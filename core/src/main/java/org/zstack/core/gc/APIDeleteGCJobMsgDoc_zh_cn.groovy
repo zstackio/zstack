@@ -3,22 +3,22 @@ package org.zstack.core.gc
 import org.zstack.core.gc.APIDeleteGCJobEvent
 
 doc {
-    title "DeleteGCJob"
+	title "DeleteGCJob"
 
-    category "gc"
+	category "gc"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/gc-jobs/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteGCJobMsg.class
+			clz APIDeleteGCJobMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -43,16 +43,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteGCJobEvent.class
-        }
-    }
+		response {
+			clz APIDeleteGCJobEvent.class
+		}
+	}
 }

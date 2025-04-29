@@ -4,28 +4,28 @@ import org.zstack.header.console.APIQueryConsoleProxyAgentReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryConsoleProxyAgent"
+	title "QueryConsoleProxyAgent"
 
-    category "console"
+	category "console"
 
-    desc """查询控制台代理Agent"""
+	desc """查询控制台代理Agent"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/consoles/agents"
 			url "GET /v1/consoles/agents/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryConsoleProxyAgentMsg.class
+			clz APIQueryConsoleProxyAgentMsg.class
 
-            desc """查询控制台代理Agent"""
-            
+			desc """查询控制台代理Agent"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryConsoleProxyAgentReply.class
-        }
-    }
+		response {
+			clz APIQueryConsoleProxyAgentReply.class
+		}
+	}
 }

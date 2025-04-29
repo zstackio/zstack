@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIDetachL3NetworkFromVmEvent
 
 doc {
-    title "从云主机卸载网络(DetachL3NetworkFromVm)"
+	title "从云主机卸载网络(DetachL3NetworkFromVm)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """从Running或Stopped的云主机上卸载一个网络"""
+	desc """从Running或Stopped的云主机上卸载一个网络"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/vm-instances/nics/{vmNicUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDetachL3NetworkFromVmMsg.class
+			clz APIDetachL3NetworkFromVmMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -43,16 +43,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDetachL3NetworkFromVmEvent.class
-        }
-    }
+		response {
+			clz APIDetachL3NetworkFromVmEvent.class
+		}
+	}
 }

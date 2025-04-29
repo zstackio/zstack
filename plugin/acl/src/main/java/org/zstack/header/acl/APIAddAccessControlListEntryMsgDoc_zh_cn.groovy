@@ -3,22 +3,22 @@ package org.zstack.header.acl
 import org.zstack.header.acl.APIAddAccessControlListEntryEvent
 
 doc {
-    title "AddAccessControlListEntry"
+	title "AddAccessControlListEntry"
 
-    category "acl"
+	category "acl"
 
-    desc """向访问控制策略组添加IP组"""
+	desc """向访问控制策略组添加IP组"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/access-control-lists/{aclUuid}/ipentries"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddAccessControlListEntryMsg.class
+			clz APIAddAccessControlListEntryMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -85,10 +85,10 @@ doc {
 					since "3.9"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddAccessControlListEntryEvent.class
-        }
-    }
+		response {
+			clz APIAddAccessControlListEntryEvent.class
+		}
+	}
 }

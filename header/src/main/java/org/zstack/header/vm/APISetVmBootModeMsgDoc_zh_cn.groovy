@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APISetVmBootModeEvent
 
 doc {
-    title "SetVmBootMode"
+	title "SetVmBootMode"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """设置云主机启动模式"""
+	desc """设置云主机启动模式"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISetVmBootModeMsg.class
+			clz APISetVmBootModeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISetVmBootModeEvent.class
-        }
-    }
+		response {
+			clz APISetVmBootModeEvent.class
+		}
+	}
 }

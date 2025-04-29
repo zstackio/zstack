@@ -3,22 +3,22 @@ package org.zstack.header.volume
 import org.zstack.header.volume.APIExpungeDataVolumeEvent
 
 doc {
-    title "ExpungeDataVolume"
+	title "ExpungeDataVolume"
 
-    category "volume"
+	category "volume"
 
-    desc """彻底删除云盘"""
+	desc """彻底删除云盘"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/volumes/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIExpungeDataVolumeMsg.class
+			clz APIExpungeDataVolumeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIExpungeDataVolumeEvent.class
-        }
-    }
+		response {
+			clz APIExpungeDataVolumeEvent.class
+		}
+	}
 }

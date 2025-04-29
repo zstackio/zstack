@@ -3,22 +3,22 @@ package org.zstack.header.sshkeypair
 import org.zstack.header.sshkeypair.APICreateSshKeyPairEvent
 
 doc {
-    title "CreateSshKeyPair"
+	title "CreateSshKeyPair"
 
-    category "sshKeyPair"
+	category "sshKeyPair"
 
-    desc """创建密钥对"""
+	desc """创建密钥对"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/ssh-key-pair"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateSshKeyPairMsg.class
+			clz APICreateSshKeyPairMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "description"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "publicKey"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "resourceUuid"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "tagUuids"
@@ -64,7 +64,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "systemTags"
@@ -73,7 +73,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "userTags"
@@ -82,13 +82,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateSshKeyPairEvent.class
-        }
-    }
+		response {
+			clz APICreateSshKeyPairEvent.class
+		}
+	}
 }

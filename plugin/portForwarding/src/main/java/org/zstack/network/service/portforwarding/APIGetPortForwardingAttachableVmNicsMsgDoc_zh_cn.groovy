@@ -3,22 +3,22 @@ package org.zstack.network.service.portforwarding
 import org.zstack.network.service.portforwarding.APIGetPortForwardingAttachableVmNicsReply
 
 doc {
-    title "GetPortForwardingAttachableVmNics"
+	title "GetPortForwardingAttachableVmNics"
 
-    category "portForwarding"
+	category "portForwarding"
 
-    desc """获取可应用端口转发规则的云主机网卡列表"""
+	desc """获取可应用端口转发规则的云主机网卡列表"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/port-forwarding/{ruleUuid}/vm-instances/candidate-nics"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetPortForwardingAttachableVmNicsMsg.class
+			clz APIGetPortForwardingAttachableVmNicsMsg.class
 
-            desc """获取可应用端口转发规则的云主机网卡列表"""
-            
+			desc """获取可应用端口转发规则的云主机网卡列表"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetPortForwardingAttachableVmNicsReply.class
-        }
-    }
+		response {
+			clz APIGetPortForwardingAttachableVmNicsReply.class
+		}
+	}
 }

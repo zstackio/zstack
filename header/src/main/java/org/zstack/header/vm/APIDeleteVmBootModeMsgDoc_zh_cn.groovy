@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIDeleteVmBootModeEvent
 
 doc {
-    title "DeleteVmBootMode"
+	title "DeleteVmBootMode"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """删除云主机启动模式"""
+	desc """删除云主机启动模式"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/vm-instances/{uuid}/bootmode"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteVmBootModeMsg.class
+			clz APIDeleteVmBootModeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteVmBootModeEvent.class
-        }
-    }
+		response {
+			clz APIDeleteVmBootModeEvent.class
+		}
+	}
 }

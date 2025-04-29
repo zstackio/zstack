@@ -3,22 +3,22 @@ package org.zstack.header.storage.snapshot.group
 import org.zstack.header.storage.snapshot.group.APIUngroupVolumeSnapshotGroupEvent
 
 doc {
-    title "UngroupVolumeSnapshotGroup"
+	title "UngroupVolumeSnapshotGroup"
 
-    category "snapshot.volume"
+	category "snapshot.volume"
 
-    desc """解绑快照组"""
+	desc """解绑快照组"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/volume-snapshots/ungroup/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUngroupVolumeSnapshotGroupMsg.class
+			clz APIUngroupVolumeSnapshotGroupMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "3.6.0"
@@ -43,16 +43,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "3.6.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUngroupVolumeSnapshotGroupEvent.class
-        }
-    }
+		response {
+			clz APIUngroupVolumeSnapshotGroupEvent.class
+		}
+	}
 }

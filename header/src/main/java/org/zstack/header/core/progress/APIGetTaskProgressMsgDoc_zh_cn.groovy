@@ -3,22 +3,22 @@ package org.zstack.header.core.progress
 import org.zstack.header.core.progress.APIGetTaskProgressReply
 
 doc {
-    title "GetTaskProgress"
+	title "GetTaskProgress"
 
-    category "core.progress"
+	category "core.progress"
 
-    desc """获取任务进度"""
+	desc """获取任务进度"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/task-progresses/{apiId}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetTaskProgressMsg.class
+			clz APIGetTaskProgressMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "1.11"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetTaskProgressReply.class
-        }
-    }
+		response {
+			clz APIGetTaskProgressReply.class
+		}
+	}
 }

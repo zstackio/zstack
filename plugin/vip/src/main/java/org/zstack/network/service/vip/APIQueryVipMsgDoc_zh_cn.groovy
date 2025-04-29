@@ -4,28 +4,28 @@ import org.zstack.network.service.vip.APIQueryVipReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryVip"
+	title "QueryVip"
 
-    category "vip"
+	category "vip"
 
-    desc """查询VIP"""
+	desc """查询VIP"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vips"
 			url "GET /v1/vips/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryVipMsg.class
+			clz APIQueryVipMsg.class
 
-            desc """查询VIP"""
-            
+			desc """查询VIP"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryVipReply.class
-        }
-    }
+		response {
+			clz APIQueryVipReply.class
+		}
+	}
 }

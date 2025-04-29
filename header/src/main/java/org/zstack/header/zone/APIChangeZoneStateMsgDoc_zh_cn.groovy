@@ -3,22 +3,22 @@ package org.zstack.header.zone
 import org.zstack.header.zone.APIChangeZoneStateEvent
 
 doc {
-    title "改变区域的可用状态(ChangeZoneState)"
+	title "改变区域的可用状态(ChangeZoneState)"
 
-    category "zone"
+	category "zone"
 
-    desc """改变区域的可用状态"""
+	desc """改变区域的可用状态"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/zones/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeZoneStateMsg.class
+			clz APIChangeZoneStateMsg.class
 
-            desc """改变区域的可用状态"""
-            
+			desc """改变区域的可用状态"""
+
 			params {
 
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeZoneStateEvent.class
-        }
-    }
+		response {
+			clz APIChangeZoneStateEvent.class
+		}
+	}
 }

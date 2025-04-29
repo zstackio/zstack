@@ -3,22 +3,22 @@ package org.zstack.network.securitygroup
 import org.zstack.network.securitygroup.APIAttachSecurityGroupToL3NetworkEvent
 
 doc {
-    title "AttachSecurityGroupToL3Network"
+	title "AttachSecurityGroupToL3Network"
 
-    category "securityGroup"
+	category "securityGroup"
 
-    desc """用户可以使用AttachSecurityGroupToL3Network来挂载一个安全组到L3网络"""
+	desc """用户可以使用AttachSecurityGroupToL3Network来挂载一个安全组到L3网络"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/security-groups/{securityGroupUuid}/l3-networks/{l3NetworkUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAttachSecurityGroupToL3NetworkMsg.class
+			clz APIAttachSecurityGroupToL3NetworkMsg.class
 
-            desc """用户可以使用AttachSecurityGroupToL3Network来挂载一个安全组到L3网络"""
-            
+			desc """用户可以使用AttachSecurityGroupToL3Network来挂载一个安全组到L3网络"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAttachSecurityGroupToL3NetworkEvent.class
-        }
-    }
+		response {
+			clz APIAttachSecurityGroupToL3NetworkEvent.class
+		}
+	}
 }

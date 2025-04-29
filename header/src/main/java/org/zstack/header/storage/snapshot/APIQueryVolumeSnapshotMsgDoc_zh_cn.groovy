@@ -4,28 +4,28 @@ import org.zstack.header.storage.snapshot.APIQueryVolumeSnapshotReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "查询云盘快照(QueryVolumeSnapshot)"
+	title "查询云盘快照(QueryVolumeSnapshot)"
 
-    category "snapshot.volume"
+	category "snapshot.volume"
 
-    desc """查询云盘快照"""
+	desc """查询云盘快照"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/volume-snapshots"
 			url "GET /v1/volume-snapshots/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryVolumeSnapshotMsg.class
+			clz APIQueryVolumeSnapshotMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryVolumeSnapshotReply.class
-        }
-    }
+		response {
+			clz APIQueryVolumeSnapshotReply.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.volume
 import org.zstack.header.volume.APIGetVolumeCapabilitiesReply
 
 doc {
-    title "获取云盘支持的类型的能力(GetVolumeCapabilities)"
+	title "获取云盘支持的类型的能力(GetVolumeCapabilities)"
 
-    category "volume"
+	category "volume"
 
-    desc """获取云盘支持的类型的能力"""
+	desc """获取云盘支持的类型的能力"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/volumes/{uuid}/capabilities"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVolumeCapabilitiesMsg.class
+			clz APIGetVolumeCapabilitiesMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVolumeCapabilitiesReply.class
-        }
-    }
+		response {
+			clz APIGetVolumeCapabilitiesReply.class
+		}
+	}
 }

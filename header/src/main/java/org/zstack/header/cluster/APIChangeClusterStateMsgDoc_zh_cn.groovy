@@ -3,22 +3,22 @@ package org.zstack.header.cluster
 import org.zstack.header.cluster.APIChangeClusterStateEvent
 
 doc {
-    title "ChangeClusterState"
+	title "ChangeClusterState"
 
-    category "cluster"
+	category "cluster"
 
-    desc """管理员可以使用ChangeClusterState来改变一个集群的可用状态"""
+	desc """管理员可以使用ChangeClusterState来改变一个集群的可用状态"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/clusters/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeClusterStateMsg.class
+			clz APIChangeClusterStateMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeClusterStateEvent.class
-        }
-    }
+		response {
+			clz APIChangeClusterStateEvent.class
+		}
+	}
 }

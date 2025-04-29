@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIDeleteLoadBalancerListenerEvent
 
 doc {
-    title "删除负载均衡监听器(DeleteLoadBalancerListener)"
+	title "删除负载均衡监听器(DeleteLoadBalancerListener)"
 
-    category "负载均衡"
+	category "负载均衡"
 
-    desc """删除负载均衡监听器"""
+	desc """删除负载均衡监听器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/load-balancers/listeners/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteLoadBalancerListenerMsg.class
+			clz APIDeleteLoadBalancerListenerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -43,16 +43,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteLoadBalancerListenerEvent.class
-        }
-    }
+		response {
+			clz APIDeleteLoadBalancerListenerEvent.class
+		}
+	}
 }

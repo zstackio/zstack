@@ -3,22 +3,22 @@ package org.zstack.header.identity
 import org.zstack.header.identity.APIUpdateQuotaEvent
 
 doc {
-    title "UpdateQuota"
+	title "UpdateQuota"
 
-    category "identity"
+	category "identity"
 
-    desc """更新配额"""
+	desc """更新配额"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/accounts/quotas/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateQuotaMsg.class
+			clz APIUpdateQuotaMsg.class
 
-            desc """更新配额"""
-            
+			desc """更新配额"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateQuotaEvent.class
-        }
-    }
+		response {
+			clz APIUpdateQuotaEvent.class
+		}
+	}
 }

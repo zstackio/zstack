@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APICreateVmInstanceFromVolumeEvent
 
 doc {
-    title "CreateVmInstanceFromVolume"
+	title "CreateVmInstanceFromVolume"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """从云盘创建虚拟机"""
+	desc """从云盘创建虚拟机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/vm-instances/from/volume"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateVmInstanceFromVolumeMsg.class
+			clz APICreateVmInstanceFromVolumeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -82,7 +82,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "type"
@@ -211,13 +211,13 @@ doc {
 					location "body"
 					type "Long"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateVmInstanceFromVolumeEvent.class
-        }
-    }
+		response {
+			clz APICreateVmInstanceFromVolumeEvent.class
+		}
+	}
 }

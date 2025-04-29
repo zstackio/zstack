@@ -3,23 +3,23 @@ package org.zstack.resourceconfig
 import org.zstack.resourceconfig.APIGetResourceBindableConfigReply
 
 doc {
-    title "GetResourceBindableConfig"
+	title "GetResourceBindableConfig"
 
-    category "resourceConfig"
+	category "resourceConfig"
 
-    desc """罗列可配置的资源高级设置"""
+	desc """罗列可配置的资源高级设置"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/resource-configurations/bindable"
 			url "GET /v1/resource-configurations/bindable/{category}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetResourceBindableConfigMsg.class
+			clz APIGetResourceBindableConfigMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -50,10 +50,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetResourceBindableConfigReply.class
-        }
-    }
+		response {
+			clz APIGetResourceBindableConfigReply.class
+		}
+	}
 }

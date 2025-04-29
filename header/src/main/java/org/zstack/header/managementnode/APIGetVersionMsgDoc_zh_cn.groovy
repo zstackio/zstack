@@ -3,22 +3,22 @@ package org.zstack.header.managementnode
 import org.zstack.header.managementnode.APIGetVersionReply
 
 doc {
-    title "GetVersion"
+	title "GetVersion"
 
-    category "managementNode"
+	category "managementNode"
 
-    desc """获取当前版本"""
+	desc """获取当前版本"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/management-nodes/actions"
 
 
 
-            clz APIGetVersionMsg.class
+			clz APIGetVersionMsg.class
 
-            desc """获取当前版本"""
-            
+			desc """获取当前版本"""
+
 			params {
 
 				column {
@@ -40,10 +40,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVersionReply.class
-        }
-    }
+		response {
+			clz APIGetVersionReply.class
+		}
+	}
 }

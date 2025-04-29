@@ -3,22 +3,22 @@ package org.zstack.storage.ceph.primary
 import org.zstack.storage.ceph.primary.APIUpdateCephPrimaryStoragePoolEvent
 
 doc {
-    title "UpdateCephPrimaryStoragePool"
+	title "UpdateCephPrimaryStoragePool"
 
-    category "storage.ceph.primary"
+	category "storage.ceph.primary"
 
-    desc """Ceph Pool存储池清单"""
+	desc """Ceph Pool存储池清单"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/primary-storage/ceph/pools/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateCephPrimaryStoragePoolMsg.class
+			clz APIUpdateCephPrimaryStoragePoolMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateCephPrimaryStoragePoolEvent.class
-        }
-    }
+		response {
+			clz APIUpdateCephPrimaryStoragePoolEvent.class
+		}
+	}
 }

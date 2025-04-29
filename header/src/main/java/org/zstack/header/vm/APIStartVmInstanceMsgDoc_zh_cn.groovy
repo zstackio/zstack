@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIStartVmInstanceEvent
 
 doc {
-    title "启动云主机(StartVmInstance)"
+	title "启动云主机(StartVmInstance)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """启动一个云主机"""
+	desc """启动一个云主机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIStartVmInstanceMsg.class
+			clz APIStartVmInstanceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIStartVmInstanceEvent.class
-        }
-    }
+		response {
+			clz APIStartVmInstanceEvent.class
+		}
+	}
 }

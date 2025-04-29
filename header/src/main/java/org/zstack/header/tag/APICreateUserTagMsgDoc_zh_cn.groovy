@@ -3,22 +3,22 @@ package org.zstack.header.tag
 import org.zstack.header.tag.APICreateUserTagEvent
 
 doc {
-    title "CreateUserTag"
+	title "CreateUserTag"
 
-    category "tag"
+	category "tag"
 
-    desc """创建用户标签"""
+	desc """创建用户标签"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/user-tags"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateUserTagMsg.class
+			clz APICreateUserTagMsg.class
 
-            desc """创建用户标签"""
-            
+			desc """创建用户标签"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateUserTagEvent.class
-        }
-    }
+		response {
+			clz APICreateUserTagEvent.class
+		}
+	}
 }

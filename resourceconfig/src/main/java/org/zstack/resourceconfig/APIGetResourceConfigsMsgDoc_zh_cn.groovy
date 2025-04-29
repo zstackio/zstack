@@ -3,22 +3,22 @@ package org.zstack.resourceconfig
 import org.zstack.resourceconfig.APIGetResourceConfigsReply
 
 doc {
-    title "GetResourceConfigs"
+	title "GetResourceConfigs"
 
-    category "resourceConfig"
+	category "resourceConfig"
 
-    desc """查询多个资源级配置"""
+	desc """查询多个资源级配置"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/resource-configurations/{resourceUuid}/{category}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetResourceConfigsMsg.class
+			clz APIGetResourceConfigsMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "names"
@@ -37,7 +37,7 @@ doc {
 					location "query"
 					type "List"
 					optional false
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "resourceUuid"
@@ -46,7 +46,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "systemTags"
@@ -55,7 +55,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "userTags"
@@ -64,13 +64,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetResourceConfigsReply.class
-        }
-    }
+		response {
+			clz APIGetResourceConfigsReply.class
+		}
+	}
 }

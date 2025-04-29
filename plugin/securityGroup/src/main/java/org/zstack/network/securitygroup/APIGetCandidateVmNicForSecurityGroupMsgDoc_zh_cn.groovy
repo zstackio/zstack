@@ -3,22 +3,22 @@ package org.zstack.network.securitygroup
 import org.zstack.network.securitygroup.APIGetCandidateVmNicForSecurityGroupReply
 
 doc {
-    title "GetCandidateVmNicForSecurityGroup"
+	title "GetCandidateVmNicForSecurityGroup"
 
-    category "securityGroup"
+	category "securityGroup"
 
-    desc """获取可应用安全组的网卡列表清单"""
+	desc """获取可应用安全组的网卡列表清单"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/security-groups/{securityGroupUuid}/vm-instances/candidate-nics"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetCandidateVmNicForSecurityGroupMsg.class
+			clz APIGetCandidateVmNicForSecurityGroupMsg.class
 
-            desc """获取可应用安全组的网卡列表清单"""
-            
+			desc """获取可应用安全组的网卡列表清单"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetCandidateVmNicForSecurityGroupReply.class
-        }
-    }
+		response {
+			clz APIGetCandidateVmNicForSecurityGroupReply.class
+		}
+	}
 }

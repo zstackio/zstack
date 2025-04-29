@@ -3,22 +3,22 @@ package org.zstack.header.identity
 import org.zstack.header.identity.APIShareResourceEvent
 
 doc {
-    title "ShareResource"
+	title "ShareResource"
 
-    category "identity"
+	category "identity"
 
-    desc """共享资源给账户"""
+	desc """共享资源给账户"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/accounts/resources/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIShareResourceMsg.class
+			clz APIShareResourceMsg.class
 
-            desc """共享资源给账户"""
-            
+			desc """共享资源给账户"""
+
 			params {
 
 				column {
@@ -76,10 +76,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIShareResourceEvent.class
-        }
-    }
+		response {
+			clz APIShareResourceEvent.class
+		}
+	}
 }

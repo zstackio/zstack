@@ -3,22 +3,22 @@ package org.zstack.header.volume
 import org.zstack.header.volume.APIUndoSnapshotCreationEvent
 
 doc {
-    title "UndoSnapshotCreation"
+	title "UndoSnapshotCreation"
 
-    category "volume"
+	category "volume"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/volumes/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUndoSnapshotCreationMsg.class
+			clz APIUndoSnapshotCreationMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "snapShotUuid"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "systemTags"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "userTags"
@@ -55,13 +55,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUndoSnapshotCreationEvent.class
-        }
-    }
+		response {
+			clz APIUndoSnapshotCreationEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIAddServerGroupToLoadBalancerListenerEvent
 
 doc {
-    title "AddServerGroupToLoadBalancerListener"
+	title "AddServerGroupToLoadBalancerListener"
 
-    category "loadBalancer"
+	category "loadBalancer"
 
-    desc """绑定负载均衡器服务器组到监听器"""
+	desc """绑定负载均衡器服务器组到监听器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/load-balancers/listeners/{listenerUuid}/servergroups"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddServerGroupToLoadBalancerListenerMsg.class
+			clz APIAddServerGroupToLoadBalancerListenerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "listenerUuid"
@@ -37,7 +37,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "systemTags"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "userTags"
@@ -55,13 +55,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddServerGroupToLoadBalancerListenerEvent.class
-        }
-    }
+		response {
+			clz APIAddServerGroupToLoadBalancerListenerEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetVmHostnameReply
 
 doc {
-    title "获取云主机Hostname(GetVmHostname)"
+	title "获取云主机Hostname(GetVmHostname)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """获取云主机指定的Hostname。该Hostname是用户之前用SetVmHostname指定的。"""
+	desc """获取云主机指定的Hostname。该Hostname是用户之前用SetVmHostname指定的。"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/{uuid}/hostnames"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVmHostnameMsg.class
+			clz APIGetVmHostnameMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVmHostnameReply.class
-        }
-    }
+		response {
+			clz APIGetVmHostnameReply.class
+		}
+	}
 }

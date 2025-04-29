@@ -3,22 +3,22 @@ package org.zstack.header.host
 import org.zstack.header.host.APIMountBlockDeviceEvent
 
 doc {
-    title "MountBlockDevice"
+	title "MountBlockDevice"
 
-    category "host"
+	category "host"
 
-    desc """挂载硬盘到挂载点"""
+	desc """挂载硬盘到挂载点"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/host/mount-block-device"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIMountBlockDeviceMsg.class
+			clz APIMountBlockDeviceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -104,10 +104,10 @@ doc {
 					since "zsv 4.3.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIMountBlockDeviceEvent.class
-        }
-    }
+		response {
+			clz APIMountBlockDeviceEvent.class
+		}
+	}
 }

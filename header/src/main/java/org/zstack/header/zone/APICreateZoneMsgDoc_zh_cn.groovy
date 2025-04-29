@@ -3,22 +3,22 @@ package org.zstack.header.zone
 import org.zstack.header.zone.APICreateZoneEvent
 
 doc {
-    title "创建一个新的区域(CreateZone)"
+	title "创建一个新的区域(CreateZone)"
 
-    category "zone"
+	category "zone"
 
-    desc """创建一个新的区域"""
+	desc """创建一个新的区域"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/zones"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateZoneMsg.class
+			clz APICreateZoneMsg.class
 
-            desc """创建一个新的区域"""
-            
+			desc """创建一个新的区域"""
+
 			params {
 
 				column {
@@ -82,13 +82,13 @@ doc {
 					location "body"
 					type "Boolean"
 					optional true
-					since "4.6.31"
+					since "3.16.31"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateZoneEvent.class
-        }
-    }
+		response {
+			clz APICreateZoneEvent.class
+		}
+	}
 }

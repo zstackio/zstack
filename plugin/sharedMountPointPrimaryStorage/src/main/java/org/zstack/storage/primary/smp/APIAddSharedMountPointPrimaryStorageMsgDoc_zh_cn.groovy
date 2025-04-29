@@ -3,22 +3,22 @@ package org.zstack.storage.primary.smp
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent
 
 doc {
-    title "添加一个共享挂载点的主存储(AddSharedMountPointPrimaryStorage)"
+	title "添加一个共享挂载点的主存储(AddSharedMountPointPrimaryStorage)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """添加一个共享挂载点的主存储"""
+	desc """添加一个共享挂载点的主存储"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/primary-storage/smp"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddSharedMountPointPrimaryStorageMsg.class
+			clz APIAddSharedMountPointPrimaryStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -103,10 +103,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddPrimaryStorageEvent.class
-        }
-    }
+		response {
+			clz APIAddPrimaryStorageEvent.class
+		}
+	}
 }

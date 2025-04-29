@@ -3,22 +3,22 @@ package org.zstack.directory
 import org.zstack.directory.APICreateDirectoryEvent
 
 doc {
-    title "CreateDirectory"
+	title "CreateDirectory"
 
-    category "directory"
+	category "directory"
 
-    desc """创建目录"""
+	desc """创建目录"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/create/directory"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateDirectoryMsg.class
+			clz APICreateDirectoryMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "parentUuid"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "zoneUuid"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "type"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "resourceUuid"
@@ -64,7 +64,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "tagUuids"
@@ -73,7 +73,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "systemTags"
@@ -82,7 +82,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "userTags"
@@ -91,13 +91,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateDirectoryEvent.class
-        }
-    }
+		response {
+			clz APICreateDirectoryEvent.class
+		}
+	}
 }

@@ -4,28 +4,28 @@ import org.zstack.header.storage.backup.APIQueryBackupStorageReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "查询镜像服务器(QueryBackupStorage)"
+	title "查询镜像服务器(QueryBackupStorage)"
 
-    category "storage.backup"
+	category "storage.backup"
 
-    desc """查询镜像服务器"""
+	desc """查询镜像服务器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/backup-storage"
 			url "GET /v1/backup-storage/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryBackupStorageMsg.class
+			clz APIQueryBackupStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryBackupStorageReply.class
-        }
-    }
+		response {
+			clz APIQueryBackupStorageReply.class
+		}
+	}
 }

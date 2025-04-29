@@ -3,22 +3,22 @@ package org.zstack.header.cluster
 import org.zstack.header.cluster.APIUpdateClusterEvent
 
 doc {
-    title "UpdateCluster"
+	title "UpdateCluster"
 
-    category "cluster"
+	category "cluster"
 
-    desc """更新集群"""
+	desc """更新集群"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/clusters/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateClusterMsg.class
+			clz APIUpdateClusterMsg.class
 
-            desc """更新集群"""
-            
+			desc """更新集群"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateClusterEvent.class
-        }
-    }
+		response {
+			clz APIUpdateClusterEvent.class
+		}
+	}
 }

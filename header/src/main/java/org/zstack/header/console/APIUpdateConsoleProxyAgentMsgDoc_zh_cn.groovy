@@ -3,22 +3,22 @@ package org.zstack.header.console
 import org.zstack.header.console.APIUpdateConsoleProxyAgentEvent
 
 doc {
-    title "UpdateConsoleProxyAgent"
+	title "UpdateConsoleProxyAgent"
 
-    category "console"
+	category "console"
 
-    desc """更新控制台代理"""
+	desc """更新控制台代理"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/consoles/agents/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateConsoleProxyAgentMsg.class
+			clz APIUpdateConsoleProxyAgentMsg.class
 
-            desc """更新控制台代理"""
-            
+			desc """更新控制台代理"""
+
 			params {
 
 				column {
@@ -64,13 +64,13 @@ doc {
 					location "body"
 					type "int"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateConsoleProxyAgentEvent.class
-        }
-    }
+		response {
+			clz APIUpdateConsoleProxyAgentEvent.class
+		}
+	}
 }

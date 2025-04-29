@@ -3,22 +3,22 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIAddDnsToL3NetworkEvent
 
 doc {
-    title "向三层网络添加DNS(AddDnsToL3Network)"
+	title "向三层网络添加DNS(AddDnsToL3Network)"
 
-    category "三层网络"
+	category "三层网络"
 
-    desc """向三层网络添加DNS"""
+	desc """向三层网络添加DNS"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l3-networks/{l3NetworkUuid}/dns"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddDnsToL3NetworkMsg.class
+			clz APIAddDnsToL3NetworkMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddDnsToL3NetworkEvent.class
-        }
-    }
+		response {
+			clz APIAddDnsToL3NetworkEvent.class
+		}
+	}
 }

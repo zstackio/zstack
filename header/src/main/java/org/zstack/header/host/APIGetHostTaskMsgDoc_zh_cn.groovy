@@ -3,22 +3,22 @@ package org.zstack.header.host
 import org.zstack.header.core.APIGetChainTaskReply
 
 doc {
-    title "GetHostTask"
+	title "GetHostTask"
 
-    category "host"
+	category "host"
 
-    desc """获取物理机上的任务信息"""
+	desc """获取物理机上的任务信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/hosts/task-details"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetHostTaskMsg.class
+			clz APIGetHostTaskMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -55,13 +55,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetChainTaskReply.class
-        }
-    }
+		response {
+			clz APIGetChainTaskReply.class
+		}
+	}
 }

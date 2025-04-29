@@ -3,22 +3,22 @@ package org.zstack.header.core.encrypt
 import org.zstack.header.core.encrypt.APIGetEncryptedFieldReply
 
 doc {
-    title "GetEncryptedField"
+	title "GetEncryptedField"
 
-    category "crypto"
+	category "crypto"
 
-    desc """获取加密字段"""
+	desc """获取加密字段"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/encrypted/fields"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetEncryptedFieldMsg.class
+			clz APIGetEncryptedFieldMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "query"
 					type "String"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "systemTags"
@@ -37,7 +37,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "userTags"
@@ -46,13 +46,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetEncryptedFieldReply.class
-        }
-    }
+		response {
+			clz APIGetEncryptedFieldReply.class
+		}
+	}
 }

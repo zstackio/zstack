@@ -3,22 +3,22 @@ package org.zstack.sugonSdnController.header
 import org.zstack.header.network.l2.APICreateL2NetworkEvent
 
 doc {
-    title "创建tungsten fabric二层网络(CreateL2TfNetwork)"
+	title "创建tungsten fabric二层网络(CreateL2TfNetwork)"
 
-    category "network.l2"
+	category "network.l2"
 
-    desc """创建tungsten fabric二层网络"""
+	desc """创建tungsten fabric二层网络"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l2-networks/tf"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateL2TfNetworkMsg.class
+			clz APICreateL2TfNetworkMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "ipPrefixLength"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "Integer"
 					optional true
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "name"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "description"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "zoneUuid"
@@ -64,7 +64,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "physicalInterface"
@@ -73,7 +73,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "type"
@@ -82,7 +82,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "vSwitchType"
@@ -91,7 +91,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.8.0"
+					since "3.18.0"
 					values ("LinuxBridge","OvsDpdk","MacVlan")
 				}
 				column {
@@ -101,7 +101,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "tagUuids"
@@ -110,7 +110,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "systemTags"
@@ -119,7 +119,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "userTags"
@@ -128,13 +128,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.8.0"
+					since "3.18.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateL2NetworkEvent.class
-        }
-    }
+		response {
+			clz APICreateL2NetworkEvent.class
+		}
+	}
 }

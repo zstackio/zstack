@@ -3,22 +3,22 @@ package org.zstack.header.storage.primary
 import org.zstack.header.storage.primary.APICleanUpTrashOnPrimaryStorageEvent
 
 doc {
-    title "CleanUpTrashOnPrimaryStorage"
+	title "CleanUpTrashOnPrimaryStorage"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """清理主存储上的回收数据"""
+	desc """清理主存储上的回收数据"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/primary-storage/{uuid}/trash/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICleanUpTrashOnPrimaryStorageMsg.class
+			clz APICleanUpTrashOnPrimaryStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "3.2.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICleanUpTrashOnPrimaryStorageEvent.class
-        }
-    }
+		response {
+			clz APICleanUpTrashOnPrimaryStorageEvent.class
+		}
+	}
 }

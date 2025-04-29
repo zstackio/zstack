@@ -3,22 +3,22 @@ package org.zstack.header.storage.snapshot
 import org.zstack.header.storage.snapshot.APIUpdateVolumeSnapshotEvent
 
 doc {
-    title "更新云盘快照信息(UpdateVolumeSnapshot)"
+	title "更新云盘快照信息(UpdateVolumeSnapshot)"
 
-    category "snapshot.volume"
+	category "snapshot.volume"
 
-    desc """更新云盘快照信息"""
+	desc """更新云盘快照信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/volume-snapshots/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateVolumeSnapshotMsg.class
+			clz APIUpdateVolumeSnapshotMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateVolumeSnapshotEvent.class
-        }
-    }
+		response {
+			clz APIUpdateVolumeSnapshotEvent.class
+		}
+	}
 }

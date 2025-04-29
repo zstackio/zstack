@@ -3,22 +3,22 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APISetL3NetworkMtuEvent
 
 doc {
-    title "SetL3NetworkMtu"
+	title "SetL3NetworkMtu"
 
-    category "network.l3"
+	category "network.l3"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l3-networks/{l3NetworkUuid}/mtu"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISetL3NetworkMtuMsg.class
+			clz APISetL3NetworkMtuMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISetL3NetworkMtuEvent.class
-        }
-    }
+		response {
+			clz APISetL3NetworkMtuEvent.class
+		}
+	}
 }

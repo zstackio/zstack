@@ -4,28 +4,28 @@ import org.zstack.header.configuration.APIQueryInstanceOfferingReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryInstanceOffering"
+	title "QueryInstanceOffering"
 
-    category "configuration"
+	category "configuration"
 
-    desc """查询云主机规格"""
+	desc """查询云主机规格"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/instance-offerings"
 			url "GET /v1/instance-offerings/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryInstanceOfferingMsg.class
+			clz APIQueryInstanceOfferingMsg.class
 
-            desc """查询云主机规格"""
-            
+			desc """查询云主机规格"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryInstanceOfferingReply.class
-        }
-    }
+		response {
+			clz APIQueryInstanceOfferingReply.class
+		}
+	}
 }

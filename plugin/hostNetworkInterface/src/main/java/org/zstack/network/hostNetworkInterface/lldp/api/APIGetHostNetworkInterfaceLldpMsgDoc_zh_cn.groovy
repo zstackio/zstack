@@ -3,22 +3,22 @@ package org.zstack.network.hostNetworkInterface.lldp.api
 import org.zstack.network.hostNetworkInterface.lldp.api.APIGetHostNetworkInterfaceLldpReply
 
 doc {
-    title "GetHostNetworkInterfaceLldp"
+	title "GetHostNetworkInterfaceLldp"
 
-    category "hostNetwork.lldp"
+	category "hostNetwork.lldp"
 
-    desc """获取物理网口lldp信息"""
+	desc """获取物理网口lldp信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/hostNetworkInterface/lldp/{interfaceUuid}/info"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetHostNetworkInterfaceLldpMsg.class
+			clz APIGetHostNetworkInterfaceLldpMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "4.1.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetHostNetworkInterfaceLldpReply.class
-        }
-    }
+		response {
+			clz APIGetHostNetworkInterfaceLldpReply.class
+		}
+	}
 }

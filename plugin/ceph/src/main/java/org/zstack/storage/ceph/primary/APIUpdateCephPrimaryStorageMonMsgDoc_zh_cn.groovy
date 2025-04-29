@@ -3,22 +3,22 @@ package org.zstack.storage.ceph.primary
 import org.zstack.storage.ceph.primary.APIUpdateCephPrimaryStorageMonEvent
 
 doc {
-    title "更新 Ceph 主存储 mon 节点(UpdateCephPrimaryStorageMon)"
+	title "更新 Ceph 主存储 mon 节点(UpdateCephPrimaryStorageMon)"
 
-    category "storage.ceph.primary"
+	category "storage.ceph.primary"
 
-    desc """更新 Ceph 主存储 mon 节点"""
+	desc """更新 Ceph 主存储 mon 节点"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/primary-storage/ceph/mons/{monUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateCephPrimaryStorageMonMsg.class
+			clz APIUpdateCephPrimaryStorageMonMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -94,10 +94,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateCephPrimaryStorageMonEvent.class
-        }
-    }
+		response {
+			clz APIUpdateCephPrimaryStorageMonEvent.class
+		}
+	}
 }

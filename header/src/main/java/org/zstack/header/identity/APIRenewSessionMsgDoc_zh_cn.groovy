@@ -3,22 +3,22 @@ package org.zstack.header.identity
 import org.zstack.header.identity.APIRenewSessionEvent
 
 doc {
-    title "RenewSession"
+	title "RenewSession"
 
-    category "identity"
+	category "identity"
 
-    desc """更新会话"""
+	desc """更新会话"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/accounts/sessions/{sessionUuid}/renew"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIRenewSessionMsg.class
+			clz APIRenewSessionMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "2.3"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIRenewSessionEvent.class
-        }
-    }
+		response {
+			clz APIRenewSessionEvent.class
+		}
+	}
 }

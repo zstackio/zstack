@@ -3,22 +3,22 @@ package org.zstack.ldap.api
 import org.zstack.ldap.api.APIGetLdapEntryReply
 
 doc {
-    title "GetLdapEntry"
+	title "GetLdapEntry"
 
-    category "ldap"
+	category "ldap"
 
-    desc """查询LDAP/AD条目"""
+	desc """查询LDAP/AD条目"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/ldap/entry"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetLdapEntryMsg.class
+			clz APIGetLdapEntryMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "4.3.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetLdapEntryReply.class
-        }
-    }
+		response {
+			clz APIGetLdapEntryReply.class
+		}
+	}
 }

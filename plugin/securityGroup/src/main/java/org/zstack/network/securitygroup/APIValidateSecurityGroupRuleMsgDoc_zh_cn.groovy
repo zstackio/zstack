@@ -3,22 +3,22 @@ package org.zstack.network.securitygroup
 import org.zstack.network.securitygroup.APIValidateSecurityGroupRuleReply
 
 doc {
-    title "ValidateSecurityGroupRule"
+	title "ValidateSecurityGroupRule"
 
-    category "securityGroup"
+	category "securityGroup"
 
-    desc """检查安全组规则是否可用"""
+	desc """检查安全组规则是否可用"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/security-groups/{securityGroupUuid}/rules/validation"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIValidateSecurityGroupRuleMsg.class
+			clz APIValidateSecurityGroupRuleMsg.class
 
-            desc """检查安全组规则是否可用"""
-            
+			desc """检查安全组规则是否可用"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "type"
@@ -37,7 +37,7 @@ doc {
 					location "query"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 					values ("Ingress","Egress")
 				}
 				column {
@@ -47,7 +47,7 @@ doc {
 					location "query"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 					values ("TCP","UDP","ICMP","ALL")
 				}
 				column {
@@ -57,7 +57,7 @@ doc {
 					location "query"
 					type "String"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "ipVersion"
@@ -66,7 +66,7 @@ doc {
 					location "query"
 					type "Integer"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 					values ("4","6")
 				}
 				column {
@@ -76,7 +76,7 @@ doc {
 					location "query"
 					type "String"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "dstIpRange"
@@ -85,7 +85,7 @@ doc {
 					location "query"
 					type "String"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "dstPortRange"
@@ -94,7 +94,7 @@ doc {
 					location "query"
 					type "String"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "action"
@@ -103,7 +103,7 @@ doc {
 					location "query"
 					type "String"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 					values ("ACCEPT","DROP")
 				}
 				column {
@@ -113,7 +113,7 @@ doc {
 					location "query"
 					type "Integer"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "endPort"
@@ -122,7 +122,7 @@ doc {
 					location "query"
 					type "Integer"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "allowedCidr"
@@ -131,7 +131,7 @@ doc {
 					location "query"
 					type "String"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "systemTags"
@@ -140,7 +140,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "userTags"
@@ -149,13 +149,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIValidateSecurityGroupRuleReply.class
-        }
-    }
+		response {
+			clz APIValidateSecurityGroupRuleReply.class
+		}
+	}
 }

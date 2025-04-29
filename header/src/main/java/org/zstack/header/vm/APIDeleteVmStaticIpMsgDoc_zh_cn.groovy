@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIDeleteVmStaticIpEvent
 
 doc {
-    title "删除云主机指定IP(DeleteVmStaticIp)"
+	title "删除云主机指定IP(DeleteVmStaticIp)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """删除云主机三层网络上指定的IP"""
+	desc """删除云主机三层网络上指定的IP"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/vm-instances/{vmInstanceUuid}/static-ips"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteVmStaticIpMsg.class
+			clz APIDeleteVmStaticIpMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "l3NetworkUuid"
 					enclosedIn ""
 					desc "三层网络UUID"
-					location "body"
+					location "query"
 					type "String"
 					optional false
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,7 +52,7 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -61,7 +61,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
@@ -70,16 +70,16 @@ doc {
 					name "staticIp"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "3.10.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteVmStaticIpEvent.class
-        }
-    }
+		response {
+			clz APIDeleteVmStaticIpEvent.class
+		}
+	}
 }

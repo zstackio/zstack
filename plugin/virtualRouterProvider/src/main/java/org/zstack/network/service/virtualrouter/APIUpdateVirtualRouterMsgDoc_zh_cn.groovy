@@ -3,22 +3,22 @@ package org.zstack.network.service.virtualrouter
 import org.zstack.network.service.virtualrouter.APIUpdateVirtualRouterEvent
 
 doc {
-    title "更新虚拟路由器(UpdateVirtualRouter)"
+	title "更新虚拟路由器(UpdateVirtualRouter)"
 
-    category "虚拟路由器"
+	category "虚拟路由器"
 
-    desc """更新虚拟路由器"""
+	desc """更新虚拟路由器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/appliances/virtual-routers/{vmInstanceUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateVirtualRouterMsg.class
+			clz APIUpdateVirtualRouterMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "3.8"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateVirtualRouterEvent.class
-        }
-    }
+		response {
+			clz APIUpdateVirtualRouterEvent.class
+		}
+	}
 }

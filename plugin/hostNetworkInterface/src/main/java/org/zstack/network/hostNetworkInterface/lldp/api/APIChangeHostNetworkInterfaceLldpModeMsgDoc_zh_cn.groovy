@@ -3,22 +3,22 @@ package org.zstack.network.hostNetworkInterface.lldp.api
 import org.zstack.network.hostNetworkInterface.lldp.api.APIChangeHostNetworkInterfaceLldpModeEvent
 
 doc {
-    title "ChangeHostNetworkInterfaceLldpMode"
+	title "ChangeHostNetworkInterfaceLldpMode"
 
-    category "hostNetwork.lldp"
+	category "hostNetwork.lldp"
 
-    desc """修改lldp的工作模式"""
+	desc """修改lldp的工作模式"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/hostNetworkInterface/lldp/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeHostNetworkInterfaceLldpModeMsg.class
+			clz APIChangeHostNetworkInterfaceLldpModeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "4.1.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeHostNetworkInterfaceLldpModeEvent.class
-        }
-    }
+		response {
+			clz APIChangeHostNetworkInterfaceLldpModeEvent.class
+		}
+	}
 }

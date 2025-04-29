@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetVmUptimeReply
 
 doc {
-    title "GetVmUptime"
+	title "GetVmUptime"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """获取虚拟机开机时间"""
+	desc """获取虚拟机开机时间"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/{uuid}/uptime"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVmUptimeMsg.class
+			clz APIGetVmUptimeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "systemTags"
@@ -37,7 +37,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.8.0"
+					since "3.18.0"
 				}
 				column {
 					name "userTags"
@@ -46,13 +46,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.8.0"
+					since "3.18.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVmUptimeReply.class
-        }
-    }
+		response {
+			clz APIGetVmUptimeReply.class
+		}
+	}
 }

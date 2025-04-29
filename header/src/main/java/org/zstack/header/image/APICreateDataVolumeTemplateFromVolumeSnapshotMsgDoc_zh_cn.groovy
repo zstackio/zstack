@@ -3,22 +3,22 @@ package org.zstack.header.image
 import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeSnapshotEvent
 
 doc {
-    title "从云盘快照创建数据云盘镜像(CreateDataVolumeTemplateFromVolumeSnapshot)"
+	title "从云盘快照创建数据云盘镜像(CreateDataVolumeTemplateFromVolumeSnapshot)"
 
-    category "image"
+	category "image"
 
-    desc """从指定的云盘快照创建出一个数据云盘镜像"""
+	desc """从指定的云盘快照创建出一个数据云盘镜像"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/images/data-volume-templates/from/volume-snapshots/{snapshotUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateDataVolumeTemplateFromVolumeSnapshotMsg.class
+			clz APICreateDataVolumeTemplateFromVolumeSnapshotMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -94,10 +94,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateDataVolumeTemplateFromVolumeSnapshotEvent.class
-        }
-    }
+		response {
+			clz APICreateDataVolumeTemplateFromVolumeSnapshotEvent.class
+		}
+	}
 }

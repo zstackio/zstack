@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIAddBackendServerToServerGroupEvent
 
 doc {
-    title "添加后端服务器到服务器组"
+	title "添加后端服务器到服务器组"
 
-    category "负载均衡"
+	category "负载均衡"
 
-    desc """负载均衡器服务器组添加后端服务器"""
+	desc """负载均衡器服务器组添加后端服务器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/load-balancers/servergroups/{serverGroupUuid}/backendservers"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddBackendServerToServerGroupMsg.class
+			clz APIAddBackendServerToServerGroupMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.0"
+					since "3.10.0"
 				}
 				column {
 					name "vmNics"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10.0"
 				}
 				column {
 					name "servers"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10.0"
 				}
 				column {
 					name "systemTags"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10.0"
 				}
 				column {
 					name "userTags"
@@ -64,13 +64,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddBackendServerToServerGroupEvent.class
-        }
-    }
+		response {
+			clz APIAddBackendServerToServerGroupEvent.class
+		}
+	}
 }

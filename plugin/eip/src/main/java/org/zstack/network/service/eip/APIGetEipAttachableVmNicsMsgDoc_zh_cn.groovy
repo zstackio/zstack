@@ -3,22 +3,22 @@ package org.zstack.network.service.eip
 import org.zstack.network.service.eip.APIGetEipAttachableVmNicsReply
 
 doc {
-    title "获取可绑定指定弹性IP的云主机网卡(GetEipAttachableVmNics)"
+	title "获取可绑定指定弹性IP的云主机网卡(GetEipAttachableVmNics)"
 
-    category "弹性IP"
+	category "弹性IP"
 
-    desc """获取可绑定指定弹性IP的云主机网卡"""
+	desc """获取可绑定指定弹性IP的云主机网卡"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/eips/{eipUuid}/vm-instances/candidate-nics"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetEipAttachableVmNicsMsg.class
+			clz APIGetEipAttachableVmNicsMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -112,10 +112,10 @@ doc {
 					since "3.9.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetEipAttachableVmNicsReply.class
-        }
-    }
+		response {
+			clz APIGetEipAttachableVmNicsReply.class
+		}
+	}
 }

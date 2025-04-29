@@ -3,22 +3,22 @@ package org.zstack.header.longjob
 import org.zstack.header.longjob.APICancelLongJobEvent
 
 doc {
-    title "CancelLongJob"
+	title "CancelLongJob"
 
-    category "longjob"
+	category "longjob"
 
-    desc """取消长任务"""
+	desc """取消长任务"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/longjobs/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICancelLongJobMsg.class
+			clz APICancelLongJobMsg.class
 
-            desc """取消长任务"""
-            
+			desc """取消长任务"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "2.2.4"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICancelLongJobEvent.class
-        }
-    }
+		response {
+			clz APICancelLongJobEvent.class
+		}
+	}
 }

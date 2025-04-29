@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIAttachL3NetworkToVmNicEvent
 
 doc {
-    title "AttachL3NetworkToVmNic"
+	title "AttachL3NetworkToVmNic"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """动态添加一个网络到网卡"""
+	desc """动态添加一个网络到网卡"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/nics/{vmNicUuid}/l3-networks/{l3NetworkUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAttachL3NetworkToVmNicMsg.class
+			clz APIAttachL3NetworkToVmNicMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAttachL3NetworkToVmNicEvent.class
-        }
-    }
+		response {
+			clz APIAttachL3NetworkToVmNicEvent.class
+		}
+	}
 }

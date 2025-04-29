@@ -3,22 +3,22 @@ package org.zstack.header.identity
 import org.zstack.header.identity.APIDeleteAccountEvent
 
 doc {
-    title "DeleteAccount"
+	title "DeleteAccount"
 
-    category "identity"
+	category "identity"
 
-    desc """删除账户"""
+	desc """删除账户"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/accounts/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteAccountMsg.class
+			clz APIDeleteAccountMsg.class
 
-            desc """删除账户"""
-            
+			desc """删除账户"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc "删除模式"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteAccountEvent.class
-        }
-    }
+		response {
+			clz APIDeleteAccountEvent.class
+		}
+	}
 }

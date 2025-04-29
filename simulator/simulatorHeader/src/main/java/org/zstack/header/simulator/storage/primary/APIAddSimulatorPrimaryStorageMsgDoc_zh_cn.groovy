@@ -3,22 +3,22 @@ package org.zstack.header.simulator.storage.primary
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent
 
 doc {
-    title "AddSimulatorPrimaryStorage"
+	title "AddSimulatorPrimaryStorage"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/primary-storage/simulators"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddSimulatorPrimaryStorageMsg.class
+			clz APIAddSimulatorPrimaryStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -139,10 +139,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddPrimaryStorageEvent.class
-        }
-    }
+		response {
+			clz APIAddPrimaryStorageEvent.class
+		}
+	}
 }

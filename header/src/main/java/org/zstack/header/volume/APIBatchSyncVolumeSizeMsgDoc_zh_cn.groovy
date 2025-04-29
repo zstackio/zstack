@@ -3,22 +3,22 @@ package org.zstack.header.volume
 import org.zstack.header.volume.APIBatchSyncVolumeSizeReply
 
 doc {
-    title "BatchSyncVolumeSize"
+	title "BatchSyncVolumeSize"
 
-    category "volume"
+	category "volume"
 
-    desc """批量刷新云盘容量"""
+	desc """批量刷新云盘容量"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/volumes/batch-sync-volumes"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIBatchSyncVolumeSizeMsg.class
+			clz APIBatchSyncVolumeSizeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "systemTags"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "userTags"
@@ -46,13 +46,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIBatchSyncVolumeSizeReply.class
-        }
-    }
+		response {
+			clz APIBatchSyncVolumeSizeReply.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.directory
 import org.zstack.directory.APIAddResourcesToDirectoryEvent
 
 doc {
-    title "AddResourcesToDirectory"
+	title "AddResourcesToDirectory"
 
-    category "directory"
+	category "directory"
 
-    desc """资源加入指定目录"""
+	desc """资源加入指定目录"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/add/resources/directory"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddResourcesToDirectoryMsg.class
+			clz APIAddResourcesToDirectoryMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "List"
 					optional false
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "directoryUuid"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "systemTags"
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddResourcesToDirectoryEvent.class
-        }
-    }
+		response {
+			clz APIAddResourcesToDirectoryEvent.class
+		}
+	}
 }

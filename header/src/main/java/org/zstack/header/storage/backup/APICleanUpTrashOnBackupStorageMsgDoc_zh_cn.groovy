@@ -3,22 +3,22 @@ package org.zstack.header.storage.backup
 import org.zstack.header.storage.backup.APICleanUpTrashOnBackupStorageEvent
 
 doc {
-    title "CleanUpTrashOnBackupStorage"
+	title "CleanUpTrashOnBackupStorage"
 
-    category "storage.backup"
+	category "storage.backup"
 
-    desc """清理备份存储上的回收数据"""
+	desc """清理备份存储上的回收数据"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/backup-storage/{uuid}/trash/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICleanUpTrashOnBackupStorageMsg.class
+			clz APICleanUpTrashOnBackupStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "3.2.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICleanUpTrashOnBackupStorageEvent.class
-        }
-    }
+		response {
+			clz APICleanUpTrashOnBackupStorageEvent.class
+		}
+	}
 }

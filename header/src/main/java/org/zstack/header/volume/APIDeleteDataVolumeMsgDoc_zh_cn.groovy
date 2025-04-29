@@ -3,22 +3,22 @@ package org.zstack.header.volume
 import org.zstack.header.volume.APIDeleteDataVolumeEvent
 
 doc {
-    title "DeleteDataVolume"
+	title "DeleteDataVolume"
 
-    category "volume"
+	category "volume"
 
-    desc """删除云盘"""
+	desc """删除云盘"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/volumes/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteDataVolumeMsg.class
+			clz APIDeleteDataVolumeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc "删除模式：Permissive(删除前检查)或Enforcing(强行删除)"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteDataVolumeEvent.class
-        }
-    }
+		response {
+			clz APIDeleteDataVolumeEvent.class
+		}
+	}
 }

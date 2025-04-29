@@ -3,22 +3,22 @@ package org.zstack.header.configuration
 import org.zstack.header.configuration.APIUpdateDiskOfferingEvent
 
 doc {
-    title "UpdateDiskOffering"
+	title "UpdateDiskOffering"
 
-    category "configuration"
+	category "configuration"
 
-    desc """更新云盘规格"""
+	desc """更新云盘规格"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/disk-offerings/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateDiskOfferingMsg.class
+			clz APIUpdateDiskOfferingMsg.class
 
-            desc """更新云盘规格"""
-            
+			desc """更新云盘规格"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateDiskOfferingEvent.class
-        }
-    }
+		response {
+			clz APIUpdateDiskOfferingEvent.class
+		}
+	}
 }

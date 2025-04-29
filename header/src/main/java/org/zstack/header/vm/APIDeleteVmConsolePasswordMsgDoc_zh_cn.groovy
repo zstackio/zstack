@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIDeleteVmConsolePasswordEvent
 
 doc {
-    title "删除云主机控制台密码(DeleteVmConsolePassword)"
+	title "删除云主机控制台密码(DeleteVmConsolePassword)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """删除一个云主机的控制台密码"""
+	desc """删除一个云主机的控制台密码"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/vm-instances/{uuid}/console-password"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteVmConsolePasswordMsg.class
+			clz APIDeleteVmConsolePasswordMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -43,16 +43,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteVmConsolePasswordEvent.class
-        }
-    }
+		response {
+			clz APIDeleteVmConsolePasswordEvent.class
+		}
+	}
 }

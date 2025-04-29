@@ -3,22 +3,22 @@ package org.zstack.header.identity.role.api
 import org.zstack.header.identity.role.api.APIUpdateRoleEvent
 
 doc {
-    title "UpdateRole"
+	title "UpdateRole"
 
-    category "rbac"
+	category "rbac"
 
-    desc """更新角色"""
+	desc """更新角色"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/identities/roles/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateRoleMsg.class
+			clz APIUpdateRoleMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -94,10 +94,10 @@ doc {
 					since "4.10.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateRoleEvent.class
-        }
-    }
+		response {
+			clz APIUpdateRoleEvent.class
+		}
+	}
 }

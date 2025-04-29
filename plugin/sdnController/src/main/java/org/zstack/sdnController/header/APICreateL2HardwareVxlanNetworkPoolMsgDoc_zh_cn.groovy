@@ -3,22 +3,22 @@ package org.zstack.sdnController.header
 import org.zstack.sdnController.header.APICreateL2HardwareVxlanNetworkPoolEvent
 
 doc {
-    title "CreateL2HardwareVxlanNetworkPool"
+	title "CreateL2HardwareVxlanNetworkPool"
 
-    category "network.l2"
+	category "network.l2"
 
-    desc """创建硬件VXLAN资源池"""
+	desc """创建硬件VXLAN资源池"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l2-networks/hardware-vxlan-pool"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateL2HardwareVxlanNetworkPoolMsg.class
+			clz APICreateL2HardwareVxlanNetworkPoolMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -118,14 +118,14 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.2"
+					since "3.11.2"
 					values ("LinuxBridge","OvsDpdk","MacVlan")
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateL2HardwareVxlanNetworkPoolEvent.class
-        }
-    }
+		response {
+			clz APICreateL2HardwareVxlanNetworkPoolEvent.class
+		}
+	}
 }

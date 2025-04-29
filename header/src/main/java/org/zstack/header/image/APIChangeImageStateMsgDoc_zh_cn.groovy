@@ -3,22 +3,22 @@ package org.zstack.header.image
 import org.zstack.header.image.APIChangeImageStateEvent
 
 doc {
-    title "修改镜像状态(ChangeImageState)"
+	title "修改镜像状态(ChangeImageState)"
 
-    category "image"
+	category "image"
 
-    desc """修改镜像状态"""
+	desc """修改镜像状态"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/images/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeImageStateMsg.class
+			clz APIChangeImageStateMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeImageStateEvent.class
-        }
-    }
+		response {
+			clz APIChangeImageStateEvent.class
+		}
+	}
 }

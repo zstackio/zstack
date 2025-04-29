@@ -3,22 +3,22 @@ package org.zstack.core.captcha
 import org.zstack.core.captcha.APIRefreshCaptchaReply
 
 doc {
-    title "RefreshCaptcha"
+	title "RefreshCaptcha"
 
-    category "captcha"
+	category "captcha"
 
-    desc """刷新验证码"""
+	desc """刷新验证码"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/captcha/refresh"
 
 
 
-            clz APIRefreshCaptchaMsg.class
+			clz APIRefreshCaptchaMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIRefreshCaptchaReply.class
-        }
-    }
+		response {
+			clz APIRefreshCaptchaReply.class
+		}
+	}
 }

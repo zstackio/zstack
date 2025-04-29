@@ -3,22 +3,22 @@ package org.zstack.header.storage.primary
 import org.zstack.header.storage.primary.APISyncPrimaryStorageCapacityEvent
 
 doc {
-    title "刷新主存储容量(SyncPrimaryStorageCapacity)"
+	title "刷新主存储容量(SyncPrimaryStorageCapacity)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """刷新主存储容量"""
+	desc """刷新主存储容量"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/primary-storage/{primaryStorageUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISyncPrimaryStorageCapacityMsg.class
+			clz APISyncPrimaryStorageCapacityMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISyncPrimaryStorageCapacityEvent.class
-        }
-    }
+		response {
+			clz APISyncPrimaryStorageCapacityEvent.class
+		}
+	}
 }

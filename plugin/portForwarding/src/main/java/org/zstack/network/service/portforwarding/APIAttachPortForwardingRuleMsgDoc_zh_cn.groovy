@@ -3,22 +3,22 @@ package org.zstack.network.service.portforwarding
 import org.zstack.network.service.portforwarding.APIAttachPortForwardingRuleEvent
 
 doc {
-    title "AttachPortForwardingRule"
+	title "AttachPortForwardingRule"
 
-    category "portForwarding"
+	category "portForwarding"
 
-    desc """用户可以使用AttachPortForwardingRule来挂载一个规则到虚拟机网卡上"""
+	desc """用户可以使用AttachPortForwardingRule来挂载一个规则到虚拟机网卡上"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/port-forwarding/{ruleUuid}/vm-instances/nics/{vmNicUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAttachPortForwardingRuleMsg.class
+			clz APIAttachPortForwardingRuleMsg.class
 
-            desc """用户可以使用AttachPortForwardingRule来挂载一个规则到虚拟机网卡上"""
-            
+			desc """用户可以使用AttachPortForwardingRule来挂载一个规则到虚拟机网卡上"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAttachPortForwardingRuleEvent.class
-        }
-    }
+		response {
+			clz APIAttachPortForwardingRuleEvent.class
+		}
+	}
 }

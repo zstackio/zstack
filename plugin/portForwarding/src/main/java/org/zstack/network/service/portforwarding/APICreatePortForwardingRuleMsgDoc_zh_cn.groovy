@@ -3,22 +3,22 @@ package org.zstack.network.service.portforwarding
 import org.zstack.network.service.portforwarding.APICreatePortForwardingRuleEvent
 
 doc {
-    title "CreatePortForwardingRule"
+	title "CreatePortForwardingRule"
 
-    category "portForwarding"
+	category "portForwarding"
 
-    desc """用户可以使用CreatePortForwardingRule来创建一个端口转发规则, 并可以同时挂载或者不挂载到虚拟机网卡上"""
+	desc """用户可以使用CreatePortForwardingRule来创建一个端口转发规则, 并可以同时挂载或者不挂载到虚拟机网卡上"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/port-forwarding"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreatePortForwardingRuleMsg.class
+			clz APICreatePortForwardingRuleMsg.class
 
-            desc """用户可以使用CreatePortForwardingRule来创建一个端口转发规则, 并可以同时挂载或者不挂载到虚拟机网卡上"""
-            
+			desc """用户可以使用CreatePortForwardingRule来创建一个端口转发规则, 并可以同时挂载或者不挂载到虚拟机网卡上"""
+
 			params {
 
 				column {
@@ -149,10 +149,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreatePortForwardingRuleEvent.class
-        }
-    }
+		response {
+			clz APICreatePortForwardingRuleEvent.class
+		}
+	}
 }

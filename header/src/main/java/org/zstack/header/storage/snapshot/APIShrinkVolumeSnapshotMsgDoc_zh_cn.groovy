@@ -3,22 +3,22 @@ package org.zstack.header.storage.snapshot
 import org.zstack.header.storage.snapshot.APIShrinkVolumeSnapshotEvent
 
 doc {
-    title "ShrinkVolumeSnapshot"
+	title "ShrinkVolumeSnapshot"
 
-    category "snapshot.volume"
+	category "snapshot.volume"
 
-    desc """快照瘦身"""
+	desc """快照瘦身"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/volume-snapshots/shrink/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIShrinkVolumeSnapshotMsg.class
+			clz APIShrinkVolumeSnapshotMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "3.10"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIShrinkVolumeSnapshotEvent.class
-        }
-    }
+		response {
+			clz APIShrinkVolumeSnapshotEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.identity
 import org.zstack.header.identity.APIGetResourceAccountReply
 
 doc {
-    title "查看资源所属账户"
+	title "查看资源所属账户"
 
-    category "identity"
+	category "identity"
 
-    desc """输入资源的UUID可以获得该资源所属账户"""
+	desc """输入资源的UUID可以获得该资源所属账户"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/resources/accounts"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetResourceAccountMsg.class
+			clz APIGetResourceAccountMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetResourceAccountReply.class
-        }
-    }
+		response {
+			clz APIGetResourceAccountReply.class
+		}
+	}
 }

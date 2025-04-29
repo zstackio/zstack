@@ -3,22 +3,22 @@ package org.zstack.header.network.l2
 import org.zstack.header.network.l2.APIUpdateL2NetworkVirtualNetworkIdEvent
 
 doc {
-    title "UpdateL2NetworkVirtualNetworkId"
+	title "UpdateL2NetworkVirtualNetworkId"
 
-    category "network.l2"
+	category "network.l2"
 
-    desc """更新二层网络虚拟网络ID"""
+	desc """更新二层网络虚拟网络ID"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/l2-networks/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateL2NetworkVirtualNetworkIdMsg.class
+			clz APIUpdateL2NetworkVirtualNetworkIdMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "4.10.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateL2NetworkVirtualNetworkIdEvent.class
-        }
-    }
+		response {
+			clz APIUpdateL2NetworkVirtualNetworkIdEvent.class
+		}
+	}
 }

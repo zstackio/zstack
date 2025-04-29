@@ -3,22 +3,22 @@ package org.zstack.storage.ceph.primary
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent
 
 doc {
-    title "添加 Ceph 主存储(AddCephPrimaryStorage)"
+	title "添加 Ceph 主存储(AddCephPrimaryStorage)"
 
-    category "storage.ceph.primary"
+	category "storage.ceph.primary"
 
-    desc """添加 Ceph 主存储"""
+	desc """添加 Ceph 主存储"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/primary-storage/ceph"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddCephPrimaryStorageMsg.class
+			clz APIAddCephPrimaryStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -139,10 +139,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddPrimaryStorageEvent.class
-        }
-    }
+		response {
+			clz APIAddPrimaryStorageEvent.class
+		}
+	}
 }

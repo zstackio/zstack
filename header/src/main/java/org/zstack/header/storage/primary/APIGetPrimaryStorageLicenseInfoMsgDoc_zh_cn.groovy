@@ -3,22 +3,22 @@ package org.zstack.header.storage.primary
 import org.zstack.header.storage.primary.APIGetPrimaryStorageLicenseInfoReply
 
 doc {
-    title "获取主存储的License信息(GetPrimaryStorageLicenseInfo)"
+	title "获取主存储的License信息(GetPrimaryStorageLicenseInfo)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """获取主存储的License信息"""
+	desc """获取主存储的License信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/primary-storage/{uuid}/license"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetPrimaryStorageLicenseInfoMsg.class
+			clz APIGetPrimaryStorageLicenseInfoMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetPrimaryStorageLicenseInfoReply.class
-        }
-    }
+		response {
+			clz APIGetPrimaryStorageLicenseInfoReply.class
+		}
+	}
 }

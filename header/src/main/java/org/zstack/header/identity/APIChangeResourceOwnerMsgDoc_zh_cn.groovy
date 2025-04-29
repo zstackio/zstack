@@ -3,22 +3,22 @@ package org.zstack.header.identity
 import org.zstack.header.identity.APIChangeResourceOwnerEvent
 
 doc {
-    title "ChangeResourceOwner"
+	title "ChangeResourceOwner"
 
-    category "identity"
+	category "identity"
 
-    desc """变更资源所有者"""
+	desc """变更资源所有者"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/account/{accountUuid}/resources"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeResourceOwnerMsg.class
+			clz APIChangeResourceOwnerMsg.class
 
-            desc """变更资源所有者"""
-            
+			desc """变更资源所有者"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeResourceOwnerEvent.class
-        }
-    }
+		response {
+			clz APIChangeResourceOwnerEvent.class
+		}
+	}
 }

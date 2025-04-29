@@ -4,28 +4,28 @@ import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterOfferingRep
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "查询虚拟路由器规格(QueryVirtualRouterOffering)"
+	title "查询虚拟路由器规格(QueryVirtualRouterOffering)"
 
-    category "虚拟路由器"
+	category "虚拟路由器"
 
-    desc """查询虚拟路由器规格"""
+	desc """查询虚拟路由器规格"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/instance-offerings/virtual-routers"
 			url "GET /v1/instance-offerings/virtual-routers/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryVirtualRouterOfferingMsg.class
+			clz APIQueryVirtualRouterOfferingMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryVirtualRouterOfferingReply.class
-        }
-    }
+		response {
+			clz APIQueryVirtualRouterOfferingReply.class
+		}
+	}
 }

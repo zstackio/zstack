@@ -3,25 +3,25 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetVmConsoleAddressReply
 
 doc {
-    title "获取云主机控制台地址(GetVmConsoleAddress)"
+	title "获取云主机控制台地址(GetVmConsoleAddress)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """获取云主机控制台地址和访问协议
+	desc """获取云主机控制台地址和访问协议
 
 >该API应该仅仅用于调试目的
 """
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/{uuid}/console-addresses"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVmConsoleAddressMsg.class
+			clz APIGetVmConsoleAddressMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -52,10 +52,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVmConsoleAddressReply.class
-        }
-    }
+		response {
+			clz APIGetVmConsoleAddressReply.class
+		}
+	}
 }

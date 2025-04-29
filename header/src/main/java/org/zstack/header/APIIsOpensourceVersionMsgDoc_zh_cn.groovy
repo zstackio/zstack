@@ -3,22 +3,22 @@ package org.zstack.header
 import org.zstack.header.APIIsOpensourceVersionReply
 
 doc {
-    title "IsOpensourceVersion"
+	title "IsOpensourceVersion"
 
-    category "identity"
+	category "identity"
 
-    desc """判断ZStack是否为开源版本。开源版本不带企业版插件"""
+	desc """判断ZStack是否为开源版本。开源版本不带企业版插件"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/meta-data/opensource"
 
 
 
-            clz APIIsOpensourceVersionMsg.class
+			clz APIIsOpensourceVersionMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -40,10 +40,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIIsOpensourceVersionReply.class
-        }
-    }
+		response {
+			clz APIIsOpensourceVersionReply.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APITakeVmConsoleScreenshotEvent
 
 doc {
-    title "TakeVmConsoleScreenshot"
+	title "TakeVmConsoleScreenshot"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """获取虚拟机控制台截图"""
+	desc """获取虚拟机控制台截图"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APITakeVmConsoleScreenshotMsg.class
+			clz APITakeVmConsoleScreenshotMsg.class
 
-            desc """获取虚拟机控制台截图"""
-            
+			desc """获取虚拟机控制台截图"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "systemTags"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "userTags"
@@ -46,13 +46,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APITakeVmConsoleScreenshotEvent.class
-        }
-    }
+		response {
+			clz APITakeVmConsoleScreenshotEvent.class
+		}
+	}
 }

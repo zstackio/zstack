@@ -3,22 +3,22 @@ package org.zstack.header.image
 import org.zstack.header.image.APIDeleteImageEvent
 
 doc {
-    title "删除镜像(DeleteImage)"
+	title "删除镜像(DeleteImage)"
 
-    category "image"
+	category "image"
 
-    desc """删除镜像"""
+	desc """删除镜像"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/images/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteImageMsg.class
+			clz APIDeleteImageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "backupStorageUuids"
 					enclosedIn ""
 					desc "镜像服务器UUID列表"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc "删除模式(Permissive 或者 Enforcing, 默认 Permissive)"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
@@ -52,7 +52,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -61,16 +61,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteImageEvent.class
-        }
-    }
+		response {
+			clz APIDeleteImageEvent.class
+		}
+	}
 }

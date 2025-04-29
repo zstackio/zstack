@@ -3,22 +3,22 @@ package org.zstack.header.managementnode
 import org.zstack.header.managementnode.APIGetPlatformTimeZoneReply
 
 doc {
-    title "GetPlatformTimeZone"
+	title "GetPlatformTimeZone"
 
-    category "mevoco"
+	category "mevoco"
 
-    desc """获取管理节点当前的时区信息"""
+	desc """获取管理节点当前的时区信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/management-nodes/platform-timezone"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetPlatformTimeZoneMsg.class
+			clz APIGetPlatformTimeZoneMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "userTags"
@@ -37,13 +37,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetPlatformTimeZoneReply.class
-        }
-    }
+		response {
+			clz APIGetPlatformTimeZoneReply.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.network.service.portforwarding
 import org.zstack.network.service.portforwarding.APIChangePortForwardingRuleStateEvent
 
 doc {
-    title "ChangePortForwardingRuleState"
+	title "ChangePortForwardingRuleState"
 
-    category "portForwarding"
+	category "portForwarding"
 
-    desc """改变端口转发规则的状态"""
+	desc """改变端口转发规则的状态"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/port-forwarding/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangePortForwardingRuleStateMsg.class
+			clz APIChangePortForwardingRuleStateMsg.class
 
-            desc """改变端口转发规则的状态"""
-            
+			desc """改变端口转发规则的状态"""
+
 			params {
 
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangePortForwardingRuleStateEvent.class
-        }
-    }
+		response {
+			clz APIChangePortForwardingRuleStateEvent.class
+		}
+	}
 }

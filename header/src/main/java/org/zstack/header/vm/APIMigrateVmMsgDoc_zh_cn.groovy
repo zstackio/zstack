@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIMigrateVmEvent
 
 doc {
-    title "热迁移云主机(MigrateVm)"
+	title "热迁移云主机(MigrateVm)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """将云主机热迁移至另一个物理机"""
+	desc """将云主机热迁移至另一个物理机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{vmInstanceUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIMigrateVmMsg.class
+			clz APIMigrateVmMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -92,13 +92,13 @@ doc {
 					location "body"
 					type "Integer"
 					optional true
-					since "4.6.21"
+					since "3.16.21"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIMigrateVmEvent.class
-        }
-    }
+		response {
+			clz APIMigrateVmEvent.class
+		}
+	}
 }

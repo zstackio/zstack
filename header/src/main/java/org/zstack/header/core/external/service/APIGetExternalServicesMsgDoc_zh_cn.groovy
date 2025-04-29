@@ -3,22 +3,22 @@ package org.zstack.header.core.external.service
 import org.zstack.header.core.external.service.APIGetExternalServicesReply
 
 doc {
-    title "GetExternalServices"
+	title "GetExternalServices"
 
-    category "externalService"
+	category "externalService"
 
-    desc """获取External Services"""
+	desc """获取External Services"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/external/services"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetExternalServicesMsg.class
+			clz APIGetExternalServicesMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "userTags"
@@ -37,13 +37,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetExternalServicesReply.class
-        }
-    }
+		response {
+			clz APIGetExternalServicesReply.class
+		}
+	}
 }

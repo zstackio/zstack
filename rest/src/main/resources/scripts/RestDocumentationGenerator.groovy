@@ -2306,26 +2306,27 @@ ${fieldStr}
                 def location
                 if (urlVars.contains(af.name)) {
                     location = LOCATION_URL
-                } else if (at.method() == HttpMethod.GET) {
+                } else if (at.method() == HttpMethod.GET || at.method() == HttpMethod.DELETE) {
                     location = LOCATION_QUERY
                 } else {
                     location = LOCATION_BODY
                 }
 
-                cols.add("""\t\t\t\tcolumn {
+                def col = """\t\t\t\tcolumn {
 \t\t\t\t\tname "${af.name}"
 \t\t\t\t\tenclosedIn "${enclosedIn}"
 \t\t\t\t\tdesc "${desc == null  ? "" : desc}"
 \t\t\t\t\tlocation "${location}"
 \t\t\t\t\ttype "${af.type.simpleName}"
 \t\t\t\t\toptional ${ap == null ? true : !ap.required()}
-\t\t\t\t\tsince "${projectVersion != null ? projectVersion : "zsv 4.2.0 (please update it)"}"
-""")
+\t\t\t\t\tsince "${projectVersion}"
+"""
                 if (values != null) {
-                    cols.add("\t\t\t\t\t${values}")
+                    col += "\t\t\t\t\t${values}\n"
                 }
 
-                cols.add("\t\t\t\t}")
+                col += "\t\t\t\t}"
+                cols.add(col)
             }
 
             if (cols.isEmpty()) {
@@ -2333,7 +2334,6 @@ ${fieldStr}
             }
 
             return """\t\t\tparams {
-
 ${cols.join("\n")}
 \t\t\t}"""
         }
@@ -2365,7 +2365,7 @@ ${cols.join("\n")}
                 paramString = "\t\t\tparams ${doc._rest._request._params.refClass.simpleName}.class"
             } else {
                 List cols = doc._rest._request._params._cloumns.collect {
-                    String values = it._values != null && !it._values.isEmpty() ? "values (${it._values.collect { "\"$it\"" }.join(",")})" : null
+                    String values = it._values != null && !it._values.isEmpty() ? "(${it._values.collect { "\"$it\"" }.join(",")})" : null
 
                     if (values == null) {
                         return """\t\t\t\tcolumn {
@@ -2386,7 +2386,7 @@ ${cols.join("\n")}
 \t\t\t\t\ttype "${it._type}"
 \t\t\t\t\toptional ${it._optional}
 \t\t\t\t\tsince "${it._since}"
-\t\t\t\t\t${values}
+\t\t\t\t\tvalues ${values}
 \t\t\t\t}"""
                     }
                 }
@@ -2402,29 +2402,29 @@ ${cols.join("\n")}
 ${imports()}
 
 doc {
-    title "${doc._title}"
+\ttitle "${doc._title}"
 
-    category "${doc._category}"
+\tcategory "${doc._category}"
 
-    desc \"\"\"${doc._desc}\"\"\"
+\tdesc \"\"\"${doc._desc}\"\"\"
 
-    rest {
-        request {
+\trest {
+\t\trequest {
 ${doc._rest._request._urls.collect { "\t\t\t" + it.toString() }.join("\n")}
 
 ${doc._rest._request._headers.collect { "\t\t\t" + it.toString() }.join("\n")}
 
-            clz ${doc._rest._request._clz.simpleName}.class
+\t\t\tclz ${doc._rest._request._clz.simpleName}.class
 
-            desc \"\"\"${doc._rest._request._desc}\"\"\"
-            
+\t\t\tdesc \"\"\"${doc._rest._request._desc}\"\"\"
+
 ${paramString}
-        }
+\t\t}
 
-        response {
-            clz ${doc._rest._response._clz.simpleName}.class
-        }
-    }
+\t\tresponse {
+\t\t\tclz ${doc._rest._response._clz.simpleName}.class
+\t\t}
+\t}
 }"""
         }
 
@@ -2444,29 +2444,29 @@ ${paramString}
 ${imports()}
 
 doc {
-    title "${title}"
+\ttitle "${title}"
 
-    category "${category}"
+\tcategory "${category}"
 
-    desc \"\"\"在这里填写API描述\"\"\"
+\tdesc \"\"\"在这里填写API描述\"\"\"
 
-    rest {
-        request {
+\trest {
+\t\trequest {
 ${urls()}
 
 ${headers()}
 
-            clz ${apiClass.simpleName}.class
+\t\t\tclz ${apiClass.simpleName}.class
 
-            desc \"\"\"\"\"\"
-            
+\t\t\tdesc \"\"\"\"\"\"
+
 ${paramString}
-        }
+\t\t}
 
-        response {
-            clz ${at.responseClass().simpleName}.class
-        }
-    }
+\t\tresponse {
+\t\t\tclz ${at.responseClass().simpleName}.class
+\t\t}
+\t}
 }"""
         }
 

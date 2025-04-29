@@ -4,27 +4,27 @@ import org.zstack.storage.primary.local.APIQueryLocalStorageResourceRefReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "查询本地存储资源引用(QueryLocalStorageResourceRef)"
+	title "查询本地存储资源引用(QueryLocalStorageResourceRef)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """查询本地存储资源引用"""
+	desc """查询本地存储资源引用"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/primary-storage/local-storage/resource-refs"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryLocalStorageResourceRefMsg.class
+			clz APIQueryLocalStorageResourceRefMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryLocalStorageResourceRefReply.class
-        }
-    }
+		response {
+			clz APIQueryLocalStorageResourceRefReply.class
+		}
+	}
 }

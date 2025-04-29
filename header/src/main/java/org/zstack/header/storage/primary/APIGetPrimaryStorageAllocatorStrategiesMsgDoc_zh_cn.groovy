@@ -3,22 +3,22 @@ package org.zstack.header.storage.primary
 import org.zstack.header.storage.primary.APIGetPrimaryStorageAllocatorStrategiesReply
 
 doc {
-    title "获取主存储分配策略清单(GetPrimaryStorageAllocatorStrategies)"
+	title "获取主存储分配策略清单(GetPrimaryStorageAllocatorStrategies)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """获取主存储分配策略清单"""
+	desc """获取主存储分配策略清单"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/primary-storage/allocators/strategies"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetPrimaryStorageAllocatorStrategiesMsg.class
+			clz APIGetPrimaryStorageAllocatorStrategiesMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -40,10 +40,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetPrimaryStorageAllocatorStrategiesReply.class
-        }
-    }
+		response {
+			clz APIGetPrimaryStorageAllocatorStrategiesReply.class
+		}
+	}
 }

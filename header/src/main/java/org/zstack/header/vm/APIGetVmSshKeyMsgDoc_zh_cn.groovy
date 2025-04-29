@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetVmSshKeyReply
 
 doc {
-    title "获取云主机SSH KEY(GetVmSshKey)"
+	title "获取云主机SSH KEY(GetVmSshKey)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """获取一个云主机的SSH Key，该SSH key是通过SetVmSshKey设置的。"""
+	desc """获取一个云主机的SSH Key，该SSH key是通过SetVmSshKey设置的。"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/{uuid}/ssh-keys"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVmSshKeyMsg.class
+			clz APIGetVmSshKeyMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVmSshKeyReply.class
-        }
-    }
+		response {
+			clz APIGetVmSshKeyReply.class
+		}
+	}
 }

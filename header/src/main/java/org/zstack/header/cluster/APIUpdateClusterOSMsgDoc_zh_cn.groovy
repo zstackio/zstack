@@ -3,22 +3,22 @@ package org.zstack.header.cluster
 import org.zstack.header.cluster.APIUpdateClusterOSEvent
 
 doc {
-    title "UpdateClusterOS"
+	title "UpdateClusterOS"
 
-    category "cluster"
+	category "cluster"
 
-    desc """升级集群内物理机的操作系统"""
+	desc """升级集群内物理机的操作系统"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/clusters/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateClusterOSMsg.class
+			clz APIUpdateClusterOSMsg.class
 
-            desc """升级集群内物理机的操作系统"""
-            
+			desc """升级集群内物理机的操作系统"""
+
 			params {
 
 				column {
@@ -94,10 +94,10 @@ doc {
 					since "2.3"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateClusterOSEvent.class
-        }
-    }
+		response {
+			clz APIUpdateClusterOSEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.storage.primary
 import org.zstack.header.storage.primary.APIDetachPrimaryStorageFromClusterEvent
 
 doc {
-    title "从集群卸载主存储(DetachPrimaryStorageFromCluster)"
+	title "从集群卸载主存储(DetachPrimaryStorageFromCluster)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """从集群卸载主存储"""
+	desc """从集群卸载主存储"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/clusters/{clusterUuid}/primary-storage/{primaryStorageUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDetachPrimaryStorageFromClusterMsg.class
+			clz APIDetachPrimaryStorageFromClusterMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDetachPrimaryStorageFromClusterEvent.class
-        }
-    }
+		response {
+			clz APIDetachPrimaryStorageFromClusterEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.identity
 import org.zstack.header.identity.APICreateAccountEvent
 
 doc {
-    title "CreateAccount"
+	title "CreateAccount"
 
-    category "identity"
+	category "identity"
 
-    desc """创建账户"""
+	desc """创建账户"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/accounts"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateAccountMsg.class
+			clz APICreateAccountMsg.class
 
-            desc """创建账户"""
-            
+			desc """创建账户"""
+
 			params {
 
 				column {
@@ -105,10 +105,10 @@ doc {
 					values ("Enabled","Disabled","Staled")
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateAccountEvent.class
-        }
-    }
+		response {
+			clz APICreateAccountEvent.class
+		}
+	}
 }

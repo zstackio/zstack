@@ -3,22 +3,22 @@ package org.zstack.header.image
 import org.zstack.header.image.APIGetCandidateImagesForCreatingVmReply
 
 doc {
-    title "GetCandidateImagesForCreatingVm"
+	title "GetCandidateImagesForCreatingVm"
 
-    category "host.allocator"
+	category "host.allocator"
 
-    desc """获取用于创建云主机的候选镜像"""
+	desc """获取用于创建云主机的候选镜像"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/images/primaryStorage/{primaryStorageUuid}/candidate-image"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetCandidateImagesForCreatingVmMsg.class
+			clz APIGetCandidateImagesForCreatingVmMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "4.1.1"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetCandidateImagesForCreatingVmReply.class
-        }
-    }
+		response {
+			clz APIGetCandidateImagesForCreatingVmReply.class
+		}
+	}
 }

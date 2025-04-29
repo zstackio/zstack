@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIFlattenVmInstanceEvent
 
 doc {
-    title "FlattenVmInstance"
+	title "FlattenVmInstance"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """扁平合并云主机"""
+	desc """扁平合并云主机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIFlattenVmInstanceMsg.class
+			clz APIFlattenVmInstanceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "full"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "boolean"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "dryRun"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "boolean"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "systemTags"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "userTags"
@@ -64,13 +64,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIFlattenVmInstanceEvent.class
-        }
-    }
+		response {
+			clz APIFlattenVmInstanceEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.APIUpdateVniRangeEvent
 
 doc {
-    title "修改VNI范围(UpdateVniRange)"
+	title "修改VNI范围(UpdateVniRange)"
 
-    category "network.l2"
+	category "network.l2"
 
-    desc """修改VNI范围"""
+	desc """修改VNI范围"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/l2-networks/vxlan-pool/vni-ranges/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateVniRangeMsg.class
+			clz APIUpdateVniRangeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "3.3.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateVniRangeEvent.class
-        }
-    }
+		response {
+			clz APIUpdateVniRangeEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.longjob
 import org.zstack.header.longjob.APICleanLongJobEvent
 
 doc {
-    title "CleanLongJob"
+	title "CleanLongJob"
 
-    category "longjob"
+	category "longjob"
 
-    desc """清理Long Job"""
+	desc """清理Long Job"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/longjobs/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICleanLongJobMsg.class
+			clz APICleanLongJobMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.3.0"
+					since "3.13.0"
 				}
 				column {
 					name "systemTags"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.3.0"
+					since "3.13.0"
 				}
 				column {
 					name "userTags"
@@ -46,13 +46,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.3.0"
+					since "3.13.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICleanLongJobEvent.class
-        }
-    }
+		response {
+			clz APICleanLongJobEvent.class
+		}
+	}
 }

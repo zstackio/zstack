@@ -3,22 +3,22 @@ package org.zstack.header.network.l2
 import org.zstack.header.network.l2.APIGetVSwitchTypesReply
 
 doc {
-    title "获取虚拟交换机类型(GetVSwitchTypes)"
+	title "获取虚拟交换机类型(GetVSwitchTypes)"
 
-    category "二层网络"
+	category "二层网络"
 
-    desc """获取虚拟交换机类型"""
+	desc """获取虚拟交换机类型"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/l2-networks/vSwitchTypes"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVSwitchTypesMsg.class
+			clz APIGetVSwitchTypesMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 				column {
 					name "userTags"
@@ -37,13 +37,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.1.0"
+					since "3.11.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVSwitchTypesReply.class
-        }
-    }
+		response {
+			clz APIGetVSwitchTypesReply.class
+		}
+	}
 }

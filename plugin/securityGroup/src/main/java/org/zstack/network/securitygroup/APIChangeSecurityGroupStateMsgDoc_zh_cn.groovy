@@ -3,22 +3,22 @@ package org.zstack.network.securitygroup
 import org.zstack.network.securitygroup.APIChangeSecurityGroupStateEvent
 
 doc {
-    title "ChangeSecurityGroupState"
+	title "ChangeSecurityGroupState"
 
-    category "securityGroup"
+	category "securityGroup"
 
-    desc """改变安全组状态"""
+	desc """改变安全组状态"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/security-groups/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeSecurityGroupStateMsg.class
+			clz APIChangeSecurityGroupStateMsg.class
 
-            desc """改变安全组状态"""
-            
+			desc """改变安全组状态"""
+
 			params {
 
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeSecurityGroupStateEvent.class
-        }
-    }
+		response {
+			clz APIChangeSecurityGroupStateEvent.class
+		}
+	}
 }

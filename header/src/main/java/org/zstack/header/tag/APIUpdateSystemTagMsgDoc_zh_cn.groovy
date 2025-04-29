@@ -3,22 +3,22 @@ package org.zstack.header.tag
 import org.zstack.header.tag.APIUpdateSystemTagEvent
 
 doc {
-    title "更新系统标签（UpdateSystemTag)"
+	title "更新系统标签（UpdateSystemTag)"
 
-    category "tag"
+	category "tag"
 
-    desc """更新系统标签"""
+	desc """更新系统标签"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/system-tags/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateSystemTagMsg.class
+			clz APIUpdateSystemTagMsg.class
 
-            desc """更新系统标签"""
-            
+			desc """更新系统标签"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateSystemTagEvent.class
-        }
-    }
+		response {
+			clz APIUpdateSystemTagEvent.class
+		}
+	}
 }

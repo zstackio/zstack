@@ -3,22 +3,22 @@ package org.zstack.header.volume
 import org.zstack.header.volume.APIRecoverDataVolumeEvent
 
 doc {
-    title "恢复云盘(RecoverDataVolume)"
+	title "恢复云盘(RecoverDataVolume)"
 
-    category "volume"
+	category "volume"
 
-    desc """恢复云盘"""
+	desc """恢复云盘"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/volumes/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIRecoverDataVolumeMsg.class
+			clz APIRecoverDataVolumeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIRecoverDataVolumeEvent.class
-        }
-    }
+		response {
+			clz APIRecoverDataVolumeEvent.class
+		}
+	}
 }

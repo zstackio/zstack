@@ -3,22 +3,22 @@ package org.zstack.resourceconfig
 import org.zstack.resourceconfig.APIDeleteResourceConfigEvent
 
 doc {
-    title "DeleteResourceConfig"
+	title "DeleteResourceConfig"
 
-    category "resourceConfig"
+	category "resourceConfig"
 
-    desc """删除资源高级设置"""
+	desc """删除资源高级设置"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/resource-configurations/{category}/{name}/{resourceUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteResourceConfigMsg.class
+			clz APIDeleteResourceConfigMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -52,7 +52,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "3.4.0"
@@ -61,7 +61,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "3.4.0"
@@ -70,16 +70,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteResourceConfigEvent.class
-        }
-    }
+		response {
+			clz APIDeleteResourceConfigEvent.class
+		}
+	}
 }

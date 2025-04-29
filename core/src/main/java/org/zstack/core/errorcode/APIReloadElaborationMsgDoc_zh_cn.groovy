@@ -3,22 +3,22 @@ package org.zstack.core.errorcode
 import org.zstack.core.errorcode.APIReloadElaborationEvent
 
 doc {
-    title "ReloadElaboration"
+	title "ReloadElaboration"
 
-    category "errorcode"
+	category "errorcode"
 
-    desc """重新加载系统错误码文件"""
+	desc """重新加载系统错误码文件"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/errorcode/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIReloadElaborationMsg.class
+			clz APIReloadElaborationMsg.class
 
-            desc """重新加载系统错误码文件"""
-            
+			desc """重新加载系统错误码文件"""
+
 			params {
 
 				column {
@@ -40,10 +40,10 @@ doc {
 					since "3.3.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIReloadElaborationEvent.class
-        }
-    }
+		response {
+			clz APIReloadElaborationEvent.class
+		}
+	}
 }

@@ -4,28 +4,28 @@ import org.zstack.header.longjob.APIQueryLongJobReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryLongJob"
+	title "QueryLongJob"
 
-    category "longjob"
+	category "longjob"
 
-    desc """查询长任务"""
+	desc """查询长任务"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/longjobs"
 			url "GET /v1/longjobs/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryLongJobMsg.class
+			clz APIQueryLongJobMsg.class
 
-            desc """查询长任务"""
-            
+			desc """查询长任务"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryLongJobReply.class
-        }
-    }
+		response {
+			clz APIQueryLongJobReply.class
+		}
+	}
 }

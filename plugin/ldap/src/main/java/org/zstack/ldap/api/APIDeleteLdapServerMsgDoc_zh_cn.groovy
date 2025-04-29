@@ -3,22 +3,22 @@ package org.zstack.ldap.api
 import org.zstack.ldap.api.APIDeleteLdapServerEvent
 
 doc {
-    title "DeleteLdapServer"
+	title "DeleteLdapServer"
 
-    category "ldap"
+	category "ldap"
 
-    desc """删除LDAP服务器"""
+	desc """删除LDAP服务器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/ldap/servers/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteLdapServerMsg.class
+			clz APIDeleteLdapServerMsg.class
 
-            desc """删除LDAP服务器"""
-            
+			desc """删除LDAP服务器"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc "删除模式"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "4.3.0"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "4.3.0"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "4.3.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteLdapServerEvent.class
-        }
-    }
+		response {
+			clz APIDeleteLdapServerEvent.class
+		}
+	}
 }

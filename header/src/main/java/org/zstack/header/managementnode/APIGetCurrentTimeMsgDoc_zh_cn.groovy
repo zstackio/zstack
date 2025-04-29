@@ -3,22 +3,22 @@ package org.zstack.header.managementnode
 import org.zstack.header.managementnode.APIGetCurrentTimeReply
 
 doc {
-    title "GetCurrentTime"
+	title "GetCurrentTime"
 
-    category "managementNode"
+	category "managementNode"
 
-    desc """获取当前时间"""
+	desc """获取当前时间"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/management-nodes/actions"
 
 
 
-            clz APIGetCurrentTimeMsg.class
+			clz APIGetCurrentTimeMsg.class
 
-            desc """获取当前时间"""
-            
+			desc """获取当前时间"""
+
 			params {
 
 				column {
@@ -40,10 +40,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetCurrentTimeReply.class
-        }
-    }
+		response {
+			clz APIGetCurrentTimeReply.class
+		}
+	}
 }

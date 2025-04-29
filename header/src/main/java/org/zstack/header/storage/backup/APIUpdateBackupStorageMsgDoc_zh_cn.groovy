@@ -3,22 +3,22 @@ package org.zstack.header.storage.backup
 import org.zstack.header.storage.backup.APIUpdateBackupStorageEvent
 
 doc {
-    title "更新镜像服务器信息(UpdateBackupStorage)"
+	title "更新镜像服务器信息(UpdateBackupStorage)"
 
-    category "storage.backup"
+	category "storage.backup"
 
-    desc """更新镜像服务器信息"""
+	desc """更新镜像服务器信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/backup-storage/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateBackupStorageMsg.class
+			clz APIUpdateBackupStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateBackupStorageEvent.class
-        }
-    }
+		response {
+			clz APIUpdateBackupStorageEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.storage.addon.backup
 import org.zstack.header.storage.addon.backup.APIAddExternalBackupStorageEvent
 
 doc {
-    title "AddExternalBackupStorage"
+	title "AddExternalBackupStorage"
 
-    category "storage.backup"
+	category "storage.backup"
 
-    desc """添加外部镜像存储"""
+	desc """添加外部镜像存储"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/backup-storage/addon"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddExternalBackupStorageMsg.class
+			clz APIAddExternalBackupStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "url"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "name"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "description"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "type"
@@ -64,7 +64,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "importImages"
@@ -73,7 +73,7 @@ doc {
 					location "body"
 					type "boolean"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "resourceUuid"
@@ -82,7 +82,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "tagUuids"
@@ -91,7 +91,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "systemTags"
@@ -100,7 +100,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "userTags"
@@ -109,13 +109,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddExternalBackupStorageEvent.class
-        }
-    }
+		response {
+			clz APIAddExternalBackupStorageEvent.class
+		}
+	}
 }

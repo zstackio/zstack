@@ -3,22 +3,22 @@ package org.zstack.header.identity.role.api
 import org.zstack.header.identity.role.api.APIGetRolePolicyActionsReply
 
 doc {
-    title "GetRolePolicyActions"
+	title "GetRolePolicyActions"
 
-    category "identity"
+	category "identity"
 
-    desc """获取角色权限行动"""
+	desc """获取角色权限行动"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/identities/role/policy-actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetRolePolicyActionsMsg.class
+			clz APIGetRolePolicyActionsMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "4.10.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetRolePolicyActionsReply.class
-        }
-    }
+		response {
+			clz APIGetRolePolicyActionsReply.class
+		}
+	}
 }

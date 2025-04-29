@@ -3,22 +3,22 @@ package org.zstack.network.securitygroup
 import org.zstack.network.securitygroup.APIUpdateSecurityGroupRulePriorityEvent
 
 doc {
-    title "UpdateSecurityGroupRulePriority"
+	title "UpdateSecurityGroupRulePriority"
 
-    category "securityGroup"
+	category "securityGroup"
 
-    desc """更新安全组规则的优先级"""
+	desc """更新安全组规则的优先级"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/security-groups/{securityGroupUuid}/rules/priority/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateSecurityGroupRulePriorityMsg.class
+			clz APIUpdateSecurityGroupRulePriorityMsg.class
 
-            desc """更新安全组规则的优先级"""
-            
+			desc """更新安全组规则的优先级"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "type"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 					values ("Ingress","Egress")
 				}
 				column {
@@ -47,7 +47,7 @@ doc {
 					location "body"
 					type "List"
 					optional false
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "systemTags"
@@ -56,7 +56,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.11"
+					since "3.17.11"
 				}
 				column {
 					name "userTags"
@@ -65,13 +65,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateSecurityGroupRulePriorityEvent.class
-        }
-    }
+		response {
+			clz APIUpdateSecurityGroupRulePriorityEvent.class
+		}
+	}
 }

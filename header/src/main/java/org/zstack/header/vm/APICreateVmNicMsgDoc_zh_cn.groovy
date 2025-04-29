@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APICreateVmNicEvent
 
 doc {
-    title "CreateVmNic"
+	title "CreateVmNic"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """创建云主机网卡"""
+	desc """创建云主机网卡"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/nics"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateVmNicMsg.class
+			clz APICreateVmNicMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "ip"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "resourceUuid"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "systemTags"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "userTags"
@@ -64,7 +64,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "tagUuids"
@@ -76,10 +76,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateVmNicEvent.class
-        }
-    }
+		response {
+			clz APICreateVmNicEvent.class
+		}
+	}
 }

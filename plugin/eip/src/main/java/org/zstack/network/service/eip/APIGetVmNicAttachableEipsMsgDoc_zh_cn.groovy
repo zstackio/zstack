@@ -3,22 +3,22 @@ package org.zstack.network.service.eip
 import org.zstack.network.service.eip.APIGetVmNicAttachableEipsReply
 
 doc {
-    title "GetVmNicAttachableEips"
+	title "GetVmNicAttachableEips"
 
-    category "eip"
+	category "eip"
 
-    desc """获取云主机网卡可挂载弹性IP"""
+	desc """获取云主机网卡可挂载弹性IP"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/nics/{vmNicUuid}/candidate-eips"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVmNicAttachableEipsMsg.class
+			clz APIGetVmNicAttachableEipsMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.3.18"
+					since "3.13.18"
 				}
 				column {
 					name "ipVersion"
@@ -37,7 +37,7 @@ doc {
 					location "query"
 					type "Integer"
 					optional true
-					since "4.3.18"
+					since "3.13.18"
 					values ("4","6")
 				}
 				column {
@@ -47,7 +47,7 @@ doc {
 					location "query"
 					type "Integer"
 					optional true
-					since "4.3.18"
+					since "3.13.18"
 				}
 				column {
 					name "start"
@@ -56,7 +56,7 @@ doc {
 					location "query"
 					type "Integer"
 					optional true
-					since "4.3.18"
+					since "3.13.18"
 				}
 				column {
 					name "systemTags"
@@ -65,7 +65,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.3.18"
+					since "3.13.18"
 				}
 				column {
 					name "userTags"
@@ -74,13 +74,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.3.18"
+					since "3.13.18"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetVmNicAttachableEipsReply.class
-        }
-    }
+		response {
+			clz APIGetVmNicAttachableEipsReply.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.header.managementnode
 import org.zstack.header.managementnode.APIGetManagementNodeOSReply
 
 doc {
-    title "GetManagementNodeOS"
+	title "GetManagementNodeOS"
 
-    category "managementNode"
+	category "managementNode"
 
-    desc """获取管理节点系统"""
+	desc """获取管理节点系统"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/management/actions"
 
 
 
-            clz APIGetManagementNodeOSMsg.class
+			clz APIGetManagementNodeOSMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.2"
+					since "3.11.2"
 				}
 				column {
 					name "userTags"
@@ -37,13 +37,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.2"
+					since "3.11.2"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetManagementNodeOSReply.class
-        }
-    }
+		response {
+			clz APIGetManagementNodeOSReply.class
+		}
+	}
 }

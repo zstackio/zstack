@@ -4,28 +4,28 @@ import org.zstack.header.tag.APIQuerySystemTagReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QuerySystemTag"
+	title "QuerySystemTag"
 
-    category "tag"
+	category "tag"
 
-    desc """查询系统标签"""
+	desc """查询系统标签"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/system-tags"
 			url "GET /v1/system-tags/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQuerySystemTagMsg.class
+			clz APIQuerySystemTagMsg.class
 
-            desc """查询系统标签"""
-            
+			desc """查询系统标签"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQuerySystemTagReply.class
-        }
-    }
+		response {
+			clz APIQuerySystemTagReply.class
+		}
+	}
 }

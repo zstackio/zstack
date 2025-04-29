@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APISetVmSshKeyEvent
 
 doc {
-    title "SetVmSshKey"
+	title "SetVmSshKey"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISetVmSshKeyMsg.class
+			clz APISetVmSshKeyMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISetVmSshKeyEvent.class
-        }
-    }
+		response {
+			clz APISetVmSshKeyEvent.class
+		}
+	}
 }

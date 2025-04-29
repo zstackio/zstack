@@ -4,28 +4,28 @@ import org.zstack.network.hostNetworkInterface.lldp.api.APIQueryHostNetworkInter
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryHostNetworkInterfaceLldp"
+	title "QueryHostNetworkInterfaceLldp"
 
-    category "hostNetwork.lldp"
+	category "hostNetwork.lldp"
 
-    desc """查询物理网口lldp配置"""
+	desc """查询物理网口lldp配置"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/hostNetworkInterface/lldp/all"
 			url "GET /v1/hostNetworkInterface/lldp/{interfaceUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryHostNetworkInterfaceLldpMsg.class
+			clz APIQueryHostNetworkInterfaceLldpMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryHostNetworkInterfaceLldpReply.class
-        }
-    }
+		response {
+			clz APIQueryHostNetworkInterfaceLldpReply.class
+		}
+	}
 }

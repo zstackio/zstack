@@ -3,22 +3,22 @@ package org.zstack.header.identity.role.api
 import org.zstack.header.identity.role.api.APICreateRoleEvent
 
 doc {
-    title "CreateRole"
+	title "CreateRole"
 
-    category "rbac"
+	category "rbac"
 
-    desc """创建角色"""
+	desc """创建角色"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/identities/roles"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateRoleMsg.class
+			clz APICreateRoleMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -94,10 +94,10 @@ doc {
 					since "4.10.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateRoleEvent.class
-        }
-    }
+		response {
+			clz APICreateRoleEvent.class
+		}
+	}
 }

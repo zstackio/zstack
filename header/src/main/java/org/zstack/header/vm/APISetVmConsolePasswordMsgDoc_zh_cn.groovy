@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APISetVmConsolePasswordEvent
 
 doc {
-    title "设置云主机控制台密码(SetVmConsolePassword)"
+	title "设置云主机控制台密码(SetVmConsolePassword)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """设置一个云主机控制台密码"""
+	desc """设置一个云主机控制台密码"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISetVmConsolePasswordMsg.class
+			clz APISetVmConsolePasswordMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISetVmConsolePasswordEvent.class
-        }
-    }
+		response {
+			clz APISetVmConsolePasswordEvent.class
+		}
+	}
 }

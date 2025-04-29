@@ -4,28 +4,28 @@ import org.zstack.directory.APIQueryDirectoryReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryDirectory"
+	title "QueryDirectory"
 
-    category "directory"
+	category "directory"
 
-    desc """查询目录分组"""
+	desc """查询目录分组"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/directories"
 			url "GET /v1/directories/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryDirectoryMsg.class
+			clz APIQueryDirectoryMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryDirectoryReply.class
-        }
-    }
+		response {
+			clz APIQueryDirectoryReply.class
+		}
+	}
 }

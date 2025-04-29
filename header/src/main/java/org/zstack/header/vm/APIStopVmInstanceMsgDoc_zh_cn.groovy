@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIStopVmInstanceEvent
 
 doc {
-    title "停止云主机(StopVmInstance)"
+	title "停止云主机(StopVmInstance)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """停止一个云主机"""
+	desc """停止一个云主机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIStopVmInstanceMsg.class
+			clz APIStopVmInstanceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -68,10 +68,10 @@ doc {
 					since "2.2"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIStopVmInstanceEvent.class
-        }
-    }
+		response {
+			clz APIStopVmInstanceEvent.class
+		}
+	}
 }

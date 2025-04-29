@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APISetVmBootOrderEvent
 
 doc {
-    title "指定云主机启动设备(SetVmBootOrder)"
+	title "指定云主机启动设备(SetVmBootOrder)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """指定一个云主机的启动设备"""
+	desc """指定一个云主机的启动设备"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISetVmBootOrderMsg.class
+			clz APISetVmBootOrderMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISetVmBootOrderEvent.class
-        }
-    }
+		response {
+			clz APISetVmBootOrderEvent.class
+		}
+	}
 }

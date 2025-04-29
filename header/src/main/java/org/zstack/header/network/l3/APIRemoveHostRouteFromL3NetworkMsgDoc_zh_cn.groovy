@@ -3,22 +3,22 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIRemoveHostRouteFromL3NetworkEvent
 
 doc {
-    title "RemoveHostRouteFromL3Network"
+	title "RemoveHostRouteFromL3Network"
 
-    category "network.l3"
+	category "network.l3"
 
-    desc """从三层网络移除主机路由"""
+	desc """从三层网络移除主机路由"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/l3-networks/{l3NetworkUuid}/hostroute"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIRemoveHostRouteFromL3NetworkMsg.class
+			clz APIRemoveHostRouteFromL3NetworkMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "prefix"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "String"
 					optional false
 					since "2.3"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "2.3"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "2.3"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIRemoveHostRouteFromL3NetworkEvent.class
-        }
-    }
+		response {
+			clz APIRemoveHostRouteFromL3NetworkEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.network.service.eip
 import org.zstack.network.service.eip.APIChangeEipStateEvent
 
 doc {
-    title "更改弹性IP状态(ChangeEipState)"
+	title "更改弹性IP状态(ChangeEipState)"
 
-    category "弹性IP"
+	category "弹性IP"
 
-    desc """更改弹性IP状态"""
+	desc """更改弹性IP状态"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/eips/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeEipStateMsg.class
+			clz APIChangeEipStateMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIChangeEipStateEvent.class
-        }
-    }
+		response {
+			clz APIChangeEipStateEvent.class
+		}
+	}
 }

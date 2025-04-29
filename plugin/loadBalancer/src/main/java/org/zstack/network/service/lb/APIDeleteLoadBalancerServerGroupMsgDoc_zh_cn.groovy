@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIDeleteLoadBalancerServerGroupEvent
 
 doc {
-    title "DeleteLoadBalancerServerGroup"
+	title "DeleteLoadBalancerServerGroup"
 
-    category "loadBalancer"
+	category "loadBalancer"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/load-balancers/servergroups/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteLoadBalancerServerGroupMsg.class
+			clz APIDeleteLoadBalancerServerGroupMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -43,16 +43,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteLoadBalancerServerGroupEvent.class
-        }
-    }
+		response {
+			clz APIDeleteLoadBalancerServerGroupEvent.class
+		}
+	}
 }

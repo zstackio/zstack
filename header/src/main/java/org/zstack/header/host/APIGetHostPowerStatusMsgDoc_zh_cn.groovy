@@ -3,22 +3,22 @@ package org.zstack.header.host
 import org.zstack.header.host.APIGetHostPowerStatusEvent
 
 doc {
-    title "GetHostPowerStatus"
+	title "GetHostPowerStatus"
 
-    category "host"
+	category "host"
 
-    desc """获取物理机最新电源状态"""
+	desc """获取物理机最新电源状态"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/hosts/power/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetHostPowerStatusMsg.class
+			clz APIGetHostPowerStatusMsg.class
 
-            desc """获取一台物理机最新电源状态"""
-            
+			desc """获取一台物理机最新电源状态"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "method"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 					values ("AUTO","AGENT","IPMI")
 				}
 				column {
@@ -47,7 +47,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "userTags"
@@ -56,13 +56,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetHostPowerStatusEvent.class
-        }
-    }
+		response {
+			clz APIGetHostPowerStatusEvent.class
+		}
+	}
 }

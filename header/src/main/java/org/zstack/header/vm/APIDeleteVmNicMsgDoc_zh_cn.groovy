@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIDeleteVmNicEvent
 
 doc {
-    title "DeleteVmNic"
+	title "DeleteVmNic"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """删除云主机网卡"""
+	desc """删除云主机网卡"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/nics/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteVmNicMsg.class
+			clz APIDeleteVmNicMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,40 +28,40 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "deleteMode"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "String"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "systemTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 				column {
 					name "userTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
-					since "4.0"
+					since "3.10"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteVmNicEvent.class
-        }
-    }
+		response {
+			clz APIDeleteVmNicEvent.class
+		}
+	}
 }

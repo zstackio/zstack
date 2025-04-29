@@ -3,22 +3,22 @@ package org.zstack.network.l2.vxlan.vxlanNetwork
 import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkEvent
 
 doc {
-    title "创建二层VXLAN网络(CreateL2VxlanNetwork)"
+	title "创建二层VXLAN网络(CreateL2VxlanNetwork)"
 
-    category "network.l2"
+	category "network.l2"
 
-    desc """创建二层VXLAN网络"""
+	desc """创建二层VXLAN网络"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l2-networks/vxlan"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateL2VxlanNetworkMsg.class
+			clz APICreateL2VxlanNetworkMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -131,10 +131,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateL2VxlanNetworkEvent.class
-        }
-    }
+		response {
+			clz APICreateL2VxlanNetworkEvent.class
+		}
+	}
 }

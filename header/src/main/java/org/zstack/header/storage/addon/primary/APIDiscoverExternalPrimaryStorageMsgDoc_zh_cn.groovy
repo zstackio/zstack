@@ -3,32 +3,32 @@ package org.zstack.header.storage.addon.primary
 import org.zstack.header.storage.addon.primary.APIDiscoverExternalPrimaryStorageEvent
 
 doc {
-    title "DiscoverExternalPrimaryStorage"
+	title "DiscoverExternalPrimaryStorage"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """发现外部存储"""
+	desc """发现外部存储"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/primary-storage/addon/discover"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDiscoverExternalPrimaryStorageMsg.class
+			clz APIDiscoverExternalPrimaryStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
 					name "url"
 					enclosedIn "params"
-					desc ""
+					desc "外部存储 URL"
 					location "body"
 					type "String"
 					optional false
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "identity"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "config"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "systemTags"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 				column {
 					name "userTags"
@@ -64,13 +64,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.0.0"
+					since "4.10.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDiscoverExternalPrimaryStorageEvent.class
-        }
-    }
+		response {
+			clz APIDiscoverExternalPrimaryStorageEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.ldap.api
 import org.zstack.ldap.api.APISyncAccountsFromLdapServerEvent
 
 doc {
-    title "SyncAccountsFromLdapServer"
+	title "SyncAccountsFromLdapServer"
 
-    category "ldap"
+	category "ldap"
 
-    desc """从LDAP服务器上同步用户"""
+	desc """从LDAP服务器上同步用户"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/ldap/servers/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISyncAccountsFromLdapServerMsg.class
+			clz APISyncAccountsFromLdapServerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "4.3.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISyncAccountsFromLdapServerEvent.class
-        }
-    }
+		response {
+			clz APISyncAccountsFromLdapServerEvent.class
+		}
+	}
 }

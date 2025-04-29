@@ -3,22 +3,22 @@ package org.zstack.header.acl
 import org.zstack.header.acl.APIRemoveAccessControlListEntryEvent
 
 doc {
-    title "RemoveAccessControlListEntry"
+	title "RemoveAccessControlListEntry"
 
-    category "acl"
+	category "acl"
 
-    desc """删除访问控制策略的IP组"""
+	desc """删除访问控制策略的IP组"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/access-control-lists/{aclUuid}/ipentries/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIRemoveAccessControlListEntryMsg.class
+			clz APIRemoveAccessControlListEntryMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -43,7 +43,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc "删除模式(Permissive / Enforcing，Permissive)"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "3.9"
@@ -52,7 +52,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "3.9"
@@ -61,16 +61,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "3.9"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIRemoveAccessControlListEntryEvent.class
-        }
-    }
+		response {
+			clz APIRemoveAccessControlListEntryEvent.class
+		}
+	}
 }

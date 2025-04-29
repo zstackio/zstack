@@ -4,27 +4,27 @@ import org.zstack.identity.imports.api.APIQueryThirdPartyAccountSourceBindingRep
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryThirdPartyAccountSourceBinding"
+	title "QueryThirdPartyAccountSourceBinding"
 
-    category "ldap"
+	category "ldap"
 
-    desc """查询第三方用户来源绑定关系"""
+	desc """查询第三方用户来源绑定关系"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/account-import/bindings"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryThirdPartyAccountSourceBindingMsg.class
+			clz APIQueryThirdPartyAccountSourceBindingMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryThirdPartyAccountSourceBindingReply.class
-        }
-    }
+		response {
+			clz APIQueryThirdPartyAccountSourceBindingReply.class
+		}
+	}
 }

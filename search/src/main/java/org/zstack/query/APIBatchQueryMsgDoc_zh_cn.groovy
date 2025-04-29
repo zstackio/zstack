@@ -3,22 +3,22 @@ package org.zstack.query
 import org.zstack.query.APIBatchQueryReply
 
 doc {
-    title "BatchQuery"
+	title "BatchQuery"
 
-    category "query"
+	category "query"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/batch-queries"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIBatchQueryMsg.class
+			clz APIBatchQueryMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIBatchQueryReply.class
-        }
-    }
+		response {
+			clz APIBatchQueryReply.class
+		}
+	}
 }

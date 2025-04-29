@@ -3,22 +3,22 @@ package org.zstack.header.console
 import org.zstack.header.console.APIRequestConsoleAccessEvent
 
 doc {
-    title "RequestConsoleAccess"
+	title "RequestConsoleAccess"
 
-    category "console"
+	category "console"
 
-    desc """请求控制台访问地址"""
+	desc """请求控制台访问地址"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/consoles"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIRequestConsoleAccessMsg.class
+			clz APIRequestConsoleAccessMsg.class
 
-            desc """请求控制台访问地址"""
-            
+			desc """请求控制台访问地址"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIRequestConsoleAccessEvent.class
-        }
-    }
+		response {
+			clz APIRequestConsoleAccessEvent.class
+		}
+	}
 }

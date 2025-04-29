@@ -3,22 +3,22 @@ package org.zstack.header.volume
 import org.zstack.header.volume.APIUpdateVolumeEvent
 
 doc {
-    title "修改云盘属性(UpdateVolume)"
+	title "修改云盘属性(UpdateVolume)"
 
-    category "volume"
+	category "volume"
 
-    desc """修改云盘属性"""
+	desc """修改云盘属性"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/volumes/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateVolumeMsg.class
+			clz APIUpdateVolumeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateVolumeEvent.class
-        }
-    }
+		response {
+			clz APIUpdateVolumeEvent.class
+		}
+	}
 }

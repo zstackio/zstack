@@ -3,22 +3,22 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.APICreateL2VxlanNetworkPoolEvent
 
 doc {
-    title "创建VXLAN资源池(CreateL2VxlanNetworkPool)"
+	title "创建VXLAN资源池(CreateL2VxlanNetworkPool)"
 
-    category "network.l2"
+	category "network.l2"
 
-    desc """创建VXLAN资源池"""
+	desc """创建VXLAN资源池"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l2-networks/vxlan-pool"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateL2VxlanNetworkPoolMsg.class
+			clz APICreateL2VxlanNetworkPoolMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -113,10 +113,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateL2VxlanNetworkPoolEvent.class
-        }
-    }
+		response {
+			clz APICreateL2VxlanNetworkPoolEvent.class
+		}
+	}
 }

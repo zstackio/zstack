@@ -3,22 +3,22 @@ package org.zstack.header.storage.primary
 import org.zstack.header.storage.primary.APIGetTrashOnPrimaryStorageReply
 
 doc {
-    title "GetTrashOnPrimaryStorage"
+	title "GetTrashOnPrimaryStorage"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """获取主存储站上的回收数据列表"""
+	desc """获取主存储站上的回收数据列表"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/primary-storage/trash"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetTrashOnPrimaryStorageMsg.class
+			clz APIGetTrashOnPrimaryStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -77,10 +77,10 @@ doc {
 					since "3.2.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetTrashOnPrimaryStorageReply.class
-        }
-    }
+		response {
+			clz APIGetTrashOnPrimaryStorageReply.class
+		}
+	}
 }

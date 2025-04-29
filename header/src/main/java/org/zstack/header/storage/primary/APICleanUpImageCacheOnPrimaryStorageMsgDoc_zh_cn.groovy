@@ -3,22 +3,22 @@ package org.zstack.header.storage.primary
 import org.zstack.header.storage.primary.APICleanUpImageCacheOnPrimaryStorageEvent
 
 doc {
-    title "清楚主存储镜像缓存(CleanUpImageCacheOnPrimaryStorage)"
+	title "清楚主存储镜像缓存(CleanUpImageCacheOnPrimaryStorage)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """尝试从主存储清除镜像缓存"""
+	desc """尝试从主存储清除镜像缓存"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/primary-storage/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICleanUpImageCacheOnPrimaryStorageMsg.class
+			clz APICleanUpImageCacheOnPrimaryStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -55,13 +55,13 @@ doc {
 					location "body"
 					type "boolean"
 					optional true
-					since "4.0.0"
+					since "3.10.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICleanUpImageCacheOnPrimaryStorageEvent.class
-        }
-    }
+		response {
+			clz APICleanUpImageCacheOnPrimaryStorageEvent.class
+		}
+	}
 }

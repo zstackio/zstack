@@ -3,22 +3,22 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIGetIpAddressCapacityReply
 
 doc {
-    title "获取IP网络地址容量(GetIpAddressCapacity)"
+	title "获取IP网络地址容量(GetIpAddressCapacity)"
 
-    category "三层网络"
+	category "三层网络"
 
-    desc """获取IP网络地址容量"""
+	desc """获取IP网络地址容量"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/ip-capacity"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetIpAddressCapacityMsg.class
+			clz APIGetIpAddressCapacityMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -76,10 +76,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetIpAddressCapacityReply.class
-        }
-    }
+		response {
+			clz APIGetIpAddressCapacityReply.class
+		}
+	}
 }

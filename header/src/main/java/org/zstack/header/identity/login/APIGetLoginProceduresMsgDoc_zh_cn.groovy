@@ -3,22 +3,22 @@ package org.zstack.header.identity.login
 import org.zstack.header.identity.login.APIGetLoginProceduresReply
 
 doc {
-    title "GetLoginProcedures"
+	title "GetLoginProcedures"
 
-    category "login"
+	category "login"
 
-    desc """获取登录的认证步骤"""
+	desc """获取登录的认证步骤"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/login/procedures"
 
 
 
-            clz APIGetLoginProceduresMsg.class
+			clz APIGetLoginProceduresMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "query"
 					type "String"
 					optional false
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "loginType"
@@ -37,7 +37,7 @@ doc {
 					location "query"
 					type "String"
 					optional false
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "systemTags"
@@ -46,7 +46,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "userTags"
@@ -55,13 +55,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetLoginProceduresReply.class
-        }
-    }
+		response {
+			clz APIGetLoginProceduresReply.class
+		}
+	}
 }

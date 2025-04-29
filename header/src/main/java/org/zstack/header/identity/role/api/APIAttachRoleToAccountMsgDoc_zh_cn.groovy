@@ -3,22 +3,22 @@ package org.zstack.header.identity.role.api
 import org.zstack.header.identity.role.api.APIAttachRoleToAccountEvent
 
 doc {
-    title "AttachRoleToAccount"
+	title "AttachRoleToAccount"
 
-    category "rbac"
+	category "rbac"
 
-    desc """绑定角色和账户"""
+	desc """绑定角色和账户"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/identities/accounts/{accountUuid}/roles/{roleUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAttachRoleToAccountMsg.class
+			clz APIAttachRoleToAccountMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "4.10.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAttachRoleToAccountEvent.class
-        }
-    }
+		response {
+			clz APIAttachRoleToAccountEvent.class
+		}
+	}
 }

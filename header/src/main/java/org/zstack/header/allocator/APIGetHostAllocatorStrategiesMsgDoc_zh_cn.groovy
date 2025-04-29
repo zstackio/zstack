@@ -3,22 +3,22 @@ package org.zstack.header.allocator
 import org.zstack.header.allocator.APIGetHostAllocatorStrategiesReply
 
 doc {
-    title "GetHostAllocatorStrategies"
+	title "GetHostAllocatorStrategies"
 
-    category "host.allocator"
+	category "host.allocator"
 
-    desc """获取物理机分配策略"""
+	desc """获取物理机分配策略"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/hosts/allocators/strategies"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetHostAllocatorStrategiesMsg.class
+			clz APIGetHostAllocatorStrategiesMsg.class
 
-            desc """获取物理机分配策略"""
-            
+			desc """获取物理机分配策略"""
+
 			params {
 
 				column {
@@ -40,10 +40,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetHostAllocatorStrategiesReply.class
-        }
-    }
+		response {
+			clz APIGetHostAllocatorStrategiesReply.class
+		}
+	}
 }

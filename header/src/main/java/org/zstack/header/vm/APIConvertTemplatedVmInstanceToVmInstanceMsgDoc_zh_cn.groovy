@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIConvertTemplatedVmInstanceToVmInstanceEvent
 
 doc {
-    title "虚拟机模板转换为虚拟机(ConvertTemplatedVmInstanceToVmInstance)"
+	title "虚拟机模板转换为虚拟机(ConvertTemplatedVmInstanceToVmInstance)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """虚拟机模板转换为虚拟机"""
+	desc """虚拟机模板转换为虚拟机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/vm-instances/{templatedVmInstanceUuid}/convert-to-vmInstance"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIConvertTemplatedVmInstanceToVmInstanceMsg.class
+			clz APIConvertTemplatedVmInstanceToVmInstanceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "zsv 4.2.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIConvertTemplatedVmInstanceToVmInstanceEvent.class
-        }
-    }
+		response {
+			clz APIConvertTemplatedVmInstanceToVmInstanceEvent.class
+		}
+	}
 }

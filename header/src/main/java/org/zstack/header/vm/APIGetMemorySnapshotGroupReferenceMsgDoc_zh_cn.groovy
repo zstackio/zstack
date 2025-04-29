@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIGetMemorySnapshotGroupReferenceReply
 
 doc {
-    title "GetMemorySnapshotGroupReference"
+	title "GetMemorySnapshotGroupReference"
 
-    category "snapshot.volume"
+	category "snapshot.volume"
 
-    desc """获取资源被引用的内存快照组"""
+	desc """获取资源被引用的内存快照组"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/memory-snapshots/group/reference"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetMemorySnapshotGroupReferenceMsg.class
+			clz APIGetMemorySnapshotGroupReferenceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "query"
 					type "String"
 					optional false
-					since "4.4.24"
+					since "3.14.24"
 				}
 				column {
 					name "resourceType"
@@ -37,7 +37,7 @@ doc {
 					location "query"
 					type "String"
 					optional false
-					since "4.4.24"
+					since "3.14.24"
 				}
 				column {
 					name "systemTags"
@@ -46,7 +46,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.4.24"
+					since "3.14.24"
 				}
 				column {
 					name "userTags"
@@ -55,13 +55,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.4.24"
+					since "3.14.24"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetMemorySnapshotGroupReferenceReply.class
-        }
-    }
+		response {
+			clz APIGetMemorySnapshotGroupReferenceReply.class
+		}
+	}
 }

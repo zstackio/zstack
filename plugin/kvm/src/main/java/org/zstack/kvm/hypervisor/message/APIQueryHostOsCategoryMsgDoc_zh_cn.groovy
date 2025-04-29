@@ -4,27 +4,27 @@ import org.zstack.kvm.hypervisor.message.APIQueryHostOsCategoryReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryHostOsCategory"
+	title "QueryHostOsCategory"
 
-    category "host"
+	category "host"
 
-    desc """查询物理机系统类型"""
+	desc """查询物理机系统类型"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/hosts/os/category"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryHostOsCategoryMsg.class
+			clz APIQueryHostOsCategoryMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryHostOsCategoryReply.class
-        }
-    }
+		response {
+			clz APIQueryHostOsCategoryReply.class
+		}
+	}
 }

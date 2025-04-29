@@ -3,22 +3,22 @@ package org.zstack.header.identity
 import org.zstack.header.identity.APILogInReply
 
 doc {
-    title "LogInByAccount"
+	title "LogInByAccount"
 
-    category "identity"
+	category "identity"
 
-    desc """使用账户身份登录"""
+	desc """使用账户身份登录"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/accounts/login"
 
 
 
-            clz APILogInByAccountMsg.class
+			clz APILogInByAccountMsg.class
 
-            desc """使用账户身份登录"""
-            
+			desc """使用账户身份登录"""
+
 			params {
 
 				column {
@@ -94,10 +94,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APILogInReply.class
-        }
-    }
+		response {
+			clz APILogInReply.class
+		}
+	}
 }

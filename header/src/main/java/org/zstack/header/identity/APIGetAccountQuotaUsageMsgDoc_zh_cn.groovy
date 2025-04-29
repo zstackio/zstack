@@ -3,22 +3,22 @@ package org.zstack.header.identity
 import org.zstack.header.identity.APIGetAccountQuotaUsageReply
 
 doc {
-    title "GetAccountQuotaUsage"
+	title "GetAccountQuotaUsage"
 
-    category "identity"
+	category "identity"
 
-    desc """获取账户配额使用情况"""
+	desc """获取账户配额使用情况"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/accounts/quota/{uuid}/usages"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetAccountQuotaUsageMsg.class
+			clz APIGetAccountQuotaUsageMsg.class
 
-            desc """获取账户配额使用情况"""
-            
+			desc """获取账户配额使用情况"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetAccountQuotaUsageReply.class
-        }
-    }
+		response {
+			clz APIGetAccountQuotaUsageReply.class
+		}
+	}
 }

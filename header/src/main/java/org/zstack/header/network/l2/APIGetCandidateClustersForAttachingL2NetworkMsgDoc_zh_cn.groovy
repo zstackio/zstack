@@ -3,22 +3,22 @@ package org.zstack.header.network.l2
 import org.zstack.header.network.l2.APIGetCandidateClustersForAttachingL2NetworkReply
 
 doc {
-    title "获取二层网络允许加载的集群"
+	title "获取二层网络允许加载的集群"
 
-    category "二层网络"
+	category "二层网络"
 
-    desc """获取二层网络允许加载的集群"""
+	desc """获取二层网络允许加载的集群"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/l2-networks/{l2NetworkUuid}/cluster-candidates"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetCandidateClustersForAttachingL2NetworkMsg.class
+			clz APIGetCandidateClustersForAttachingL2NetworkMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "4.0.0"
+					since "3.10.0"
 				}
 				column {
 					name "clusterTypes"
@@ -37,7 +37,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.0.0"
+					since "3.10.0"
 				}
 				column {
 					name "limit"
@@ -46,7 +46,7 @@ doc {
 					location "query"
 					type "Integer"
 					optional true
-					since "4.0.0"
+					since "3.10.0"
 				}
 				column {
 					name "start"
@@ -55,7 +55,7 @@ doc {
 					location "query"
 					type "Integer"
 					optional true
-					since "4.0.0"
+					since "3.10.0"
 				}
 				column {
 					name "systemTags"
@@ -64,7 +64,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.0.0"
+					since "3.10.0"
 				}
 				column {
 					name "userTags"
@@ -73,13 +73,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.0.0"
+					since "3.10.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetCandidateClustersForAttachingL2NetworkReply.class
-        }
-    }
+		response {
+			clz APIGetCandidateClustersForAttachingL2NetworkReply.class
+		}
+	}
 }

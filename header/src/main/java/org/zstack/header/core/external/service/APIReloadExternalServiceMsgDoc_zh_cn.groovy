@@ -3,22 +3,22 @@ package org.zstack.header.core.external.service
 import org.zstack.header.core.external.service.APIReloadExternalServiceEvent
 
 doc {
-    title "ReloadExternalService"
+	title "ReloadExternalService"
 
-    category "externalService"
+	category "externalService"
 
-    desc """重新加载External Service"""
+	desc """重新加载External Service"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/external/services"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIReloadExternalServiceMsg.class
+			clz APIReloadExternalServiceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "systemTags"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 				column {
 					name "userTags"
@@ -46,13 +46,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.7.0"
+					since "3.17.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIReloadExternalServiceEvent.class
-        }
-    }
+		response {
+			clz APIReloadExternalServiceEvent.class
+		}
+	}
 }

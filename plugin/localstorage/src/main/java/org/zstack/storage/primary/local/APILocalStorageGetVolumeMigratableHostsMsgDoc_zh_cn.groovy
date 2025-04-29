@@ -3,22 +3,22 @@ package org.zstack.storage.primary.local
 import org.zstack.storage.primary.local.APILocalStorageGetVolumeMigratableReply
 
 doc {
-    title "LocalStorageGetVolumeMigratableHosts"
+	title "LocalStorageGetVolumeMigratableHosts"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/volumes/{volumeUuid}/migration-target-hosts"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APILocalStorageGetVolumeMigratableHostsMsg.class
+			clz APILocalStorageGetVolumeMigratableHostsMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APILocalStorageGetVolumeMigratableReply.class
-        }
-    }
+		response {
+			clz APILocalStorageGetVolumeMigratableReply.class
+		}
+	}
 }

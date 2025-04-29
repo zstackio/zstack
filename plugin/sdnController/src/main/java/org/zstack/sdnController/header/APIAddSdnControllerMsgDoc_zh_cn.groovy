@@ -3,22 +3,22 @@ package org.zstack.sdnController.header
 import org.zstack.sdnController.header.APIAddSdnControllerEvent
 
 doc {
-    title "AddSdnController"
+	title "AddSdnController"
 
-    category "SdnController"
+	category "SdnController"
 
-    desc """添加SDN控制器"""
+	desc """添加SDN控制器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/sdn-controllers"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddSdnControllerMsg.class
+			clz APIAddSdnControllerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -112,10 +112,10 @@ doc {
 					since "3.7"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddSdnControllerEvent.class
-        }
-    }
+		response {
+			clz APIAddSdnControllerEvent.class
+		}
+	}
 }

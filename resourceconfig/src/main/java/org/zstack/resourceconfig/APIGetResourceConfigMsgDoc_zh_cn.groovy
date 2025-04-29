@@ -3,22 +3,22 @@ package org.zstack.resourceconfig
 import org.zstack.resourceconfig.APIGetResourceConfigReply
 
 doc {
-    title "GetResourceConfig"
+	title "GetResourceConfig"
 
-    category "resourceConfig"
+	category "resourceConfig"
 
-    desc """获取资源的高级设置"""
+	desc """获取资源的高级设置"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/resource-configurations/{resourceUuid}/{category}/{name}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetResourceConfigMsg.class
+			clz APIGetResourceConfigMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetResourceConfigReply.class
-        }
-    }
+		response {
+			clz APIGetResourceConfigReply.class
+		}
+	}
 }

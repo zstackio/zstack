@@ -3,22 +3,22 @@ package org.zstack.core.debug
 import org.zstack.core.debug.APIGetDebugSignalReply
 
 doc {
-    title "GetDebugSignal"
+	title "GetDebugSignal"
 
-    category "debug"
+	category "debug"
 
-    desc """Get available debug signals"""
+	desc """Get available debug signals"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/debug"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetDebugSignalMsg.class
+			clz APIGetDebugSignalMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -40,10 +40,10 @@ doc {
 					since "3.6.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetDebugSignalReply.class
-        }
-    }
+		response {
+			clz APIGetDebugSignalReply.class
+		}
+	}
 }

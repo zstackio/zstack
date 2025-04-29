@@ -3,22 +3,22 @@ package org.zstack.ldap.api
 import org.zstack.ldap.api.APIAddLdapServerEvent
 
 doc {
-    title "AddLdapServer"
+	title "AddLdapServer"
 
-    category "ldap"
+	category "ldap"
 
-    desc """添加LDAP服务器"""
+	desc """添加LDAP服务器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/ldap/servers"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddLdapServerMsg.class
+			clz APIAddLdapServerMsg.class
 
-            desc """添加LDAP服务器"""
-            
+			desc """添加LDAP服务器"""
+
 			params {
 
 				column {
@@ -152,10 +152,10 @@ doc {
 					values ("NoAction","StaleAccount","DeleteAccount")
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddLdapServerEvent.class
-        }
-    }
+		response {
+			clz APIAddLdapServerEvent.class
+		}
+	}
 }

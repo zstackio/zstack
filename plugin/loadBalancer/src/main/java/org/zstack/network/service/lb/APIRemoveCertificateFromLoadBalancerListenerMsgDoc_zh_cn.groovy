@@ -3,29 +3,29 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIRemoveCertificateFromLoadBalancerListenerEvent
 
 doc {
-    title "RemoveCertificateFromLoadBalancerListener"
+	title "RemoveCertificateFromLoadBalancerListener"
 
-    category "loadBalancer"
+	category "loadBalancer"
 
-    desc """从负载均衡移除证书"""
+	desc """从负载均衡移除证书"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/load-balancers/listeners/{listenerUuid}/certificate"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIRemoveCertificateFromLoadBalancerListenerMsg.class
+			clz APIRemoveCertificateFromLoadBalancerListenerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
 					name "certificateUuid"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "String"
 					optional false
 					since "2.3"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "2.3"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "2.3"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIRemoveCertificateFromLoadBalancerListenerEvent.class
-        }
-    }
+		response {
+			clz APIRemoveCertificateFromLoadBalancerListenerEvent.class
+		}
+	}
 }

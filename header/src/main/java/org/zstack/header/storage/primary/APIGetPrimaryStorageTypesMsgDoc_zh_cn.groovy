@@ -3,22 +3,22 @@ package org.zstack.header.storage.primary
 import org.zstack.header.storage.primary.APIGetPrimaryStorageTypesReply
 
 doc {
-    title "获取主存储类型列表(GetPrimaryStorageTypes)"
+	title "获取主存储类型列表(GetPrimaryStorageTypes)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """获取主存储类型列表"""
+	desc """获取主存储类型列表"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/primary-storage/types"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetPrimaryStorageTypesMsg.class
+			clz APIGetPrimaryStorageTypesMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -40,10 +40,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetPrimaryStorageTypesReply.class
-        }
-    }
+		response {
+			clz APIGetPrimaryStorageTypesReply.class
+		}
+	}
 }

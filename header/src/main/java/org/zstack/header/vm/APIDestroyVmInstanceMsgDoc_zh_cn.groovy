@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIDestroyVmInstanceEvent
 
 doc {
-    title "删除云主机(DestroyVmInstance)"
+	title "删除云主机(DestroyVmInstance)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """删除一个云主机"""
+	desc """删除一个云主机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/vm-instances/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDestroyVmInstanceMsg.class
+			clz APIDestroyVmInstanceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDestroyVmInstanceEvent.class
-        }
-    }
+		response {
+			clz APIDestroyVmInstanceEvent.class
+		}
+	}
 }

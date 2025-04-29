@@ -4,28 +4,28 @@ import org.zstack.header.vm.devices.APIQueryVmInstanceDeviceAddressArchiveReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryVmInstanceDeviceAddressArchive"
+	title "QueryVmInstanceDeviceAddressArchive"
 
-    category "snapshot.volume"
+	category "snapshot.volume"
 
-    desc """查询云主机设备地址归档"""
+	desc """查询云主机设备地址归档"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vmInstance/device/address/archive"
 			url "GET /v1/vmInstance/device/address/archive/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryVmInstanceDeviceAddressArchiveMsg.class
+			clz APIQueryVmInstanceDeviceAddressArchiveMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryVmInstanceDeviceAddressArchiveReply.class
-        }
-    }
+		response {
+			clz APIQueryVmInstanceDeviceAddressArchiveReply.class
+		}
+	}
 }

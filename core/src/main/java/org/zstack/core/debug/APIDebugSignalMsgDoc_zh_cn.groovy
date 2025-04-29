@@ -3,22 +3,22 @@ package org.zstack.core.debug
 import org.zstack.core.debug.APIDebugSignalEvent
 
 doc {
-    title "DebugSignal"
+	title "DebugSignal"
 
-    category "debug"
+	category "debug"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/debug"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDebugSignalMsg.class
+			clz APIDebugSignalMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDebugSignalEvent.class
-        }
-    }
+		response {
+			clz APIDebugSignalEvent.class
+		}
+	}
 }

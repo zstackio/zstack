@@ -3,22 +3,22 @@ package org.zstack.ldap.api
 import org.zstack.ldap.api.APIGetLdapEntryReply
 
 doc {
-    title "GetCandidateLdapEntryForBinding"
+	title "GetCandidateLdapEntryForBinding"
 
-    category "ldap"
+	category "ldap"
 
-    desc """查询可绑定的LDAP/AD条目(排除已绑定的LDAP/AD用户)"""
+	desc """查询可绑定的LDAP/AD条目(排除已绑定的LDAP/AD用户)"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/ldap/entries/candidates"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetCandidateLdapEntryForBindingMsg.class
+			clz APIGetCandidateLdapEntryForBindingMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "4.3.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetLdapEntryReply.class
-        }
-    }
+		response {
+			clz APIGetLdapEntryReply.class
+		}
+	}
 }

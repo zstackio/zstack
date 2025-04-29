@@ -3,22 +3,22 @@ package org.zstack.header.storage.backup
 import org.zstack.header.storage.backup.APIExportImageFromBackupStorageEvent
 
 doc {
-    title "从镜像服务器导出镜像(ExportImageFromBackupStorage)"
+	title "从镜像服务器导出镜像(ExportImageFromBackupStorage)"
 
-    category "storage.backup"
+	category "storage.backup"
 
-    desc """从镜像服务器中导出镜像"""
+	desc """从镜像服务器中导出镜像"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/backup-storage/{backupStorageUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIExportImageFromBackupStorageMsg.class
+			clz APIExportImageFromBackupStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "1.7"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIExportImageFromBackupStorageEvent.class
-        }
-    }
+		response {
+			clz APIExportImageFromBackupStorageEvent.class
+		}
+	}
 }

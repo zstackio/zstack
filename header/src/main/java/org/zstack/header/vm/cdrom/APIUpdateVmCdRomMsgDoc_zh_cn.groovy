@@ -3,22 +3,22 @@ package org.zstack.header.vm.cdrom
 import org.zstack.header.vm.cdrom.APIUpdateVmCdRomEvent
 
 doc {
-    title "UpdateVmCdRom"
+	title "UpdateVmCdRom"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """修改CDROM"""
+	desc """修改CDROM"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/cdroms/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateVmCdRomMsg.class
+			clz APIUpdateVmCdRomMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "3.3"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateVmCdRomEvent.class
-        }
-    }
+		response {
+			clz APIUpdateVmCdRomEvent.class
+		}
+	}
 }

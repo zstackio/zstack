@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.core.APIGetChainTaskReply
 
 doc {
-    title "GetVmTask"
+	title "GetVmTask"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """获取虚拟机上的任务信息"""
+	desc """获取虚拟机上的任务信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/vm-instances/task-details"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetVmTaskMsg.class
+			clz APIGetVmTaskMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "query"
 					type "List"
 					optional false
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "systemTags"
@@ -37,7 +37,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "userTags"
@@ -46,7 +46,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "syncSignatures"
@@ -55,13 +55,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.6.0"
+					since "3.16.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetChainTaskReply.class
-        }
-    }
+		response {
+			clz APIGetChainTaskReply.class
+		}
+	}
 }

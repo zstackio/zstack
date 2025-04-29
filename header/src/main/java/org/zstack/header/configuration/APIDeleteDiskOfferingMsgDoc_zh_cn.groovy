@@ -3,22 +3,22 @@ package org.zstack.header.configuration
 import org.zstack.header.configuration.APIDeleteDiskOfferingEvent
 
 doc {
-    title "DeleteDiskOffering"
+	title "DeleteDiskOffering"
 
-    category "configuration"
+	category "configuration"
 
-    desc """删除云盘规格"""
+	desc """删除云盘规格"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/disk-offerings/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteDiskOfferingMsg.class
+			clz APIDeleteDiskOfferingMsg.class
 
-            desc """删除云盘规格"""
-            
+			desc """删除云盘规格"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc "删除模式"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteDiskOfferingEvent.class
-        }
-    }
+		response {
+			clz APIDeleteDiskOfferingEvent.class
+		}
+	}
 }

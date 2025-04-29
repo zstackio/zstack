@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIRefreshLoadBalancerEvent
 
 doc {
-    title "刷新负载均衡器(RefreshLoadBalancer)"
+	title "刷新负载均衡器(RefreshLoadBalancer)"
 
-    category "负载均衡"
+	category "负载均衡"
 
-    desc """刷新负载均衡器"""
+	desc """刷新负载均衡器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/load-balancers/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIRefreshLoadBalancerMsg.class
+			clz APIRefreshLoadBalancerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIRefreshLoadBalancerEvent.class
-        }
-    }
+		response {
+			clz APIRefreshLoadBalancerEvent.class
+		}
+	}
 }

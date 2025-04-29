@@ -3,22 +3,22 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIAddIpRangeByNetworkCidrEvent
 
 doc {
-    title "通过网络CIDR添加IP地址范围(AddIpRangeByNetworkCidr)"
+	title "通过网络CIDR添加IP地址范围(AddIpRangeByNetworkCidr)"
 
-    category "三层网络"
+	category "三层网络"
 
-    desc """通过网络CIDR添加IP地址范围"""
+	desc """通过网络CIDR添加IP地址范围"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l3-networks/{l3NetworkUuid}/ip-ranges/by-cidr"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddIpRangeByNetworkCidrMsg.class
+			clz APIAddIpRangeByNetworkCidrMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -113,10 +113,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddIpRangeByNetworkCidrEvent.class
-        }
-    }
+		response {
+			clz APIAddIpRangeByNetworkCidrEvent.class
+		}
+	}
 }

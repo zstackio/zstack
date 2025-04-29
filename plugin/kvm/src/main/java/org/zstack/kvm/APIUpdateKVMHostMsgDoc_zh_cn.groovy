@@ -3,22 +3,22 @@ package org.zstack.kvm
 import org.zstack.header.host.APIUpdateHostEvent
 
 doc {
-    title "UpdateKVMHost"
+	title "UpdateKVMHost"
 
-    category "host"
+	category "host"
 
-    desc """更新KVM机信息"""
+	desc """更新KVM机信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/hosts/kvm/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateKVMHostMsg.class
+			clz APIUpdateKVMHostMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -103,10 +103,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateHostEvent.class
-        }
-    }
+		response {
+			clz APIUpdateHostEvent.class
+		}
+	}
 }

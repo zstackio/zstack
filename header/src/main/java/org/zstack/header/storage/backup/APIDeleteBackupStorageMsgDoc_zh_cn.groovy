@@ -3,22 +3,22 @@ package org.zstack.header.storage.backup
 import org.zstack.header.storage.backup.APIDeleteBackupStorageEvent
 
 doc {
-    title "删除镜像服务器(DeleteBackupStorage)"
+	title "删除镜像服务器(DeleteBackupStorage)"
 
-    category "storage.backup"
+	category "storage.backup"
 
-    desc """删除指定的镜像服务器"""
+	desc """删除指定的镜像服务器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/backup-storage/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteBackupStorageMsg.class
+			clz APIDeleteBackupStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc "删除模式(Permissive 或者 Enforcing, 默认 Permissive)"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteBackupStorageEvent.class
-        }
-    }
+		response {
+			clz APIDeleteBackupStorageEvent.class
+		}
+	}
 }

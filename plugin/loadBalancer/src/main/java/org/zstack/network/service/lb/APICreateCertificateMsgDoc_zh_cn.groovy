@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APICreateCertificateEvent
 
 doc {
-    title "CreateCertificate"
+	title "CreateCertificate"
 
-    category "loadBalancer"
+	category "loadBalancer"
 
-    desc """创建证书"""
+	desc """创建证书"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/certificates"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateCertificateMsg.class
+			clz APICreateCertificateMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -85,10 +85,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateCertificateEvent.class
-        }
-    }
+		response {
+			clz APICreateCertificateEvent.class
+		}
+	}
 }

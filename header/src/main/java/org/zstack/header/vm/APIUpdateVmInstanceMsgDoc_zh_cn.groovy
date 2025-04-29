@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APIUpdateVmInstanceEvent
 
 doc {
-    title "更新云主机信息(UpdateVmInstance)"
+	title "更新云主机信息(UpdateVmInstance)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """更新一个云主机的信息"""
+	desc """更新一个云主机的信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateVmInstanceMsg.class
+			clz APIUpdateVmInstanceMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -120,7 +120,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.2"
+					since "3.11.2"
 				}
 				column {
 					name "reservedMemorySize"
@@ -129,7 +129,7 @@ doc {
 					location "body"
 					type "Long"
 					optional true
-					since "4.7.21"
+					since "3.17.21"
 				}
 				column {
 					name "allocatorStrategy"
@@ -141,10 +141,10 @@ doc {
 					since "4.10.10"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateVmInstanceEvent.class
-        }
-    }
+		response {
+			clz APIUpdateVmInstanceEvent.class
+		}
+	}
 }

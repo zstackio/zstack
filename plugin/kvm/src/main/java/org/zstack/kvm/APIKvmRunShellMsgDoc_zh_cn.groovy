@@ -3,22 +3,22 @@ package org.zstack.kvm
 import org.zstack.kvm.APIKvmRunShellEvent
 
 doc {
-    title "KvmRunShell"
+	title "KvmRunShell"
 
-    category "host"
+	category "host"
 
-    desc """KVM运行命令"""
+	desc """KVM运行命令"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/hosts/kvm/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIKvmRunShellMsg.class
+			clz APIKvmRunShellMsg.class
 
-            desc """KVM运行命令"""
-            
+			desc """KVM运行命令"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIKvmRunShellEvent.class
-        }
-    }
+		response {
+			clz APIKvmRunShellEvent.class
+		}
+	}
 }

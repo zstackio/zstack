@@ -3,22 +3,22 @@ package org.zstack.directory
 import org.zstack.directory.APIMoveResourcesToDirectoryEvent
 
 doc {
-    title "MoveResourcesToDirectory"
+	title "MoveResourcesToDirectory"
 
-    category "directory"
+	category "directory"
 
-    desc """移动资源到指定目录"""
+	desc """移动资源到指定目录"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/move/resources/directory"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIMoveResourcesToDirectoryMsg.class
+			clz APIMoveResourcesToDirectoryMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "List"
 					optional false
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "directoryUuid"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.6.0"
+					since "3.16.0"
 				}
 				column {
 					name "systemTags"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "3.16.0"
 				}
 				column {
 					name "userTags"
@@ -55,13 +55,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "3.16.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIMoveResourcesToDirectoryEvent.class
-        }
-    }
+		response {
+			clz APIMoveResourcesToDirectoryEvent.class
+		}
+	}
 }

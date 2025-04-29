@@ -4,28 +4,28 @@ import org.zstack.header.managementnode.APIQueryManagementNodeReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryManagementNode"
+	title "QueryManagementNode"
 
-    category "managementNode"
+	category "managementNode"
 
-    desc """查询管理节点"""
+	desc """查询管理节点"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/management-nodes"
 			url "GET /v1/management-nodes/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIQueryManagementNodeMsg.class
+			clz APIQueryManagementNodeMsg.class
 
-            desc """查询管理节点"""
-            
+			desc """查询管理节点"""
+
 			params APIQueryMessage.class
-        }
+		}
 
-        response {
-            clz APIQueryManagementNodeReply.class
-        }
-    }
+		response {
+			clz APIQueryManagementNodeReply.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.core.gc
 import org.zstack.core.gc.APITriggerGCJobEvent
 
 doc {
-    title "TriggerGCJob"
+	title "TriggerGCJob"
 
-    category "gc"
+	category "gc"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/gc-jobs/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APITriggerGCJobMsg.class
+			clz APITriggerGCJobMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -49,10 +49,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APITriggerGCJobEvent.class
-        }
-    }
+		response {
+			clz APITriggerGCJobEvent.class
+		}
+	}
 }

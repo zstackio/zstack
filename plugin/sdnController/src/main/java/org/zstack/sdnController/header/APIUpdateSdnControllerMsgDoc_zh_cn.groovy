@@ -3,22 +3,22 @@ package org.zstack.sdnController.header
 import org.zstack.sdnController.header.APIUpdateSdnControllerEvent
 
 doc {
-    title "UpdateSdnController"
+	title "UpdateSdnController"
 
-    category "SdnController"
+	category "SdnController"
 
-    desc """更新SDN控制器"""
+	desc """更新SDN控制器"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/sdn-controllers/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateSdnControllerMsg.class
+			clz APIUpdateSdnControllerMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "3.7"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateSdnControllerEvent.class
-        }
-    }
+		response {
+			clz APIUpdateSdnControllerEvent.class
+		}
+	}
 }

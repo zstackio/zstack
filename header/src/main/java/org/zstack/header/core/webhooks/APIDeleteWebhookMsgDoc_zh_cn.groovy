@@ -3,22 +3,22 @@ package org.zstack.header.core.webhooks
 import org.zstack.header.core.webhooks.APIDeleteWebhookEvent
 
 doc {
-    title "DeleteWebhook"
+	title "DeleteWebhook"
 
-    category "webhook"
+	category "webhook"
 
-    desc """在这里填写API描述"""
+	desc """在这里填写API描述"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/web-hooks/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteWebhookMsg.class
+			clz APIDeleteWebhookMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
@@ -43,7 +43,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
@@ -52,16 +52,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteWebhookEvent.class
-        }
-    }
+		response {
+			clz APIDeleteWebhookEvent.class
+		}
+	}
 }

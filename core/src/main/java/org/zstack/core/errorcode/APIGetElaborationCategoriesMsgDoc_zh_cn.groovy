@@ -3,22 +3,22 @@ package org.zstack.core.errorcode
 import org.zstack.core.errorcode.APIGetElaborationCategoriesReply
 
 doc {
-    title "GetElaborationCategories"
+	title "GetElaborationCategories"
 
-    category "errorcode"
+	category "errorcode"
 
-    desc """查看错误码目录列表"""
+	desc """查看错误码目录列表"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/errorcode/elaborations/categories"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetElaborationCategoriesMsg.class
+			clz APIGetElaborationCategoriesMsg.class
 
-            desc """查看错误码目录列表"""
-            
+			desc """查看错误码目录列表"""
+
 			params {
 
 				column {
@@ -40,10 +40,10 @@ doc {
 					since "3.3.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetElaborationCategoriesReply.class
-        }
-    }
+		response {
+			clz APIGetElaborationCategoriesReply.class
+		}
+	}
 }

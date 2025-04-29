@@ -3,22 +3,22 @@ package org.zstack.header.storage.primary
 import org.zstack.header.storage.primary.APIAttachPrimaryStorageToClusterEvent
 
 doc {
-    title "向集群添加主存储(AttachPrimaryStorageToCluster)"
+	title "向集群添加主存储(AttachPrimaryStorageToCluster)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """向集群添加主存储"""
+	desc """向集群添加主存储"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/clusters/{clusterUuid}/primary-storage/{primaryStorageUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAttachPrimaryStorageToClusterMsg.class
+			clz APIAttachPrimaryStorageToClusterMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAttachPrimaryStorageToClusterEvent.class
-        }
-    }
+		response {
+			clz APIAttachPrimaryStorageToClusterEvent.class
+		}
+	}
 }

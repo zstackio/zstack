@@ -3,22 +3,22 @@ package org.zstack.header.acl
 import org.zstack.header.acl.APICreateAccessControlListEvent
 
 doc {
-    title "CreateAccessControlList"
+	title "CreateAccessControlList"
 
-    category "acl"
+	category "acl"
 
-    desc """创建访问控制策略组"""
+	desc """创建访问控制策略组"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/access-control-lists"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateAccessControlListMsg.class
+			clz APICreateAccessControlListMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -86,10 +86,10 @@ doc {
 					since "3.9"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICreateAccessControlListEvent.class
-        }
-    }
+		response {
+			clz APICreateAccessControlListEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.core.debug
 import org.zstack.core.debug.APICleanQueueEvent
 
 doc {
-    title "CleanQueue"
+	title "CleanQueue"
 
-    category "debug"
+	category "debug"
 
-    desc """清理管理节点队列"""
+	desc """清理管理节点队列"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/clean/queue"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICleanQueueMsg.class
+			clz APICleanQueueMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "taskIndex"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "Integer"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "isCleanUp"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "Boolean"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "isRunningTask"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "Boolean"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "managementiUuid"
@@ -64,7 +64,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "systemTags"
@@ -73,7 +73,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 				column {
 					name "userTags"
@@ -82,13 +82,13 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "4.1.3"
+					since "3.11.3"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICleanQueueEvent.class
-        }
-    }
+		response {
+			clz APICleanQueueEvent.class
+		}
+	}
 }

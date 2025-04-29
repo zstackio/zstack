@@ -3,22 +3,22 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIGetCandidateL3NetworksForServerGroupReply
 
 doc {
-    title "GetCandidateL3NetworksForServerGroup"
+	title "GetCandidateL3NetworksForServerGroup"
 
-    category "loadBalancer"
+	category "loadBalancer"
 
-    desc """查询负载均衡后端服务组所能绑定的三层网络"""
+	desc """查询负载均衡后端服务组所能绑定的三层网络"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/load-balancers/servergroups/candidate-l3network"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetCandidateL3NetworksForServerGroupMsg.class
+			clz APIGetCandidateL3NetworksForServerGroupMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -28,7 +28,7 @@ doc {
 					location "query"
 					type "String"
 					optional true
-					since "4.3.0"
+					since "3.13.0"
 				}
 				column {
 					name "loadBalancerUuid"
@@ -37,7 +37,7 @@ doc {
 					location "query"
 					type "String"
 					optional true
-					since "4.3.0"
+					since "3.13.0"
 				}
 				column {
 					name "limit"
@@ -46,7 +46,7 @@ doc {
 					location "query"
 					type "Integer"
 					optional true
-					since "4.3.0"
+					since "3.13.0"
 				}
 				column {
 					name "start"
@@ -55,7 +55,7 @@ doc {
 					location "query"
 					type "Integer"
 					optional true
-					since "4.3.0"
+					since "3.13.0"
 				}
 				column {
 					name "systemTags"
@@ -64,7 +64,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.3.0"
+					since "3.13.0"
 				}
 				column {
 					name "userTags"
@@ -73,13 +73,13 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "4.3.0"
+					since "3.13.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIGetCandidateL3NetworksForServerGroupReply.class
-        }
-    }
+		response {
+			clz APIGetCandidateL3NetworksForServerGroupReply.class
+		}
+	}
 }

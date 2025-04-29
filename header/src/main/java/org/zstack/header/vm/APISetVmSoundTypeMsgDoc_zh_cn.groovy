@@ -3,22 +3,22 @@ package org.zstack.header.vm
 import org.zstack.header.vm.APISetVmSoundTypeEvent
 
 doc {
-    title "设置云主机虚拟声卡类型(SetVmSoundType)"
+	title "设置云主机虚拟声卡类型(SetVmSoundType)"
 
-    category "vmInstance"
+	category "vmInstance"
 
-    desc """指定一个云主机的虚拟声卡类型"""
+	desc """指定一个云主机的虚拟声卡类型"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vm-instances/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APISetVmSoundTypeMsg.class
+			clz APISetVmSoundTypeMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -59,10 +59,10 @@ doc {
 					since "3.7"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APISetVmSoundTypeEvent.class
-        }
-    }
+		response {
+			clz APISetVmSoundTypeEvent.class
+		}
+	}
 }

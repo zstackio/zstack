@@ -3,22 +3,22 @@ package org.zstack.header.storage.snapshot.group
 import org.zstack.header.storage.snapshot.group.APIDeleteVolumeSnapshotGroupEvent
 
 doc {
-    title "DeleteVolumeSnapshotGroup"
+	title "DeleteVolumeSnapshotGroup"
 
-    category "snapshot.volume"
+	category "snapshot.volume"
 
-    desc """删除快照组"""
+	desc """删除快照组"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/volume-snapshots/group/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteVolumeSnapshotGroupMsg.class
+			clz APIDeleteVolumeSnapshotGroupMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 					name "direction"
 					enclosedIn ""
 					desc "数据合并方向。pull：向前合并；commit：向后合并；auto：自动选择最优合并方向"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "4.10.6"
@@ -43,7 +43,7 @@ doc {
 					name "scope"
 					enclosedIn ""
 					desc "数据合并方式。single：仅合并单个快照；chain：合并整个快照链；auto：自动判断最佳合并范围"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "4.10.6"
@@ -52,7 +52,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "3.6.0"
@@ -61,7 +61,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "3.6.0"
@@ -70,16 +70,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "3.6.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDeleteVolumeSnapshotGroupEvent.class
-        }
-    }
+		response {
+			clz APIDeleteVolumeSnapshotGroupEvent.class
+		}
+	}
 }

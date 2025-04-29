@@ -3,22 +3,22 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIAddHostRouteToL3NetworkEvent
 
 doc {
-    title "AddHostRouteToL3Network"
+	title "AddHostRouteToL3Network"
 
-    category "network.l3"
+	category "network.l3"
 
-    desc """向三层网络添加DNS主机路由"""
+	desc """向三层网络添加DNS主机路由"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l3-networks/{l3NetworkUuid}/hostroute"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddHostRouteToL3NetworkMsg.class
+			clz APIAddHostRouteToL3NetworkMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "2.3"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddHostRouteToL3NetworkEvent.class
-        }
-    }
+		response {
+			clz APIAddHostRouteToL3NetworkEvent.class
+		}
+	}
 }

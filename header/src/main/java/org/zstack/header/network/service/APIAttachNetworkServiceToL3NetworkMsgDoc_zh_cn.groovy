@@ -3,22 +3,22 @@ package org.zstack.header.network.service
 import org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkEvent
 
 doc {
-    title "挂载网络服务到三层网络(AttachNetworkServiceToL3Network)"
+	title "挂载网络服务到三层网络(AttachNetworkServiceToL3Network)"
 
-    category "三层网络"
+	category "三层网络"
 
-    desc """挂载网络服务到三层网络"""
+	desc """挂载网络服务到三层网络"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/l3-networks/{l3NetworkUuid}/network-services"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAttachNetworkServiceToL3NetworkMsg.class
+			clz APIAttachNetworkServiceToL3NetworkMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAttachNetworkServiceToL3NetworkEvent.class
-        }
-    }
+		response {
+			clz APIAttachNetworkServiceToL3NetworkEvent.class
+		}
+	}
 }

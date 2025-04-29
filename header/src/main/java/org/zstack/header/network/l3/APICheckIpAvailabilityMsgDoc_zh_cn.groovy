@@ -3,22 +3,22 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APICheckIpAvailabilityReply
 
 doc {
-    title "检查IP可用性(CheckIpAvailability)"
+	title "检查IP可用性(CheckIpAvailability)"
 
-    category "三层网络"
+	category "三层网络"
 
-    desc """检查IP可用性"""
+	desc """检查IP可用性"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "GET /v1/l3-networks/{l3NetworkUuid}/ip/{ip}/availability"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICheckIpAvailabilityMsg.class
+			clz APICheckIpAvailabilityMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -58,10 +58,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APICheckIpAvailabilityReply.class
-        }
-    }
+		response {
+			clz APICheckIpAvailabilityReply.class
+		}
+	}
 }

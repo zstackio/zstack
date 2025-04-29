@@ -3,22 +3,22 @@ package org.zstack.header.storage.primary
 import org.zstack.header.storage.primary.APIUpdatePrimaryStorageEvent
 
 doc {
-    title "根系更新主存储信息(UpdatePrimaryStorage)"
+	title "根系更新主存储信息(UpdatePrimaryStorage)"
 
-    category "storage.primary"
+	category "storage.primary"
 
-    desc """更新主存储信息"""
+	desc """更新主存储信息"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/primary-storage/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdatePrimaryStorageMsg.class
+			clz APIUpdatePrimaryStorageMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -76,10 +76,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdatePrimaryStorageEvent.class
-        }
-    }
+		response {
+			clz APIUpdatePrimaryStorageEvent.class
+		}
+	}
 }

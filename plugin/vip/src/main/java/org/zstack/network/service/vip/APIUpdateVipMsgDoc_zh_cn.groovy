@@ -3,22 +3,22 @@ package org.zstack.network.service.vip
 import org.zstack.network.service.vip.APIUpdateVipEvent
 
 doc {
-    title "UpdateVip"
+	title "UpdateVip"
 
-    category "vip"
+	category "vip"
 
-    desc """更新VIP"""
+	desc """更新VIP"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/vips/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateVipMsg.class
+			clz APIUpdateVipMsg.class
 
-            desc """更新VIP"""
-            
+			desc """更新VIP"""
+
 			params {
 
 				column {
@@ -67,10 +67,10 @@ doc {
 					since "0.6"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateVipEvent.class
-        }
-    }
+		response {
+			clz APIUpdateVipEvent.class
+		}
+	}
 }

@@ -3,22 +3,22 @@ package org.zstack.kvm
 import org.zstack.header.host.APIAddHostEvent
 
 doc {
-    title "AddKVMHost"
+	title "AddKVMHost"
 
-    category "host"
+	category "host"
 
-    desc """添加KVM主机"""
+	desc """添加KVM主机"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/hosts/kvm"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddKVMHostMsg.class
+			clz APIAddKVMHostMsg.class
 
-            desc """添加KVM主机"""
-            
+			desc """添加KVM主机"""
+
 			params {
 
 				column {
@@ -121,10 +121,10 @@ doc {
 					since "3.4.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddHostEvent.class
-        }
-    }
+		response {
+			clz APIAddHostEvent.class
+		}
+	}
 }

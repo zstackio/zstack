@@ -3,22 +3,22 @@ package org.zstack.header.identity.role.api
 import org.zstack.header.identity.role.api.APIDetachRoleFromAccountEvent
 
 doc {
-    title "DetachRoleFromAccount"
+	title "DetachRoleFromAccount"
 
-    category "rbac"
+	category "rbac"
 
-    desc """解绑角色和账户"""
+	desc """解绑角色和账户"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "DELETE /v1/identities/accounts/{accountUuid}/roles/{roleUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDetachRoleFromAccountMsg.class
+			clz APIDetachRoleFromAccountMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -43,7 +43,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc "删除模式, 当前 API 该字段无效"
-					location "body"
+					location "query"
 					type "String"
 					optional true
 					since "4.10.0"
@@ -52,7 +52,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "4.10.0"
@@ -61,16 +61,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "body"
+					location "query"
 					type "List"
 					optional true
 					since "4.10.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIDetachRoleFromAccountEvent.class
-        }
-    }
+		response {
+			clz APIDetachRoleFromAccountEvent.class
+		}
+	}
 }

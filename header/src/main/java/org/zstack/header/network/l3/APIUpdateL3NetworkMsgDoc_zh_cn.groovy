@@ -3,22 +3,22 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIUpdateL3NetworkEvent
 
 doc {
-    title "更新三层网络(UpdateL3Network)"
+	title "更新三层网络(UpdateL3Network)"
 
-    category "三层网络"
+	category "三层网络"
 
-    desc """更新三层网络"""
+	desc """更新三层网络"""
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/l3-networks/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIUpdateL3NetworkMsg.class
+			clz APIUpdateL3NetworkMsg.class
 
-            desc """"""
-            
+			desc """"""
+
 			params {
 
 				column {
@@ -95,10 +95,10 @@ doc {
 					since "2.6.0"
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateL3NetworkEvent.class
-        }
-    }
+		response {
+			clz APIUpdateL3NetworkEvent.class
+		}
+	}
 }
