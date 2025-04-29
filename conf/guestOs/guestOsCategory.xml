@@ -232,13 +232,13 @@
         <platform>Linux</platform>
         <name>SUSE</name>
         <version>SLED11</version>
-        <osRelease>SUSE Linux Desktop 11</osRelease>
+        <osRelease>SUSE Linux Enterprise Desktop 11</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
         <name>SUSE</name>
         <version>SLED12</version>
-        <osRelease>SUSE Linux Desktop 12</osRelease>
+        <osRelease>SUSE Linux Enterprise Desktop 12</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
