@@ -10,14 +10,14 @@ doc {
 
 	field {
 		name "success"
-		desc ""
+		desc "请求是否成功"
 		type "boolean"
 		since "0.6"
 	}
 	ref {
 		name "error"
 		path "org.zstack.header.storage.backup.APICleanUpTrashOnBackupStorageEvent.error"
-		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
+		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null"
 		type "ErrorCode"
 		since "3.2.0"
 		clz ErrorCode.class
@@ -35,7 +35,7 @@ doc {
 		path "org.zstack.header.storage.backup.APICleanUpTrashOnBackupStorageEvent.results"
 		desc "清理数据的返回信息"
 		type "List"
-		since "4.7.0"
+		since "3.17.0"
 		clz TrashCleanupResult.class
 	}
 }

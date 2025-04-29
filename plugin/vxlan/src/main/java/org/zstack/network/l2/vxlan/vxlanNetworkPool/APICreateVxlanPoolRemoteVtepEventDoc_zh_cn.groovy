@@ -5,28 +5,28 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "远端VXLAN隧道端点清单"
+	title "创建远端 VXLAN 隧道端点结果"
 
 	ref {
 		name "inventory"
 		path "org.zstack.network.l2.vxlan.vxlanNetworkPool.APICreateVxlanPoolRemoteVtepEvent.inventory"
-		desc "null"
+		desc "远端 VXLAN 隧道端点清单"
 		type "RemoteVtepInventory"
-		since "4.7.11"
+		since "3.17.11"
 		clz RemoteVtepInventory.class
 	}
 	field {
 		name "success"
-		desc ""
+		desc "请求是否成功"
 		type "boolean"
-		since "4.7.11"
+		since "3.17.11"
 	}
 	ref {
 		name "error"
 		path "org.zstack.network.l2.vxlan.vxlanNetworkPool.APICreateVxlanPoolRemoteVtepEvent.error"
-		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
+		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null"
 		type "ErrorCode"
-		since "4.7.11"
+		since "3.17.11"
 		clz ErrorCode.class
 	}
 }

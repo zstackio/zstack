@@ -11,30 +11,30 @@ doc {
 		name "validValue"
 		desc ""
 		type "List"
-		since "4.4.0"
+		since "3.14.0"
 	}
 	field {
 		name "numberGreaterThan"
-		desc ""
+		desc "大于"
 		type "Long"
-		since "4.4.0"
+		since "3.14.0"
 	}
 	field {
 		name "numberLessThan"
-		desc ""
+		desc "小于"
 		type "Long"
-		since "4.4.0"
+		since "3.14.0"
 	}
 	field {
 		name "numberGreaterThanOrEqual"
 		desc "大于等于"
 		type "Long"
-		since "4.8.0"
+		since "3.18.0"
 	}
 	field {
 		name "numberLessThanOrEqual"
 		desc "小于等于"
 		type "Long"
-		since "4.8.0"
+		since "3.18.0"
 	}
 }
