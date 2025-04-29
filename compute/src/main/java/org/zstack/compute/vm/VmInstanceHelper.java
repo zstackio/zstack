@@ -153,13 +153,24 @@ public class VmInstanceHelper {
         }
 
         if (VmInstanceConstant.USER_VM_TYPE.equals(msg.getType())) {
-            if (msg.getDefaultL3NetworkUuid() == null && (!CollectionUtils.isEmpty(msg.getL3NetworkUuids()) && msg.getL3NetworkUuids().size() != 1)) {
-                throw new ApiMessageInterceptionException(argerr("there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null"));
-            } else if (msg.getDefaultL3NetworkUuid() == null && !CollectionUtils.isEmpty(msg.getL3NetworkUuids()) && msg.getL3NetworkUuids().size() == 1) {
-                msg.setDefaultL3NetworkUuid(msg.getL3NetworkUuids().get(0));
-            } else if (msg.getDefaultL3NetworkUuid() != null && !msg.getL3NetworkUuids().contains(msg.getDefaultL3NetworkUuid())) {
-                throw new ApiMessageInterceptionException(argerr("defaultL3NetworkUuid[uuid:%s] is not in l3NetworkUuids%s", msg.getDefaultL3NetworkUuid(), msg.getL3NetworkUuids()));
+            String defaultL3Uuid = msg.getDefaultL3NetworkUuid();
+            List<String> l3UuidList = msg.getL3NetworkUuids() == null ? new ArrayList<>() : msg.getL3NetworkUuids();
+
+            if (defaultL3Uuid == null) {
+                if (l3UuidList.size() == 1) {
+                    defaultL3Uuid = l3UuidList.get(0);
+                } else if (l3UuidList.size() > 1) {
+                    throw new ApiMessageInterceptionException(
+                            argerr("there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null"));
+                }
+            } else {
+                if (!l3UuidList.contains(defaultL3Uuid)) {
+                    throw new ApiMessageInterceptionException(
+                            argerr("defaultL3NetworkUuid[uuid:%s] is not in l3NetworkUuids%s", defaultL3Uuid, l3UuidList));
+                }
             }
+
+            msg.setDefaultL3NetworkUuid(defaultL3Uuid);
         }
 
         if (!StringUtils.isEmpty(msg.getVmNicParams())) {
