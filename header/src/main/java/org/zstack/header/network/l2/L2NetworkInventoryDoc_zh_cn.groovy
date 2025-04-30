@@ -65,9 +65,9 @@ doc {
 	ref {
 		name "attachedHostRefs"
 		path "org.zstack.header.network.l2.L2NetworkInventory.attachedHostRefs"
-		desc "null"
+		desc "绑定主机映射清单列表"
 		type "List"
-		since "4.1.0"
+		since "3.11.0"
 		clz L2NetworkHostRefInventory.class
 	}
 }

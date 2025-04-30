@@ -8,22 +8,22 @@ doc {
 
 	field {
 		name "architecture"
-		desc ""
+		desc "管理节点系统架构"
 		type "String"
-		since "4.1.2"
+		since "3.11.2"
 	}
 	field {
 		name "success"
-		desc ""
+		desc "请求是否成功"
 		type "boolean"
-		since "4.1.2"
+		since "3.11.2"
 	}
 	ref {
 		name "error"
 		path "org.zstack.header.managementnode.APIGetManagementNodeArchReply.error"
-		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
+		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null"
 		type "ErrorCode"
-		since "4.1.2"
+		since "3.11.2"
 		clz ErrorCode.class
 	}
 }

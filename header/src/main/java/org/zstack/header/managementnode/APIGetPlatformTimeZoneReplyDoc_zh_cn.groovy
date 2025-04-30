@@ -9,27 +9,27 @@ doc {
 	ref {
 		name "error"
 		path "org.zstaheader.managementnode.APIGetPlatformTimeZoneReply.error"
-		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
+		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null"
 		type "ErrorCode"
-		since "4.1.0"
+		since "3.11.0"
 		clz ErrorCode.class
 	}
 	field {
 		name "timezone"
 		desc "时区名称"
 		type "String"
-		since "4.1.0"
+		since "3.11.0"
 	}
 	field {
 		name "offset"
 		desc "与GMT时间的时差"
 		type "String"
-		since "4.1.0"
+		since "3.11.0"
 	}
 	field {
 		name "success"
-		desc ""
+		desc "请求是否成功"
 		type "boolean"
-		since "4.1.0"
+		since "3.11.0"
 	}
 }

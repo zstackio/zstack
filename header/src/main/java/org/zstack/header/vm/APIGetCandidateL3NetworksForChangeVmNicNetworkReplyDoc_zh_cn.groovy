@@ -5,28 +5,28 @@ import org.zstack.header.network.l3.L3NetworkInventory
 
 doc {
 
-	title "云主机网卡可加载网络清单"
+	title "获取虚拟机网卡可加载网络的请求返回"
 
 	field {
 		name "success"
-		desc ""
+		desc "请求是否成功"
 		type "boolean"
 		since "0.6"
 	}
 	ref {
 		name "error"
 		path "org.zstack.header.vm.APIGetCandidateL3NetworksForChangeVmNicNetworkReply.error"
-		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
+		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null"
 		type "ErrorCode"
-		since "4.1.0"
+		since "3.11.0"
 		clz ErrorCode.class
 	}
 	ref {
 		name "inventories"
 		path "org.zstack.header.vm.APIGetCandidateL3NetworksForChangeVmNicNetworkReply.inventories"
-		desc "null"
+		desc "虚拟机网卡可加载网络清单列表"
 		type "List"
-		since "4.1.0"
+		since "3.11.0"
 		clz L3NetworkInventory.class
 	}
 }
