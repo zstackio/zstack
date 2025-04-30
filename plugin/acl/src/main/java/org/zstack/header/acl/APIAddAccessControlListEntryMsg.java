@@ -53,7 +53,7 @@ public class APIAddAccessControlListEntryMsg extends APICreateMessage implements
     public static APIAddAccessControlListEntryMsg __example__() {
         APIAddAccessControlListEntryMsg msg = new APIAddAccessControlListEntryMsg();
 
-        msg.setAclUuid(uuid());
+        msg.setAclUuid(uuid(AccessControlListVO.class));
         msg.setEntries("192.168.12.1,192.168.48.0/24");
 
         return msg;
