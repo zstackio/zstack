@@ -49,7 +49,7 @@ public class APICreateSystemTagsMsg extends APIMessage {
         this.tags = tags;
     }
 
-    public static APICreateSystemTagsMsg example() {
+    public static APICreateSystemTagsMsg __example__() {
         APICreateSystemTagsMsg msg = new APICreateSystemTagsMsg();
         msg.setResourceUuid(uuid(ResourceVO.class));
         msg.setResourceType("VmInstanceVO");

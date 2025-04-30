@@ -51,6 +51,7 @@ public class APIUpdateSshKeyPairMsg extends APIMessage implements SshKeyPairMess
 
     public static APIUpdateSshKeyPairMsg __example__() {
         APIUpdateSshKeyPairMsg ret = new APIUpdateSshKeyPairMsg();
+        ret.uuid = uuid(SshKeyPairVO.class);
         ret.name = "ssh-key-pair";
         ret.description = "description";
         return ret;

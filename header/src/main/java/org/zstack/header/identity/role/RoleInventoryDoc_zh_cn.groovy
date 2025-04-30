@@ -26,7 +26,6 @@ doc {
 	}
 	field {
 		name "type"
-		path "org.zstack.header.identity.role.RoleInventory.type"
 		desc "角色类型, 系统预定义的为 Predefined, 自定义的为 Customized"
 		type "String"
 		since "4.10.0"
