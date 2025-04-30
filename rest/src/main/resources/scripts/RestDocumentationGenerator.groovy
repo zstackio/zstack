@@ -1381,6 +1381,44 @@ ${examples.join("\n")}
 
         @Override
         String generate() {
+            def urlScript = ""
+            def headerScript = ""
+            def requestExampleScript = ""
+            def curlExampleScript = ""
+            def paramsScript = ""
+            def responseDescScript = ""
+            def responseExampleScript = ""
+            def javaSdkScript = ""
+            def pythonSdkScript = ""
+
+            try {
+                urlScript = url()
+            } catch (Exception e) { logger.warn("failed to generate url of ${doc._title}", e) }
+            try {
+                headerScript = headers()
+            } catch (Exception e) { logger.warn("failed to generate header of ${doc._title}", e) }
+            try {
+                requestExampleScript = requestExample()
+            } catch (Exception e) { logger.warn("failed to generate requestExample of ${doc._title}", e) }
+            try {
+                curlExampleScript = curlExample()
+            } catch (Exception e) { logger.warn("failed to generate curlExample of ${doc._title}", e) }
+            try {
+                paramsScript = params()
+            } catch (Exception e) { logger.warn("failed to generate params of ${doc._title}", e) }
+            try {
+                responseDescScript = responseDesc()
+            } catch (Exception e) { logger.warn("failed to generate responseDesc of ${doc._title}", e) }
+            try {
+                responseExampleScript = responseExample()
+            } catch (Exception e) { logger.warn("failed to generate responseExample of ${doc._title}", e) }
+            try {
+                javaSdkScript = javaSdk()
+            } catch (Exception e) { logger.warn("failed to generate javaSdk of ${doc._title}", e) }
+            try {
+                pythonSdkScript = pythonSdk()
+            } catch (Exception e) { logger.warn("failed to generate pythonSdk of ${doc._title}", e) }
+
             return  """\
 ## ${doc._category} - ${doc._title}
 
@@ -1388,31 +1426,31 @@ ${doc._desc}
 
 ## API请求
 
-${url()}
+${urlScript}
 
-${headers()}
+${headerScript}
 
-${requestExample()}
+${requestExampleScript}
 
-${curlExample()}
+${curlExampleScript}
 
-${params()}
+${paramsScript}
 
 ## API返回
 
-${responseDesc()}
+${responseDescScript}
 
-${responseExample()}
+${responseExampleScript}
 
 ## SDK示例
 
 ### Java SDK
 
-${javaSdk()}
+${javaSdkScript}
 
 ### Python SDK
 
-${pythonSdk()}
+${pythonSdkScript}
 """
         }
     }
@@ -1867,43 +1905,77 @@ ${cols.join("\n")}
         }
 
         String generate() {
+            def urlScript = ""
+            def headerScript = ""
+            def requestExampleScript = ""
+            def curlExampleScript = ""
+            def paramsScript = ""
+            def responseDescScript = ""
+            def responseExampleScript = ""
+            def javaSdkScript = ""
+            def pythonSdkScript = ""
+
             try {
-                return """\
+                urlScript = url()
+            } catch (Exception e) { logger.warn("failed to generate url of ${doc._title}", e) }
+            try {
+                headerScript = headers()
+            } catch (Exception e) { logger.warn("failed to generate header of ${doc._title}", e) }
+            try {
+                requestExampleScript = requestExample()
+            } catch (Exception e) { logger.warn("failed to generate requestExample of ${doc._title}", e) }
+            try {
+                curlExampleScript = curlExample()
+            } catch (Exception e) { logger.warn("failed to generate curlExample of ${doc._title}", e) }
+            try {
+                paramsScript = params()
+            } catch (Exception e) { logger.warn("failed to generate params of ${doc._title}", e) }
+            try {
+                responseDescScript = responseDesc()
+            } catch (Exception e) { logger.warn("failed to generate responseDesc of ${doc._title}", e) }
+            try {
+                responseExampleScript = responseExample()
+            } catch (Exception e) { logger.warn("failed to generate responseExample of ${doc._title}", e) }
+            try {
+                javaSdkScript = javaSdk()
+            } catch (Exception e) { logger.warn("failed to generate javaSdk of ${doc._title}", e) }
+            try {
+                pythonSdkScript = pythonSdk()
+            } catch (Exception e) { logger.warn("failed to generate pythonSdk of ${doc._title}", e) }
+
+            return """\
 ## ${doc._category} - ${doc._title}
 
 ${doc._desc}
 
 ## API请求
 
-${url()}
+${urlScript}
 
-${headers()}
+${headerScript}
 
-${requestExample()}
+${requestExampleScript}
 
-${curlExample()}
+${curlExampleScript}
 
-${params()}
+${paramsScript}
 
 ## API返回
 
-${responseDesc()}
+${responseDescScript}
 
-${responseExample()}
+${responseExampleScript}
 
 ## SDK示例
 
 ### Java SDK
 
-${javaSdk()}
+${javaSdkScript}
 
 ### Python SDK
 
-${pythonSdk()}
+${pythonSdkScript}
 """
-            } catch (Exception e) {
-                logger.warn(e.message, e)
-            }
         }
     }
 
@@ -1956,6 +2028,10 @@ ${pythonSdk()}
             // generate dependent tables
 
             refs.each {
+                if (it._clz.name.startsWith("java.")) {
+                    return ""
+                }
+
                 String txt = resolvedRefs[it._clz]
 
                 if (txt == null) {
