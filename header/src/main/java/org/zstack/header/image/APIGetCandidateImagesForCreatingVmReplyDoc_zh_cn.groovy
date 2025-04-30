@@ -5,7 +5,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "获取用于创建云主机的候选镜像返回"
+	title "获取用于创建虚拟机的候选镜像返回"
 
 	ref {
 		name "inventories"
@@ -17,14 +17,14 @@ doc {
 	}
 	field {
 		name "success"
-		desc ""
+		desc "请求是否成功"
 		type "boolean"
 		since "4.1.1"
 	}
 	ref {
 		name "error"
 		path "org.zstack.header.image.APIGetCandidateImagesForCreatingVmReply.error"
-		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
+		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null"
 		type "ErrorCode"
 		since "4.1.1"
 		clz ErrorCode.class
