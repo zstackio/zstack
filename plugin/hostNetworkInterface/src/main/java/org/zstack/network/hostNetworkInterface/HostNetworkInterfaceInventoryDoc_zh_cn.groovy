@@ -26,31 +26,31 @@ doc {
 		name "interfaceModel"
 		desc "网卡型号"
 		type "String"
-		since "4.7.11"
+		since "3.17.11"
 	}
 	field {
 		name "vendorId"
 		desc "产商Id"
 		type "String"
-		since "4.7.11"
+		since "3.17.11"
 	}
 	field {
 		name "deviceId"
 		desc "设备Id"
 		type "String"
-		since "4.7.11"
+		since "3.17.11"
 	}
 	field {
 		name "subvendorId"
 		desc "子产商Id"
 		type "String"
-		since "4.7.11"
+		since "3.17.11"
 	}
 	field {
 		name "subdeviceId"
 		desc "子设备Id"
 		type "String"
-		since "4.7.11"
+		since "3.17.11"
 	}
 	field {
 		name "interfaceName"
@@ -92,7 +92,7 @@ doc {
 		name "gateway"
 		desc "网关地址"
 		type "String"
-		since "4.7.0"
+		since "3.17.0"
 	}
 	field {
 		name "mac"
@@ -104,7 +104,7 @@ doc {
 		name "callBackIp"
 		desc "回调地址"
 		type "String"
-		since "4.7.0"
+		since "3.17.0"
 	}
 	field {
 		name "pciDeviceAddress"
@@ -116,13 +116,13 @@ doc {
 		name "offloadStatus"
 		desc ""
 		type "String"
-		since "4.7.0"
+		since "3.17.0"
 	}
 	field {
 		name "description"
 		desc "资源的详细描述"
 		type "String"
-		since "4.7.0"
+		since "3.17.0"
 	}
 	field {
 		name "createDate"

@@ -4,29 +4,29 @@ import java.sql.Timestamp
 
 doc {
 
-    title "IP使用情况结构"
+    title "IP 使用情况结构"
 
     field {
         name "ip"
-        desc "IP地址"
+        desc "IP 地址"
         type "String"
         since "3.7.0"
     }
     field {
         name "vipUuid"
-        desc "虚拟IP的UUID"
+        desc "虚拟 IP 的 UUID"
         type "String"
         since "3.7.0"
     }
     field {
         name "vipName"
-        desc "虚拟IP名字"
+        desc "虚拟 IP 名字"
         type "String"
         since "3.7.0"
     }
     field {
         name "vmInstanceUuid"
-        desc "虚拟机实例UUID"
+        desc "虚拟机实例 UUID"
         type "String"
         since "3.7.0"
     }
@@ -44,19 +44,19 @@ doc {
     }
     field {
         name "applianceVmOwnerUuid"
-        desc "应用虚拟机实例的网络服务Uuid"
+        desc "应用虚拟机实例的网络服务 UUID"
         type "String"
-        since "4.3.12"
+        since "3.13.12"
     }
     field {
         name "vmDefaultIp"
-        desc "虚拟机实例默认IP"
+        desc "虚拟机实例默认 IP"
         type "String"
         since "3.7.0"
     }
     field {
         name "resourceTypes"
-        desc "绑定到IP地址的资源类型列表"
+        desc "绑定到 IP 地址的资源类型列表"
         type "List"
         since "3.7.0"
     }
@@ -68,7 +68,7 @@ doc {
     }
     field {
         name "useFor"
-        desc "虚拟IP绑定的网络服务"
+        desc "虚拟 IP 绑定的网络服务"
         type "String"
         since "3.7.0"
     }
@@ -86,14 +86,14 @@ doc {
     }
     field {
         name "resourceOwnerUuid"
-        desc "资源所有者的UUID"
+        desc "资源所有者的 UUID"
         type "String"
-        since "4.1.0"
+        since "3.11.0"
     }
     field {
         name "usedIpUuid"
-        desc "IP的UUID"
+        desc "IP 的 UUID"
         type "String"
-        since "4.1.0"
+        since "3.11.0"
     }
 }

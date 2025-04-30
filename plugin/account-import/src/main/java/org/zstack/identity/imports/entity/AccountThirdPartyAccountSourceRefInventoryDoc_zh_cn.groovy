@@ -18,7 +18,7 @@ doc {
     }
     field {
         name "accountSourceUuid"
-        desc "导入源服务器UUID"
+        desc "导入源服务器 UUID"
         type "String"
         since "4.3.0"
     }

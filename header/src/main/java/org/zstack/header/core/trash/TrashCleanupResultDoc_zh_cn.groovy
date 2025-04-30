@@ -11,32 +11,32 @@ doc {
         name "resourceUuid"
         desc "清理数据对应的UUID"
         type "String"
-        since "4.7.0"
+        since "3.17.0"
     }
     field {
         name "success"
-        desc ""
+        desc "请求是否成功"
         type "boolean"
-        since "4.7.0"
+        since "3.17.0"
     }
     ref {
         name "error"
         path "org.zstack.header.core.trash.TrashCleanupResult.error"
-        desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
+        desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null"
         type "ErrorCode"
-        since "4.7.0"
+        since "3.17.0"
         clz ErrorCode.class
     }
     field {
         name "trashId"
         desc "清理数据对应的ID"
         type "long"
-        since "4.7.0"
+        since "3.17.0"
     }
     field {
         name "size"
         desc "清理数据对应的大小"
         type "Long"
-        since "4.7.0"
+        since "3.17.0"
     }
 }

@@ -7,7 +7,7 @@ doc {
 
 	category "volume"
 
-	desc """在这里填写API描述"""
+	desc """撤销快照创建"""
 
 	rest {
 		request {

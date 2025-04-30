@@ -33,7 +33,7 @@ doc {
 				column {
 					name "hostUuid"
 					enclosedIn "params"
-					desc "物理机UUID"
+					desc "主机 UUID"
 					location "url"
 					type "String"
 					optional false

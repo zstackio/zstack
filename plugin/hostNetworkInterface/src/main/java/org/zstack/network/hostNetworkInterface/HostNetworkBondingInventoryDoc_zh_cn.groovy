@@ -26,13 +26,13 @@ doc {
 		name "bondingType"
 		desc "Bond应用状态，有noBridge、bridgeSlave"
 		type "String"
-		since "4.7.0"
+		since "3.17.0"
 	}
 	field {
 		name "speed"
 		desc "Bond速率"
 		type "Long"
-		since "4.7.0"
+		since "3.17.0"
 	}
 	field {
 		name "mode"
@@ -68,13 +68,13 @@ doc {
 		name "gateway"
 		desc "网关地址"
 		type "String"
-		since "4.7.0"
+		since "3.17.0"
 	}
 	field {
 		name "callBackIp"
 		desc "回调地址"
 		type "String"
-		since "4.7.0"
+		since "3.17.0"
 	}
 	field {
 		name "miimon"
@@ -86,7 +86,7 @@ doc {
 		name "type"
 		desc "Bond类型"
 		type "String"
-		since "4.7.0"
+		since "3.17.0"
 	}
 	field {
 		name "allSlavesActive"
@@ -98,7 +98,7 @@ doc {
 		name "description"
 		desc "资源的详细描述"
 		type "String"
-		since "4.7.0"
+		since "3.17.0"
 	}
 	field {
 		name "createDate"
