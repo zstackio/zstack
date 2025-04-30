@@ -10,23 +10,23 @@ doc {
 	ref {
 		name "results"
 		path "org.zstack.header.core.APIGetChainTaskReply.results"
-		desc "null"
+		desc "任务队列信息"
 		type "Map"
-		since "4.6.0"
+		since "3.16.0"
 		clz ChainInfo.class
 	}
 	field {
 		name "success"
-		desc ""
+		desc "请求是否成功"
 		type "boolean"
-		since "4.6.0"
+		since "3.16.0"
 	}
 	ref {
 		name "error"
 		path "org.zstack.header.core.APIGetChainTaskReply.error"
-		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
+		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null"
 		type "ErrorCode"
-		since "4.6.0"
+		since "3.16.0"
 		clz ErrorCode.class
 	}
 }

@@ -10,6 +10,6 @@ doc {
 		name "reloadConfig"
 		desc "支持重新加载配置"
 		type "boolean"
-		since "4.7.0"
+		since "3.17.0"
 	}
 }

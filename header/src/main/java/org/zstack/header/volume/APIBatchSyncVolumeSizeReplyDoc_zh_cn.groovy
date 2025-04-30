@@ -4,32 +4,32 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "批量刷新云盘容量返回"
+	title "批量刷新硬盘容量返回"
 
 	field {
 		name "successCount"
 		desc "成功数量"
 		type "int"
-		since "4.6.0"
+		since "3.16.0"
 	}
 	field {
 		name "failCount"
 		desc "失败数量"
 		type "int"
-		since "4.6.0"
+		since "3.16.0"
 	}
 	field {
 		name "success"
-		desc ""
+		desc "请求是否成功"
 		type "boolean"
-		since "4.6.0"
+		since "3.16.0"
 	}
 	ref {
 		name "error"
 		path "org.zstack.header.volume.APIBatchSyncVolumeSizeReply.error"
-		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
+		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null"
 		type "ErrorCode"
-		since "4.6.0"
+		since "3.16.0"
 		clz ErrorCode.class
 	}
 }

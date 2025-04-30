@@ -11,7 +11,7 @@ doc {
 		name "priority"
 		desc "安全组优先级"
 		type "Integer"
-		since "4.7.21"
+		since "3.17.21"
 	}
 	field {
 		name "vmNicUuid"

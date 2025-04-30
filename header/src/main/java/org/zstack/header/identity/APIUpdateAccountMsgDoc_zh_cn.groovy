@@ -78,7 +78,7 @@ doc {
 				column {
 					name "oldPassword"
 					enclosedIn "updateAccount"
-					desc ""
+					desc "原来使用的密码"
 					location "body"
 					type "String"
 					optional true

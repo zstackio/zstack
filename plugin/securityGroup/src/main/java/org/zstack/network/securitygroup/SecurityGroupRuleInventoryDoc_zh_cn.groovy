@@ -47,43 +47,43 @@ doc {
         name "priority"
         desc "规则优先级"
         type "Integer"
-        since "4.7.21"
+        since "3.17.21"
     }
 	field {
         name "description"
         desc "规则描述"
         type "String"
-        since "4.7.21"
+        since "3.17.21"
     }
 	field {
 		name "srcIpRange"
 		desc "源IP范围"
 		type "String"
-		since "4.7.21"
+		since "3.17.21"
 	}
 	field {
 		name "dstIpRange"
 		desc "目的IP范围"
 		type "String"
-		since "4.7.21"
+		since "3.17.21"
 	}
 	field {
 		name "srcPortRange"
 		desc "源端口范围，当前版本未实现"
 		type "String"
-		since "4.7.21"
+		since "3.17.21"
 	}
 	field {
 		name "dstPortRange"
 		desc "目的端口范围"
 		type "String"
-		since "4.7.21"
+		since "3.17.21"
 	}
 	field {
 		name "action"
 		desc "规则的默认动作"
 		type "String"
-		since "4.7.21"
+		since "3.17.21"
 	}
 	field {
 		name "remoteSecurityGroupUuid"
