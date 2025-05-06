@@ -37,7 +37,6 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeStats;
-import org.zstack.kvm.KVMGlobalConfig;
 import org.zstack.kvm.KVMHostVO;
 import org.zstack.kvm.KVMHostVO_;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -84,6 +83,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String DELETE_VOLUME_PATH = "/zbs/primarystorage/volume/delete";
     public static final String CLONE_VOLUME_PATH = "/zbs/primarystorage/volume/clone";
     public static final String QUERY_VOLUME_PATH = "/zbs/primarystorage/volume/query";
+    public static final String BATCH_QUERY_VOLUME_PATH = "/zbs/primarystorage/volume/query/batch";
     public static final String EXPAND_VOLUME_PATH = "/zbs/primarystorage/volume/expand";
     public static final String CBD_TO_NBD_PATH = "/zbs/primarystorage/volume/cbdtonbd";
     public static final String CLEAN_NBD_PATH = "/zbs/primarystorage/volume/cleannbd";
@@ -703,7 +703,28 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void batchStats(Collection<String> installPath, ReturnValueCompletion<List<VolumeStats>> comp) {
+        BatchQueryVolumeCmd cmd = new BatchQueryVolumeCmd();
+        cmd.setInstallPaths(installPath);
 
+        httpCall(BATCH_QUERY_VOLUME_PATH, cmd, BatchQueryVolumeRsp.class, new ReturnValueCompletion<BatchQueryVolumeRsp>(comp) {
+            @Override
+            public void success(BatchQueryVolumeRsp returnValue) {
+                List<VolumeStats> stats = returnValue.getVolumes().entrySet().stream().map(v -> {
+                    VolumeStats s = new VolumeStats();
+                    s.setInstallPath(v.getKey());
+                    s.setSize(v.getValue().get("length"));
+                    s.setActualSize(v.getValue().get("usedSize"));
+                    s.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+                    return s;
+                }).collect(Collectors.toList());
+                comp.success(stats);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                comp.fail(errorCode);
+            }
+        });
     }
 
     @Override
@@ -1166,6 +1187,18 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
     }
 
+    public static class BatchQueryVolumeRsp extends AgentResponse {
+        private Map<String, Map<String, Long>> volumes;
+
+        public Map<String, Map<String, Long>> getVolumes() {
+            return volumes;
+        }
+
+        public void setVolumes(Map<String, Map<String, Long>> volumes) {
+            this.volumes = volumes;
+        }
+    }
+
     public static class CbdToNbdRsp extends AgentResponse {
         private String ip;
         private int port;
@@ -1473,6 +1506,18 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         public void setLunName(String lunName) {
             this.lunName = lunName;
+        }
+    }
+
+    public static class BatchQueryVolumeCmd extends AgentCommand {
+        private Collection<String> installPaths;
+
+        public Collection<String> getInstallPaths() {
+            return installPaths;
+        }
+
+        public void setInstallPaths(Collection<String> installPaths) {
+            this.installPaths = installPaths;
         }
     }
 
