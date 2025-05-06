@@ -9,14 +9,14 @@ doc {
 
 	field {
 		name "success"
-		desc ""
+		desc "请求是否成功"
 		type "boolean"
-		since "0.6"
+		since "3.9"
 	}
 	ref {
 		name "error"
 		path "org.zstack.header.acl.APIAddAccessControlListEntryEvent.error"
-		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
+		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null"
 		type "ErrorCode"
 		since "3.9"
 		clz ErrorCode.class
@@ -24,7 +24,7 @@ doc {
 	ref {
 		name "inventory"
 		path "org.zstack.header.acl.APIAddAccessControlListEntryEvent.inventory"
-		desc "null"
+		desc "访问控制清单"
 		type "AccessControlListEntryInventory"
 		since "3.9"
 		clz AccessControlListEntryInventory.class
