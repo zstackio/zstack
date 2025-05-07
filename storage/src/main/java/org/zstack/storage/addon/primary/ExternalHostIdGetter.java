@@ -129,7 +129,7 @@ public class ExternalHostIdGetter {
                 vo.setStatus(PrimaryStorageHostStatus.Disconnected);
                 dbf.getEntityManager().persist(vo);
                 logger.debug(String.format(
-                        "new sharedblock group primary storage[%s] host[%s] ref created, allocated host id[%s]", psUuid, hostUuid, vo.getHostId()));
+                        "new external primary storage[%s] host[%s] ref created, allocated host id[%s]", psUuid, hostUuid, vo.getHostId()));
                 return hostId;
             } else if (vo.getHostId() != hostId) {
                 boolean exists = Q.New(ExternalPrimaryStorageHostRefVO.class)
