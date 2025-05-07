@@ -365,19 +365,24 @@ public class RestServer implements Component, CloudBusEventListener {
 
         if (d.apiMessage instanceof APIBatchRequest) {
             if (evt.isSuccess()) {
-                APIBatchRequest.Result batchResult = ((APIBatchRequest) d.apiMessage).collectResult(d.apiMessage, evt);
+                try {
+                    APIBatchRequest.Result batchResult = ((APIBatchRequest) d.apiMessage).collectResult(d.apiMessage, evt);
 
-                DebugUtils.Assert(batchResult != null, "APIBatchRequest.collectResult should not return null");
-                RestConstants.Batch result;
-                if (batchResult.getSuccessCount() == 0) {
-                    result = RestConstants.Batch.FAIL;
-                } else if (batchResult.getSuccessCount() == batchResult.getTotalCount()) {
-                    result = RestConstants.Batch.SUCCESS;
-                } else {
-                    result = RestConstants.Batch.PARTIAL;
+                    DebugUtils.Assert(batchResult != null, "APIBatchRequest.collectResult should not return null");
+                    RestConstants.Batch result;
+                    if (batchResult.getSuccessCount() == 0) {
+                        result = RestConstants.Batch.FAIL;
+                    } else if (batchResult.getSuccessCount() == batchResult.getTotalCount()) {
+                        result = RestConstants.Batch.SUCCESS;
+                    } else {
+                        result = RestConstants.Batch.PARTIAL;
+                    }
+
+                    rb.addHeader(RestConstants.HEADER_JOB_BATCH, result.toString());
+                } catch (Exception e) {
+                    logger.error(String.format("failed to collect batch result for %s", d.apiMessage.getId()), e);
+                    rb.addHeader(RestConstants.HEADER_JOB_BATCH, RestConstants.Batch.FAIL.toString());
                 }
-
-                rb.addHeader(RestConstants.HEADER_JOB_BATCH, result.toString());
             } else {
                 rb.addHeader(RestConstants.HEADER_JOB_BATCH, RestConstants.Batch.FAIL.toString());
             }
