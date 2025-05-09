@@ -121,7 +121,7 @@ public class APILogInMsg extends APISessionMessage implements APILoginAuditor {
         APILogInMsg msg = new APILogInMsg();
         msg.setUsername("admin");
         msg.setPassword("password");
-        msg.setLoginType("iam1");
+        msg.setLoginType("account");
         return msg;
     }
 }
