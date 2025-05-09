@@ -52,6 +52,7 @@
         <module>longjob</module>
         <module>resourceconfig</module>
         <module>plugin/iscsi</module>
+        <module>abstraction</module>
     </modules>
 
     <dependencyManagement>
