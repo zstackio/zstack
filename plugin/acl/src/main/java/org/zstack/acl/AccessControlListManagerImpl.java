@@ -411,6 +411,18 @@ public class AccessControlListManagerImpl extends AbstractService implements Acc
                 fchain.done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
+                        // Call extensions before deleting entries
+                        List<AccessControlListEntryVO> entries = Q.New(AccessControlListEntryVO.class)
+                                .eq(AccessControlListEntryVO_.aclUuid, aclVO.getUuid()).list();
+
+                        entries.forEach(entry -> {
+                            CollectionUtils.safeForEach(pluginRgty.getExtensionList(RefreshAccessControlListExtensionPoint.class),
+                                ext -> {
+                                    logger.debug(String.format("execute before del acl ip entry extension point %s", ext));
+                                    ext.beforeDeleteIpEntry(aclVO.toInventory(), entry.toInventory());
+                                });
+                        });
+
                         new SQLBatch() {
                             @Override
                             protected void scripts() {
@@ -419,6 +431,14 @@ public class AccessControlListManagerImpl extends AbstractService implements Acc
                                 if (!entrys.isEmpty()) {
                                     entrys.forEach( entry-> remove(entry));
                                 }
+                                // Call extensions after deleting entries
+                                entries.forEach(entry -> {
+                                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(RefreshAccessControlListExtensionPoint.class),
+                                        ext -> {
+                                            logger.debug(String.format("execute after del acl ip entry extension point %s", ext));
+                                            ext.afterDeleteIpEntry(aclVO.toInventory(), entry.toInventory());
+                                        });
+                                });
                                 remove(aclVO);
                             }
                         }.execute();

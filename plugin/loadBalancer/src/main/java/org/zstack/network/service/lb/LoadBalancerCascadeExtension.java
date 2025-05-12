@@ -75,31 +75,50 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
                 completion.success();
                 return;
             }
-
-            LoadBalancerListenerVO listenerVO = Q.New(LoadBalancerListenerVO.class).eq(LoadBalancerListenerVO_.uuid, refVOS.get(0).getListenerUuid()).find();
-            if (listenerVO.getLoadBalancerUuid() == null) {
+            List<String> refList = refVOS.stream().map(LoadBalancerListenerACLRefVO::getListenerUuid).collect(Collectors.toList());
+            List<LoadBalancerListenerVO> listenerVOList = Q.New(LoadBalancerListenerVO.class).in(LoadBalancerListenerVO_.uuid, refList).list();
+            if (listenerVOList.isEmpty()) {
                 completion.success();
                 return;
             }
-
-            RemoveAccessControlListFromLoadBalancerMsg msg = new RemoveAccessControlListFromLoadBalancerMsg();
-            msg.setLoadBalancerUuid(listenerVO.getLoadBalancerUuid());
-            msg.setAclUuids(Collections.singletonList(acl.getUuid()));
-            msg.setServerGroupUuids(refVOS.stream().filter(ref -> ref.getServerGroupUuid() != null).map(LoadBalancerListenerACLRefVO::getServerGroupUuid).collect(Collectors.toList()));
-            msg.setListenerUuid(listenerVO.getUuid());
-            bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, listenerVO.getLoadBalancerUuid());
-
-            bus.send(msg, new CloudBusCallBack(msg) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        completion.fail(reply.getError());
-                        return;
-                    }
-                    completion.success();
+            List<RemoveAccessControlListFromLoadBalancerMsg> msgs = new ArrayList<>();
+            listenerVOList.forEach(listenerVO -> {
+                if (listenerVO.getLoadBalancerUuid() == null) {
+                    return;
                 }
+                RemoveAccessControlListFromLoadBalancerMsg msg = new RemoveAccessControlListFromLoadBalancerMsg();
+                msg.setLoadBalancerUuid(listenerVO.getLoadBalancerUuid());
+                msg.setAclUuids(Collections.singletonList(acl.getUuid()));
+                msg.setServerGroupUuids(refVOS.stream().filter(ref -> ref.getServerGroupUuid() != null).map(LoadBalancerListenerACLRefVO::getServerGroupUuid).collect(Collectors.toList()));
+                msg.setListenerUuid(listenerVO.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, listenerVO.getLoadBalancerUuid());
+                msgs.add(msg);
             });
 
+            List<ErrorCode> errors = new ArrayList<>();
+            new While<>(msgs).each((msg, coml) -> {
+                bus.send(msg, new CloudBusCallBack(coml) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.warn(String.format("Failed to delete ACL[uuids:%s] from listener[uuid:%s] of load balancer[uuid:%s], error: %s",
+                                    msg.getAclUuids(), msg.getListenerUuid(), msg.getLoadBalancerUuid(), reply.getError()));
+                            errors.add(reply.getError());
+                        }
+                        coml.done();
+                    }
+                });
+            }).run(new WhileDoneCompletion(completion) {
+                @Override
+                public void done(ErrorCodeList errorCodeList) {
+                    if (!errors.isEmpty()) {
+                        errorCodeList.getCauses().addAll(errors);
+                        completion.fail(errorCodeList);
+                    } else {
+                        completion.success();
+                    }
+                }
+            });
             return;
         }
 
