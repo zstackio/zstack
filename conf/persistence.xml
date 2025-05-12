@@ -214,5 +214,6 @@
         <class>org.zstack.kvm.xmlhook.XmlHookVO</class>
         <class>org.zstack.kvm.xmlhook.XmlHookVmInstanceRefVO</class>
         <class>org.zstack.log.server.LogServerVO</class>
+        <class>org.zstack.header.network.l3.L3NetworkSequenceNumberVO</class>
     </persistence-unit>
 </persistence>

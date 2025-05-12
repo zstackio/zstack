@@ -102,10 +102,8 @@ public class SecurityGroupInventory {
      * @desc last time this resource gets operated
      */
     private Timestamp lastOpDate;
-    /**
-     * @ignore
-     */
-    @APINoSee
+
+
     private long internalId;
     /**
      * @desc

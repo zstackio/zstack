@@ -20,6 +20,14 @@ public class L3NetworkInventory  {
         return this.name;
     }
 
+    public java.lang.Integer internalId;
+    public void setInternalId(java.lang.Integer internalId) {
+        this.internalId = internalId;
+    }
+    public java.lang.Integer getInternalId() {
+        return this.internalId;
+    }
+
     public java.lang.String description;
     public void setDescription(java.lang.String description) {
         this.description = description;

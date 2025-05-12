@@ -125,7 +125,7 @@ public class NormalIpRangeFactory implements IpRangeFactory {
                     return;
                 }
 
-                sdnDhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(l3vo)), false, new Completion(trigger) {
+                sdnDhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(l3vo)), new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();

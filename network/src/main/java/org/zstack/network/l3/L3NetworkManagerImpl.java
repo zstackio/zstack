@@ -177,7 +177,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     return;
                 }
 
-                dhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(l3Vo)), false, new Completion(trigger) {
+                dhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(l3Vo)), new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -520,6 +520,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         } else {
             vo.setIpVersion(IPv6Constants.IPv4);
         }
+        vo.setInternalId((int)dbf.generateSequenceNumber(L3NetworkSequenceNumberVO.class));
 
         L3NetworkFactory factory = getL3NetworkFactory(L3NetworkType.valueOf(msg.getType()));
         L3NetworkInventory inv = new SQLBatchWithReturn<L3NetworkInventory>() {

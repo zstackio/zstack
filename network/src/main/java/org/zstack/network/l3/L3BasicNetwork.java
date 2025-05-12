@@ -1126,7 +1126,7 @@ public class L3BasicNetwork implements L3Network {
                             return;
                         }
 
-                        sdnDhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(self)), false, new Completion(trigger) {
+                        sdnDhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(self)), new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -1244,7 +1244,7 @@ public class L3BasicNetwork implements L3Network {
                             return;
                         }
 
-                        sdnDhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(self)), false, new Completion(trigger) {
+                        sdnDhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(self)), new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
