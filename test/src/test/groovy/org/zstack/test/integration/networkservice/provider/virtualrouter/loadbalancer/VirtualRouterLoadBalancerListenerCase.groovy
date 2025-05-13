@@ -147,6 +147,11 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
                     name = "lb"
                     useVip("pubL3")
                 }
+
+                lb {
+                    name = "lb2"
+                    useVip("pubL3")
+                }
             }
 
             vm {
@@ -182,6 +187,7 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             testOperateLBRedirectRuleCase()
             testValidateLBRedirectAclCase()
             testOperateLBRedirectAclCase()
+            testDeleteAclWithMultipleListenersCase()
         }
     }
 
@@ -1303,6 +1309,97 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         //tokens = LoadBalancerSystemTags.BALANCER_WEIGHT.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
         //assert tokens == null || tokens.isEmpty()
 
+    }
+
+    private void testDeleteAclWithMultipleListenersCase() {
+        def load = env.inventoryByName("lb2") as LoadBalancerInventory
+        def vm = env.inventoryByName("vm") as VmInstanceInventory
+        def l3 = env.inventoryByName("l3") as L3NetworkInventory
+        VirtualRouterLoadBalancerBackend.RefreshLbCmd cmd = null
+        int refreshCount = 0
+        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, VirtualRouterLoadBalancerBackend.RefreshLbCmd.class)
+            refreshCount++
+            return rsp
+        }
+
+        // Create multiple listeners associated with the same load balancer
+        List<LoadBalancerListenerInventory> listeners = new ArrayList<>()
+        int listenerCount = 3 // Create 3 listeners to ensure multiple associations
+        for (int i = 0; i < listenerCount; i++) {
+            CreateLoadBalancerListenerAction listenerAction = new CreateLoadBalancerListenerAction()
+            listenerAction.loadBalancerUuid = load.uuid
+            listenerAction.name = "listener-${i}"
+            listenerAction.loadBalancerPort = 9000 + i
+            listenerAction.instancePort = 9000 + i
+            listenerAction.protocol = "udp"
+            listenerAction.sessionId = adminSession()
+            CreateLoadBalancerListenerAction.Result lblRes = listenerAction.call()
+            assert lblRes.error == null
+            listeners.add(lblRes.value.inventory)
+
+            // Add VM NIC to each listener to ensure backend server group exists
+            addVmNicToLoadBalancer {
+                vmNicUuids = [vm.vmNics.find { nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
+                listenerUuid = lblRes.value.inventory.uuid
+            }
+        }
+
+        // Create an ACL
+        AccessControlListInventory acl = createAccessControlList {
+            name = "acl-multi-listeners"
+        }
+        addAccessControlListEntry {
+            aclUuid = acl.uuid
+            entries = "192.168.0.1,192.168.1.0/24"
+        }
+
+        // Associate the ACL with all listeners
+        listeners.each { listener ->
+            addAccessControlListToLoadBalancer {
+                aclUuids = [acl.uuid]
+                aclType = LoadBalancerAclType.black.toString()
+                listenerUuid = listener.uuid
+            }
+        }
+
+        // Verify that ACL is associated with all listeners
+        listeners.each { listener ->
+            def refs = Q.New(LoadBalancerListenerACLRefVO.class)
+                    .eq(LoadBalancerListenerACLRefVO_.listenerUuid, listener.uuid)
+                    .eq(LoadBalancerListenerACLRefVO_.aclUuid, acl.uuid)
+                    .list()
+            assert refs.size() == 1
+        }
+
+        // Delete the ACL and verify all associations are removed
+        cmd = null
+        refreshCount = 0
+        deleteAccessControlList {
+            uuid = acl.uuid
+        }
+
+        // Retry to ensure the deletion operation is completed and messages are sent
+        retryInSecs {
+            assert cmd != null
+            assert cmd.lbs.size() == listenerCount
+            assert refreshCount == listenerCount
+        }
+
+        // Verify that all LoadBalancerListenerACLRefVO records are removed
+        listeners.each { listener ->
+            def refs = Q.New(LoadBalancerListenerACLRefVO.class)
+                    .eq(LoadBalancerListenerACLRefVO_.listenerUuid, listener.uuid)
+                    .eq(LoadBalancerListenerACLRefVO_.aclUuid, acl.uuid)
+                    .list()
+            assert refs.isEmpty()
+        }
+
+        // Verify that AccessControlListEntryVO records are also removed
+        def entries = Q.New(AccessControlListEntryVO.class)
+                .eq(AccessControlListEntryVO_.aclUuid, acl.uuid)
+                .list()
+        assert entries.isEmpty()
     }
 
     @Override
