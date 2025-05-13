@@ -44,7 +44,7 @@ public class CronJobImpl extends AbstractLocalExternalService implements CronJob
             protected void scripts() {
                 setE();
 
-                run("service crond start");
+                sudoRun("service crond start");
             }
         }.execute();
     }
@@ -70,7 +70,7 @@ public class CronJobImpl extends AbstractLocalExternalService implements CronJob
             protected void scripts() {
                 setE();
 
-                run("service crond reload");
+                sudoRun("service crond reload");
             }
         }.execute();
     }
@@ -86,7 +86,7 @@ public class CronJobImpl extends AbstractLocalExternalService implements CronJob
             protected void scripts() {
                 setE();
 
-                run("crontab -l");
+                sudoRun("crontab -l");
 
                 Set<String> jobs = new HashSet<>();
                 Collections.addAll(jobs, stdout().split("\n"));
@@ -99,7 +99,7 @@ public class CronJobImpl extends AbstractLocalExternalService implements CronJob
                     throw new CloudRuntimeException(e);
                 }
 
-                run("crontab %s", tmpJobFile.getAbsolutePath());
+                sudoRun("crontab %s", tmpJobFile.getAbsolutePath());
             }
         }.execute();
     }
