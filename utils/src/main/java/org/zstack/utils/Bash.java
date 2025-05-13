@@ -132,16 +132,16 @@ public abstract class Bash {
     }
 
     protected int run(String cmd, Object...args) {
-        return run(cmd, true, args);
+        return runFormat(cmd, args);
     }
 
-    protected int run(String cmd, boolean sudo, Object...args) {
+    protected int runFormat(String cmd, Object... args) {
         if (args != null) {
             cmd = String.format(cmd, args);
         }
 
         lastCommand = cmd;
-        ShellResult res = ShellUtils.runAndReturn(cmd, sudo);
+        ShellResult res = ShellUtils.runAndReturn(cmd, false);
         lastReturnCode = res.getRetCode();
         lastStdout = res.getStdout();
         lastStderr = res.getStderr();
@@ -153,11 +153,15 @@ public abstract class Bash {
         return lastReturnCode;
     }
 
+    protected int sudoRun(String cmd, Object... args) {
+        return sudoRunFormat(cmd, args);
+    }
+
     /**
      * ex: sudoRun("tar", "-xf", path)      => run("tar -xf %s", path)     => tar -xf $your_path
      * ex: sudoRun("cat", "error code.txt") => run("cat error\\ code.txt") => cat error\ code.txt
      */
-    protected int sudoRun(Object... cmdScripts) {
+    protected int sudoRunScripts(Object... cmdScripts) {
         List<String> tos = new ArrayList<>(cmdScripts.length);
         for (Object cmd : cmdScripts) {
             if (cmd instanceof Script) {
@@ -166,7 +170,25 @@ public abstract class Bash {
                 tos.add(Script.escapeCmd(cmd.toString()));
             }
         }
-        return run(String.join(" ", tos), true, new Object[0]);
+        return sudoRunFormat(String.join(" ", tos));
+    }
+
+    protected int sudoRunFormat(String cmd, Object... args) {
+        if (args != null && args.length > 0) {
+            cmd = String.format(cmd, args);
+        }
+
+        lastCommand = cmd;
+        ShellResult res = ShellUtils.runAndReturn(cmd, true);
+        lastReturnCode = res.getRetCode();
+        lastStdout = res.getStdout();
+        lastStderr = res.getStderr();
+
+        if (SET_E) {
+            errorOnFailure();
+        }
+
+        return lastReturnCode;
     }
 
     protected void errorOnFailure() {
