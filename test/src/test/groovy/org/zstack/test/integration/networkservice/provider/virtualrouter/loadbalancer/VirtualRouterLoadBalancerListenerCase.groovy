@@ -1136,6 +1136,12 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         AccessControlListInventory acl8 = createAccessControlList {
             name = "redirect-acl-test-7-8"
         }
+
+        acl8 = updateAccessControlList {
+            uuid = acl8.uuid
+            name = "redirect-acl-test-7-8-update"
+            description = "redirect-acl-test-7-8-update"
+        }
         AccessControlListEntryInventory redirectRule3 = addAccessControlListRedirectRule {
             name = "redirect rule"
             domain = "*.zstack.io"
