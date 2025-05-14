@@ -1,0 +1,76 @@
+package org.zstack.header.acl
+
+import org.zstack.header.acl.APIUpdateAccessControlListEvent
+
+doc {
+    title "UpdateAccessControlList"
+
+    category "acl"
+
+    desc """更新访问控制策略组"""
+
+    rest {
+        request {
+			url "PUT /v1/access-control-lists/{uuid}/actions"
+
+			header (Authorization: 'OAuth the-session-uuid')
+
+            clz APIUpdateAccessControlListMsg.class
+
+            desc """用于更新指定UUID的访问控制策略组的名称和描述"""
+            
+			params {
+
+				column {
+					name "uuid"
+					enclosedIn "updateAccessControlList"
+					desc "资源的UUID，唯一标示该资源"
+					location "url"
+					type "String"
+					optional false
+					since "5.3.28"
+				}
+				column {
+					name "name"
+					enclosedIn "updateAccessControlList"
+					desc "资源名称"
+					location "body"
+					type "String"
+					optional true
+					since "5.3.28"
+				}
+				column {
+					name "description"
+					enclosedIn "updateAccessControlList"
+					desc "资源的详细描述"
+					location "body"
+					type "String"
+					optional true
+					since "5.3.28"
+				}
+				column {
+					name "systemTags"
+					enclosedIn ""
+					desc "系统标签"
+					location "body"
+					type "List"
+					optional true
+					since "5.3.28"
+				}
+				column {
+					name "userTags"
+					enclosedIn ""
+					desc "用户标签"
+					location "body"
+					type "List"
+					optional true
+					since "5.3.28"
+				}
+			}
+        }
+
+        response {
+            clz APIUpdateAccessControlListEvent.class
+        }
+    }
+}
