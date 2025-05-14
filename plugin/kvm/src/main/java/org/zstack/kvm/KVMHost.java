@@ -6803,7 +6803,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(GetSensorsResponse rsp) {
                 if (!rsp.isSuccess()) {
-                    reply.setError(operr("failed to get block devices, because:%s", rsp.getError()));
+                    reply.setError(operr("failed to get sensors info, because:%s", rsp.getError()));
                     bus.reply(msg, reply);
                     completion.done();
                     return;
