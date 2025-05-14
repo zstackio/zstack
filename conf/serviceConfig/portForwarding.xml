@@ -36,4 +36,8 @@
         <name>org.zstack.network.service.portforwarding.APIUpdatePortForwardingRuleMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.network.service.portforwarding.APIChangePortForwardingRuleMsg</name>
+    </message>
+
 </service>
