@@ -167,6 +167,8 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             handle((APIGetPortForwardingAttachableVmNicsMsg) msg);
         } else if (msg instanceof APIUpdatePortForwardingRuleMsg) {
             handle((APIUpdatePortForwardingRuleMsg) msg);
+        } else if (msg instanceof APIChangePortForwardingRuleMsg) {
+            handle((APIChangePortForwardingRuleMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -400,6 +402,63 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             public void success() {
                 PortForwardingRuleVO prvo = dbf.reload(vo);
                 evt.setInventory(PortForwardingRuleInventory.valueOf(prvo));
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(APIChangePortForwardingRuleMsg msg) {
+        APIChangePortForwardingRuleEvent evt = new APIChangePortForwardingRuleEvent(msg.getId());
+
+        boolean update = false;
+        PortForwardingRuleVO vo = dbf.findByUuid(msg.getUuid(), PortForwardingRuleVO.class);
+
+        if (msg.getAllowedCidr() != null && !msg.getAllowedCidr().equals(vo.getAllowedCidr())) {
+            if (msg.getAllowedCidr().isEmpty()) {
+                vo.setAllowedCidr(null);
+            } else {
+                vo.setAllowedCidr(msg.getAllowedCidr());
+            }
+
+            update = true;
+        }
+
+        if (!update) {
+            evt.setInventory(PortForwardingRuleInventory.valueOf(vo));
+            bus.publish(evt);
+            return;
+        }
+
+        vo = dbf.updateAndRefresh(vo);
+        PortForwardingRuleInventory inv = PortForwardingRuleInventory.valueOf(vo);
+        // no vmnic is bound
+        if (vo.getVmNicUuid() == null) {
+            evt.setInventory(inv);
+            bus.publish(evt);
+            return;
+        }
+
+        VmNicVO nicvo = dbf.findByUuid(vo.getVmNicUuid(), VmNicVO.class);
+        L3NetworkVO nicL3Vo = dbf.findByUuid(nicvo.getL3NetworkUuid(), L3NetworkVO.class);
+        VmInstanceState vmState = getVmStateFromVmNicUuid(vo.getVmNicUuid());
+        if (VmInstanceState.Running != vmState && l3Mgr.applyNetworkServiceWhenVmStateChange(nicL3Vo.getType())) {
+            evt.setInventory(inv);
+            bus.publish(evt);
+            return;
+        }
+
+        final PortForwardingStruct struct = makePortForwardingStruct(inv);
+        final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(struct.getGuestL3Network().getUuid(), NetworkServiceType.PortForwarding);
+        attachPortForwardingRule(struct, providerType.toString(), new Completion(msg) {
+            @Override
+            public void success() {
+                evt.setInventory(inv);
                 bus.publish(evt);
             }
 

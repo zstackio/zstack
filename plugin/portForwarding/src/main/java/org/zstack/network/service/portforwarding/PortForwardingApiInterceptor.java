@@ -55,9 +55,24 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
             validate((APIDetachPortForwardingRuleMsg) msg);
         } else if (msg instanceof APIGetPortForwardingAttachableVmNicsMsg) {
             validate((APIGetPortForwardingAttachableVmNicsMsg) msg);
+        } else if (msg instanceof APIChangePortForwardingRuleMsg) {
+            validate((APIChangePortForwardingRuleMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APIChangePortForwardingRuleMsg msg) {
+        // TODO: add ipv6 portforwarding
+        if (msg.getAllowedCidr() != null && !msg.getAllowedCidr().isEmpty()) {
+            String[] cidrs = msg.getAllowedCidr().split(",");
+            for (String cidr : cidrs) {
+                if (!NetworkUtils.isCidr(cidr, IPv6Constants.IPv4)) {
+                    throw new ApiMessageInterceptionException(argerr("could not change portforwarding rule[uuid:%s] because wrong cidr: %s",
+                            msg.getUuid(), cidr));
+                }
+            }
+        }
     }
 
     private void validate(APIGetPortForwardingAttachableVmNicsMsg msg) {
@@ -190,10 +205,13 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getAllowedCidr() != null) {
-            if (!NetworkUtils.isCidr(msg.getAllowedCidr())) {
-                throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s]", msg.getAllowedCidr()));
-            } else if (!NetworkUtils.isCidr(msg.getAllowedCidr(), IPv6Constants.IPv4)) {
-                throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s], only ipv4 is supported", msg.getAllowedCidr()));
+            String[] cidrs = msg.getAllowedCidr().split(",");
+            for (String cidr : cidrs) {
+                if (!NetworkUtils.isCidr(cidr)) {
+                    throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s]", msg.getAllowedCidr()));
+                } else if (!NetworkUtils.isCidr(cidr, IPv6Constants.IPv4)) {
+                    throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s], only ipv4 is supported", msg.getAllowedCidr()));
+                }
             }
         }
 
