@@ -188,6 +188,7 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             testValidateLBRedirectAclCase()
             testOperateLBRedirectAclCase()
             testDeleteAclWithMultipleListenersCase()
+            testAclStatusRollbackCase()
         }
     }
 
@@ -1406,6 +1407,49 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
                 .eq(AccessControlListEntryVO_.aclUuid, acl.uuid)
                 .list()
         assert entries.isEmpty()
+    }
+
+    void testAclStatusRollbackCase() {
+        def lb = env.inventoryByName("lb") as LoadBalancerInventory
+        def vm = env.inventoryByName("vm") as VmInstanceInventory
+        def vm2 = env.inventoryByName("vm2") as VmInstanceInventory
+        def l3 = env.inventoryByName("l3") as L3NetworkInventory
+        def _name = "testacl"
+
+        CreateLoadBalancerListenerAction listenerAction = new CreateLoadBalancerListenerAction()
+        listenerAction.loadBalancerUuid = lb.uuid
+        listenerAction.name = _name
+        listenerAction.loadBalancerPort = 8080
+        listenerAction.instancePort = 8080
+        listenerAction.protocol = "http"
+        listenerAction.sessionId = adminSession()
+        CreateLoadBalancerListenerAction.Result createRes = listenerAction.call()
+        assert createRes.error == null
+        def listenerUuid_lb = createRes.value.inventory.uuid
+
+        List<String> nicUuids = [vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid, vm2.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
+        addVmNicToLoadBalancer {
+            vmNicUuids = nicUuids
+            listenerUuid = listenerUuid_lb
+        }
+
+        def oldAclStatus = LoadBalancerSystemTags.BALANCER_ACL.getTokenByResourceUuid(listenerUuid_lb, LoadBalancerSystemTags.BALANCER_ACL_TOKEN)
+        assert oldAclStatus == "disable"
+
+        env.simulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+            VirtualRouterLoadBalancerBackend.RefreshLbRsp rspFail = new VirtualRouterLoadBalancerBackend.RefreshLbRsp()
+            rspFail.setError("Acl refresh failed")
+            rspFail.setSuccess(false)
+            return rspFail
+        }
+
+        ChangeLoadBalancerListenerAction changeAction = new ChangeLoadBalancerListenerAction()
+        changeAction.uuid = listenerUuid_lb
+        changeAction.aclStatus = LoadBalancerAclStatus.enable.toString()
+        changeAction.sessionId = adminSession()
+        ChangeLoadBalancerListenerAction.Result changeRes = changeAction.call()
+        def rollbackedStatus = LoadBalancerSystemTags.BALANCER_ACL.getTokenByResourceUuid(listenerUuid_lb, LoadBalancerSystemTags.BALANCER_ACL_TOKEN)
+        assert rollbackedStatus == "disable"
     }
 
     @Override
