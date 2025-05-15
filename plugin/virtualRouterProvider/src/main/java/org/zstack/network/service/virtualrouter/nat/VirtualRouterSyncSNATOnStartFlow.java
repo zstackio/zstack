@@ -93,13 +93,13 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
         List<VmNicInventory> pubNics = new ArrayList<>();
         pubNics.add(vr.getPublicNic());
         pubNics.addAll(vr.getAdditionalPublicNics());
-        String whileList = null;
+        String whiteList = null;
         for(VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
-            whileList = ext.getSNATWhileList(vr.getUuid());
+            whiteList = ext.getSNATWhiteList(vr.getUuid());
         }
-        if (whileList == null || whileList.equals("null")) {
+        if (whiteList == null || whiteList.equals("null")) {
             for(VirtualRouterSNATExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterSNATExtensionPoint.class)) {
-                whileList = ext.getSNATWhileList(vr.getUuid());
+                whiteList = ext.getSNATWhiteList(vr.getUuid());
             }
         }
         for (VmNicInventory pubNic : pubNics) {
@@ -122,7 +122,7 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
                     } else {
                         info.setState(Boolean.FALSE);
                     }
-                    info.setWhileList(whileList);
+                    info.setWhiteList(whiteList);
                     snatInfo.add(info);
                 }
             }
