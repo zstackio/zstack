@@ -183,7 +183,6 @@
 
 	<property name="applyPortForwardingRuleElements">
             <list>
-                <value>org.zstack.network.service.virtualrouter.portforwarding.PortForwardingOpenVirtualRouterFirewallFlow</value>
                 <value>org.zstack.network.service.virtualrouter.portforwarding.ApplyPortforwardingRuleOnVirtualRouterVmFlow</value>
             </list>
         </property>
@@ -191,7 +190,6 @@
         <property name="releasePortForwardingRuleElements">
             <list>
                 <value>org.zstack.network.service.virtualrouter.portforwarding.ReleasePortForwardingRuleOnVirtualRouterVmFlow</value>
-                <value>org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRemoveVirtualRouterFirewallFlow</value>
             </list>
         </property>
     </bean>

@@ -71,10 +71,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
                     if (NetworkUtils.isCidr(cidr, IPv6Constants.IPv4)) {
                         continue;
                     }
-                    if (NetworkUtils.isCidr(cidr, IPv6Constants.IPv6)) {
-                        continue;
-                    }
-                    if (NetworkUtils.isValidIPAddress(cidr)) {
+                    if (NetworkUtils.isIpv4Address(cidr)) {
                         continue;
                     }
                     throw new ApiMessageInterceptionException(argerr("could not change portforwarding rule[uuid:%s] because wrong cidr: %s",
@@ -82,9 +79,6 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
                 } else {
                     String[] ips = cidr.split("-");
                     if (NetworkUtils.isValidIpv4Range(ips[0], ips[1])) {
-                        continue;
-                    }
-                    if (IPv6NetworkUtils.isValidIpRange(ips[0], ips[1])) {
                         continue;
                     }
                     throw new ApiMessageInterceptionException(argerr("could not change portforwarding rule[uuid:%s] because wrong ip range: %s",
@@ -230,9 +224,6 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
                     if (NetworkUtils.isCidr(cidr, IPv6Constants.IPv4)) {
                         continue;
                     }
-                    if (NetworkUtils.isCidr(cidr, IPv6Constants.IPv6)) {
-                        continue;
-                    }
                     if (NetworkUtils.isValidIPAddress(cidr)) {
                         continue;
                     }
@@ -241,9 +232,6 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
                 } else {
                     String[] ips = cidr.split("-");
                     if (NetworkUtils.isValidIpv4Range(ips[0], ips[1])) {
-                        continue;
-                    }
-                    if (IPv6NetworkUtils.isValidIpRange(ips[0], ips[1])) {
                         continue;
                     }
                     throw new ApiMessageInterceptionException(argerr("could not create portforwarding rule because wrong ip range: %s", cidr));
