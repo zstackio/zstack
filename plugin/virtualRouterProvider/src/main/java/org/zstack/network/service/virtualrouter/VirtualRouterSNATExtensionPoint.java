@@ -7,5 +7,5 @@ import org.zstack.header.message.MessageReply;
  * @date: 2025-05-13
  **/
 public interface VirtualRouterSNATExtensionPoint {
-    String getSNATWhileList(String vrUuid);
+    String getSNATWhiteList(String vrUuid);
 }
