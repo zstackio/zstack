@@ -22,6 +22,7 @@ import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.vip.*;
 import org.zstack.utils.VipUseForList;
 import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
@@ -63,12 +64,30 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIChangePortForwardingRuleMsg msg) {
-        // TODO: add ipv6 portforwarding
         if (msg.getAllowedCidr() != null && !msg.getAllowedCidr().isEmpty()) {
             String[] cidrs = msg.getAllowedCidr().split(",");
             for (String cidr : cidrs) {
-                if (!NetworkUtils.isCidr(cidr, IPv6Constants.IPv4)) {
+                if (!cidr.contains("-")) {
+                    if (NetworkUtils.isCidr(cidr, IPv6Constants.IPv4)) {
+                        continue;
+                    }
+                    if (NetworkUtils.isCidr(cidr, IPv6Constants.IPv6)) {
+                        continue;
+                    }
+                    if (NetworkUtils.isValidIPAddress(cidr)) {
+                        continue;
+                    }
                     throw new ApiMessageInterceptionException(argerr("could not change portforwarding rule[uuid:%s] because wrong cidr: %s",
+                            msg.getUuid(), cidr));
+                } else {
+                    String[] ips = cidr.split("-");
+                    if (NetworkUtils.isValidIpv4Range(ips[0], ips[1])) {
+                        continue;
+                    }
+                    if (IPv6NetworkUtils.isValidIpRange(ips[0], ips[1])) {
+                        continue;
+                    }
+                    throw new ApiMessageInterceptionException(argerr("could not change portforwarding rule[uuid:%s] because wrong ip range: %s",
                             msg.getUuid(), cidr));
                 }
             }
@@ -207,10 +226,27 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         if (msg.getAllowedCidr() != null) {
             String[] cidrs = msg.getAllowedCidr().split(",");
             for (String cidr : cidrs) {
-                if (!NetworkUtils.isCidr(cidr)) {
-                    throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s]", msg.getAllowedCidr()));
-                } else if (!NetworkUtils.isCidr(cidr, IPv6Constants.IPv4)) {
-                    throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s], only ipv4 is supported", msg.getAllowedCidr()));
+                if (!cidr.contains("-")) {
+                    if (NetworkUtils.isCidr(cidr, IPv6Constants.IPv4)) {
+                        continue;
+                    }
+                    if (NetworkUtils.isCidr(cidr, IPv6Constants.IPv6)) {
+                        continue;
+                    }
+                    if (NetworkUtils.isValidIPAddress(cidr)) {
+                        continue;
+                    }
+                    throw new ApiMessageInterceptionException(argerr("could not create portforwarding rule because wrong cidr: %s",
+                            cidr));
+                } else {
+                    String[] ips = cidr.split("-");
+                    if (NetworkUtils.isValidIpv4Range(ips[0], ips[1])) {
+                        continue;
+                    }
+                    if (IPv6NetworkUtils.isValidIpRange(ips[0], ips[1])) {
+                        continue;
+                    }
+                    throw new ApiMessageInterceptionException(argerr("could not create portforwarding rule because wrong ip range: %s", cidr));
                 }
             }
         }

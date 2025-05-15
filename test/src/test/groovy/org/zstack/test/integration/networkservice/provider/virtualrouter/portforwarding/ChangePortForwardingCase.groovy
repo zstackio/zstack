@@ -177,14 +177,7 @@ class ChangePortForwardingCase extends SubCase {
         expect(AssertionError.class) {
             changePortForwardingRule {
                 uuid = portForwarding.uuid
-                allowedCidr = "192.168.1.0"
-            }
-        }
-
-        expect(AssertionError.class) {
-            changePortForwardingRule {
-                uuid = portForwarding.uuid
-                allowedCidr = "192.168.1.10-192.168.1.11"
+                allowedCidr = "192.168.1.20-192.168.1.11"
             }
         }
 
@@ -195,12 +188,13 @@ class ChangePortForwardingCase extends SubCase {
             }
         }
 
+        String cidr = "192.168.1.0/24"
         portForwarding = changePortForwardingRule {
             uuid = portForwarding.uuid
-            allowedCidr = "192.168.1.0/24"
+            allowedCidr = cidr
         }
         assert cmd == null
-        assert portForwarding.allowedCidr == "192.168.1.0/24"
+        assert portForwarding.allowedCidr == cidr
 
         portForwarding = changePortForwardingRule {
             uuid = portForwarding.uuid
@@ -209,9 +203,10 @@ class ChangePortForwardingCase extends SubCase {
         assert cmd == null
         assert portForwarding.allowedCidr == null
 
+        cidr = "192.168.1.0/24,192.168.2.100,192.168.3.100-192.168.3.200"
         portForwarding = changePortForwardingRule {
             uuid = portForwarding.uuid
-            allowedCidr = "192.168.2.0/24"
+            allowedCidr = cidr
         }
 
         attachPortForwardingRule {
@@ -221,17 +216,19 @@ class ChangePortForwardingCase extends SubCase {
         assert cmd != null
         assert cmd.rules.size() == 1
         PortForwardingRuleTO to = cmd.rules.get(0)
-        assert to.allowedCidr == "192.168.2.0/24"
+        assert to.allowedCidr == cidr
 
+        cidr = ""
         portForwarding = changePortForwardingRule {
             uuid = portForwarding.uuid
-            allowedCidr = ""
+            allowedCidr = cidr
         }
         assert cmd != null
         assert cmd.rules.size() == 1
         to = cmd.rules.get(0)
         assert to.allowedCidr == null
 
+        cidr = "10.1.0.0/16"
         PortForwardingRuleInventory pf1 = createPortForwardingRule {
             name = "pf-1"
             vipUuid = vip.uuid
@@ -241,16 +238,17 @@ class ChangePortForwardingCase extends SubCase {
             privatePortStart = 100
             protocolType = PortForwardingProtocolType.UDP.toString()
             vmNicUuid = vm.getVmNics().get(0).uuid
-            allowedCidr = "10.1.0.0/16"
+            allowedCidr = cidr
         }
         assert cmd != null
         assert cmd.rules.size() == 1
         to = cmd.rules.get(0)
-        assert to.allowedCidr == "10.1.0.0/16"
+        assert to.allowedCidr == cidr
 
+        cidr = ""
         pf1 = changePortForwardingRule {
             uuid = pf1.uuid
-            allowedCidr = ""
+            allowedCidr = cidr
         }
         assert cmd != null
         assert cmd.rules.size() == 1
