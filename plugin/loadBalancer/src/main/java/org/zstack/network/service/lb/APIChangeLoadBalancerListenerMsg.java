@@ -62,7 +62,7 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     @APIParam(numberRange = {LoadBalancerConstants.NUMBER_OF_PROCESS_MIN, LoadBalancerConstants.NUMBER_OF_PROCESS_MAX}, required = false)
     private Integer nbprocess;
 
-    @APIParam(validValues = {"http-keep-alive", "http-server-close", "http-tunnel", "httpclose", "forceclose"}, required = false)
+    @APIParam(validValues = {"http-keep-alive", "http-server-close", "httpclose"}, required = false)
     private String httpMode;
 
     @APIParam(validValues = {"disable", "iphash", "insert", "rewrite"}, required = false)

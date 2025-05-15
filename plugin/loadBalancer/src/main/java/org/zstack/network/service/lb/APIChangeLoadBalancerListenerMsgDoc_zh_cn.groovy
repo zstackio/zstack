@@ -169,7 +169,7 @@ doc {
 					type "String"
 					optional true
 					since "4.1"
-					values ("http-keep-alive","http-server-close","http-tunnel","httpclose","forceclose")
+					values ("http-keep-alive","http-server-close","httpclose")
 				}
 				column {
 					name "sessionPersistence"

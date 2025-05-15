@@ -70,7 +70,7 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,64L}, noTrim = false)
     public java.lang.Integer nbprocess;
 
-    @Param(required = false, validValues = {"http-keep-alive","http-server-close","http-tunnel","httpclose","forceclose"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"http-keep-alive","http-server-close","httpclose"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String httpMode;
 
     @Param(required = false, validValues = {"disable","iphash","insert","rewrite"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

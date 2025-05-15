@@ -489,9 +489,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
                 List<String> httpModes = new ArrayList<>(Arrays.asList("http-keep-alive",
                                                                         "http-server-close",
-                                                                        "http-tunnel",
-                                                                        "httpclose",
-                                                                        "forceclose"));
+                                                                        "httpclose"));
                 if (!httpModes.contains(value)) {
                     throw new GlobalConfigException(String.format("%s must be in %s",
                             LoadBalancerGlobalConfig.HTTP_MODE.getName(),String.join(", ",httpModes)));
