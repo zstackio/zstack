@@ -156,6 +156,15 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         pubNics.add(vr.getPublicNic());
         pubNics.addAll(vr.getAdditionalPublicNics());
 
+        String whileList = null;
+        for(VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            whileList = ext.getSNATWhileList(vrUuid);
+        }
+        if (whileList == null || whileList.equals("null")) {
+            for(VirtualRouterSNATExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterSNATExtensionPoint.class)) {
+                whileList = ext.getSNATWhileList(vrUuid);
+            }
+        }
         for (VmNicInventory pubNic : pubNics) {
             if (pubNic.isIpv6OnlyNic()) {
                 continue;
@@ -173,6 +182,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
             info.setPublicNicMac(pubNic.getMac());
             info.setSnatNetmask(privateNic.getNetmask());
             info.setPrivateGatewayIp(privateNic.getGateway());
+            info.setWhileList(whileList);
             snatInfo.add(info);
         }
 
@@ -249,6 +259,15 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         }
 
         final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<VirtualRouterCommands.SNATInfo>();
+        String whileList = null;
+        for(VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            whileList = ext.getSNATWhileList(vrUuid);
+        }
+        if (whileList == null || whileList.equals("null")) {
+            for(VirtualRouterSNATExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterSNATExtensionPoint.class)) {
+                whileList = ext.getSNATWhileList(vrUuid);
+            }
+        }
         for (VmNicInventory priNic : vr.getGuestNics()) {
             if (priNic.isIpv6OnlyNic()) {
                 continue;
@@ -262,6 +281,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
             info.setPublicNicMac(publicNic.getMac());
             info.setSnatNetmask(priNic.getNetmask());
             info.setPrivateGatewayIp(priNic.getGateway());
+            info.setWhileList(whileList);
             snatInfo.add(info);
         }
 
@@ -362,7 +382,15 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         List<VmNicInventory> pubNics = new ArrayList<>();
         pubNics.add(vr.getPublicNic());
         pubNics.addAll(vr.getAdditionalPublicNics());
-
+        String whileList = null;
+        for(VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            whileList = ext.getSNATWhileList(vr.getUuid());
+        }
+        if (whileList == null || whileList.equals("null")) {
+            for(VirtualRouterSNATExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterSNATExtensionPoint.class)) {
+                whileList = ext.getSNATWhileList(vr.getUuid());
+            }
+        }
         for (VmNicInventory pubnic : pubNics) {
             if (pubnic.isIpv6OnlyNic()) {
                 continue;
@@ -386,6 +414,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 } else {
                     info.setState(Boolean.FALSE);
                 }
+                info.setWhileList(whileList);
                 snatInfo.add(info);
             }
         }

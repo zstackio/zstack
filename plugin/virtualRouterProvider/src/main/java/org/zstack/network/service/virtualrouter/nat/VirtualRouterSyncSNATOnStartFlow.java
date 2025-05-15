@@ -19,6 +19,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.NetworkServiceManager;
@@ -92,6 +93,15 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
         List<VmNicInventory> pubNics = new ArrayList<>();
         pubNics.add(vr.getPublicNic());
         pubNics.addAll(vr.getAdditionalPublicNics());
+        String whileList = null;
+        for(VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            whileList = ext.getSNATWhileList(vr.getUuid());
+        }
+        if (whileList == null || whileList.equals("null")) {
+            for(VirtualRouterSNATExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterSNATExtensionPoint.class)) {
+                whileList = ext.getSNATWhileList(vr.getUuid());
+            }
+        }
         for (VmNicInventory pubNic : pubNics) {
             if (pubNic.isIpv6OnlyNic()) {
                 continue;
@@ -112,6 +122,7 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
                     } else {
                         info.setState(Boolean.FALSE);
                     }
+                    info.setWhileList(whileList);
                     snatInfo.add(info);
                 }
             }

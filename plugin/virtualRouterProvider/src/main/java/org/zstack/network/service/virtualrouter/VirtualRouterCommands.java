@@ -590,6 +590,7 @@ public class VirtualRouterCommands {
 		private String privateGatewayIp;
 		private String snatNetmask;
 		private Boolean state;
+		private String whileList;
 
 		public String getPrivateNicMac() {
 			return privateNicMac;
@@ -636,6 +637,14 @@ public class VirtualRouterCommands {
 
 		public void setPrivateGatewayIp(String privateGatewayIp) {
 			this.privateGatewayIp = privateGatewayIp;
+		}
+
+		public String getWhileList() {
+			return whileList;
+		}
+
+		public void setWhileList(String whileList) {
+			this.whileList = whileList;
 		}
 	}
 
