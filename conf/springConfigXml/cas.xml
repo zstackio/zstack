@@ -8,7 +8,7 @@
     http://zstack.org/schema/zstack/plugin.xsd"
        default-init-method="init" default-destroy-method="destroy">
 
-    <bean id="TicketValidator"  class="org.jasig.cas.client.validation.Cas20ServiceTicketValidator">
+    <bean id="TicketValidator"  class="org.zstack.identity.imports.client.CasTicketValidator">
         <constructor-arg index="0" value="${casServerUrlPrefix:http://localHost:8080}" />
     </bean>
 
