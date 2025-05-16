@@ -1,7 +1,4 @@
 #!/bin/bash
-set -e
-set -x
-
 current_folder=`pwd`
 relative_script_parent_path=`dirname $0`
 if [ ${relative_script_parent_path:0:1} = "/" ]; then
