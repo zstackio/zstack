@@ -28,4 +28,6 @@ public interface PortForwardingConstant {
             VmInstanceConstant.VmOperation.ChangeNicNetwork,
             VmInstanceConstant.VmOperation.ChangeNicIp
     );
+
+    public final static int ALLOW_CIDR_MAX_NUM = 100;
 }

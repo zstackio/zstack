@@ -66,6 +66,11 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIChangePortForwardingRuleMsg msg) {
         if (msg.getAllowedCidr() != null && !msg.getAllowedCidr().isEmpty()) {
             String[] cidrs = msg.getAllowedCidr().split(",");
+            if (cidrs.length > PortForwardingConstant.ALLOW_CIDR_MAX_NUM) {
+                throw new ApiMessageInterceptionException(argerr("could not change portforwarding rule[uuid:%s] because max allow cidr number is %d",
+                        msg.getUuid(), PortForwardingConstant.ALLOW_CIDR_MAX_NUM));
+            }
+
             for (String cidr : cidrs) {
                 if (!cidr.contains("-")) {
                     if (NetworkUtils.isCidr(cidr, IPv6Constants.IPv4)) {
@@ -219,6 +224,10 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
 
         if (msg.getAllowedCidr() != null) {
             String[] cidrs = msg.getAllowedCidr().split(",");
+            if (cidrs.length > PortForwardingConstant.ALLOW_CIDR_MAX_NUM) {
+                throw new ApiMessageInterceptionException(argerr("could not create portforwarding rule because max allow cidr number is %d",
+                        PortForwardingConstant.ALLOW_CIDR_MAX_NUM));
+            }
             for (String cidr : cidrs) {
                 if (!cidr.contains("-")) {
                     if (NetworkUtils.isCidr(cidr, IPv6Constants.IPv4)) {

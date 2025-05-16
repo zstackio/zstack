@@ -1,0 +1,1 @@
+ALTER TABLE PortForwardingRuleVO MODIFY COLUMN allowedCidr varchar(10240) DEFAULT NULL;
