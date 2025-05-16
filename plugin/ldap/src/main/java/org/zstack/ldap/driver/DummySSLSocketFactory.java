@@ -4,6 +4,8 @@ package org.zstack.ldap.driver;
  * Created by miao on 16-9-14.
  */
 
+import org.zstack.identity.imports.client.DummyTrustManager;
+
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;

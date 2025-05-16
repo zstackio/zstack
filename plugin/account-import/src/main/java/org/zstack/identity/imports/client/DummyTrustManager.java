@@ -1,4 +1,4 @@
-package org.zstack.ldap.driver;
+package org.zstack.identity.imports.client;
 
 import java.security.cert.*;
 import javax.net.ssl.*;
