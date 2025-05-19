@@ -81,7 +81,7 @@
     <config>
         <category>loadBalancer</category>
         <name>httpMode</name>
-        <description>When mode http is turned on, HAProxy processes HTTP protocol for each request and response passing through. to choose from http-keep-alive,http-server-close,http-tunnel,httpclose,forceclose</description>
+        <description>When mode http is turned on, HAProxy processes HTTP protocol for each request and response passing through. to choose from http-keep-alive,http-server-close,httpclose</description>
         <defaultValue>http-server-close</defaultValue>
         <type>java.lang.String</type>
     </config>

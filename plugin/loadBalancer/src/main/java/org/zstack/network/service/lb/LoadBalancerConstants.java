@@ -32,8 +32,10 @@ public class LoadBalancerConstants {
 
     public static final String HTTP_MODE_HTTP_KEEP_ALIVE = "http-keep-alive";
     public static final String HTTP_MODE_HTTP_SERVER_CLOSE = "http-server-close";
+    @Deprecated
     public static final String HTTP_MODE_HTTP_TUNNEL = "http-tunnel";
     public static final String HTTP_MODE_HTTPCLOSE = "httpclose";
+    @Deprecated
     public static final String HTTP_MODE_FORCECLOSE = "forceclose";
 
     public static enum HealthCheckMothod {
@@ -132,9 +134,7 @@ public class LoadBalancerConstants {
 
         HTTP_MODES.add(HTTP_MODE_HTTP_KEEP_ALIVE);
         HTTP_MODES.add(HTTP_MODE_HTTP_SERVER_CLOSE);
-        HTTP_MODES.add(HTTP_MODE_HTTP_TUNNEL);
         HTTP_MODES.add(HTTP_MODE_HTTPCLOSE);
-        HTTP_MODES.add(HTTP_MODE_FORCECLOSE);
     }
 
     public static enum Param {
