@@ -172,6 +172,14 @@ public class ModelServiceInventory  {
         return this.modelServiceRefs;
     }
 
+    public java.util.List modelServiceImages;
+    public void setModelServiceImages(java.util.List modelServiceImages) {
+        this.modelServiceImages = modelServiceImages;
+    }
+    public java.util.List getModelServiceImages() {
+        return this.modelServiceImages;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
