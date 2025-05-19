@@ -164,6 +164,22 @@ public class ModelServiceInventory  {
         return this.startCommand;
     }
 
+    public java.lang.String cpuArchitectures;
+    public void setCpuArchitectures(java.lang.String cpuArchitectures) {
+        this.cpuArchitectures = cpuArchitectures;
+    }
+    public java.lang.String getCpuArchitectures() {
+        return this.cpuArchitectures;
+    }
+
+    public java.lang.String gpuVendors;
+    public void setGpuVendors(java.lang.String gpuVendors) {
+        this.gpuVendors = gpuVendors;
+    }
+    public java.lang.String getGpuVendors() {
+        return this.gpuVendors;
+    }
+
     public java.util.List modelServiceRefs;
     public void setModelServiceRefs(java.util.List modelServiceRefs) {
         this.modelServiceRefs = modelServiceRefs;
