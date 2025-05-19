@@ -6,6 +6,7 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.springframework.http.HttpMethod;
 import org.zstack.core.Platform;
 import org.zstack.externalStorage.sdk.ExternalStorageApiClient;
+import org.zstack.externalStorage.sdk.ExternalStorageParam;
 import org.zstack.header.rest.DefaultSSLVerifier;
 import org.zstack.header.xinfini.XInfiniConstants;
 import org.zstack.utils.Utils;
@@ -13,6 +14,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.xinfini.NodeStatus;
 import org.zstack.xinfini.XInfiniConfig;
+import org.zstack.xinfini.sdk.volume.FlattenVolumeRequest;
 
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
@@ -92,7 +94,6 @@ public class XInfiniClient extends ExternalStorageApiClient {
 
         final String taskIdForLog = Platform.getUuid();
         String reqBody; // for log
-        final String CREATOR_PARAM = "creator";
 
         Api(XInfiniRequest action) {
             this.action = action;
@@ -286,6 +287,7 @@ public class XInfiniClient extends ExternalStorageApiClient {
             }
 
             final Map<String, Object> params = new HashMap<>();
+            final Map<String, String> queryableParams = new HashMap<>();
 
             for (String pname : action.getAllParameterNames()) {
                 if (varNames.contains(pname)) {
@@ -294,7 +296,13 @@ public class XInfiniClient extends ExternalStorageApiClient {
                 }
 
                 Object value = action.getParameterValue(pname);
-                if (value != null) {
+                if (value == null) {
+                    continue;
+                }
+
+                if (action.isQueryableParam(pname)) {
+                    queryableParams.put(pname, value.toString());
+                } else {
                     params.put(CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, pname), value);
                 }
             }
@@ -304,10 +312,9 @@ public class XInfiniClient extends ExternalStorageApiClient {
             } else if (restInfo.method().equals(HttpMethod.DELETE) && !restInfo.hasBody()) {
                 params.forEach((k, v) -> builder.addQueryParameter(k, v.toString()));
                 reqBuilder.url(builder.build()).delete();
-            } else if (restInfo.method().equals(HttpMethod.PATCH)) {
-                if (params.containsKey(CREATOR_PARAM)) {
-                    builder.addQueryParameter(CREATOR_PARAM, params.get(CREATOR_PARAM).toString());
-                    params.remove(CREATOR_PARAM);
+            } else if (!queryableParams.isEmpty()) {
+                for (Map.Entry<String, String> entry : queryableParams.entrySet()) {
+                    builder.addQueryParameter(entry.getKey(), entry.getValue());
                 }
                 reqBody = gson.toJson(new WrappedRequest(params));
                 reqBuilder.url(builder.build()).method(restInfo.method().toString(), RequestBody.create(XInfiniConstants.JSON, reqBody));

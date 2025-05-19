@@ -15,26 +15,20 @@ import java.util.Map;
  * @ Date   : Created in 17:36 2024/5/27
  */
 @XInfiniRestRequest(
-    path = "/bs-volumes/:clone",
+    path = "/bs-volumes/{id}/:rollback",
     method = HttpMethod.POST,
-    responseClass = CloneVolumeResponse.class,
+    responseClass = RollbackSnapshotResponse.class,
     category = XInfiniApiCategory.AFA
 )
-public class CloneVolumeRequest extends XInfiniRequest {
+public class RollbackSnapshotRequest extends XInfiniRequest {
     @Param
-    private String name;
+    private int id;
 
     @Param
     private int bsSnapId;
 
     @Param
     private String creator = XInfiniConstants.DEFAULT_CREATOR;
-
-    @Param
-    private boolean flatten;
-
-    @Param(required = false)
-    private String description;
 
     public int getBsSnapId() {
         return bsSnapId;
@@ -44,31 +38,13 @@ public class CloneVolumeRequest extends XInfiniRequest {
         this.bsSnapId = bsSnapId;
     }
 
-    public boolean isFlatten() {
-        return flatten;
+    public int getId() {
+        return id;
     }
 
-    public void setFlatten(boolean flatten) {
-        this.flatten = flatten;
+    public void setId(int id) {
+        this.id = id;
     }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-
 
     public String getCreator() {
         return creator;

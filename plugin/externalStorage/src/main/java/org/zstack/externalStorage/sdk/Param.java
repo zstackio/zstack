@@ -13,4 +13,6 @@ public @interface Param {
     long[] numberRange() default {};
 
     boolean nonempty() default false;
+
+    boolean queryable() default false;
 }
