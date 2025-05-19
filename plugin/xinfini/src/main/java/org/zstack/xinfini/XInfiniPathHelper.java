@@ -37,4 +37,8 @@ public class XInfiniPathHelper {
     public static int getSnapIdFromPath(String url) {
         return Integer.parseInt(url.replace("xinfini://", "").split("/")[1].split("@")[1]);
     }
+
+    public static String buildSnapshotExportVolumeName(int snapId) {
+        return String.format("for-snapshot-%s-iscsi-export", snapId);
+    }
 }
