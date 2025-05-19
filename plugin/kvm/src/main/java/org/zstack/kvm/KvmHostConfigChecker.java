@@ -1,12 +1,16 @@
 package org.zstack.kvm;
 
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.ansible.AnsibleChecker;
+import org.zstack.utils.RangeSet;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
+
+import java.util.Objects;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class KvmHostConfigChecker implements AnsibleChecker {
@@ -17,10 +21,15 @@ public class KvmHostConfigChecker implements AnsibleChecker {
     private String privateKey;
     private String targetIp;
     private String requireKsmCheck;
+    private String requireReservePorts;
     private int sshPort = 22;
 
     @Override
     public boolean needDeploy() {
+        return needDeployKsmCheck() || needDeployReservePorts();
+    }
+
+    private boolean needDeployKsmCheck() {
         if ("none".equals(requireKsmCheck)) {
             return false;
         }
@@ -59,6 +68,45 @@ public class KvmHostConfigChecker implements AnsibleChecker {
         }
 
         return true;
+    }
+
+    private boolean needDeployReservePorts() {
+        if (Strings.isEmpty(requireReservePorts)) {
+            return false;
+        }
+
+        Ssh ssh = new Ssh();
+        ssh.setUsername(username).setPrivateKey(privateKey)
+                .setPassword(password).setPort(sshPort)
+                .setHostname(targetIp);
+        try {
+            ssh.sudoCommand("cat /proc/sys/net/ipv4/ip_local_reserved_ports");
+            SshResult ret = ssh.setTimeout(60).runAndClose();
+            if (ret.getReturnCode() != 0) {
+                logger.warn(String.format("exec ssh command failed, return code: %d, stdout: %s, stderr: %s",
+                        ret.getReturnCode(), ret.getStdout(), ret.getStderr()));
+                return true;
+            }
+            String reservedPorts = ret.getStdout();
+            RangeSet cur = RangeSet.valueOf(reservedPorts.trim());
+            RangeSet expect = RangeSet.valueOf(requireReservePorts.trim());
+
+            for (RangeSet.Range range : cur.getRanges()) {
+                expect.closed(range.getStart(), range.getEnd());
+            }
+
+            cur.mergeAndSort();
+            expect.mergeAndSort();
+
+            if (!Objects.equals(cur.getRanges(), expect.getRanges())) {
+                logger.debug(String.format("Reserved ports are not the same, need to deploy, current: %s, expect: %s",
+                        cur.getRanges(), expect.getRanges()));
+                return true;
+            }
+            return false;
+        } finally {
+            ssh.close();
+        }
     }
 
     @Override
@@ -104,6 +152,14 @@ public class KvmHostConfigChecker implements AnsibleChecker {
 
     public void setRequireKsmCheck(String requireKsmCheck) {
         this.requireKsmCheck = requireKsmCheck;
+    }
+
+    public String getRequireReservePorts() {
+        return requireReservePorts;
+    }
+
+    public void setRequireReservePorts(String requireReservePorts) {
+        this.requireReservePorts = requireReservePorts;
     }
 
     public int getSshPort() {

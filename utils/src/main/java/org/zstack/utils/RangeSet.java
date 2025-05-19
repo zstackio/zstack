@@ -1,5 +1,7 @@
 package org.zstack.utils;
 
+import org.apache.logging.log4j.util.Strings;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -69,6 +71,23 @@ public class RangeSet {
         public String toString() {
             return String.format("[%s, %s]", start, end);
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+            Range range = (Range) obj;
+            return start == range.start && end == range.end;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(start, end);
+        }
     }
 
     private List<Range> ranges = new ArrayList<Range>();
@@ -120,13 +139,14 @@ public class RangeSet {
             }
         }
         ret.add(r);
+        ranges = ret;
         return ret;
     }
 
     public List<Range> mergeAndSort() {
-        List<Range> ret = merge();
+        merge();
         sort();
-        return ret;
+        return ranges;
     }
 
     public void sort(){
@@ -175,6 +195,32 @@ public class RangeSet {
             }
         }
         results.ranges.add(new Range(begin, end));
+        return results;
+    }
+
+    public static RangeSet valueOf(String str) {
+        RangeSet results = new RangeSet();
+        if (str == null || str.isEmpty()) {
+            return results;
+        }
+
+        for (String s : str.split(",")) {
+            if (Strings.isBlank(s)) {
+                continue;
+            }
+            String[] range = s.split("-");
+            try {
+                if (range.length == 1) {
+                    long value = Long.parseLong(range[0].trim());
+                    results.closed(value, value);
+                } else if (range.length == 2) {
+                    String start = range[0].trim();
+                    String end = range[1].trim();
+                    results.closed(Long.parseLong(start), Long.parseLong(end));
+                }
+            } catch (NumberFormatException ignore) {}
+        }
+
         return results;
     }
 
