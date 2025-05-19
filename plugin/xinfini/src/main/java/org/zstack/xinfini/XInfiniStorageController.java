@@ -275,14 +275,21 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
                     bdc.getSpec().getId(), bdevName, vcfs);
             return bdev.getSpec().getSocketPath();
         } else if (VolumeProtocol.iSCSI.toString().equals(v.getProtocol())) {
+            int volId;
             if (v.getInstallPath().contains("@")) {
-                // todo
-                throw new OperationFailureException(operr("not support active snapshot with iscsi protocol"));
+                int snapId = getSnapIdFromPath(v.getInstallPath());
+                VolumeModule vol = apiHelper.queryVolumeByNameAndSnapId(buildSnapshotExportVolumeName(snapId), snapId);
+                if (vol == null) {
+                    logger.info(String.format("can not find exported volume for snapshot %s", snapId));
+                    return null;
+                }
+                volId = vol.getSpec().getId();
+            } else {
+                volId = getVolIdFromPath(v.getInstallPath());
             }
             String clientIqn = IscsiUtils.getHostInitiatorName(h.getUuid());
             IscsiClientModule client = apiHelper.queryIscsiClientByIqn(clientIqn);
             IscsiClientGroupModule group = apiHelper.getIscsiClientGroup(client.getSpec().getIscsiClientGroupId());
-            int volId = getVolIdFromPath(v.getInstallPath());
             VolumeClientGroupMappingModule map = apiHelper.queryVolumeClientGroupMappingByGroupIdAndVolId(group.getSpec().getId(), volId);
             if (map == null) {
                 logger.info(String.format("vol %s not related to client group %s, skip get installPath", volId, group.getSpec().getId()));
@@ -720,8 +727,12 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public void cloneVolume(String srcInstallPath, CreateVolumeSpec dst, ReturnValueCompletion<VolumeStats> comp) {
+        cloneVolume(srcInstallPath, dst, comp, false);
+    }
+
+    private void cloneVolume(String srcInstallPath, CreateVolumeSpec dst, ReturnValueCompletion<VolumeStats> comp, boolean flatten) {
         int snapId = getSnapIdFromPath(srcInstallPath);
-        VolumeModule vol = apiHelper.cloneVolume(snapId, dst.getName(), null, false);
+        VolumeModule vol = apiHelper.cloneVolume(snapId, dst.getName(), null, flatten);
 
         if (SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()) < dst.getSize()) {
             vol = apiHelper.expandVolume(vol.getSpec().getId(), convertBytesToMegaBytes(dst.getSize()));
@@ -737,14 +748,18 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public void copyVolume(String srcInstallPath, CreateVolumeSpec dst, ReturnValueCompletion<VolumeStats> comp) {
-        // TODO
-        throw new OperationFailureException(operr("not support copy volume yet"));
+        cloneVolume(srcInstallPath, dst, comp, true);
     }
 
     @Override
     public void flattenVolume(String installPath, ReturnValueCompletion<VolumeStats> comp) {
-        // TODO
-        throw new OperationFailureException(operr("not support flatten volume yet"));
+        VolumeModule vol = apiHelper.flattenVolume(getVolIdFromPath(installPath));
+        VolumeStats stats = new VolumeStats();
+        stats.setInstallPath(installPath);
+        stats.setSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
+        stats.setActualSize(vol.getStatus().getAllocatedSizeByte());
+        stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+        comp.success(stats);
     }
 
     @Override
@@ -813,13 +828,24 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         return createIscsiRemoteTarget(espec.getClientMnIp(), espec.getClientQualifiedName(), espec.getInstallPath());
     }
 
-    private IscsiRemoteTarget createIscsiRemoteTarget(String clientIp, String clientIqn, String installPath) {
-        if (installPath.contains("@")) {
-            // todo
-            throw new OperationFailureException(operr("not support active snapshot with iscsi protocol"));
+    private VolumeModule cloneVolumeIfNotExist(int snapId, String dstVolumeName) {
+        VolumeModule vol = apiHelper.queryVolumeByNameAndSnapId(dstVolumeName, snapId);
+        if (vol != null) {
+            return vol;
         }
+        vol = apiHelper.cloneVolume(snapId, dstVolumeName, null, false);
+        return vol;
+    }
 
-        int volId = getVolIdFromPath(installPath);
+    private IscsiRemoteTarget createIscsiRemoteTarget(String clientIp, String clientIqn, String installPath) {
+        int volId;
+        if (installPath.contains("@")) {
+            int snapId = getSnapIdFromPath(installPath);
+            VolumeModule vol = cloneVolumeIfNotExist(snapId, buildSnapshotExportVolumeName(snapId));
+            volId = vol.getSpec().getId();
+        } else {
+            volId = getVolIdFromPath(installPath);
+        }
         IscsiClientGroupModule group;
         IscsiClientModule clientModule;
         clientModule = apiHelper.queryIscsiClientByIqn(clientIqn);
@@ -873,9 +899,17 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     }
 
     private synchronized void unexportIscsi(String source, String clientIqn) {
+        int volId;
         if (source.contains("@")) {
-            // todo
-            throw new OperationFailureException(operr("not support unexport snapshot with iscsi protocol"));
+            int snapId = getSnapIdFromPath(source);
+            VolumeModule vol = apiHelper.queryVolumeByNameAndSnapId(buildSnapshotExportVolumeName(snapId), snapId);
+            if (vol == null) {
+                return;
+            }
+
+            volId = vol.getSpec().getId();
+        } else {
+            volId = getVolIdFromPath(source);
         }
 
         IscsiClientModule clientModule = apiHelper.queryIscsiClientByIqn(clientIqn);
@@ -883,12 +917,16 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
             return;
         }
 
-        VolumeClientGroupMappingModule mapping = apiHelper.queryVolumeClientGroupMappingByGroupIdAndVolId(clientModule.getSpec().getIscsiClientGroupId(), getVolIdFromPath(source));
+        VolumeClientGroupMappingModule mapping = apiHelper.queryVolumeClientGroupMappingByGroupIdAndVolId(clientModule.getSpec().getIscsiClientGroupId(), volId);
         if (mapping == null) {
             return;
         }
 
         retry(() -> apiHelper.deleteVolumeClientGroupMapping(mapping.getSpec().getId()));
+
+        if (source.contains("@")) {
+            apiHelper.deleteVolume(volId, true);
+        }
     }
 
     @Override
@@ -914,8 +952,14 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public void revertVolumeSnapshot(String snapshotInstallPath, ReturnValueCompletion<VolumeStats> comp) {
-        // TODO
-        throw new OperationFailureException(operr("not support revert volume snapshot yet"));
+        int volId = getVolIdFromPath(snapshotInstallPath);
+        int snapId = getSnapIdFromPath(snapshotInstallPath);
+        VolumeModule vol = apiHelper.rollbackSnapshot(volId, snapId);
+        VolumeStats stats = new VolumeStats();
+        stats.setInstallPath(buildXInfiniPath(vol.getSpec().getPoolId(), vol.getSpec().getId()));
+        stats.setSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
+        stats.setActualSize(vol.getStatus().getAllocatedSizeByte());
+        comp.success(stats);
     }
 
     @Override
