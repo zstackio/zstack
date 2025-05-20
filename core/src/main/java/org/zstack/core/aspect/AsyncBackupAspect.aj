@@ -3,14 +3,14 @@ package org.zstack.core.aspect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.core.workflow.FlowRollback;
-import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.*;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Message;
 import org.zstack.utils.DebugUtils;
@@ -245,6 +245,15 @@ public aspect AsyncBackupAspect {
             proceed(completion);
         } catch (Throwable  t) {
             backup(completion.getBackups(), t);
+        }
+    }
+
+    boolean around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(boolean org.zstack.core.thread.CancelablePeriodicTask+.run()) {
+        try {
+            return proceed(completion);
+        } catch (Throwable  t) {
+            backup(completion.getBackups(), t);
+            return true;
         }
     }
 }
