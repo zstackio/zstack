@@ -52,3 +52,12 @@ DELIMITER ;
 
 CALL update_model_service_cpu_arch();
 DROP PROCEDURE IF EXISTS update_model_service_cpu_arch;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ContainerBackupStorageVO` (
+    `uuid` varchar(32) NOT NULL,
+    `endpointUuid` varchar(32) NOT NULL,
+    `id` bigint(20) unsigned DEFAULT NULL,
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT `fkContainerBackupStorageVOBackupStorageEO` FOREIGN KEY (`uuid`) REFERENCES `BackupStorageEO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkContainerBackupStorageVOContainerManagementEndpointVO` FOREIGN KEY (`endpointUuid`) REFERENCES `ContainerManagementEndpointVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
