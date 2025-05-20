@@ -46,7 +46,8 @@ import static org.zstack.core.Platform.operr;
  * To change this template use File | Settings | File Templates.
  */
 public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend implements
-        NetworkServiceSnatBackend, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint {
+        NetworkServiceSnatBackend, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint,
+        VirtualRouterAfterDetachNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VirtualRouterSnatBackend.class);
 
     @Autowired
@@ -321,7 +322,8 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                         String msg = String.format(
                                 "virtual router[uuid:%s, ip:%s] successfully released snat for public l3[uuid:%s]",
                                 vr.getUuid(), vr.getManagementNic().getIp(), finalNic.getL3NetworkUuid());
-                        app.detachNetworkService(vr.getUuid(), NetworkServiceType.SNAT.toString(), finalNic.getL3NetworkUuid());
+                        //has moved to afterDetachNic to avoid delete data too early
+                        //app.detachNetworkService(vr.getUuid(), NetworkServiceType.SNAT.toString(), finalNic.getL3NetworkUuid());
                         logger.warn(msg);
                     }
                 }
@@ -501,5 +503,39 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
     @Override
     public void afterAttachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
         completion.done();
+    }
+
+    @Override
+    public void afterDetachVirtualRouterNic(VmNicInventory nic, Completion completion) {
+        VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find();
+        if (vrVO == null) {
+            completion.success();
+            return;
+        }
+        final VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
+        ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVO.getApplianceVmType());
+        ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVO);
+
+        if ( ! (VirtualRouterNicMetaData.isPublicNic(nic) || VirtualRouterNicMetaData.isAddinitionalPublicNic(nic))) {
+            completion.success();
+            return;
+        }
+
+        String peerVrUuid = haBackend.getVirtualRouterPeerUuid(vr.getUuid());
+        if (peerVrUuid == null) {
+            app.detachNetworkService(vr.getUuid(), NetworkServiceType.SNAT.toString(), nic.getL3NetworkUuid());
+            completion.success();
+            return;
+        }
+
+        VirtualRouterVmVO peerVrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, peerVrUuid).find();
+        VirtualRouterVmInventory peerVr = VirtualRouterVmInventory.valueOf(peerVrVO);
+        List<String> allL3Uuids = peerVr.getAllL3Networks();
+        if (allL3Uuids != null && allL3Uuids.contains(nic.getL3NetworkUuid())) {
+            completion.success();
+            return;
+        }
+        app.detachNetworkService(vr.getUuid(), NetworkServiceType.SNAT.toString(), nic.getL3NetworkUuid());
+        completion.success();
     }
 }

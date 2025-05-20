@@ -179,6 +179,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.service.NetworkServiceSnatBackend" />
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterDetachNicExtensionPoint" />
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint" />
         </zstack:plugin>
     </bean>
