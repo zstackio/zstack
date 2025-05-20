@@ -220,6 +220,7 @@
             <zstack:extension interface="org.zstack.network.service.portforwarding.PortForwardingBackend"/>
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterDetachNicExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterHaGetCallbackExtensionPoint" />
         </zstack:plugin>
 
