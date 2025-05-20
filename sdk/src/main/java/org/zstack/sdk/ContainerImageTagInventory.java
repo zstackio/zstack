@@ -1,4 +1,4 @@
-package org.zstack.sdk.iam2.container;
+package org.zstack.sdk;
 
 
 
@@ -58,6 +58,14 @@ public class ContainerImageTagInventory  {
     }
     public java.lang.String getPullCommand() {
         return this.pullCommand;
+    }
+
+    public java.lang.String architectures;
+    public void setArchitectures(java.lang.String architectures) {
+        this.architectures = architectures;
+    }
+    public java.lang.String getArchitectures() {
+        return this.architectures;
     }
 
 }

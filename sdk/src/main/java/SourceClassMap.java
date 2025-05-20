@@ -111,10 +111,14 @@ public class SourceClassMap {
 			put("org.zstack.cloudformation.template.struct.ActionStruct", "org.zstack.sdk.ActionStruct");
 			put("org.zstack.cloudformation.template.struct.ResourceStruct", "org.zstack.sdk.ResourceStruct");
 			put("org.zstack.cloudformation.template.struct.ResourceType", "org.zstack.sdk.ResourceType");
+			put("org.zstack.container.ContainerBackupStorageInventory", "org.zstack.sdk.ContainerBackupStorageInventory");
 			put("org.zstack.container.ContainerUsage", "org.zstack.sdk.ContainerUsage");
+			put("org.zstack.container.entity.ContainerImageInventory", "org.zstack.sdk.ContainerImageInventory");
+			put("org.zstack.container.entity.ContainerImageTagInventory", "org.zstack.sdk.ContainerImageTagInventory");
 			put("org.zstack.container.entity.ContainerManagementEndpointInventory", "org.zstack.sdk.ContainerManagementEndpointInventory");
 			put("org.zstack.container.entity.NativeClusterInventory", "org.zstack.sdk.NativeClusterInventory");
 			put("org.zstack.container.entity.NativeHostInventory", "org.zstack.sdk.NativeHostInventory");
+			put("org.zstack.container.entity.ProjectRepositoryInventory", "org.zstack.sdk.ProjectRepositoryInventory");
 			put("org.zstack.core.config.GlobalConfigInventory", "org.zstack.sdk.GlobalConfigInventory");
 			put("org.zstack.core.config.GlobalConfigOptions", "org.zstack.sdk.GlobalConfigOptions");
 			put("org.zstack.core.config.GuestOsCharacterInventory", "org.zstack.sdk.GuestOsCharacterInventory");
@@ -432,9 +436,6 @@ public class SourceClassMap {
 			put("org.zstack.iam2.api.Attribute", "org.zstack.sdk.iam2.api.Attribute");
 			put("org.zstack.iam2.api.ErrorResult", "org.zstack.sdk.iam2.api.ErrorResult");
 			put("org.zstack.iam2.container.ContainerClusterInventory", "org.zstack.sdk.iam2.container.ContainerClusterInventory");
-			put("org.zstack.iam2.container.ContainerImageInventory", "org.zstack.sdk.iam2.container.ContainerImageInventory");
-			put("org.zstack.iam2.container.ContainerImageTagInventory", "org.zstack.sdk.iam2.container.ContainerImageTagInventory");
-			put("org.zstack.iam2.container.ProjectRepositoryInventory", "org.zstack.sdk.iam2.container.ProjectRepositoryInventory");
 			put("org.zstack.iam2.entity.AttributeType", "org.zstack.sdk.iam2.entity.AttributeType");
 			put("org.zstack.iam2.entity.IAM2AttributeInventory", "org.zstack.sdk.iam2.entity.IAM2AttributeInventory");
 			put("org.zstack.iam2.entity.IAM2OrganizationAttributeInventory", "org.zstack.sdk.iam2.entity.IAM2OrganizationAttributeInventory");
@@ -957,6 +958,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ConnectionRelationShipProperty", "org.zstack.header.aliyun.network.connection.ConnectionRelationShipProperty");
 			put("org.zstack.sdk.ConsoleInventory", "org.zstack.header.console.ConsoleInventory");
 			put("org.zstack.sdk.ConsoleProxyAgentInventory", "org.zstack.header.console.ConsoleProxyAgentInventory");
+			put("org.zstack.sdk.ContainerBackupStorageInventory", "org.zstack.container.ContainerBackupStorageInventory");
+			put("org.zstack.sdk.ContainerImageInventory", "org.zstack.container.entity.ContainerImageInventory");
+			put("org.zstack.sdk.ContainerImageTagInventory", "org.zstack.container.entity.ContainerImageTagInventory");
 			put("org.zstack.sdk.ContainerManagementEndpointInventory", "org.zstack.container.entity.ContainerManagementEndpointInventory");
 			put("org.zstack.sdk.ContainerUsage", "org.zstack.container.ContainerUsage");
 			put("org.zstack.sdk.ControlStrategy", "org.zstack.loginControl.entity.ControlStrategy");
@@ -1273,6 +1277,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PrimaryStorageHostStatus", "org.zstack.header.storage.primary.PrimaryStorageHostStatus");
 			put("org.zstack.sdk.PrimaryStorageInventory", "org.zstack.header.storage.primary.PrimaryStorageInventory");
 			put("org.zstack.sdk.ProgressProperty", "org.zstack.header.aliyun.image.ProgressProperty");
+			put("org.zstack.sdk.ProjectRepositoryInventory", "org.zstack.container.entity.ProjectRepositoryInventory");
 			put("org.zstack.sdk.ProtocolType", "org.zstack.vpcfirewall.entity.ProtocolType");
 			put("org.zstack.sdk.PubIpVipBandwidthInBillingInventory", "org.zstack.billing.generator.pubip.vip.PubIpVipBandwidthInBillingInventory");
 			put("org.zstack.sdk.PubIpVipBandwidthOutBillingInventory", "org.zstack.billing.generator.pubip.vip.PubIpVipBandwidthOutBillingInventory");
@@ -1524,9 +1529,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.iam2.api.ErrorResult", "org.zstack.iam2.api.ErrorResult");
 			put("org.zstack.sdk.iam2.api.Permission", "org.zstack.iam2.api.APIGetIAM2VirtualIDAPIPermissionReply$Permission");
 			put("org.zstack.sdk.iam2.container.ContainerClusterInventory", "org.zstack.iam2.container.ContainerClusterInventory");
-			put("org.zstack.sdk.iam2.container.ContainerImageInventory", "org.zstack.iam2.container.ContainerImageInventory");
-			put("org.zstack.sdk.iam2.container.ContainerImageTagInventory", "org.zstack.iam2.container.ContainerImageTagInventory");
-			put("org.zstack.sdk.iam2.container.ProjectRepositoryInventory", "org.zstack.iam2.container.ProjectRepositoryInventory");
 			put("org.zstack.sdk.iam2.entity.AttributeType", "org.zstack.iam2.entity.AttributeType");
 			put("org.zstack.sdk.iam2.entity.IAM2AttributeInventory", "org.zstack.iam2.entity.IAM2AttributeInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2OrganizationAttributeInventory", "org.zstack.iam2.entity.IAM2OrganizationAttributeInventory");
