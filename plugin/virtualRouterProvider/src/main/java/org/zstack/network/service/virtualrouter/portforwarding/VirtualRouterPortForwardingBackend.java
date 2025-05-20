@@ -600,7 +600,6 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
                         }
                     }.execute();
                 }
-                completion.success();
             }
         }
         DbCleaner cleanner = new DbCleaner();
