@@ -164,12 +164,36 @@ public class ModelServiceInventory  {
         return this.startCommand;
     }
 
+    public java.util.List cpuArchitectures;
+    public void setCpuArchitectures(java.util.List cpuArchitectures) {
+        this.cpuArchitectures = cpuArchitectures;
+    }
+    public java.util.List getCpuArchitectures() {
+        return this.cpuArchitectures;
+    }
+
+    public java.util.List gpuVendors;
+    public void setGpuVendors(java.util.List gpuVendors) {
+        this.gpuVendors = gpuVendors;
+    }
+    public java.util.List getGpuVendors() {
+        return this.gpuVendors;
+    }
+
     public java.util.List modelServiceRefs;
     public void setModelServiceRefs(java.util.List modelServiceRefs) {
         this.modelServiceRefs = modelServiceRefs;
     }
     public java.util.List getModelServiceRefs() {
         return this.modelServiceRefs;
+    }
+
+    public java.util.List modelServiceImages;
+    public void setModelServiceImages(java.util.List modelServiceImages) {
+        this.modelServiceImages = modelServiceImages;
+    }
+    public java.util.List getModelServiceImages() {
+        return this.modelServiceImages;
     }
 
     public java.sql.Timestamp createDate;
