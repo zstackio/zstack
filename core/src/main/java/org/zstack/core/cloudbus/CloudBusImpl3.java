@@ -680,6 +680,11 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         });
 
         future.await(SYNC_CALL_TIMEOUT);
+        if (!future.isSuccess()) {
+            MessageReply reply = new MessageReply();
+            reply.setError(future.getErrorCode());
+            return reply;
+        }
         return future.getResult();
     }
 
@@ -696,6 +701,15 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         });
 
         future.await(SYNC_CALL_TIMEOUT);
+        if (!future.isSuccess()) {
+            List<MessageReply> replies = new ArrayList<>(msgs.size());
+            msgs.forEach(msg -> {
+                MessageReply reply = new MessageReply();
+                reply.setError(future.getErrorCode());
+                replies.add(reply);
+            });
+            return replies;
+        }
         return future.getResult();
     }
 
