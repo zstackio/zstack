@@ -1373,6 +1373,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             return;
         }
 
+        List<LocalStorageResourceRefVO> refs = new ArrayList<>();
         for (CreateVolumesSnapshotsJobStruct job : msg.getVolumeSnapshotJobs()) {
             if (!isLocalStorage(job.getPrimaryStorageUuid())) {
                 continue;
@@ -1391,8 +1392,13 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                     .findFirst()
                     .map(TakeSnapshotsOnKvmResultStruct::getSize)
                     .orElse(0L));
-            dbf.persistAndRefresh(ref);
+            refs.add(ref);
         }
+
+        if (!refs.isEmpty()) {
+            dbf.persistCollection(refs);
+        }
+
         completion.success();
     }
 
