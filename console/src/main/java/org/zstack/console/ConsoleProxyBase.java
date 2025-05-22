@@ -79,7 +79,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
         cmd.setTargetHostname(targetHostname);
         cmd.setTargetPort(targetPort);
         cmd.setProxyHostname("0.0.0.0");
-        if (ConsoleConstants.HTTP_SCHEMA.equals(self.getTargetSchema())) {
+        if (ConsoleConstants.HTTP_SCHEMA.equals(targetSchema)) {
             cmd.setProxyPort(CoreGlobalProperty.HTTP_CONSOLE_PROXY_PORT);
         } else {
             cmd.setProxyPort(CoreGlobalProperty.CONSOLE_PROXY_PORT);
