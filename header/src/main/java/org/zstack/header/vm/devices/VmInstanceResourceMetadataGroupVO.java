@@ -8,7 +8,7 @@ import java.util.List;
 
 @Entity
 @Table
-public class VmInstanceDeviceAddressGroupVO implements ToInventory {
+public class VmInstanceResourceMetadataGroupVO implements ToInventory {
     @Id
     @Column
     private String uuid;
@@ -28,7 +28,7 @@ public class VmInstanceDeviceAddressGroupVO implements ToInventory {
     @Column
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "addressGroupUuid", insertable = false, updatable = false)
-    private List<VmInstanceDeviceAddressArchiveVO> addressList;
+    private List<VmInstanceResourceMetadataArchiveVO> addressList;
 
     @Column
     private Timestamp createDate;
@@ -76,11 +76,11 @@ public class VmInstanceDeviceAddressGroupVO implements ToInventory {
         this.lastOpDate = lastOpDate;
     }
 
-    public List<VmInstanceDeviceAddressArchiveVO> getAddressList() {
+    public List<VmInstanceResourceMetadataArchiveVO> getAddressList() {
         return addressList;
     }
 
-    public void setAddressList(List<VmInstanceDeviceAddressArchiveVO> addressList) {
+    public void setAddressList(List<VmInstanceResourceMetadataArchiveVO> addressList) {
         this.addressList = addressList;
     }
 }

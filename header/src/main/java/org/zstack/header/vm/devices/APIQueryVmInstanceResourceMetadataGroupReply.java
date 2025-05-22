@@ -18,25 +18,25 @@ import java.util.List;
  * Created by LiangHanYu on 2022/6/20 18:03
  */
 @RestResponse(allTo = "inventories")
-public class APIQueryVmInstanceDeviceAddressGroupReply extends APIQueryReply {
-    private List<VmInstanceDeviceAddressGroupInventory> inventories;
+public class APIQueryVmInstanceResourceMetadataGroupReply extends APIQueryReply {
+    private List<VmInstanceResourceMetadataGroupInventory> inventories;
 
-    public List<VmInstanceDeviceAddressGroupInventory> getInventories() {
+    public List<VmInstanceResourceMetadataGroupInventory> getInventories() {
         return inventories;
     }
 
-    public void setInventories(List<VmInstanceDeviceAddressGroupInventory> inventories) {
+    public void setInventories(List<VmInstanceResourceMetadataGroupInventory> inventories) {
         this.inventories = inventories;
     }
 
-    public static APIQueryVmInstanceDeviceAddressGroupReply __example__() {
-        VmInstanceDeviceAddressGroupInventory inv = new VmInstanceDeviceAddressGroupInventory();
+    public static APIQueryVmInstanceResourceMetadataGroupReply __example__() {
+        VmInstanceResourceMetadataGroupInventory inv = new VmInstanceResourceMetadataGroupInventory();
         inv.setUuid(uuid());
         inv.setResourceUuid(uuid());
         inv.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         inv.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
 
-        VmInstanceDeviceAddressArchiveInventory archiveInventory = new VmInstanceDeviceAddressArchiveInventory();
+        VmInstanceResourceMetadataArchiveInventory archiveInventory = new VmInstanceResourceMetadataArchiveInventory();
         archiveInventory.setId(1);
         archiveInventory.setResourceUuid(uuid());
 
@@ -72,9 +72,9 @@ public class APIQueryVmInstanceDeviceAddressGroupReply extends APIQueryReply {
         vol.setRootImageUuid(uuid());
 
         archiveInventory.setMetadata(JSONObjectUtil.toJsonString(vol));
-        archiveInventory.setMetadataClass(VmInstanceDeviceAddressGroupInventory.class.getCanonicalName());
+        archiveInventory.setMetadataClass(VmInstanceResourceMetadataGroupInventory.class.getCanonicalName());
         inv.setAddressList(Arrays.asList(archiveInventory));
-        APIQueryVmInstanceDeviceAddressGroupReply result = new APIQueryVmInstanceDeviceAddressGroupReply();
+        APIQueryVmInstanceResourceMetadataGroupReply result = new APIQueryVmInstanceResourceMetadataGroupReply();
         result.inventories = Collections.singletonList(inv);
         return result;
     }

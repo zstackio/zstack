@@ -115,4 +115,11 @@ public class ResourceConfigVO implements ToInventory {
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
     }
+
+    public String getIdentity() {
+        if (category == null || name == null) {
+            return "";
+        }
+        return String.format("%s.%s", category, name);
+    }
 }

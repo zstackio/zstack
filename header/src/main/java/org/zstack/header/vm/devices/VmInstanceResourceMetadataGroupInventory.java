@@ -14,35 +14,35 @@ import java.util.stream.Collectors;
 /**
  * Created by LiangHanYu on 2022/6/20 18:03
  */
-@Inventory(mappingVOClass = VmInstanceDeviceAddressGroupVO.class)
+@Inventory(mappingVOClass = VmInstanceResourceMetadataGroupVO.class)
 @ExpandedQueries({
-        @ExpandedQuery(expandedField = "volumeSnapshotRef", inventoryClass = VmInstanceDeviceAddressArchiveInventory.class,
+        @ExpandedQuery(expandedField = "volumeSnapshotRef", inventoryClass = VmInstanceResourceMetadataArchiveInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "addressGroupUuid", hidden = true),
 })
-public class VmInstanceDeviceAddressGroupInventory {
+public class VmInstanceResourceMetadataGroupInventory {
     private String uuid;
     private String resourceUuid;
     private String vmInstanceUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
-    @Queryable(mappingClass = VmInstanceDeviceAddressArchiveInventory.class,
+    @Queryable(mappingClass = VmInstanceResourceMetadataArchiveInventory.class,
             joinColumn = @JoinColumn(name = "addressGroupUuid"))
-    private List<VmInstanceDeviceAddressArchiveInventory> addressList;
+    private List<VmInstanceResourceMetadataArchiveInventory> addressList;
 
-    public static VmInstanceDeviceAddressGroupInventory valueOf(VmInstanceDeviceAddressGroupVO vo) {
-        VmInstanceDeviceAddressGroupInventory inv = new VmInstanceDeviceAddressGroupInventory();
+    public static VmInstanceResourceMetadataGroupInventory valueOf(VmInstanceResourceMetadataGroupVO vo) {
+        VmInstanceResourceMetadataGroupInventory inv = new VmInstanceResourceMetadataGroupInventory();
         inv.setUuid(vo.getUuid());
         inv.setResourceUuid(vo.getResourceUuid());
         inv.setVmInstanceUuid(vo.getVmInstanceUuid());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
-        inv.setAddressList(VmInstanceDeviceAddressArchiveInventory.valueOf(vo.getAddressList()));
+        inv.setAddressList(VmInstanceResourceMetadataArchiveInventory.valueOf(vo.getAddressList()));
         return inv;
     }
 
-    public static List<VmInstanceDeviceAddressGroupInventory> valueOf(Collection<VmInstanceDeviceAddressGroupVO> vos) {
-        return vos.stream().map(VmInstanceDeviceAddressGroupInventory::valueOf).collect(Collectors.toList());
+    public static List<VmInstanceResourceMetadataGroupInventory> valueOf(Collection<VmInstanceResourceMetadataGroupVO> vos) {
+        return vos.stream().map(VmInstanceResourceMetadataGroupInventory::valueOf).collect(Collectors.toList());
     }
 
     public String getUuid() {
@@ -69,11 +69,11 @@ public class VmInstanceDeviceAddressGroupInventory {
         this.vmInstanceUuid = vmInstanceUuid;
     }
 
-    public List<VmInstanceDeviceAddressArchiveInventory> getAddressList() {
+    public List<VmInstanceResourceMetadataArchiveInventory> getAddressList() {
         return addressList;
     }
 
-    public void setAddressList(List<VmInstanceDeviceAddressArchiveInventory> addressList) {
+    public void setAddressList(List<VmInstanceResourceMetadataArchiveInventory> addressList) {
         this.addressList = addressList;
     }
 

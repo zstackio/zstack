@@ -50,9 +50,9 @@ import org.zstack.header.tag.SystemTagLifeCycleListener;
 import org.zstack.header.tag.SystemTagOperationJudger;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressVO;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressVO_;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataVO;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataVO_;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -139,7 +139,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     @Autowired
     private ResourceConfigFacade rcf;
     @Autowired
-    private VmInstanceDeviceManager vidm;
+    private VmInstanceResourceMetadataManager vidm;
     @Autowired
     private VmNicManager vmNicManager;
 
@@ -848,18 +848,18 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         String rootVolumeUuid = vmTuple.get(1, String.class);
 
         logger.info(String.format(
-                "All VmInstanceDeviceAddressVO related VM[uuid:%s] except for the root volume will be cleaned up",
+                "All VmInstanceResourceMetadataVO related VM[uuid:%s] except for the root volume will be cleaned up",
                 vmUuid));
 
-        SQL.New(VmInstanceDeviceAddressVO.class)
-                .eq(VmInstanceDeviceAddressVO_.vmInstanceUuid, vmUuid)
-                .notIn(VmInstanceDeviceAddressVO_.resourceUuid, list(rootVolumeUuid))
+        SQL.New(VmInstanceResourceMetadataVO.class)
+                .eq(VmInstanceResourceMetadataVO_.vmInstanceUuid, vmUuid)
+                .notIn(VmInstanceResourceMetadataVO_.resourceUuid, list(rootVolumeUuid))
                 .delete();
     }
 
     private void cleanDeviceAddress(SystemTagInventory tag) {
         VolumeVO volume = dbf.findByUuid(tag.getResourceUuid(), VolumeVO.class);
-        vidm.deleteVmDeviceAddress(volume.getUuid(), volume.getVmInstanceUuid());
+        vidm.deleteVmResourceMetadata(volume.getUuid(), volume.getVmInstanceUuid());
     }
 
     private void configKVMDeviceType() {

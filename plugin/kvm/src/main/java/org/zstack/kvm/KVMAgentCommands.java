@@ -2075,6 +2075,8 @@ public class KVMAgentCommands {
         private String chassisAssetTag;
         private PriorityConfigStruct priorityConfigStruct;
         private String memorySnapshotPath;
+        @NoLogging
+        private String vmXml;
         private boolean coloPrimary;
         private boolean coloSecondary;
         private boolean consoleLogToFile;
@@ -2088,6 +2090,14 @@ public class KVMAgentCommands {
         private boolean useColoBinary;
         private String vmCpuVendorId;
         private boolean qemu64BitPciMmioSetup;
+
+        public String getVmXml() {
+            return vmXml;
+        }
+
+        public void setVmXml(String vmXml) {
+            this.vmXml = vmXml;
+        }
 
         public boolean isQemu64BitPciMmioSetup() {
             return qemu64BitPciMmioSetup;
@@ -2658,6 +2668,8 @@ public class KVMAgentCommands {
         private List<VirtualDeviceInfo> virtualDeviceInfoList;
         private VirtualDeviceInfo memBalloonInfo;
         private VirtualizerInfoTO virtualizerInfo;
+        @NoLogging
+        private String vmXml;
 
         public VirtualDeviceInfo getMemBalloonInfo() {
             return memBalloonInfo;
@@ -2689,6 +2701,14 @@ public class KVMAgentCommands {
 
         public void setVirtualizerInfo(VirtualizerInfoTO virtualizerInfo) {
             this.virtualizerInfo = virtualizerInfo;
+        }
+
+        public String getVmXml() {
+            return vmXml;
+        }
+
+        public void setVmXml(String vmXml) {
+            this.vmXml = vmXml;
         }
     }
 

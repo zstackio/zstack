@@ -405,7 +405,6 @@ public class ResourceConfig {
         }
 
         private void init(List<Class> connectedClasses) {
-            ResourceConfigGetter getter = new ResourceConfigGetter();
             Class resourceClass = connectedClasses.get(0);
             for (Class parentClass : connectedClasses.subList(1, connectedClasses.size())) {
                 Optional.ofNullable(DBGraph.findVerticesWithSmallestWeight(resourceClass, parentClass)).ifPresent(vertex ->
@@ -417,7 +416,7 @@ public class ResourceConfig {
                         parentResourceUuidPairsSql.add(vertex.toBidirectionalSQL("uuid", SimpleQuery.Op.IN, "(%s)")));
             }
 
-            getter.resourceType = resourceClass.getSimpleName();
+            resourceType = resourceClass.getSimpleName();
         }
     }
 
@@ -491,6 +490,19 @@ public class ResourceConfig {
                 .eq(ResourceConfigVO_.category, globalConfig.getCategory())
                 .eq(ResourceConfigVO_.resourceUuid, resourceUuid)
                 .isExists();
+    }
+
+    public boolean isMatch(String identity) {
+        return Objects.equals(globalConfig.getIdentity(), identity);
+    }
+
+    public String getResourceConfigUuid(String resourceUuid, String value) {
+        return Q.New(ResourceConfigVO.class)
+                .eq(ResourceConfigVO_.name, globalConfig.getName())
+                .eq(ResourceConfigVO_.category, globalConfig.getCategory())
+                .eq(ResourceConfigVO_.resourceUuid, resourceUuid)
+                .eq(ResourceConfigVO_.value, value)
+                .select(ResourceConfigVO_.uuid).findValue();
     }
 
     private String loadConfigValue(String resourceUuid) {

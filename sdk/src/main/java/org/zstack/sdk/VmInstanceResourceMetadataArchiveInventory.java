@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class VmInstanceDeviceAddressArchiveInventory  {
+public class VmInstanceResourceMetadataArchiveInventory  {
 
     public long id;
     public void setId(long id) {

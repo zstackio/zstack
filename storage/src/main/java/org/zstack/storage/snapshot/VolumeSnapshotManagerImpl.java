@@ -39,7 +39,7 @@ import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceMessa
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO;
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO_;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -103,7 +103,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     @Autowired
     private CascadeFacade casf;
     @Autowired
-    private VmInstanceDeviceManager vidm;
+    private VmInstanceResourceMetadataManager vidm;
 
     private Map<String, MemorySnapshotGroupReferenceFactory> referenceFactories = Collections.synchronizedMap(new HashMap<>());
 
@@ -396,7 +396,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
     @Override
     public void afterCleanUpVmBackup(String groupUuid) {
-        vidm.deleteArchiveVmInstanceDeviceAddressGroup(groupUuid);
+        vidm.deleteArchiveVmInstanceResourceMetadataGroup(groupUuid);
     }
 
     private class SnapshotAncestorStruct {

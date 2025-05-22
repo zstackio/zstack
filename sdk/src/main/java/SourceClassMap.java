@@ -346,8 +346,8 @@ public class SourceClassMap {
 			put("org.zstack.header.vm.VmSchedHistoryInventory", "org.zstack.sdk.VmSchedHistoryInventory");
 			put("org.zstack.header.vm.cdrom.VmCdRomInventory", "org.zstack.sdk.VmCdRomInventory");
 			put("org.zstack.header.vm.devices.DeviceAddress", "org.zstack.sdk.DeviceAddress");
-			put("org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveInventory", "org.zstack.sdk.VmInstanceDeviceAddressArchiveInventory");
-			put("org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupInventory", "org.zstack.sdk.VmInstanceDeviceAddressGroupInventory");
+			put("org.zstack.header.vm.devices.VmInstanceResourceMetadataArchiveInventory", "org.zstack.sdk.VmInstanceResourceMetadataArchiveInventory");
+			put("org.zstack.header.vm.devices.VmInstanceResourceMetadataGroupInventory", "org.zstack.sdk.VmInstanceResourceMetadataGroupInventory");
 			put("org.zstack.header.vmscheduling.HostSchedulingRuleGroupInventory", "org.zstack.sdk.HostSchedulingRuleGroupInventory");
 			put("org.zstack.header.vmscheduling.VmSchedulingRuleExecuteState", "org.zstack.sdk.VmSchedulingRuleExecuteState");
 			put("org.zstack.header.vmscheduling.VmSchedulingRuleGroupInventory", "org.zstack.sdk.VmSchedulingRuleGroupInventory");
@@ -1277,11 +1277,11 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmCdRomInventory", "org.zstack.header.vm.cdrom.VmCdRomInventory");
 			put("org.zstack.sdk.VmDnsInventory", "org.zstack.header.vm.VmDnsInventory");
 			put("org.zstack.sdk.VmExternalBackupInfo", "org.zstack.externalbackup.VmExternalBackupInfo");
-			put("org.zstack.sdk.VmInstanceDeviceAddressArchiveInventory", "org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveInventory");
-			put("org.zstack.sdk.VmInstanceDeviceAddressGroupInventory", "org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupInventory");
 			put("org.zstack.sdk.VmInstanceInventory", "org.zstack.header.vm.VmInstanceInventory");
 			put("org.zstack.sdk.VmInstanceMdevDeviceSpecRefInventory", "org.zstack.pciDevice.specification.mdev.VmInstanceMdevDeviceSpecRefInventory");
 			put("org.zstack.sdk.VmInstancePciDeviceSpecRefInventory", "org.zstack.pciDevice.specification.pci.VmInstancePciDeviceSpecRefInventory");
+			put("org.zstack.sdk.VmInstanceResourceMetadataArchiveInventory", "org.zstack.header.vm.devices.VmInstanceResourceMetadataArchiveInventory");
+			put("org.zstack.sdk.VmInstanceResourceMetadataGroupInventory", "org.zstack.header.vm.devices.VmInstanceResourceMetadataGroupInventory");
 			put("org.zstack.sdk.VmMemoryBillingInventory", "org.zstack.billing.generator.vm.memory.VmMemoryBillingInventory");
 			put("org.zstack.sdk.VmMemorySpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmMemorySpendingDetails");
 			put("org.zstack.sdk.VmNicBandwidthSpendingDetails", "org.zstack.billing.spendingcalculator.vmnic.VmNicBandwidthSpendingDetails");

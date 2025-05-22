@@ -43,7 +43,7 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
@@ -91,7 +91,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     @Autowired
     private PluginRegistry pluginRgty;
     @Autowired
-    private VmInstanceDeviceManager vidm;
+    private VmInstanceResourceMetadataManager vidm;
 
     private Future<Void> volumeExpungeTask;
 
@@ -1348,7 +1348,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 .set(VolumeVO_.vmInstanceUuid, null)
                 .set(VolumeVO_.deviceId, null)
                 .update();
-        vidm.deleteVmDeviceAddress(volume.getUuid(), vm.getUuid());
+        vidm.deleteVmResourceMetadata(volume.getUuid(), vm.getUuid());
         completion.success();
     }
 
