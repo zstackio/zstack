@@ -5,9 +5,6 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.Constants
-import org.zstack.header.host.HostStatus
-import org.zstack.header.host.HostVO
-import org.zstack.header.host.HostVO_
 import org.zstack.header.longjob.LongJobState
 import org.zstack.header.longjob.LongJobVO
 import org.zstack.header.longjob.LongJobVO_
@@ -27,7 +24,6 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
-
 /**
  * Created by shixin.ruan on 2018/02/10.
  */
@@ -287,6 +283,17 @@ class MigrateVmFromDestitonHostCase extends SubCase {
         MigrateVmAction.Result ret = action.call()
 
         assert ret.error != null
+
+        // test migrate disable auto-converge
+        KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.updateValue(true)
+        migrateVm {
+            vmInstanceUuid = vm1.uuid
+            hostUuid = host.uuid
+            strategy = "no-converge"
+            downTime = 300
+        }
+
+        assert !cmd.autoConverge
     }
 
     private void migrateUnknownVm(String destHostUuid) {

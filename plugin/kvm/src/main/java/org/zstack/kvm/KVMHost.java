@@ -3050,9 +3050,11 @@ public class KVMHost extends HostBase implements Host {
                     public void run(final FlowTrigger trigger, Map data) {
                         TaskProgressRange stage = markTaskStage(parentStage, MIGRATE_VM_STAGE);
 
-                        boolean autoConverage = rcf.getResourceConfigValue(KVMGlobalConfig.MIGRATE_AUTO_CONVERGE, vmUuid, Boolean.class);
-                        if (!autoConverage) {
-                            autoConverage = s.strategy != null && s.strategy.equals("auto-converge");
+                        boolean autoConverge;
+                        if (s.strategy != null) {
+                            autoConverge = s.strategy.equals("auto-converge");
+                        } else {
+                            autoConverge = rcf.getResourceConfigValue(KVMGlobalConfig.MIGRATE_AUTO_CONVERGE, vmUuid, Boolean.class);
                         }
 
                         boolean xbzrle = KVMGlobalConfig.MIGRATE_XBZRLE.value(Boolean.class);
@@ -3064,7 +3066,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setMigrateFromDestination(migrateFromDestination);
                         cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
                         cmd.setVmUuid(vmUuid);
-                        cmd.setAutoConverge(autoConverage);
+                        cmd.setAutoConverge(autoConverge);
                         cmd.setXbzrle(xbzrle);
                         cmd.setVdpaPaths((List<String>) data.get("vDPA_paths"));
                         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));

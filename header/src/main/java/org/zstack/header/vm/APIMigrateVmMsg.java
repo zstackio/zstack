@@ -69,7 +69,7 @@ public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, Mi
     @APIParam(required = false)
     private boolean allowUnknown;
 
-    @APIParam(required = false, validValues = {"auto-converge"})
+    @APIParam(required = false, validValues = {"auto-converge", "no-converge"})
     private String strategy;
 
     @APIParam(required = false)
