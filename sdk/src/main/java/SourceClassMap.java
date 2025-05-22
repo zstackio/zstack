@@ -24,6 +24,7 @@ public class SourceClassMap {
 			put("org.zstack.ai.entity.ModelServiceInventory", "org.zstack.sdk.ModelServiceInventory");
 			put("org.zstack.ai.entity.ModelServiceRefInventory", "org.zstack.sdk.ModelServiceRefInventory");
 			put("org.zstack.ai.entity.TrainedModelRecordInventory", "org.zstack.sdk.TrainedModelRecordInventory");
+			put("org.zstack.ai.message.ArchitectureImageMapping", "org.zstack.sdk.ArchitectureImageMapping");
 			put("org.zstack.ai.message.MaaSUsage", "org.zstack.sdk.MaaSUsage");
 			put("org.zstack.ai.message.ModelCenterServiceInventory", "org.zstack.sdk.ModelCenterServiceInventory");
 			put("org.zstack.ai.message.ModelCenterServiceInventory$MetaServerService", "org.zstack.sdk.MetaServerService");
@@ -255,6 +256,7 @@ public class SourceClassMap {
 			put("org.zstack.header.flowMeter.FlowMeterInventory", "org.zstack.sdk.FlowMeterInventory");
 			put("org.zstack.header.flowMeter.NetworkRouterFlowMeterRefInventory", "org.zstack.sdk.NetworkRouterFlowMeterRefInventory");
 			put("org.zstack.header.host.AddHostFromFileResult", "org.zstack.sdk.AddHostFromFileResult");
+			put("org.zstack.header.host.CpuArchitecture", "org.zstack.sdk.CpuArchitecture");
 			put("org.zstack.header.host.HostInventory", "org.zstack.sdk.HostInventory");
 			put("org.zstack.header.host.HostIpmiInventory", "org.zstack.sdk.HostIpmiInventory");
 			put("org.zstack.header.host.HostNUMANode", "org.zstack.sdk.HostNUMANode");
@@ -869,6 +871,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AppBuildSystemZoneRefInventory", "org.zstack.header.buildsystem.AppBuildSystemZoneRefInventory");
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");
 			put("org.zstack.sdk.ApplicationDevelopmentServiceInventory", "org.zstack.ai.entity.ApplicationDevelopmentServiceInventory");
+			put("org.zstack.sdk.ArchitectureImageMapping", "org.zstack.ai.message.ArchitectureImageMapping");
 			put("org.zstack.sdk.AttachTagResult", "org.zstack.tag2.AttachTagResult");
 			put("org.zstack.sdk.AuditData", "org.zstack.header.zwatch.AuditData");
 			put("org.zstack.sdk.AuditDataV1", "org.zstack.header.zwatch.AuditDataV1");
@@ -964,6 +967,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ContainerManagementEndpointInventory", "org.zstack.container.entity.ContainerManagementEndpointInventory");
 			put("org.zstack.sdk.ContainerUsage", "org.zstack.container.ContainerUsage");
 			put("org.zstack.sdk.ControlStrategy", "org.zstack.loginControl.entity.ControlStrategy");
+			put("org.zstack.sdk.CpuArchitecture", "org.zstack.header.host.CpuArchitecture");
 			put("org.zstack.sdk.CpuMemoryCapacityData", "org.zstack.header.allocator.datatypes.CpuMemoryCapacityData");
 			put("org.zstack.sdk.CreateDataVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeSnapshotEvent$Failure");
 			put("org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent$Failure");
