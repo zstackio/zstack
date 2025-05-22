@@ -11,19 +11,19 @@ import java.util.List;
  * Created by LiangHanYu on 2022/6/17 17:31
  */
 @RestResponse(allTo = "inventories")
-public class APIQueryVmInstanceDeviceAddressArchiveReply extends APIQueryReply {
-    private List<VmInstanceDeviceAddressArchiveInventory> inventories;
+public class APIQueryVmInstanceResourceMetadataArchiveReply extends APIQueryReply {
+    private List<VmInstanceResourceMetadataArchiveInventory> inventories;
 
-    public List<VmInstanceDeviceAddressArchiveInventory> getInventories() {
+    public List<VmInstanceResourceMetadataArchiveInventory> getInventories() {
         return inventories;
     }
 
-    public void setInventories(List<VmInstanceDeviceAddressArchiveInventory> inventories) {
+    public void setInventories(List<VmInstanceResourceMetadataArchiveInventory> inventories) {
         this.inventories = inventories;
     }
 
-    public static APIQueryVmInstanceDeviceAddressArchiveReply __example__() {
-        VmInstanceDeviceAddressArchiveInventory inv = new VmInstanceDeviceAddressArchiveInventory();
+    public static APIQueryVmInstanceResourceMetadataArchiveReply __example__() {
+        VmInstanceResourceMetadataArchiveInventory inv = new VmInstanceResourceMetadataArchiveInventory();
         inv.setId(1);
         inv.setResourceUuid(uuid());
 
@@ -36,11 +36,11 @@ public class APIQueryVmInstanceDeviceAddressArchiveReply extends APIQueryReply {
         inv.setDeviceAddress(address.toString());
         inv.setAddressGroupUuid(uuid());
         inv.setMetadata("Metadata");
-        inv.setMetadataClass(VmInstanceDeviceAddressArchiveInventory.class.getCanonicalName());
+        inv.setMetadataClass(VmInstanceResourceMetadataArchiveInventory.class.getCanonicalName());
         inv.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         inv.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
 
-        APIQueryVmInstanceDeviceAddressArchiveReply result = new APIQueryVmInstanceDeviceAddressArchiveReply();
+        APIQueryVmInstanceResourceMetadataArchiveReply result = new APIQueryVmInstanceResourceMetadataArchiveReply();
         result.inventories = Collections.singletonList(inv);
         return result;
     }

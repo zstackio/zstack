@@ -51,12 +51,12 @@
     </message>
 
     <message>
-        <name>org.zstack.header.vm.devices.APIQueryVmInstanceDeviceAddressArchiveMsg</name>
+        <name>org.zstack.header.vm.devices.APIQueryVmInstanceResourceMetadataArchiveMsg</name>
         <serviceId>query</serviceId>
     </message>
 
     <message>
-        <name>org.zstack.header.vm.devices.APIQueryVmInstanceDeviceAddressGroupMsg</name>
+        <name>org.zstack.header.vm.devices.APIQueryVmInstanceResourceMetadataGroupMsg</name>
         <serviceId>query</serviceId>
     </message>
 

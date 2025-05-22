@@ -7,7 +7,7 @@ import java.sql.Timestamp;
 
 @Entity
 @Table
-public class VmInstanceDeviceAddressVO implements ToInventory {
+public class VmInstanceResourceMetadataVO implements ToInventory {
     @Id
     @Column
     @GeneratedValue(strategy = GenerationType.IDENTITY)

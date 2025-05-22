@@ -58,7 +58,7 @@ import org.zstack.header.vm.VmInstanceSpec.CdRomSpec;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.vm.cdrom.*;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.Account;
@@ -136,7 +136,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     @Autowired
     private TagManager tagMgr;
     @Autowired
-    private VmInstanceDeviceManager vidm;
+    private VmInstanceResourceMetadataManager vidm;
     @Autowired
     private NetworkServiceManager nwServiceMgr;
 
@@ -4122,7 +4122,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 bus.publish(evt);
 
                 if (bootModeChanged[0]) {
-                    vidm.deleteAllDeviceAddressesByVm(self.getUuid());
+                    vidm.deleteAllResourceMetadataByVm(self.getUuid());
                 }
             }
         }).start();
@@ -8967,7 +8967,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                             .set(VmCdRomVO_.deviceId, deviceId)
                             .update();
                     logger.debug(String.format("delete the device address of the cdRom %s of the vm %s", beforeDefaultCdRomVO.getUuid(), beforeDefaultCdRomVO.getVmInstanceUuid()));
-                    vidm.deleteVmDeviceAddress(beforeDefaultCdRomVO.getUuid(), beforeDefaultCdRomVO.getVmInstanceUuid());
+                    vidm.deleteVmResourceMetadata(beforeDefaultCdRomVO.getUuid(), beforeDefaultCdRomVO.getVmInstanceUuid());
                 }
             }
         }.execute();

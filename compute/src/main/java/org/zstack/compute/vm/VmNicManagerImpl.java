@@ -23,7 +23,7 @@ import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.network.l3.UsedIpVO_;
 import org.zstack.header.tag.*;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -40,7 +40,7 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
     private static final CLogger logger = Utils.getLogger(VmNicManagerImpl.class);
 
     @Autowired
-    private VmInstanceDeviceManager vidm;
+    private VmInstanceResourceMetadataManager vidm;
     @Autowired
     private PluginRegistry pluginRegistry;
     @Autowired
@@ -297,13 +297,13 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
             @Override
             public void tagCreated(SystemTagInventory tag) {
                 resetVmNicDriverType(tag.getResourceUuid(), defaultPVNicDriver);
-                vidm.deleteDeviceAddressesByVmModifyVirtIO(tag.getResourceUuid());
+                vidm.deleteResourceMetadataByVmModifyVirtIO(tag.getResourceUuid());
             }
 
             @Override
             public void tagDeleted(SystemTagInventory tag) {
                 resetVmNicDriverType(tag.getResourceUuid(), defaultNicDriver);
-                vidm.deleteDeviceAddressesByVmModifyVirtIO(tag.getResourceUuid());
+                vidm.deleteResourceMetadataByVmModifyVirtIO(tag.getResourceUuid());
             }
 
             @Override

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryVmInstanceDeviceAddressGroupAction extends QueryAction {
+public class QueryVmInstanceResourceMetadataGroupAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryVmInstanceDeviceAddressGroupAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryVmInstanceDeviceAddressGroupResult value;
+        public org.zstack.sdk.QueryVmInstanceResourceMetadataGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryVmInstanceDeviceAddressGroupAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryVmInstanceDeviceAddressGroupResult value = res.getResult(org.zstack.sdk.QueryVmInstanceDeviceAddressGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryVmInstanceDeviceAddressGroupResult() : value; 
+        org.zstack.sdk.QueryVmInstanceResourceMetadataGroupResult value = res.getResult(org.zstack.sdk.QueryVmInstanceResourceMetadataGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVmInstanceResourceMetadataGroupResult() : value; 
 
         return ret;
     }
@@ -65,7 +65,7 @@ public class QueryVmInstanceDeviceAddressGroupAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/vmInstance/device/address/group";
+        info.path = "/vmInstance/resource/metadata/group";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class QueryVmInstanceDeviceAddressGroupResult {
+public class QueryVmInstanceResourceMetadataArchiveResult {
     public java.util.List inventories;
     public void setInventories(java.util.List inventories) {
         this.inventories = inventories;

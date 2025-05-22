@@ -42,7 +42,7 @@ import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeConstant.Capability;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
@@ -97,7 +97,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
     @Autowired
     private VolumeDeletionPolicyManager deletionPolicyMgr;
     @Autowired
-    private VmInstanceDeviceManager vidm;
+    private VmInstanceResourceMetadataManager vidm;
     @Autowired
     private StorageTrash trash;
 

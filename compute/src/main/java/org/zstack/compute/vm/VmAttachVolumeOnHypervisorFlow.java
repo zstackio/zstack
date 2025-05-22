@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.host.HostManager;
 import org.zstack.core.db.Q;
 import org.zstack.header.host.*;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -16,11 +16,9 @@ import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.VolumeInventory;
 
 import java.util.List;
@@ -35,7 +33,7 @@ public class VmAttachVolumeOnHypervisorFlow implements Flow {
     @Autowired
     private ErrorFacade errf;
     @Autowired
-    private VmInstanceDeviceManager vidm;
+    private VmInstanceResourceMetadataManager vidm;
     @Autowired
     private HostManager hostManager;
 
@@ -85,7 +83,7 @@ public class VmAttachVolumeOnHypervisorFlow implements Flow {
 
         for (VirtualDeviceInfo info : reply.getVirtualDeviceInfoList()) {
             if (info.isValid()) {
-                vidm.createOrUpdateVmDeviceAddress(info, spec.getVmInventory().getUuid());
+                vidm.createOrUpdateVmResourceMetadata(info, spec.getVmInventory().getUuid());
             }
         }
     }

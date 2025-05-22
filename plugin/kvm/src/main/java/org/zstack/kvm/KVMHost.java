@@ -15,7 +15,7 @@ import org.zstack.compute.vm.*;
 import org.zstack.core.timeout.TimeHelper;
 import org.zstack.header.core.*;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
@@ -146,7 +146,7 @@ public class KVMHost extends HostBase implements Host {
     @Autowired
     private ClusterResourceConfigInitializer crci;
     @Autowired
-    private VmInstanceDeviceManager vidm;
+    private VmInstanceResourceMetadataManager vidm;
     @Autowired
     private KvmHypervisorInfoManager hypervisorManager;
     @Autowired
@@ -3419,7 +3419,7 @@ public class KVMHost extends HostBase implements Host {
                 bus.reply(msg, reply);
 
                 if (ret.getVirtualDeviceInfoList() != null && !ret.getVirtualDeviceInfoList().isEmpty()) {
-                    ret.getVirtualDeviceInfoList().forEach(info -> vidm.createOrUpdateVmDeviceAddress(msg.getNicInventory().getUuid(),
+                    ret.getVirtualDeviceInfoList().forEach(info -> vidm.createOrUpdateVmResourceMetadata(msg.getNicInventory().getUuid(),
                             info.getDeviceAddress(), msg.getNicInventory().getVmInstanceUuid(),
                             null, null));
                 }
