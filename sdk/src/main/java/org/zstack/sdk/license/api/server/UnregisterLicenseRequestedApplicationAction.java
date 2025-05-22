@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.license.api.server;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RegisterLicenseRequestedApplicationAction extends AbstractAction {
+public class UnregisterLicenseRequestedApplicationAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RegisterLicenseRequestedApplicationAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.RegisterLicenseRequestedApplicationResult value;
+        public org.zstack.sdk.license.api.server.UnregisterLicenseRequestedApplicationResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,13 +26,7 @@ public class RegisterLicenseRequestedApplicationAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String licenseRequestCode;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String clientPubKey;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long currentTimeMillis;
+    public java.lang.String appId;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +60,8 @@ public class RegisterLicenseRequestedApplicationAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.RegisterLicenseRequestedApplicationResult value = res.getResult(org.zstack.sdk.RegisterLicenseRequestedApplicationResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RegisterLicenseRequestedApplicationResult() : value; 
+        org.zstack.sdk.license.api.server.UnregisterLicenseRequestedApplicationResult value = res.getResult(org.zstack.sdk.license.api.server.UnregisterLicenseRequestedApplicationResult.class);
+        ret.value = value == null ? new org.zstack.sdk.license.api.server.UnregisterLicenseRequestedApplicationResult() : value; 
 
         return ret;
     }
@@ -96,11 +90,11 @@ public class RegisterLicenseRequestedApplicationAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/licenses/applications";
+        info.httpMethod = "PUT";
+        info.path = "/license/unregister-applications";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "unregisterLicenseRequestedApplication";
         return info;
     }
 
