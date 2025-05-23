@@ -45,5 +45,80 @@
         <id>1008</id>
         <description>The current Primary License does not allow using Addon licenses to add plus services</description>
     </code>
+
+    <code>
+        <id>2000</id>
+        <description>Generic license component error</description>
+    </code>
+
+    <code>
+        <id>2001</id>
+        <description>Missing license request code</description>
+    </code>
+
+    <code>
+        <id>3000</id>
+        <description>Generic license server error</description>
+    </code>
+
+    <code>
+        <id>3002</id>
+        <description>Unsupported license key-store type</description>
+    </code>
+
+    <code>
+        <id>3003</id>
+        <description>License key-store error</description>
+    </code>
+
+    <code>
+        <id>3004</id>
+        <description>License public key error</description>
+    </code>
+
+    <code>
+        <id>3100</id>
+        <description>License server generic error</description>
+    </code>
+
+    <code>
+        <id>3101</id>
+        <description>Missing license server file</description>
+    </code>
+
+    <code>
+        <id>3102</id>
+        <description>Connect to license client error</description>
+    </code>
+
+    <code>
+        <id>3104</id>
+        <description>License server call license client API error</description>
+    </code>
+
+    <code>
+        <id>3200</id>
+        <description>License client generic error</description>
+    </code>
+
+    <code>
+        <id>3201</id>
+        <description>Missing license client file</description>
+    </code>
+
+    <code>
+        <id>3202</id>
+        <description>Connect to license server error</description>
+    </code>
+
+    <code>
+        <id>3203</id>
+        <description>Log in license server error</description>
+    </code>
+
+    <code>
+        <id>3204</id>
+        <description>License client call license server API error</description>
+    </code>
 </error>
 
