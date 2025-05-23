@@ -61,3 +61,23 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ContainerBackupStorageVO` (
     CONSTRAINT `fkContainerBackupStorageVOBackupStorageEO` FOREIGN KEY (`uuid`) REFERENCES `BackupStorageEO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkContainerBackupStorageVOContainerManagementEndpointVO` FOREIGN KEY (`endpointUuid`) REFERENCES `ContainerManagementEndpointVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceCpuArchitectureVO` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `modelServiceUuid` varchar(32) NOT NULL,
+    `architecture` varchar(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fkModelServiceCpuArchitectureVOModelServiceVO` FOREIGN KEY (`modelServiceUuid`) REFERENCES `ModelServiceVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceGpuVendorVO` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `modelServiceUuid` varchar(32) NOT NULL,
+    `gpuVendor` varchar(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fkModelServiceGpuVendorVOModelServiceVO` FOREIGN KEY (`modelServiceUuid`) REFERENCES `ModelServiceVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
