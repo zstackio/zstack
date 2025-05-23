@@ -135,6 +135,18 @@ public abstract class Bash {
         return runFormat(cmd, args);
     }
 
+    protected int runScripts(Object... cmdScripts) {
+        List<String> tos = new ArrayList<>(cmdScripts.length);
+        for (Object cmd : cmdScripts) {
+            if (cmd instanceof Script) {
+                tos.add(cmd.toString());
+            } else {
+                tos.add(Script.escapeCmd(cmd.toString()));
+            }
+        }
+        return runFormat(String.join(" ", tos));
+    }
+
     protected int runFormat(String cmd, Object... args) {
         if (args != null) {
             cmd = String.format(cmd, args);
