@@ -81,3 +81,13 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceGpuVendorVO` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fkModelServiceGpuVendorVOModelServiceVO` FOREIGN KEY (`modelServiceUuid`) REFERENCES `ModelServiceVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ContainerImageVO` (
+    `uuid` varchar(32) NOT NULL,
+    `registryUrl` varchar(255) DEFAULT NULL,
+    `endpointUuid` varchar(32) NOT NULL,
+    `imageTag` varchar(64) DEFAULT NULL,
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT `fkContainerImageVOImageEO` FOREIGN KEY (`uuid`) REFERENCES `ImageEO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkContainerImageVOContainerManagementEndpointVO` FOREIGN KEY (`endpointUuid`) REFERENCES `ContainerManagementEndpointVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
