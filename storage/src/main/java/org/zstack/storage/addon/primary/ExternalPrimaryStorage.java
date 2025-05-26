@@ -722,8 +722,17 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             ImageCacheVO cache = createTemporaryImageCacheFromVolumeSnapshot(msg.getImageInventory(), msg.getVolumeSnapshot());
             dbf.persist(cache);
             reply.setInventory(cache.toInventory());
-            // TODO hardcode for expon
-            reply.setIncremental(false);
+
+            boolean lazyDelete = controller.reportCapabilities().getSnapshotCapability().isSupportLazyDelete();
+            /**
+             If the primary storage supports lazy deletion, we can delete the snapshot immediately.
+             Otherwise, we need to retain the snapshot until its references are deleted.
+             The incremental clone mechanism handles this reference management.
+
+             In other words, if the primary storage supports lazy deletion, we can treat it as a
+             standard clone operation for simplified management.
+             */
+            reply.setIncremental(!lazyDelete);
             bus.reply(msg, reply);
             return;
         }
