@@ -22,9 +22,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
 import javax.persistence.Tuple;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class VolumeSnapshotReferenceUtils {
@@ -79,8 +77,31 @@ public class VolumeSnapshotReferenceUtils {
 
     public static List<String> getVolumeInstallUrlsReferenceByOtherVolumes(String volumeUuid) {
         return getVolumeReferenceRef(volumeUuid).stream()
-                .map(VolumeSnapshotReferenceVO::getVolumeSnapshotInstallUrl)
+                .map(VolumeSnapshotReferenceVO::getVolumeSnapshotInstallUrl).distinct()
                 .collect(Collectors.toList());
+    }
+
+    // get volume snapshotUuids referenced by other volumes directly or indirectly
+    public static Set<String> getVolumeAllSnapshotsReferencedByOtherVolumes(String volumeUuid) {
+        List<String> refVolumeSnapshotUuids = getVolumeReferenceRef(volumeUuid).stream()
+                .map(VolumeSnapshotReferenceVO::getVolumeSnapshotUuid).distinct()
+                .collect(Collectors.toList());
+        if (refVolumeSnapshotUuids.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        List<VolumeSnapshotVO> allSnapshots = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, volumeUuid).list();
+
+        Map<String, List<VolumeSnapshotVO>> treeSnapshotsMap = allSnapshots.stream().collect(Collectors.groupingBy(VolumeSnapshotVO::getTreeUuid));
+        List<String> refVolumeSnapshotUuidsInTree = new ArrayList<>();
+        for (VolumeSnapshotVO refSnapshot : allSnapshots.stream().filter(sp -> refVolumeSnapshotUuids.contains(sp.getUuid())).collect(Collectors.toList())) {
+            refVolumeSnapshotUuidsInTree.add(refSnapshot.getUuid());
+            VolumeSnapshotTree tree = VolumeSnapshotTree.fromVOs(treeSnapshotsMap.get(refSnapshot.getTreeUuid()));
+            VolumeSnapshotTree.SnapshotLeaf snapshotLeaf = tree.findSnapshot(arg -> arg.getUuid().equals(refSnapshot.getUuid()));
+            refVolumeSnapshotUuidsInTree.addAll(snapshotLeaf.getAncestors().stream()
+                    .map(VolumeSnapshotInventory::getUuid).collect(Collectors.toList()));
+        }
+        return new HashSet<>(refVolumeSnapshotUuidsInTree);
     }
 
     public static List<VolumeInventory> getReferenceVolume(String volumeUuid) {
