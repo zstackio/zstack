@@ -21,6 +21,7 @@ BEGIN
     DECLARE service_uuid VARCHAR(32);
     DECLARE vm_image_uuid VARCHAR(32);
     DECLARE cpu_arch VARCHAR(32);
+    DECLARE model_service_image_uuid VARCHAR(32);
     DECLARE img_cursor CURSOR FOR
         SELECT ms.uuid, ms.vmImageUuid, img.architecture
         FROM ModelServiceVO ms
@@ -41,8 +42,10 @@ BEGIN
         WHERE uuid = service_uuid;
 
         IF NOT EXISTS (SELECT 1 FROM ModelServiceImageVO WHERE modelServiceUuid = service_uuid AND cpuArchitecture = cpu_arch) THEN
+            SET model_service_image_uuid = REPLACE(UUID(),'-','');
             INSERT INTO ModelServiceImageVO (uuid, modelServiceUuid, cpuArchitecture, vmImageUuid, createDate, lastOpDate)
-            VALUES (UUID_SHORT(), service_uuid, cpu_arch, vm_image_uuid, NOW(), NOW());
+            VALUES (model_service_image_uuid, service_uuid, cpu_arch, vm_image_uuid, NOW(), NOW());
+            INSERT INTO ResourceVO (uuid, resourceType, concreteResourceType) values (model_service_image_uuid, 'ModelServiceImageVO', 'org.zstack.ai.entity.ModelServiceImageVO');
         END IF;
     END LOOP;
 
