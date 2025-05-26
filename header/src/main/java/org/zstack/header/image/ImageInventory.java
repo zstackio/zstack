@@ -49,29 +49,50 @@ public class ImageInventory implements Serializable {
     private List<ImageBackupStorageRefInventory> backupStorageRefs;
     private List<SystemTagInventory> systemTags;
 
+    public ImageInventory() {
+
+    }
+    public ImageInventory(ImageVO vo) {
+        this.uuid = vo.getUuid();
+        this.name = vo.getName();
+        this.description = vo.getDescription();
+        if (vo.getState() != null) {
+            this.state = vo.getState().toString();
+        } else {
+            this.state = null;
+        }
+        if (vo.getStatus() != null) {
+            this.status = vo.getStatus().toString();
+        } else {
+            this.status = null;
+        }
+        this.size = vo.getSize();
+        this.actualSize = vo.getActualSize();
+        this.md5Sum = vo.getMd5Sum();
+        this.url = vo.getUrl();
+        if (vo.getMediaType() != null) {
+            this.mediaType = vo.getMediaType().toString();
+        } else {
+            this.mediaType = null;
+        }
+        this.guestOsType = vo.getGuestOsType();
+        this.type = vo.getType();
+        if (vo.getPlatform() != null) {
+            this.platform = vo.getPlatform().toString();
+        } else {
+            this.platform = null;
+        }
+        this.architecture = vo.getArchitecture();
+        this.format = vo.getFormat();
+        this.system = vo.isSystem();
+        this.virtio = vo.getVirtio();
+        this.createDate = vo.getCreateDate();
+        this.lastOpDate = vo.getLastOpDate();
+        this.backupStorageRefs = ImageBackupStorageRefInventory.valueOf(vo.getBackupStorageRefs());
+    }
+
     public static ImageInventory valueOf(ImageVO vo) {
-        ImageInventory inv = new ImageInventory();
-        inv.setCreateDate(vo.getCreateDate());
-        inv.setDescription(vo.getDescription());
-        inv.setMediaType(vo.getMediaType().toString());
-        inv.setFormat(vo.getFormat());
-        inv.setGuestOsType(vo.getGuestOsType());
-        inv.setMd5Sum(vo.getMd5Sum());
-        inv.setName(vo.getName());
-        inv.setSize(vo.getSize());
-        inv.setActualSize(vo.getActualSize());
-        inv.setStatus(vo.getStatus().toString());
-        inv.setState(vo.getState().toString());
-        inv.setUrl(vo.getUrl());
-        inv.setPlatform(vo.getPlatform() == null ? null : vo.getPlatform().toString());
-        inv.setArchitecture(vo.getArchitecture());
-        inv.setUuid(vo.getUuid());
-        inv.setType(vo.getType());
-        inv.setSystem(vo.isSystem());
-        inv.setLastOpDate(vo.getLastOpDate());
-        inv.setBackupStorageRefs(ImageBackupStorageRefInventory.valueOf(vo.getBackupStorageRefs()));
-        inv.setVirtio(vo.getVirtio());
-        return inv;
+        return new ImageInventory(vo);
     }
 
     public static ImageInventory valueOf(ImageEO vo) {
