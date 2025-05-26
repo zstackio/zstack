@@ -15,60 +15,25 @@ import java.util.Map;
  * @ Date   : Created in 17:36 2024/5/27
  */
 @XInfiniRestRequest(
-    path = "/bs-volumes/:clone",
+    path = "/bs-volumes/{id}/:flatten",
     method = HttpMethod.POST,
-    responseClass = CloneVolumeResponse.class,
+    responseClass = FlattenVolumeResponse.class,
     category = XInfiniApiCategory.AFA
 )
-public class CloneVolumeRequest extends XInfiniRequest {
+public class FlattenVolumeRequest extends XInfiniRequest {
     @Param
-    private String name;
+    private int id;
 
-    @Param
-    private int bsSnapId;
-
-    @Param
+    @Param(queryable=true)
     private String creator = XInfiniConstants.DEFAULT_CREATOR;
 
-    @Param
-    private boolean flatten;
-
-    @Param(required = false)
-    private String description;
-
-    public int getBsSnapId() {
-        return bsSnapId;
+    public int getId() {
+        return id;
     }
 
-    public void setBsSnapId(int bsSnapId) {
-        this.bsSnapId = bsSnapId;
+    public void setId(int id) {
+        this.id = id;
     }
-
-    public boolean isFlatten() {
-        return flatten;
-    }
-
-    public void setFlatten(boolean flatten) {
-        this.flatten = flatten;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-
 
     public String getCreator() {
         return creator;
