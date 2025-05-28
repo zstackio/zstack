@@ -9,4 +9,5 @@ import org.zstack.header.message.MessageReply;
 public interface VirtualRouterSNATExtensionPoint {
     String getSNATWhiteList(String vrUuid);
     String getSNATDestWhiteList(String vrUuid);
+    String getSNATEgressIpv4Addr(String vrUuid);
 }

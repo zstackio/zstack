@@ -30,6 +30,7 @@ public interface VirtualRouterHaGroupExtensionPoint {
     List<String> getNetworkServicesFromHaGroupUuid(String type, String haGroupUuid);
     String getSNATWhiteList(String vrUuid);
     String getSNATDestWhiteList(String vrUuid);
+    String getSNATEgressIpv4Addr(String vrUuid);
 
     String getHaGroupName(String vrUuid);
     String getHaGroupUuid(String vrUuid);
