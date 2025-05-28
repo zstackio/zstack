@@ -166,6 +166,15 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 whiteList = ext.getSNATWhiteList(vrUuid);
             }
         }
+        String destWhiteList = null;
+        for(VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            destWhiteList = ext.getSNATDestWhiteList(vr.getUuid());
+        }
+        if (destWhiteList == null || destWhiteList.equals("null")) {
+            for(VirtualRouterSNATExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterSNATExtensionPoint.class)) {
+                destWhiteList = ext.getSNATDestWhiteList(vr.getUuid());
+            }
+        }
         for (VmNicInventory pubNic : pubNics) {
             if (pubNic.isIpv6OnlyNic()) {
                 continue;
@@ -184,6 +193,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
             info.setSnatNetmask(privateNic.getNetmask());
             info.setPrivateGatewayIp(privateNic.getGateway());
             info.setWhiteList(whiteList);
+            info.setDestWhiteList(destWhiteList);
             snatInfo.add(info);
         }
 
@@ -269,6 +279,15 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 whiteList = ext.getSNATWhiteList(vrUuid);
             }
         }
+        String destWhiteList = null;
+        for(VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            destWhiteList = ext.getSNATDestWhiteList(vr.getUuid());
+        }
+        if (destWhiteList == null || destWhiteList.equals("null")) {
+            for(VirtualRouterSNATExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterSNATExtensionPoint.class)) {
+                destWhiteList = ext.getSNATDestWhiteList(vr.getUuid());
+            }
+        }
         for (VmNicInventory priNic : vr.getGuestNics()) {
             if (priNic.isIpv6OnlyNic()) {
                 continue;
@@ -283,6 +302,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
             info.setSnatNetmask(priNic.getNetmask());
             info.setPrivateGatewayIp(priNic.getGateway());
             info.setWhiteList(whiteList);
+            info.setDestWhiteList(destWhiteList);
             snatInfo.add(info);
         }
 
@@ -393,6 +413,15 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 whiteList = ext.getSNATWhiteList(vr.getUuid());
             }
         }
+        String destWhiteList = null;
+        for(VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            destWhiteList = ext.getSNATDestWhiteList(vr.getUuid());
+        }
+        if (destWhiteList == null || destWhiteList.equals("null")) {
+            for(VirtualRouterSNATExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterSNATExtensionPoint.class)) {
+                destWhiteList = ext.getSNATDestWhiteList(vr.getUuid());
+            }
+        }
         for (VmNicInventory pubnic : pubNics) {
             if (pubnic.isIpv6OnlyNic()) {
                 continue;
@@ -417,6 +446,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                     info.setState(Boolean.FALSE);
                 }
                 info.setWhiteList(whiteList);
+                info.setDestWhiteList(destWhiteList);
                 snatInfo.add(info);
             }
         }

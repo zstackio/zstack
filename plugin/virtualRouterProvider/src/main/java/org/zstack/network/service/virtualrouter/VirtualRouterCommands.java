@@ -591,6 +591,7 @@ public class VirtualRouterCommands {
 		private String snatNetmask;
 		private Boolean state;
 		private String whiteList;
+		private String destWhiteList;
 
 		public String getPrivateNicMac() {
 			return privateNicMac;
@@ -645,6 +646,14 @@ public class VirtualRouterCommands {
 
 		public void setWhiteList(String whiteList) {
 			this.whiteList = whiteList;
+		}
+
+		public String getDestWhiteList() {
+			return destWhiteList;
+		}
+
+		public void setDestWhiteList(String destWhiteList) {
+			this.destWhiteList = destWhiteList;
 		}
 	}
 
