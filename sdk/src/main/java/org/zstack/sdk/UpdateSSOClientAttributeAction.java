@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateCasClientAction extends AbstractAction {
+public class UpdateSSOClientAttributeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateCasClientAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateCasClientResult value;
+        public org.zstack.sdk.UpdateSSOClientAttributeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,34 +26,16 @@ public class CreateCasClientAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
+    public java.lang.String uuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String value;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String casServerLoginUrl;
+    @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String purpose;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String casServerUrlPrefix;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String serverName;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String loginType;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String urlTemplate;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List attributes;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -87,8 +69,8 @@ public class CreateCasClientAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateCasClientResult value = res.getResult(org.zstack.sdk.CreateCasClientResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateCasClientResult() : value; 
+        org.zstack.sdk.UpdateSSOClientAttributeResult value = res.getResult(org.zstack.sdk.UpdateSSOClientAttributeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateSSOClientAttributeResult() : value; 
 
         return ret;
     }
@@ -117,11 +99,11 @@ public class CreateCasClientAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/create/cas/client";
+        info.httpMethod = "PUT";
+        info.path = "/sso/client/attributes/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updateSSOClientAttribute";
         return info;
     }
 
