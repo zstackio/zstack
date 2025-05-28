@@ -98,6 +98,7 @@ public class RemoveIAM2ProjectLoginExpiredAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "removeIAM2ProjectLoginExpired";
+        info.morphTransform = "IAM2";
         return info;
     }
 

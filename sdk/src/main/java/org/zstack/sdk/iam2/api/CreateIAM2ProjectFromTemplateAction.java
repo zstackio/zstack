@@ -43,6 +43,9 @@ public class CreateIAM2ProjectFromTemplateAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List resourceTemplates;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String linkAccountUuid;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
@@ -116,6 +119,7 @@ public class CreateIAM2ProjectFromTemplateAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
+        info.morphTransform = "IAM2";
         return info;
     }
 

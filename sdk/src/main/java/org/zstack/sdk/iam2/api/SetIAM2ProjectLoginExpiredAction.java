@@ -31,6 +31,9 @@ public class SetIAM2ProjectLoginExpiredAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String loginExpired;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String loginExpiredAttributeUuid;
+
     @Param(required = false)
     public java.util.List systemTags;
 
@@ -98,6 +101,7 @@ public class SetIAM2ProjectLoginExpiredAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "setIAM2ProjectLoginExpired";
+        info.morphTransform = "IAM2";
         return info;
     }
 

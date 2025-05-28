@@ -107,6 +107,7 @@ public class UpdateIAM2OrganizationAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "updateIAM2Organization";
+        info.morphTransform = "IAM2";
         return info;
     }
 
