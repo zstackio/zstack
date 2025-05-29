@@ -175,6 +175,16 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 destWhiteList = ext.getSNATDestWhiteList(vr.getUuid());
             }
         }
+        String egressIpv4Addr = null;
+        for(VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            egressIpv4Addr = ext.getSNATEgressIpv4Addr(vr.getUuid());
+        }
+        if (egressIpv4Addr == null || egressIpv4Addr.equals("null")) {
+            for(VirtualRouterSNATExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterSNATExtensionPoint.class)) {
+                egressIpv4Addr = ext.getSNATEgressIpv4Addr(vr.getUuid());
+            }
+        }
+
         for (VmNicInventory pubNic : pubNics) {
             if (pubNic.isIpv6OnlyNic()) {
                 continue;
@@ -188,7 +198,11 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
             VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
             info.setPrivateNicIp(privateNic.getIp());
             info.setPrivateNicMac(privateNic.getMac());
-            info.setPublicIp(pubNic.getIp());
+            if (egressIpv4Addr != null && !egressIpv4Addr.equals("null") && !egressIpv4Addr.isEmpty()) {
+                info.setPublicIp(egressIpv4Addr);
+            } else {
+                info.setPublicIp(pubNic.getIp());
+            }
             info.setPublicNicMac(pubNic.getMac());
             info.setSnatNetmask(privateNic.getNetmask());
             info.setPrivateGatewayIp(privateNic.getGateway());
@@ -288,6 +302,16 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 destWhiteList = ext.getSNATDestWhiteList(vr.getUuid());
             }
         }
+        String egressIpv4Addr = null;
+        for(VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            egressIpv4Addr = ext.getSNATEgressIpv4Addr(vr.getUuid());
+        }
+        if (egressIpv4Addr == null || egressIpv4Addr.equals("null")) {
+            for(VirtualRouterSNATExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterSNATExtensionPoint.class)) {
+                egressIpv4Addr = ext.getSNATEgressIpv4Addr(vr.getUuid());
+            }
+        }
+
         for (VmNicInventory priNic : vr.getGuestNics()) {
             if (priNic.isIpv6OnlyNic()) {
                 continue;
@@ -297,7 +321,11 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
             VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
             info.setPrivateNicIp(priNic.getIp());
             info.setPrivateNicMac(priNic.getMac());
-            info.setPublicIp(publicNic.getIp());
+            if (egressIpv4Addr != null && !egressIpv4Addr.equals("null") && !egressIpv4Addr.isEmpty()) {
+                info.setPublicIp(egressIpv4Addr);
+            } else {
+                info.setPublicIp(publicNic.getIp());
+            }
             info.setPublicNicMac(publicNic.getMac());
             info.setSnatNetmask(priNic.getNetmask());
             info.setPrivateGatewayIp(priNic.getGateway());
@@ -422,6 +450,15 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 destWhiteList = ext.getSNATDestWhiteList(vr.getUuid());
             }
         }
+        String egressIpv4Addr = null;
+        for(VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            egressIpv4Addr = ext.getSNATEgressIpv4Addr(vr.getUuid());
+        }
+        if (egressIpv4Addr == null || egressIpv4Addr.equals("null")) {
+            for(VirtualRouterSNATExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterSNATExtensionPoint.class)) {
+                egressIpv4Addr = ext.getSNATEgressIpv4Addr(vr.getUuid());
+            }
+        }
         for (VmNicInventory pubnic : pubNics) {
             if (pubnic.isIpv6OnlyNic()) {
                 continue;
@@ -436,7 +473,11 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
                 info.setPrivateNicIp(priNic.getIp());
                 info.setPrivateNicMac(priNic.getMac());
-                info.setPublicIp(pubnic.getIp());
+                if (egressIpv4Addr != null && !egressIpv4Addr.equals("null") && !egressIpv4Addr.isEmpty()) {
+                    info.setPublicIp(egressIpv4Addr);
+                } else {
+                    info.setPublicIp(pubnic.getIp());
+                }
                 info.setPublicNicMac(pubnic.getMac());
                 info.setSnatNetmask(priNic.getNetmask());
                 info.setPrivateGatewayIp(priNic.getGateway());

@@ -111,6 +111,15 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
                 destWhiteList = ext.getSNATDestWhiteList(vr.getUuid());
             }
         }
+        String egressIpv4Addr = null;
+        for(VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            egressIpv4Addr = ext.getSNATEgressIpv4Addr(vr.getUuid());
+        }
+        if (egressIpv4Addr == null || egressIpv4Addr.equals("null")) {
+            for(VirtualRouterSNATExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterSNATExtensionPoint.class)) {
+                egressIpv4Addr = ext.getSNATEgressIpv4Addr(vr.getUuid());
+            }
+        }
         for (VmNicInventory pubNic : pubNics) {
             if (pubNic.isIpv6OnlyNic()) {
                 continue;
@@ -122,7 +131,11 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
                     SNATInfo info = new SNATInfo();
                     info.setPrivateNicIp(priNic.getIp());
                     info.setPrivateNicMac(priNic.getMac());
-                    info.setPublicIp(pubNic.getIp());
+                    if (egressIpv4Addr != null && !egressIpv4Addr.equals("null") && !egressIpv4Addr.isEmpty()) {
+                        info.setPublicIp(egressIpv4Addr);
+                    } else {
+                        info.setPublicIp(pubNic.getIp());
+                    }
                     info.setPublicNicMac(pubNic.getMac());
                     info.setSnatNetmask(priNic.getNetmask());
                     info.setPrivateGatewayIp(priNic.getGateway());
