@@ -7,6 +7,8 @@ import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.*;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.utils.Utils;
@@ -41,9 +43,6 @@ public class MacOperator {
             this.mac = mac;
         }
     }
-
-    @Autowired
-    private DatabaseFacade dbf;
 
     private PatternedSystemTag that = VmSystemTags.CUSTOM_MAC;
 
@@ -97,14 +96,30 @@ public class MacOperator {
         }
     }
 
-    public boolean checkDuplicateMac(String hypervisorType, String mac) {
+    public boolean checkDuplicateMac(String hypervisorType, String l3Uuid, String mac) {
         if (!VmInstanceConstant.KVM_HYPERVISOR_TYPE.equals(hypervisorType)) {
+            return false;
+        }
+
+        L3NetworkVO l3vo = Q.New(L3NetworkVO.class)
+                .eq(L3NetworkVO_.uuid, l3Uuid).find();
+        if (l3vo == null) {
+            return false;
+        }
+        
+        List<String> l3Uuids = Q.New(L3NetworkVO.class)
+                .select(L3NetworkVO_.uuid)
+                .eq(L3NetworkVO_.l2NetworkUuid, l3vo.getL2NetworkUuid())
+                .listValues();
+
+        if (l3Uuids.isEmpty()) {
             return false;
         }
 
         return Q.New(VmNicVO.class)
                 .eq(VmNicVO_.hypervisorType, hypervisorType)
                 .eq(VmNicVO_.mac, mac.toLowerCase())
+                .in(VmNicVO_.l3NetworkUuid, l3Uuids)
                 .notEq(VmNicVO_.state, VmNicState.disable)
                 .isExists();
     }

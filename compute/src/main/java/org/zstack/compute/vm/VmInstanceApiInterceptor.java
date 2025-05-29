@@ -1091,7 +1091,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
         if (msg.getState().equals(VmNicState.enable.toString()) && !msg.getState().equals(nicVO.getState().toString())) {
             MacOperator mo = new MacOperator();
-            if (mo.checkDuplicateMac(nicVO.getHypervisorType(), nicVO.getMac())) {
+            if (mo.checkDuplicateMac(nicVO.getHypervisorType(), nicVO.getL3NetworkUuid(),
+                    nicVO.getMac())) {
                 throw new ApiMessageInterceptionException(Platform.argerr("Duplicate mac address [%s]", nicVO.getMac()));
             }
         }
