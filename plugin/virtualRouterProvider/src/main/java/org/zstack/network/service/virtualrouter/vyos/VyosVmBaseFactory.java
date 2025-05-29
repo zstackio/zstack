@@ -294,7 +294,9 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
         } else {
             info.put(VyosConstants.CONFIG_ENABLE_VYOS, false);
         }
-        
+
+        Boolean  passwordAuth = VirtualRouterGlobalConfig.SSH_LOGIN_PASSWORD.value(Boolean.class);
+        info.put(VyosConstants.ALLOW_PASSWORD_AUTH, passwordAuth ? "yes" : "no");
         info.put(VirtualRouterConstant.TC_FOR_VIPQOS, rcf.getResourceConfigValue(VirtualRouterGlobalConfig.TC_FOR_VIPQOS, spec.getVmInventory().getUuid(), Boolean.class));
         info.put(ApplianceVmConstant.ABNORMAL_FILE_MAX_SIZE, ApplianceVmGlobalConfig.ABNORMAL_FILE_MAX_SIZE.value(Integer.class));
     }
