@@ -57,4 +57,6 @@ public class CloudBusGlobalProperty {
     // Unit of SYNC_CALL_TIMEOUT: millisecond
     @GlobalProperty(name="Cloudbus.syncCallTimeout", defaultValue = "900000")
     public static int SYNC_CALL_TIMEOUT;
+    @GlobalProperty(name="CloudBus.sentryOn", defaultValue = "false")
+    public static boolean SENTRY_ON;
 }

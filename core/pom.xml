@@ -137,6 +137,11 @@
             <artifactId>blade-patchca</artifactId>
             <version>1.1.0</version>
         </dependency>
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry</artifactId>
+            <version>8.29.0</version>
+        </dependency>
     </dependencies>
 
     <build>
