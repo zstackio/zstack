@@ -32,6 +32,7 @@ public interface PrimaryStorageControllerSvc {
     void copyVolume(String srcInstallPath, CreateVolumeSpec dst, ReturnValueCompletion<VolumeStats>comp);
     void flattenVolume(String installPath, ReturnValueCompletion<VolumeStats>comp);
 
+    // support uri or path
     void stats(String installPath, ReturnValueCompletion<VolumeStats> comp);
 
     void batchStats(Collection<String> installPath, ReturnValueCompletion<List<VolumeStats>> comp);
