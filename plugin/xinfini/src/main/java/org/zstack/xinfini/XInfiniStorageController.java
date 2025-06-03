@@ -732,6 +732,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
         stats.setSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
         stats.setActualSize(vol.getStatus().getAllocatedSizeByte());
+        stats.setParentUri(srcInstallPath);
         comp.success(stats);
     }
 
