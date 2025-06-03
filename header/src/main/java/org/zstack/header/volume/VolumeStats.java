@@ -2,9 +2,16 @@ package org.zstack.header.volume;
 
 public class VolumeStats {
     protected String installPath;
-    protected Long actualSize;
     protected String format;
+    protected Long actualSize;
     protected Long size;
+    /**
+     * The parent uri of the volume, vendor://pool/path@snapshot or snapshot://uuid
+     */
+    protected String parentUri;
+
+    // TODO(shenjin): remove it
+    @Deprecated
     protected String runStatus;
 
     public VolumeStats(String installPath, Long actualSize) {
@@ -54,6 +61,15 @@ public class VolumeStats {
         return format;
     }
 
+    public void setParentUri(String parentUri) {
+        this.parentUri = parentUri;
+    }
+
+    public String getParentUri() {
+        return parentUri;
+    }
+
+    @Deprecated
     public String getRunStatus() {
         return runStatus;
     }

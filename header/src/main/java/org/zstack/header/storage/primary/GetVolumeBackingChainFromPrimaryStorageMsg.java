@@ -12,6 +12,7 @@ public class GetVolumeBackingChainFromPrimaryStorageMsg extends NeedReplyMessage
     private String volumeUuid;
     private List<String> rootInstallPaths = new ArrayList<>();
     private String primaryStorageUuid;
+    // TODO remove it
     private String hostUuid;
     private String volumeFormat;
 

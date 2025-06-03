@@ -56,10 +56,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -140,6 +137,10 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             handle((GetAccessPathMsg) msg);
         } else if (msg instanceof UpdatePrimaryStorageHostStatusMsg) {
             handle((UpdatePrimaryStorageHostStatusMsg) msg);
+        } else if (msg instanceof GetVolumeBackingChainFromPrimaryStorageMsg) {
+            handle((GetVolumeBackingChainFromPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteVolumeChainOnPrimaryStorageMsg) {
+            handle((DeleteVolumeChainOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -1370,6 +1371,91 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         bus.reply(msg, reply);
     }
 
+    protected void handle(GetVolumeBackingChainFromPrimaryStorageMsg msg) {
+        GetVolumeBackingChainFromPrimaryStorageReply r = new GetVolumeBackingChainFromPrimaryStorageReply();
+        new While<>(msg.getRootInstallPaths()).each((installPath, compl) -> {
+            getParentChain(installPath, new ArrayList<>(), new ReturnValueCompletion<List<VolumeStats>>(compl) {
+                @Override
+                public void success(List<VolumeStats> chains) {
+                    long tsize = 0;
+                    List<String> chainPaths = new ArrayList<>();
+                    for (VolumeStats stats : chains) {
+                        tsize += stats.getActualSize();
+                        chainPaths.add(stats.getInstallPath());
+                    }
+
+                    r.putBackingChainInstallPath(installPath, chainPaths);
+                    r.putBackingChainSize(installPath, tsize);
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.allDone();
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    r.setError(errorCodeList.getCauses().get(0));
+                }
+                bus.reply(msg, r);
+            }
+        });
+    }
+
+    private void getParentChain(String installPath, List<VolumeStats> chains, ReturnValueCompletion<List<VolumeStats>> completion) {
+        controller.stats(installPath, new ReturnValueCompletion<VolumeStats>(completion) {
+            @Override
+            public void success(VolumeStats stats) {
+                chains.add(stats);
+                if (stats.getParentUri() == null) {
+                    chains.remove(0);  // do not contain self
+                    completion.success(chains);
+                    return;
+                }
+
+                getParentChain(stats.getParentUri(), chains, completion);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    protected void handle(DeleteVolumeChainOnPrimaryStorageMsg msg) {
+        DeleteVolumeChainOnPrimaryStorageReply reply = new DeleteVolumeChainOnPrimaryStorageReply();
+        new While<>(msg.getInstallPaths()).each((installPath, compl) -> {
+            // TODO use trash instead, make sure only one snapshot for link clone.
+            controller.deleteVolumeAndSnapshot(installPath, new Completion(compl) {
+                @Override
+                public void success() {
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.allDone();
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    reply.setError(errorCodeList.getCauses().get(0));
+                    bus.reply(msg, reply);
+                } else {
+                    bus.reply(msg, reply);
+                }
+            }
+        });
+    }
+
     @Override
     protected void handle(DeleteVolumeBitsOnPrimaryStorageMsg msg) {
         String protocol = null;
@@ -1379,6 +1465,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             if (volume != null) {
                 protocol = volume.getProtocol();
             }
+
+             // FIXME(shenjin) remove it
             if (volume != null && VolumeType.Root.equals(volume.getType()) && VolumeProtocol.iSCSI.toString().equals(protocol)) {
                 force = true;
             }
@@ -2001,7 +2089,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         }).start();
     }
 
-    protected void doDeleteBits(String installPath, boolean force, Completion completion) {
+    private void doDeleteBits(String installPath, boolean force, Completion completion) {
         if (force) {
             controller.deleteVolume(installPath, completion);
         } else {
