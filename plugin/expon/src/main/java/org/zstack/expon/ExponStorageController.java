@@ -1056,6 +1056,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
         stats.setSize(vol.getVolumeSize());
         stats.setActualSize(vol.getDataSize());
+        stats.setParentUri(srcInstallPath);
         comp.success(stats);
     }
 

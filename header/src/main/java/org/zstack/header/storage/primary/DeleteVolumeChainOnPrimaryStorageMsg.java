@@ -7,6 +7,7 @@ import java.util.List;
 public class DeleteVolumeChainOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String primaryStorageUuid;
 
+    // TODO remove it
     private String hostUuid;
 
     private List<String> installPaths;
