@@ -1225,7 +1225,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
         GetLocalFileSizeOnBackupStorageReply reply = new GetLocalFileSizeOnBackupStorageReply();
         GetLocalFileSizeCmd cmd = new GetLocalFileSizeCmd();
         cmd.path = msg.getUrl();
-        httpCall(GET_LOCAL_FILE_SIZE, cmd, GetLocalFileSizeRsp.class, new ReturnValueCompletion<GetLocalFileSizeRsp>(msg) {
+        String apiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
+        new HttpCaller<>(GET_LOCAL_FILE_SIZE, cmd, GetLocalFileSizeRsp.class, new ReturnValueCompletion<GetLocalFileSizeRsp>(msg) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
@@ -1237,7 +1238,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 reply.setSize(ret.size);
                 bus.reply(msg, reply);
             }
-        });
+        }).tryNext().specifyOrder(apiId).call();
     }
 
     @Override
