@@ -24,6 +24,7 @@ import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
@@ -34,6 +35,7 @@ import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
@@ -46,6 +48,7 @@ import org.zstack.header.longjob.LongJobInventory;
 import org.zstack.header.longjob.LongJobState;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
+import org.zstack.header.network.l3.IpRangeVO;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.CancelJobOnPrimaryStorageMsg;
@@ -55,10 +58,9 @@ import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagValidator;
-import org.zstack.header.vm.CreateTemplateFromRootVolumeVmMsg;
-import org.zstack.header.vm.CreateTemplateFromRootVolumeVmReply;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.*;
+import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.vo.ResourceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.TagManager;
@@ -66,25 +68,32 @@ import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 import org.zstack.zql.ZQL;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import javax.xml.ws.ResponseWrapper;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
-import static org.zstack.core.progress.ProgressReportService.getTaskStage;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
+import static org.zstack.core.progress.ProgressReportService.*;
+import static org.zstack.core.progress.ProgressReportService.markTaskStage;
 import static org.zstack.longjob.LongJobUtils.buildErrIfCanceled;
 import static org.zstack.longjob.LongJobUtils.noncancelableErr;
 import static org.zstack.utils.CollectionDSL.list;
@@ -328,6 +337,78 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         }
     }
 
+    private void handle(final APIExpungeImageGroupMsg msg) {
+        final APIExpungeImageGroupEvent evt = new APIExpungeImageGroupEvent(msg.getId());
+        List<String> imageUuids = Q.New(ImageGroupRefVO.class)
+                .eq(ImageGroupRefVO_.imageGroupUuid, msg.getUuid())
+                .select(ImageGroupRefVO_.imageUuid)
+                .listValues();
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("delete-image-group-%s", msg.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = String.format("delete-images-from-image-group-%s", msg.getUuid());
+
+            @Override
+            public boolean skip(Map data) {
+                return CollectionUtils.isEmpty(imageUuids);
+            }
+
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                new While<>(imageUuids).all((uuid, compl) -> {
+                    ImageDeletionMsg msg = new ImageDeletionMsg();
+                    msg.setImageUuid(uuid);
+                    msg.setDeletionPolicy(ImageDeletionPolicyManager.ImageDeletionPolicy.Direct.toString());
+                    msg.setForceDelete(true);
+                    bus.makeTargetServiceIdByResourceUuid(msg, ImageConstant.SERVICE_ID, uuid);
+                    bus.send(msg, new CloudBusCallBack(compl) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            compl.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "database-clean";
+
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        if (!CollectionUtils.isEmpty(imageUuids)) {
+                            sql(ImageGroupRefVO.class)
+                                    .eq(ImageGroupRefVO_.imageGroupUuid, msg.getUuid())
+                                    .hardDelete();
+                        }
+
+                        sql(ImageGroupVO.class)
+                                .eq(ImageGroupVO_.uuid, msg.getUuid())
+                                .hardDelete();
+                    }
+                }.execute();
+                trigger.next();
+            }
+        });
+        chain.done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                bus.publish(evt);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                bus.publish(evt);
+            }
+        }).start();
+    }
+
     private void handle(CreateDataVolumeTemplateFromVolumeMsg msg) {
         CreateDataVolumeTemplateFromVolumeReply reply = new CreateDataVolumeTemplateFromVolumeReply();
         createDataVolumeTemplateFromVolume(msg, msg.getVolumeUuid(), new ReturnValueCompletion<ImageInventory>(msg) {
@@ -494,6 +575,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     private void handleApiMessage(Message msg) {
         if (msg instanceof APIAddImageMsg) {
             handle((APIAddImageMsg) msg);
+        } else if (msg instanceof APIExpungeImageGroupMsg) {
+            handle((APIExpungeImageGroupMsg) msg);
+        } else if (msg instanceof APICloneImageMsg) {
+            handle((APICloneImageMsg) msg);
         } else if (msg instanceof APIGetUploadImageJobDetailsMsg) {
             handle((APIGetUploadImageJobDetailsMsg) msg);
         } else if (msg instanceof APICreateRootVolumeTemplateFromRootVolumeMsg) {
@@ -504,9 +589,509 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             handle((APICreateDataVolumeTemplateFromVolumeMsg) msg);
         } else if (msg instanceof APICreateDataVolumeTemplateFromVolumeSnapshotMsg) {
             handle((APICreateDataVolumeTemplateFromVolumeSnapshotMsg) msg);
+        } else if (msg instanceof APICreateImageGroupFromVmInstanceMsg){
+            handle((APICreateImageGroupFromVmInstanceMsg) msg);
+        } else if (msg instanceof APICreateImageGroupFromImageMsg){
+            handle((APICreateImageGroupFromImageMsg) msg);
+        } else if (msg instanceof APICreateImageGroupFromSnapshotMsg){
+            handle((APICreateImageGroupFromSnapshotMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APICreateImageGroupFromSnapshotMsg msg) {
+        APICreateImageGroupFromSnapshotEvent evt = new APICreateImageGroupFromSnapshotEvent(msg.getId());
+        createImageGroupFromSnapshot(msg, new ReturnValueCompletion<ImageGroupInventory>(evt) {
+            @Override
+            public void success(ImageGroupInventory imageGroup) {
+                evt.setInventory(imageGroup);
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(APICreateImageGroupFromVmInstanceMsg msg) {
+        APICreateImageGroupFromVmInstanceEvent evt = new APICreateImageGroupFromVmInstanceEvent(msg.getId());
+        createImageGroupFromVmInstance(msg, msg.getVmInstanceUuid(), new ReturnValueCompletion<ImageGroupInventory>(evt) {
+            @Override
+            public void success(ImageGroupInventory imageGroup) {
+                evt.setInventory(imageGroup);
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(APICreateImageGroupFromImageMsg msg) {
+        APICreateImageGroupFromImageEvent evt = new APICreateImageGroupFromImageEvent(msg.getId());
+
+        ImageGroupVO gvo = new SQLBatchWithReturn<ImageGroupVO>() {
+            @Override
+            protected ImageGroupVO scripts() {
+                List<String> dateVolumeTemplateUuids = msg.getDateVolumeTemplateUuids();
+                List<String> volumesUuids = new ArrayList<>();
+                volumesUuids.add(msg.getRootVolumeTemplateUuid());
+                String groupUuid = Platform.getUuid();
+                ImageGroupVO vo = new ImageGroupVO();
+                vo.setUuid(groupUuid);
+                vo.setName(msg.getName());
+                vo.setStatus(ImageStatus.Ready);
+                vo.setDescription(msg.getDescription());
+                vo.setImageCount(1);
+                if (!CollectionUtils.isEmpty(dateVolumeTemplateUuids)) {
+                    vo.setImageCount(1 + dateVolumeTemplateUuids.size());
+                    volumesUuids.addAll(msg.getDateVolumeTemplateUuids());
+                }
+                vo = persist(vo);
+
+
+                new HashSet<String>(volumesUuids).forEach(
+                        uuid -> {
+                            ImageVO image = q(ImageVO.class)
+                                    .eq(ImageVO_.uuid, uuid)
+                                    .find();
+
+                            ImageGroupRefVO refVO = new ImageGroupRefVO();
+                            refVO.setImageGroupUuid(groupUuid);
+                            refVO.setImageUuid(uuid);
+                            persist(refVO);
+                        }
+                );
+                return vo;
+            }
+        }.execute();
+        evt.setInventory(ImageGroupInventory.valueOf(gvo));
+        bus.publish(evt);
+    }
+
+    private void createImageGroupFromSnapshot(APICreateImageGroupFromSnapshotMsg msg, ReturnValueCompletion<ImageGroupInventory> completion) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("create-image-group-from-snapshot-%s", msg.getRootVolumeSnapshotUuid()));
+        chain.then(new ShareFlow() {
+            ImageGroupVO imageGroupVO = new ImageGroupVO();
+            String rootVolumeSnapshotUuid = msg.getRootVolumeSnapshotUuid();
+            List<String> dataVolumeSnapshotUuids = msg.getDateVolumeSnapshotUuids();
+            List<String> newImageUuids = new ArrayList<String>();
+
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "prepare-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        imageGroupVO = new SQLBatchWithReturn<ImageGroupVO>() {
+                            @Override
+                            protected ImageGroupVO scripts() {
+                                String groupUuid = StringUtils.isEmpty(msg.getResourceUuid()) ? Platform.getUuid() : msg.getResourceUuid();
+                                ImageGroupVO vo = new ImageGroupVO();
+                                vo.setUuid(groupUuid);
+                                vo.setName(msg.getName());
+                                vo.setStatus(ImageStatus.Creating);
+                                vo.setDescription(msg.getDescription());
+                                vo.setImageCount(1);
+                                if (!CollectionUtils.isEmpty(dataVolumeSnapshotUuids)) {
+                                    vo.setImageCount(1 + dataVolumeSnapshotUuids.size());
+                                }
+                                vo = persist(vo);
+                                return vo;
+                            }
+                        }.execute();
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        dbf.removeByPrimaryKey(imageGroupVO.getUuid(), ImageGroupVO.class);
+                        trigger.rollback();
+                    }
+                });
+                flow(new Flow() {
+                    String __name__ = "create-root-template-from-snapshot";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        CreateRootVolumeTemplateFromVolumeSnapshotMsg cmsg = new CreateRootVolumeTemplateFromVolumeSnapshotMsg();
+                        cmsg.setName("create-from-snap-" + rootVolumeSnapshotUuid);
+                        cmsg.setSnapshotUuid(rootVolumeSnapshotUuid);
+                        cmsg.setSession(msg.getSession());
+                        bus.makeLocalServiceId(cmsg, ImageConstant.SERVICE_ID);
+                        bus.send(cmsg, new CloudBusCallBack(completion) {
+                            @Override
+                            public void run(MessageReply r) {
+                                if (!r.isSuccess()) {
+                                    trigger.fail(r.getError());
+                                    return;
+                                }
+
+                                CreateRootVolumeTemplateFromVolumeSnapshotReply reply = r.castReply();
+                                ImageInventory imageInv = ((CreateRootVolumeTemplateFromVolumeSnapshotReply) reply).getInventory();
+                                newImageUuids.add(imageInv.getUuid());
+                                trigger.next();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (CollectionUtils.isEmpty(newImageUuids)) {
+                            trigger.rollback();
+                            return;
+                        }
+                        for (String uuid : newImageUuids) {
+                            ImageDeletionMsg delMsg = new ImageDeletionMsg();
+                            delMsg.setImageUuid(uuid);
+                            delMsg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString());
+                            delMsg.setForceDelete(true);
+                            bus.makeTargetServiceIdByResourceUuid(delMsg, ImageConstant.SERVICE_ID, uuid);
+                            bus.send(delMsg);
+                            newImageUuids.remove(uuid);
+                        }
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "create-data-templates-from-snapshots";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (CollectionUtils.isEmpty(dataVolumeSnapshotUuids)) {
+                            trigger.next();
+                            return;
+                        }
+
+                        List<ErrorCode> errors = new ArrayList<>();
+                        new While<>(dataVolumeSnapshotUuids).each((iUuid, compl) -> {
+                            CreateDataVolumeTemplateFromVolumeSnapshotMsg csmsg = new CreateDataVolumeTemplateFromVolumeSnapshotMsg();
+                            csmsg.setName(String.format("create-from-snapshot-%s", iUuid));
+                            csmsg.setSnapshotUuid(iUuid);
+                            csmsg.setSession(msg.getSession());
+                            bus.makeLocalServiceId(csmsg, ImageConstant.SERVICE_ID);
+                            bus.send(csmsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        errors.add(reply.getError());
+                                        compl.allDone();
+                                    }
+
+                                    ImageInventory imageInv = ((CreateDataVolumeTemplateFromVolumeSnapshotReply) reply).getInventory();
+                                    newImageUuids.add(imageInv.getUuid());
+                                    compl.done();
+                                }
+                            });
+                        }).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (!errors.isEmpty()) {
+                                    trigger.fail(errors.get(0));
+                                    return;
+                                }
+                                trigger.next();
+                            }
+                        });
+
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (CollectionUtils.isEmpty(newImageUuids)) {
+                            trigger.rollback();
+                            return;
+                        }
+                        for (String uuid : newImageUuids) {
+                            ImageDeletionMsg delMsg = new ImageDeletionMsg();
+                            delMsg.setImageUuid(uuid);
+                            delMsg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString());
+                            delMsg.setForceDelete(true);
+                            bus.makeTargetServiceIdByResourceUuid(delMsg, ImageConstant.SERVICE_ID, uuid);
+                            bus.send(delMsg);
+                            newImageUuids.remove(uuid);
+                        }
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        String __name__ = "create-image-group-in-database";
+
+                        imageGroupVO = new SQLBatchWithReturn<ImageGroupVO>() {
+                            @Override
+                            protected ImageGroupVO scripts() {
+                                ImageGroupVO vo = findByUuid(imageGroupVO.getUuid(), ImageGroupVO.class);
+                                vo.setStatus(ImageStatus.Ready);
+                                vo = merge(vo);
+
+                                new HashSet<String>(newImageUuids).forEach(
+                                        resourceUuid -> {
+                                            ImageGroupRefVO refVO = new ImageGroupRefVO();
+                                            refVO.setImageGroupUuid(imageGroupVO.getUuid());
+                                            refVO.setImageUuid(resourceUuid);
+                                            persist(refVO);
+                                        }
+                                );
+                                return vo;
+                            }
+                        }.execute();
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        ImageGroupInventory inv = ImageGroupInventory.valueOf(imageGroupVO);
+                        completion.success(inv);
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+            }
+        }).start();
+    }
+
+
+    private void createImageGroupFromVmInstance(APICreateImageGroupFromVmInstanceMsg msg, String vmUuid, ReturnValueCompletion<ImageGroupInventory> completion) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("create-image-group-from-vm-instance-%s", vmUuid));
+        chain.then(new ShareFlow() {
+            ImageGroupVO imageGroupVO = new ImageGroupVO();
+            String rootVolumeUuid;
+            List<String> dataVolumeUuids = new ArrayList<String>();
+            List<String> newVolumeUuids = new ArrayList<String>();
+
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "prepare-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<VolumeVO> volumes = Q.New(VolumeVO.class).eq(VolumeVO_.vmInstanceUuid, vmUuid).list();
+                        if (CollectionUtils.isEmpty(volumes)) {
+                            trigger.fail(operr("vm instance[uuid:%s] has no volume", vmUuid));
+                            return;
+                        }
+
+                        for (VolumeVO vol : volumes) {
+                            if (vol.getType() == VolumeType.Root) {
+                                rootVolumeUuid = vol.getUuid();
+                            } else {
+                                dataVolumeUuids.add(vol.getUuid());
+                            }
+                        }
+
+                        if (rootVolumeUuid == null) {
+                            trigger.fail(operr("vm instance[uuid:%s] has no root volume", vmUuid));
+                            return;
+                        }
+
+                        imageGroupVO = new SQLBatchWithReturn<ImageGroupVO>() {
+                            @Override
+                            protected ImageGroupVO scripts() {
+                                String groupUuid = StringUtils.isEmpty(msg.getResourceUuid()) ? Platform.getUuid() : msg.getResourceUuid();
+                                ImageGroupVO vo = new ImageGroupVO();
+                                vo.setUuid(groupUuid);
+                                vo.setName(msg.getName());
+                                vo.setStatus(ImageStatus.Creating);
+                                vo.setDescription(msg.getDescription());
+                                vo.setImageCount(1);
+                                if (!CollectionUtils.isEmpty(dataVolumeUuids)) {
+                                    vo.setImageCount(1 + dataVolumeUuids.size());
+                                }
+                                vo = persist(vo);
+                                return vo;
+                            }
+                        }.execute();
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        dbf.removeByPrimaryKey(imageGroupVO.getUuid(), ImageGroupVO.class);
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "create-root-template-from-volume";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        VmInstanceVO vmVO = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid).find();
+                        CreateRootVolumeTemplateFromRootVolumeMsg crtMsg = new CreateRootVolumeTemplateFromRootVolumeMsg();
+                        crtMsg.setRootVolumeUuid(rootVolumeUuid);
+                        crtMsg.setName(String.format("create-from-root-volume-%s", rootVolumeUuid));
+                        crtMsg.setArchitecture(vmVO.getArchitecture());
+                        crtMsg.setPlatform(vmVO.getPlatform());
+                        crtMsg.setGuestOsType(vmVO.getPlatform());
+                        crtMsg.setDescription(msg.getDescription());
+                        crtMsg.setSession(msg.getSession());
+                        bus.makeLocalServiceId(crtMsg, ImageConstant.SERVICE_ID);
+                        bus.send(crtMsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                ImageInventory imageInv = ((CreateRootVolumeTemplateFromRootVolumeReply) reply).getInventory();
+                                newVolumeUuids.add(imageInv.getUuid());
+                                trigger.next();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (CollectionUtils.isEmpty(newVolumeUuids)) {
+                            trigger.rollback();
+                            return;
+                        }
+                        for (String uuid : newVolumeUuids) {
+                            ImageDeletionMsg delMsg = new ImageDeletionMsg();
+                            delMsg.setImageUuid(uuid);
+                            delMsg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString());
+                            delMsg.setForceDelete(true);
+                            bus.makeTargetServiceIdByResourceUuid(delMsg, ImageConstant.SERVICE_ID, uuid);
+                            bus.send(delMsg);
+                            newVolumeUuids.remove(uuid);
+                        }
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "create-data-templates-from-volumes";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (CollectionUtils.isEmpty(dataVolumeUuids)) {
+                            trigger.next();
+                            return;
+                        }
+
+                        List<ErrorCode> errors = new ArrayList<>();
+                        new While<>(dataVolumeUuids).each((volUuid, compl) -> {
+                            CreateDataVolumeTemplateFromVolumeMsg cdtMsg = new CreateDataVolumeTemplateFromVolumeMsg();
+                            cdtMsg.setVolumeUuid(volUuid);
+                            cdtMsg.setName(String.format("create-from-data-volume-%s", volUuid));
+                            cdtMsg.setDescription(msg.getDescription());
+                            cdtMsg.setSession(msg.getSession());
+                            bus.makeLocalServiceId(cdtMsg, ImageConstant.SERVICE_ID);
+                            bus.send(cdtMsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        errors.add(reply.getError());
+                                        compl.allDone();
+                                    }
+
+                                    ImageInventory imageInv = ((CreateDataVolumeTemplateFromVolumeReply) reply).getInventory();
+                                    newVolumeUuids.add(imageInv.getUuid());
+                                    compl.done();
+                                }
+                            });
+                        }).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (!errors.isEmpty()) {
+                                    trigger.fail(errors.get(0));
+                                    return;
+                                }
+                                trigger.next();
+                            }
+                        });
+
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (CollectionUtils.isEmpty(newVolumeUuids)) {
+                            trigger.rollback();
+                            return;
+                        }
+                        for (String uuid : newVolumeUuids) {
+                            ImageDeletionMsg delMsg = new ImageDeletionMsg();
+                            delMsg.setImageUuid(uuid);
+                            delMsg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString());
+                            delMsg.setForceDelete(true);
+                            bus.makeTargetServiceIdByResourceUuid(delMsg, ImageConstant.SERVICE_ID, uuid);
+                            bus.send(delMsg);
+                            newVolumeUuids.remove(uuid);
+                        }
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        String __name__ = "create-image-group-ref-in-database";
+
+                        imageGroupVO = new SQLBatchWithReturn<ImageGroupVO>() {
+                            @Override
+                            protected ImageGroupVO scripts() {
+                                ImageGroupVO vo = findByUuid(imageGroupVO.getUuid(), ImageGroupVO.class);
+                                vo.setStatus(ImageStatus.Ready);
+                                vo = merge(vo);
+
+                                new HashSet<String>(newVolumeUuids).forEach(
+                                        resourceUuid -> {
+                                            ImageVO image = q(ImageVO.class)
+                                                    .eq(ImageVO_.uuid, resourceUuid)
+                                                    .find();
+
+                                            ImageGroupRefVO refVO = new ImageGroupRefVO();
+                                            refVO.setImageGroupUuid(imageGroupVO.getUuid());
+                                            refVO.setImageUuid(resourceUuid);
+                                            persist(refVO);
+                                        }
+                                );
+                                return vo;
+                            }
+                        }.execute();
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        ImageGroupInventory inv = ImageGroupInventory.valueOf(imageGroupVO);
+                        completion.success(inv);
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+            }
+        }).start();
     }
 
     private void handle(final APICreateDataVolumeTemplateFromVolumeMsg msg) {
@@ -804,6 +1389,88 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         AddImageLongJobData data = new AddImageLongJobData(msg);
         BeanUtils.copyProperties(msg, data);
         handleAddImageMsg(data, evt);
+    }
+
+    private void handle(final APICloneImageMsg msg) {
+        APICloneImageEvent evt = new APICloneImageEvent(msg.getId());
+        Set<ImageBackupStorageRefVO> copiedRefs;
+        ImageVO sourceImage = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
+        if (sourceImage == null) {
+            throw new OperationFailureException(operr("source image [%s] not existed", msg.getImageUuid()));
+        }
+        if (sourceImage.getStatus() != ImageStatus.Ready) {
+            throw new OperationFailureException(operr("cannot clone image, because image [%s] status is not ready", msg.getImageUuid()));
+        }
+
+        ImageVO vo = new ImageVO();
+        if (msg.getResourceUuid() != null) {
+            dbf.eoCleanup(ImageVO.class, msg.getResourceUuid());
+            vo.setUuid(msg.getResourceUuid());
+        } else {
+            vo.setUuid(Platform.getUuid());
+        }
+        vo.setName(String.format("Clone-from-%s", sourceImage.getName()));
+        vo.setDescription(sourceImage.getDescription());
+        vo.setStatus(ImageStatus.Ready);
+        vo.setState(sourceImage.getState());
+        vo.setSize(sourceImage.getSize());
+        vo.setActualSize(sourceImage.getActualSize());
+        vo.setMd5Sum(sourceImage.getMd5Sum());
+        vo.setPlatform(sourceImage.getPlatform());
+        vo.setType(sourceImage.getType());
+        vo.setFormat(sourceImage.getFormat());
+        vo.setUrl(sourceImage.getUrl());
+        vo.setSystem(sourceImage.isSystem());
+        vo.setMediaType(sourceImage.getMediaType());
+        vo.setCreateDate(sourceImage.getCreateDate());
+        vo.setLastOpDate(sourceImage.getLastOpDate());
+        vo.setGuestOsType(sourceImage.getGuestOsType());
+        vo.setArchitecture(sourceImage.getArchitecture());
+        vo.setVirtio(sourceImage.getVirtio());
+        vo.setAccountUuid(sourceImage.getAccountUuid());
+        copiedRefs = sourceImage.getBackupStorageRefs();
+
+        ImageFactory factory = getImageFacotry(ImageType.valueOf(sourceImage.getType()));
+        final ImageVO ivo = new SQLBatchWithReturn<ImageVO>() {
+            @Override
+            protected ImageVO scripts() {
+                Set<ImageBackupStorageRefVO> rvos = new HashSet<>();
+                vo.setAccountUuid(sourceImage.getAccountUuid());
+                tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), ImageVO.class.getSimpleName());
+                ImageVO ivo = factory.createImage(vo);
+                for (ImageBackupStorageRefVO ref : copiedRefs) {
+                    ImageBackupStorageRefVO rvo = copyImageBackupStorageRefVO(ref);
+                    rvo.setImageUuid(vo.getUuid());
+
+                    persist(rvo);
+                    rvos.add(rvo);
+                }
+                
+                ivo.setBackupStorageRefs(rvos);
+                ivo = merge(ivo);
+                return ivo;
+            }
+        }.execute();
+
+        evt.setInventory(ImageInventory.valueOf(ivo));
+        bus.publish(evt);
+    }
+
+    private static ImageBackupStorageRefVO copyImageBackupStorageRefVO(ImageBackupStorageRefVO original) {
+        if (original == null) {
+            return null;
+        }
+
+        ImageBackupStorageRefVO copy = new ImageBackupStorageRefVO();
+        copy.setImageUuid(original.getImageUuid());
+        copy.setBackupStorageUuid(original.getBackupStorageUuid());
+        copy.setStatus(original.getStatus());
+        copy.setInstallPath(original.getInstallPath());
+        Timestamp now = Timestamp.valueOf(LocalDateTime.now());
+        copy.setCreateDate(now);
+        copy.setLastOpDate(now);
+
+        return copy;
     }
 
     @Override
