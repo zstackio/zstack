@@ -162,8 +162,37 @@ public class RestServer implements Component, CloudBusEventListener {
         }
 
         formatter = new DateTimeFormatterBuilder()
-                .parseCaseInsensitive()
-                .appendPattern("EEE, dd MMM yyyy HH:mm:ss z")
+                .parseCaseInsensitive() // Allows parsing of month names and day periods (e.g., "Jan" or "JAN", "AM" or "am") in a case-insensitive manner.
+
+                // Common RFC 1123-like format with two-digit day and time zone name (e.g., "Thu, 26 Oct 2023 10:30:00 GMT").
+                // Note: The 'z' pattern has limited support for time zone names (e.g., typically parses "GMT" but not full IDs like "Asia/Shanghai").
+                .appendOptional(DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH))
+
+                // Standard RFC 1123 date-time formatter, commonly used in HTTP headers.
+                // It handles single-digit days (e.g., '5 Jun') and formats time zones as offsets (e.g., '+0800') or 'GMT'.
+                // Example: "Thu, 5 Jun 2025 15:47:29 +0800".
+                .appendOptional(DateTimeFormatter.RFC_1123_DATE_TIME)
+
+                // ISO 8601 (International Organization for Standardization standard)
+                // Appends the ISO-8601 date-time formatter with an offset from UTC. Example: "2023-10-26T10:30:00+08:00".
+                .appendOptional(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+
+                // Appends a custom formatter for date-time with milliseconds and a two-character ISO-8601 offset. Example: "2023-10-26T10:30:00.123+08".
+                .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSxx", Locale.ENGLISH))
+
+                // Appends a custom formatter for date-time with milliseconds and a four-digit offset (e.g., "+0800"). Example: "2023-10-26T10:30:00.123+0800".
+                .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.ENGLISH))
+
+                // Appends a custom formatter for date-time with a colon-separated ISO-8601 extended offset. Example: "2023-10-26T10:30:00+08:00".
+                .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ENGLISH))
+
+                // Appends a custom formatter for date-time (no milliseconds) with a two-character ISO-8601 offset. Example: "2023-10-26T10:30:00+08".
+                .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssxx", Locale.ENGLISH))
+
+                // Appends a custom formatter for date-time (no milliseconds) with a four-digit offset. Example: "2023-10-26T10:30:00+0800".
+                .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ", Locale.ENGLISH))
+
+                // Completes the builder and creates the final DateTimeFormatter, ensuring that English locale rules are used for parsing (e.g., for month names).
                 .toFormatter(Locale.ENGLISH);
     }
 
@@ -1060,7 +1089,10 @@ public class RestServer implements Component, CloudBusEventListener {
         try {
             date = ZonedDateTime.parse(dateStr, formatter);
         } catch (RuntimeException e) {
-            throw new RestException(HttpStatus.BAD_REQUEST.value(), "'Date' format error, correct format is 'EEE, dd MMM yyyy HH:mm:ss z'");
+            throw new RestException(HttpStatus.BAD_REQUEST.value(),
+                    "Date format error. The 'Date' header must conform to one of the supported RFC 1123 or ISO 8601 formats. " +
+                            "Examples include: 'Thu, 5 Jun 2025 15:47:29 +0800', '2025-06-05T16:08:42+08:00', or '2025-06-05T16:08:42.123Z'."
+            );
         }
 
         ZonedDateTime now = ZonedDateTime.now();

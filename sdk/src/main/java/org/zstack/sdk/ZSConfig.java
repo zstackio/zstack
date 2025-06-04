@@ -14,6 +14,7 @@ public class ZSConfig {
     Long readTimeout;
     Long writeTimeout;
     String contextPath;
+    String accessKeyDateStr;
 
     public String getHostname() {
         return hostname;
@@ -74,6 +75,10 @@ public class ZSConfig {
             return this;
         }
 
+        public Builder setAccessKeyDateStr(String name) {
+            config.accessKeyDateStr = name;
+            return this;
+        }
 
         public ZSConfig build() {
             return config;
