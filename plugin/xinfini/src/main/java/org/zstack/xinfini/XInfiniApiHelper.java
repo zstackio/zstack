@@ -319,11 +319,33 @@ public class XInfiniApiHelper {
                 (GetVolumeResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
     }
 
+    private <T extends XInfiniResponse> void retryUtilResourceDeletedIn10Secs(XInfiniRequest req,
+                                                                      Class<T> rsp) {
+        new Retry<Void>() {
+            @Override
+            @RetryCondition(times = 5, interval = 2)
+            protected Void call() {
+                T r = XInfiniApiHelper.this.call(req, rsp);
+                if (!r.resourceIsDeleted()) {
+                    throw new RetryException("resource not deleted yet");
+                }
+
+                return null;
+            }
+
+            @Override
+            // not error out if delete failed
+            protected boolean onFailure(Throwable t) {
+                return false;
+            }
+        }.run();
+    }
+
     private <T extends XInfiniResponse> void retryUtilResourceDeleted(XInfiniRequest req,
                                                                       Class<T> rsp) {
         new Retry<Void>() {
             @Override
-            @RetryCondition(times = XInfiniConstants.DEFAULT_POLLING_TIMES)
+            @RetryCondition(times = 150, interval = 2)
             protected Void call() {
                 T r = XInfiniApiHelper.this.call(req, rsp);
                 if (!r.resourceIsDeleted()) {
@@ -405,7 +427,7 @@ public class XInfiniApiHelper {
         return callErrorOut(req, GetBdcBdevResponse.class).toModule();
     }
 
-    public void deleteBdcBdev(int bdevId) {
+    public void deleteBdcBdev(int bdevId, int bdcId) {
         DeleteBdcBdevRequest req = new DeleteBdcBdevRequest();
         req.setId(bdevId);
         DeleteBdcBdevResponse rsp = call(req, DeleteBdcBdevResponse.class);
@@ -420,7 +442,14 @@ public class XInfiniApiHelper {
 
         GetBdcBdevRequest gReq = new GetBdcBdevRequest();
         gReq.setId(bdevId);
-        retryUtilResourceDeleted(gReq, GetBdcBdevResponse.class);
+        BdcModule bdc = getBdc(bdcId);
+        if (!BdcRunState.Active.toString().equals(bdc.getStatus().getRunState())) {
+            logger.info(String.format("bdc %s is not active, current %s, check bdev deleted in 10s",
+                    bdcId, bdc.getStatus().getRunState()));
+            retryUtilResourceDeletedIn10Secs(gReq, GetBdcBdevResponse.class);
+        } else {
+            retryUtilResourceDeleted(gReq, GetBdcBdevResponse.class);
+        }
     }
 
     public VolumeModule rollbackSnapshot(int volId, int snapId) {

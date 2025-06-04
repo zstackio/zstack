@@ -159,11 +159,10 @@ public class XInfiniClient extends ExternalStorageApiClient {
 
             Request request = reqBuilder.build();
 
-            logger.debug(String.format("call request[%s: %s]: %s, body: %s", action.getClass().getSimpleName(), taskIdForLog,
-                    request, reqBody));
             int retryCount = 0;
             while (retryCount <= 2) {
                 try {
+                    logger.debug(String.format("call request[%s: %s]: %s, body: %s", action.getClass().getSimpleName(), taskIdForLog, request, reqBody));
                     try (Response response = http.newCall(request).execute()) {
                         if (!response.isSuccessful()) {
                             if (response.body() == null) {

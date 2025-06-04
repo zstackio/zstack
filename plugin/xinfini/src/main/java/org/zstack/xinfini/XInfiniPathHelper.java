@@ -26,6 +26,10 @@ public class XInfiniPathHelper {
         return volPath + "@" + snapId;
     }
 
+    public static String buildXInfiniSnapshotPath(Integer poolId, Integer volId, Integer snapId) {
+        return String.format("xinfini://%s/%s@%s", poolId, volId, snapId);
+    }
+
     public static int getPoolIdFromPath(String url) {
         return Integer.parseInt(url.replace("xinfini://", "").split("/")[0]);
     }

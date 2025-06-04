@@ -5,7 +5,6 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
@@ -260,8 +259,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 reply.setSize(stats.getSize());
                 reply.setInstallPath(stats.getInstallPath());
                 reply.setProtocol(externalVO.getDefaultProtocol());
-                // FIXME: bypass the incremental flag for expon
-                // reply.setIncremental(true);
+                reply.setIncremental(!controller.reportCapabilities().getSnapshotCapability().isSupportLazyDelete());
                 bus.reply(msg, reply);
             }
 
