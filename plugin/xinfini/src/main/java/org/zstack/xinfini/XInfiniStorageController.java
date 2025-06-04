@@ -45,6 +45,7 @@ import org.zstack.xinfini.sdk.pool.PoolCapacity;
 import org.zstack.xinfini.sdk.pool.PoolModule;
 import org.zstack.xinfini.sdk.vhost.BdcBdevModule;
 import org.zstack.xinfini.sdk.vhost.BdcModule;
+import org.zstack.xinfini.sdk.vhost.BdcRunState;
 import org.zstack.xinfini.sdk.volume.VolumeModule;
 import org.zstack.xinfini.sdk.volume.VolumeSnapshotModule;
 
@@ -77,7 +78,15 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     @Autowired
     private ResourceConfigFacade rcf;
 
-    private final String vhostSocketDir;
+    private String vhostSocketDir;
+
+    private String getVhostSocketDir() {
+        if (vhostSocketDir == null) {
+            vhostSocketDir = String.format("/var/run/bdc-%s/", apiHelper.getClusterUuid());
+        }
+
+        return vhostSocketDir;
+    }
 
     private static final StorageCapabilities capabilities = new StorageCapabilities();
 
@@ -119,7 +128,6 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         client.configure(clientConfig);
 
         apiHelper = new XInfiniApiHelper(client);
-        vhostSocketDir = String.format("/var/run/bdc-%s/", apiHelper.getClusterUuid());
     }
 
     private String protocolToString(VolumeProtocol protocol) {
@@ -244,7 +252,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
             return;
         }
 
-        retry(() -> apiHelper.deleteBdcBdev(bdev.getSpec().getId()));
+        retry(() -> apiHelper.deleteBdcBdev(bdev.getSpec().getId(), bdc.getSpec().getId()));
     }
 
     @Override
@@ -325,8 +333,8 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     public BaseVolumeInfo getActiveVolumeInfo(String activePath, HostInventory h, boolean shareable) {
         BaseVolumeInfo info = new BaseVolumeInfo();
         String volUuid;
-        if (activePath.startsWith(vhostSocketDir)) {
-            volUuid = activePath.replace(String.format("%svolume-", vhostSocketDir), "");
+        if (activePath.startsWith(getVhostSocketDir())) {
+            volUuid = activePath.replace(String.format("%svolume-", getVhostSocketDir()), "");
             info.setUuid(volUuid);
             info.setProtocol(VolumeProtocol.Vhost.toString());
             info.setShareable(shareable);
@@ -394,7 +402,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public List<String> getActiveVolumesLocation(HostInventory h) {
-        return Collections.singletonList("file://" + PathUtil.join(vhostSocketDir, "volume-*"));
+        return Collections.singletonList("file://" + PathUtil.join(getVhostSocketDir(), "volume-*"));
     }
 
     @Override
@@ -419,7 +427,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         to.setInstallPath(target.getResourceURI());
         to.setHostId(apiHelper.queryBdcByIp(h.getManagementIp()).getSpec().getId());
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
-        to.setCoveringPaths(Collections.singletonList(vhostSocketDir));
+        to.setCoveringPaths(Collections.singletonList(getVhostSocketDir()));
         comp.success(to);
     }
 
@@ -465,7 +473,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         to.setInstallPath(target.getResourceURI());
         to.setHostId(apiHelper.queryBdcByIp(h.getManagementIp()).getSpec().getId());
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
-        to.setCoveringPaths(Collections.singletonList(vhostSocketDir));
+        to.setCoveringPaths(Collections.singletonList(getVhostSocketDir()));
         return to;
     }
 
@@ -531,7 +539,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
                     .orElseThrow(() -> new OperationFailureException(operr("fail to get pool[id:%d, name:%s] %s details", it.getId(), it.getName()))));
         }
         info.setPools(pools.stream().map(this::getPoolAddonInfo).collect(Collectors.toList()));
-
+        vhostSocketDir = String.format("/var/run/bdc-%s/", apiHelper.getClusterUuid());
         comp.success(JSONObjectUtil.rehashObject(info, LinkedHashMap.class));
     }
 
@@ -620,7 +628,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     private void setNodeHealthyByVhost(HostInventory host, NodeHealthy healthy) {
         VolumeProtocol protocol = VolumeProtocol.Vhost;
         BdcModule bdc = apiHelper.queryBdcByIp(host.getManagementIp());
-        if (bdc.getMetadata().getState().getState().equals(MetadataState.active.toString())) {
+        if (bdc.getStatus().getRunState().equals(BdcRunState.Active.toString())) {
             healthy.setHealthy(protocol, StorageHealthy.Ok);
         }  else {
             healthy.setHealthy(protocol, StorageHealthy.Failed);
@@ -755,7 +763,13 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public void flattenVolume(String installPath, ReturnValueCompletion<VolumeStats> comp) {
-        VolumeModule vol = apiHelper.flattenVolume(getVolIdFromPath(installPath));
+        VolumeModule vol = apiHelper.getVolume(getVolIdFromPath(installPath));
+        if (vol.getSpec().getBsSnapId() == 0) {
+            logger.info(String.format("volume[%s] has no related snapshot, no need to flatten", installPath));
+        } else {
+            vol = apiHelper.flattenVolume(getVolIdFromPath(installPath));
+        }
+
         VolumeStats stats = new VolumeStats();
         stats.setInstallPath(installPath);
         stats.setSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
@@ -772,7 +786,17 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         stats.setSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
         stats.setActualSize(vol.getStatus().getAllocatedSizeByte());
         stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+        stats.setParentUri(getParentUri(vol));
         comp.success(stats);
+    }
+
+    private String getParentUri(VolumeModule vol) {
+        if (vol.getSpec().getBsSnapId() == 0) {
+            return null;
+        }
+
+        VolumeSnapshotModule vss = apiHelper.getVolumeSnapshot(vol.getSpec().getBsSnapId());
+        return buildXInfiniSnapshotPath(vss.getSpec().getPoolId(), vss.getSpec().getBsVolumeId(), vss.getSpec().getId());
     }
 
     @Override
@@ -872,7 +896,14 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
                 .map(IscsiGatewayClientGroupMappingModule::getSpec)
                 .map(IscsiGatewayClientGroupMappingModule.IscsiGatewayClientGroupMappingSpec::getIscsiGatewayId)
                 .collect(Collectors.toList());
-        List<IscsiGatewayModule> groupRelatedGateways = apiHelper.queryIscsiGatewaysByIds(gatewayIds);
+        List<IscsiGatewayModule> groupRelatedGateways = apiHelper.queryIscsiGatewaysByIds(gatewayIds)
+                        .stream()
+                        .filter(v -> IscsiNodeState.ACTIVE.toString().equals(v.getStatus().getNodeState()))
+                        .collect(Collectors.toList());
+
+        if (groupRelatedGateways.isEmpty()) {
+            throw new OperationFailureException(operr("no active gateway found for client[%s]", clientIqn));
+        }
 
         // refresh client
         clientModule = apiHelper.queryIscsiClientByIqn(clientIqn);
@@ -948,8 +979,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public void expungeSnapshot(String installPath, Completion comp) {
-        apiHelper.deleteVolume(getSnapIdFromPath(installPath), true);
-        comp.success();
+        deleteSnapshot(installPath, comp);
     }
 
     @Override

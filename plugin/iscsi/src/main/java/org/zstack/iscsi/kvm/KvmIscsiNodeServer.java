@@ -279,39 +279,16 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, 
 
     @Override
     public void kvmCancelSelfFencer(KvmCancelSelfFencerParam param, Completion completion) {
-        PrimaryStorageNodeSvc nodeSvc = extPsFactory.getNodeSvc(param.getPrimaryStorage().getUuid());
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("cancel-self-fencer-for-external-primary-storage-%s", param.getPrimaryStorage().getUuid()));
         chain.then(new ShareFlow() {
-            HostInventory host = HostInventory.valueOf(dbf.findByUuid(param.getHostUuid(), HostVO.class));
-            HeartbeatVolumeTO heartbeatVol;
             @Override
             public void setup() {
-                flow(new NoRollbackFlow() {
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        nodeSvc.activateHeartbeatVolume(host, new ReturnValueCompletion<HeartbeatVolumeTO>(trigger) {
-                            @Override
-                            public void success(HeartbeatVolumeTO vol) {
-                                heartbeatVol = vol;
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-                });
 
                 flow(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         KvmCancelSelfFencerCmd cmd = new KvmCancelSelfFencerCmd();
-                        cmd.installPath = heartbeatVol.getInstallPath();
-                        cmd.hostId = heartbeatVol.getHostId();
-                        cmd.hostUuid = param.getHostUuid();
                         cmd.uuid = param.getPrimaryStorage().getUuid();
 
                         httpCall(KvmIscsiCommands.CANCEL_ISCSI_SELF_FENCER_PATH, param.getHostUuid(), cmd, true, AgentRsp.class, new ReturnValueCompletion<AgentRsp>(trigger) {
