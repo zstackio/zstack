@@ -12,4 +12,22 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VolumeCbtBackupRecordVO` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE VIEW `zstack`.`GuestVmScriptVO` AS SELECT uuid, name, description, platform, encodingType, scriptContent, renderParams, scriptType, scriptTimeout, version, createDate, lastOpDate FROM `zstack`.`GuestVmScriptEO` WHERE deleted IS NULL;
+CREATE TABLE IF NOT EXISTS  `zstack`.`ImageGroupVO` (
+     `uuid` VARCHAR(32) NOT NULL UNIQUE,
+     `name` VARCHAR(255) NOT NULL,
+     `status` varchar(32) NOT NULL,
+     `description` VARCHAR(2048) DEFAULT NULL,
+     `imageCount` int unsigned NOT NULL,
+     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE current_timestamp(),
+     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+     PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ImageGroupRefVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `imageUuid` VARCHAR(32) NOT NULL,
+    `imageGroupUuid` VARCHAR(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE current_timestamp(),
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

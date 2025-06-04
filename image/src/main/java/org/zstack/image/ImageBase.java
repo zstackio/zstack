@@ -3,8 +3,7 @@ package org.zstack.image;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.compute.vm.IsoOperator;
-import org.zstack.compute.vm.VmSystemTags;
+import org.zstack.compute.vm.*;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -18,6 +17,10 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.cluster.APIDeleteClusterEvent;
+import org.zstack.header.cluster.ClusterInventory;
+import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -35,14 +38,17 @@ import org.zstack.header.image.GetImageEncryptedReply;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.message.*;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.backup.*;
-import org.zstack.header.vm.DetachIsoFromVmInstanceMsg;
-import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -51,8 +57,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.*;
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * Created with IntelliJ IDEA.
@@ -463,6 +469,12 @@ public class ImageBase implements Image {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
                     if (deletionPolicy == ImageDeletionPolicy.Direct) {
+                        long count = Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.installPath, ref.getInstallPath()).count();
+                        if (count > 1) {
+                            trigger.next();
+                            return;
+                        }
+
                         DeleteBitsOnBackupStorageMsg dmsg = new DeleteBitsOnBackupStorageMsg();
                         dmsg.setBackupStorageUuid(ref.getBackupStorageUuid());
                         dmsg.setInstallPath(ref.getInstallPath());
@@ -815,7 +827,7 @@ public class ImageBase implements Image {
 
             if (bsUuids.isEmpty()) {
                 throw new OperationFailureException(operr("the image[uuid:%s, name:%s] is not deleted on any backup storage",
-                                self.getUuid(), self.getName()));
+                        self.getUuid(), self.getName()));
             }
         } else {
             for (final String bsUuid : msg.getBackupStorageUuids()) {
@@ -831,12 +843,12 @@ public class ImageBase implements Image {
 
                 if (ref == null) {
                     throw new OperationFailureException(argerr("the image[uuid:%s, name:%s] is not on the backup storage[uuid:%s]",
-                                    self.getUuid(), self.getName(), bsUuid));
+                            self.getUuid(), self.getName(), bsUuid));
                 }
 
                 if (ref.getStatus() != ImageStatus.Deleted) {
                     throw new OperationFailureException(argerr("the image[uuid:%s, name:%s] is not deleted on the backup storage[uuid:%s]",
-                                    self.getUuid(), self.getName(), bsUuid));
+                            self.getUuid(), self.getName(), bsUuid));
                 }
 
                 bsUuids.add(bsUuid);

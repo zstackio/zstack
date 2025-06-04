@@ -91,7 +91,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
     public ApiMessageProcessorImpl(Map<String, Object> config) {
         this.unitTestOn = CoreGlobalProperty.UNIT_TEST_ON;
         this.minimalOn = Platform.isMinimalOn();
-        this.configFolders = (List <String>)config.get("serviceConfigFolders");
+        this.configFolders = (List<String>) config.get("serviceConfigFolders");
         this.supportApis = new ArrayList<>();
 
         populateGlobalInterceptors();

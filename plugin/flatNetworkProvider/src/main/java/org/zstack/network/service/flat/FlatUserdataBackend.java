@@ -132,7 +132,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         for (String dnsIp : dnsServers) {
             dnsIpListBuilder.append(dnsIp).append("\n");
         }
-        // 删除最后一个多余的换行符（如果存在）
+        // Delete the last extra newline character, if it exists.
         if (dnsIpListBuilder.length() > 0) {
             dnsIpListBuilder.setLength(dnsIpListBuilder.length() - 1);
         }
@@ -141,7 +141,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     }
 
     private String getVpcIdByVmInstanceUuid(String vmInstanceUuid) {
-        String sql =  "SELECT DISTINCT vm.uuid " +
+        String sql = "SELECT DISTINCT vm.uuid " +
                 "FROM VmInstanceVO vm " +
                 "JOIN VmNicVO nic ON vm.uuid = nic.vmInstanceUuid " +
                 "WHERE vm.type = 'ApplianceVm' " +
@@ -167,7 +167,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 "from VmNicVO nic " +
                 "join IpRangeVO ipr on nic.l3NetworkUuid = ipr.l3NetworkUuid " + // 加入对IpRangeVO的JOIN
                 "where nic.vmInstanceUuid = :vmInstanceUuid " +
-                "and nic.ipVersion = :ipversion " ;
+                "and nic.ipVersion = :ipversion ";
 
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("vmInstanceUuid", vmInstanceUuid);
@@ -189,6 +189,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
         return networkInterfaceDetailsList;
     }
+
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
         return createHostPrepareUserdataFlow(context.getInventory().getUuid());
@@ -686,7 +687,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     @Override
     public void applyUserdata(final UserdataStruct struct, final Completion completion) {
         if (!UserdataGlobalConfig.OPEN_USERDATA_SERVICE_BY_DEFAULT.value(Boolean.class)) {
-            if ( !hasMetedata(struct) && !hasUserdata(struct)) {
+            if (!hasMetedata(struct) && !hasUserdata(struct)) {
                 completion.success();
                 return;
             }
@@ -710,7 +711,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         }
 
         L3NetworkVO defaultL3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, struct.getL3NetworkUuid()).find();
-        if (defaultL3!= null && defaultL3.getNetworkServices().stream().noneMatch(
+        if (defaultL3 != null && defaultL3.getNetworkServices().stream().noneMatch(
                 service -> Objects.equals(UserdataConstant.USERDATA_TYPE_STRING, service.getNetworkServiceType()))) {
             completion.success();
             return;
@@ -953,7 +954,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     whileCompletion.allDone();
                 }
             }).start();
-        },10).run(new WhileDoneCompletion(null) {
+        }, 10).run(new WhileDoneCompletion(null) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (!errorCodeList.getCauses().isEmpty()) {
