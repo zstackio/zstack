@@ -77,7 +77,15 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     @Autowired
     private ResourceConfigFacade rcf;
 
-    private final String vhostSocketDir;
+    private String vhostSocketDir;
+
+    private String getVhostSocketDir() {
+        if (vhostSocketDir == null) {
+            vhostSocketDir = String.format("/var/run/bdc-%s/", apiHelper.getClusterUuid());
+        }
+
+        return vhostSocketDir;
+    }
 
     private static final StorageCapabilities capabilities = new StorageCapabilities();
 
@@ -119,7 +127,6 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         client.configure(clientConfig);
 
         apiHelper = new XInfiniApiHelper(client);
-        vhostSocketDir = String.format("/var/run/bdc-%s/", apiHelper.getClusterUuid());
     }
 
     private String protocolToString(VolumeProtocol protocol) {
@@ -325,8 +332,8 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     public BaseVolumeInfo getActiveVolumeInfo(String activePath, HostInventory h, boolean shareable) {
         BaseVolumeInfo info = new BaseVolumeInfo();
         String volUuid;
-        if (activePath.startsWith(vhostSocketDir)) {
-            volUuid = activePath.replace(String.format("%svolume-", vhostSocketDir), "");
+        if (activePath.startsWith(getVhostSocketDir())) {
+            volUuid = activePath.replace(String.format("%svolume-", getVhostSocketDir()), "");
             info.setUuid(volUuid);
             info.setProtocol(VolumeProtocol.Vhost.toString());
             info.setShareable(shareable);
@@ -394,7 +401,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public List<String> getActiveVolumesLocation(HostInventory h) {
-        return Collections.singletonList("file://" + PathUtil.join(vhostSocketDir, "volume-*"));
+        return Collections.singletonList("file://" + PathUtil.join(getVhostSocketDir(), "volume-*"));
     }
 
     @Override
@@ -419,7 +426,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         to.setInstallPath(target.getResourceURI());
         to.setHostId(apiHelper.queryBdcByIp(h.getManagementIp()).getSpec().getId());
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
-        to.setCoveringPaths(Collections.singletonList(vhostSocketDir));
+        to.setCoveringPaths(Collections.singletonList(getVhostSocketDir()));
         comp.success(to);
     }
 
@@ -465,7 +472,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         to.setInstallPath(target.getResourceURI());
         to.setHostId(apiHelper.queryBdcByIp(h.getManagementIp()).getSpec().getId());
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
-        to.setCoveringPaths(Collections.singletonList(vhostSocketDir));
+        to.setCoveringPaths(Collections.singletonList(getVhostSocketDir()));
         return to;
     }
 
@@ -531,7 +538,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
                     .orElseThrow(() -> new OperationFailureException(operr("fail to get pool[id:%d, name:%s] %s details", it.getId(), it.getName()))));
         }
         info.setPools(pools.stream().map(this::getPoolAddonInfo).collect(Collectors.toList()));
-
+        vhostSocketDir = String.format("/var/run/bdc-%s/", apiHelper.getClusterUuid());
         comp.success(JSONObjectUtil.rehashObject(info, LinkedHashMap.class));
     }
 
@@ -772,7 +779,17 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         stats.setSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
         stats.setActualSize(vol.getStatus().getAllocatedSizeByte());
         stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+        stats.setParentUri(getParentUri(vol));
         comp.success(stats);
+    }
+
+    private String getParentUri(VolumeModule vol) {
+        if (vol.getSpec().getBsSnapId() == 0) {
+            return null;
+        }
+
+        VolumeSnapshotModule vss = apiHelper.getVolumeSnapshot(vol.getSpec().getBsSnapId());
+        return buildXInfiniSnapshotPath(vss.getSpec().getPoolId(), vss.getSpec().getBsVolumeId(), vss.getSpec().getId());
     }
 
     @Override
@@ -948,8 +965,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public void expungeSnapshot(String installPath, Completion comp) {
-        apiHelper.deleteVolume(getSnapIdFromPath(installPath), true);
-        comp.success();
+        deleteSnapshot(installPath, comp);
     }
 
     @Override
