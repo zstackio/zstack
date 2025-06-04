@@ -18,11 +18,13 @@ import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -78,6 +80,15 @@ public class VirtualRouterPingTracker extends PingTracker implements ManagementN
         callExtensionPoints(resourceUuid, reply);
 
         if (!pr.isDoReconnect() || pr.isConnected()) {
+            return;
+        }
+
+        // virtual router is not running/unknow state, skip the reconnection
+        List<VmInstanceState> states = new ArrayList<>();
+        states.add(VmInstanceState.Running);
+        states.add(VmInstanceState.Unknown);
+        if (Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, resourceUuid)
+                .notIn(VirtualRouterVmVO_.state, states).isExists()) {
             return;
         }
 
