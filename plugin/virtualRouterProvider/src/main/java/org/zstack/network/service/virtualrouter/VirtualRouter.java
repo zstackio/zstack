@@ -412,6 +412,10 @@ public class VirtualRouter extends ApplianceVmBase {
                 final PingVirtualRouterVmReply reply = new PingVirtualRouterVmReply(self.getUuid());
                 if ((VmInstanceState.Running != self.getState() && VmInstanceState.Unknown != self.getState())
                         || ApplianceVmStatus.Connecting == getSelf().getStatus()) {
+                    if (VmInstanceState.Stopped == self.getState()
+                            && ApplianceVmStatus.Disconnected != getSelf().getStatus()) {
+                        changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
+                    }
                     reply.setDoReconnect(false);
                     bus.reply(msg, reply);
                     chain.next();
