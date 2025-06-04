@@ -44,7 +44,7 @@
         <category>volumeSnapshot</category>
         <name>enable.fast.revert</name>
         <description>Enable fast revert for volume snapshot</description>
-        <defaultValue>true</defaultValue>
+        <defaultValue>false</defaultValue>
         <type>java.lang.Boolean</type>
     </config>
 
