@@ -1308,12 +1308,11 @@ public class KVMHost extends HostBase implements Host {
         Completion c = new Completion(msg, completion) {
             @Override
             public void success() {
-                changeConnectionState(HostStatusEvent.disconnected);
                 if (msg.isReturnEarly()) {
                     bus.reply(msg, reply);
-                } else {
-                    submitTaskWaitHostShutdownByIpmi();
                 }
+
+                submitTaskWaitHostShutdownByIpmi();
                 completion.done();
             }
 
@@ -1338,16 +1337,21 @@ public class KVMHost extends HostBase implements Host {
                         HostVO host = dbf.findByUuid(msg.getHostUuid(), HostVO.class);
 
                         if (timeHelper.getCurrentTimeMillis() > deadline) {
-                            reply.setError(operr(String.format("Host[%s] has not been shut down within %d seconds for an unknown reason. Please check host status in BMC[%s]", msg.getHostUuid(), timeoutInSec, host.getIpmi().getIpmiAddress())));
-                            reply.setSuccess(false);
-                            bus.reply(msg, reply);
+                            if (!msg.isReturnEarly()) {
+                                reply.setError(operr(String.format("Host[%s] has not been shut down within %d seconds for an unknown reason. Please check host status in BMC[%s]", msg.getHostUuid(), timeoutInSec, host.getIpmi().getIpmiAddress())));
+                                reply.setSuccess(false);
+                                bus.reply(msg, reply);
+                            }
                             HostIpmiVO ipmi = host.getIpmi();
                             kvmHostIpmiPowerExecutor.updateIpmiPowerStatusInDB(ipmi, HostPowerStatus.POWER_ON);
                             return true;
                         }
                         HostPowerStatus status = kvmHostIpmiPowerExecutor.refreshHostPowerStatus(host).getIpmiPowerStatus();
                         if (HostPowerStatus.POWER_OFF.equals(status)) {
-                            bus.reply(msg, reply);
+                            if (!msg.isReturnEarly()) {
+                                bus.reply(msg, reply);
+                            }
+                            changeConnectionState(HostStatusEvent.disconnected);
                             return true;
                         }
                         if (HostPowerStatus.POWER_ON.equals(status)) {
@@ -6145,13 +6149,12 @@ public class KVMHost extends HostBase implements Host {
                     return;
                 }
 
-                changeConnectionState(HostStatusEvent.disconnected);
                 if (msg.isReturnEarly()) {
                     bus.reply(msg, reply);
                     completion.done();
-                } else {
-                    waitForHostShutdown(reply, completion);
                 }
+
+                waitForHostShutdown(reply, completion);
             }
 
             private boolean testPort() {
@@ -6177,10 +6180,12 @@ public class KVMHost extends HostBase implements Host {
                     @Override
                     public boolean run() {
                         if (isTimeout()) {
-                            reply.setSuccess(false);
-                            reply.setError(operr("host[%s] not shutdown in %d seconds",msg.getHostUuid(), ctimeout));
-                            bus.reply(msg,reply);
-                            noErrorCompletion.done();
+                            if (!msg.isReturnEarly()) {
+                                reply.setSuccess(false);
+                                reply.setError(operr("host[%s] not shutdown in %d seconds", msg.getHostUuid(), ctimeout));
+                                bus.reply(msg, reply);
+                                noErrorCompletion.done();
+                            }
                             return true;
                         }
 
@@ -6188,8 +6193,11 @@ public class KVMHost extends HostBase implements Host {
                             return false;
                         }
 
-                        bus.reply(msg, reply);
-                        noErrorCompletion.done();
+                        if (!msg.isReturnEarly()) {
+                            bus.reply(msg, reply);
+                            noErrorCompletion.done();
+                        }
+                        changeConnectionState(HostStatusEvent.disconnected);
                         return true;
                     }
 
