@@ -19,6 +19,7 @@ import org.zstack.core.thread.ThreadFacadeImpl.TimeoutTaskReceipt;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.Constants;
 import org.zstack.header.Service;
+import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.apimediator.APIIsReadyToGoMsg;
 import org.zstack.header.apimediator.APIIsReadyToGoReply;
@@ -105,6 +106,11 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private final String AMQP_PROPERTY_HEADER__COMPRESSED = "compressed";
 
     private String SERVICE_ID = makeLocalServiceId("cloudbus");
+    public static final FutureCompletion SEND_CONFIRMED = new FutureCompletion(null);
+
+    static {
+        SEND_CONFIRMED.success();
+    }
 
     public void setDEFAULT_MESSAGE_TIMEOUT(long timeout) {
         this.DEFAULT_MESSAGE_TIMEOUT = timeout;
@@ -1327,8 +1333,9 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     }
 
     @Override
-    public void send(Message msg) {
+    public FutureCompletion send(Message msg) {
         send(msg, true);
+        return SEND_CONFIRMED;
     }
 
     @Override
@@ -1358,7 +1365,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     }
 
     @Override
-    public void send(final NeedReplyMessage msg, final CloudBusCallBack callback) {
+    public FutureCompletion send(final NeedReplyMessage msg, final CloudBusCallBack callback) {
         evaluateMessageTimeout(msg);
 
         Envelope e = new Envelope() {
@@ -1409,6 +1416,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         envelopes.put(msg.getId(), e);
 
         send(msg, false);
+        return SEND_CONFIRMED;
     }
 
     private MessageReply createTimeoutReply(NeedReplyMessage m) {
