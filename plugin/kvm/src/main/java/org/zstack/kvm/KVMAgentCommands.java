@@ -2151,6 +2151,17 @@ public class KVMAgentCommands {
         @GrayVersion(value = "5.0.0")
         private boolean useColoBinary;
 
+        @GrayVersion(value = "5.0.0")
+        private Boolean qemu64BitPciMmioSetup;
+
+        public Boolean getQemu64BitPciMmioSetup() {
+            return qemu64BitPciMmioSetup;
+        }
+
+        public void setQemu64BitPciMmioSetup(Boolean qemu64BitPciMmioSetup) {
+            this.qemu64BitPciMmioSetup = qemu64BitPciMmioSetup;
+        }
+
         public void setSocketNum(Integer socketNum) {
             this.socketNum = socketNum;
         }
