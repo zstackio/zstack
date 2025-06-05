@@ -58,10 +58,10 @@ class ManagementNodeHeartbeatCase extends SubCase {
     }
 
     void testUnexpectedManagementNodeRecord() {
+        prepareInvalidRecords()
         ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.updateValue(1)
         PortalGlobalProperty.MAX_HEARTBEAT_FAILURE = 2
 
-        prepareInvalidRecords()
         int heartbeatFailureTimeout = ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class) * PortalGlobalProperty.MAX_HEARTBEAT_FAILURE
         int heartbeatUpdateDelay = 1 * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class)
 
@@ -80,7 +80,12 @@ class ManagementNodeHeartbeatCase extends SubCase {
         assert count == 2
 
         // wait one more interval to wait 127.0.0.111 cleaned
-        sleep(TimeUnit.SECONDS.toMillis(failureInterval * 3))
+        // exceed 3s will be added in suspects
+        // next heartbeat will be clean
+        // but hb timestamp is second precision, so it will not be added until 4s.
+        // and cleaned after 5s
+        // so we need to wait more than 5s
+        sleep(TimeUnit.SECONDS.toMillis(failureInterval * 3) + 500)
         count = dbf.count(ManagementNodeVO.class)
         assert count == 1
 

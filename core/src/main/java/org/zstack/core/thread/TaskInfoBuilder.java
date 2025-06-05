@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 public class TaskInfoBuilder {
     static RunningTaskInfo buildRunningTaskInfo(AbstractTimeStatisticFuture abstractTimeStatisticFuture, long now, int index) {
         RunningTaskInfo info = new RunningTaskInfo();
-        loadTaskInfo(info, abstractTimeStatisticFuture, index);
+        loadTaskInfo(info, abstractTimeStatisticFuture.getTask(), index);
         info.setExecutionTime(TimeUnit.MILLISECONDS.toSeconds(now - abstractTimeStatisticFuture.getStartExecutionTimeInMills()));
         info.setPendingTime(TimeUnit.MILLISECONDS.toSeconds(now - abstractTimeStatisticFuture.getStartPendingTimeInMills()) - info.getExecutionTime());
         return info;
@@ -29,23 +29,23 @@ public class TaskInfoBuilder {
 
     static PendingTaskInfo buildPendingTaskInfo(AbstractTimeStatisticFuture abstractTimeStatisticFuture, long now, int index) {
         PendingTaskInfo info = new PendingTaskInfo();
-        loadTaskInfo(info, abstractTimeStatisticFuture, index);
+        loadTaskInfo(info, abstractTimeStatisticFuture.getTask(), index);
         info.setPendingTime(TimeUnit.MILLISECONDS.toSeconds(now - abstractTimeStatisticFuture.getStartPendingTimeInMills()));
         return info;
     }
 
-    static private void loadTaskInfo(TaskInfo info, AbstractTimeStatisticFuture cf, int index) {
-        info.setName(cf.getTask().getName());
-        info.setClassName(cf.getTask().getClass().getSimpleName());
+    static private void loadTaskInfo(TaskInfo info, AbstractChainTask task, int index) {
+        info.setName(task.getName());
+        info.setClassName(task.getClass().getSimpleName());
         info.setIndex(index);
-        Map<String, String> tc = cf.getTask().getThreadContext();
+        Map<String, String> tc = task.getThreadContext();
         if (tc != null) {
             info.setApiName(tc.get(Constants.THREAD_CONTEXT_TASK_NAME));
             info.setApiId(tc.get(Constants.THREAD_CONTEXT_API));
         }
 
         info.setContextList(new ArrayList<>());
-        for (AsyncBackup backup : cf.getTask().getBackups()) {
+        for (AsyncBackup backup : task.getBackups()) {
             if (backup instanceof Message) {
                 info.getContextList().add(JSONObjectUtil.toJsonString(backup));
             }
