@@ -12,6 +12,7 @@ import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.storage.volume.VolumeErrors;
+import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -46,7 +47,7 @@ public class CephDeleteVolumeGC extends TimeBasedGarbageCollector {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    if (reply.getError().isError(VolumeErrors.VOLUME_IN_USE)) {
+                    if (reply.getError().isError(VolumeErrors.VOLUME_IN_USE) && !VolumeSystemTags.FAST_REVERT.hasTag(volume.getUuid())) {
                         logger.warn(String.format("unable to delete path:%s right now, cancel this GC job because it's in use", msg.getInstallPath()));
                         completion.cancel();
                         return;

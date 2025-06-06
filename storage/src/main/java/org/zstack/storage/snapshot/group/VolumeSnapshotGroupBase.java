@@ -373,7 +373,8 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
         }
 
         final String finalNewGroupUuid = newGroup == null ? null : newGroup.getUuid();
-        new While<>(snapshots).each((snapshot, compl) -> {
+        Integer concurrencyNum = VolumeSnapshotGlobalConfig.SNAPSHOT_GROUP_REVERT_CONCURRENCY.value(Integer.class);
+        new While<>(snapshots).step((snapshot, compl) -> {
             if (Q.New(VolumeVO.class).eq(VolumeVO_.uuid, snapshot.getVolumeUuid()).eq(VolumeVO_.type, VolumeType.Memory).isExists()) {
                 compl.done();
                 return;
@@ -394,7 +395,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                     compl.done();
                 }
             });
-        }).run(new WhileDoneCompletion(msg) {
+        }, concurrencyNum).run(new WhileDoneCompletion(msg) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 bus.reply(msg, reply);
