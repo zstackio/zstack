@@ -120,5 +120,15 @@
         <id>3204</id>
         <description>License client call license server API error</description>
     </code>
+
+    <code>
+        <id>3211</id>
+        <description>Invalid license capacity application</description>
+    </code>
+
+    <code>
+        <id>3212</id>
+        <description>License quota exceeded</description>
+    </code>
 </error>
 

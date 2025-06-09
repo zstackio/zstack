@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizedNodeVO` (
 
 CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizedCapacityVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-    `nodeUuid` char(32) NOT NULL UNIQUE,
+    `nodeUuid` char(32) NOT NULL,
     `resourceUuid` char(32) DEFAULT NULL,
     `quotaType` varchar(64) NOT NULL,
     `quota` bigint unsigned DEFAULT 0,
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizedCapacityVO` (
 
 CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizeHistoryVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-    `nodeUuid` char(32) NOT NULL UNIQUE,
+    `nodeUuid` char(32) NOT NULL,
     `resourceUuid` char(32) DEFAULT NULL,
     `quotaType` varchar(64) NOT NULL,
     `usageFrom` bigint unsigned DEFAULT 0,
