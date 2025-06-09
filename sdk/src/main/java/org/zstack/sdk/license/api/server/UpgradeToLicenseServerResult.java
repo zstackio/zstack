@@ -1,6 +1,6 @@
 package org.zstack.sdk.license.api.server;
 
-import org.zstack.sdk.LicenseAuthorizedNodeInventory;
+import org.zstack.sdk.license.header.server.LicenseAuthorizedNodeInventory;
 
 public class UpgradeToLicenseServerResult {
     public LicenseAuthorizedNodeInventory inventory;

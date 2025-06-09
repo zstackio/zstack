@@ -1,6 +1,7 @@
 package org.zstack.sdk.license.api.server;
 
-
+import org.zstack.sdk.license.header.server.LicenseAuthorizedNodeInventory;
+import org.zstack.sdk.license.header.server.LicenseAuthorizedNodeInventory;
 
 public class VerifyLicenseServerResult {
     public java.lang.String accessKeyId;
@@ -19,12 +20,20 @@ public class VerifyLicenseServerResult {
         return this.accessKeySecret;
     }
 
-    public java.lang.String serverAppId;
-    public void setServerAppId(java.lang.String serverAppId) {
-        this.serverAppId = serverAppId;
+    public LicenseAuthorizedNodeInventory licenseClient;
+    public void setLicenseClient(LicenseAuthorizedNodeInventory licenseClient) {
+        this.licenseClient = licenseClient;
     }
-    public java.lang.String getServerAppId() {
-        return this.serverAppId;
+    public LicenseAuthorizedNodeInventory getLicenseClient() {
+        return this.licenseClient;
+    }
+
+    public LicenseAuthorizedNodeInventory licenseServer;
+    public void setLicenseServer(LicenseAuthorizedNodeInventory licenseServer) {
+        this.licenseServer = licenseServer;
+    }
+    public LicenseAuthorizedNodeInventory getLicenseServer() {
+        return this.licenseServer;
     }
 
 }
