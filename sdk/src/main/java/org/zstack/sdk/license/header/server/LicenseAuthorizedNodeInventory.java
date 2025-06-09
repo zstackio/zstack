@@ -1,4 +1,4 @@
-package org.zstack.sdk;
+package org.zstack.sdk.license.header.server;
 
 
 
@@ -10,6 +10,14 @@ public class LicenseAuthorizedNodeInventory  {
     }
     public java.lang.String getUuid() {
         return this.uuid;
+    }
+
+    public java.lang.String appId;
+    public void setAppId(java.lang.String appId) {
+        this.appId = appId;
+    }
+    public java.lang.String getAppId() {
+        return this.appId;
     }
 
     public java.lang.String ip;

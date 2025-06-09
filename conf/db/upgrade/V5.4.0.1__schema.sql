@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizedNodeVO` (
     `uuid` char(32) NOT NULL UNIQUE,
+    `appId` char(32) NOT NULL,
     `ip` varchar(255) NOT NULL,
     `lastSyncDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
     `status` varchar(64) NOT NULL,
@@ -11,7 +12,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizedNodeVO` (
 
 CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizedCapacityVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-    `uuid` char(32) NOT NULL UNIQUE,
+    `nodeUuid` char(32) NOT NULL UNIQUE,
     `resourceUuid` char(32) DEFAULT NULL,
     `quotaType` varchar(64) NOT NULL,
     `quota` bigint unsigned DEFAULT 0,
@@ -20,12 +21,12 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizedCapacityVO` (
     `lastOpDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
     PRIMARY KEY (`id`),
-    CONSTRAINT `fkLicenseAuthorizedCapacityLicenseAuthorizedNode` FOREIGN KEY (`uuid`) REFERENCES `LicenseAuthorizedNodeVO` (`uuid`) ON DELETE CASCADE
+    CONSTRAINT `fkLicenseAuthorizedCapacityLicenseAuthorizedNode` FOREIGN KEY (`nodeUuid`) REFERENCES `LicenseAuthorizedNodeVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizeHistoryVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-    `uuid` char(32) NOT NULL UNIQUE,
+    `nodeUuid` char(32) NOT NULL UNIQUE,
     `resourceUuid` char(32) DEFAULT NULL,
     `quotaType` varchar(64) NOT NULL,
     `usageFrom` bigint unsigned DEFAULT 0,

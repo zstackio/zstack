@@ -484,7 +484,7 @@ public class SourceClassMap {
 			put("org.zstack.log.server.LogServerInventory", "org.zstack.sdk.LogServerInventory");
 			put("org.zstack.log.server.LogType", "org.zstack.sdk.LogType");
 			put("org.zstack.login.entity.LdapResourceRefInventory", "org.zstack.sdk.LdapResourceRefInventory");
-			put("org.zstack.license.header.server.LicenseAuthorizedNodeInventory", "org.zstack.sdk.LicenseAuthorizedNodeInventory");
+			put("org.zstack.license.header.server.LicenseAuthorizedNodeInventory", "org.zstack.sdk.license.header.server.LicenseAuthorizedNodeInventory");
 			put("org.zstack.loginControl.entity.AccessControlRuleInventory", "org.zstack.sdk.AccessControlRuleInventory");
 			put("org.zstack.loginControl.entity.ControlStrategy", "org.zstack.sdk.ControlStrategy");
 			put("org.zstack.mevoco.ShareableVolumeVmInstanceRefInventory", "org.zstack.sdk.ShareableVolumeVmInstanceRefInventory");
@@ -1109,7 +1109,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LdapResourceRefInventory", "org.zstack.login.entity.LdapResourceRefInventory");
 			put("org.zstack.sdk.LdapServerInventory", "org.zstack.ldap.LdapServerInventory");
 			put("org.zstack.sdk.LicenseAddOnInventory", "org.zstack.license.LicenseAddOnInventory");
-			put("org.zstack.sdk.LicenseAuthorizedNodeInventory", "org.zstack.license.header.server.LicenseAuthorizedNodeInventory");
 			put("org.zstack.sdk.LicenseInventory", "org.zstack.license.LicenseInventory");
 			put("org.zstack.sdk.LoadBalancerDataInventory", "org.zstack.observabilityServer.service.loadBalancer.LoadBalancerDataInventory");
 			put("org.zstack.sdk.LoadBalancerInventory", "org.zstack.network.service.lb.LoadBalancerInventory");
@@ -1548,6 +1547,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.identity.role.RoleStateEvent", "org.zstack.header.identity.role.RoleStateEvent");
 			put("org.zstack.sdk.identity.role.RoleType", "org.zstack.header.identity.role.RoleType");
 			put("org.zstack.sdk.sns.SNSAliyunSmsEndpointInventory", "org.zstack.sns.SNSAliyunSmsEndpointInventory");
+			put("org.zstack.sdk.license.header.server.LicenseAuthorizedNodeInventory", "org.zstack.license.header.server.LicenseAuthorizedNodeInventory");
 			put("org.zstack.sdk.sns.SNSApplicationEndpointInventory", "org.zstack.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sdk.sns.SNSApplicationPlatformInventory", "org.zstack.sns.SNSApplicationPlatformInventory");
 			put("org.zstack.sdk.sns.SNSSmsReceiverInventory", "org.zstack.sns.SNSSmsReceiverInventory");
