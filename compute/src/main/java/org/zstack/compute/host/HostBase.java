@@ -261,7 +261,6 @@ public abstract class HostBase extends AbstractHost {
         final APIShutdownHostEvent event = new APIShutdownHostEvent(msg.getId());
         ShutdownHostMsg shutdownHostMsg = new ShutdownHostMsg();
         shutdownHostMsg.setMethod(HostPowerManagementMethod.valueOf(msg.getMethod()));
-        shutdownHostMsg.setWaitTaskCompleted(!msg.isReturnEarly());
         shutdownHostMsg.setReturnEarly(msg.isReturnEarly());
         shutdownHostMsg.setUuid(msg.getUuid());
         shutdownHostMsg.setForce(msg.isForce());

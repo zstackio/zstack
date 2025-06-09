@@ -7,8 +7,15 @@ import org.zstack.header.message.NeedReplyMessage;
  */
 public class ShutdownHostMsg extends NeedReplyMessage implements HostMessage {
     private String uuid;
+    /**
+     * If true, the shutdown task execution should wait for the running task to complete.
+     */
     private boolean waitTaskCompleted;
     private Long maxWaitTime;
+
+    /**
+     * If true, the shutdown task will return immediately without waiting for the host to be powered off.
+     */
     private boolean returnEarly;
     private HostPowerManagementMethod method;
     private boolean force = false;
