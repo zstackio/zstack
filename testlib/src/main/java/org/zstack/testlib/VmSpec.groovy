@@ -169,6 +169,7 @@ class VmSpec extends Spec implements HasSession {
             delegate.l3NetworkUuids = l3Networks()
             delegate.defaultL3NetworkUuid = defaultL3Network()
             delegate.systemTags = systemTags
+            delegate.timeout = 60000
         }
 
         postCreate {
