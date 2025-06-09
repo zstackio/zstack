@@ -94,3 +94,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ContainerImageVO` (
     CONSTRAINT `fkContainerImageVOImageEO` FOREIGN KEY (`uuid`) REFERENCES `ImageEO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkContainerImageVOContainerManagementEndpointVO` FOREIGN KEY (`endpointUuid`) REFERENCES `ContainerManagementEndpointVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL DROP_COLUMN('ModelServiceVO', 'vmImageUuid');
+CALL DROP_COLUMN('ModelServiceVO', 'dockerImage');

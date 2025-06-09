@@ -92,14 +92,6 @@ public class ModelServiceInventory  {
         return this.source;
     }
 
-    public java.lang.String dockerImage;
-    public void setDockerImage(java.lang.String dockerImage) {
-        this.dockerImage = dockerImage;
-    }
-    public java.lang.String getDockerImage() {
-        return this.dockerImage;
-    }
-
     public java.lang.Long size;
     public void setSize(java.lang.Long size) {
         this.size = size;
@@ -114,14 +106,6 @@ public class ModelServiceInventory  {
     }
     public java.lang.Boolean getSystem() {
         return this.system;
-    }
-
-    public java.lang.String vmImageUuid;
-    public void setVmImageUuid(java.lang.String vmImageUuid) {
-        this.vmImageUuid = vmImageUuid;
-    }
-    public java.lang.String getVmImageUuid() {
-        return this.vmImageUuid;
     }
 
     public java.lang.String gpuComputeCapability;
