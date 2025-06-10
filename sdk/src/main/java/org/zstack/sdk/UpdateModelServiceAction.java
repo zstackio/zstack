@@ -32,16 +32,10 @@ public class UpdateModelServiceAction extends AbstractAction {
     public java.lang.String name;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dockerImage;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String yaml;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmImageUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Integer requestCpu;

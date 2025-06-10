@@ -29,9 +29,6 @@ public class AddModelServiceAction extends AbstractAction {
     public java.lang.String name;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dockerImage;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -39,9 +36,6 @@ public class AddModelServiceAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String modelCenterUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmImageUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Integer requestCpu;
