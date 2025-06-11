@@ -1162,14 +1162,16 @@ public class KVMHost extends HostBase implements Host {
         }
 
         KVMHostVO host = dbf.findByUuid(msg.getHostUuid(), KVMHostVO.class);
-        HTTP.Builder hb = HTTP.post();
-        hb.body("");
-        hb.url(String.format("http://localhost:%s?username=%s&&hostname=%s&&port=%s&&password=%s",
-                KVMGlobalConfig.HOST_WEBSSH_PORT.value(),
-                msg.getUserName(),
-                host.getManagementIp(),
-                host.getPort().toString(),
-                msg.getPassword()));
+
+        Map<String, Object> formMap = new HashMap<>();
+        formMap.put("username", msg.getUserName());
+        formMap.put("hostname", host.getManagementIp());
+        formMap.put("port", host.getPort().toString());
+        formMap.put("password", msg.getPassword());
+
+        HTTP.Builder hb = HTTP.post()
+                .url(String.format("http://localhost:%s", KVMGlobalConfig.HOST_WEBSSH_PORT.value()))
+                .formData(formMap);
 
         try (Response r = hb.callWithException()) {
             // 1. webssh maybe is not running
