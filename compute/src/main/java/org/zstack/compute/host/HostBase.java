@@ -54,6 +54,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.e;
@@ -1191,7 +1192,7 @@ public abstract class HostBase extends AbstractHost {
         return changeConnectionState(event, null);
     }
 
-    protected boolean changeConnectionState(final HostStatusEvent event, Runnable runnable) {
+    protected boolean changeConnectionState(final HostStatusEvent event, Consumer<HostVO> consumer) {
         String hostUuid = self.getUuid();
         self = dbf.reload(self);
         if (self == null) {
@@ -1205,7 +1206,7 @@ public abstract class HostBase extends AbstractHost {
         }
 
         self.setStatus(next);
-        Optional.ofNullable(runnable).ifPresent(Runnable::run);
+        Optional.ofNullable(consumer).ifPresent(it -> it.accept(self));
         self = dbf.updateAndRefresh(self);
         logger.debug(String.format("Host %s [uuid:%s] changed connection state from %s to %s",
                 self.getName(), self.getUuid(), before, next));
