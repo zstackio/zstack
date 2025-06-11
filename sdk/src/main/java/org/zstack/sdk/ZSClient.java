@@ -383,8 +383,15 @@ public class ZSClient {
 
         private void calculateAccessKeySignature(Request.Builder reqBuilder, String accessKeyId, String accessKeySecret, String path) throws Exception {
             ZonedDateTime date = ZonedDateTime.now();
-            String dateStr = date.format(formatter);
+            DateTimeFormatter fmt = formatter;
+            if (getConfig() != null && getConfig().accessKeyDateStr != null) {
+                fmt = new DateTimeFormatterBuilder()
+                        .parseCaseInsensitive()
+                        .appendPattern(getConfig().accessKeyDateStr)
+                        .toFormatter(Locale.ENGLISH);
+            }
 
+            String dateStr = date.format(fmt);
             StringBuilder sb = new StringBuilder();
             sb.append(info.httpMethod).append("\n");
             sb.append(dateStr).append("\n").append("/v1").append(path);
