@@ -106,6 +106,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
@@ -1337,21 +1338,26 @@ public class KVMHost extends HostBase implements Host {
                         HostVO host = dbf.findByUuid(msg.getHostUuid(), HostVO.class);
 
                         if (timeHelper.getCurrentTimeMillis() > deadline) {
+                            HostIpmiVO ipmi = host.getIpmi();
+                            kvmHostIpmiPowerExecutor.updateIpmiPowerStatusInDB(ipmi, HostPowerStatus.POWER_ON);
                             if (!msg.isReturnEarly()) {
                                 reply.setError(operr(String.format("Host[%s] has not been shut down within %d seconds for an unknown reason. Please check host status in BMC[%s]", msg.getHostUuid(), timeoutInSec, host.getIpmi().getIpmiAddress())));
                                 reply.setSuccess(false);
                                 bus.reply(msg, reply);
                             }
-                            HostIpmiVO ipmi = host.getIpmi();
-                            kvmHostIpmiPowerExecutor.updateIpmiPowerStatusInDB(ipmi, HostPowerStatus.POWER_ON);
                             return true;
                         }
                         HostPowerStatus status = kvmHostIpmiPowerExecutor.refreshHostPowerStatus(host).getIpmiPowerStatus();
                         if (HostPowerStatus.POWER_OFF.equals(status)) {
+                            Consumer<HostVO> c = msg.getOriginState() == null ? null : h -> {
+                                logger.debug(String.format("host[uuid:%s, name:%s, ip:%s] is power off, set it to origin state %s",
+                                        h.getUuid(), h.getName(), h.getManagementIp(), msg.getOriginState()));
+                                h.setState(HostState.valueOf(msg.getOriginState()));
+                            };
+                            changeConnectionState(HostStatusEvent.disconnected, c);
                             if (!msg.isReturnEarly()) {
                                 bus.reply(msg, reply);
                             }
-                            changeConnectionState(HostStatusEvent.disconnected);
                             return true;
                         }
                         if (HostPowerStatus.POWER_ON.equals(status)) {
@@ -6190,11 +6196,16 @@ public class KVMHost extends HostBase implements Host {
                             return false;
                         }
 
+                        Consumer<HostVO> c = msg.getOriginState() == null ? null : h -> {
+                            logger.debug(String.format("host[uuid:%s, name:%s, ip:%s] is power off, set it to origin state %s",
+                                    h.getUuid(), h.getName(), h.getManagementIp(), msg.getOriginState()));
+                            h.setState(HostState.valueOf(msg.getOriginState()));
+                        };
+                        changeConnectionState(HostStatusEvent.disconnected, c);
                         if (!msg.isReturnEarly()) {
                             bus.reply(msg, reply);
                             noErrorCompletion.done();
                         }
-                        changeConnectionState(HostStatusEvent.disconnected);
                         return true;
                     }
 
