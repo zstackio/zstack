@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetLicenseAuthorizedCapacityAction extends AbstractAction {
+public class WithdrawLicenseCapacityApplicationAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetLicenseAuthorizedCapacityAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.license.api.server.GetLicenseAuthorizedCapacityResult value;
+        public org.zstack.sdk.license.api.server.WithdrawLicenseCapacityApplicationResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,8 +25,14 @@ public class GetLicenseAuthorizedCapacityAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List resourceUuidList;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String clientAuthorizedNodeUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String licenseType;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -46,6 +52,12 @@ public class GetLicenseAuthorizedCapacityAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -54,8 +66,8 @@ public class GetLicenseAuthorizedCapacityAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.license.api.server.GetLicenseAuthorizedCapacityResult value = res.getResult(org.zstack.sdk.license.api.server.GetLicenseAuthorizedCapacityResult.class);
-        ret.value = value == null ? new org.zstack.sdk.license.api.server.GetLicenseAuthorizedCapacityResult() : value; 
+        org.zstack.sdk.license.api.server.WithdrawLicenseCapacityApplicationResult value = res.getResult(org.zstack.sdk.license.api.server.WithdrawLicenseCapacityApplicationResult.class);
+        ret.value = value == null ? new org.zstack.sdk.license.api.server.WithdrawLicenseCapacityApplicationResult() : value; 
 
         return ret;
     }
@@ -84,10 +96,10 @@ public class GetLicenseAuthorizedCapacityAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/license-server/authorized-capacity";
+        info.httpMethod = "DELETE";
+        info.path = "/license-server/capacity-application";
         info.needSession = true;
-        info.needPoll = false;
+        info.needPoll = true;
         info.parameterName = "";
         return info;
     }

@@ -404,7 +404,13 @@ public class SourceClassMap {
 			put("org.zstack.license.LicenseInventory", "org.zstack.sdk.LicenseInventory");
 			put("org.zstack.license.UKeyInventory", "org.zstack.sdk.UKeyInventory");
 			put("org.zstack.license.UKeyStatus", "org.zstack.sdk.UKeyStatus");
+			put("org.zstack.license.entity.LicenseUsageView", "org.zstack.sdk.license.entity.LicenseUsageView");
+			put("org.zstack.license.header.server.LicenseAuthorizedCapacityClientAddOnUsageView", "org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityClientAddOnUsageView");
+			put("org.zstack.license.header.server.LicenseAuthorizedCapacityClientUsageView", "org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityClientUsageView");
+			put("org.zstack.license.header.server.LicenseAuthorizedCapacityInventory", "org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityInventory");
+			put("org.zstack.license.header.server.LicenseAuthorizedCapacityUsageDetailView", "org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityUsageDetailView");
 			put("org.zstack.license.header.server.LicenseAuthorizedNodeInventory", "org.zstack.sdk.license.header.server.LicenseAuthorizedNodeInventory");
+			put("org.zstack.license.header.server.TotalLicenseAuthorizedCapacityView", "org.zstack.sdk.license.header.server.TotalLicenseAuthorizedCapacityView");
 			put("org.zstack.loginControl.entity.AccessControlRuleInventory", "org.zstack.sdk.AccessControlRuleInventory");
 			put("org.zstack.loginControl.entity.ControlStrategy", "org.zstack.sdk.ControlStrategy");
 			put("org.zstack.mevoco.ShareableVolumeVmInstanceRefInventory", "org.zstack.sdk.ShareableVolumeVmInstanceRefInventory");
@@ -1363,7 +1369,13 @@ public class SourceClassMap {
 			put("org.zstack.sdk.identity.ldap.entity.LdapServerInventory", "org.zstack.ldap.entity.LdapServerInventory");
 			put("org.zstack.sdk.identity.role.RoleAccountRefInventory", "org.zstack.header.identity.role.RoleAccountRefInventory");
 			put("org.zstack.sdk.identity.role.RoleInventory", "org.zstack.header.identity.role.RoleInventory");
+			put("org.zstack.sdk.license.entity.LicenseUsageView", "org.zstack.license.entity.LicenseUsageView");
+			put("org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityClientAddOnUsageView", "org.zstack.license.header.server.LicenseAuthorizedCapacityClientAddOnUsageView");
+			put("org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityClientUsageView", "org.zstack.license.header.server.LicenseAuthorizedCapacityClientUsageView");
+			put("org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityInventory", "org.zstack.license.header.server.LicenseAuthorizedCapacityInventory");
+			put("org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityUsageDetailView", "org.zstack.license.header.server.LicenseAuthorizedCapacityUsageDetailView");
 			put("org.zstack.sdk.license.header.server.LicenseAuthorizedNodeInventory", "org.zstack.license.header.server.LicenseAuthorizedNodeInventory");
+			put("org.zstack.sdk.license.header.server.TotalLicenseAuthorizedCapacityView", "org.zstack.license.header.server.TotalLicenseAuthorizedCapacityView");
 			put("org.zstack.sdk.sns.SNSApplicationEndpointInventory", "org.zstack.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sdk.sns.SNSApplicationPlatformInventory", "org.zstack.sns.SNSApplicationPlatformInventory");
 			put("org.zstack.sdk.sns.SNSSmsEndpointInventory", "org.zstack.sns.SNSSmsEndpointInventory");
