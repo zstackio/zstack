@@ -17,6 +17,7 @@ public class ShutdownHostMsg extends NeedReplyMessage implements HostMessage {
      * If true, the shutdown task will return immediately without waiting for the host to be powered off.
      */
     private boolean returnEarly;
+    private String originState;
     private HostPowerManagementMethod method;
     private boolean force = false;
 
@@ -71,5 +72,13 @@ public class ShutdownHostMsg extends NeedReplyMessage implements HostMessage {
 
     public void setForce(boolean force) {
         this.force = force;
+    }
+
+    public String getOriginState() {
+        return originState;
+    }
+
+    public void setOriginState(String originState) {
+        this.originState = originState;
     }
 }
