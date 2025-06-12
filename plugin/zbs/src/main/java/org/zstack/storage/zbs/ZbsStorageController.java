@@ -83,6 +83,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String CLONE_VOLUME_PATH = "/zbs/primarystorage/volume/clone";
     public static final String QUERY_VOLUME_PATH = "/zbs/primarystorage/volume/query";
     public static final String EXPAND_VOLUME_PATH = "/zbs/primarystorage/volume/expand";
+    public static final String FLATTEN_VOLUME_PATH = "/zbs/primarystorage/volume/flatten";
     public static final String CBD_TO_NBD_PATH = "/zbs/primarystorage/volume/cbdtonbd";
     public static final String CLEAN_NBD_PATH = "/zbs/primarystorage/volume/cleannbd";
     public static final String CREATE_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/create";
@@ -96,6 +97,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         scap.setSupport(true);
         scap.setArrangementType(VolumeSnapshotCapability.VolumeSnapshotArrangementType.INDIVIDUAL);
         scap.setSupportCreateOnHypervisor(false);
+        scap.setSupportLazyDelete(false);
         capabilities.setSnapshotCapability(scap);
         capabilities.setSupportCloneFromVolume(false);
         capabilities.setSupportStorageQos(false);
@@ -549,7 +551,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void deleteVolumeAndSnapshot(String installPath, Completion comp) {
-
+        doDeleteVolume(installPath, true, comp);
     }
 
     @Override
@@ -584,6 +586,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                                 stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                                 stats.setSize(returnValue.getSize());
                                 stats.setActualSize(returnValue.getActualSize());
+                                stats.setParentUri(srcInstallPath);
                                 trigger.next();
                             }
 
@@ -672,14 +675,31 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void flattenVolume(String installPath, ReturnValueCompletion<VolumeStats> comp) {
-        comp.fail(operr("not supported flatten volume with zbs primary storage."));
+        FlattenVolumeCmd cmd = new FlattenVolumeCmd();
+        cmd.setPath(installPath);
+
+        httpCall(FLATTEN_VOLUME_PATH, cmd, FlattenVolumeRsp.class, new ReturnValueCompletion<FlattenVolumeRsp>(comp) {
+            @Override
+            public void success(FlattenVolumeRsp returnValue) {
+                VolumeStats stats = new VolumeStats();
+                stats.setInstallPath(installPath);
+                stats.setSize(returnValue.getSize());
+                stats.setActualSize(returnValue.getActualSize());
+                stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+                comp.success(stats);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                comp.fail(errorCode);
+            }
+        });
     }
 
     @Override
     public void stats(String installPath, ReturnValueCompletion<VolumeStats> comp) {
         QueryVolumeCmd cmd = new QueryVolumeCmd();
-        cmd.setLogicalPoolName(getLogicalPoolNameFromPath(installPath));
-        cmd.setLunName(getLunNameFromPath(installPath));
+        cmd.setPath(installPath);
 
         httpCall(QUERY_VOLUME_PATH, cmd, QueryVolumeRsp.class, new ReturnValueCompletion<QueryVolumeRsp>(comp) {
             @Override
@@ -689,6 +709,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 stats.setSize(returnValue.getSize());
                 stats.setActualSize(returnValue.getActualSize());
                 stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+                stats.setParentUri(returnValue.getParentUri());
                 comp.success(stats);
             }
 
@@ -1145,6 +1166,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static class QueryVolumeRsp extends AgentResponse {
         private long size;
         private long actualSize;
+        private String parentUri;
 
         public long getSize() {
             return size;
@@ -1161,6 +1183,18 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         public void setActualSize(long actualSize) {
             this.actualSize = actualSize;
         }
+
+        public String getParentUri() {
+            return parentUri;
+        }
+
+        public void setParentUri(String parentUri) {
+            this.parentUri = parentUri;
+        }
+    }
+
+    public static class FlattenVolumeRsp extends QueryVolumeRsp {
+
     }
 
     public static class CbdToNbdRsp extends AgentResponse {
@@ -1453,23 +1487,26 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     public static class QueryVolumeCmd extends AgentCommand {
-        private String logicalPoolName;
-        private String lunName;
+        private String path;
 
-        public String getLogicalPoolName() {
-            return logicalPoolName;
+        public String getPath() {
+            return path;
         }
 
-        public void setLogicalPoolName(String logicalPoolName) {
-            this.logicalPoolName = logicalPoolName;
+        public void setPath(String path) {
+            this.path = path;
+        }
+    }
+
+    public static class FlattenVolumeCmd extends AgentCommand {
+        private String path;
+
+        public String getPath() {
+            return path;
         }
 
-        public String getLunName() {
-            return lunName;
-        }
-
-        public void setLunName(String lunName) {
-            this.lunName = lunName;
+        public void setPath(String path) {
+            this.path = path;
         }
     }
 
