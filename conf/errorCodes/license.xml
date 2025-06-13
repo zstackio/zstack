@@ -97,6 +97,16 @@
     </code>
 
     <code>
+        <id>3111</id>
+        <description>Invalid license capacity application</description>
+    </code>
+
+    <code>
+        <id>3112</id>
+        <description>License quota exceeded</description>
+    </code>
+
+    <code>
         <id>3200</id>
         <description>License client generic error</description>
     </code>
@@ -122,13 +132,8 @@
     </code>
 
     <code>
-        <id>3211</id>
-        <description>Invalid license capacity application</description>
-    </code>
-
-    <code>
-        <id>3212</id>
-        <description>License quota exceeded</description>
+        <id>3205</id>
+        <description>Invalid license capacity response from license server</description>
     </code>
 </error>
 
