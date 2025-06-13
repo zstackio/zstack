@@ -5,8 +5,9 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 
 /**
  */
-public class DeleteSnapshotOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
+public class DeleteSnapshotOnPrimaryStorageMsg extends NeedReplyMessage implements DeleteOnPrimaryStorageMessage {
     private VolumeSnapshotInventory snapshot;
+    private boolean gcOnFailure = false;
 
     @Override
     public String getPrimaryStorageUuid() {
@@ -19,5 +20,14 @@ public class DeleteSnapshotOnPrimaryStorageMsg extends NeedReplyMessage implemen
 
     public void setSnapshot(VolumeSnapshotInventory snapshot) {
         this.snapshot = snapshot;
+    }
+
+    @Override
+    public boolean isGcOnFailure() {
+        return gcOnFailure;
+    }
+
+    public void setGcOnFailure(boolean gcOnFailure) {
+        this.gcOnFailure = gcOnFailure;
     }
 }

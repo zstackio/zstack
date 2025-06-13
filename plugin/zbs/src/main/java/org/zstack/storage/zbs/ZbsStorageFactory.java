@@ -8,6 +8,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.externalStorage.primary.ExternalStorageFencerType;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.storage.primary.DeleteVolumeBitsOnPrimaryStorageMsg;
@@ -74,13 +75,8 @@ public class ZbsStorageFactory implements ExternalPrimaryStorageSvcBuilder, Back
     }
 
     @Override
-    public void volumeSnapshotAfterDeleteExtensionPoint(VolumeSnapshotInventory snapshot, Completion completion) {
-        completion.success();
-    }
-
-    @Override
-    public void volumeSnapshotAfterFailedDeleteExtensionPoint(VolumeSnapshotInventory snapshot) {
-
+    public void volumeSnapshotAfterDeleteExtensionPoint(VolumeSnapshotInventory snapshot, NoErrorCompletion completion) {
+        completion.done();
     }
 
     private boolean isCbdProtocol(String volumeUuid) {

@@ -43,7 +43,9 @@ import org.zstack.header.volume.*;
 import org.zstack.storage.primary.*;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
+import org.zstack.storage.snapshot.DeleteVolumeSnapshotGC;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
+import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionDSL;
@@ -1448,7 +1450,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("delete-snapshot-%s-on-local-storage-%s", msg.getSnapshot().getUuid(), self.getUuid()));
         chain.then(new ShareFlow() {
-            DeleteSnapshotOnPrimaryStorageReply reply;
+            DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
 
             @Override
             public void setup() {
@@ -1459,10 +1461,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     public void run(final FlowTrigger trigger, Map data) {
                         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
                         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-                        bkd.handle(msg, hostUuid, new ReturnValueCompletion<DeleteSnapshotOnPrimaryStorageReply>(trigger) {
+                        bkd.deleteBits(msg.getSnapshot().getPrimaryStorageInstallPath(), hostUuid, new Completion(trigger) {
                             @Override
-                            public void success(DeleteSnapshotOnPrimaryStorageReply returnValue) {
-                                reply = returnValue;
+                            public void success() {
                                 trigger.next();
                             }
 

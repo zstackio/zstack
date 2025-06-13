@@ -671,7 +671,7 @@ public class VolumeSnapshotTreeBase {
                             }
                         }
                         if (errors.getCauses().size() > 0) {
-                            trigger.fail(errors);
+                            trigger.fail(errors.getCauses().get(0));
                         } else {
                             trigger.next();
                         }

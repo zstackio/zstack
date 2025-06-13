@@ -17,10 +17,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.ExceptionSafe;
-import org.zstack.header.core.NopeCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -1316,7 +1313,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     }
 
     @Override
-    public void volumeBeforeExpunge(VolumeInventory volume, Completion completion) {
+    public void volumeBeforeExpunge(VolumeInventory volume, NoErrorCompletion completion) {
         List<VolumeSnapshotDeletionMsg> msgs = VolumeSnapshotCascadeExtension.handleVolumeExpunge(volume.getUuid());
 
         new While<>(msgs).all((msg, c) -> {
@@ -1325,22 +1322,13 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             bus.send(msg, new CloudBusCallBack(c) {
                 @Override
                 public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        c.addError(reply.getError());
-                    }
-
                     c.done();
                 }
             });
         }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (!errorCodeList.getCauses().isEmpty()) {
-                    completion.fail(errorCodeList.getCauses().get(0));
-                    return;
-                }
-
-                completion.success();
+                completion.done();
             }
         });
     }

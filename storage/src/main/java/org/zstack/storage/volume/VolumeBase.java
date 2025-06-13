@@ -911,18 +911,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        new While<>(exts).each((ext, c) -> ext.volumeBeforeExpunge(inv, new Completion(c) {
-                            @Override
-                            public void success() {
-                                c.done();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                logger.debug(String.format("failed to execute extension, because %s", errorCode.getDetails()));
-                                c.done();
-                            }
-                        })).run(new WhileDoneCompletion(trigger) {
+                        new While<>(exts).each((ext, c) -> ext.volumeBeforeExpunge(inv, c))
+                                .run(new WhileDoneCompletion(trigger) {
                             @Override
                             public void done(ErrorCodeList errorCodeList) {
                                 trigger.next();

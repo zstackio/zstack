@@ -11,6 +11,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.gc.GCGlobalConfig;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -222,17 +223,7 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
         chain.then(new ShareFlow() {
             private void finish() {
                 new While<>(pluginRgty.getExtensionList(VolumeSnapshotAfterDeleteExtensionPoint.class)).all((ext, c) -> {
-                    ext.volumeSnapshotAfterDeleteExtensionPoint(sp, new Completion(c) {
-                        @Override
-                        public void success() {
-                            c.done();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            c.done();
-                        }
-                    });
+                    ext.volumeSnapshotAfterDeleteExtensionPoint(sp, c);
                 }).run(new WhileDoneCompletion(msg) {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
@@ -259,13 +250,6 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
             }
 
             private void errors(ErrorCode errorCode) {
-                CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeSnapshotAfterDeleteExtensionPoint.class), new ForEachFunction<VolumeSnapshotAfterDeleteExtensionPoint>() {
-                    @Override
-                    public void run(VolumeSnapshotAfterDeleteExtensionPoint arg) {
-                        arg.volumeSnapshotAfterFailedDeleteExtensionPoint(sp);
-                    }
-                });
-
                 VolumeSnapshotPrimaryStorageDeletionReply dreply = new VolumeSnapshotPrimaryStorageDeletionReply();
                 dreply.setError(errorCode);
                 bus.reply(msg, dreply);
@@ -279,6 +263,7 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                     public void run(final FlowTrigger trigger, Map data) {
                         DeleteSnapshotOnPrimaryStorageMsg dmsg = new DeleteSnapshotOnPrimaryStorageMsg();
                         dmsg.setSnapshot(getSelfInventory());
+                        dmsg.setGcOnFailure(true);
                         bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
                         bus.send(dmsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -318,7 +303,7 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        // TODO GC
+                        // primary storage handle gc by itself, and reply success. the flow chain will always succeed.
                         if (VolumeSnapshotErrors.FULL_SNAPSHOT_ERROR.toString().equals(errCode.getCode())) {
                             errors(errCode);
                         } else {
