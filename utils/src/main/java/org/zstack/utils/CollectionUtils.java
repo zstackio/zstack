@@ -56,6 +56,10 @@ public class CollectionUtils {
         return from.stream().map(mapper).collect(Collectors.toList());
     }
 
+    public static <FROM, TO> List<TO> transformAndRemoveNull(Collection<FROM> from, java.util.function.Function<FROM, TO> mapper) {
+        return from.stream().map(mapper).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
     public static <T> List<T> filter(Collection<T> from, Predicate<T> tester) {
         return from.stream().filter(tester).collect(Collectors.toList());
     }
