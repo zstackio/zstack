@@ -10,6 +10,7 @@ public class ShutdownHostMsg extends NeedReplyMessage implements HostMessage {
     private boolean waitTaskCompleted;
     private Long maxWaitTime;
     private boolean returnEarly;
+    private String originState;
     private HostPowerManagementMethod method;
     private boolean force = false;
 
@@ -64,5 +65,13 @@ public class ShutdownHostMsg extends NeedReplyMessage implements HostMessage {
 
     public void setForce(boolean force) {
         this.force = force;
+    }
+
+    public String getOriginState() {
+        return originState;
+    }
+
+    public void setOriginState(String originState) {
+        this.originState = originState;
     }
 }
