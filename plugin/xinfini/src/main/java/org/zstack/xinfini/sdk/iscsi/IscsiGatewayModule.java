@@ -44,6 +44,15 @@ public class IscsiGatewayModule extends BaseResource {
         private int iscsiClientNum;
         private int iscsiClientGroupNum;
         private int iscsiPathNum;
+        private String nodeState;
+
+        public String getNodeState() {
+            return nodeState;
+        }
+
+        public void setNodeState(String nodeState) {
+            this.nodeState = nodeState;
+        }
 
         public String getConfigContent() {
             return configContent;
