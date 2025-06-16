@@ -1,6 +1,7 @@
 package org.zstack.xinfini;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.lucene.util.packed.DirectMonotonicReader;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -45,6 +46,7 @@ import org.zstack.xinfini.sdk.pool.PoolCapacity;
 import org.zstack.xinfini.sdk.pool.PoolModule;
 import org.zstack.xinfini.sdk.vhost.BdcBdevModule;
 import org.zstack.xinfini.sdk.vhost.BdcModule;
+import org.zstack.xinfini.sdk.vhost.BdcRunState;
 import org.zstack.xinfini.sdk.volume.VolumeModule;
 import org.zstack.xinfini.sdk.volume.VolumeSnapshotModule;
 
@@ -251,7 +253,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
             return;
         }
 
-        retry(() -> apiHelper.deleteBdcBdev(bdev.getSpec().getId()));
+        retry(() -> apiHelper.deleteBdcBdev(bdev.getSpec().getId(), bdc.getSpec().getId()));
     }
 
     @Override
@@ -627,7 +629,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     private void setNodeHealthyByVhost(HostInventory host, NodeHealthy healthy) {
         VolumeProtocol protocol = VolumeProtocol.Vhost;
         BdcModule bdc = apiHelper.queryBdcByIp(host.getManagementIp());
-        if (bdc.getMetadata().getState().getState().equals(MetadataState.active.toString())) {
+        if (bdc.getStatus().getRunState().equals(BdcRunState.Active.toString())) {
             healthy.setHealthy(protocol, StorageHealthy.Ok);
         }  else {
             healthy.setHealthy(protocol, StorageHealthy.Failed);
@@ -762,7 +764,13 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public void flattenVolume(String installPath, ReturnValueCompletion<VolumeStats> comp) {
-        VolumeModule vol = apiHelper.flattenVolume(getVolIdFromPath(installPath));
+        VolumeModule vol = apiHelper.getVolume(getVolIdFromPath(installPath));
+        if (vol.getSpec().getBsSnapId() == 0) {
+            logger.info(String.format("volume[%s] has no related snapshot, no need to flatten", installPath));
+        } else {
+            vol = apiHelper.flattenVolume(getVolIdFromPath(installPath));
+        }
+
         VolumeStats stats = new VolumeStats();
         stats.setInstallPath(installPath);
         stats.setSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
@@ -889,7 +897,14 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
                 .map(IscsiGatewayClientGroupMappingModule::getSpec)
                 .map(IscsiGatewayClientGroupMappingModule.IscsiGatewayClientGroupMappingSpec::getIscsiGatewayId)
                 .collect(Collectors.toList());
-        List<IscsiGatewayModule> groupRelatedGateways = apiHelper.queryIscsiGatewaysByIds(gatewayIds);
+        List<IscsiGatewayModule> groupRelatedGateways = apiHelper.queryIscsiGatewaysByIds(gatewayIds)
+                        .stream()
+                        .filter(v -> IscsiNodeState.ACTIVE.toString().equals(v.getStatus().getNodeState()))
+                        .collect(Collectors.toList());
+
+        if (groupRelatedGateways.isEmpty()) {
+            throw new OperationFailureException(operr("no active gateway found for client[%s]", clientIqn));
+        }
 
         // refresh client
         clientModule = apiHelper.queryIscsiClientByIqn(clientIqn);

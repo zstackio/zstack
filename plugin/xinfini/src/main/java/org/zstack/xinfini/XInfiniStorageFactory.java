@@ -1,12 +1,13 @@
 package org.zstack.xinfini;
 
-import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.externalStorage.primary.ExternalStorageFencerType;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.volume.VolumeAfterExpungeExtensionPoint;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.xinfini.XInfiniConstants;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 
@@ -16,6 +17,8 @@ import java.util.List;
 import static org.zstack.core.Platform.operr;
 
 public class XInfiniStorageFactory implements ExternalPrimaryStorageSvcBuilder, BackupStorageSelector, VolumeAfterExpungeExtensionPoint {
+
+    public static final ExternalStorageFencerType fencerType = new ExternalStorageFencerType(XInfiniConstants.IDENTITY, VolumeProtocol.iSCSI.toString());
 
     private List<String> preferBackupStorageTypes;
 
