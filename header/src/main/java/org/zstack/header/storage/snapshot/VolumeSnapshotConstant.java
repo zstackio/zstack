@@ -16,4 +16,5 @@ public interface VolumeSnapshotConstant {
     String VOLUME_SNAPSHOT_STRUCT = "VolumeSnapshotStruct";
     String NEED_TAKE_SNAPSHOTS_ON_HYPERVISOR = "needTakeSnapshotOnHypervisor";
     String NEED_BLOCK_STREAM_ON_HYPERVISOR = "needBlockStreamOnHypervisor";
+    String INTEGRITY_VOLUME_SNAPSHOTS = "integrityVolumeSnapshots";
 }
