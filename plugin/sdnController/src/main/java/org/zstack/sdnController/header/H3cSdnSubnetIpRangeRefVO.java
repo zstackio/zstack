@@ -1,6 +1,7 @@
 package org.zstack.sdnController.header;
 
 import org.zstack.header.network.l3.IpRangeEO;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;

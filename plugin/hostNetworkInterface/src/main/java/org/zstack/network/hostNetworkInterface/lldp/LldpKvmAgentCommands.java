@@ -1,5 +1,6 @@
 package org.zstack.network.hostNetworkInterface.lldp;
 
+import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.core.validation.ConditionalValidation;
 
 import java.util.List;
@@ -36,6 +37,7 @@ public class LldpKvmAgentCommands {
     }
 
     public static class ChangeLldpModeCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private List<String> physicalInterfaceNames;
 
         private String mode;
@@ -61,6 +63,7 @@ public class LldpKvmAgentCommands {
     }
 
     public static class GetLldpInfoCmd extends AgentCommand {
+        @GrayVersion(value = "5.0.0")
         private String physicalInterfaceName;
 
         public String getPhysicalInterfaceName() {
@@ -73,6 +76,7 @@ public class LldpKvmAgentCommands {
     }
 
     public static class GetLldpInfoResponse extends AgentResponse {
+        @GrayVersion(value = "5.0.0")
         private LldpInfoStruct lldpInfo;
 
         public LldpInfoStruct getLldpInfo() {

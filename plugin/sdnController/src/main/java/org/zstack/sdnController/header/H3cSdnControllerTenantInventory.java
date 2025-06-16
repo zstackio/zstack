@@ -1,5 +1,6 @@
 package org.zstack.sdnController.header;
 
+import org.zstack.header.network.sdncontroller.SdnControllerInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;

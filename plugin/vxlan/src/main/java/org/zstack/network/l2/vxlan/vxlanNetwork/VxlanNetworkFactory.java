@@ -99,7 +99,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
                 String uuid = msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid();
                 vo.setUuid(uuid);
                 vo.setVni(r.getVni());
-                vo.setVirtualNetworkId(vo.getVni());
+                vo.setVirtualNetworkId(r.getVni());
                 vo.setAccountUuid(msg.getSession().getAccountUuid());
                 vo.setPoolUuid((amsg.getPoolUuid()));
                 if (vo.getPhysicalInterface() == null) {
@@ -247,7 +247,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
     @Override
     public Integer getL2NetworkVni(String l2NetworkUuid, String hostUuid) {
         VxlanNetworkVO vxlanNetworkVO = Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.uuid, l2NetworkUuid).find();
-        return vxlanNetworkVO.getVni();
+        return vxlanNetworkVO.getVirtualNetworkId();
     }
 
     @Override

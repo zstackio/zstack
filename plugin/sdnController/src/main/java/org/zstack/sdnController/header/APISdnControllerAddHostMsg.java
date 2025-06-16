@@ -1,18 +1,15 @@
 package org.zstack.sdnController.header;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l2.L2NetworkConstant;
-import org.zstack.header.rest.APINoSee;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.rest.RestRequest;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Action(category = SdnControllerConstant.ACTION_CATEGORY)
 @RestRequest(

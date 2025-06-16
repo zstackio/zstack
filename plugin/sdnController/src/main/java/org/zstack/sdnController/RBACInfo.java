@@ -17,7 +17,11 @@ public class RBACInfo implements RBACDescription {
 
     @Override
     public void roles() {
-
+        roleBuilder()
+                .name("sdnController")
+                .uuid("4266a67e46cb4e68864899458287941e")
+                .permissionsByName("sdnController")
+                .build();
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.zstack.sdnController.header;
 
 import org.zstack.header.message.NeedJsonSchema;
+import org.zstack.header.network.sdncontroller.SdnControllerInventory;
 
 public class SdnControllerCanonicalEvents {
     public static final String SDNCONTROLLER_STATE_CHANGED_PATH = "/sdnController/state/change";

@@ -1,5 +1,7 @@
 package org.zstack.sdnController;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
@@ -20,7 +22,13 @@ import org.zstack.header.message.Message;
 import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.network.service.GetSdnControllerDhcpExtensionPoint;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.SdnControllerL3;
+import org.zstack.header.network.sdncontroller.SdnControllerInventory;
+import org.zstack.header.network.sdncontroller.SdnControllerStatus;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
+import org.zstack.header.network.service.GetSdnControllerExtensionPoint;
 import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.header.vm.*;
 import org.zstack.network.l2.L2NetworkSystemTags;
@@ -42,8 +50,9 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         L2NetworkCreateExtensionPoint, L2NetworkDeleteExtensionPoint, InstantiateResourceOnAttachingNicExtensionPoint,
         PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
         ReleaseNetworkServiceOnDetachingNicExtensionPoint, SecurityGroupGetSdnBackendExtensionPoint,
-        GetSdnControllerDhcpExtensionPoint, AfterAddIpRangeExtensionPoint, IpRangeDeletionExtensionPoint {
+        AfterAddIpRangeExtensionPoint, IpRangeDeletionExtensionPoint, GetSdnControllerExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SdnControllerManagerImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(SdnControllerManagerImpl.class);
 
     @Autowired
     private CloudBus bus;
@@ -109,6 +118,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        msg.setResourceUuid(vo.getUuid());
                         controller.preInitSdnController(msg, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -127,13 +137,23 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        dbf.persist(vo);
-                        trigger.next();
+                        controller.createSdnControllerDb(msg, vo, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.debug(String.format("create sdn controller db error: %s", errorCode.getDetails()));
+                                trigger.fail(errorCode);
+                            }
+                        });
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        dbf.removeByPrimaryKey(vo.getUuid(), SdnControllerVO.class);
+                        controller.deleteSdnControllerDb(vo);
                         trigger.rollback();
                     }
                 });
@@ -150,7 +170,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                dbf.removeByPrimaryKey(vo.getUuid(), SdnControllerVO.class);
+                                controller.deleteSdnControllerDb(vo);
                                 trigger.fail(errorCode);
                             }
                         });
@@ -214,6 +234,11 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         vo.setUsername(msg.getUserName());
         vo.setPassword(msg.getPassword());
         vo.setAccountUuid(msg.getSession().getAccountUuid());
+        if (msg.getVendorVersion() != null) {
+            vo.setVendorVersion(msg.getVendorVersion());
+        } else {
+            vo.setVendorVersion(SdnControllerConstant.DEFAULT_SDN_CONTROLLER_VERSION);
+        }
         vo.setStatus(SdnControllerStatus.Connected);
 
         doCreateSdnController(vo, msg, new Completion(msg) {
@@ -295,6 +320,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     public void deleteL2Network(L2NetworkInventory inv, NoErrorCompletion completion) {
         VSwitchType vSwitchType = VSwitchType.valueOf(inv.getvSwitchType());
         if (vSwitchType.getSdnControllerType() == null) {
+            //hardware vxlan will go this path
             completion.done();
             return;
         }
@@ -707,6 +733,22 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         }
         SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
         return factory.getSdnControllerDhcp(vo);
+    }
+
+    @Override
+    public SdnControllerL3 getSdnControllerL3(String l2Uuid) {
+        String controllerUuid = L3NetworkHelper.getSdnControllerUuidFromL2Uuid(l2Uuid);
+        if (controllerUuid == null) {
+            return null;
+        }
+
+        SdnControllerVO vo = dbf.findByUuid(controllerUuid, SdnControllerVO.class);
+        if (vo == null) {
+            throw new CloudRuntimeException(String.format("can not find sdn controller[uuid:%s] for l2 network[uuid:%s]",
+                    controllerUuid, l2Uuid));
+        }
+        SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
+        return factory.getSdnControllerL3(vo);
     }
 
     @Override

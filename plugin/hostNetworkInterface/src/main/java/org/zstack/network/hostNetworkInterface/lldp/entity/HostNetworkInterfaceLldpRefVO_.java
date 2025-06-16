@@ -14,6 +14,7 @@ public class HostNetworkInterfaceLldpRefVO_ {
     public static volatile SingularAttribute<HostNetworkInterfaceLldpRefVO, String> systemName;
     public static volatile SingularAttribute<HostNetworkInterfaceLldpRefVO, String> systemDescription;
     public static volatile SingularAttribute<HostNetworkInterfaceLldpRefVO, String> systemCapabilities;
+    public static volatile SingularAttribute<HostNetworkInterfaceLldpRefVO, String> portId;
     public static volatile SingularAttribute<HostNetworkInterfaceLldpRefVO, String> portDescription;
     public static volatile SingularAttribute<HostNetworkInterfaceLldpRefVO, Integer> vlanId;
     public static volatile SingularAttribute<HostNetworkInterfaceLldpRefVO, Long> aggregationPortId;

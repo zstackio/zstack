@@ -6,6 +6,7 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.rest.RestRequest;
 
 import java.util.List;

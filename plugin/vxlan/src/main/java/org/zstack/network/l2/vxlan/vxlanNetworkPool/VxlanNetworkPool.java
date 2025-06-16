@@ -281,9 +281,9 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         });
     }
 
-    private void handle(final PrepareL2NetworkOnHostMsg msg) {
+    protected void handle(final PrepareL2NetworkOnHostMsg msg) {
         final PrepareL2NetworkOnHostReply reply = new PrepareL2NetworkOnHostReply();
-        prepareL2NetworkOnHosts(msg.getL2NetworkUuid(), Arrays.asList(msg.getHost()), new Completion(msg) {
+        prepareL2NetworkOnHosts(msg.getL2NetworkUuid(), Arrays.asList(msg.getHost()), false, new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -777,6 +777,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                 });
             }
         }).then(new NoRollbackFlow() {
+            String __name__ = "after-detach-l2-vxlan-pool";
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 afterDetachVxlanPoolFromCluster(msg);
@@ -822,6 +824,10 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
     }
 
     protected void afterAttachVxlanPoolFromClusterFailed(APIAttachL2NetworkToClusterMsg msg) {
+        if (msg.getSystemTags() == null) {
+            return;
+        }
+
         for (String tag : msg.getSystemTags()) {
             VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.delete(msg.getL2NetworkUuid(), tag);
         }
@@ -850,9 +856,15 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         query.add(HostVO_.state, SimpleQuery.Op.NOT_IN, HostState.PreMaintenance, HostState.Maintenance);
         query.add(HostVO_.status, SimpleQuery.Op.EQ, HostStatus.Connected);
         final List<HostVO> hosts = query.list();
+        if (hosts.isEmpty()) {
+            evt.setInventory(self.toInventory());
+            bus.publish(evt);
+            return;
+        }
+
         List<HostInventory> hvinvs = HostInventory.valueOf(hosts);
 
-        prepareL2NetworkOnHosts(msg.getL2NetworkUuid(), hvinvs, new Completion(msg) {
+        prepareL2NetworkOnHosts(msg.getL2NetworkUuid(), hvinvs, true, new Completion(msg) {
             @Override
             public void success() {
                 L2NetworkClusterRefVO rvo = new L2NetworkClusterRefVO();
@@ -987,11 +999,13 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         logger.info(String.format("update l2 vxlan vni range[%s] name[%s]", msg.getUuid(), msg.getName()));
     }
 
-    private void prepareL2NetworkOnHosts(final String l2NetworkUuid, final List<HostInventory> hosts, final Completion completion) {
+    public void prepareL2NetworkOnHosts(final String l2NetworkUuid, final List<HostInventory> hosts, boolean applyToSdn, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         List<String> vtepIpChanged = new ArrayList<>();
         chain.setName(String.format("prepare-l2-%s-on-hosts", self.getUuid()));
         chain.then(new NoRollbackFlow() {
+            String __name__ = "check-vtep-ip";
+
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 ErrorCodeList errList = new ErrorCodeList();
@@ -1052,6 +1066,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                 });
             }
         }).then(new NoRollbackFlow() {
+            String __name__ = "realize-l2-network";
+
             private void realize(final Iterator<HostInventory> it, final FlowTrigger trigger) {
                 if (!it.hasNext()) {
                     trigger.next();

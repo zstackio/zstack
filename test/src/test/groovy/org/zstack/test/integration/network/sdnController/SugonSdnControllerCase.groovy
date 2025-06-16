@@ -1,6 +1,7 @@
 package org.zstack.test.integration.network.sdnController
 
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.header.network.sdncontroller.SdnControllerVO
 import org.zstack.sdk.*
 import org.zstack.sugonSdnController.controller.SugonSdnControllerConstant
 import org.zstack.sugonSdnController.controller.api.types.MacAddressesType
@@ -8,7 +9,6 @@ import org.zstack.sugonSdnController.controller.api.types.Project
 import org.zstack.sugonSdnController.controller.api.types.VirtualMachineInterface
 import org.zstack.sugonSdnController.controller.api.ApiSerializer
 import org.zstack.sugonSdnController.controller.api.TfCommands
-import org.zstack.sdnController.header.SdnControllerVO
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase

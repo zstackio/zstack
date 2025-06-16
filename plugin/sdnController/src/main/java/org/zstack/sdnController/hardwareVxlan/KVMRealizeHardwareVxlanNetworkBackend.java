@@ -21,8 +21,6 @@ import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeCmd;
 import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.NicTO;
 import org.zstack.network.l2.L2NetworkManager;
-import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
-import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.sdnController.header.*;
 import org.zstack.tag.SystemTagCreator;
@@ -49,7 +47,8 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
 
     @Override
     public void realize(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
-        final L2VxlanNetworkInventory vxlan = (L2VxlanNetworkInventory) l2Network;
+        HardwareL2VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), HardwareL2VxlanNetworkVO.class);
+        final HardwareL2VxlanNetworkInventory vxlan = HardwareL2VxlanNetworkInventory.valueOf(vo);
         HostInventory host = HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class));
 
         HardwareVxlanHelper.VxlanHostMappingStruct struct = HardwareVxlanHelper.getHardwareVxlanMappingVxlanId(vxlan, host);
@@ -112,7 +111,8 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
     }
 
     public void check(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
-        final L2VxlanNetworkInventory vxlan = (L2VxlanNetworkInventory) l2Network;
+        HardwareL2VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), HardwareL2VxlanNetworkVO.class);
+        final HardwareL2VxlanNetworkInventory vxlan = HardwareL2VxlanNetworkInventory.valueOf(vo);
 
         HostInventory host = HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class));
         HardwareVxlanHelper.VxlanHostMappingStruct struct = HardwareVxlanHelper.getHardwareVxlanMappingVxlanId(vxlan, host);
@@ -182,7 +182,8 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
 
     @Override
 	public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
-        L2VxlanNetworkInventory vxlan = L2VxlanNetworkInventory.valueOf(dbf.findByUuid(l2Network.getUuid(), VxlanNetworkVO.class));
+        HardwareL2VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), HardwareL2VxlanNetworkVO.class);
+        final HardwareL2VxlanNetworkInventory vxlan = HardwareL2VxlanNetworkInventory.valueOf(vo);
         VmInstanceVO vm = dbf.findByUuid(nic.getVmInstanceUuid(), VmInstanceVO.class);
 
         /* TODO vm must have hostUuid */
@@ -199,7 +200,7 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
 
     @Override
     public String getBridgeName(L2NetworkInventory l2Network) {
-        VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), VxlanNetworkVO.class);
+        HardwareL2VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), HardwareL2VxlanNetworkVO.class);
        /*
        * to be done */
 
@@ -207,6 +208,43 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
     }
 
     public void delete(L2NetworkInventory l2Network, String hostUuid, Completion completion) {
-        completion.success();
+        HardwareL2VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), HardwareL2VxlanNetworkVO.class);
+        HardwareL2VxlanNetworkInventory l2Vxlan = HardwareL2VxlanNetworkInventory.valueOf(vo);
+        KVMAgentCommands.DeleteVlanBridgeCmd cmd = new KVMAgentCommands.DeleteVlanBridgeCmd();
+        cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
+        cmd.setBridgeName(makeBridgeName(l2Vxlan.getUuid(), l2Vxlan.getVlan()));
+        cmd.setVlan(l2Vxlan.getVlan());
+        cmd.setL2NetworkUuid(l2Network.getUuid());
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setHostUuid(hostUuid);
+        msg.setCommand(cmd);
+        msg.setPath(KVMConstant.KVM_DELETE_L2VLAN_NETWORK_PATH);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                KVMAgentCommands.DeleteVlanBridgeResponse rsp = hreply.toResponse(KVMAgentCommands.DeleteVlanBridgeResponse.class);
+                if (!rsp.isSuccess()) {
+                    ErrorCode err = operr("failed to delete bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
+                            cmd.getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2Vxlan.getVlan(), hostUuid, rsp.getError());
+                    completion.fail(err);
+                    return;
+                }
+
+                String message = String.format(
+                        "successfully delete bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s]", cmd
+                                .getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2Vxlan.getVlan(), hostUuid);
+                logger.debug(message);
+
+                completion.success();
+            }
+        });
     }
 }

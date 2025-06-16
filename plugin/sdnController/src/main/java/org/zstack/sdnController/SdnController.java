@@ -1,6 +1,9 @@
 package org.zstack.sdnController;
 
 import org.zstack.header.core.Completion;
+import org.zstack.header.network.sdncontroller.SdnControllerHostRefVO;
+import org.zstack.header.network.sdncontroller.SdnControllerInventory;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.sdnController.header.*;
 
 
@@ -13,6 +16,8 @@ public interface SdnController {
     有关sdn控制器的后置处理: post-event
      */
     void preInitSdnController(APIAddSdnControllerMsg msg, Completion completion);
+    void createSdnControllerDb(APIAddSdnControllerMsg msg, SdnControllerVO vo, Completion completion);
+    void deleteSdnControllerDb(SdnControllerVO vo);
     void initSdnController(APIAddSdnControllerMsg msg, Completion completion);
     void postInitSdnController(SdnControllerVO vo, Completion completion);
 

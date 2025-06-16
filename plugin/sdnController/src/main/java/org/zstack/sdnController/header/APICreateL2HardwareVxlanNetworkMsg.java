@@ -6,6 +6,8 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.message.OverriddenApiParam;
 import org.zstack.header.message.OverriddenApiParams;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
 import org.zstack.header.zone.ZoneVO;
@@ -32,6 +34,9 @@ public class APICreateL2HardwareVxlanNetworkMsg extends APICreateL2NetworkMsg {
 
     @APIParam(required = false, resourceType = H3cSdnControllerTenantVO.class)
     private String h3cTenantUuid;
+
+    @APIParam(required = false, numberRange = {1, 4095})
+    private Integer vlan;
 
     public Integer getVni() {
         return vni;
@@ -60,6 +65,14 @@ public class APICreateL2HardwareVxlanNetworkMsg extends APICreateL2NetworkMsg {
 
     public void setH3cTenantUuid(String h3cTenantUuid) {
         this.h3cTenantUuid = h3cTenantUuid;
+    }
+
+    public Integer getVlan() {
+        return vlan;
+    }
+
+    public void setVlan(Integer vlan) {
+        this.vlan = vlan;
     }
 
     public static APICreateL2HardwareVxlanNetworkMsg __example__() {

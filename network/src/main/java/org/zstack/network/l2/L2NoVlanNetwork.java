@@ -675,7 +675,7 @@ public class L2NoVlanNetwork implements L2Network {
         }).start();
     }
 
-    private void prepareL2NetworkOnHosts(final List<HostInventory> hosts, String providerType, final Completion completion) {
+    protected void prepareL2NetworkOnHosts(final List<HostInventory> hosts, String providerType, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("prepare-l2-%s-on-hosts", self.getUuid()));
         chain.then(new NoRollbackFlow() {
@@ -737,7 +737,7 @@ public class L2NoVlanNetwork implements L2Network {
                             whileCompletion.allDone();
                         }
                     });
-                },10).run(new WhileDoneCompletion(trigger) {
+                },L2NetworkConstant.MAX_PARALLEL_HOST_MSG).run(new WhileDoneCompletion(trigger) {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
                         if (!errorCodeList.getCauses().isEmpty()) {
@@ -1029,7 +1029,7 @@ public class L2NoVlanNetwork implements L2Network {
         deleteL2Bridge(null, completion);
     }
 
-    private void deleteL2Bridge(List<String> clusterUuids, Completion completion) {
+    protected void deleteL2Bridge(List<String> clusterUuids, Completion completion) {
         if (clusterUuids == null) {
             L2NetworkInventory l2NetworkInventory = getSelfInventory();
             clusterUuids = l2NetworkInventory.getAttachedClusterUuids();
@@ -1074,7 +1074,7 @@ public class L2NoVlanNetwork implements L2Network {
                 }
 
             });
-        },10).run((new WhileDoneCompletion(completion) {
+        },L2NetworkConstant.MAX_PARALLEL_HOST_MSG).run((new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (errs.size() > 0) {

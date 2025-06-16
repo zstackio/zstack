@@ -157,6 +157,15 @@ doc {
 					optional true
 					since "5.3.28"
 				}
+				column {
+					name "vlan"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Integer"
+					optional true
+					since "5.4.0"
+				}
 			}
         }
 

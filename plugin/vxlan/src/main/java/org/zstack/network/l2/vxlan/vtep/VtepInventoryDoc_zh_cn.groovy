@@ -38,6 +38,12 @@ doc {
 		since "0.6"
 	}
 	field {
+		name "physicalInterface"
+		desc ""
+		type "String"
+		since "5.3.28"
+	}
+	field {
 		name "createDate"
 		desc "创建时间"
 		type "Timestamp"

@@ -101,8 +101,11 @@ public class L3BasicNetwork implements L3Network {
 
     private L3NetworkVO self;
 
+    protected String syncThreadName;
+
     public L3BasicNetwork(L3NetworkVO vo) {
         this.self = vo;
+        syncThreadName = "l3-" + vo.getUuid();
     }
 
     protected L3NetworkVO getSelf() {
@@ -202,151 +205,264 @@ public class L3BasicNetwork implements L3Network {
         bus.reply(msg, reply);
     }
 
+    private boolean isLastNormalIpRangeOfVersion(String ipRangeUuid, int ipVersion) {
+        List<IpRangeInventory> normalIpRanges = IpRangeHelper.getNormalIpRanges(self);
+        normalIpRanges = normalIpRanges.stream()
+                .filter(r -> r.getIpVersion() == ipVersion)
+                .collect(Collectors.toList());
+        return normalIpRanges.size() == 1 &&
+                normalIpRanges.get(0).getUuid().equals(ipRangeUuid);
+    }
+
     private void handle(IpRangeDeletionMsg msg) {
         IpRangeDeletionReply reply = new IpRangeDeletionReply();
-
-        List<IpRangeDeletionExtensionPoint> exts = pluginRgty.getExtensionList(IpRangeDeletionExtensionPoint.class);
-        IpRangeVO iprvo = dbf.findByUuid(msg.getIpRangeUuid(), IpRangeVO.class);
-        if (iprvo == null) {
-            bus.reply(msg, reply);
-            return;
-        }
-
-        final IpRangeInventory inv = IpRangeInventory.valueOf(iprvo);
-
-        for (IpRangeDeletionExtensionPoint ext : exts) {
-            ext.preDeleteIpRange(inv);
-        }
-
-        CollectionUtils.safeForEach(exts, new ForEachFunction<IpRangeDeletionExtensionPoint>() {
+        doDeleteIpRange(msg, new Completion(msg) {
             @Override
-            public void run(IpRangeDeletionExtensionPoint arg) {
-                arg.beforeDeleteIpRange(inv);
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
             }
         });
+    }
 
-        FlowChain chain = new SimpleFlowChain();
-        chain.setName(String.format("del-ip-range-%s", inv.getUuid()));
-        chain.then(new NoRollbackFlow() {
-            String __name__ = "disable-sdn-dhcp";
-
+    private void doDeleteIpRange(IpRangeDeletionMsg msg, Completion completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
             @Override
-            @Deferred
-            public void run(FlowTrigger trigger, Map data) {
-                if (!self.enableIpAddressAllocation()) {
-                    trigger.next();
+            public void run(SyncTaskChain chainTask) {
+                List<IpRangeDeletionExtensionPoint> exts = pluginRgty.getExtensionList(IpRangeDeletionExtensionPoint.class);
+                IpRangeVO iprvo = dbf.findByUuid(msg.getIpRangeUuid(), IpRangeVO.class);
+                if (iprvo == null) {
+                    completion.success();
+                    chainTask.next();
                     return;
                 }
 
-                SdnControllerDhcp sdnDhcp = l3NwMgr.getSdnControllerDhcp(self.getUuid());
-                if (sdnDhcp == null) {
-                    trigger.next();
-                    return;
+                final IpRangeInventory inv = IpRangeInventory.valueOf(iprvo);
+
+                for (IpRangeDeletionExtensionPoint ext : exts) {
+                    ext.preDeleteIpRange(inv);
                 }
-
-                GLock lock = new GLock(String.format("delete-ip-range-from-l3-%s", self.getUuid()), TimeUnit.MINUTES.toSeconds(5));
-                lock.lock();
-                Defer.defer(lock::unlock);
-
-                self = dbf.reload(self);
-                List<IpRangeInventory> normalIpRanges = IpRangeHelper.getNormalIpRanges(self);
-                normalIpRanges = normalIpRanges.stream().filter(r -> r.getIpVersion() == inv.getIpVersion()).collect(Collectors.toList());
-                if (normalIpRanges.size() == 1 && normalIpRanges.get(0).getUuid().equals(msg.getIpRangeUuid())) {
-                    sdnDhcp.disableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(self)), inv.getIpVersion(),
-                            new Completion(trigger) {
-                        @Override
-                        public void success() {
-                            trigger.next();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            trigger.fail(errorCode);
-                        }
-                    });
-                } else {
-                    trigger.next();
-                }
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "remove-db";
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                dbf.remove(iprvo);
-                IpRangeHelper.updateL3NetworkIpversion(iprvo);
 
                 CollectionUtils.safeForEach(exts, new ForEachFunction<IpRangeDeletionExtensionPoint>() {
                     @Override
                     public void run(IpRangeDeletionExtensionPoint arg) {
-                        arg.afterDeleteIpRange(inv);
+                        arg.beforeDeleteIpRange(inv);
                     }
                 });
-                trigger.next();
+
+                FlowChain chain = new SimpleFlowChain();
+                chain.setName(String.format("del-ip-range-%s", inv.getUuid()));
+                chain.then(new NoRollbackFlow() {
+                    String __name__ = "disable-sdn-dhcp";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        boolean isLastIpRange = isLastNormalIpRangeOfVersion(msg.getIpRangeUuid(), inv.getIpVersion());
+                        data.put("isLastIpRange", isLastIpRange);
+
+                        if (!self.enableIpAddressAllocation()) {
+                            trigger.next();
+                            return;
+                        }
+
+                        SdnControllerDhcp sdnDhcp = l3NwMgr.getSdnControllerDhcp(self.getUuid());
+                        if (sdnDhcp == null) {
+                            trigger.next();
+                            return;
+                        }
+
+                        if (isLastIpRange) {
+                            sdnDhcp.disableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(self)), inv.getIpVersion(),
+                                    new Completion(trigger) {
+                                        @Override
+                                        public void success() {
+                                            trigger.next();
+                                        }
+
+                                        @Override
+                                        public void fail(ErrorCode errorCode) {
+                                            trigger.fail(errorCode);
+                                        }
+                                    });
+                        } else {
+                            trigger.next();
+                        }
+                    }
+                }).then(new NoRollbackFlow() {
+                    String __name__ = "delete-ip-range";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        SdnControllerL3 sdnL3 = l3NwMgr.getSdnControllerL3(self.getL2NetworkUuid());
+                        if (sdnL3 == null) {
+                            trigger.next();
+                            return;
+                        }
+
+                        boolean isLastIpRange = (boolean) data.get("isLastIpRange");
+                        if (isLastIpRange) {
+                            sdnL3.deleteIpRange(inv, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    logger.debug(String.format("delete ip range [uuid:%s] failed because %s",
+                                            inv.getUuid(), errorCode.getDetails()));
+                                    trigger.next();
+                                }
+                            });
+                        } else {
+                            trigger.next();
+                        }
+                    }
+                }).then(new NoRollbackFlow() {
+                    String __name__ = "remove-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        dbf.remove(iprvo);
+                        IpRangeHelper.updateL3NetworkIpversion(iprvo);
+
+                        CollectionUtils.safeForEach(exts, new ForEachFunction<IpRangeDeletionExtensionPoint>() {
+                            @Override
+                            public void run(IpRangeDeletionExtensionPoint arg) {
+                                arg.afterDeleteIpRange(inv);
+                            }
+                        });
+                        trigger.next();
+                    }
+                }).then(new NoRollbackFlow() {
+                    String __name__ = "after-delete-ip-range";
+
+                    @Override
+                    public void run (FlowTrigger trigger, Map data){
+                        CollectionUtils.safeForEach(
+                                pluginRgty.getExtensionList(AfterDeleteIpRangeExtensionPoint.class),
+                                ext -> ext.afterDeleteIpRange(inv)
+                        );
+                        trigger.next();
+                    }
+                }).error(new FlowErrorHandler(msg) {
+                    @Override
+                    @Deferred
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                        chainTask.next();
+                    }
+                }).done(new FlowDoneHandler(msg) {
+                    @Override
+                    @Deferred
+                    public void handle(Map data) {
+                        completion.success();
+                        chainTask.next();
+                    }
+                }).start();
             }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "after-delete-ip-range";
 
             @Override
-            public void run (FlowTrigger trigger, Map data){
-                CollectionUtils.safeForEach(
-                        pluginRgty.getExtensionList(AfterDeleteIpRangeExtensionPoint.class),
-                        ext -> ext.afterDeleteIpRange(inv)
-                );
-                trigger.next();
+            public String getSyncSignature() {
+                return syncThreadName;
             }
-        }).error(new FlowErrorHandler(msg) {
+
             @Override
-            public void handle(ErrorCode errCode, Map data) {
-                reply.setError(errCode);
-                bus.reply(msg, reply);
+            public String getName() {
+                return "delete-ip-range";
             }
-        }).done(new FlowDoneHandler(msg) {
-            @Override
-            public void handle(Map data) {
-                bus.reply(msg, reply);
-            }
-        }).start();
+        });
     }
 
     private void handle(L3NetworkDeletionMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public void run(SyncTaskChain chain) {
+                L3NetworkDeletionReply reply = new L3NetworkDeletionReply();
                 L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
                 L2NetworkVO l2NetworkVO = dbf.findByUuid(l3NetworkVO.getL2NetworkUuid(), L2NetworkVO.class);
-                boolean isExistSystemL3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.system, true)
-                        .eq(L3NetworkVO_.l2NetworkUuid, l2NetworkVO.getUuid()).isExists();
-                List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).select(L2NetworkClusterRefVO_.clusterUuid)
-                        .eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2NetworkVO.getUuid()).listValues();
-                if (isExistSystemL3) {
-                    if (clusterUuids != null && !clusterUuids.isEmpty()) {
-                        for (ServiceTypeExtensionPoint ext : pluginRgty.getExtensionList(ServiceTypeExtensionPoint.class)) {
-                            List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid).in(HostVO_.clusterUuid, clusterUuids).listValues();
-                            if (l2NetworkVO.getType().equals(L2NetworkConstant.VXLAN_NETWORK_TYPE) || l2NetworkVO.getType().equals(L2NetworkConstant.HARDWARE_VXLAN_NETWORK_TYPE)) {
-                                ext.syncManagementServiceTypeExtensionPoint(hostUuids, "vxlan" + l2NetworkVO.getVirtualNetworkId(), null, true);
+
+                FlowChain fchain = new SimpleFlowChain();
+                fchain.setName(String.format("del-l3-network-%s", msg.getL3NetworkUuid()));
+                fchain.then(new NoRollbackFlow() {
+                    String __name__ = "remove-from-sdn-controller";
+
+                    @Override
+                    @Deferred
+                    public void run(FlowTrigger trigger, Map data) {
+                        SdnControllerL3 controllerL3 = l3NwMgr.getSdnControllerL3(self.getL2NetworkUuid());
+                        if (controllerL3 == null) {
+                            trigger.next();
+                            return;
+                        }
+
+                        controllerL3.deleteL3Network(L3NetworkInventory.valueOf(l3NetworkVO), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
                             }
-                            if (l2NetworkVO.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE) || l2NetworkVO.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
-                                ext.syncManagementServiceTypeExtensionPoint(hostUuids, l2NetworkVO.getPhysicalInterface(), l2NetworkVO.getVirtualNetworkId(), true);
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.next();//ignore error
+                            }
+                        });
+                    }
+                }).then(new NoRollbackFlow() {
+                    String __name__ = "remove-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        boolean isExistSystemL3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.system, true)
+                                .eq(L3NetworkVO_.l2NetworkUuid, l2NetworkVO.getUuid()).isExists();
+                        List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).select(L2NetworkClusterRefVO_.clusterUuid)
+                                .eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2NetworkVO.getUuid()).listValues();
+                        if (isExistSystemL3) {
+                            if (clusterUuids != null && !clusterUuids.isEmpty()) {
+                                for (ServiceTypeExtensionPoint ext : pluginRgty.getExtensionList(ServiceTypeExtensionPoint.class)) {
+                                    List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid).in(HostVO_.clusterUuid, clusterUuids).listValues();
+                                    if (l2NetworkVO.getType().equals(L2NetworkConstant.VXLAN_NETWORK_TYPE) || l2NetworkVO.getType().equals(L2NetworkConstant.HARDWARE_VXLAN_NETWORK_TYPE)) {
+                                        ext.syncManagementServiceTypeExtensionPoint(hostUuids, "vxlan" + l2NetworkVO.getVirtualNetworkId(), null, true);
+                                    }
+                                    if (l2NetworkVO.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE) || l2NetworkVO.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
+                                        ext.syncManagementServiceTypeExtensionPoint(hostUuids, l2NetworkVO.getPhysicalInterface(), l2NetworkVO.getVirtualNetworkId(), true);
+                                    }
+                                }
                             }
                         }
+
+                        if (!self.getReservedIpRanges().isEmpty()) {
+                            SQL.New(ReservedIpRangeVO.class)
+                                    .in(ReservedIpRangeVO_.uuid, self.getReservedIpRanges().stream().map(ReservedIpRangeVO::getUuid).collect(Collectors.toList()))
+                                    .delete();
+                        }
+
+                        L3NetworkInventory inv = L3NetworkInventory.valueOf(self);
+                        extpEmitter.beforeDelete(inv);
+                        deleteHook();
+                        extpEmitter.afterDelete(inv);
+
+                        trigger.next();
                     }
-                }
-
-                if (!self.getReservedIpRanges().isEmpty()) {
-                    SQL.New(ReservedIpRangeVO.class)
-                            .in(ReservedIpRangeVO_.uuid, self.getReservedIpRanges().stream().map(ReservedIpRangeVO::getUuid).collect(Collectors.toList()))
-                            .delete();
-                }
-
-                L3NetworkInventory inv = L3NetworkInventory.valueOf(self);
-                extpEmitter.beforeDelete(inv);
-                deleteHook();
-                extpEmitter.afterDelete(inv);
-
-                L3NetworkDeletionReply reply = new L3NetworkDeletionReply();
-                bus.reply(msg, reply);
-                chain.next();
+                }).error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                }).done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                }).start();
             }
 
             @Override

@@ -33,4 +33,12 @@ public interface L3NetworkManager {
     boolean applyNetworkServiceWhenVmStateChange(String type);
 
     SdnControllerDhcp getSdnControllerDhcp(String l3Uuid);
+
+    /**
+     * Resolve SDN controller L3 service bound to the given L2 network.
+     *
+     * @param l2Uuid L2Network UUID used to locate the SDN controller
+     * @return SdnControllerL3 implementation, or null if none is available
+     */
+    SdnControllerL3 getSdnControllerL3(String l2Uuid);
 }

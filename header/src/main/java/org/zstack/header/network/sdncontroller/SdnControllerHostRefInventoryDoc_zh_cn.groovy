@@ -1,10 +1,10 @@
-package org.zstack.sdnController.header
+package org.zstack.header.network.sdncontroller
 
 
 
 doc {
 
-	title "SDN控制器物理机清单"
+	title "SDN控制器与物理机关联关系清单"
 
 	field {
 		name "sdnControllerUuid"

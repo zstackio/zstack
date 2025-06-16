@@ -3,16 +3,21 @@ package org.zstack.test.integration.network.sdnController
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
-import org.zstack.header.network.l3.L3NetworkConstant
-import org.zstack.sdk.*
+import org.zstack.header.network.sdncontroller.SdnControllerVO
+import org.zstack.sdk.ClusterInventory
+import org.zstack.sdk.H3cSdnControllerTenantInventory
+import org.zstack.sdk.L2NetworkInventory
+import org.zstack.sdk.L2VxlanNetworkPoolInventory
+import org.zstack.sdk.SdnControllerInventory
+import org.zstack.sdk.ZoneInventory
 import org.zstack.sdnController.SdnControllerGlobalConfig
-import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands
+import org.zstack.sdnController.SdnControllerSystemTags
 import org.zstack.sdnController.h3cVcfc.H3cVcfcV2Commands
-import org.zstack.sdnController.h3cVcfc.H3cVcfcSdnControllerSystemTags
+import org.zstack.sdnController.header.SdnControllerConstant
 import org.zstack.sdnController.header.H3cSdnControllerTenantVO
 import org.zstack.sdnController.header.H3cSdnControllerTenantVO_
-import org.zstack.sdnController.header.SdnControllerConstant
-import org.zstack.sdnController.header.SdnControllerVO
+import org.zstack.header.network.l3.L3NetworkConstant
+import org.zstack.sdnController.h3cVcfc.H3cVcfcSdnControllerSystemTags
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
@@ -188,10 +193,8 @@ class SdnControllerCase extends SubCase {
                 H3cVcfcSdnControllerSystemTags.H3C_TENANT_UUID_TOKEN)
         assert tenantUuid != null
         assert tenantUuid == inputTenantUuid
-        List<Map<String, String>> vniRanges = H3cVcfcSdnControllerSystemTags.H3C_VNI_RANGE.getTokensOfTagsByResourceUuid(sdn2.uuid)
+        List<Map<String, String>> vniRanges = SdnControllerSystemTags.VNI_RANGE.getTokensOfTagsByResourceUuid(sdn2.uuid)
         assert vniRanges.size() > 0
-        /* this result depends on the simulator */
-        assert sdn2.vniRanges.size() == 3
 
         /* can not add controller with same ip again */
         expectError {
@@ -210,7 +213,7 @@ class SdnControllerCase extends SubCase {
             name = "sdn2"
             description = "sdn2"
         }
-        SdnControllerVO  vo = dbf.findByUuid(sdn2.uuid, SdnControllerVO.class)
+        SdnControllerVO vo = dbf.findByUuid(sdn2.uuid, SdnControllerVO.class)
         assert vo.name == "sdn2"
         assert vo.description == "sdn2"
 

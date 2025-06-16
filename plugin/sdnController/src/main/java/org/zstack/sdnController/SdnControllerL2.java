@@ -1,6 +1,7 @@
 package org.zstack.sdnController;
 
 import org.zstack.header.core.Completion;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l3.IpRangeInventory;
@@ -8,7 +9,7 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.sdnController.header.SdnControllerDeletionMsg;
-import org.zstack.sdnController.header.SdnControllerInventory;
+import org.zstack.header.network.sdncontroller.SdnControllerInventory;
 import org.zstack.sdnController.header.SdnVlanRange;
 import org.zstack.sdnController.header.SdnVniRange;
 
@@ -22,11 +23,12 @@ public interface SdnControllerL2 {
     void postCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
 
     void preAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
-    void attachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
+    void attachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> clusterUuids, List<String> systemTags, Completion completion);
+    default void attachL2NetworkToHosts(L2VxlanNetworkInventory vxlan, List<HostInventory> hinvs, List<String> systemTags, Completion completion) {completion.success();};
     void postAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
 
     void deleteSdnController(SdnControllerDeletionMsg msg, SdnControllerInventory sdn, Completion completion);
-    void detachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, Completion completion);
+    void detachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, List<String> clusterUuids, Completion completion);
     void deleteL2Network(L2NetworkInventory inv, Completion completion);
 
     List<SdnVniRange> getVniRange(SdnControllerInventory controller);

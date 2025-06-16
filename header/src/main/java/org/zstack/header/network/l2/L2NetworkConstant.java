@@ -59,4 +59,5 @@ public interface L2NetworkConstant {
 
     public static final Integer VLAN_ID_MAX = 4095;
     public static final Integer VXLAN_ID_MAX = 16777215;
+    public static final Integer MAX_PARALLEL_HOST_MSG = 10;
 }

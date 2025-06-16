@@ -2,6 +2,7 @@ package org.zstack.sdnController.header;
 
 import org.zstack.header.network.l2.L2NetworkEO;
 import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.ForeignKey;
@@ -22,6 +23,12 @@ public class HardwareL2VxlanNetworkPoolVO extends VxlanNetworkPoolVO {
     @ForeignKey(parentEntityClass = SdnControllerVO.class, onDeleteAction = ForeignKey.ReferenceOption.RESTRICT)
     private String sdnControllerUuid;
 
+    @Column
+    private Integer startVlan;
+
+    @Column
+    private Integer endVlan;
+
     public HardwareL2VxlanNetworkPoolVO() {
     }
 
@@ -35,5 +42,21 @@ public class HardwareL2VxlanNetworkPoolVO extends VxlanNetworkPoolVO {
 
     public void setSdnControllerUuid(String sdnControllerUuid) {
         this.sdnControllerUuid = sdnControllerUuid;
+    }
+
+    public Integer getStartVlan() {
+        return startVlan;
+    }
+
+    public void setStartVlan(Integer startVlan) {
+        this.startVlan = startVlan;
+    }
+
+    public Integer getEndVlan() {
+        return endVlan;
+    }
+
+    public void setEndVlan(Integer endVlan) {
+        this.endVlan = endVlan;
     }
 }

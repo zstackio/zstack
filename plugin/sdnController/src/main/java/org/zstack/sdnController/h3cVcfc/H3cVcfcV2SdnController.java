@@ -16,8 +16,10 @@ import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.sdnController.SdnControllerLog;
+import org.zstack.sdnController.SdnControllerSystemTags;
 import org.zstack.sdnController.header.*;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
@@ -303,17 +305,17 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
                 return;
             }
             // Delete previous inherent VNI range tags before creating new ones
-            H3cVcfcSdnControllerSystemTags.H3C_VNI_RANGE.delete(self.getUuid());
+            SdnControllerSystemTags.VNI_RANGE.delete(self.getUuid());
             int count = 0;
             for (H3cVcfcV2Commands.H3cVniRangeStruct d : rsp.domains) {
                 for (H3cVcfcV2Commands.VniRangeStruct v : d.vlan_map_list) {
-                    SystemTagCreator creator = H3cVcfcSdnControllerSystemTags.H3C_VNI_RANGE.newSystemTagCreator(self.getUuid());
+                    SystemTagCreator creator = SdnControllerSystemTags.VNI_RANGE.newSystemTagCreator(self.getUuid());
                     creator.ignoreIfExisting = false;
                     creator.inherent = false;
                     creator.setTagByTokens(
                             map(
-                                    e(H3cVcfcSdnControllerSystemTags.H3C_START_VNI_TOKEN, v.start_vxlan),
-                                    e(H3cVcfcSdnControllerSystemTags.H3C_END_VNI_TOKEN, v.end_vxlan)
+                                    e(SdnControllerSystemTags.START_VNI_TOKEN, v.start_vxlan),
+                                    e(SdnControllerSystemTags.END_VNI_TOKEN, v.end_vxlan)
                             )
                     );
                     creator.create();

@@ -1049,7 +1049,7 @@ class EnvSpec extends ApiHelper implements Node  {
                 ret = handler()
             } else if (handler.maximumNumberOfParameters == 1) {
                 ret = handler(entity)
-            } else if (handler.maximumNumberOfParameters == 3) {
+            } else if (handler.maximumNumberOfParameters >= 3) {
                 ret = handler(req, entity, this)
             } else {
                 ret = handler(entity, this)
@@ -1058,7 +1058,8 @@ class EnvSpec extends ApiHelper implements Node  {
             Closure postHandler = httpPostHandlers[url]
 
             if (postHandler == null) {
-                for (String httpUrl : httpPostHandlers.keys()) {
+                List<String> keys = (httpHandlers.keySet() as List).sort {a, b  -> b.size() - a.size() }
+                for (String httpUrl : keys) {
                     if (Pattern.matches(httpUrl, url)) {
                         postHandler = httpPostHandlers.get(httpUrl)
                         break
@@ -1123,7 +1124,8 @@ class EnvSpec extends ApiHelper implements Node  {
         def handler = httpHandlers[url]
 
         if (handler == null) {
-            for (String httpUrl : httpHandlers.keys()) {
+            List<String> keys = (httpHandlers.keySet() as List).sort {a, b  -> b.size() - a.size() }
+            for (String httpUrl : keys) {
                 if (Pattern.matches(httpUrl, url)) {
                     handler = httpHandlers.get(httpUrl)
                     break
