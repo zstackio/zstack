@@ -404,7 +404,7 @@ public class VirtualRouter extends ApplianceVmBase {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return String.format("ping-virtualrouter-%s", self.getUuid());
+                return syncThreadName;
             }
 
             @Override

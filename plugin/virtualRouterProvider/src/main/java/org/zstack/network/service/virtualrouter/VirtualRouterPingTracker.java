@@ -84,11 +84,11 @@ public class VirtualRouterPingTracker extends PingTracker implements ManagementN
         }
 
         // virtual router is not running/unknow state, skip the reconnection
-        List<VmInstanceState> states = new ArrayList<>();
-        states.add(VmInstanceState.Running);
-        states.add(VmInstanceState.Unknown);
-        if (Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, resourceUuid)
-                .notIn(VirtualRouterVmVO_.state, states).isExists()) {
+        VmInstanceState state = Q.New(VirtualRouterVmVO.class)
+                .eq(VirtualRouterVmVO_.uuid, resourceUuid)
+                .select(VirtualRouterVmVO_.state).findValue();
+        if (VmInstanceState.Running != state && VmInstanceState.Unknown != state) {
+            logger.debug(String.format("virtual router[uuid:%s] is in state: %s, skip the reconnection", resourceUuid, state));
             return;
         }
 
