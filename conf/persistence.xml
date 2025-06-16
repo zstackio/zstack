@@ -194,6 +194,7 @@
         <class>org.zstack.storage.ceph.primary.CephOsdGroupVO</class>
         <class>org.zstack.sdnController.header.SdnControllerVO</class>
         <class>org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO</class>
+        <class>org.zstack.sdnController.header.HardwareL2VxlanNetworkVO</class>
         <class>org.zstack.sdnController.header.VxlanHostMappingVO</class>
         <class>org.zstack.sdnController.header.VxlanClusterMappingVO</class>
         <class>org.zstack.sdnController.header.SdnControllerHostRefVO</class>
@@ -214,5 +215,7 @@
         <class>org.zstack.kvm.xmlhook.XmlHookVO</class>
         <class>org.zstack.kvm.xmlhook.XmlHookVmInstanceRefVO</class>
         <class>org.zstack.log.server.LogServerVO</class>
+        <class>org.zstack.network.hostNetworkInterface.PhysicalSwitchVO</class>
+        <class>org.zstack.network.hostNetworkInterface.PhysicalSwitchPortVO</class>
     </persistence-unit>
 </persistence>

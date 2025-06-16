@@ -1,6 +1,7 @@
 package org.zstack.sdnController;
 
 import org.zstack.header.core.Completion;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
@@ -18,7 +19,8 @@ public interface SdnControllerL2 {
     void postCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
 
     void preAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
-    void attachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
+    void attachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> clusterUuids, List<String> systemTags, Completion completion);
+    default void attachL2NetworkToHosts(L2VxlanNetworkInventory vxlan, List<HostInventory> hinvs, List<String> systemTags, Completion completion) {completion.success();};
     void postAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
 
     void deleteSdnController(SdnControllerDeletionMsg msg, SdnControllerInventory sdn, Completion completion);

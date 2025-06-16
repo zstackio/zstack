@@ -3,18 +3,18 @@ package org.zstack.sdnController.header;
 import org.zstack.header.message.NeedReplyMessage;
 
 public class ReconnectSdnControllerMsg extends NeedReplyMessage implements SdnControllerMessage {
-    String controllerUUid;
+    String controllerUuid;
 
-    public String getControllerUUid() {
-        return controllerUUid;
+    public String getControllerUuid() {
+        return controllerUuid;
     }
 
-    public void setControllerUUid(String controllerUUid) {
-        this.controllerUUid = controllerUUid;
+    public void setControllerUuid(String controllerUuid) {
+        this.controllerUuid = controllerUuid;
     }
 
     @Override
     public String getSdnControllerUuid() {
-        return controllerUUid;
+        return controllerUuid;
     }
 }

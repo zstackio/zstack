@@ -6,7 +6,9 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.message.OverriddenApiParam;
 import org.zstack.header.message.OverriddenApiParams;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
+import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.tag.TagResourceType;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant;
 
@@ -15,6 +17,7 @@ import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant;
         @OverriddenApiParam(field = "physicalInterface", param = @APIParam(maxLength = 1024, required = false)),
         @OverriddenApiParam(field = "zoneUuid", param = @APIParam(maxLength = 1024, required = false, resourceType = ZoneVO.class))
 })
+@TagResourceType(L2NetworkVO.class)
 @RestRequest(
         path = "/l2-networks/hardware-vxlan",
         method = HttpMethod.POST,
@@ -27,6 +30,9 @@ public class APICreateL2HardwareVxlanNetworkMsg extends APICreateL2NetworkMsg {
 
     @APIParam(required = true, resourceType = HardwareL2VxlanNetworkPoolVO.class)
     private String poolUuid;
+
+    @APIParam(required = false, numberRange = {1, 4095})
+    private Integer vlan;
 
     public Integer getVni() {
         return vni;
@@ -47,6 +53,14 @@ public class APICreateL2HardwareVxlanNetworkMsg extends APICreateL2NetworkMsg {
 
     public void setPoolUuid(String poolUuid) {
         this.poolUuid = poolUuid;
+    }
+
+    public Integer getVlan() {
+        return vlan;
+    }
+
+    public void setVlan(Integer vlan) {
+        this.vlan = vlan;
     }
 
     public static APICreateL2HardwareVxlanNetworkMsg __example__() {

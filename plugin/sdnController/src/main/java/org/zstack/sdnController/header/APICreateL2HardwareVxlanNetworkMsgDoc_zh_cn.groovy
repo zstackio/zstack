@@ -148,6 +148,15 @@ doc {
 					optional true
 					since "4.8.0"
 				}
+				column {
+					name "vlan"
+					enclosedIn "params"
+					desc "VLAN标识符，用于硬件VXLAN网络的在物理机上VLAN配置"
+					location "body"
+					type "Integer"
+					optional true
+					since "5.3.28"
+				}
 			}
         }
 

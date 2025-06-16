@@ -56,4 +56,6 @@ public interface L2NetworkConstant {
     public static final String LACP_MODE_OFF = "off";
     public static final String LACP_MODE_ACTIVE = "active";
     public static final String LACP_MODE_PASSIVE = "passive";
+
+    public static final Integer MAX_PARALLEL_HOST_MSG = 10;
 }

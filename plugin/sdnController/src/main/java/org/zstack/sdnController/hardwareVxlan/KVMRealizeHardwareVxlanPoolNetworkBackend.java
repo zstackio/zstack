@@ -108,7 +108,6 @@ public class KVMRealizeHardwareVxlanPoolNetworkBackend implements L2NetworkReali
         return to;
     }
 
-    @Override
     public String getBridgeName(L2NetworkInventory l2Network) {
         return null;
     }

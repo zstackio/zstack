@@ -31,7 +31,7 @@
             <zstack:extension interface="org.zstack.header.vm.InstantiateResourceOnAttachingNicExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.vm.ReleaseNetworkServiceOnDetachingNicExtensionPoint" order="-500"/>
             <zstack:extension interface="org.zstack.network.securitygroup.SecurityGroupGetSdnBackendExtensionPoint"/>
-            <zstack:extension interface="org.zstack.header.network.service.GetSdnControllerDhcpExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.network.service.GetSdnControllerExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
@@ -89,6 +89,15 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="SdnControllerPingTracker" class="org.zstack.sdnController.SdnControllerPingTracker">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" order="-100"/>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.network.l2.SdnControllerDeleteExtensionPoint" />
         </zstack:plugin>
     </bean>
 

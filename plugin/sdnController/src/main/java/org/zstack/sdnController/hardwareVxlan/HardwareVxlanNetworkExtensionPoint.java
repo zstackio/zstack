@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface HardwareVxlanNetworkExtensionPoint {
     void createVxlanNetworkOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
-    void attachL2NetworkToClusterOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
+    void attachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
     void deleteVxlanNetworkOnSdnController(VxlanNetworkVO vo, Completion completion);
 }

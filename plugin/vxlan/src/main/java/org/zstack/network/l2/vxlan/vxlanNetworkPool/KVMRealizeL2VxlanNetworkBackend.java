@@ -107,7 +107,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
         String info = String.format(
                 "get vtep peers [%s] and vtep ip [%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s]", peers,
-                vtepIp, l2Network.getUuid(), l2Network.getType(), l2vxlan.getVni(), hostUuid);
+                vtepIp, l2Network.getUuid(), l2Network.getType(), l2vxlan.getVirtualNetworkId(), hostUuid);
         logger.debug(info);
 
         List<Integer> dstports = Q.New(VtepVO.class).select(VtepVO_.port)
@@ -120,7 +120,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         final VxlanKvmAgentCommands.CreateVxlanBridgeCmd cmd = new VxlanKvmAgentCommands.CreateVxlanBridgeCmd();
         cmd.setVtepIp(vtepIp);
         cmd.setBridgeName(getBridgeName(l2vxlan));
-        cmd.setVni(l2vxlan.getVni());
+        cmd.setVni(l2vxlan.getVirtualNetworkId());
         cmd.setL2NetworkUuid(l2Network.getUuid());
         cmd.setPeers(peers);
         cmd.setDstport(dstport);
@@ -146,14 +146,14 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 VxlanKvmAgentCommands.CreateVxlanBridgeResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.CreateVxlanBridgeResponse.class);
                 if (!rsp.isSuccess()) {
                     ErrorCode err = operr("failed to create bridge[%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s], because %s",
-                            cmd.getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vxlan.getVni(), hostUuid, rsp.getError());
+                            cmd.getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vxlan.getVirtualNetworkId(), hostUuid, rsp.getError());
                     completion.fail(err);
                     return;
                 }
 
                 String info = String.format(
                         "successfully realize bridge[%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s]", cmd
-                                .getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vxlan.getVni(), hostUuid);
+                                .getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vxlan.getVirtualNetworkId(), hostUuid);
                 logger.debug(info);
 
                 SystemTagCreator creator = KVMSystemTags.L2_BRIDGE_NAME.newSystemTagCreator(l2Network.getUuid());
@@ -364,7 +364,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
                     VxlanKvmAgentCommands.PopulateVxlanFdbCmd cmd = new VxlanKvmAgentCommands.PopulateVxlanFdbCmd();
                     cmd.setPeers(peers);
-                    cmd.setVni(l2vxlan.getVni());
+                    cmd.setVni(l2vxlan.getVirtualNetworkId());
 
                     KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                     msg.setHostUuid(vtep.getHostUuid());
@@ -423,7 +423,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
     @Override
     public KVMAgentCommands.NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
-        final Integer vni = getVni(l2Network.getUuid());
+        final Integer vni = getVirtualNetworkId(l2Network.getUuid());
         KVMAgentCommands.NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
         to.setBridgeName(getBridgeName(l2Network));
         to.setMetaData(String.valueOf(vni));
@@ -431,12 +431,11 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         return to;
     }
 
-    @Override
     public String getBridgeName(L2NetworkInventory l2Network) {
         if (KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2Network.getUuid(), L2NetworkVO.class)) {
             return KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l2Network.getUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
         }
-        final Integer vni = getVni(l2Network.getUuid());
+        final Integer vni = getVirtualNetworkId(l2Network.getUuid());
         return makeBridgeName(vni);
     }
 
@@ -451,10 +450,10 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         return attachedClusters;
     }
 
-    private Integer getVni(String l2NetworkUuid) {
+    private Integer getVirtualNetworkId(String l2NetworkUuid) {
         return Q.New(VxlanNetworkVO.class)
                 .eq(VxlanNetworkVO_.uuid, l2NetworkUuid)
-                .select(VxlanNetworkVO_.vni)
+                .select(VxlanNetworkVO_.virtualNetworkId)
                 .findValue();
     }
 
@@ -524,7 +523,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
         final VxlanKvmAgentCommands.DeleteVxlanBridgeCmd cmd = new VxlanKvmAgentCommands.DeleteVxlanBridgeCmd();
         cmd.setBridgeName(getBridgeName(l2vxlan));
-        cmd.setVni(l2vxlan.getVni());
+        cmd.setVni(l2vxlan.getVirtualNetworkId());
         cmd.setL2NetworkUuid(l2Network.getUuid());
 
         final List<String> vtepIps = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.hostUuid, hostUuid).eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid()).listValues();
@@ -548,14 +547,14 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 VxlanKvmAgentCommands.DeleteVxlanBridgeResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.DeleteVxlanBridgeResponse.class);
                 if (!rsp.isSuccess()) {
                     ErrorCode err = operr("failed to delete bridge[%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s], because %s",
-                            cmd.getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vxlan.getVni(), hostUuid, rsp.getError());
+                            cmd.getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vxlan.getVirtualNetworkId(), hostUuid, rsp.getError());
                     completion.fail(err);
                     return;
                 }
 
                 String message = String.format(
                         "successfully delete bridge[%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s]", cmd
-                                .getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vxlan.getVni(), hostUuid);
+                                .getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vxlan.getVirtualNetworkId(), hostUuid);
                 logger.debug(message);
 
                 completion.success();
