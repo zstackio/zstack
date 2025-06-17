@@ -743,6 +743,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         if (ips.isEmpty() || ips.startsWith(SecurityGroupConstant.IP_SPLIT) || ips.endsWith(SecurityGroupConstant.IP_SPLIT)) {
             throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s]", ips));
         }
+        logger.debug("weiw test")
         String ipArray[];
         if (ips.contains(SecurityGroupConstant.IP_SPLIT)) {
             ipArray = ips.split(SecurityGroupConstant.IP_SPLIT);
