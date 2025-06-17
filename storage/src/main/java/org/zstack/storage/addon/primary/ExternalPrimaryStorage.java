@@ -606,8 +606,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     }
                 });
+
                 flow(new Flow() {
-                    final String __name__ = "clone-volume";
+                    final String __name__ = "create-image-cache-from-volume-snapshot";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -654,6 +655,39 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                             }
                         });
 
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "create-image-cache-snapshot";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        CreateVolumeSnapshotSpec sspec = new CreateVolumeSnapshotSpec();
+                        sspec.setVolumeInstallPath(imageCachePath);
+                        sspec.setName(buildSnapshotName(msg.getImageInventory().getUuid()));
+                        controller.createSnapshot(sspec, new ReturnValueCompletion<VolumeSnapshotStats>(trigger) {
+                            @Override
+                            public void success(VolumeSnapshotStats returnValue) {
+                                ImageCacheVO cvo = new ImageCacheVO();
+                                cvo.setMd5sum("not calculated");
+                                cvo.setInstallUrl(returnValue.getInstallPath());
+                                cvo.setImageUuid((msg.getImageInventory().getUuid()));
+                                cvo.setPrimaryStorageUuid(self.getUuid());
+                                cvo.setMediaType(ImageConstant.ImageMediaType.valueOf(
+                                        msg.getImageInventory().getMediaType())
+                                );
+                                cvo.setState(ImageCacheState.ready);
+                                cvo.setSize(returnValue.getActualSize());
+                                dbf.persist(cvo);
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
                     }
                 });
 
@@ -1319,7 +1353,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     public void run(FlowTrigger trigger, Map data) {
                         CreateVolumeSnapshotSpec sspec = new CreateVolumeSnapshotSpec();
                         sspec.setVolumeInstallPath(volume.getInstallPath());
-                        sspec.setName(spec.getName());
+                        sspec.setName(buildSnapshotName(spec.getUuid()));
                         controller.createSnapshot(sspec, new ReturnValueCompletion<VolumeSnapshotStats>(trigger) {
                             @Override
                             public void success(VolumeSnapshotStats returnValue) {
