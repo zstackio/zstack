@@ -32,7 +32,7 @@ public class ZceXTestConnectionAction extends AbstractAction {
     public java.lang.Integer port = 8056;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String url = "/";
+    public java.lang.String url = "/api/v1/cluster/time";
 
     @Param(required = false)
     public java.util.List systemTags;
