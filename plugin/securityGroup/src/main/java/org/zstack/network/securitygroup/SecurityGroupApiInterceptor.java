@@ -50,6 +50,8 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 
+// test log
+
 /**
  */
 public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
