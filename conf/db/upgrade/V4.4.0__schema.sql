@@ -1,4 +1,3 @@
-UPDATE `zstack`.`LicenseHistoryVO` SET `hash` = 'unknown' WHERE `hash` IS NULL;
 ALTER TABLE `zstack`.`LicenseHistoryVO` MODIFY COLUMN `hash` char(32) NOT NULL DEFAULT 'unknown';
 ALTER TABLE `zstack`.`LicenseHistoryVO` ADD COLUMN `source` varchar(16) DEFAULT 'Legacy';
 ALTER TABLE `zstack`.`LicenseHistoryVO` MODIFY COLUMN `source` varchar(16) NOT NULL;
