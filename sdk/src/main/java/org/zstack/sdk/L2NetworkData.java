@@ -20,14 +20,6 @@ public class L2NetworkData  {
         return this.name;
     }
 
-    public java.lang.String poolUuid;
-    public void setPoolUuid(java.lang.String poolUuid) {
-        this.poolUuid = poolUuid;
-    }
-    public java.lang.String getPoolUuid() {
-        return this.poolUuid;
-    }
-
     public java.lang.String zoneUuid;
     public void setZoneUuid(java.lang.String zoneUuid) {
         this.zoneUuid = zoneUuid;
@@ -60,20 +52,12 @@ public class L2NetworkData  {
         return this.type;
     }
 
-    public java.lang.String vni;
-    public void setVni(java.lang.String vni) {
-        this.vni = vni;
+    public java.lang.Integer virtualNetworkId;
+    public void setVirtualNetworkId(java.lang.Integer virtualNetworkId) {
+        this.virtualNetworkId = virtualNetworkId;
     }
-    public java.lang.String getVni() {
-        return this.vni;
-    }
-
-    public int vlan;
-    public void setVlan(int vlan) {
-        this.vlan = vlan;
-    }
-    public int getVlan() {
-        return this.vlan;
+    public java.lang.Integer getVirtualNetworkId() {
+        return this.virtualNetworkId;
     }
 
     public java.sql.Timestamp createDate;

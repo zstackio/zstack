@@ -5,13 +5,11 @@ import java.sql.Timestamp;
 public class L2NetworkData {
     private String uuid;
     private String name;
-    private String poolUuid;
     private String zoneUuid;
     private String description;
     private String physicalInterface;
     private String type;
-    private String vni;
-    private int vlan;
+    private Integer virtualNetworkId;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -29,14 +27,6 @@ public class L2NetworkData {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getPoolUuid() {
-        return poolUuid;
-    }
-
-    public void setPoolUuid(String poolUuid) {
-        this.poolUuid = poolUuid;
     }
 
     public String getZoneUuid() {
@@ -71,20 +61,12 @@ public class L2NetworkData {
         this.type = type;
     }
 
-    public String getVni() {
-        return vni;
+    public Integer getVirtualNetworkId() {
+        return virtualNetworkId;
     }
 
-    public void setVni(String vni) {
-        this.vni = vni;
-    }
-
-    public int getVlan() {
-        return vlan;
-    }
-
-    public void setVlan(int vlan) {
-        this.vlan = vlan;
+    public void setVirtualNetworkId(Integer virtualNetworkId) {
+        this.virtualNetworkId = virtualNetworkId;
     }
 
     public Timestamp getCreateDate() {
