@@ -12,7 +12,21 @@
     </message>
 
     <message>
+        <name>org.zstack.header.image.APICloneImageMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.image.APIQueryImageMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.image.APIQueryImageGroupMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.image.APIQueryImageGroupRefMsg</name>
         <serviceId>query</serviceId>
     </message>
 
@@ -49,6 +63,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.image.APIExpungeImageGroupMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.image.APIRecoverImageMsg</name>
     </message>
 
@@ -62,5 +80,17 @@
 
     <message>
         <name>org.zstack.header.image.APICalculateImageHashMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.image.APICreateImageGroupFromVmInstanceMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.image.APICreateImageGroupFromImageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.image.APICreateImageGroupFromSnapshotMsg</name>
     </message>
 </service>

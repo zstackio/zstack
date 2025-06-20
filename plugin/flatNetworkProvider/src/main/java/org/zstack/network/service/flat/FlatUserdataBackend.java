@@ -19,13 +19,11 @@ import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
@@ -36,6 +34,7 @@ import org.zstack.header.network.l2.L2NetworkUpdateExtensionPoint;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
+import org.zstack.header.zone.ZoneVO;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.network.l2.L2NetworkHostHelper;
@@ -82,6 +81,114 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     public static final String BATCH_APPLY_USER_DATA = "/flatnetworkprovider/userdata/batchapply";
     public static final String RELEASE_USER_DATA = "/flatnetworkprovider/userdata/release";
     public static final String CLEANUP_USER_DATA = "/flatnetworkprovider/userdata/cleanup";
+
+    private String getVmNicMacAddressByVmInstanceId(String vmInstanceId) {
+        String sql = "SELECT nic.mac " +
+                "FROM VmInstanceVO vm " +
+                "JOIN VmNicVO nic ON vm.uuid = nic.vmInstanceUuid " +
+                "WHERE vm.uuid = :vmInstanceId " +
+                "AND nic.l3NetworkUuid = vm.defaultL3NetworkUuid";
+
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("vmInstanceId", vmInstanceId);
+
+        List<String> resultList = q.getResultList();
+        if (resultList.isEmpty()) {
+            return null;
+        }
+        return resultList.get(0);
+    }
+
+
+    private String getZoneNameByVmInstanceId(String vmInstanceId) {
+        VmInstanceVO vmInstance = dbf.findByUuid(vmInstanceId, VmInstanceVO.class);
+        if (vmInstance == null || vmInstance.getZoneUuid() == null) {
+            return null;
+        }
+
+        String zoneId = vmInstance.getZoneUuid();
+
+        ZoneVO zone = dbf.findByUuid(zoneId, ZoneVO.class);
+        if (zone == null) {
+            return null;
+        }
+
+        return zone.getName();
+    }
+
+    private String getDnsServersIp(String vmInstanceId) {
+        String sql = "SELECT dns.dns FROM VmInstanceVO AS v " +
+                "JOIN L3NetworkDnsVO AS dns ON v.defaultL3NetworkUuid = dns.l3NetworkUuid " +
+                "WHERE v.uuid = :vmInstanceId";
+
+        TypedQuery<String> query = dbf.getEntityManager().createQuery(sql, String.class);
+        query.setParameter("vmInstanceId", vmInstanceId);
+        List<String> dnsServers = query.getResultList();
+        if (dnsServers.isEmpty()) {
+            return null;
+        }
+
+        StringBuilder dnsIpListBuilder = new StringBuilder();
+        for (String dnsIp : dnsServers) {
+            dnsIpListBuilder.append(dnsIp).append("\n");
+        }
+        // Delete the last extra newline character, if it exists.
+        if (dnsIpListBuilder.length() > 0) {
+            dnsIpListBuilder.setLength(dnsIpListBuilder.length() - 1);
+        }
+
+        return dnsIpListBuilder.toString();
+    }
+
+    private String getVpcIdByVmInstanceUuid(String vmInstanceUuid) {
+        String sql = "SELECT DISTINCT vm.uuid " +
+                "FROM VmInstanceVO vm " +
+                "JOIN VmNicVO nic ON vm.uuid = nic.vmInstanceUuid " +
+                "WHERE vm.type = 'ApplianceVm' " +
+                "AND nic.l3NetworkUuid IN (" +
+                "    SELECT v.defaultL3NetworkUuid " +
+                "    FROM VmInstanceVO v " +
+                "    WHERE v.uuid = :vmInstanceUuid" +
+                ")";
+
+        TypedQuery<String> query = dbf.getEntityManager().createQuery(sql, String.class);
+        query.setParameter("vmInstanceUuid", vmInstanceUuid);
+
+        List<String> results = query.getResultList();
+        if (results.isEmpty()) {
+            return null;
+        }
+
+        return results.get(0);
+    }
+
+    private List<NetworkInterfaceDetails> getNetworkInterfaceDetails(String vmInstanceUuid) {
+        String sql = "select DISTINCT nic.mac, nic.ip, nic.netmask, nic.gateway, ipr.networkCidr " +
+                "from VmNicVO nic " +
+                "join IpRangeVO ipr on nic.l3NetworkUuid = ipr.l3NetworkUuid " + // 加入对IpRangeVO的JOIN
+                "where nic.vmInstanceUuid = :vmInstanceUuid " +
+                "and nic.ipVersion = :ipversion ";
+
+        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+        q.setParameter("vmInstanceUuid", vmInstanceUuid);
+        q.setParameter("ipversion", IPv6Constants.IPv4);
+        List<Tuple> ts = q.getResultList();
+
+        List<NetworkInterfaceDetails> networkInterfaceDetailsList = new ArrayList<>();
+
+        for (Tuple t : ts) {
+            NetworkInterfaceDetails details = new NetworkInterfaceDetails();
+            details.macAddress = t.get(0, String.class);
+            details.ip = t.get(1, String.class);
+            details.netmask = t.get(2, String.class);
+            details.gateway = t.get(3, String.class);
+            details.vpcCidrBlock = t.get(4, String.class);
+            details.vSwitchCidrBlock = t.get(4, String.class);
+            networkInterfaceDetailsList.add(details);
+        }
+
+        return networkInterfaceDetailsList;
+    }
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
@@ -191,6 +298,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     MetadataTO mto = new MetadataTO();
                     mto.vmUuid = vmuuid;
                     mto.vmHostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(vmuuid, VmSystemTags.HOSTNAME_TOKEN);
+                    mto.regionName = getZoneNameByVmInstanceId(vmuuid);
+                    mto.mac = getVmNicMacAddressByVmInstanceId(vmuuid);
+                    mto.dnsServersIp = getDnsServersIp(vmuuid);
+                    mto.vpcId = getVpcIdByVmInstanceUuid(vmuuid);
                     to.metadata = mto;
 
                     VmIpL3Uuid l = vmipl3.get(vmuuid);
@@ -209,6 +320,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         continue;
                     }
 
+                    to.networkInterfaces = getNetworkInterfaceDetails(vmuuid);
                     to.dhcpServerIp = l.dhcpServerIp;
                     to.vmIp = l.vmIp;
                     to.netmask = l.netmask;
@@ -483,6 +595,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
     public static class UserdataTO {
         public MetadataTO metadata;
+        public List<NetworkInterfaceDetails> networkInterfaces;
         public List<String> userdataList = new ArrayList<>();
         public String vmIp;
         public String netmask;
@@ -498,6 +611,19 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     public static class MetadataTO {
         public String vmUuid;
         public String vmHostname;
+        public String regionName;
+        public String mac;
+        public String dnsServersIp;
+        public String vpcId;
+    }
+
+    public static class NetworkInterfaceDetails {
+        public String macAddress;
+        public String ip;
+        public String vpcCidrBlock;
+        public String vSwitchCidrBlock;
+        public String netmask;
+        public String gateway;
     }
 
     public static class CleanupUserdataCmd extends KVMAgentCommands.AgentCommand {
@@ -561,7 +687,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     @Override
     public void applyUserdata(final UserdataStruct struct, final Completion completion) {
         if (!UserdataGlobalConfig.OPEN_USERDATA_SERVICE_BY_DEFAULT.value(Boolean.class)) {
-            if ( !hasMetedata(struct) && !hasUserdata(struct)) {
+            if (!hasMetedata(struct) && !hasUserdata(struct)) {
                 completion.success();
                 return;
             }
@@ -585,7 +711,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         }
 
         L3NetworkVO defaultL3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, struct.getL3NetworkUuid()).find();
-        if (defaultL3!= null && defaultL3.getNetworkServices().stream().noneMatch(
+        if (defaultL3 != null && defaultL3.getNetworkServices().stream().noneMatch(
                 service -> Objects.equals(UserdataConstant.USERDATA_TYPE_STRING, service.getNetworkServiceType()))) {
             completion.success();
             return;
@@ -653,8 +779,13 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         MetadataTO to = new MetadataTO();
                         to.vmUuid = struct.getVmUuid();
                         to.vmHostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(struct.getVmUuid(), VmSystemTags.HOSTNAME_TOKEN);
+                        to.regionName = getZoneNameByVmInstanceId(struct.getVmUuid());
+                        to.mac = destNic.getMac();
+                        to.dnsServersIp = getDnsServersIp(struct.getVmUuid());
+                        to.vpcId = getVpcIdByVmInstanceUuid(struct.getVmUuid());
                         UserdataTO uto = new UserdataTO();
                         uto.metadata = to;
+                        uto.networkInterfaces = getNetworkInterfaceDetails(struct.getVmUuid());
                         uto.userdataList = struct.getUserdataList();
                         uto.dhcpServerIp = dhcpServerIp;
                         uto.vmIp = ipv4.getIp();
@@ -823,7 +954,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     whileCompletion.allDone();
                 }
             }).start();
-        },10).run(new WhileDoneCompletion(null) {
+        }, 10).run(new WhileDoneCompletion(null) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (!errorCodeList.getCauses().isEmpty()) {

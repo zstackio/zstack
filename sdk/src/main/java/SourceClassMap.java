@@ -160,6 +160,8 @@ public class SourceClassMap {
 			put("org.zstack.externalbackup.zbox.ZBoxVmBackupInfo", "org.zstack.sdk.ZBoxVmBackupInfo");
 			put("org.zstack.externalbackup.zbox.ZBoxVolumeBackupInfo", "org.zstack.sdk.ZBoxVolumeBackupInfo");
 			put("org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory", "org.zstack.sdk.FaultToleranceVmGroupInventory");
+			put("org.zstack.guesttools.AliyunInvocationRecordData", "org.zstack.sdk.AliyunInvocationRecordData");
+			put("org.zstack.guesttools.AliyunInvocationRecordDetailData", "org.zstack.sdk.AliyunInvocationRecordDetailData");
 			put("org.zstack.guesttools.GuestToolsInventory", "org.zstack.sdk.GuestToolsInventory");
 			put("org.zstack.guesttools.GuestToolsStateInventory", "org.zstack.sdk.GuestToolsStateInventory");
 			put("org.zstack.guesttools.GuestVmScriptExecutedRecordDetailInventory", "org.zstack.sdk.GuestVmScriptExecutedRecordDetailInventory");
@@ -292,6 +294,8 @@ public class SourceClassMap {
 			put("org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent$Failure", "org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotFailure");
 			put("org.zstack.header.image.APIGetUploadImageJobDetailsReply$JobDetails", "org.zstack.sdk.JobDetails");
 			put("org.zstack.header.image.ImageBackupStorageRefInventory", "org.zstack.sdk.ImageBackupStorageRefInventory");
+			put("org.zstack.header.image.ImageGroupInventory", "org.zstack.sdk.ImageGroupInventory");
+			put("org.zstack.header.image.ImageGroupRefInventory", "org.zstack.sdk.ImageGroupRefInventory");
 			put("org.zstack.header.image.ImageInventory", "org.zstack.sdk.ImageInventory");
 			put("org.zstack.header.longjob.LongJobInventory", "org.zstack.sdk.LongJobInventory");
 			put("org.zstack.header.longjob.LongJobState", "org.zstack.sdk.LongJobState");
@@ -849,6 +853,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AliyunEbsBackupStorageInventory", "org.zstack.header.aliyun.ebs.AliyunEbsBackupStorageInventory");
 			put("org.zstack.sdk.AliyunEbsPrimaryStorageInventory", "org.zstack.header.aliyun.ebs.AliyunEbsPrimaryStorageInventory");
 			put("org.zstack.sdk.AliyunErrorCode", "org.zstack.header.aliyun.errorCode.AliyunErrorCode");
+			put("org.zstack.sdk.AliyunInvocationRecordData", "org.zstack.guesttools.AliyunInvocationRecordData");
+			put("org.zstack.sdk.AliyunInvocationRecordDetailData", "org.zstack.guesttools.AliyunInvocationRecordDetailData");
 			put("org.zstack.sdk.AliyunNasAccessGroupInventory", "org.zstack.aliyun.nas.filesystem.AliyunNasAccessGroupInventory");
 			put("org.zstack.sdk.AliyunNasAccessGroupProperty", "org.zstack.aliyun.nas.message.AliyunNasAccessGroupProperty");
 			put("org.zstack.sdk.AliyunNasAccessRuleInventory", "org.zstack.aliyun.nas.filesystem.AliyunNasAccessRuleInventory");
@@ -1059,6 +1065,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.IdentityZoneProperty", "org.zstack.header.identityzone.IdentityZoneProperty");
 			put("org.zstack.sdk.ImageBackupStorageRefInventory", "org.zstack.header.image.ImageBackupStorageRefInventory");
 			put("org.zstack.sdk.ImageCacheInventory", "org.zstack.header.storage.primary.ImageCacheInventory");
+			put("org.zstack.sdk.ImageGroupInventory", "org.zstack.header.image.ImageGroupInventory");
+			put("org.zstack.sdk.ImageGroupRefInventory", "org.zstack.header.image.ImageGroupRefInventory");
 			put("org.zstack.sdk.ImageInventory", "org.zstack.header.image.ImageInventory");
 			put("org.zstack.sdk.ImagePackageInventory", "org.zstack.ovf.datatype.ImagePackageInventory");
 			put("org.zstack.sdk.ImagePackageState", "org.zstack.ovf.datatype.ImagePackageState");
