@@ -59,7 +59,7 @@ public class RuleTO {
     }
 
     public void setSrcIpRange(String srcIpRange) {
-        this.srcIpRange = srcIpRange;
+        this.srcIpRange = srcIpRange == null ? null : srcIpRange.replaceAll("\\s+", "");
     }
 
     public String getDstIpRange() {
@@ -67,7 +67,7 @@ public class RuleTO {
     }
 
     public void setDstIpRange(String dstIpRange) {
-        this.dstIpRange = dstIpRange;
+        this.dstIpRange = dstIpRange == null ? null : dstIpRange.replaceAll("\\s+", "");
     }
 
     public String getDstPortRange() {
@@ -75,7 +75,7 @@ public class RuleTO {
     }
 
     public void setDstPortRange(String dstPortRange) {
-        this.dstPortRange = dstPortRange;
+        this.dstPortRange = dstPortRange == null ? null : dstPortRange.replaceAll("\\s+", "");
     }
 
     public String getProtocol() {
