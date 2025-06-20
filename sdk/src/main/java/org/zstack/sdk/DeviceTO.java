@@ -20,6 +20,14 @@ public class DeviceTO  {
         return this.status;
     }
 
+    public java.lang.String state;
+    public void setState(java.lang.String state) {
+        this.state = state;
+    }
+    public java.lang.String getState() {
+        return this.state;
+    }
+
     public java.lang.String target;
     public void setTarget(java.lang.String target) {
         this.target = target;
