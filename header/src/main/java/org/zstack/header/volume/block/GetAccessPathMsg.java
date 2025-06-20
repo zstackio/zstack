@@ -8,8 +8,8 @@ import org.zstack.header.storage.primary.PrimaryStorageMessage;
  * @date 2023/6/21 13:13
  */
 public class GetAccessPathMsg extends NeedReplyMessage implements PrimaryStorageMessage {
-    String primaryStorageUuid;
-    String volumeUuid;
+    private String primaryStorageUuid;
+    private String volumeUuid;
 
     public String getVolumeUuid() {
         return volumeUuid;

@@ -161,6 +161,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         String clientPassword = Q.New(KVMHostVO.class).select(KVMHostVO_.password).eq(KVMHostVO_.uuid, h.getUuid()).findValue();
         if (clientPassword == null) {
             comp.fail(operr("failed to get client[uuid:%s] password", h.getUuid()));
+            return;
         }
 
         DeployClientCmd cmd = new DeployClientCmd();

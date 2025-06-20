@@ -74,8 +74,9 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     private DatabaseFacade dbf;
     private ExternalPrimaryStorageVO self;
     private ExponConfig config;
-    public ExponAddonInfo addonInfo;
-    public final ExponApiHelper apiHelper;
+    private ExponAddonInfo addonInfo;
+    private final ExponApiHelper apiHelper;
+
     @Autowired
     private ExternalPrimaryStorageFactory extPsFactory;
 
@@ -88,6 +89,14 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     private final static long MIN_SIZE = 1024 * 1024 * 1024L;
 
     private final static long MAX_ISCSI_TARGET_LUN_COUNT = 64;
+
+    public ExponAddonInfo getAddonInfo() {
+        return addonInfo;
+    }
+
+    public ExponApiHelper getApiHelper() {
+        return apiHelper;
+    }
 
     static {
         VolumeSnapshotCapability scap = new VolumeSnapshotCapability();

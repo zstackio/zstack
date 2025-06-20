@@ -7,7 +7,7 @@ import org.zstack.header.rest.RestRequest;
 import org.zstack.header.volume.VolumeProtocol;
 
 @RestRequest(
-        path = "/primary-storage/protocol",
+        path = "/primary-storage/protocols",
         responseClass = APIAddStorageProtocolEvent.class,
         method = HttpMethod.POST,
         parameterName = "params"

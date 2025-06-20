@@ -90,8 +90,11 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("outputProtocol[%s] is exist on primary storage[%s]" +
                     "no need to add again", msg.getOutputProtocol(), msg.getPrimaryStorageUuid()));
         }
-        PrimaryStorageVO vo = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid()).find();
-        PrimaryStorageFactory factory = primaryStorageManager.primaryStorageFactories.get(vo.getType());
+        String type = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid()).select(PrimaryStorageVO_.type).find();
+        PrimaryStorageFactory factory = primaryStorageManager.getPrimaryStorageFactory(type);
+        if (factory == null) {
+            throw new ApiMessageInterceptionException(argerr("unknown primary storage type[%s]", type));
+        }
         factory.validateStorageProtocol(msg.getOutputProtocol());
     }
 

@@ -94,7 +94,7 @@ public class AddStorageProtocolAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/primary-storage/protocol";
+        info.path = "/primary-storage/protocols";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

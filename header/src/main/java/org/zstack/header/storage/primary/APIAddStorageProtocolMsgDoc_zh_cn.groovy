@@ -11,7 +11,7 @@ doc {
 
 	rest {
 		request {
-			url "POST /v1/primary-storage/protocol"
+			url "POST /v1/primary-storage/protocols"
 
 			header (Authorization: 'OAuth the-session-uuid')
 

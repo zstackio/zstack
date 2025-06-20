@@ -152,6 +152,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         if (blockVolumeVO == null) {
             GetAccessPathReply reply = new GetAccessPathReply();
             reply.setError(operr("can not found block volume, access path only for block volume"));
+            bus.reply(msg, reply);
             return;
         }
         BlockExternalPrimaryStorageBackend backend = getBlockBackend(blockVolumeVO.getVendor());

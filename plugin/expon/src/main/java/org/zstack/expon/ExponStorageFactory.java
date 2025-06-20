@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ExponStorageFactory implements ExternalPrimaryStorageSvcBuilder, BackupStorageSelector, VolumeAfterExpungeExtensionPoint {
-    public static final ExternalStorageFencerType fencerType = new ExternalStorageFencerType(ExponConstants.IDENTITY, VolumeProtocol.iSCSI.toString());
+    public static final ExternalStorageFencerType FENCER_TYPE = new ExternalStorageFencerType(ExponConstants.IDENTITY, VolumeProtocol.iSCSI.toString());
 
     private List<String> preferBackupStorageTypes;
 
@@ -24,7 +24,7 @@ public class ExponStorageFactory implements ExternalPrimaryStorageSvcBuilder, Ba
     @Override
     public PrimaryStorageControllerSvc buildControllerSvc(ExternalPrimaryStorageVO vo) {
         ExponStorageController svc = new ExponStorageController(vo);
-        MultiNodeSingleFlightImpl.register(svc.apiHelper);
+        MultiNodeSingleFlightImpl.register(svc.getApiHelper());
         controllers.put(vo.getUuid(), svc);
         return svc;
     }
@@ -37,7 +37,7 @@ public class ExponStorageFactory implements ExternalPrimaryStorageSvcBuilder, Ba
     @Override
     public void discover(String url, String config, ReturnValueCompletion<LinkedHashMap> completion) {
         ExponStorageController controller = new ExponStorageController(url);
-        MultiNodeSingleFlightImpl.register(controller.apiHelper);
+        MultiNodeSingleFlightImpl.register(controller.getApiHelper());
         controller.connect(config, url, completion);
     }
 
