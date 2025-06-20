@@ -10,4 +10,7 @@ import org.zstack.core.GlobalPropertyDefinition;
 public class UserdataGlobalProperty {
     @GlobalProperty(name="Userdata.hostPort", defaultValue = "1180")
     public static int HOST_PORT;
+
+    @GlobalProperty(name="Userdata.applyWithNoneDefaultNic", defaultValue = "false")
+    public static boolean APPLY_WITH_NONE_DEFAULT_NIC;
 }
