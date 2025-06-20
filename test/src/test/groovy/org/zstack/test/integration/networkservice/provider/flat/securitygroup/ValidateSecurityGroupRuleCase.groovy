@@ -107,6 +107,41 @@ class ValidateSecurityGroupRuleCase extends SubCase {
             assert e.code == SecurityGroupErrors.RULE_IP_FIELD_ERROR.toString()
         }
 
+        validateSecurityGroupRule {
+            securityGroupUuid = sg1.uuid
+            type = "Ingress"
+            protocol = "TCP"
+            allowedCidr = "3.168.1.100, 33.168.1.0/24\n"
+            startPort = 500
+            endPort = 600
+        }
+
+        validateSecurityGroupRule {
+            securityGroupUuid = sg1.uuid
+            type = "Ingress"
+            protocol = "TCP"
+            srcIpRange = "3.168.1.0/24,\n33.168.1.0/24"
+            startPort = 500
+            endPort = 600
+        }
+
+        validateSecurityGroupRule {
+            securityGroupUuid = sg1.uuid
+            type = "Egress"
+            protocol = "TCP"
+            dstIpRange = "3.168.1.0/24,\n33.168.1.0/24"
+            startPort = 500
+            endPort = 600
+        }
+
+        validateSecurityGroupRule {
+            securityGroupUuid = sg1.uuid
+            type = "Egress"
+            protocol = "TCP"
+            allowedCidr = "3.168.1.0/24,\n33.168.1.0/24"
+            dstPortRange = "111-500\t\n"
+        }
+
         SecurityGroupRuleAO r = new SecurityGroupRuleAO()
         r.type = "Ingress"
         r.ipVersion = 4
