@@ -2094,7 +2094,8 @@ public class VolumeSnapshotTreeBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        if (!VolumeSnapshotGlobalConfig.SNAPSHOT_BEFORE_REVERTVOLUME.value(Boolean.class)) {
+                        if (VolumeSnapshotGlobalConfig.ENABLE_FAST_REVERT.value(Boolean.class)
+                                || !VolumeSnapshotGlobalConfig.SNAPSHOT_BEFORE_REVERTVOLUME.value(Boolean.class)) {
                             VolumeInventory vol = VolumeInventory.valueOf(volume);
                             vol.setSize(actualSize);
                             vol.setInstallPath(oldVolumeInstallPath);

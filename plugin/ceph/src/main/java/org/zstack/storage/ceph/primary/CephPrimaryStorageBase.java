@@ -72,6 +72,7 @@ import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
 import org.zstack.storage.ceph.primary.capacity.CephOsdGroupCapacityHelper;
 import org.zstack.storage.primary.*;
+import org.zstack.storage.snapshot.VolumeSnapshotGlobalConfig;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTag;
@@ -5148,21 +5149,35 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                boolean fastRevert = VolumeSnapshotGlobalConfig.ENABLE_FAST_REVERT.value(Boolean.class);
+                String snapShotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
                 // get volume path from snapshot path, just split @
-                String volumePath = msg.getSnapshot().getPrimaryStorageInstallPath().split("@")[0];
+                String volumePath = snapShotPath.split("@")[0];
 
                 flow(new NoRollbackFlow() {
+                    String __name__ = "revert-volume-from-snapshot";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return fastRevert;
+                    }
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         TaskProgressRange stage = markTaskStage(parentStage, UNDO_SNAPSHOT_CREATION_STAGE);
 
                         RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
-                        cmd.snapshotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
+                        cmd.snapshotPath = snapShotPath;
                         cmd.capacityThreshold = psPhysicalCapacityMgr.getRatio(getSelf().getUuid());
                         httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(msg) {
                             @Override
                             public void success(RollbackSnapshotRsp returnValue) {
+                                Long trashId = trash.getTrashId(self.getUuid(), volumePath);
+                                if (trashId != null) {
+                                    trash.removeFromDb(trashId);
+                                }
                                 reply.setSize(returnValue.getSize());
+                                reply.setNewVolumeInstallPath(volumePath);
                                 reportProgress(stage.getEnd().toString());
                                 trigger.next();
                             }
@@ -5175,15 +5190,41 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
                 });
 
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "fast-revert-volume-from-snapshot";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return !fastRevert;
+                    }
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        TaskProgressRange stage = markTaskStage(parentStage, UNDO_SNAPSHOT_CREATION_STAGE);
+
+                        final String newVolumePath = makeVolumeInstallPathByTargetPool(Platform.getUuid(), getTargetPoolNameFromAllocatedUrl(snapShotPath));
+                        VolumeSnapshotInventory sp = msg.getSnapshot();
+                        cloneAndProtectSnaphost(sp.getPrimaryStorageInstallPath(), newVolumePath, new ReturnValueCompletion<CloneRsp>(trigger) {
+                            @Override
+                            public void success(CloneRsp rsp) {
+                                reply.setNewVolumeInstallPath(newVolumePath);
+                                reply.setSize(rsp.size);
+                                reportProgress(stage.getEnd().toString());
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        Long trashId = trash.getTrashId(self.getUuid(), volumePath);
-                        if (trashId != null) {
-                            trash.removeFromDb(trashId);
-                        }
-
-                        reply.setNewVolumeInstallPath(volumePath);
                         bus.reply(msg, reply);
                     }
                 });

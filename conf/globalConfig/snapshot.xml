@@ -40,4 +40,19 @@
         <type>java.lang.Boolean</type>
     </config>
 
+    <config>
+        <category>volumeSnapshot</category>
+        <name>enable.fast.revert</name>
+        <description>Enable fast revert for volume snapshot</description>
+        <defaultValue>true</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <category>volumeSnapshot</category>
+        <name>snapshot.group.revert.concurrency</name>
+        <description>The max snapshots the can be concurrently revert</description>
+        <defaultValue>1</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>
