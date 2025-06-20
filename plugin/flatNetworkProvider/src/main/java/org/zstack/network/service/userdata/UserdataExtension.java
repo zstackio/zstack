@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -11,14 +12,15 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicSpec;
 import org.zstack.network.securitygroup.SecurityGroupGetDefaultRuleExtensionPoint;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
@@ -66,14 +68,10 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
         return UserdataConstant.USERDATA_TYPE;
     }
 
-    private NetworkServiceProviderInventory findProvider(final VmInstanceSpec spec) {
-        L3NetworkInventory defaultL3 = CollectionUtils.find(VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()),
-                new Function<L3NetworkInventory, L3NetworkInventory>() {
-            @Override
-            public L3NetworkInventory call(L3NetworkInventory arg) {
-                return arg.getUuid().equals(spec.getVmInventory().getDefaultL3NetworkUuid()) ? arg : null;
-            }
-        });
+    private NetworkServiceProviderInventory findProvider(final L3NetworkInventory defaultL3) {
+        if (defaultL3 == null || defaultL3.getNetworkServices() == null) {
+            return null;
+        }
 
         for (NetworkServiceL3NetworkRefInventory ref : defaultL3.getNetworkServices()) {
             if (UserdataConstant.USERDATA_TYPE_STRING.equals(ref.getNetworkServiceType())) {
@@ -96,12 +94,21 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
     @Override
     public void applyNetworkService(final VmInstanceSpec servedVm, Map<String, Object> data, Completion completion) {
         L3NetworkInventory defaultL3 = CollectionUtils.find(VmNicSpec.getL3NetworkInventoryOfSpec(servedVm.getL3Networks()),
-                new Function<L3NetworkInventory, L3NetworkInventory>() {
-            @Override
-            public L3NetworkInventory call(L3NetworkInventory arg) {
-                return arg.getUuid().equals(servedVm.getVmInventory().getDefaultL3NetworkUuid()) ? arg : null;
+                arg -> arg.getUuid().equals(servedVm.getVmInventory().getDefaultL3NetworkUuid()) ? arg : null);
+        VmNicInventory defaultNic = null;
+        if (defaultL3 == null && servedVm.getVmInventory().getDefaultL3NetworkUuid() != null && UserdataGlobalProperty.APPLY_WITH_NONE_DEFAULT_NIC) {
+            L3NetworkVO l3 = Q.New(L3NetworkVO.class)
+                    .eq(L3NetworkVO_.uuid, servedVm.getVmInventory().getDefaultL3NetworkUuid())
+                    .find();
+            if (l3 != null) {
+                defaultL3 = L3NetworkInventory.valueOf(l3);
+                final String defaultL3Uuid = defaultL3.getUuid();
+                defaultNic = servedVm.getVmInventory().getVmNics().stream()
+                        .filter(vmNic -> vmNic.getL3NetworkUuid().equals(defaultL3Uuid))
+                        .findFirst()
+                        .orElse(null);
             }
-        });
+        }
 
         if (defaultL3 == null) {
             // the L3 for operation is not the default L3
@@ -115,7 +122,7 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
             return;
         }
 
-        NetworkServiceProviderInventory provider = findProvider(servedVm);
+        NetworkServiceProviderInventory provider = findProvider(defaultL3);
         if (provider == null) {
             completion.success();
             return;
@@ -125,7 +132,9 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
         struct.setL3NetworkUuid(servedVm.getVmInventory().getDefaultL3NetworkUuid());
         struct.setParametersFromVmSpec(servedVm);
         struct.setUserdataList(servedVm.getUserdataList());
-
+        if (defaultNic != null) {
+            struct.getVmNics().add(defaultNic);
+        }
         UserdataBackend bkd = getUserdataBackend(provider.getType());
         bkd.applyUserdata(struct, completion);
     }
@@ -144,12 +153,7 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
     @Override
     public void releaseNetworkService(final VmInstanceSpec servedVm, Map<String, Object> data, final NoErrorCompletion completion) {
         L3NetworkInventory defaultL3 = CollectionUtils.find(VmNicSpec.getL3NetworkInventoryOfSpec(servedVm.getL3Networks()),
-                new Function<L3NetworkInventory, L3NetworkInventory>() {
-            @Override
-            public L3NetworkInventory call(L3NetworkInventory arg) {
-                return arg.getUuid().equals(servedVm.getVmInventory().getDefaultL3NetworkUuid()) ? arg : null;
-            }
-        });
+                arg -> arg.getUuid().equals(servedVm.getVmInventory().getDefaultL3NetworkUuid()) ? arg : null);
         if (!Optional.ofNullable(servedVm.getDestHost()).isPresent()){
             completion.done();
             return;
@@ -166,7 +170,7 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
             return;
         }
 
-        NetworkServiceProviderInventory provider = findProvider(servedVm);
+        NetworkServiceProviderInventory provider = findProvider(defaultL3);
         if (provider == null) {
             completion.done();
             return;
