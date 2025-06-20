@@ -193,7 +193,7 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
             return;
         }
 
-        if (ImagePlatform.valueOf(nowPlatform).isParaVirtualization()) {
+        if (ImagePlatform.valueOf(nowPlatform).isParaVirtualization() || VmSystemTags.VIRTIO.hasTag(vm.getUuid())) {
             resetVmNicDriverType(vm.getUuid(), defaultPVNicDriver);
             return;
         }
@@ -266,7 +266,7 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
             return;
         }
 
-        if (isImageSupportVirtIo || isParaVirtualization || VmSystemTags.VIRTIO.hasTag(nic.getVmInstanceUuid())) {
+        if (isImageSupportVirtIo || isParaVirtualization || VmSystemTags.VIRTIO.hasTag(vm.getUuid())) {
             nic.setDriverType(getDefaultPVNicDriver());
         } else {
             nic.setDriverType(getDefaultNicDriver());
