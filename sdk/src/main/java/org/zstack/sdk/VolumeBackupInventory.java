@@ -68,6 +68,14 @@ public class VolumeBackupInventory  {
         return this.size;
     }
 
+    public java.lang.String hypervisorType;
+    public void setHypervisorType(java.lang.String hypervisorType) {
+        this.hypervisorType = hypervisorType;
+    }
+    public java.lang.String getHypervisorType() {
+        return this.hypervisorType;
+    }
+
     public java.lang.String metadata;
     public void setMetadata(java.lang.String metadata) {
         this.metadata = metadata;
