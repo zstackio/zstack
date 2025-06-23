@@ -23,7 +23,11 @@ BEGIN
     DECLARE docker_image VARCHAR(255);
     DECLARE model_service_image_uuid VARCHAR(32);
     DECLARE cpu_arch VARCHAR(32);
+    DECLARE existing_uuid VARCHAR(32);
 
+    DECLARE all_services_cursor CURSOR FOR
+        SELECT uuid FROM ModelServiceVO;
+        
     DECLARE vm_cursor CURSOR FOR
         SELECT ms.uuid, ms.vmImageUuid
         FROM ModelServiceVO ms
@@ -36,6 +40,25 @@ BEGIN
 
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 
+    OPEN all_services_cursor;
+    all_services_loop: LOOP
+        FETCH all_services_cursor INTO service_uuid;
+        IF done THEN
+            SET done = FALSE;
+            LEAVE all_services_loop;
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM ModelServiceImageVO WHERE modelServiceUuid = service_uuid) THEN
+            SET model_service_image_uuid = REPLACE(UUID(),'-','');
+            INSERT INTO ModelServiceImageVO (uuid, modelServiceUuid, cpuArchitecture, createDate, lastOpDate)
+            VALUES (model_service_image_uuid, service_uuid, 'x86_64', NOW(), NOW());
+            
+            INSERT INTO ResourceVO (uuid, resourceType, concreteResourceType) 
+            VALUES (model_service_image_uuid, 'ModelServiceImageVO', 'org.zstack.ai.entity.ModelServiceImageVO');
+        END IF;
+    END LOOP;
+    CLOSE all_services_cursor;
+
     OPEN vm_cursor;
     vm_read_loop: LOOP
         FETCH vm_cursor INTO service_uuid, vm_image_uuid;
@@ -45,17 +68,29 @@ BEGIN
         END IF;
 
         SELECT IFNULL(img.architecture, 'x86_64') INTO cpu_arch
-        FROM ImageVO img
+        FROM ImageVO img 
         WHERE img.uuid = vm_image_uuid
         LIMIT 1;
 
-        IF NOT EXISTS (SELECT 1 FROM ModelServiceImageVO WHERE modelServiceUuid = service_uuid AND vmImageUuid = vm_image_uuid) THEN
+        SELECT uuid INTO existing_uuid
+        FROM ModelServiceImageVO 
+        WHERE modelServiceUuid = service_uuid AND cpuArchitecture = cpu_arch
+        LIMIT 1;
+        
+        IF existing_uuid IS NULL THEN
             SET model_service_image_uuid = REPLACE(UUID(),'-','');
             INSERT INTO ModelServiceImageVO (uuid, modelServiceUuid, cpuArchitecture, vmImageUuid, createDate, lastOpDate)
             VALUES (model_service_image_uuid, service_uuid, cpu_arch, vm_image_uuid, NOW(), NOW());
-            INSERT INTO ResourceVO (uuid, resourceType, concreteResourceType)
+            
+            INSERT INTO ResourceVO (uuid, resourceType, concreteResourceType) 
             VALUES (model_service_image_uuid, 'ModelServiceImageVO', 'org.zstack.ai.entity.ModelServiceImageVO');
+        ELSE
+            UPDATE ModelServiceImageVO 
+            SET vmImageUuid = vm_image_uuid, lastOpDate = NOW()
+            WHERE uuid = existing_uuid;
         END IF;
+        
+        SET existing_uuid = NULL;
     END LOOP;
     CLOSE vm_cursor;
 
@@ -68,21 +103,67 @@ BEGIN
 
         SET cpu_arch = 'x86_64';
 
-        IF NOT EXISTS (SELECT 1 FROM ModelServiceImageVO WHERE modelServiceUuid = service_uuid AND dockerImage = docker_image) THEN
+        SELECT uuid INTO existing_uuid
+        FROM ModelServiceImageVO 
+        WHERE modelServiceUuid = service_uuid AND cpuArchitecture = cpu_arch
+        LIMIT 1;
+        
+        IF existing_uuid IS NULL THEN
             SET model_service_image_uuid = REPLACE(UUID(),'-','');
             INSERT INTO ModelServiceImageVO (uuid, modelServiceUuid, cpuArchitecture, dockerImage, createDate, lastOpDate)
             VALUES (model_service_image_uuid, service_uuid, cpu_arch, docker_image, NOW(), NOW());
-            INSERT INTO ResourceVO (uuid, resourceType, concreteResourceType)
+            
+            INSERT INTO ResourceVO (uuid, resourceType, concreteResourceType) 
             VALUES (model_service_image_uuid, 'ModelServiceImageVO', 'org.zstack.ai.entity.ModelServiceImageVO');
+        ELSE
+            UPDATE ModelServiceImageVO 
+            SET dockerImage = docker_image, lastOpDate = NOW()
+            WHERE uuid = existing_uuid;
         END IF;
+        
+        SET existing_uuid = NULL;
     END LOOP;
     CLOSE docker_cursor;
+
+    INSERT INTO zstack.OperationLog (content, type, resourceUuid)
+    VALUES (CONCAT('ModelServiceVO count: ', 
+                  (SELECT COUNT(*) FROM ModelServiceVO), 
+                  ', ModelServiceImageVO count: ',
+                  (SELECT COUNT(*) FROM ModelServiceImageVO)), 
+            'System', REPLACE(UUID(),'-',''));
 END$$
 DELIMITER ;
 
+-- 执行迁移并添加检查
 CALL migrate_model_service_image_data();
+
+-- 再次检查确保所有ModelServiceVO都有对应的ModelServiceImageVO
+DROP PROCEDURE IF EXISTS ensure_model_service_image_completeness;
+DELIMITER $$
+CREATE PROCEDURE ensure_model_service_image_completeness()
+BEGIN
+    INSERT INTO ModelServiceImageVO (uuid, modelServiceUuid, cpuArchitecture, createDate, lastOpDate)
+    SELECT REPLACE(UUID(),'-',''), ms.uuid, 'x86_64', NOW(), NOW()
+    FROM ModelServiceVO ms
+    WHERE NOT EXISTS (
+        SELECT 1 FROM ModelServiceImageVO msi WHERE msi.modelServiceUuid = ms.uuid
+    );
+    
+    -- 记录最终结果
+    INSERT INTO zstack.OperationLog (content, type, resourceUuid)
+    VALUES (CONCAT('Final ModelServiceVO count: ', 
+                  (SELECT COUNT(*) FROM ModelServiceVO), 
+                  ', ModelServiceImageVO count: ',
+                  (SELECT COUNT(*) FROM ModelServiceImageVO)), 
+            'System', REPLACE(UUID(),'-',''));
+END$$
+DELIMITER ;
+
+CALL ensure_model_service_image_completeness();
+DROP PROCEDURE IF EXISTS ensure_model_service_image_completeness;
 DROP PROCEDURE IF EXISTS migrate_model_service_image_data;
 
+-- 确认数据完整后再删除字段
 CALL DROP_COLUMN('ModelServiceVO', 'vmImageUuid');
 CALL DROP_COLUMN('ModelServiceVO', 'dockerImage');
 
