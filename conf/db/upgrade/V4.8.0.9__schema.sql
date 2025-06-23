@@ -1,0 +1,1 @@
+CALL ADD_COLUMN('VolumeBackupVO', 'hypervisorType', 'varchar(255)', 0, 'kvm');
