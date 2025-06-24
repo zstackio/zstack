@@ -242,7 +242,7 @@ public class QueryMore {
     }
 
     public QueryMore notIn(SingularAttribute<?, ?> attr, Q subQuery) {
-        return in(attr, subQuery.toQueryMore());
+        return notIn(attr, subQuery.toQueryMore());
     }
 
     public QueryMore isNull(SingularAttribute<?, ?> attr) {
