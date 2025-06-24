@@ -20,6 +20,14 @@ public class CephPluginConnectionView  {
         return this.pluginType;
     }
 
+    public java.util.Map pluginProperties;
+    public void setPluginProperties(java.util.Map pluginProperties) {
+        this.pluginProperties = pluginProperties;
+    }
+    public java.util.Map getPluginProperties() {
+        return this.pluginProperties;
+    }
+
     public java.lang.String managementNodeUuid;
     public void setManagementNodeUuid(java.lang.String managementNodeUuid) {
         this.managementNodeUuid = managementNodeUuid;
