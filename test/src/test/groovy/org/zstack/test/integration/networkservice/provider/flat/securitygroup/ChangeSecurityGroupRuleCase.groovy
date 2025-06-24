@@ -374,7 +374,7 @@ class ChangeSecurityGroupRuleCase extends SubCase {
         r.description = 'ingress-rule-1'
         r.ipVersion = 4
         r.dstPortRange = '300-400'
-        r.srcIpRange = '3.3.3.3'
+        r.srcIpRange = '3.3.3.0/24\n'
         r.protocol = 'TCP'
 
         sg4 = addSecurityGroupRule {
