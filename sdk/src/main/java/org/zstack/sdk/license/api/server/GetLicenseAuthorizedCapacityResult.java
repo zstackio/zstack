@@ -1,6 +1,7 @@
 package org.zstack.sdk.license.api.server;
 
 import org.zstack.sdk.license.header.server.TotalLicenseAuthorizedCapacityView;
+import org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityServerUsageView;
 
 public class GetLicenseAuthorizedCapacityResult {
     public TotalLicenseAuthorizedCapacityView total;
@@ -17,6 +18,14 @@ public class GetLicenseAuthorizedCapacityResult {
     }
     public java.util.List getClients() {
         return this.clients;
+    }
+
+    public LicenseAuthorizedCapacityServerUsageView server;
+    public void setServer(LicenseAuthorizedCapacityServerUsageView server) {
+        this.server = server;
+    }
+    public LicenseAuthorizedCapacityServerUsageView getServer() {
+        return this.server;
     }
 
 }
