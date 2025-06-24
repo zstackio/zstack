@@ -408,6 +408,7 @@ public class SourceClassMap {
 			put("org.zstack.license.header.server.LicenseAuthorizedCapacityClientAddOnUsageView", "org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityClientAddOnUsageView");
 			put("org.zstack.license.header.server.LicenseAuthorizedCapacityClientUsageView", "org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityClientUsageView");
 			put("org.zstack.license.header.server.LicenseAuthorizedCapacityInventory", "org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityInventory");
+			put("org.zstack.license.header.server.LicenseAuthorizedCapacityServerUsageView", "org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityServerUsageView");
 			put("org.zstack.license.header.server.LicenseAuthorizedCapacityUsageDetailView", "org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityUsageDetailView");
 			put("org.zstack.license.header.server.LicenseAuthorizedNodeInventory", "org.zstack.sdk.license.header.server.LicenseAuthorizedNodeInventory");
 			put("org.zstack.license.header.server.TotalLicenseAuthorizedCapacityView", "org.zstack.sdk.license.header.server.TotalLicenseAuthorizedCapacityView");
@@ -1373,6 +1374,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityClientAddOnUsageView", "org.zstack.license.header.server.LicenseAuthorizedCapacityClientAddOnUsageView");
 			put("org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityClientUsageView", "org.zstack.license.header.server.LicenseAuthorizedCapacityClientUsageView");
 			put("org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityInventory", "org.zstack.license.header.server.LicenseAuthorizedCapacityInventory");
+			put("org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityServerUsageView", "org.zstack.license.header.server.LicenseAuthorizedCapacityServerUsageView");
 			put("org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityUsageDetailView", "org.zstack.license.header.server.LicenseAuthorizedCapacityUsageDetailView");
 			put("org.zstack.sdk.license.header.server.LicenseAuthorizedNodeInventory", "org.zstack.license.header.server.LicenseAuthorizedNodeInventory");
 			put("org.zstack.sdk.license.header.server.TotalLicenseAuthorizedCapacityView", "org.zstack.license.header.server.TotalLicenseAuthorizedCapacityView");
