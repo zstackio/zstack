@@ -124,20 +124,11 @@ BEGIN
         SET existing_uuid = NULL;
     END LOOP;
     CLOSE docker_cursor;
-
-    INSERT INTO zstack.OperationLog (content, type, resourceUuid)
-    VALUES (CONCAT('ModelServiceVO count: ', 
-                  (SELECT COUNT(*) FROM ModelServiceVO), 
-                  ', ModelServiceImageVO count: ',
-                  (SELECT COUNT(*) FROM ModelServiceImageVO)), 
-            'System', REPLACE(UUID(),'-',''));
 END$$
 DELIMITER ;
 
--- 执行迁移并添加检查
 CALL migrate_model_service_image_data();
 
--- 再次检查确保所有ModelServiceVO都有对应的ModelServiceImageVO
 DROP PROCEDURE IF EXISTS ensure_model_service_image_completeness;
 DELIMITER $$
 CREATE PROCEDURE ensure_model_service_image_completeness()
@@ -148,14 +139,6 @@ BEGIN
     WHERE NOT EXISTS (
         SELECT 1 FROM ModelServiceImageVO msi WHERE msi.modelServiceUuid = ms.uuid
     );
-    
-    -- 记录最终结果
-    INSERT INTO zstack.OperationLog (content, type, resourceUuid)
-    VALUES (CONCAT('Final ModelServiceVO count: ', 
-                  (SELECT COUNT(*) FROM ModelServiceVO), 
-                  ', ModelServiceImageVO count: ',
-                  (SELECT COUNT(*) FROM ModelServiceImageVO)), 
-            'System', REPLACE(UUID(),'-',''));
 END$$
 DELIMITER ;
 
