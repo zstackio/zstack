@@ -88,6 +88,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         scap.setSupport(true);
         scap.setArrangementType(VolumeSnapshotCapability.VolumeSnapshotArrangementType.INDIVIDUAL);
         scap.setSupportCreateOnHypervisor(false);
+        scap.setSupportLazyDelete(false);
         capabilities.setSnapshotCapability(scap);
         capabilities.setSupportCloneFromVolume(false);
         capabilities.setSupportStorageQos(false);
@@ -732,6 +733,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
         stats.setSize(SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()));
         stats.setActualSize(vol.getStatus().getAllocatedSizeByte());
+        stats.setParentUri(srcInstallPath);
         comp.success(stats);
     }
 
