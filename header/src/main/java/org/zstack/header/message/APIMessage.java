@@ -219,6 +219,20 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
                 value = ((String) value).trim();
                 f.set(this, value);
             }
+
+            if (value instanceof List && !at.noTrim()) {
+                List<?> valueList = (List<?>) value;
+                if (!valueList.isEmpty()) {
+                    boolean allStrings = valueList.stream().allMatch(element -> element instanceof String);
+                    if (allStrings) {
+                        List<String> valueNew = new ArrayList<>();
+                        for (Object element : valueList) {
+                            valueNew.add(((String) element).trim());
+                        }
+                        f.set(this, valueNew);
+                    }
+                }
+            }
             
             for (ApiMessageValidator validator : validators) {
                 validator.validate(this, f, value, at);

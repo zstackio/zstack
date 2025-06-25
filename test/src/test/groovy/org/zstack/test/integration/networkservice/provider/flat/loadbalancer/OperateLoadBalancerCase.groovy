@@ -17,6 +17,7 @@ import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.LoadBalancerInventory
 import org.zstack.sdk.LoadBalancerListenerInventory
 import org.zstack.sdk.SystemTagInventory
+import org.zstack.sdk.TagInventory
 import org.zstack.sdk.VipInventory
 import org.zstack.sdk.VirtualRouterOfferingInventory
 import org.zstack.sdk.VirtualRouterVmInventory
@@ -296,13 +297,31 @@ class OperateLoadBalancerCase extends SubCase {
         assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.LB_NETWORK_SERVICE_TYPE
         assert Q.New(VipPeerL3NetworkRefVO.class).eq(VipPeerL3NetworkRefVO_.vipUuid, vip.getUuid()).count() == 0
 
+        List<String> httpAlgos = ["deflate","gzip", "raw-deflate"]
+        List<String> httpAlgosInput = ["deflate","gzip", "raw-deflate\n"]
         def listener = createLoadBalancerListener {
             loadBalancerUuid = lb.uuid
             name = "listener"
             instancePort = 22
             loadBalancerPort = 22
-            protocol = LoadBalancerConstants.LB_PROTOCOL_TCP
+            protocol = LoadBalancerConstants.LB_PROTOCOL_HTTP
+            httpCompressAlgos = httpAlgosInput
         } as LoadBalancerListenerInventory
+
+        String httpAlgosTag = String.join(" ", httpAlgos)
+        List<TagInventory> tags = querySystemTag {
+            conditions = [
+                "resourceUuid=${listener.uuid}",
+                "tag=httpCompressAlgos::${httpAlgosTag}".toString()
+        ]}
+        assert tags.size() == 1
+        httpAlgosTag = String.join(" ", httpAlgosInput)
+        tags = querySystemTag {
+            conditions = [
+                    "resourceUuid=${listener.uuid}",
+                    "tag=httpCompressAlgos::${httpAlgosTag}".toString()
+            ]}
+        assert tags.size() == 0
 
         def result = getCandidateVmNicsForLoadBalancer {
             listenerUuid = listener.uuid
