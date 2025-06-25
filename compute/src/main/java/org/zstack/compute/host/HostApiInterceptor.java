@@ -25,6 +25,8 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
+import java.util.Set;
+
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
@@ -162,6 +164,57 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
         }
         msg.setPassword(proxyHardware.getPassword());
         msg.setUsername(msg.getUsername() != null ? msg.getUsername() : proxyHardware.getUsername());
+
+        validatePath(msg.getPath());
+        validateMountPoint(msg.getMountPoint());
+    }
+
+    private void validatePath(String path) {
+        if (path == null || path.isEmpty()) {
+            throw new ApiMessageInterceptionException(operr("path cannot be empty"));
+        }
+
+        if (!path.startsWith("/")) {
+            throw new ApiMessageInterceptionException(operr("path must be an absolute path (start with '/')\""));
+        }
+
+        if (path.contains("..") || path.contains("//")) {
+            throw new ApiMessageInterceptionException(operr("invalid path traversal detected"));
+        }
+    }
+
+    private void validateMountPoint(String mountPoint) {
+        if (mountPoint == null || mountPoint.isEmpty()) {
+            throw new ApiMessageInterceptionException(operr("mountPoint cannot be empty"));
+        }
+
+        if (!mountPoint.startsWith("/")) {
+            throw new ApiMessageInterceptionException(operr("mount point must be an absolute path (start with '/')"));
+        }
+
+        if (mountPoint.contains("..") || mountPoint.contains("//")) {
+            throw new ApiMessageInterceptionException(operr("path traversal detected in mount point"));
+        }
+
+        String safePattern = "^[a-zA-Z0-9_\\-./]+$";
+        if (!mountPoint.matches(safePattern)) {
+            throw new ApiMessageInterceptionException(operr(
+                    "the mount point must strictly follow the security pattern: '^[a-zA-Z0-9_\\-./]+$'. " +
+                            "this requires: \n" +
+                            "1. only alphanumeric characters [a-z, A-Z, 0-9]\n" +
+                            "2. limited special characters: hyphen (-), underscore (_), period (.), and forward slash (/)\n" +
+                            "3. must be a valid absolute path starting with '/'\n\n" +
+                            "valid examples:\n" +
+                            "  /mnt/data\n" +
+                            "  /volumes/drive01\n" +
+                            "  /backup-2023.disk\n\n" +
+                            "invalid value detected: '" + mountPoint + "'"
+            ));
+        }
+
+        if (mountPoint.endsWith("/") && !mountPoint.equals("/")) {
+            throw new ApiMessageInterceptionException(operr("mountPoint should not end with '/' except root directory"));
+        }
     }
 
     private ProxyHardware getProxyHardware(String hostname) {

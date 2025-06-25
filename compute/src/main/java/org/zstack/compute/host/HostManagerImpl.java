@@ -536,37 +536,93 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             return;
         }
 
-        List<String> commands = new ArrayList<>();
-        commands.add(String.format("mkdir -p '%s'", msg.getMountPoint()));
-        commands.add(buildMkfsCommd(msg.getFilesystemType(), msg.getPath()));
-        commands.add(String.format("mount | grep -w '%s' | grep -w '%s' || mount '%s' '%s'",
-                msg.getPath(), msg.getMountPoint(), msg.getPath(), msg.getMountPoint()));
-        commands.add(String.format("grep -w '%s' /etc/fstab | grep -w '%s' | grep -w '%s' || echo '%s %s %s defaults 0 0' >> /etc/fstab",
-                msg.getPath(), msg.getMountPoint(), msg.getFilesystemType(), msg.getPath(), msg.getMountPoint(), msg.getFilesystemType()));
-
         Ssh ssh = new Ssh();
         ssh.setUsername(msg.getUsername()).setPassword(msg.getPassword()).setPort(msg.getSshPort())
                 .setHostname(msg.getHostName()).setTimeout(20);
         try {
-            for (String command : commands) {
-                if (command.startsWith("mkfs")) {
-                    long timeout = (msg.getMessageDeadline() - new Date().getTime()) / 1000 - 30;
-                    command = String.format("timeout %d %s", timeout, command);
-                }
-                SshResult ret = ssh.command(command).run();
-                ssh.reset();
-                if (ret.getReturnCode() != 0) {
-                    event.setError(operr("failed to execute the command[%s], " +
-                                    "because [stderr:%s, stdout:%s, exitErrorMessage:%s]",
-                            command, ret.getStderr(), ret.getStdout(), ret.getExitErrorMessage()));
-                    event.setSuccess(false);
-                    break;
-                }
+            // 1 Check if mount point is already mounted
+            SshResult mountPointCheck = ssh.command(String.format("findmnt -n -o SOURCE '%s'", msg.getMountPoint())).run();
+            ssh.reset();
+            if (mountPointCheck.getReturnCode() == 0 && !mountPointCheck.getStdout().trim().isEmpty()) {
+                throw new OperationFailureException(operr("mountPoint %s is already mount on device %s",
+                        msg.getMountPoint(), mountPointCheck.getStdout().trim()));
             }
+
+            // 2 Check if device is already mounted
+            SshResult devicePathCheck = ssh.command(String.format("findmnt -n -o TARGET '%s'", msg.getPath())).run();
+            ssh.reset();
+            if (devicePathCheck.getReturnCode() == 0 && !devicePathCheck.getStdout().trim().isEmpty()) {
+                throw new OperationFailureException(operr("device %s is already mount on mountPoint %s",
+                        msg.getPath(), devicePathCheck.getStdout().trim()));
+            }
+
+            // 3 Create mount point directory
+            executeSshCommand(ssh, String.format("mkdir -p '%s'", msg.getMountPoint()));
+
+            // 4 Check if device already has a filesystem
+            // ------------------------------------------------------------------------
+            // Interpreting blkid exit codes:
+            //   0: Device contains a recognized filesystem (success with output)
+            //   2: Device exists but contains NO filesystem (unformatted)
+            //   1/4: Error state (invalid device or unrecognized filesystem)
+            // ------------------------------------------------------------------------
+            SshResult blkidResult = ssh.command(String.format("blkid -p -o value -s TYPE '%s'", msg.getPath())).run();
+            ssh.reset();
+            String fsType = blkidResult.getStdout().trim();
+            int exitCode = blkidResult.getReturnCode();
+            if (exitCode == 0) {
+                // Throw security-conscious exception to prevent accidental format
+                if (!msg.isSkipFormat()) {
+                    throw new OperationFailureException(
+                            operr("device [%s] already has an existing %s filesystem. to preserve existing data and use this filesystem without formatting, set the 'skipFormat' parameter to true in your request.", msg.getPath(), fsType));
+                }
+            } else if (exitCode == 2) {
+                // Device is unformatted - proceed to create filesystem
+                executeSshCommand(ssh, buildMkfsCommd(msg.getFilesystemType(), msg.getPath()));
+            } else {
+                // Handle unexpected error states
+                throw new OperationFailureException(operr("failed to check the filesystem on device [%s]: exit code=%d, error=%s", msg.getPath(), exitCode, blkidResult.getStderr().trim()
+                ));
+            }
+
+            // 5 Retrieve device UUID
+            SshResult ret = executeSshCommand(ssh, String.format("blkid -s UUID -o value '%s'", msg.getPath()));
+            String uuid = ret.getStdout().trim();
+            if (uuid.isEmpty()) {
+                throw new OperationFailureException(operr("failed to get UUID for device %s", msg.getPath()));
+            }
+
+            // 6 Mount device using UUID
+            executeSshCommand(ssh, String.format("mount -U '%s' '%s'", uuid, msg.getMountPoint()));
+
+            String fstabEntry = String.format("UUID=%s %s %s defaults 0 0", uuid, msg.getMountPoint(), msg.getFilesystemType());
+
+            // 7 Check if fstabEntry already exists in /etc/fstab
+            String checkCommand = String.format("grep -F '%s' /etc/fstab", fstabEntry);
+            SshResult fstabCheck = ssh.command(checkCommand).run();
+            ssh.reset();
+            if (fstabCheck.getReturnCode() == 0 && fstabCheck.getStdout().trim().equals(fstabEntry)) {
+                logger.info(String.format("fstabEntry[%s] already exists in fstab", fstabEntry));
+                bus.publish(event);
+                return;
+            }
+
+            // 8 Add fstabEntry to fstab
+            executeSshCommand(ssh, String.format("echo '%s' >> /etc/fstab", fstabEntry));
+
             bus.publish(event);
         } finally {
             ssh.close();
         }
+    }
+
+    private SshResult executeSshCommand(Ssh ssh, String command) {
+        SshResult ret = ssh.command(command).run();
+        ssh.reset();
+        if (ret.getReturnCode() != 0) {
+            throw new CloudRuntimeException(String.format("SSH command failed [%s]: stderr=%s, stdout=%s", command, ret.getStderr(), ret.getStdout()));
+        }
+        return ret;
     }
 
     private void handle(final APIGetHostBlockDevicesMsg msg) {

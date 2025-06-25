@@ -46,6 +46,9 @@ public class MountBlockDeviceAction extends AbstractAction {
     @Param(required = false, validValues = {"ext4","xfs"}, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String filesystemType = "xfs";
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean skipFormat = false;
+
     @Param(required = false)
     public java.util.List systemTags;
 
