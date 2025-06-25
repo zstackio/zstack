@@ -86,15 +86,6 @@ doc {
 					values ("ext4","xfs")
 				}
 				column {
-					name "skipFormat"
-					enclosedIn "params"
-					desc "跳过格式化，仅硬盘有文件系统的情况下有效"
-					location "body"
-					type "boolean"
-					optional true
-					since "4.10.16"
-				}
-				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
