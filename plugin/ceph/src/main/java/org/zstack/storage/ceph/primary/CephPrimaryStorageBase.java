@@ -73,6 +73,7 @@ import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFa
 import org.zstack.storage.ceph.primary.capacity.CephOsdGroupCapacityHelper;
 import org.zstack.storage.primary.*;
 import org.zstack.storage.snapshot.VolumeSnapshotGlobalConfig;
+import org.zstack.storage.volume.FlattenVolumeGC;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTag;
@@ -5153,6 +5154,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 String snapShotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
                 // get volume path from snapshot path, just split @
                 String volumePath = snapShotPath.split("@")[0];
+                final String newVolumePath = makeVolumeInstallPathByTargetPool(Platform.getUuid(), getTargetPoolNameFromAllocatedUrl(snapShotPath));
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "revert-volume-from-snapshot";
@@ -5203,7 +5205,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     public void run(final FlowTrigger trigger, Map data) {
                         TaskProgressRange stage = markTaskStage(parentStage, UNDO_SNAPSHOT_CREATION_STAGE);
 
-                        final String newVolumePath = makeVolumeInstallPathByTargetPool(Platform.getUuid(), getTargetPoolNameFromAllocatedUrl(snapShotPath));
                         VolumeSnapshotInventory sp = msg.getSnapshot();
                         cloneAndProtectSnaphost(sp.getPrimaryStorageInstallPath(), newVolumePath, new ReturnValueCompletion<CloneRsp>(trigger) {
                             @Override
@@ -5219,6 +5220,41 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 trigger.fail(errorCode);
                             }
                         });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "flatten-volume";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return !fastRevert;
+                    }
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        FlattenCmd cmd = new FlattenCmd();
+                        cmd.path = newVolumePath;
+
+                        httpCall(FLATTEN_PATH, cmd, FlattenRsp.class, new ReturnValueCompletion<FlattenRsp>(null) {
+                            @Override
+                            public void success(FlattenRsp rsp) {
+                                logger.debug(String.format("successfully flattened %s", newVolumePath));
+                            }
+
+                            @Override
+                            public void fail(ErrorCode err) {
+                                logger.debug(String.format("failed to flatten %s, creating flatten GC", newVolumePath));
+                                VolumeInventory volume = msg.getVolume();
+                                volume.setInstallPath(newVolumePath);
+                                FlattenVolumeGC flattenVolumeGC = new FlattenVolumeGC();
+                                flattenVolumeGC.NAME = String.format("gc-ceph-%s-volume-path-%s", self.getUuid(), volume.getInstallPath());
+                                flattenVolumeGC.volume = volume;
+                                flattenVolumeGC.deduplicateSubmit(CephGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
+                            }
+                        });
+
+                        trigger.next();
                     }
                 });
 
