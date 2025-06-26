@@ -17,28 +17,12 @@ public class ZbsHelper {
         }
     }
 
-    public static String buildVolumePath(String physicalPoolName, String logicalPoolName, String volId) {
+    public static String buildVolumePath(String physicalPool, String logicalPool, String volId) {
         String base = volId.replace("-", "");
-        return String.format(ZbsConstants.ZBS_CBD_LUN_PATH_FORMAT, physicalPoolName, logicalPoolName, base);
+        return String.format(ZbsConstants.ZBS_CBD_LUN_PATH_FORMAT, physicalPool, logicalPool, base);
     }
 
-    public static String getLogicalPoolNameFromPath(String url) {
-        return url.split("/")[1];
-    }
-
-    public static String getPhysicalPoolNameFromPath(String url) {
-        return url.split("/")[0].split(":")[1];
-    }
-
-    public static String getLunNameFromPath(String url) {
-        return url.split("/")[2].split("@")[0];
-    }
-
-    public static String getSnapshotNameFromPath(String url) {
-        return url.split("/")[2].split("@")[1];
-    }
-
-    public static String getVolumeInstallPathFromSnapshot(String snapshotInstallPath) {
-        return snapshotInstallPath.split("@")[0];
+    public static String getVolumeFromSnapshotPath(String path) {
+        return path.split("@")[0];
     }
 }
