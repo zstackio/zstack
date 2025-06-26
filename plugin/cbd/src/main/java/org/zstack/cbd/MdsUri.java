@@ -22,8 +22,8 @@ public class MdsUri {
     private String hostname;
     private int mdsPort = DEFAULT_MDS_PORT;
     private int sshPort = DEFAULT_SSH_PORT;
-    private String sshUsername;
-    private String sshPassword;
+    private String username;
+    private String password;
 
     private static final String MDS_URL_FORMAT = "sshUsername:sshPassword@hostname:[sshPort]/?[mdsPort=]";
     private static final Integer DEFAULT_MDS_PORT = 6666;
@@ -73,8 +73,8 @@ public class MdsUri {
                 throw new OperationFailureException(operr("invalid mdsUrl[%s]. SSH username and password must be separated by ':' and cannot be empty. A valid monUrl format is %s", url, MDS_URL_FORMAT));
             }
 
-            sshUsername = ssh[0];
-            sshPassword = ssh[1];
+            username = ssh[0];
+            password = ssh[1];
 
             URI uri = new URI(String.format("ssh://%s", rest));
             hostname = uri.getHost();
@@ -113,20 +113,20 @@ public class MdsUri {
         this.mdsPort = mdsPort;
     }
 
-    public String getSshUsername() {
-        return sshUsername;
+    public String getUsername() {
+        return username;
     }
 
-    public void setSshUsername(String sshUsername) {
-        this.sshUsername = sshUsername;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
-    public String getSshPassword() {
-        return sshPassword;
+    public String getPassword() {
+        return password;
     }
 
-    public void setSshPassword(String sshPassword) {
-        this.sshPassword = sshPassword;
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public int getSshPort() {
