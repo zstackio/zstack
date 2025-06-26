@@ -559,31 +559,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             // 3 Create mount point directory
             executeSshCommand(ssh, String.format("mkdir -p '%s'", msg.getMountPoint()));
 
-            // 4 Check if device already has a filesystem
-            // ------------------------------------------------------------------------
-            // Interpreting blkid exit codes:
-            //   0: Device contains a recognized filesystem (success with output)
-            //   2: Device exists but contains NO filesystem (unformatted)
-            //   1/4: Error state (invalid device or unrecognized filesystem)
-            // ------------------------------------------------------------------------
-            SshResult blkidResult = ssh.command(String.format("blkid -p -o value -s TYPE '%s'", msg.getPath())).run();
-            ssh.reset();
-            String fsType = blkidResult.getStdout().trim();
-            int exitCode = blkidResult.getReturnCode();
-            if (exitCode == 0) {
-                // Throw security-conscious exception to prevent accidental format
-                if (!msg.isSkipFormat()) {
-                    throw new OperationFailureException(
-                            operr("device [%s] already has an existing %s filesystem. to preserve existing data and use this filesystem without formatting, set the 'skipFormat' parameter to true in your request.", msg.getPath(), fsType));
-                }
-            } else if (exitCode == 2) {
-                // Device is unformatted - proceed to create filesystem
-                executeSshCommand(ssh, buildMkfsCommd(msg.getFilesystemType(), msg.getPath()));
-            } else {
-                // Handle unexpected error states
-                throw new OperationFailureException(operr("failed to check the filesystem on device [%s]: exit code=%d, error=%s", msg.getPath(), exitCode, blkidResult.getStderr().trim()
-                ));
-            }
+            // 4 Format and execute mkfs command
+            executeSshCommand(ssh, buildMkfsCommd(msg.getFilesystemType(), msg.getPath()));
 
             // 5 Retrieve device UUID
             SshResult ret = executeSshCommand(ssh, String.format("blkid -s UUID -o value '%s'", msg.getPath()));
