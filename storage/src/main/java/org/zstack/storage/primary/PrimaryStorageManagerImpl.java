@@ -128,6 +128,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         });
     }
 
+    public PrimaryStorageFactory getPrimaryStorageFactory(String type) {
+        return primaryStorageFactories.get(type);
+    }
+
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIAddPrimaryStorageMsg) {
             handle((APIAddPrimaryStorageMsg) msg);

@@ -51,4 +51,9 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="ExternalPrimaryStorageChangeVolumeProcessingMethodExtension" class="org.zstack.storage.addon.primary.ExternalPrimaryStorageChangeVolumeProcessingMethodExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.volume.ChangeVolumeProcessingMethodExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>

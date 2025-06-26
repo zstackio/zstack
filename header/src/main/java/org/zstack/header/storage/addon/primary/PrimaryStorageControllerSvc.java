@@ -15,6 +15,7 @@ import java.util.List;
 public interface PrimaryStorageControllerSvc {
     String getIdentity();
     void connect(String config, String url, ReturnValueCompletion<LinkedHashMap> comp);
+    void ping(Completion completion);
 
     void reportCapacity(ReturnValueCompletion<StorageCapacity> comp);
     void reportHealthy(ReturnValueCompletion<StorageHealthy> comp);
@@ -31,6 +32,7 @@ public interface PrimaryStorageControllerSvc {
     void copyVolume(String srcInstallPath, CreateVolumeSpec dst, ReturnValueCompletion<VolumeStats>comp);
     void flattenVolume(String installPath, ReturnValueCompletion<VolumeStats>comp);
 
+    // support uri or path
     void stats(String installPath, ReturnValueCompletion<VolumeStats> comp);
 
     void batchStats(Collection<String> installPath, ReturnValueCompletion<List<VolumeStats>> comp);
@@ -39,13 +41,15 @@ public interface PrimaryStorageControllerSvc {
     void setVolumeQos(BaseVolumeInfo v, Completion comp);
     void deleteVolumeQos(BaseVolumeInfo v, Completion comp);
     void export(ExportSpec espec, VolumeProtocol protocol, ReturnValueCompletion<RemoteTarget> comp);
-    void unexport(ExportSpec espec, VolumeProtocol protocol, Completion comp);
+    void unexport(ExportSpec espec, RemoteTarget remoteTarget, VolumeProtocol protocol, Completion comp);
 
     void createSnapshot(CreateVolumeSnapshotSpec spec, ReturnValueCompletion<VolumeSnapshotStats> comp);
     void deleteSnapshot(String installPath, Completion comp);
+    void expungeSnapshot(String installPath, Completion comp);
     void revertVolumeSnapshot(String snapshotInstallPath, ReturnValueCompletion<VolumeStats> comp);
 
     void validateConfig(String config);
 
     void setTrashExpireTime(int timeInSeconds, Completion completion);
+    void onFirstAdditionConfigure(Completion completion);
 }

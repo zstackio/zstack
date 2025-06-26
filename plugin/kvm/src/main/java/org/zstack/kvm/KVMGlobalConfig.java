@@ -130,7 +130,6 @@ public class KVMGlobalConfig {
     @BindResourceConfig({HostVO.class})
     public static GlobalConfig HOST_KSM = new GlobalConfig(CATEGORY, "host.ksm");
 
-    @GlobalConfigValidation(validValues = {"true", "false"})
     @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "use 'force' mode when stop VM without operating system")
     public static GlobalConfig STOP_VM_WITHOUT_OS_BY_FORCE_MODE =
             new GlobalConfig(CATEGORY, "stop.vm.without.os.by.force.mode");
@@ -139,4 +138,9 @@ public class KVMGlobalConfig {
     @GlobalConfigDef(defaultValue = "1000000",type = Long.class)
     @BindResourceConfig(VmInstanceVO.class)
     public static GlobalConfig VM_CPU_QUOTA = new GlobalConfig(CATEGORY,"vm.cpu.quota");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "false", description = "restart kvm host libvirtd service or not")
+    @BindResourceConfig({HostVO.class, ClusterVO.class})
+    public static GlobalConfig RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE = new GlobalConfig(CATEGORY, "reconnect.host.restart.libvirtd.service");
 }

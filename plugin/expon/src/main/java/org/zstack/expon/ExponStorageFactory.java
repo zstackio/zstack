@@ -1,10 +1,12 @@
 package org.zstack.expon;
 
 import org.zstack.core.singleflight.MultiNodeSingleFlightImpl;
+import org.zstack.externalStorage.primary.ExternalStorageFencerType;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.volume.VolumeAfterExpungeExtensionPoint;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeProtocol;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ExponStorageFactory implements ExternalPrimaryStorageSvcBuilder, BackupStorageSelector, VolumeAfterExpungeExtensionPoint {
+    public static final ExternalStorageFencerType FENCER_TYPE = new ExternalStorageFencerType(ExponConstants.IDENTITY, VolumeProtocol.iSCSI.toString());
 
     private List<String> preferBackupStorageTypes;
 
@@ -21,7 +24,7 @@ public class ExponStorageFactory implements ExternalPrimaryStorageSvcBuilder, Ba
     @Override
     public PrimaryStorageControllerSvc buildControllerSvc(ExternalPrimaryStorageVO vo) {
         ExponStorageController svc = new ExponStorageController(vo);
-        MultiNodeSingleFlightImpl.register(svc.apiHelper);
+        MultiNodeSingleFlightImpl.register(svc.getApiHelper());
         controllers.put(vo.getUuid(), svc);
         return svc;
     }
@@ -34,7 +37,7 @@ public class ExponStorageFactory implements ExternalPrimaryStorageSvcBuilder, Ba
     @Override
     public void discover(String url, String config, ReturnValueCompletion<LinkedHashMap> completion) {
         ExponStorageController controller = new ExponStorageController(url);
-        MultiNodeSingleFlightImpl.register(controller.apiHelper);
+        MultiNodeSingleFlightImpl.register(controller.getApiHelper());
         controller.connect(config, url, completion);
     }
 

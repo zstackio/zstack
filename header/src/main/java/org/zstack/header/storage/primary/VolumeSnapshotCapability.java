@@ -12,13 +12,34 @@ public class VolumeSnapshotCapability {
         this.supportCreateOnHypervisor = supportCreateOnHypervisor;
     }
 
+    public boolean isSupportLazyDelete() {
+        return supportLazyDelete;
+    }
+
+    public void setSupportLazyDelete(boolean supportLazyDelete) {
+        this.supportLazyDelete = supportLazyDelete;
+    }
+
     public static enum VolumeSnapshotArrangementType {
         CHAIN,
         INDIVIDUAL
     }
 
     private boolean support;
+
+    /***
+     * Whether the primary storage supports creating volume snapshots by hypervisor.
+     */
     private boolean supportCreateOnHypervisor;
+
+
+    /***
+     * Whether the primary storage supports lazy delete for volume snapshots.
+     * even if snapshot is not ready for delete, it can be auto-deleted in storage backend.
+     * so client can delete snapshot immediately without waiting for reference cleaned.
+     */
+    private boolean supportLazyDelete;
+
     private VolumeSnapshotArrangementType arrangementType;
 
     public boolean isSupport() {

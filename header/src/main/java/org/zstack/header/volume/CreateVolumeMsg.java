@@ -15,6 +15,7 @@ public class CreateVolumeMsg extends NeedReplyMessage implements VolumeCreateMes
     private String diskOfferingUuid;
     private String format;
     private String resourceUuid;
+    private String protocol;
 
     public String getFormat() {
         return format;
@@ -120,5 +121,13 @@ public class CreateVolumeMsg extends NeedReplyMessage implements VolumeCreateMes
 
     public void setActualSize(long actualSize) {
         this.actualSize = actualSize;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
     }
 }

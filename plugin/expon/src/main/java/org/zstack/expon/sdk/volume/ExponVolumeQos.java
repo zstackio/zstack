@@ -16,11 +16,11 @@ public class ExponVolumeQos implements ExponParam {
     private Long readBpsLimit;
     @Param(required = false, numberRange = {10485760, 107374182400L})
     private Long writeBpsLimit;
-    @Param(required = false, numberRange = {1000, 10000000})
+    @Param(required = false, numberRange = {100, 10000000})
     private Long iopsLimit;
-    @Param(required = false, numberRange = {1000, 10000000})
+    @Param(required = false, numberRange = {100, 10000000})
     private Long readIopsLimit;
-    @Param(required = false, numberRange = {1000, 10000000})
+    @Param(required = false, numberRange = {100, 10000000})
     private Long writeIopsLimit;
 
     public static ExponVolumeQos valueOf(VolumeQos qos) {
