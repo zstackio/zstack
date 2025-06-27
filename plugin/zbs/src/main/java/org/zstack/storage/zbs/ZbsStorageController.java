@@ -16,9 +16,7 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -232,48 +230,32 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void connect(String cfg, String url, ReturnValueCompletion<LinkedHashMap> completion) {
-        changeStatus(PrimaryStorageStatus.Connecting);
-
-        reloadDbInfo();
-        if (config.getLogicalPoolName().contains("/")) {
-            throw new CloudRuntimeException(String.format("invalid logical pool name[%s]", config.getLogicalPoolName()));
-        }
-
-        List<MdsInfo> mdsInfos = new ArrayList<>();
-        for (String mdsUrl : config.getMdsUrls()) {
-            MdsUri uri = new MdsUri(mdsUrl);
-            MdsInfo mdsInfo = new MdsInfo();
-            mdsInfo.setUsername(uri.getUsername());
-            mdsInfo.setPassword(uri.getPassword());
-            mdsInfo.setPort(uri.getSshPort());
-            mdsInfo.setAddr(uri.getHostname());
-            mdsInfos.add(mdsInfo);
-        }
-
         AddonInfo newAddonInfo = new AddonInfo();
+        Config current = JSONObjectUtil.toObject(cfg, Config.class);
+        List<MdsInfo> mdsInfos = parseMdsInfos(current.getMdsUrls());
         newAddonInfo.setMdsInfos(mdsInfos);
-        final List<ZbsPrimaryStorageMdsBase> mds = CollectionUtils.transformToList(newAddonInfo.getMdsInfos(),
+        final List<ZbsPrimaryStorageMdsBase> mdsList = CollectionUtils.transformToList(newAddonInfo.getMdsInfos(),
                 ZbsPrimaryStorageMdsBase::new);
 
         class Connector {
             private final ErrorCodeList errorCodes = new ErrorCodeList();
-            private final Iterator<ZbsPrimaryStorageMdsBase> it = mds.iterator();
+            private final Iterator<ZbsPrimaryStorageMdsBase> it = mdsList.iterator();
 
             void connect(final FlowTrigger trigger) {
                 if (!it.hasNext()) {
-                    if (errorCodes.getCauses().size() == mds.size()) {
+                    if (errorCodes.getCauses().size() == mdsList.size()) {
                         if (errorCodes.getCauses().isEmpty()) {
-                            trigger.fail(operr("unable to connect to the zbs primary storage[uuid:%s]," +
-                                    " failed to connect all zbs mds", self.getUuid()));
+                            trigger.fail(operr("unable to connect to the ZBS primary storage[uuid:%s]," +
+                                    " failed to connect all MDS", self.getUuid()));
                         } else {
-                            trigger.fail(operr(errorCodes, "unable to connect to the zbs primary storage[uuid:%s]," +
-                                            " failed to connect all zbs mds",
+                            trigger.fail(operr(errorCodes, "unable to connect to the ZBS primary storage[uuid:%s]," +
+                                            " failed to connect all MDS",
                                     self.getUuid()));
                         }
                     } else {
                         ExternalPrimaryStorageVO vo = dbf.reload(self);
                         if (vo == null) {
-                            trigger.fail(operr("zbs primary storage[uuid:%s] may have been deleted", self.getUuid()));
+                            trigger.fail(operr("ZBS primary storage[uuid:%s] may have been deleted", self.getUuid()));
                         } else {
                             self = vo;
                             trigger.next();
@@ -342,7 +324,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                                     .findValue();
 
                             if (clientPassword == null) {
-                                comp.addError(operr("failed to get client[uuid:%s] password.", h.getUuid()));
+                                comp.addError(operr("failed to get ZBS client[uuid:%s] password.", h.getUuid()));
                             }
 
                             DeployClientCmd cmd = new DeployClientCmd();
@@ -378,7 +360,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
-                        changeStatus(PrimaryStorageStatus.Connected);
                         configUrl(self.getUuid());
                         addonInfo = newAddonInfo;
                         completion.success(JSONObjectUtil.rehashObject(newAddonInfo, LinkedHashMap.class));
@@ -388,7 +369,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        changeStatus(PrimaryStorageStatus.Disconnected);
                         completion.fail(errCode);
                     }
                 });
@@ -428,7 +408,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                             .map(MdsInfo::getAddr)
                             .collect(Collectors.joining(", "));
 
-                    completion.fail(operr("no MDS node is Connected, the following MDS nodes[%s] are not Connected.", notConnectedIps));
+                    completion.fail(operr("no MDS is Connected, the following MDS[%s] are not Connected.", notConnectedIps));
                     return;
                 }
                 completion.success();
@@ -802,7 +782,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
 
         if (remoteTarget == null || remoteTarget.getResourceURI() == null) {
-            logger.debug("remote target or the uri does not exist");
+            logger.debug("remote target or the URI does not exist");
             comp.success();
             return;
         }
@@ -825,7 +805,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 }
             }).setTargetMds(uri.getHost()).call();
         } catch (URISyntaxException e) {
-            comp.fail(operr("Invalid URI syntax: %s", e.getMessage()));
+            comp.fail(operr("invalid URI syntax: %s", e.getMessage()));
         }
     }
 
@@ -900,7 +880,35 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void validateConfig(String config) {
+        Config old = JSONObjectUtil.toObject(self.getConfig(), Config.class);
+        Config current = JSONObjectUtil.toObject(config, Config.class);
 
+        if (current.getLogicalPoolName().contains("/")) {
+            throw new CloudRuntimeException(String.format("invalid logical pool name[%s]", current.getLogicalPoolName()));
+        }
+
+        if (current.getMdsUrls().isEmpty()) {
+            throw new OperationFailureException(operr("ensure at least one MDS is configured"));
+        }
+
+        List<MdsInfo> newMdsInfos = parseMdsInfos(current.getMdsUrls());
+        List<MdsInfo> duplicateMdsInfos = newMdsInfos.stream().collect(Collectors.groupingBy(MdsInfo::getAddr))
+                .values().stream().filter(addr -> addr.size() > 1).flatMap(List::stream).collect(Collectors.toList());
+        if (!duplicateMdsInfos.isEmpty()) {
+            throw new OperationFailureException(operr("do not allow to add duplicate MDS[%s]",
+                    duplicateMdsInfos.stream().map(MdsInfo::getAddr).distinct().collect(Collectors.joining(", "))
+            ));
+        }
+
+        List<MdsInfo> oldMdsInfos = parseMdsInfos(old.getMdsUrls());
+        List<MdsInfo> changedMdsInfos = newMdsInfos.stream().filter(n -> oldMdsInfos.stream().noneMatch(o -> o.equals(n))).collect(Collectors.toList());
+        if (!changedMdsInfos.isEmpty() && !CoreGlobalProperty.UNIT_TEST_ON) {
+            List<ZbsPrimaryStorageMdsBase> mdsList = CollectionUtils.transformToList(changedMdsInfos, ZbsPrimaryStorageMdsBase::new);
+            for (ZbsPrimaryStorageMdsBase base : mdsList) {
+                base.checkSshAndTools();
+                base.checkStorageHealth();
+            }
+        }
     }
 
     @Override
@@ -939,24 +947,16 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         config = StringUtils.isEmpty(self.getConfig()) ? new Config() : JSONObjectUtil.toObject(self.getConfig(), Config.class);
     }
 
-    public void changeStatus(PrimaryStorageStatus status) {
-        String uuid = self.getUuid();
-        self = dbf.reload(self);
-        if (self == null) {
-            throw new OperationFailureException(operr(
-                    "cannot update status of the zbs primary storage[uuid:%s], it has been deleted." +
-                            "This error can be ignored", uuid
-            ));
-        }
-
-        if (self.getStatus() == status) {
-            return;
-        }
-
-        PrimaryStorageStatus oldStatus = self.getStatus();
-        self.setStatus(status);
-        self = dbf.updateAndRefresh(self);
-        logger.debug(String.format("zbs primary storage[uuid:%s] changed status from %s to %s", self.getUuid(), oldStatus, status));
+    private List<MdsInfo> parseMdsInfos(List<String> mdsUrls) {
+        return mdsUrls.stream().map(mdsUrl -> {
+            MdsUri uri = new MdsUri(mdsUrl);
+            MdsInfo mdsInfo = new MdsInfo();
+            mdsInfo.setUsername(uri.getUsername());
+            mdsInfo.setPassword(uri.getPassword());
+            mdsInfo.setPort(uri.getSshPort());
+            mdsInfo.setAddr(uri.getHostname());
+            return mdsInfo;
+        }).collect(Collectors.toList());
     }
 
     protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
@@ -1002,12 +1002,12 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
 
         HttpCaller<T> setTargetMds(String mdsAddr) {
-            logger.debug(String.format("target mds[ip:%s]", mdsAddr));
+            logger.debug(String.format("target MDS[%s]", mdsAddr));
 
             mdsInfos.removeIf(it -> !it.getAddr().equals(mdsAddr));
             if (mdsInfos.isEmpty()) {
                 throw new OperationFailureException(operr(
-                        "not found mds[ip:%s] of zbs primary storage[uuid:%s] node", mdsAddr, self.getUuid())
+                        "not found MDS[%s] of zbs primary storage[uuid:%s] node", mdsAddr, self.getUuid())
                 );
             }
 
@@ -1026,7 +1026,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             mds.removeIf(it -> it.getStatus() != MdsStatus.Connected);
             if (mds.isEmpty()) {
                 throw new OperationFailureException(operr(
-                        "all zbs mds of primary storage[uuid:%s] are not in Connected state", self.getUuid())
+                        "all MDS of ZBS primary storage[uuid:%s] are not in Connected state", self.getUuid())
                 );
             }
 
@@ -1039,7 +1039,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         private void doCall() {
             if (!it.hasNext()) {
-                callback.fail(operr(errorCodes, "all mds cannot execute http call[%s]", path));
+                callback.fail(operr(errorCodes, "all MDS cannot execute http call[%s]", path));
                 return;
             }
 
@@ -1055,8 +1055,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 @Override
                 public void fail(ErrorCode errorCode) {
                     if (!errorCode.isError(SysErrors.OPERATION_ERROR) && !errorCode.isError(SysErrors.TIMEOUT)) {
-                        logger.warn(String.format("mds[addr:%s] failed to execute http call[%s], error is: %s",
-                                base.getSelf().getAddr(), path, JSONObjectUtil.toJsonString(errorCode)));
+                        logger.warn(String.format("failed to execute http call[%s] on MDS[%s], error is: %s",
+                                path, base.getSelf().getAddr(), JSONObjectUtil.toJsonString(errorCode)));
                         errorCodes.getCauses().add(errorCode);
                         doCall();
                         return;

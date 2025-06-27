@@ -182,11 +182,34 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         if (msg.getDefaultProtocol() != null) {
             externalVO.setDefaultProtocol(msg.getDefaultProtocol());
         }
+        boolean needReconnect = false;
         if (msg.getConfig() != null) {
             controller.validateConfig(msg.getConfig());
             externalVO.setConfig(msg.getConfig());
+            needReconnect = true;
         }
         externalVO = dbf.updateAndRefresh(externalVO);
+
+        if (needReconnect) {
+            ReconnectPrimaryStorageMsg rmsg = new ReconnectPrimaryStorageMsg();
+            rmsg.setPrimaryStorageUuid(externalVO.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rmsg.getPrimaryStorageUuid());
+            bus.send(rmsg, new CloudBusCallBack(msg) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        evt.setError(reply.getError());
+                    } else {
+                        self = dbf.reload(self);
+                        evt.setInventory(externalVO.toInventory());
+                    }
+
+                    bus.publish(evt);
+                }
+            });
+            return;
+        }
+
         evt.setInventory(externalVO.toInventory());
         bus.publish(evt);
     }
@@ -1915,6 +1938,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void connectHook(ConnectParam param, Completion completion) {
+        controller.validateConfig(externalVO.getConfig());
         controller.connect(externalVO.getConfig(), self.getUrl(), new ReturnValueCompletion<LinkedHashMap>(completion) {
             @Override
             public void success(LinkedHashMap addonInfo) {

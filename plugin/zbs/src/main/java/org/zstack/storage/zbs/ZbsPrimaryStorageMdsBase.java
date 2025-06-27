@@ -71,8 +71,8 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            checkTools();
-                            checkHealth();
+                            checkSshAndTools();
+                            checkStorageHealth();
                             trigger.next();
                         }
                     });
@@ -335,7 +335,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            logger.warn(String.format("ping zbs primary storage mds[%s] failed (%d/%d): %s", getSelf().getAddr(), step, MAX_PING_CNT, errorCode.toString()));
+                            logger.warn(String.format("ping ZBS primary storage MDS[%s] failed (%d/%d): %s", getSelf().getAddr(), step, MAX_PING_CNT, errorCode.toString()));
                             comp.addError(errorCode);
 
                             if (step.equals(MAX_PING_CNT)) {
