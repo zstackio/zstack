@@ -1,5 +1,7 @@
 package org.zstack.cbd;
 
+import java.util.Objects;
+
 /**
  * @author Xingwei Yu
  * @date 2024/4/10 23:18
@@ -11,6 +13,23 @@ public class MdsInfo {
     private String addr;
     private String externalAddr;
     private MdsStatus status;
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+
+        MdsInfo other = (MdsInfo) obj;
+        return Objects.equals(addr, other.addr) &&
+                Objects.equals(port, other.port) &&
+                Objects.equals(username, other.username) &&
+                Objects.equals(password, other.password);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(addr, port, username, password);
+    }
 
     public String getUsername() {
         return username;

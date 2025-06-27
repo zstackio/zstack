@@ -148,6 +148,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
 
             testDefaultConfig()
+            testUpdateExternalPrimaryStorage()
             testLifecycle()
             testDataVolumeLifecycle()
             testMdsPing()
@@ -155,6 +156,44 @@ class ZbsPrimaryStorageCase extends SubCase {
             testDataVolumeNegativeScenario()
             testDecodeMdsUriWithSpecialPassword()
         }
+    }
+
+    void testUpdateExternalPrimaryStorage() {
+        expect(AssertionError.class) {
+            updateExternalPrimaryStorage {
+                uuid = ps.uuid
+                config = "{\"mdsUrls\":[],\"logicalPoolName\":\"lpool1\"}"
+            }
+        }
+
+        expect(AssertionError.class) {
+            updateExternalPrimaryStorage {
+                uuid = ps.uuid
+                config = "{\"mdsUrls\":[\"root:password@127.0.1.1\",\"root:password@127.0.1.1\"],\"logicalPoolName\":\"lpool1\"}"
+            }
+        }
+
+        updateExternalPrimaryStorage {
+            uuid = ps.uuid
+            config = "{\"mdsUrls\":[\"root:password@127.0.1.1\",\"root:password@127.0.1.2\"],\"logicalPoolName\":\"lpool1\"}"
+        }
+
+        String addonInfo = Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.addonInfo)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                .findValue()
+        assert !addonInfo.contains("127.0.1.3")
+
+        updateExternalPrimaryStorage {
+            uuid = ps.uuid
+            config = "{\"mdsUrls\":[\"root:password@127.0.1.1\",\"root:password@127.0.1.2\",\"root:password@127.0.1.3\"],\"logicalPoolName\":\"lpool1\"}"
+        }
+
+        addonInfo = Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.addonInfo)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                .findValue()
+        assert addonInfo.contains("127.0.1.3")
     }
 
     void testDefaultConfig() {
