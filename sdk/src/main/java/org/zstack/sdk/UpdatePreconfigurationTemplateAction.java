@@ -37,7 +37,7 @@ public class UpdatePreconfigurationTemplateAction extends AbstractAction {
     @Param(required = false, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String distribution;
 
-    @Param(required = false, validValues = {"kickstart","preseed","autoyast"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"kickstart","preseed","autoyast","autoinstall"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
     @Param(required = false, maxLength = 16777215, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
