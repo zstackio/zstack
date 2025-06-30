@@ -2376,10 +2376,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
                     });
 
-                    done(new FlowDoneHandler(completion) {
+                    flow(new Flow() {
+                        String __name__ = "persist-db";
+
+                        ImageCacheVO cvo = new ImageCacheVO();
+
                         @Override
-                        public void handle(Map data) {
-                            ImageCacheVO cvo = new ImageCacheVO();
+                        public void run(final FlowTrigger trigger, Map data) {
                             cvo.setMd5sum("not calculated");
                             cvo.setSize(image.getInventory().getActualSize());
                             cvo.setInstallUrl(snapshotPath);
@@ -2389,9 +2392,23 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             cvo.setState(ImageCacheState.ready);
                             cvo.setSize(actualSize);
                             cvo = dbf.persistAndRefresh(cvo);
+                            data.put(ImageCacheVO.class.getSimpleName(),cvo);
+                            trigger.next();
+                        }
 
-                            ImageCacheVO finalCvo = cvo;
+                        @Override
+                        public void rollback(FlowRollback trigger, Map data) {
+                            dbf.remove(cvo);
+                            trigger.rollback();
+                        }
+                    });
 
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "save-encryption-Integrity-after-create-image-cache";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            ImageCacheVO finalCvo = (ImageCacheVO) (data.get(ImageCacheVO.class.getSimpleName()));
                             new While<>(pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)).each((ext, whileCompletion) -> {
                                 ext.saveEncryptAfterCreateImageCache(null, ImageCacheInventory.valueOf(finalCvo), new Completion(whileCompletion) {
                                     @Override
@@ -2409,11 +2426,19 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 @Override
                                 public void done(ErrorCodeList errorCodeList) {
                                     if (!errorCodeList.getCauses().isEmpty()) {
-                                        logger.warn(String.format("failed to saveEncryptAfterCreateImageCache: %s", errorCodeList.getCauses().get(0)));
+                                        trigger.fail(operr(String.format("failed to saveEncryptAfterCreateImageCache: %s", errorCodeList.getCauses().get(0))));
+                                        return;
                                     }
-                                    completion.success(finalCvo);
+                                    trigger.next();
                                 }
                             });
+                        }
+                    });
+
+                    done(new FlowDoneHandler(completion) {
+                        @Override
+                        public void handle(Map data) {
+                            completion.success((ImageCacheVO) (data.get(ImageCacheVO.class.getSimpleName())));
                         }
                     });
 
