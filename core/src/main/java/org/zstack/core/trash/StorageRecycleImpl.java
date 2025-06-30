@@ -15,7 +15,7 @@ import org.zstack.core.jsonlabel.JsonLabelVO_;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
-import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.header.core.trash.InstallPathRecycleVO;
 import org.zstack.header.core.trash.InstallPathRecycleVO_;
@@ -297,7 +297,7 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
         UpdateQuery.New(InstallPathRecycleVO.class).eq(InstallPathRecycleVO_.trashId, trashId).delete();
     }
 
-    private void deleteTrashForVolume(String resourceUuid, String primaryStorageUuid, Completion completion) {
+    private void deleteTrashForVolume(String resourceUuid, String primaryStorageUuid, NoErrorCompletion completion) {
         List<InstallPathRecycleVO> vos = Q.New(InstallPathRecycleVO.class).eq(InstallPathRecycleVO_.storageUuid, primaryStorageUuid).list();
         List<Long> trashIds = new ArrayList<>();
         for (InstallPathRecycleVO vo: vos) {
@@ -309,9 +309,9 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
         deleteTrashForVolume(trashIds.iterator(), primaryStorageUuid, completion);
     }
 
-    private void deleteTrashForVolume(final Iterator<Long> trashIds, String primaryStorageUuid, Completion completion) {
+    private void deleteTrashForVolume(final Iterator<Long> trashIds, String primaryStorageUuid, NoErrorCompletion completion) {
         if (!trashIds.hasNext()) {
-            completion.success();
+            completion.done();
             return;
         }
         Long trashId = trashIds.next();
@@ -333,13 +333,8 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
     }
 
     @Override
-    public void volumeSnapshotAfterDeleteExtensionPoint(VolumeSnapshotInventory snapshot, Completion completion) {
+    public void volumeSnapshotAfterDeleteExtensionPoint(VolumeSnapshotInventory snapshot, NoErrorCompletion completion) {
         deleteTrashForVolume(snapshot.getUuid(), snapshot.getPrimaryStorageUuid(), completion);
-    }
-
-    @Override
-    public void volumeSnapshotAfterFailedDeleteExtensionPoint(VolumeSnapshotInventory snapshot) {
-
     }
 
     @Override
@@ -432,7 +427,7 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
     public void volumePreExpunge(VolumeInventory volume) {}
 
     @Override
-    public void volumeBeforeExpunge(VolumeInventory volume, Completion completion) {
+    public void volumeBeforeExpunge(VolumeInventory volume, NoErrorCompletion completion) {
         deleteTrashForVolume(volume.getUuid(), volume.getPrimaryStorageUuid(), completion);
     }
 

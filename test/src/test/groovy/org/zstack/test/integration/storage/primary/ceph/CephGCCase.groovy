@@ -11,7 +11,7 @@ import org.zstack.sdk.*
 import org.zstack.storage.ceph.CephGlobalConfig
 import org.zstack.storage.ceph.primary.CephDeleteVolumeChainGC
 import org.zstack.storage.ceph.primary.CephDeleteVolumeGC
-import org.zstack.storage.ceph.primary.CephDeleteVolumeSnapshotGC
+import org.zstack.storage.snapshot.DeleteVolumeSnapshotGC
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.storage.volume.VolumeSystemTags
@@ -196,7 +196,7 @@ class CephGCCase extends SubCase {
         }
 
         def spGC = queryGCJob {
-            conditions = ["runnerClass=${CephDeleteVolumeSnapshotGC.class.name}".toString(), "context~=%${sp.primaryStorageInstallPath}%".toString()]
+            conditions = ["runnerClass=${DeleteVolumeSnapshotGC.class.name}".toString(), "context~=%${sp.primaryStorageInstallPath}%".toString()]
         } as List<GarbageCollectorInventory>
         assert spGC.size() == 1
         assert spGC[0].status != GCStatus.Done.toString()
@@ -218,7 +218,7 @@ class CephGCCase extends SubCase {
 
         retryInSecs {
             assert queryGCJob {
-                conditions = ["runnerClass=${CephDeleteVolumeSnapshotGC.class.name}".toString(), "context~=%${sp.primaryStorageInstallPath}%".toString()]
+                conditions = ["runnerClass=${DeleteVolumeSnapshotGC.class.name}".toString(), "context~=%${sp.primaryStorageInstallPath}%".toString()]
             }[0].status == GCStatus.Done.toString()
             assert queryGCJob {
                 conditions = ["runnerClass=${CephDeleteVolumeGC.class.name}".toString(), "context~=%${vol.installPath}%".toString()]

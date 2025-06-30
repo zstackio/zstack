@@ -72,6 +72,7 @@ import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
 import org.zstack.storage.ceph.primary.capacity.CephOsdGroupCapacityHelper;
 import org.zstack.storage.primary.*;
+import org.zstack.storage.snapshot.DeleteVolumeSnapshotGC;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTag;
@@ -5382,12 +5383,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                CephDeleteVolumeSnapshotGC snapshotGC = new CephDeleteVolumeSnapshotGC();
+                // ceph has trash, so children may not be deleted immediately.
+                DeleteVolumeSnapshotGC snapshotGC = new DeleteVolumeSnapshotGC();
                 snapshotGC.NAME = String.format("gc-ceph-%s-volumesnapshot-path-%s", self.getUuid(), cmd.snapshotPath);
                 snapshotGC.primaryStorageUuid = self.getUuid();
                 snapshotGC.volumeSnapshot = msg.getSnapshot();
                 snapshotGC.deduplicateSubmit(CephGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
-                reply.setError(errorCode);
+                reply.setGcSubmitted(true);
                 bus.reply(msg, reply);
                 completion.done();
             }

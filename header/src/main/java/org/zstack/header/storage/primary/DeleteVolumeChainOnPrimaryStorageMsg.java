@@ -5,15 +5,16 @@ import org.zstack.utils.CollectionUtils;
 
 import java.util.List;
 
-public class DeleteVolumeChainOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
+public class DeleteVolumeChainOnPrimaryStorageMsg extends NeedReplyMessage implements DeleteOnPrimaryStorageMessage {
     private String primaryStorageUuid;
-
+    // TODO remove this field, use url instead
     private String hostUuid;
 
     private List<String> installPaths;
 
     private String volumeFormat;
 
+    // TODO refactor, remove it
     // for gc, used to deduplicate GC
     private String chainTop;
 
@@ -61,5 +62,10 @@ public class DeleteVolumeChainOnPrimaryStorageMsg extends NeedReplyMessage imple
 
     public void setChainTop(String chainTop) {
         this.chainTop = chainTop;
+    }
+
+    @Override
+    public boolean isGcOnFailure() {
+        return true;
     }
 }

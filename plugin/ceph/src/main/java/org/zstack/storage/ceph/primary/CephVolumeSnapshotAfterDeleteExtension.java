@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.SQL;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.storage.primary.DeleteVolumeBitsOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotAfterDeleteExtensionPoint;
@@ -30,12 +31,8 @@ public class CephVolumeSnapshotAfterDeleteExtension implements VolumeSnapshotAft
     private static final CLogger logger = Utils.getLogger(CephVolumeSnapshotAfterDeleteExtension.class);
 
     @Override
-    public void volumeSnapshotAfterDeleteExtensionPoint(VolumeSnapshotInventory snapshot, Completion completion) {
-        completion.success();
-    }
-
-    @Override
-    public void volumeSnapshotAfterFailedDeleteExtensionPoint(VolumeSnapshotInventory snapshot) {
+    public void volumeSnapshotAfterDeleteExtensionPoint(VolumeSnapshotInventory snapshot, NoErrorCompletion completion) {
+        completion.done();
     }
 
     private String getVolumeInstallPathFromSnapshot(String snapshotInstallPath) {
