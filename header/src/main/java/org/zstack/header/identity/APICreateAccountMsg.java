@@ -21,7 +21,7 @@ public class APICreateAccountMsg extends APICreateMessage implements APIAuditor 
     @APIParam(maxLength = 255, password = true)
     @NoLogging
     private String password;
-    @APIParam(validValues = {"SystemAdmin", "Normal"}, required = false)
+    @APIParam(validValues = {"SystemAdmin", "Normal", "ThirdParty"}, required = false)
     private String type;
     @APIParam(maxLength = 2048, required = false)
     private String description;
