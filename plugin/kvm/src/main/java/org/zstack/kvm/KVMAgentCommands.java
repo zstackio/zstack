@@ -4773,6 +4773,19 @@ public class KVMAgentCommands {
         public String bondingMode;
         @GrayVersion(value = "5.4.0")
         public String lacpMode;
+        @GrayVersion(value = "5.4.0")
+        public Integer hugePageSize;
+        @GrayVersion(value = "5.4.0")
+        public Integer socketMem;
+        @GrayVersion(value = "5.4.0")
+        public String lcores;
+        @GrayVersion(value = "5.4.0")
+        public String pmdcores;
+        @GrayVersion(value = "5.4.0")
+        public Integer nicRxQueueNumber;
+        @GrayVersion(value = "5.4.0")
+        public Integer nicRxQueueDescNumber;
+
     }
 
     public static class StartOvsServiceRsp extends AgentResponse {
