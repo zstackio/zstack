@@ -319,9 +319,12 @@ class VFS {
         }
 
         createDirectories(p.getParent())
+        def originPath = f.path
         f.path = p
         write(p, f.asJSONString())
-        return getFile(f.pathString(), true)
+        VFSFile ret = getFile(f.pathString(), true)
+        f.path = originPath // restore original path
+        return ret
     }
 
     VFSFile createFileFrom(VFSFile f) {

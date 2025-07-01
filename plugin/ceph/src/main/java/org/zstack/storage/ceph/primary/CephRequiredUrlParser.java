@@ -1,9 +1,13 @@
 package org.zstack.storage.ceph.primary;
 
+import org.apache.commons.lang.StringUtils;
 import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.storage.snapshot.VolumeInnerSnapshotPathParser;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
+import org.zstack.storage.ceph.CephConstants;
 import org.zstack.utils.DebugUtils;
 
 import java.net.URI;

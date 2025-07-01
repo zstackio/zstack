@@ -67,6 +67,7 @@ public class VolumeSnapshotReferenceUtils {
         ));
     }
 
+    // suppose that inner snapshot path is like: volumePath@snapshotId
     public static boolean isVolumeDirectlyReferenceByOthers(VolumeInventory volume) {
         return Q.New(VolumeSnapshotReferenceVO.class).eq(VolumeSnapshotReferenceVO_.volumeUuid, volume.getUuid())
                 .like(VolumeSnapshotReferenceVO_.volumeSnapshotInstallUrl, volume.getInstallPath() + "%%")
@@ -80,14 +81,6 @@ public class VolumeSnapshotReferenceUtils {
         }
 
         return null;
-    }
-
-    // use getVolumeAllSnapshotsReferencedOtherVolumes or isVolumeDirectlyReferenceByOthers
-    @Deprecated
-    public static List<String> getVolumeSnapshotsReferencedByOtherVolumes(String volumeUuid) {
-        return getVolumeReferenceRef(volumeUuid).stream()
-                .map(VolumeSnapshotReferenceVO::getVolumeSnapshotInstallUrl).distinct()
-                .collect(Collectors.toList());
     }
 
     // get volume snapshotUuids referenced by other volumes directly or indirectly

@@ -467,7 +467,12 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 srcVfs.walkFileSystem { VFSFile f ->
                     if (f.pathString().contains(cmd.srcFolderPath)) {
                         String newPath = f.pathString().replace(cmd.srcFolderPath, cmd.dstFolderPath)
-                        dstVfs.createFileFrom(Paths.get(newPath), f)
+                        def dstFile = dstVfs.createFileFrom(Paths.get(newPath), f)
+                        if (dstFile instanceof Qcow2 &&
+                                dstFile.backingFile != null &&
+                                f.pathString() == cmd.independentPath) {
+                            dstFile.rebase(null)
+                        }
                     }
                 }
 
@@ -515,33 +520,23 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
 
             VFS.vfsHook(NfsPrimaryStorageKVMBackend.NFS_REBASE_VOLUME_BACKING_FILE_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.NfsRebaseVolumeBackingFileCmd.class)
-//                String dstPrimaryStorageUuid = getPrimaryStorageFromPath(cmd.dstPsMountPath)
-//                VFS dstVfs = vfs(dstPrimaryStorageUuid, spec)
-                //TODO: for guoyi
-//                List<Qcow2> fileList = new ArrayList<>()
-//                if (cmd.dstImageCacheTemplateFolderPath == null) {
-//                    dstVfs.walkFileSystem { f ->
-//                        if (f.pathString().contains(cmd.dstVolumeFolderPath)) {
-//                            fileList.add(f)
-//                        }
-//                    }
-//                } else {
-//                    dstVfs.walkFileSystem { f ->
-//                        if (f.pathString().contains(cmd.dstVolumeFolderPath)
-//                                || f.pathString().contains(cmd.dstImageCacheTemplateFolderPath)) {
-//                            fileList.add(f)
-//                        }
-//                    }
-//                }
-//
-//                fileList.each { file ->
-//                    if (file.backingFile == null) {
-//                        return
-//                    }
-//
-//                    file.backingFile = Paths.get(file.backingFile.toAbsolutePath().toString().replace(cmd.srcPsMountPath, cmd.dstPsMountPath))
-//                    dstVfs.write(file.path, file.asJSONString())
-//                }
+
+                VFS dstVfs = vfs(cmd, spec)
+                List<VFSFile> fileList = new ArrayList<>()
+                dstVfs.walkFileSystem { f ->
+                    if (f.pathString().contains(cmd.dstVolumeFolderPath)
+                            || (cmd.dstImageCacheTemplateFolderPath != null &&
+                            f.pathString().contains(cmd.dstImageCacheTemplateFolderPath))) {
+                        fileList.add(f)
+                    }
+                }
+
+                fileList.each { file ->
+                    if (file instanceof Qcow2 && file.backingFile != null) {
+                        String newBackingFile = file.backingFile.toAbsolutePath().toString().replace(cmd.srcPsMountPath, cmd.dstPsMountPath)
+                        file.rebase(newBackingFile)
+                    }
+                }
 
                 return rsp
             }
