@@ -108,7 +108,7 @@ class CephVolumeSnapshotCase extends SubCase {
             name = "root-snapshot"
         } as VolumeSnapshotInventory
 
-        assert rootSnapshot.primaryStorageInstallPath.startsWith("ceph://pri-c-")
+        assert rootSnapshot.primaryStorageInstallPath.startsWith("ceph://pri-v-r-")
         assert rootSnapshot.primaryStorageInstallPath.endsWith("/${root.uuid}@${rootSnapshot.uuid}")
         assert rootSnapshot.parentUuid == null
         assert rootSnapshot.status == VolumeSnapshotStatus.Ready.toString()
