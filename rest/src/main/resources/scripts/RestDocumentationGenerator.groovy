@@ -1315,12 +1315,12 @@ ${cols.join("\n")}
 
             String actionName = getSdkActionName()
 
-            def cols = ["${actionName} action = ${actionName}()"]
+            List<String> cols = ["action = ${actionName}()".toString()]
             List<String> conds = getQueryConditionExampleOfTheClass(clz)
             conds = conds.collect { return "\"" + it + "\""}
-            cols.add("action.conditions = [${conds.join(",")}]")
-            cols.add("""action.sessionId = "b86c9016b4f24953a9edefb53ca0678c\"""")
-            cols.add("${actionName}.Result res = action.call()")
+            cols.add("action.conditions = [${conds.join(",")}]".toString())
+            cols.add("action.sessionId = \"b86c9016b4f24953a9edefb53ca0678c\"")
+            cols.add("res = action.call()")
 
             return """\
 ```
@@ -1827,20 +1827,20 @@ ${dmd.generate()}
                 return "Python SDK未能自动生成"
             }
 
-            def cols = ["${actionName} action = ${actionName}()"]
+            List<String> cols = ["action = ${actionName}()"]
             cols.addAll(apiFields.collect { k, v ->
                 if (v instanceof String) {
-                    return """action.${k} = "${v}\""""
+                    return "action.${k} = \"${v}\"".toString()
                 } else {
-                    return "action.${k} = ${v}"
+                    return "action.${k} = ${v}".toString()
                 }
             })
 
             if (!clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
-                cols.add("""action.sessionId = "b86c9016b4f24953a9edefb53ca0678c\"""")
+                cols.add("action.sessionId = \"b86c9016b4f24953a9edefb53ca0678c\"")
             }
 
-            cols.add("${actionName}.Result res = action.call()")
+            cols.add("res = action.call()")
 
             return """\
 ```
