@@ -92,14 +92,6 @@ public class ModelServiceInventory  {
         return this.source;
     }
 
-    public java.lang.String dockerImage;
-    public void setDockerImage(java.lang.String dockerImage) {
-        this.dockerImage = dockerImage;
-    }
-    public java.lang.String getDockerImage() {
-        return this.dockerImage;
-    }
-
     public java.lang.Long size;
     public void setSize(java.lang.Long size) {
         this.size = size;
@@ -114,14 +106,6 @@ public class ModelServiceInventory  {
     }
     public java.lang.Boolean getSystem() {
         return this.system;
-    }
-
-    public java.lang.String vmImageUuid;
-    public void setVmImageUuid(java.lang.String vmImageUuid) {
-        this.vmImageUuid = vmImageUuid;
-    }
-    public java.lang.String getVmImageUuid() {
-        return this.vmImageUuid;
     }
 
     public java.lang.String gpuComputeCapability;
@@ -164,12 +148,36 @@ public class ModelServiceInventory  {
         return this.startCommand;
     }
 
+    public java.util.List cpuArchitectures;
+    public void setCpuArchitectures(java.util.List cpuArchitectures) {
+        this.cpuArchitectures = cpuArchitectures;
+    }
+    public java.util.List getCpuArchitectures() {
+        return this.cpuArchitectures;
+    }
+
+    public java.util.List gpuVendors;
+    public void setGpuVendors(java.util.List gpuVendors) {
+        this.gpuVendors = gpuVendors;
+    }
+    public java.util.List getGpuVendors() {
+        return this.gpuVendors;
+    }
+
     public java.util.List modelServiceRefs;
     public void setModelServiceRefs(java.util.List modelServiceRefs) {
         this.modelServiceRefs = modelServiceRefs;
     }
     public java.util.List getModelServiceRefs() {
         return this.modelServiceRefs;
+    }
+
+    public java.util.List modelServiceImages;
+    public void setModelServiceImages(java.util.List modelServiceImages) {
+        this.modelServiceImages = modelServiceImages;
+    }
+    public java.util.List getModelServiceImages() {
+        return this.modelServiceImages;
     }
 
     public java.sql.Timestamp createDate;
