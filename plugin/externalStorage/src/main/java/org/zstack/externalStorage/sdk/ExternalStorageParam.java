@@ -69,6 +69,10 @@ public interface ExternalStorageParam {
         return getParameterValue(name, true);
     }
 
+    default boolean isQueryableParam(String name) {
+        return getParameterMap().get(name).annotation.queryable();
+    }
+
     default Object getParameterValue(String name, boolean exceptionOnNotFound){
         return getParameterValue(getParameterMap(), name, exceptionOnNotFound);
     }

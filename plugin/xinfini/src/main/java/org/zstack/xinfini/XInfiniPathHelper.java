@@ -26,6 +26,10 @@ public class XInfiniPathHelper {
         return volPath + "@" + snapId;
     }
 
+    public static String buildXInfiniSnapshotPath(Integer poolId, Integer volId, Integer snapId) {
+        return String.format("xinfini://%s/%s@%s", poolId, volId, snapId);
+    }
+
     public static int getPoolIdFromPath(String url) {
         return Integer.parseInt(url.replace("xinfini://", "").split("/")[0]);
     }
@@ -36,5 +40,9 @@ public class XInfiniPathHelper {
 
     public static int getSnapIdFromPath(String url) {
         return Integer.parseInt(url.replace("xinfini://", "").split("/")[1].split("@")[1]);
+    }
+
+    public static String buildSnapshotExportVolumeName(int snapId) {
+        return String.format("for-snapshot-%s-iscsi-export", snapId);
     }
 }
