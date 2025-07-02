@@ -24,6 +24,7 @@ class BeanConstructor {
             "ansibleFacade.xml",
             "CascadeFacade.xml",
             "tag.xml",
+            "resourceAttributes.xml",
             "Aspect.xml",
             "keyValueFacade.xml",
             "jmx.xml",
