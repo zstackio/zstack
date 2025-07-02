@@ -264,6 +264,9 @@ public class SourceClassMap {
 			put("org.zstack.header.protocol.Neighbor", "org.zstack.sdk.Neighbor");
 			put("org.zstack.header.protocol.NetworkRouterAreaRefInventory", "org.zstack.sdk.NetworkRouterAreaRefInventory");
 			put("org.zstack.header.protocol.RouterAreaInventory", "org.zstack.sdk.RouterAreaInventory");
+			put("org.zstack.header.resourceattribute.entity.CreateResourceAttributeResult", "org.zstack.sdk.attribute.entity.CreateResourceAttributeResult");
+			put("org.zstack.header.resourceattribute.entity.ResourceAttributeKeyInventory", "org.zstack.sdk.attribute.entity.ResourceAttributeKeyInventory");
+			put("org.zstack.header.resourceattribute.entity.ResourceAttributeValueInventory", "org.zstack.sdk.attribute.entity.ResourceAttributeValueInventory");
 			put("org.zstack.header.scheduler.SchedulerJobGroupInventory", "org.zstack.sdk.SchedulerJobGroupInventory");
 			put("org.zstack.header.scheduler.SchedulerJobGroupJobRefInventory", "org.zstack.sdk.SchedulerJobGroupJobRefInventory");
 			put("org.zstack.header.scheduler.SchedulerJobGroupSchedulerTriggerRefInventory", "org.zstack.sdk.SchedulerJobGroupSchedulerTriggerRefInventory");
@@ -1343,6 +1346,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ZBoxVolumeBackupInfo", "org.zstack.externalbackup.zbox.ZBoxVolumeBackupInfo");
 			put("org.zstack.sdk.ZQLQueryReturn", "org.zstack.zql.ZQLQueryReturn");
 			put("org.zstack.sdk.ZoneInventory", "org.zstack.header.zone.ZoneInventory");
+			put("org.zstack.sdk.attribute.entity.CreateResourceAttributeResult", "org.zstack.header.resourceattribute.entity.CreateResourceAttributeResult");
+			put("org.zstack.sdk.attribute.entity.ResourceAttributeKeyInventory", "org.zstack.header.resourceattribute.entity.ResourceAttributeKeyInventory");
+			put("org.zstack.sdk.attribute.entity.ResourceAttributeValueInventory", "org.zstack.header.resourceattribute.entity.ResourceAttributeValueInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupInventory", "org.zstack.header.storage.database.backup.DatabaseBackupInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory", "org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStruct", "org.zstack.header.storage.database.backup.DatabaseBackupStruct");

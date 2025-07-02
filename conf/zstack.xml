@@ -93,6 +93,7 @@
     <import resource="springConfigXml/SftpBackupStorage.xml"/>
     <import resource="springConfigXml/sharedMountPointPrimaryStorage.xml"/>
     <import resource="springConfigXml/tag.xml"/>
+    <import resource="springConfigXml/resourceAttributes.xml"/>
     <import resource="springConfigXml/ThreadFacade.xml"/>
     <import resource="springConfigXml/validation.xml"/>
     <import resource="springConfigXml/vip.xml"/>

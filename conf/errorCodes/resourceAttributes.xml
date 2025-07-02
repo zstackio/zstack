@@ -1,0 +1,13 @@
+<error>
+    <prefix>ATTRIBUTE</prefix>
+
+    <code>
+        <id>1000</id>
+        <description>Tag generic error</description>
+    </code>
+
+    <code>
+        <id>1001</id>
+        <description>Duplicated resource attribute</description>
+    </code>
+</error>
