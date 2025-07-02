@@ -2861,15 +2861,7 @@ public class Api implements CloudBusEventListener {
 
             return JSONObjectUtil.rehashObject(r.value.getInventory(), TagInventory.class);
         } else {
-            CreateUserTagAction a = new CreateUserTagAction();
-            a.sessionId = getSessionUuid(session);
-            a.resourceType = entityClass.getSimpleName();
-            a.resourceUuid = resourceUuid;
-            a.tag = tag;
-            CreateUserTagAction.Result r = a.call();
-            throwExceptionIfNeed(r.error);
-
-            return JSONObjectUtil.rehashObject(r.value.getInventory(), TagInventory.class);
+            throw new CloudRuntimeException(String.format("unsupported tag type[%s]", type));
         }
     }
 
