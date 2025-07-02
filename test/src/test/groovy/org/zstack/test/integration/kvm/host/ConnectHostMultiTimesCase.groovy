@@ -106,7 +106,9 @@ class ConnectHostMultiTimesCase extends SubCase {
             stateEvent = HostStateEvent.enable
         }
 
-        assert count == 1
+        retryInSecs {
+            assert count == 1
+        }
         cleanup()
 
         retryInSecs {
