@@ -625,9 +625,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     private void handleApiMessage(APIMessage msg) {
-        if (msg instanceof APICreateUserTagMsg) {
-            handle((APICreateUserTagMsg) msg);
-        } else if (msg instanceof APICreateSystemTagMsg) {
+        if (msg instanceof APICreateSystemTagMsg) {
             handle((APICreateSystemTagMsg) msg);
         } else if (msg instanceof APICreateSystemTagsMsg) {
             handle((APICreateSystemTagsMsg) msg);  
@@ -695,13 +693,6 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         }
 
         SystemTagInventory inv = createNonInherentSystemTag(msg.getResourceUuid(), msg.getTag(), msg.getResourceType());
-        evt.setInventory(inv);
-        bus.publish(evt);
-    }
-
-    private void handle(APICreateUserTagMsg msg) {
-        APICreateUserTagEvent evt = new APICreateUserTagEvent(msg.getId());
-        UserTagInventory inv = (UserTagInventory) createUserTag(msg.getResourceUuid(), msg.getTag(), msg.getResourceType());
         evt.setInventory(inv);
         bus.publish(evt);
     }
