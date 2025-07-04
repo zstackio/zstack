@@ -24,6 +24,9 @@ public class ImageGroupRefInventory implements Serializable {
         this.setLastOpDate(vo.getLastOpDate());
     }
 
+    public ImageGroupRefInventory() {
+    }
+
     public static ImageGroupRefInventory valueOf(ImageGroupRefVO vo) {
         return new ImageGroupRefInventory(vo);
     }
