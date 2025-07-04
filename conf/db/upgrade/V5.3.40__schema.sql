@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceImageVO` (
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`),
+    UNIQUE KEY `ukModelServiceCpuArch` (`modelServiceUuid`,`cpuArchitecture`) USING BTREE,
     CONSTRAINT `fkModelServiceImageVOModelServiceVO` FOREIGN KEY (`modelServiceUuid`) REFERENCES `ModelServiceVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
