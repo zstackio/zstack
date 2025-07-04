@@ -20,7 +20,7 @@ import java.util.Map;
     category = XInfiniApiCategory.AFA
 )
 public class UpdateVolumeRequest extends XInfiniRequest {
-    @Param(required = false)
+    @Param(required = false, queryable = true)
     private String creator;
 
     @Param

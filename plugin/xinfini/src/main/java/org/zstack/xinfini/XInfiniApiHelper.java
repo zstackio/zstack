@@ -226,6 +226,17 @@ public class XInfiniApiHelper {
         return rsp.getItems().get(0);
     }
 
+    public VolumeModule queryVolumeByNameAndSnapId(String name, int snapId) {
+        QueryVolumeRequest req = new QueryVolumeRequest();
+        req.q = String.format("((spec.name:%s) AND (spec.bs_snap_id:%s))", name, snapId);
+        QueryVolumeResponse rsp = queryErrorOut(req, QueryVolumeResponse.class);
+        if (rsp.getMetadata().getPagination().getCount() == 0) {
+            return null;
+        }
+
+        return rsp.getItems().get(0);
+    }
+
     public VolumeModule queryVolumeById(int id) {
         QueryVolumeRequest req = new QueryVolumeRequest();
         req.q = String.format("spec.id:%s", id);
@@ -285,6 +296,17 @@ public class XInfiniApiHelper {
                 (GetVolumeResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
     }
 
+    public VolumeModule flattenVolume(int volId) {
+        FlattenVolumeRequest req = new FlattenVolumeRequest();
+        req.setId(volId);
+        req.setCreator(XInfiniConstants.DEFAULT_CREATOR);
+        callErrorOut(req, FlattenVolumeResponse.class);
+        GetVolumeRequest gReq = new GetVolumeRequest();
+        gReq.setId(volId);
+        return retryUtilStateActive(gReq, GetVolumeResponse.class,
+                (GetVolumeResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
+    }
+
     public VolumeModule expandVolume(int volId, long size) {
         UpdateVolumeRequest req = new UpdateVolumeRequest();
         req.setCreator(XInfiniConstants.DEFAULT_CREATOR);
@@ -297,11 +319,33 @@ public class XInfiniApiHelper {
                 (GetVolumeResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
     }
 
+    private <T extends XInfiniResponse> void retryUtilResourceDeletedIn10Secs(XInfiniRequest req,
+                                                                      Class<T> rsp) {
+        new Retry<Void>() {
+            @Override
+            @RetryCondition(times = 5, interval = 2)
+            protected Void call() {
+                T r = XInfiniApiHelper.this.call(req, rsp);
+                if (!r.resourceIsDeleted()) {
+                    throw new RetryException("resource not deleted yet");
+                }
+
+                return null;
+            }
+
+            @Override
+            // not error out if delete failed
+            protected boolean onFailure(Throwable t) {
+                return false;
+            }
+        }.run();
+    }
+
     private <T extends XInfiniResponse> void retryUtilResourceDeleted(XInfiniRequest req,
                                                                       Class<T> rsp) {
         new Retry<Void>() {
             @Override
-            @RetryCondition(times = XInfiniConstants.DEFAULT_POLLING_TIMES)
+            @RetryCondition(times = 150, interval = 2)
             protected Void call() {
                 T r = XInfiniApiHelper.this.call(req, rsp);
                 if (!r.resourceIsDeleted()) {
@@ -383,7 +427,7 @@ public class XInfiniApiHelper {
         return callErrorOut(req, GetBdcBdevResponse.class).toModule();
     }
 
-    public void deleteBdcBdev(int bdevId) {
+    public void deleteBdcBdev(int bdevId, int bdcId) {
         DeleteBdcBdevRequest req = new DeleteBdcBdevRequest();
         req.setId(bdevId);
         DeleteBdcBdevResponse rsp = call(req, DeleteBdcBdevResponse.class);
@@ -398,7 +442,25 @@ public class XInfiniApiHelper {
 
         GetBdcBdevRequest gReq = new GetBdcBdevRequest();
         gReq.setId(bdevId);
-        retryUtilResourceDeleted(gReq, GetBdcBdevResponse.class);
+        BdcModule bdc = getBdc(bdcId);
+        if (!BdcRunState.Active.toString().equals(bdc.getStatus().getRunState())) {
+            logger.info(String.format("bdc %s is not active, current %s, check bdev deleted in 10s",
+                    bdcId, bdc.getStatus().getRunState()));
+            retryUtilResourceDeletedIn10Secs(gReq, GetBdcBdevResponse.class);
+        } else {
+            retryUtilResourceDeleted(gReq, GetBdcBdevResponse.class);
+        }
+    }
+
+    public VolumeModule rollbackSnapshot(int volId, int snapId) {
+        RollbackSnapshotRequest req = new RollbackSnapshotRequest();
+        req.setId(volId);
+        req.setBsSnapId(snapId);
+        callErrorOut(req, RollbackSnapshotResponse.class);
+        GetVolumeRequest gReq = new GetVolumeRequest();
+        gReq.setId(volId);
+        return retryUtilStateActive(gReq, GetVolumeResponse.class,
+                (GetVolumeResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
     }
 
     public void deleteVolume(int volId, boolean force) {
@@ -452,7 +514,8 @@ public class XInfiniApiHelper {
                     .isExists();
 
             if (exist) {
-                throw new OperationFailureException(operr("snapshot %s has %d cloned volumes, volumes names: %s", snapShotId, vRsp.getMetadata().getPagination().getCount(), volNames));
+                VolumeSnapshotModule snap = getVolumeSnapshot(snapShotId);
+                throw new OperationFailureException(operr("snapshot [id:%s, name:%s] has %d cloned volumes, volumes names: %s", snapShotId, snap.getSpec().getName(), vRsp.getMetadata().getPagination().getCount(), volNames));
             }
             logger.info("all cloned volumes not exist in database, try to delete them");
             // try to delete cloned volumes if not exist in db

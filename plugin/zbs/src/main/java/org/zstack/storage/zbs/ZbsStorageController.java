@@ -98,6 +98,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         scap.setSupport(true);
         scap.setArrangementType(VolumeSnapshotCapability.VolumeSnapshotArrangementType.INDIVIDUAL);
         scap.setSupportCreateOnHypervisor(false);
+        scap.setSupportLazyDelete(false);
         capabilities.setSnapshotCapability(scap);
         capabilities.setSupportCloneFromVolume(false);
         capabilities.setSupportStorageQos(false);
@@ -586,6 +587,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                                 stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                                 stats.setSize(returnValue.getSize());
                                 stats.setActualSize(returnValue.getActualSize());
+                                stats.setParentUri(srcInstallPath);
                                 trigger.next();
                             }
 

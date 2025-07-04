@@ -5,7 +5,6 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
@@ -55,10 +54,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -139,6 +135,10 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             handle((GetAccessPathMsg) msg);
         } else if (msg instanceof UpdatePrimaryStorageHostStatusMsg) {
             handle((UpdatePrimaryStorageHostStatusMsg) msg);
+        } else if (msg instanceof GetVolumeBackingChainFromPrimaryStorageMsg) {
+            handle((GetVolumeBackingChainFromPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteVolumeChainOnPrimaryStorageMsg) {
+            handle((DeleteVolumeChainOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -259,8 +259,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 reply.setSize(stats.getSize());
                 reply.setInstallPath(stats.getInstallPath());
                 reply.setProtocol(externalVO.getDefaultProtocol());
-                // FIXME: bypass the incremental flag for expon
-                // reply.setIncremental(true);
+                reply.setIncremental(!controller.reportCapabilities().getSnapshotCapability().isSupportLazyDelete());
                 bus.reply(msg, reply);
             }
 
@@ -688,8 +687,17 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             ImageCacheVO cache = createTemporaryImageCacheFromVolumeSnapshot(msg.getImageInventory(), msg.getVolumeSnapshot());
             dbf.persist(cache);
             reply.setInventory(cache.toInventory());
-            // TODO hardcode for expon
-            reply.setIncremental(false);
+
+            boolean lazyDelete = controller.reportCapabilities().getSnapshotCapability().isSupportLazyDelete();
+            /**
+             If the primary storage supports lazy deletion, we can delete the snapshot immediately.
+             Otherwise, we need to retain the snapshot until its references are deleted.
+             The incremental clone mechanism handles this reference management.
+
+             In other words, if the primary storage supports lazy deletion, we can treat it as a
+             standard clone operation for simplified management.
+             */
+            reply.setIncremental(!lazyDelete);
             bus.reply(msg, reply);
             return;
         }
@@ -1365,6 +1373,91 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         bus.reply(msg, reply);
     }
 
+    protected void handle(GetVolumeBackingChainFromPrimaryStorageMsg msg) {
+        GetVolumeBackingChainFromPrimaryStorageReply r = new GetVolumeBackingChainFromPrimaryStorageReply();
+        new While<>(msg.getRootInstallPaths()).each((installPath, compl) -> {
+            getParentChain(installPath, new ArrayList<>(), new ReturnValueCompletion<List<VolumeStats>>(compl) {
+                @Override
+                public void success(List<VolumeStats> chains) {
+                    long tsize = 0;
+                    List<String> chainPaths = new ArrayList<>();
+                    for (VolumeStats stats : chains) {
+                        tsize += stats.getActualSize();
+                        chainPaths.add(stats.getInstallPath());
+                    }
+
+                    r.putBackingChainInstallPath(installPath, chainPaths);
+                    r.putBackingChainSize(installPath, tsize);
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.allDone();
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    r.setError(errorCodeList.getCauses().get(0));
+                }
+                bus.reply(msg, r);
+            }
+        });
+    }
+
+    private void getParentChain(String installPath, List<VolumeStats> chains, ReturnValueCompletion<List<VolumeStats>> completion) {
+        controller.stats(installPath, new ReturnValueCompletion<VolumeStats>(completion) {
+            @Override
+            public void success(VolumeStats stats) {
+                chains.add(stats);
+                if (stats.getParentUri() == null) {
+                    chains.remove(0);  // do not contain self
+                    completion.success(chains);
+                    return;
+                }
+
+                getParentChain(stats.getParentUri(), chains, completion);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    protected void handle(DeleteVolumeChainOnPrimaryStorageMsg msg) {
+        DeleteVolumeChainOnPrimaryStorageReply reply = new DeleteVolumeChainOnPrimaryStorageReply();
+        new While<>(msg.getInstallPaths()).each((installPath, compl) -> {
+            // TODO use trash instead, make sure only one snapshot for link clone.
+            controller.deleteVolumeAndSnapshot(installPath, new Completion(compl) {
+                @Override
+                public void success() {
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.allDone();
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    reply.setError(errorCodeList.getCauses().get(0));
+                    bus.reply(msg, reply);
+                } else {
+                    bus.reply(msg, reply);
+                }
+            }
+        });
+    }
+
     @Override
     protected void handle(DeleteVolumeBitsOnPrimaryStorageMsg msg) {
         String protocol = null;
@@ -1374,6 +1467,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             if (volume != null) {
                 protocol = volume.getProtocol();
             }
+
+             // FIXME(shenjin) remove it
             if (volume != null && VolumeType.Root.equals(volume.getType()) && VolumeProtocol.iSCSI.toString().equals(protocol)) {
                 force = true;
             }
@@ -1978,7 +2073,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         }).start();
     }
 
-    protected void doDeleteBits(String installPath, boolean force, Completion completion) {
+    private void doDeleteBits(String installPath, boolean force, Completion completion) {
         if (force) {
             controller.deleteVolume(installPath, completion);
         } else {
