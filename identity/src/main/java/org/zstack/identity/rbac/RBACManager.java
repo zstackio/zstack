@@ -21,20 +21,14 @@ public interface RBACManager {
     }
 
     static List<PolicyInventory> getPoliciesBySession(final SessionInventory session) {
+        if (session.getAccountUuid().equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID) || session.isAccountSession()) {
+            return new ArrayList<>(internalPolices);
+
+        }
+
         return new SQLBatchWithReturn<List<PolicyInventory>>() {
             @Override
             protected List<PolicyInventory> scripts() {
-                List<PolicyInventory> ret = new ArrayList<>();
-                if (!session.getAccountUuid().equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID) && !session.isAccountSession()) {
-                    ret.addAll(getPoliciesForUser(session));
-                } else {
-                    ret.addAll(internalPolices);
-                }
-
-                return ret;
-            }
-
-            private List<PolicyInventory> getPoliciesForUser(SessionInventory session) {
                 // polices attached to the user
                 List<PolicyVO> vos = sql("select p from PolicyVO p, UserPolicyRefVO r where r.policyUuid = p.uuid" +
                         " and r.userUuid = :uuid", PolicyVO.class).param("uuid", session.getUserUuid()).list();
