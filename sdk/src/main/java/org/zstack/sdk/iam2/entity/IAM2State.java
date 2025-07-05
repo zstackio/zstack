@@ -1,6 +1,6 @@
 package org.zstack.sdk.iam2.entity;
 
-public enum State {
+public enum IAM2State {
 	Enabled,
 	Disabled,
 	Staled,
