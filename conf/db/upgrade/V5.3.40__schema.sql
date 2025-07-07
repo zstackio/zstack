@@ -73,6 +73,10 @@ BEGIN
         WHERE img.uuid = vm_image_uuid
         LIMIT 1;
 
+        IF cpu_arch IS NULL THEN
+            SET cpu_arch = 'x86_64';
+        END IF;
+
         SELECT uuid INTO existing_uuid
         FROM ModelServiceImageVO 
         WHERE modelServiceUuid = service_uuid AND cpuArchitecture = cpu_arch
