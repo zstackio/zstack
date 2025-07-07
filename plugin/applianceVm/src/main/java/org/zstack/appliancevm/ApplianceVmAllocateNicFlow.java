@@ -83,6 +83,7 @@ public class ApplianceVmAllocateNicFlow implements Flow {
         inv.setHypervisorType(vmSpec.getVmInventory().getHypervisorType());
         inv.setDriverType(ImagePlatform.valueOf(vmSpec.getVmInventory().getPlatform()).isParaVirtualization() ?
                 nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
+        inv.setState(VmNicState.enable.toString());
 
         L3NetworkVO l3NetworkVO = dbf.findByUuid(nicSpec.getL3NetworkUuid(), L3NetworkVO.class);
         VmNicParam nicParam = VmNicSpec.getVmNicParamsOfSpec(vmSpec.getL3Networks())

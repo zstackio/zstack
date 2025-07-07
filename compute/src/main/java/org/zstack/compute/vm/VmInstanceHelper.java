@@ -182,7 +182,7 @@ public class VmInstanceHelper {
             try {
                 vmNicParams = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParam.class);
             } catch (JsonSyntaxException e) {
-                throw new OperationFailureException(operr("invalid json format, causes: %s", e.getMessage()));
+                throw new ApiMessageInterceptionException(argerr("invalid json format, causes: %s", e.getMessage()));
             }
 
             new VmNicParamValidator().withVmNicParams(vmNicParams)

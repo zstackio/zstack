@@ -30,4 +30,6 @@ public class FlatNetworkServiceSimulatorConfig {
     public List<ResetDefaultGatewayCmd> resetDefaultGatewayCmds = new ArrayList<ResetDefaultGatewayCmd>();
     public List<BatchApplyUserdataCmd> batchApplyUserdataCmds = new ArrayList<BatchApplyUserdataCmd>();
     public List<DeleteNamespaceCmd> deleteNamespaceCmds = new ArrayList<>();
+    public List<FlushDhcpNamespaceCmd> flushNamespaceCmds = new ArrayList<>();
+    public List<ArpingCmd> arpingNamespaceCmds = new ArrayList<>();
 }

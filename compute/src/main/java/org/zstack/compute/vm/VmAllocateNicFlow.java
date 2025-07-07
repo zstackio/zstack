@@ -15,11 +15,11 @@ import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -39,6 +39,8 @@ import static org.zstack.core.progress.ProgressReportService.taskProgress;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateNicFlow implements Flow {
     private static final CLogger logger = Utils.getLogger(VmAllocateNicFlow.class);
+    private static final StaticIpOperator ipOperator = new StaticIpOperator();
+
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -73,7 +75,8 @@ public class VmAllocateNicFlow implements Flow {
         final Map<String, NicIpAddressInfo> nicNetworkInfoMap =
                 Optional.ofNullable(data.get(VmInstanceConstant.Params.VmAllocateNicFlow_nicNetworkInfo.toString()))
                 .map(obj -> (Map<String, NicIpAddressInfo>) obj)
-                .orElse(new StaticIpOperator().getNicNetworkInfoByVmUuid(spec.getVmInventory().getUuid()));
+                .orElse(ipOperator.getNicNetworkInfoByVmUuid(spec.getVmInventory().getUuid()));
+        ipOperator.updateNicNetworkInfoByVmNicParam(spec.getVmInventory().getUuid(), nicNetworkInfoMap, VmNicSpec.getVmNicParamsOfSpec(spec.getL3Networks()));
 
         final List<String> disableL3Networks = new ArrayList<>();
         if (spec.getDisableL3Networks() != null && !spec.getDisableL3Networks().isEmpty()) {
@@ -91,6 +94,7 @@ public class VmAllocateNicFlow implements Flow {
 
         new While<>(VmNicSpec.getFirstL3NetworkInventoryOfSpec(spec.getL3Networks())).each((nicSpec, wcomp) -> {
             L3NetworkInventory nw = nicSpec.getL3Invs().get(0);
+            VmNicParam nicParam = nicSpec.getVmNicParam();
             int deviceId = deviceIdBitmap.nextClearBit(0);
             deviceIdBitmap.set(deviceId);
             MacOperator mo = new MacOperator();
@@ -98,15 +102,14 @@ public class VmAllocateNicFlow implements Flow {
             if (customMac != null){
                 mo.deleteCustomMacSystemTag(spec.getVmInventory().getUuid(), nw.getUuid(), customMac);
                 customMac = customMac.toLowerCase();
+            } else if (nicParam.getMac() != null) {
+                customMac = nicParam.getMac().toLowerCase();
             } else {
                 customMac = NetworkUtils.generateMacWithDeviceId((short) deviceId);
             }
             final String mac = customMac;
-            CustomNicOperator nicOperator = new CustomNicOperator(spec.getVmInventory().getUuid(),nw.getUuid());
-            final String customNicUuid = nicOperator.getCustomNicId();
 
             // choose vnic factory based on nicParams of nicSpec & enableVhostUser globalConfig
-            VmNicParam nicParam = nicSpec.getVmNicParam();
             VmNicType type = nicManager.getVmNicType(spec.getVmInventory().getUuid(), nw, nicParam.isSriovEnabled());
             if (type == null) {
                 wcomp.addError(Platform.operr("there is no available nicType on L3 network [%s]", nw.getUuid()));
@@ -115,7 +118,8 @@ public class VmAllocateNicFlow implements Flow {
             }
             VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(type);
 
-
+            CustomNicOperator nicOperator = new CustomNicOperator(spec.getVmInventory().getUuid(),nw.getUuid());
+            final String customNicUuid = nicOperator.getCustomNicId();
             VmNicInventory nic = new VmNicInventory();
             if (customNicUuid != null) {
                 nic.setUuid(customNicUuid);
@@ -144,14 +148,20 @@ public class VmAllocateNicFlow implements Flow {
 
             nic.setDeviceId(deviceId);
             nic.setInternalName(VmNicVO.generateNicInternalName(spec.getVmInventory().getInternalId(), nic.getDeviceId()));
-            nic.setState(disableL3Networks.contains(nic.getL3NetworkUuid()) ? VmNicState.disable.toString() : VmNicState.enable.toString());
+            nic.setState(
+                    disableL3Networks.contains(nic.getL3NetworkUuid()) || VmNicState.disable.toString().equals(nicParam.getState())
+                            ? VmNicState.disable.toString()
+                            : VmNicState.enable.toString()
+            );
             final String vmNicUuid = new SQLBatchWithReturn<String>() {
                 @Override
                 protected String scripts() {
                     VmNicVO nicVO = vnicFactory.createVmNic(nic, spec);
-                    if (!nw.getEnableIPAM() && nicNetworkInfoMap != null && nicNetworkInfoMap.containsKey(nw.getUuid())) {
+                    if (!nw.enableIpAllocation() && nicNetworkInfoMap != null
+                            && nicNetworkInfoMap.containsKey(nw.getUuid())
+                            && spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
                         NicIpAddressInfo nicNicIpAddressInfo = nicNetworkInfoMap.get(nic.getL3NetworkUuid());
-                        if (!nicNicIpAddressInfo.ipv6Address.isEmpty()) {
+                        if (!StringUtils.isEmpty(nicNicIpAddressInfo.ipv6Address)) {
                             UsedIpVO vo = new UsedIpVO();
                             vo.setUuid(Platform.getUuid());
                             vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(nicNicIpAddressInfo.ipv6Address));
@@ -161,30 +171,28 @@ public class VmAllocateNicFlow implements Flow {
                             vo.setIpVersion(IPv6Constants.IPv6);
                             vo.setVmNicUuid(nic.getUuid());
                             vo.setL3NetworkUuid(nic.getL3NetworkUuid());
-                            if (nic.getUsedIpUuid() == null) {
-                                nic.setUsedIpUuid(vo.getUuid());
-                                nicVO.setUsedIpUuid(vo.getUuid());
-                            }
+                            vo.setIpRangeUuid(IpRangeHelper.getIpRangeUuid(nic.getL3NetworkUuid(), vo.getIp()));
+                            nic.setUsedIpUuid(vo.getUuid());
+                            nicVO.setUsedIpUuid(vo.getUuid());
                             nicVO.setIp(vo.getIp());
                             nicVO.setIpVersion(vo.getIpVersion());
                             nicVO.setNetmask(vo.getNetmask());
                             nicVO.setGateway(vo.getGateway());
                             persist(vo);
                         }
-                        if (!nicNicIpAddressInfo.ipv4Address.isEmpty()) {
+                        if (!StringUtils.isEmpty(nicNicIpAddressInfo.ipv4Address)) {
                             UsedIpVO vo = new UsedIpVO();
                             vo.setUuid(Platform.getUuid());
                             vo.setIp(nicNicIpAddressInfo.ipv4Address);
-                            vo.setIpInLong(NetworkUtils.ipv4StringToLong(nicNicIpAddressInfo.ipv4Address));
+                            vo.setIpInLong(NetworkUtils.ipv4StringToLong(vo.getIp()));
+                            vo.setIpRangeUuid(IpRangeHelper.getIpRangeUuid(nic.getL3NetworkUuid(), vo.getIp()));
                             vo.setGateway(nicNicIpAddressInfo.ipv4Gateway);
                             vo.setNetmask(nicNicIpAddressInfo.ipv4Netmask);
                             vo.setIpVersion(IPv6Constants.IPv4);
                             vo.setVmNicUuid(nic.getUuid());
                             vo.setL3NetworkUuid(nic.getL3NetworkUuid());
-                            if (nic.getUsedIpUuid() == null) {
-                                nic.setUsedIpUuid(vo.getUuid());
-                                nicVO.setUsedIpUuid(vo.getUuid());
-                            }
+                            nic.setUsedIpUuid(vo.getUuid());
+                            nicVO.setUsedIpUuid(vo.getUuid());
                             nicVO.setIp(vo.getIp());
                             nicVO.setIpVersion(vo.getIpVersion());
                             nicVO.setNetmask(vo.getNetmask());
@@ -197,7 +205,7 @@ public class VmAllocateNicFlow implements Flow {
                     return nicVO.getUuid();
                 }
             }.execute();
-            addVmNicConfig(vmNicUuid, spec, nicSpec);
+            addVmNicConfig(vmNicUuid, spec, nicParam);
             wcomp.done();
 
         }).run(new WhileDoneCompletion(trigger) {
@@ -212,12 +220,11 @@ public class VmAllocateNicFlow implements Flow {
         });
     }
 
-    private void addVmNicConfig(String vmNicUuid, VmInstanceSpec vmSpec, VmNicSpec nicSpec) {
-        if (nicSpec == null) {
+    private void addVmNicConfig(String vmNicUuid, VmInstanceSpec vmSpec, VmNicParam vmNicParam) {
+        if (vmNicParam == null) {
             return;
         }
 
-        VmNicParam vmNicParam = nicSpec.getVmNicParam();
         // add vmnic bandwidth systemtag
         if (vmNicParam.getInboundBandwidth() != null || vmNicParam.getOutboundBandwidth() != null) {
             VmNicQosConfigBackend backend = vmMgr.getVmNicQosConfigBackend(vmSpec.getVmInventory().getType());

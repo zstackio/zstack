@@ -3,18 +3,16 @@ package org.zstack.header.network.l3;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.NoView;
 import org.zstack.header.zone.ZoneVO;
-import org.zstack.utils.network.IPv6Constants;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
 @Table
@@ -50,6 +48,11 @@ public class L3NetworkVO extends L3NetworkAO implements OwnedByAccount {
     @NoView
     private Set<L3NetworkHostRouteVO> hostRoutes = new HashSet<L3NetworkHostRouteVO>();
 
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "l3NetworkUuid", insertable = false, updatable = false)
+    @NoView
+    private Set<ReservedIpRangeVO> reservedIpRanges = new HashSet<ReservedIpRangeVO>();
+
     @Transient
     private String accountUuid;
 
@@ -75,6 +78,7 @@ public class L3NetworkVO extends L3NetworkAO implements OwnedByAccount {
         this.setIpRanges(vo.getIpRanges());
         this.setNetworkServices(vo.getNetworkServices());
         this.setHostRoutes(vo.getHostRoutes());
+        this.setReservedIpRanges(vo.getReservedIpRanges());
         this.setAccountUuid(vo.getAccountUuid());
     }
 
@@ -120,17 +124,30 @@ public class L3NetworkVO extends L3NetworkAO implements OwnedByAccount {
         this.hostRoutes = hostRoutes;
     }
 
+    public Set<ReservedIpRangeVO> getReservedIpRanges() {
+        return reservedIpRanges;
+    }
+
+    public void setReservedIpRanges(Set<ReservedIpRangeVO> reservedIpRanges) {
+        this.reservedIpRanges = reservedIpRanges;
+    }
+
     public List<Integer> getIpVersions() {
-        List<Integer> ipVersions = new ArrayList<>();
-        if (super.getIpVersion() == IPv6Constants.IPv4) {
-            ipVersions.add(IPv6Constants.IPv4);
-        } else if (super.getIpVersion() == IPv6Constants.IPv6) {
-            ipVersions.add(IPv6Constants.IPv6);
-        } else if (super.getIpVersion() == IPv6Constants.DUAL_STACK) {
-            ipVersions.add(IPv6Constants.IPv4);
-            ipVersions.add(IPv6Constants.IPv6);
+        return getIpRanges().stream().map(IpRangeAO::getIpVersion).distinct()
+                .sorted().collect(Collectors.toList());
+    }
+
+    public boolean enableIpAllocation() {
+        if (L3NetworkType.valueOf(getType()).isMandatoryIpAllocation()) {
+            return true;
         }
 
-        return ipVersions;
+        for (NetworkServiceL3NetworkRefVO ref : networkServices) {
+            if (ref.getNetworkServiceType().equals(NetworkServiceType.DHCP.toString())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -10,10 +10,10 @@ public class AllocateIpMsg extends NeedReplyMessage implements L3NetworkMessage,
     private String excludedIp;
     private boolean duplicatedIpAllowed = false;
     private String ipRangeUuid;
-    private String ipRangeType;
     private int ipVersion = IPv6Constants.IPv4;
     private String netmask;
     private int prefixLength;
+    private String gateway;
 
     public String getRequiredIp() {
         return requiredIp;
@@ -91,5 +91,13 @@ public class AllocateIpMsg extends NeedReplyMessage implements L3NetworkMessage,
 
     public void setPrefixLength(int prefixLength) {
         this.prefixLength = prefixLength;
+    }
+
+    public String getGateway() {
+        return gateway;
+    }
+
+    public void setGateway(String gateway) {
+        this.gateway = gateway;
     }
 }

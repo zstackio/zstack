@@ -82,7 +82,7 @@ public class TfL3Network extends L3BasicNetwork {
 
     private void handle(APICheckIpAvailabilityMsg msg) {
         APICheckIpAvailabilityReply reply = new APICheckIpAvailabilityReply();
-        CheckIpAvailabilityReply r = new CheckIpAvailabilityReply();
+        CheckIpAvailabilityResult r = new CheckIpAvailabilityResult();
         TfPortClient tfPortClient = new TfPortClient();
         try {
             boolean availability = tfPortClient.checkTfIpAvailability(msg.getIp(), msg.getL3NetworkUuid());

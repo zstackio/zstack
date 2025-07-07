@@ -230,26 +230,27 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
     private void isVipInVmNicSubnet(String vipUuid, String guestIpUuid) {
         VipVO vip = dbf.findByUuid(vipUuid, VipVO.class);
         UsedIpVO vipIp = dbf.findByUuid(vip.getUsedIpUuid(), UsedIpVO.class);
-        NormalIpRangeVO vipRange = dbf.findByUuid(vipIp.getIpRangeUuid(), NormalIpRangeVO.class);
 
         UsedIpVO guestIp = dbf.findByUuid(guestIpUuid, UsedIpVO.class);
-        NormalIpRangeVO guestRange = dbf.findByUuid(guestIp.getIpRangeUuid(), NormalIpRangeVO.class);
 
         if (!vipIp.getIpVersion().equals(guestIp.getIpVersion())) {
             throw new ApiMessageInterceptionException(operr("vip ipVersion [%d] is different from guestIp ipVersion [%d].",
                     vipIp.getIpVersion(), guestIp.getIpVersion()));
         }
 
-        if (vipIp.getIpVersion() == IPv6Constants.IPv4) {
-            SubnetUtils guestSub = new SubnetUtils(guestRange.getGateway(), guestRange.getNetmask());
-            if (guestSub.getInfo().isInRange(vipIp.getIp())) {
-                throw new ApiMessageInterceptionException(operr("Vip[%s] is in the guest ip range [%s, %s]",
-                        vipIp.getIp(), guestRange.getStartIp(), guestRange.getEndIp()));
-            }
-        } else {
-            if (IPv6NetworkUtils.isIpv6InCidrRange(vipIp.getIp(), guestRange.getNetworkCidr())){
-                throw new ApiMessageInterceptionException(operr("Vip[%s] is in the guest ip range [%s, %s]",
-                        vipIp.getIp(), guestRange.getStartIp(), guestRange.getEndIp()));
+        if (guestIp.getIpRangeUuid() != null) {
+            NormalIpRangeVO guestRange = dbf.findByUuid(guestIp.getIpRangeUuid(), NormalIpRangeVO.class);
+            if (vipIp.getIpVersion() == IPv6Constants.IPv4) {
+                SubnetUtils guestSub = new SubnetUtils(guestRange.getGateway(), guestRange.getNetmask());
+                if (guestSub.getInfo().isInRange(vipIp.getIp())) {
+                    throw new ApiMessageInterceptionException(operr("Vip[%s] is in the guest ip range [%s, %s]",
+                            vipIp.getIp(), guestRange.getStartIp(), guestRange.getEndIp()));
+                }
+            } else {
+                if (IPv6NetworkUtils.isIpv6InCidrRange(vipIp.getIp(), guestRange.getNetworkCidr())){
+                    throw new ApiMessageInterceptionException(operr("Vip[%s] is in the guest ip range [%s, %s]",
+                            vipIp.getIp(), guestRange.getStartIp(), guestRange.getEndIp()));
+                }
             }
         }
     }
