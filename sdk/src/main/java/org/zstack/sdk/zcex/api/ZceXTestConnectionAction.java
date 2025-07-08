@@ -25,14 +25,21 @@ public class ZceXTestConnectionAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String managementIp;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
     public java.lang.Integer port = 8056;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
+
+    @Deprecated
     @Param(required = false, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String url = "/api/v1/cluster/time";
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String adminToken;
 
     @Param(required = false)
     public java.util.List systemTags;
