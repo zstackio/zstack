@@ -34,6 +34,7 @@ public class BeanConstructor {
             "<import resource=\"springConfigXml/ansibleFacade.xml\" />",
             "<import resource=\"springConfigXml/CascadeFacade.xml\" />",
             "<import resource=\"springConfigXml/tag.xml\" />",
+            "<import resource=\"springConfigXml/resourceAttributes.xml\" />",
             "<import resource=\"springConfigXml/Aspect.xml\" />",
             "<import resource=\"springConfigXml/keyValueFacade.xml\" />",
             "<import resource=\"springConfigXml/jmx.xml\" />",

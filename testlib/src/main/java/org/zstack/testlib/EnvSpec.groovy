@@ -30,6 +30,8 @@ import org.zstack.header.vo.EO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.image.ImageGlobalConfig
 import org.zstack.sdk.*
+import org.zstack.sdk.attribute.api.CreateResourceAttributeKeyAction
+import org.zstack.sdk.attribute.api.DeleteResourceAttributeKeyAction
 import org.zstack.sdk.identity.ldap.api.AddLdapServerAction
 import org.zstack.sdk.identity.ldap.api.DeleteLdapServerAction
 import org.zstack.sdk.identity.role.api.CreateRoleAction
@@ -181,6 +183,7 @@ class EnvSpec extends ApiHelper implements Node  {
             [CreateDirectoryAction.metaClass, CreateDirectoryAction.Result.metaClass, DeleteDirectoryAction.class],
             [CreateSNSSnmpPlatformAction.metaClass, CreateSNSSnmpPlatformAction.Result.metaClass, DeleteSNSApplicationPlatformAction.class],
             [CreateSNSSnmpEndpointAction.metaClass, CreateSNSSnmpEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
+            [CreateResourceAttributeKeyAction.metaClass, CreateResourceAttributeKeyAction.Result.metaClass, DeleteResourceAttributeKeyAction.class],
     ]
 
     static Closure GLOBAL_DELETE_HOOK
