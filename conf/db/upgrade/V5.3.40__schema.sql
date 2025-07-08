@@ -53,9 +53,6 @@ BEGIN
             SET model_service_image_uuid = REPLACE(UUID(),'-','');
             INSERT INTO ModelServiceImageVO (uuid, modelServiceUuid, cpuArchitecture, createDate, lastOpDate)
             VALUES (model_service_image_uuid, service_uuid, 'x86_64', NOW(), NOW());
-            
-            INSERT INTO ResourceVO (uuid, resourceType, concreteResourceType) 
-            VALUES (model_service_image_uuid, 'ModelServiceImageVO', 'org.zstack.ai.entity.ModelServiceImageVO');
         END IF;
     END LOOP;
     CLOSE all_services_cursor;
@@ -86,9 +83,6 @@ BEGIN
             SET model_service_image_uuid = REPLACE(UUID(),'-','');
             INSERT INTO ModelServiceImageVO (uuid, modelServiceUuid, cpuArchitecture, vmImageUuid, createDate, lastOpDate)
             VALUES (model_service_image_uuid, service_uuid, cpu_arch, vm_image_uuid, NOW(), NOW());
-            
-            INSERT INTO ResourceVO (uuid, resourceType, concreteResourceType) 
-            VALUES (model_service_image_uuid, 'ModelServiceImageVO', 'org.zstack.ai.entity.ModelServiceImageVO');
         ELSE
             UPDATE ModelServiceImageVO 
             SET vmImageUuid = vm_image_uuid, lastOpDate = NOW()
@@ -117,9 +111,6 @@ BEGIN
             SET model_service_image_uuid = REPLACE(UUID(),'-','');
             INSERT INTO ModelServiceImageVO (uuid, modelServiceUuid, cpuArchitecture, dockerImage, createDate, lastOpDate)
             VALUES (model_service_image_uuid, service_uuid, cpu_arch, docker_image, NOW(), NOW());
-            
-            INSERT INTO ResourceVO (uuid, resourceType, concreteResourceType) 
-            VALUES (model_service_image_uuid, 'ModelServiceImageVO', 'org.zstack.ai.entity.ModelServiceImageVO');
         ELSE
             UPDATE ModelServiceImageVO 
             SET dockerImage = docker_image, lastOpDate = NOW()
