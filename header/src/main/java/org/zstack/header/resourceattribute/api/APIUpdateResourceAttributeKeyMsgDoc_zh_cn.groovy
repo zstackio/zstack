@@ -40,6 +40,15 @@ doc {
 					since "4.10.16"
 				}
 				column {
+					name "resourceTypes"
+					enclosedIn "updateResourceAttributeKey"
+					desc "该属性支持的资源类型列表"
+					location "body"
+					type "List"
+					optional true
+					since "4.10.16"
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"

@@ -8,6 +8,7 @@ import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @TagResourceType(ResourceAttributeKeyVO.class)
@@ -25,6 +26,9 @@ public class APICreateResourceAttributeKeyMsg extends APICreateMessage {
     @APIParam(required = false)
     private String description;
 
+    @APIParam(required = false)
+    private List<String> resourceTypes;
+
     public String getName() {
         return name;
     }
@@ -39,6 +43,14 @@ public class APICreateResourceAttributeKeyMsg extends APICreateMessage {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public List<String> getResourceTypes() {
+        return resourceTypes;
+    }
+
+    public void setResourceTypes(List<String> resourceTypes) {
+        this.resourceTypes = resourceTypes;
     }
 
     public static APICreateResourceAttributeKeyMsg __example__() {

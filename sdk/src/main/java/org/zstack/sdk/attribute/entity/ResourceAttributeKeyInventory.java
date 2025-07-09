@@ -28,6 +28,14 @@ public class ResourceAttributeKeyInventory  {
         return this.description;
     }
 
+    public java.util.List resourceTypes;
+    public void setResourceTypes(java.util.List resourceTypes) {
+        this.resourceTypes = resourceTypes;
+    }
+    public java.util.List getResourceTypes() {
+        return this.resourceTypes;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
