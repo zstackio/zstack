@@ -1,13 +1,19 @@
 package org.zstack.header.resourceattribute.entity;
 
 import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.NoView;
 import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import java.sql.Timestamp;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table
@@ -24,6 +30,11 @@ public class ResourceAttributeKeyVO extends ResourceVO {
 
     @Column
     private Timestamp lastOpDate;
+
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "keyUuid", insertable = false, updatable = false)
+    @NoView
+    private Set<ResourceAttributeKeyResourceTypeVO> types = new HashSet<>();
 
     @PreUpdate
     private void preUpdate() {
@@ -60,5 +71,13 @@ public class ResourceAttributeKeyVO extends ResourceVO {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public Set<ResourceAttributeKeyResourceTypeVO> getTypes() {
+        return types;
+    }
+
+    public void setTypes(Set<ResourceAttributeKeyResourceTypeVO> types) {
+        this.types = types;
     }
 }

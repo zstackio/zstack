@@ -34,6 +34,9 @@ public class UpdateResourceAttributeKeyAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List resourceTypes;
+
     @Param(required = false)
     public java.util.List systemTags;
 

@@ -12,10 +12,14 @@ import org.zstack.header.resourceattribute.ResourceAttributeMessage;
 import org.zstack.header.resourceattribute.api.APICreateResourceAttributeKeyEvent;
 import org.zstack.header.resourceattribute.api.APICreateResourceAttributeKeyMsg;
 import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyInventory;
+import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyResourceTypeVO;
 import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyVO;
 import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.zstack.core.Platform.err;
 
@@ -72,13 +76,24 @@ public class ResourceAttributeManager extends AbstractService {
         key.setName(msg.getName());
         key.setDescription(msg.getDescription());
 
+        List<ResourceAttributeKeyResourceTypeVO> relatedTypes = new ArrayList<>();
+        for (String resourceType : msg.getResourceTypes()) {
+            ResourceAttributeKeyResourceTypeVO type = new ResourceAttributeKeyResourceTypeVO();
+            type.setKeyUuid(key.getUuid());
+            type.setResourceType(resourceType);
+            relatedTypes.add(type);
+        }
+
         boolean duplicate;
         synchronized (createLock) {
             duplicate = Q.New(ResourceAttributeKeyVO.class)
                     .eq(ResourceAttributeKeyVO_.name, msg.getName())
                     .isExists();
             if (!duplicate) {
-                databaseFacade.persistAndRefresh(key);
+                databaseFacade.persist(key);
+                databaseFacade.persistCollection(relatedTypes);
+
+                key = databaseFacade.reload(key);
             }
         }
 

@@ -10,4 +10,14 @@
         <id>1001</id>
         <description>Duplicated resource attribute</description>
     </code>
+
+    <code>
+        <id>1002</id>
+        <description>Unsupported resource type</description>
+    </code>
+
+    <code>
+        <id>1003</id>
+        <description>Remove resource type not allowed</description>
+    </code>
 </error>

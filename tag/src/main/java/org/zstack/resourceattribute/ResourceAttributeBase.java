@@ -14,6 +14,7 @@ import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -27,20 +28,31 @@ import org.zstack.header.resourceattribute.api.APIUpdateResourceAttributeKeyEven
 import org.zstack.header.resourceattribute.api.APIUpdateResourceAttributeKeyMsg;
 import org.zstack.header.resourceattribute.entity.CreateResourceAttributeResult;
 import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyInventory;
+import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyResourceTypeVO;
+import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyResourceTypeVO_;
 import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyVO;
 import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyVO_;
 import org.zstack.header.resourceattribute.entity.ResourceAttributeValueVO;
 import org.zstack.header.resourceattribute.entity.ResourceAttributeValueVO_;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ResourceVO_;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import static org.zstack.core.Platform.err;
+import static org.zstack.header.resourceattribute.AttributeErrors.*;
+import static org.zstack.utils.CollectionUtils.transform;
+import static org.zstack.utils.CollectionUtils.transformToSet;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ResourceAttributeBase {
@@ -103,7 +115,16 @@ public class ResourceAttributeBase {
                 createResourceAttributeValue(context);
 
                 APICreateResourceAttributeValueEvent event = new APICreateResourceAttributeValueEvent(msg.getId());
-                event.setInventories(CreateResourceAttributeResult.valueOf(context.values));
+                boolean allFail = context.values.stream().allMatch(value -> !value.isSuccess());
+                if (allFail) {
+                    ErrorCode error = err(GENERIC_ERROR, "failed to create resource attribute value");
+                    ErrorCode errors = ObjectUtils.newAndCopy(error, ErrorCode.class);
+                    errors.setCauses(transform(context.values, value -> value.error));
+                    event.setError(errors);
+                } else {
+                    event.setInventories(CreateResourceAttributeResult.valueOf(context.values));
+                }
+
                 bus.publish(event);
 
                 chain.next();
@@ -151,6 +172,18 @@ public class ResourceAttributeBase {
 
             @Override
             public void run(SyncTaskChain chain) {
+                APIUpdateResourceAttributeKeyEvent event = new APIUpdateResourceAttributeKeyEvent(msg.getId());
+
+                if (!CollectionUtils.isEmpty(msg.getResourceTypes())) {
+                    final ErrorCode error = updateTypes();
+                    if (error != null) {
+                        event.setError(error);
+                        bus.publish(event);
+                        chain.next();
+                        return;
+                    }
+                }
+
                 boolean update = false;
                 final UpdateQuery sql = SQL.New(ResourceAttributeKeyVO.class)
                         .eq(ResourceAttributeKeyVO_.uuid, self.getUuid());
@@ -168,11 +201,53 @@ public class ResourceAttributeBase {
                     sql.update();
                 }
                 self = databaseFacade.reload(self);
-
-                APIUpdateResourceAttributeKeyEvent event = new APIUpdateResourceAttributeKeyEvent(msg.getId());
                 event.setInventory(ResourceAttributeKeyInventory.valueOf(self));
                 bus.publish(event);
                 chain.next();
+            }
+
+            @Transactional
+            private ErrorCode updateTypes() {
+                Set<String> originalTypes = transformToSet(self.getTypes(), ResourceAttributeKeyResourceTypeVO::getResourceType);
+
+                Set<String> needDeletes = new HashSet<>(originalTypes);
+                needDeletes.removeAll(msg.getResourceTypes());
+
+                Set<String> needPersists = new HashSet<>(msg.getResourceTypes());
+                needPersists.removeAll(originalTypes);
+
+                if (!CollectionUtils.isEmpty(needDeletes)) {
+                    List<String> resourceRelatedTypes = Q.New(ResourceAttributeValueVO.class)
+                            .eq(ResourceAttributeValueVO_.keyUuid, self.getUuid())
+                            .in(ResourceAttributeValueVO_.resourceType, needDeletes)
+                            .select(ResourceAttributeValueVO_.resourceType)
+                            .listValues();
+                    if (!resourceRelatedTypes.isEmpty()) {
+                        return err(REMOVE_RESOURCE_TYPE_NOT_ALLOWED,
+                                "failed to remove resource type %s in attribute key[%s]: resources already attached",
+                                resourceRelatedTypes, self.getUuid())
+                                .withOpaque("related.resource.types", resourceRelatedTypes)
+                                .withOpaque("attribute.key", self.getUuid());
+                    }
+
+                    SQL.New(ResourceAttributeKeyResourceTypeVO.class)
+                            .eq(ResourceAttributeKeyResourceTypeVO_.keyUuid, self.getUuid())
+                            .in(ResourceAttributeKeyResourceTypeVO_.resourceType, needDeletes)
+                            .delete();
+                }
+
+                if (!CollectionUtils.isEmpty(needPersists)) {
+                    List<ResourceAttributeKeyResourceTypeVO> types = new ArrayList<>();
+                    for (String resourceType : needPersists) {
+                        ResourceAttributeKeyResourceTypeVO vo = new ResourceAttributeKeyResourceTypeVO();
+                        vo.setKeyUuid(self.getUuid());
+                        vo.setResourceType(resourceType);
+                        types.add(vo);
+                    }
+                    databaseFacade.persistCollection(types);
+                }
+
+                return null;
             }
         });
     }
@@ -223,6 +298,7 @@ public class ResourceAttributeBase {
             values.add(value);
         }
 
+        Set<String> supportTypes = transformToSet(self.getTypes(), ResourceAttributeKeyResourceTypeVO::getResourceType);
         new SQLBatch() {
             @Override
             protected void scripts() {
@@ -234,8 +310,16 @@ public class ResourceAttributeBase {
                 }
 
                 for (ResourceAttributeValueVO item : values) {
-                    persist(item);
-                    context.values.add(ErrorableValue.of(reload(item)));
+                    if (supportTypes.contains(item.getResourceType())) {
+                        persist(item);
+                        context.values.add(ErrorableValue.of(reload(item)));
+                        continue;
+                    }
+
+                    context.values.add(ErrorableValue.ofErrorCode(
+                            err(UNSUPPORTED_RESOURCE_TYPE, "unsupported resource type[%s]", item.getResourceType())
+                                    .withOpaque("actual.resource.type", item.getResourceType())
+                                    .withOpaque("attribute.key", self.getUuid())));
                 }
             }
         }.execute();

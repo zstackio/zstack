@@ -2,7 +2,6 @@ package org.zstack.header.resourceattribute.entity;
 
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.search.Inventory;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.StringDSL;
 
 import java.io.Serializable;
@@ -10,12 +9,16 @@ import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.transform;
+
 @Inventory(mappingVOClass = ResourceAttributeKeyVO.class)
 @PythonClassInventory
 public class ResourceAttributeKeyInventory implements Serializable {
     private String uuid;
     private String name;
     private String description;
+    private List<String> resourceTypes;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -26,11 +29,12 @@ public class ResourceAttributeKeyInventory implements Serializable {
         inv.setDescription(vo.getDescription());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
+        inv.setResourceTypes(transform(vo.getTypes(), ResourceAttributeKeyResourceTypeVO::getResourceType));
         return inv;
     }
 
     public static List<ResourceAttributeKeyInventory> valueOf(Collection<ResourceAttributeKeyVO> vos) {
-        return CollectionUtils.transform(vos, ResourceAttributeKeyInventory::valueOf);
+        return transform(vos, ResourceAttributeKeyInventory::valueOf);
     }
 
     public String getUuid() {
@@ -57,6 +61,14 @@ public class ResourceAttributeKeyInventory implements Serializable {
         this.description = description;
     }
 
+    public List<String> getResourceTypes() {
+        return resourceTypes;
+    }
+
+    public void setResourceTypes(List<String> resourceTypes) {
+        this.resourceTypes = resourceTypes;
+    }
+
     public Timestamp getCreateDate() {
         return createDate;
     }
@@ -78,6 +90,7 @@ public class ResourceAttributeKeyInventory implements Serializable {
         inventory.setUuid(StringDSL.createFixedUuid(ResourceAttributeKeyVO.class));
         inventory.setName("OperationsPersonnel");
         inventory.setDescription("Kinny");
+        inventory.setResourceTypes(list("VmInstanceVO"));
         inventory.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         inventory.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         return inventory;
