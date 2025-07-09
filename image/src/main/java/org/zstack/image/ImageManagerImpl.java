@@ -599,7 +599,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             public void done() {
                 if (failures.size() == cmsgs.size()) {
                     // failed on all
-                    ErrorCodeList error = errf.stringToOperationError(String.format("failed to create template from" +
+                    ErrorCode error = errf.stringToOperationError(String.format("failed to create template from" +
                                     " the volume snapshot[uuid:%s] on backup storage[uuids:%s]", snapshotUuid,
                             msg.getBackupStorageUuids()), failures.stream().map(f -> f.error).collect(Collectors.toList()));
                     dbf.remove(vo);

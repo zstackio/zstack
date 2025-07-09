@@ -6,7 +6,7 @@ import org.zstack.core.cloudbus.CloudBusIN
 import org.zstack.core.errorcode.ErrorFacade
 import org.zstack.core.thread.AsyncThread
 import org.zstack.header.AbstractService
-import org.zstack.header.errorcode.ErrorCodeList
+import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.message.Message
 import org.zstack.header.message.MessageReply
 import org.zstack.testlib.SkipTestSuite
@@ -123,9 +123,9 @@ class CloudBusCase extends SubCase{
         def msg = new FakeNeedReplyMessage()
         bus.makeTargetServiceIdByResourceUuid(msg, servId, Platform.getUuid())
         MessageReply r = bus.call(msg)
-        assert r.error instanceof ErrorCodeList
-        assert r.error.causes[0] instanceof ErrorCodeList
-        assert r.error.causes[0].causes[0] instanceof ErrorCodeList
+        assert r.error instanceof ErrorCode
+        assert r.error.causes[0] instanceof ErrorCode
+        assert r.error.causes[0].causes[0] instanceof ErrorCode
     }
 
     @Override

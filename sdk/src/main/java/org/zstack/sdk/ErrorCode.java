@@ -36,12 +36,21 @@ public class ErrorCode  {
         return this.elaboration;
     }
 
+    @Deprecated
     public ErrorCode cause;
     public void setCause(ErrorCode cause) {
         this.cause = cause;
     }
     public ErrorCode getCause() {
         return this.cause;
+    }
+
+    public java.util.List causes;
+    public void setCauses(java.util.List causes) {
+        this.causes = causes;
+    }
+    public java.util.List getCauses() {
+        return this.causes;
     }
 
     public java.util.LinkedHashMap opaque;

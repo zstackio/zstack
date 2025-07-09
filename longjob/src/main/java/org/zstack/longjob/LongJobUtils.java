@@ -53,9 +53,7 @@ public class LongJobUtils {
 
     public static ErrorCode noncancelableErr(String error, List<ErrorCode> causes) {
         ErrorCode err = noncancelableErr(error);
-        if (err instanceof ErrorCodeList) {
-            ((ErrorCodeList) err).setCauses(causes);
-        }
+        err.setCauses(causes);
         return err;
     }
 

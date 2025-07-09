@@ -54,7 +54,7 @@ public class ErrorFacadeImpl implements ErrorFacade {
         return instantiateErrorCode(code.toString(), details);
     }
 
-    private void replaceSystemError(ErrorCodeList err, String details) {
+    private void replaceSystemError(ErrorCode err, String details) {
         try {
             ErrorCode subErr = JSONObjectUtil.toObject(details.substring(details.indexOf("{\"code\":")), ErrorCode.class);
             err.setCode(subErr.getCode());
@@ -77,7 +77,7 @@ public class ErrorFacadeImpl implements ErrorFacade {
         if (details != null && details.length() > 4096) {
             details = details.substring(0, 4093) + "...";
         }
-        ErrorCodeList err = (ErrorCodeList) info.code.copy();
+        ErrorCode err = info.code.copy();
         if (SysErrors.INTERNAL.toString().equals(code)) {
             if (details != null && details.trim().contains(", {\"code\":") && details.trim().endsWith("}")) {
                 replaceSystemError(err, details);
@@ -134,27 +134,27 @@ public class ErrorFacadeImpl implements ErrorFacade {
     }
 
     @Override
-    public ErrorCodeList instantiateErrorCode(Enum code, List<ErrorCode> causes) {
+    public ErrorCode instantiateErrorCode(Enum code, List<ErrorCode> causes) {
         return instantiateErrorCode(code.toString(), causes);
     }
 
     @Override
-    public ErrorCodeList instantiateErrorCode(String code, List<ErrorCode> causes) {
+    public ErrorCode instantiateErrorCode(String code, List<ErrorCode> causes) {
         return instantiateErrorCode(code, null, causes);
     }
 
     @Override
-    public ErrorCodeList instantiateErrorCode(Enum code, String details, List<ErrorCode> causes) {
+    public ErrorCode instantiateErrorCode(Enum code, String details, List<ErrorCode> causes) {
         return instantiateErrorCode(code.toString(), details, causes);
     }
 
     @Override
-    public ErrorCodeList instantiateErrorCode(String code, String details, List<ErrorCode> causes) {
-        return (ErrorCodeList) doInstantiateErrorCode(code, details, causes);
+    public ErrorCode instantiateErrorCode(String code, String details, List<ErrorCode> causes) {
+        return doInstantiateErrorCode(code, details, causes);
     }
 
     @Override
-    public ErrorCodeList stringToOperationError(String details, List<ErrorCode> causes) {
+    public ErrorCode stringToOperationError(String details, List<ErrorCode> causes) {
         return instantiateErrorCode(SysErrors.OPERATION_ERROR, details, causes);
     }
 

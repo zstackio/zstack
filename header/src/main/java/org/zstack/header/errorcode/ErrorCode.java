@@ -1,12 +1,14 @@
 package org.zstack.header.errorcode;
 
-import org.zstack.header.exception.CloudRuntimeException;
+import org.apache.commons.collections.CollectionUtils;
 import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.string.ErrorCodeElaboration;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
@@ -20,7 +22,12 @@ public class ErrorCode implements Serializable, Cloneable {
     private ErrorCodeElaboration messages;
     @APINoSee
     private String cost;
+    /**
+     * TODO: merge cause to causes
+     */
+    @Deprecated
     private ErrorCode cause;
+    protected final List<ErrorCode> causes = Collections.synchronizedList(new ArrayList<>());
     @NoJsonSchema
     private LinkedHashMap<String, Object> opaque;
 
@@ -69,6 +76,7 @@ public class ErrorCode implements Serializable, Cloneable {
         this.elaboration = other.elaboration;
         this.messages = other.messages;
         this.cause = other.cause;
+        this.causes.addAll(other.causes);
         if (other.opaque != null) {
             this.opaque = new LinkedHashMap<>(other.opaque);
         }
@@ -99,11 +107,7 @@ public class ErrorCode implements Serializable, Cloneable {
     }
 
     public ErrorCode copy() {
-        try {
-            return (ErrorCode) this.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new CloudRuntimeException(e);
-        }
+        return new ErrorCode(this);
     }
 
     @Override
@@ -131,13 +135,28 @@ public class ErrorCode implements Serializable, Cloneable {
         this.cause = cause;
     }
 
+    public List<ErrorCode> getCauses() {
+        return causes;
+    }
+
+    public void setCauses(List<ErrorCode> causes) {
+        this.causes.clear();
+        if (!CollectionUtils.isEmpty(causes))
+            this.causes.addAll(causes);
+    }
+
+    public ErrorCode withCause(ErrorCode cause) {
+        causes.add(cause);
+        return this;
+    }
+
     public ErrorCode causedBy(ErrorCode cause) {
         setCause(cause);
         return this;
     }
 
     public ErrorCode causedBy(List<ErrorCode> cause) {
-        ((ErrorCodeList) this).setCauses(cause);
+        setCauses(cause);
         return this;
     }
 
@@ -172,7 +191,8 @@ public class ErrorCode implements Serializable, Cloneable {
         return Objects.equals(this.code, other.code) &&
                 Objects.equals(this.cause, other.cause) &&
                 Objects.equals(this.details, other.details) &&
-                Objects.equals(this.opaque, other.opaque);
+                Objects.equals(this.opaque, other.opaque) &&
+                Objects.equals(this.causes, other.causes);
     }
 
     @Override
@@ -182,10 +202,23 @@ public class ErrorCode implements Serializable, Cloneable {
         sb.append(details == null ? "" : details);
         sb.append(opaque == null ? "" : opaque);
         sb.append(cause == null ? "" : cause.toString());
+        sb.append(causes == null || causes.isEmpty() ? "" : causes.toString());
         return sb.toString().hashCode();
     }
 
     public String getReadableDetails() {
+        ErrorCode root = this;
+        StringBuffer errorBuf = new StringBuffer();
+        if (CollectionUtils.isNotEmpty(root.causes)) {
+            root.causes.forEach(cause -> {
+                if (errorBuf.length() > 0) {
+                    errorBuf.append(",");
+                }
+                errorBuf.append(cause.getReadableDetails());
+            });
+            return errorBuf.toString().trim();
+        }
+
         return getRootCauseDetails();
     }
 
