@@ -6001,7 +6001,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         return String.format("ceph://%s", originPath);
     }
 
-    protected String getTargetPoolNameFromAllocatedUrl(String allocatedUrl) {
+    public String getTargetPoolNameFromAllocatedUrl(String allocatedUrl) {
         if (allocatedUrl == null) {
             throw new OperationFailureException(operr("allocated url not found"));
         }
