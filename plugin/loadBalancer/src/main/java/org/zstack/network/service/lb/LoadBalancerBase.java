@@ -2360,6 +2360,8 @@ public class LoadBalancerBase {
                     }
                 }
 
+                final String oldAclStatus = LoadBalancerSystemTags.BALANCER_ACL.getTokenByResourceUuid(
+                        msg.getUuid(), LoadBalancerSystemTags.BALANCER_ACL_TOKEN);
                 if (msg.getAclStatus() != null) {
                     if (LoadBalancerSystemTags.BALANCER_ACL.hasTag(msg.getUuid())) {
                         LoadBalancerSystemTags.BALANCER_ACL.update(msg.getUuid(),
@@ -2387,15 +2389,26 @@ public class LoadBalancerBase {
 
                 boolean refresh = isListenerNeedRefresh(lblVo, null);
                 if (refresh) {
-                    RefreshLoadBalancerMsg msg = new RefreshLoadBalancerMsg();
-                    msg.setUuid(lblVo.getLoadBalancerUuid());
-                    bus.makeLocalServiceId(msg, LoadBalancerConstants.SERVICE_ID);
-                    bus.send(msg, new CloudBusCallBack(chain) {
+                    RefreshLoadBalancerMsg rmsg = new RefreshLoadBalancerMsg();
+                    rmsg.setUuid(lblVo.getLoadBalancerUuid());
+                    bus.makeLocalServiceId(rmsg, LoadBalancerConstants.SERVICE_ID);
+                    bus.send(rmsg, new CloudBusCallBack(chain) {
                         @Override
                         public void run(MessageReply reply) {
                             if (!reply.isSuccess()) {
                                 logger.warn(String.format( "update listener [uuid:%s] failed", lblVo.getUuid()));
                                 evt.setError(reply.getError());
+                                if (msg.getAclStatus() != null) {
+                                    logger.warn(String.format( "rollback acl status for listener [uuid:%s]", msg.getUuid()));
+                                    if (oldAclStatus != null) {
+                                        LoadBalancerSystemTags.BALANCER_ACL.update(msg.getUuid(),
+                                                LoadBalancerSystemTags.BALANCER_ACL.instantiateTag(map(
+                                                        e(LoadBalancerSystemTags.BALANCER_ACL_TOKEN, oldAclStatus)
+                                                )));
+                                    } else {
+                                        LoadBalancerSystemTags.BALANCER_ACL.delete(msg.getUuid());
+                                    }
+                                }
                             } else {
                                 evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
                             }
