@@ -29,5 +29,9 @@ public class RBACInfo implements RBACDescription {
         globalReadableResourceBuilder()
                 .resources(PrimaryStorageVO.class)
                 .build();
+
+        attributeSupportResourceBuilder()
+                .resources(PrimaryStorageVO.class)
+                .build();
     }
 }
