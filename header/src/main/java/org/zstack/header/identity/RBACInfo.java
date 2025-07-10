@@ -89,4 +89,11 @@ public class RBACInfo implements RBACDescription {
                 .toOtherRole()
                 .build();
     }
+
+    @Override
+    public void globalReadableResources() {
+        attributeSupportResourceBuilder()
+                .resources(AccountVO.class)
+                .build();
+    }
 }

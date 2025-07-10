@@ -39,5 +39,9 @@ public class RBACInfo implements RBACDescription {
         globalReadableResourceBuilder()
                 .resources(L2NetworkVO.class)
                 .build();
+
+        attributeSupportResourceBuilder()
+                .resources(L2NetworkVO.class)
+                .build();
     }
 }
