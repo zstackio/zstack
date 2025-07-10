@@ -45,5 +45,9 @@ public class RBACInfo implements RBACDescription {
                 .resources(IpRangeVO.class)
                 .resources(AddressPoolVO.class)
                 .build();
+
+        attributeSupportResourceBuilder()
+                .resources(L3NetworkVO.class)
+                .build();
     }
 }
