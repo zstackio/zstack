@@ -73,11 +73,11 @@ import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFa
 import org.zstack.storage.ceph.primary.capacity.CephOsdGroupCapacityHelper;
 import org.zstack.storage.primary.*;
 import org.zstack.storage.snapshot.VolumeSnapshotGlobalConfig;
-import org.zstack.storage.volume.FlattenVolumeGC;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
+import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -120,6 +120,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private PoolUsageReport poolUsageCollector;
     @Autowired
     protected PrimaryStoragePhysicalCapacityManager psPhysicalCapacityMgr;
+    @Autowired
+    private TagManager tagMgr;
 
 
     public CephPrimaryStorageBase() {
@@ -1834,6 +1836,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             logger.info(String.format("Deleted volume %s in Trash.", inv.getInstallPath()));
                         } else {
                             logger.warn(String.format("Failed to delete volume %s in Trash.", inv.getInstallPath()));
+                            submitCephDeleteVolumeGC(inv, self);
                         }
                         trigger.next();
                     }
@@ -1929,6 +1932,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 logger.info(String.format("Deleted volume %s in Trash.", inv.getInstallPath()));
                             } else {
                                 logger.warn(String.format("Failed to delete volume %s in Trash.", inv.getInstallPath()));
+                                submitCephDeleteVolumeGC(inv, self);
                             }
                             trigger.next();
                         }
@@ -1967,6 +1971,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 }
             }
         });
+    }
+
+    private void submitCephDeleteVolumeGC(InstallPathRecycleInventory inv, PrimaryStorageVO self) {
+        CephDeleteVolumeGC gc = new CephDeleteVolumeGC();
+        gc.NAME = String.format("gc-ceph-%s-volume-path-%s", self.getUuid(), inv.getInstallPath());
+        gc.primaryStorageUuid = self.getUuid();
+        VolumeInventory volume = new VolumeInventory();
+        volume.setUuid(inv.getResourceUuid());
+        volume.setInstallPath(inv.getInstallPath());
+        volume.setSize(inv.getSize());
+        gc.volume = volume;
+        gc.deduplicateSubmit(CephGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
     }
 
     protected void handle(final CleanUpTrashOnPrimaryStroageMsg msg) {
@@ -5211,6 +5227,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             public void success(CloneRsp rsp) {
                                 reply.setNewVolumeInstallPath(newVolumePath);
                                 reply.setSize(rsp.size);
+                                tagMgr.createNonInherentSystemTag(sp.getVolumeUuid(), VolumeSystemTags.FAST_REVERT.getTagFormat(), VolumeVO.class.getSimpleName());
                                 reportProgress(stage.getEnd().toString());
                                 trigger.next();
                             }
@@ -5220,41 +5237,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 trigger.fail(errorCode);
                             }
                         });
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "flatten-volume";
-
-                    @Override
-                    public boolean skip(Map data) {
-                        return !fastRevert;
-                    }
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        FlattenCmd cmd = new FlattenCmd();
-                        cmd.path = newVolumePath;
-
-                        httpCall(FLATTEN_PATH, cmd, FlattenRsp.class, new ReturnValueCompletion<FlattenRsp>(null) {
-                            @Override
-                            public void success(FlattenRsp rsp) {
-                                logger.debug(String.format("successfully flattened %s", newVolumePath));
-                            }
-
-                            @Override
-                            public void fail(ErrorCode err) {
-                                logger.debug(String.format("failed to flatten %s, creating flatten GC", newVolumePath));
-                                VolumeInventory volume = msg.getVolume();
-                                volume.setInstallPath(newVolumePath);
-                                FlattenVolumeGC flattenVolumeGC = new FlattenVolumeGC();
-                                flattenVolumeGC.NAME = String.format("gc-ceph-%s-volume-path-%s", self.getUuid(), volume.getInstallPath());
-                                flattenVolumeGC.volume = volume;
-                                flattenVolumeGC.deduplicateSubmit(CephGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
-                            }
-                        });
-
-                        trigger.next();
                     }
                 });
 
