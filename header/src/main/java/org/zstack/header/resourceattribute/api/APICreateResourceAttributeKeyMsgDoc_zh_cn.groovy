@@ -40,6 +40,15 @@ doc {
 					since "4.10.16"
 				}
 				column {
+					name "resourceTypes"
+					enclosedIn "params"
+					desc "该属性支持的资源类型列表, 默认支持所有可支持的属性"
+					location "body"
+					type "List"
+					optional true
+					since "4.10.16"
+				}
+				column {
 					name "resourceUuid"
 					enclosedIn "params"
 					desc "资源 UUID"

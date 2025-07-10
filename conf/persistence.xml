@@ -206,5 +206,6 @@
         <class>org.zstack.header.volume.block.BlockVolumeVO</class>
         <class>org.zstack.header.resourceattribute.entity.ResourceAttributeKeyVO</class>
         <class>org.zstack.header.resourceattribute.entity.ResourceAttributeValueVO</class>
+        <class>org.zstack.header.resourceattribute.entity.ResourceAttributeKeyResourceTypeVO</class>
     </persistence-unit>
 </persistence>

@@ -33,6 +33,10 @@ public interface RBACDescription {
         return new RBAC.GlobalReadableResourceBuilder();
     }
 
+    default RBAC.AttributeSupportResourceBuilder attributeSupportResourceBuilder() {
+        return new RBAC.AttributeSupportResourceBuilder();
+    }
+
     default RBAC.ResourceEnsembleContributorBuilder resourceEnsembleContributorBuilder() {
         return new RBAC.ResourceEnsembleContributorBuilder();
     }

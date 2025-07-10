@@ -7,6 +7,8 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
 @RestRequest(
         path = "/resource-attributes/{uuid}/actions",
         method = HttpMethod.PUT,
@@ -19,6 +21,9 @@ public class APIUpdateResourceAttributeKeyMsg extends APIMessage implements Reso
 
     @APIParam(required = false)
     private String description;
+
+    @APIParam(required = false)
+    private List<String> resourceTypes;
 
     public String getUuid() {
         return uuid;
@@ -34,6 +39,14 @@ public class APIUpdateResourceAttributeKeyMsg extends APIMessage implements Reso
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public List<String> getResourceTypes() {
+        return resourceTypes;
+    }
+
+    public void setResourceTypes(List<String> resourceTypes) {
+        this.resourceTypes = resourceTypes;
     }
 
     @Override

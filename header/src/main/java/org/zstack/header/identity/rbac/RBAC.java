@@ -35,6 +35,7 @@ public class RBAC {
     public static List<Role> roles = new ArrayList<>();
     public static Map<String, ApiPermissionBucket> apiBuckets = new HashMap<>();
     public static List<Class<?>> readableResources = new ArrayList<>();
+    public static List<Class<?>> attributeSupportResources = new ArrayList<>();
     public static List<ResourceEnsembleMember> ensembleMembers = new ArrayList<>();
 
     public static Map<Class<?>, List<Function<?, List<APIMessage>>>> expendApiClassForPermissionCheck = new HashMap<>();
@@ -503,15 +504,16 @@ public class RBAC {
         }
     }
 
-    public static class GlobalReadableResource {
-        private List<Class> resources = new ArrayList<>();
+    public static class AttributeSupportResourceBuilder {
+        private List<Class<?>> attributeSupportResource = new ArrayList<>();
 
-        public List<Class> getResources() {
-            return resources;
+        public AttributeSupportResourceBuilder resources(Class<?>...clzs) {
+            Collections.addAll(attributeSupportResource, clzs);
+            return this;
         }
 
-        public void setResources(List<Class> resources) {
-            this.resources = resources;
+        public void build() {
+            attributeSupportResources.addAll(this.attributeSupportResource);
         }
     }
 
