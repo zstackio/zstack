@@ -1,10 +1,7 @@
 package org.zstack.test.integration.core
 
-import org.springframework.beans.factory.annotation.Autowired
 import org.zstack.core.errorcode.ErrorFacade
-import org.zstack.core.errorcode.ErrorFacadeImpl
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.header.errorcode.ErrorCodeList
 import org.zstack.testlib.SubCase
 
 import static org.zstack.core.Platform.argerr
@@ -28,7 +25,7 @@ class ErrorCodeHashCase extends SubCase{
     void test() {
         ErrorFacade errf = bean(ErrorFacade.class)
         ErrorCode err1, err2, err3
-        ErrorCodeList errl1, errl2, errl3, errl4
+        ErrorCode errl1, errl2, errl3, errl4
         err1 = operr("test error")
         err2 = operr("test error")
         err3 = argerr("test error")

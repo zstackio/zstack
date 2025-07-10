@@ -18,15 +18,15 @@ public interface ErrorFacade {
 
     ErrorCode stringToOperationError(String details, ErrorCode cause);
 
-    ErrorCodeList instantiateErrorCode(Enum code, List<ErrorCode> causes);
+    ErrorCode instantiateErrorCode(Enum code, List<ErrorCode> causes);
 
-    ErrorCodeList instantiateErrorCode(String code, List<ErrorCode> causes);
+    ErrorCode instantiateErrorCode(String code, List<ErrorCode> causes);
 
-    ErrorCodeList instantiateErrorCode(Enum code, String details, List<ErrorCode> causes);
+    ErrorCode instantiateErrorCode(Enum code, String details, List<ErrorCode> causes);
 
-    ErrorCodeList instantiateErrorCode(String code, String details, List<ErrorCode> causes);
+    ErrorCode instantiateErrorCode(String code, String details, List<ErrorCode> causes);
 
-    ErrorCodeList stringToOperationError(String details, List<ErrorCode> causes);
+    ErrorCode stringToOperationError(String details, List<ErrorCode> causes);
 
     ErrorCode instantiateErrorCode(Enum code, String details);
 

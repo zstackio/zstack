@@ -967,13 +967,12 @@ public class Platform {
             result.setCost(coreError.getCost());
             result.setElaboration(coreError.getElaboration());
             result.setMessages(coreError.getMessages());
-        } else if (cause instanceof ErrorCodeList && ((ErrorCodeList) cause).getCauses() != null) {
+        } else if (cause != null && !cause.getCauses().isEmpty()) {
             // suppose elaborations are existed in causes...
-            ErrorCodeList errList = (ErrorCodeList) cause;
             String costs = null;
             String elas = null;
             ErrorCodeElaboration messages = null;
-            for (ErrorCode c: errList.getCauses()) {
+            for (ErrorCode c: cause.getCauses()) {
                 ErrorCode lcError = getCoreError(c);
                 if (lcError.getElaboration() != null && !lcError.getElaboration().equals(elas) && !lcError.getMessages().equals(messages)) {
                     costs = costs == null ? lcError.getCost() : addTwoCosts(costs, lcError.getCost());

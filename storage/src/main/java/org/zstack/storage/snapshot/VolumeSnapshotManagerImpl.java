@@ -361,8 +361,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 bus.publish(event);
             }
         }).error(new FlowErrorHandler(msg) {
-            private void handleErrorCode(ErrorCodeList errorCodeList) {
-                errorCodeList.getCauses().forEach(err -> {
+            private void handleErrorCode(ErrorCode errorCode) {
+                errorCode.getCauses().forEach(err -> {
                     String snapshotUuid = (String) err.getFromOpaque(VolumeSnapshotConstant.SNAPSHOT_UUID);
                     List<String> spUuids = new ArrayList<>();
                     spUuids.add(snapshotUuid);
@@ -382,7 +382,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     bus.publish(event);
                     return;
                 }
-                handleErrorCode((ErrorCodeList) errCode);
+                handleErrorCode(errCode);
                 event.setResults(new ArrayList<>(results.values()));
                 ctx.getSnapshotInventories().stream().filter(inventory -> results.containsKey(inventory.getUuid()) && results.get(inventory.getUuid()).isSuccess())
                         .forEach(inventory -> {

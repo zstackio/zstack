@@ -187,7 +187,7 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
                     completion.success();
                     return;
                 }
-                ErrorCodeList errorCode = errf.instantiateErrorCode(VolumeSnapshotErrors.BATCH_DELETE_ERROR, "batch delete volume snapshot error", errorCodeList.getCauses());
+                ErrorCode errorCode = errf.instantiateErrorCode(VolumeSnapshotErrors.BATCH_DELETE_ERROR, "batch delete volume snapshot error", errorCodeList.getCauses());
                 completion.fail(errorCode);
             }
         });

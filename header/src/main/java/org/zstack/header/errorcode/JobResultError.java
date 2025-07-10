@@ -22,8 +22,8 @@ public class JobResultError {
     }
 
     public static JobResultError valueOf(ErrorCode error) {
-        if (error instanceof ErrorCodeList && !CollectionUtils.isEmpty(((ErrorCodeList) error).getCauses())) {
-            return valueOf((ErrorCodeList) error);
+        if (!CollectionUtils.isEmpty(error.getCauses())) {
+            return parseErrorCodeWithCauses(error);
         }
         return parseErrorCode(error);
     }
@@ -34,7 +34,7 @@ public class JobResultError {
         return result;
     }
 
-    public static JobResultError valueOf(ErrorCodeList error) {
+    public static JobResultError parseErrorCodeWithCauses(ErrorCode error) {
         if (error.getMessages() != null || error.getDetails() != null || CollectionUtils.isEmpty(error.getCauses())) {
             return parseErrorCode(error);
         }
