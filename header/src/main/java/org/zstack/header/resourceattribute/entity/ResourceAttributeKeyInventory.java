@@ -1,9 +1,14 @@
 package org.zstack.header.resourceattribute.entity;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.Queryable;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 import org.zstack.utils.StringDSL;
 
+import javax.persistence.JoinColumn;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.Collection;
@@ -12,6 +17,10 @@ import java.util.List;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.transform;
 
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "types", inventoryClass = ResourceAttributeKeyResourceTypeInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "keyUuid", hidden = true),
+})
 @Inventory(mappingVOClass = ResourceAttributeKeyVO.class)
 @PythonClassInventory
 public class ResourceAttributeKeyInventory implements Serializable {
@@ -22,6 +31,11 @@ public class ResourceAttributeKeyInventory implements Serializable {
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
+    @APINoSee
+    @Queryable(mappingClass = ResourceAttributeKeyResourceTypeInventory.class,
+            joinColumn = @JoinColumn(name = "keyUuid", referencedColumnName = "uuid"))
+    private List<ResourceAttributeKeyResourceTypeInventory> types;
+
     public static ResourceAttributeKeyInventory valueOf(ResourceAttributeKeyVO vo) {
         ResourceAttributeKeyInventory inv = new ResourceAttributeKeyInventory();
         inv.setUuid(vo.getUuid());
@@ -30,6 +44,7 @@ public class ResourceAttributeKeyInventory implements Serializable {
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setResourceTypes(transform(vo.getTypes(), ResourceAttributeKeyResourceTypeVO::getResourceType));
+        inv.setTypes(ResourceAttributeKeyResourceTypeInventory.valueOf(vo.getTypes()));
         return inv;
     }
 
@@ -83,6 +98,14 @@ public class ResourceAttributeKeyInventory implements Serializable {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public List<ResourceAttributeKeyResourceTypeInventory> getTypes() {
+        return types;
+    }
+
+    public void setTypes(List<ResourceAttributeKeyResourceTypeInventory> types) {
+        this.types = types;
     }
 
     public static ResourceAttributeKeyInventory __example__() {
