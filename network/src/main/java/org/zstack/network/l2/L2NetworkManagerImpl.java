@@ -29,6 +29,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -117,9 +118,9 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
             return new ArrayList<>();
         }
 
-        List<String> clusterUuids = SQL.New("select distinct ref.clusterUuid from L2NetworkVO l2, L2NetworkClusterRefVO ref where" +
-                " l2.uuid = ref.l2NetworkUuid" +
-                " and l2.uuid = :l2Uuid")
+        List<String> attachedClusterUuids = SQL.New("select distinct ref.clusterUuid from L2NetworkVO l2, L2NetworkClusterRefVO ref where" +
+                        " l2.uuid = ref.l2NetworkUuid" +
+                        " and l2.uuid = :l2Uuid")
                 .param("l2Uuid", l2NetworkVO.getUuid())
                 .list();
 
@@ -132,22 +133,19 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         if (clusterVOS.isEmpty()) {
             return new ArrayList<>();
         }
-        clusterVOS = clusterVOS.stream().filter(clusterVO -> !clusterUuids.contains(clusterVO.getUuid())).collect(Collectors.toList());
+        clusterVOS.removeIf(clusterVO -> attachedClusterUuids.contains(clusterVO.getUuid()));
 
-        List<ClusterInventory> ret = new ArrayList<>();
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(L2NetworkCandidateFilterExtensionPoint.class),
+                ext -> ext.filterClusterCandidates(clusterVOS, l2NetworkVO));
 
-        if (!l2NetworkVO.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE) &&
-                !l2NetworkVO.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)) {
-            clusterVOS = clusterVOS.stream().filter(cluster -> cluster.getHypervisorType().equals("KVM")).collect(Collectors.toList());
-            ret.addAll(ClusterInventory.valueOf(clusterVOS));
-        } else {
-            for (ClusterVO cluster : clusterVOS) {
-                if (canAttachL2ToThisCluster(l2NetworkVO, cluster)) {
-                    ret.add(ClusterInventory.valueOf(cluster));
-                }
-            }
+        if (l2NetworkVO.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE) ||
+                l2NetworkVO.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)) {
+            clusterVOS.removeIf(cluster -> !canAttachL2ToThisCluster(l2NetworkVO, cluster));
+        } else if (L2NetworkType.valueOf(l2NetworkVO.getType()).isAttachToAllHosts()) {
+            clusterVOS.removeIf(cluster -> !cluster.getHypervisorType().equals("KVM"));
         }
-        return ret;
+
+        return ClusterInventory.valueOf(clusterVOS);
     }
 
     private boolean ovsDpdkSupport(ClusterVO clusterVO) {
@@ -227,112 +225,66 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
             return new ArrayList<>();
         }
 
-        List<L2NetworkVO> attachClusterL2s= SQL.New("select distinct l2 from L2NetworkVO l2, L2NetworkClusterRefVO ref where" +
-                " l2.uuid = ref.l2NetworkUuid" +
-                " and ref.clusterUuid = :clusterUuid")
+        List<L2NetworkVO> attachClusterL2s = SQL.New("select distinct l2 from L2NetworkVO l2, L2NetworkClusterRefVO ref where" +
+                        " l2.uuid = ref.l2NetworkUuid" +
+                        " and ref.clusterUuid = :clusterUuid")
                 .param("clusterUuid", clusterVO.getUuid())
                 .list();
         //filter l2 attached to cluster
-        l2s = l2s.stream().filter(l2 -> !attachClusterL2s.stream()
-                .map(L2NetworkVO::getUuid)
-                .collect(Collectors.toList())
-                .contains(l2.getUuid()))
-                .collect(Collectors.toList());
+        l2s.removeIf(l2 -> attachClusterL2s.stream()
+                .anyMatch(attachedL2s -> attachedL2s.getUuid().equals(l2.getUuid())));
 
         //filter l2 attached to different type cluster
-        List<L2NetworkVO> attachedDifferentTypeClusterL2VOs = null;
+        List<String> attachedDifferentTypeClusterL2Uuids;
         if (!clusterVO.getType().equals("vmware")) {
-            attachedDifferentTypeClusterL2VOs = SQL.New("select distinct l2 from L2NetworkVO l2, L2NetworkClusterRefVO ref, ClusterVO cluster where" +
-                    " l2.uuid = ref.l2NetworkUuid" +
-                    " and ref.clusterUuid = cluster.uuid" +
-                    " and cluster.type = :clusterType")
+            attachedDifferentTypeClusterL2Uuids = SQL.New("select distinct l2.uuid from L2NetworkVO l2, L2NetworkClusterRefVO ref, ClusterVO cluster where" +
+                            " l2.uuid = ref.l2NetworkUuid" +
+                            " and ref.clusterUuid = cluster.uuid" +
+                            " and cluster.type = :clusterType")
                     .param("clusterType", "vmware")
                     .list();
         } else {
-            attachedDifferentTypeClusterL2VOs = SQL.New("select distinct l2 from L2NetworkVO l2, L2NetworkClusterRefVO ref where" +
-                    " l2.uuid = ref.l2NetworkUuid" +
-                    " and ref.clusterUuid is not null")
+            attachedDifferentTypeClusterL2Uuids = SQL.New("select distinct l2.uuid from L2NetworkVO l2, L2NetworkClusterRefVO ref where" +
+                            " l2.uuid = ref.l2NetworkUuid" +
+                            " and ref.clusterUuid is not null")
                     .list();
         }
-        final List<L2NetworkVO> attachedDifferentTypeClusterL2s = attachedDifferentTypeClusterL2VOs == null ? new ArrayList<>() : attachedDifferentTypeClusterL2VOs;
-        l2s = l2s.stream().filter(l2 -> !attachedDifferentTypeClusterL2s.stream()
-                .map(L2NetworkVO::getUuid)
-                .collect(Collectors.toList())
-                .contains(l2.getUuid()))
-                .collect(Collectors.toList());
+        l2s.removeIf(l2 -> attachedDifferentTypeClusterL2Uuids.contains(l2.getUuid()));
 
         if (!ovsDpdkSupport(clusterVO)) {
-            final List<L2NetworkVO> DpdkL2s =  SQL.New("select distinct l2 from L2NetworkVO l2 where" +
-                    " l2.vSwitchType = :l2vSwitchType")
+            final List<String> DpdkL2Uuids = SQL.New("select distinct l2.uuid from L2NetworkVO l2 where" +
+                            " l2.vSwitchType = :l2vSwitchType")
                     .param("l2vSwitchType", "OvsDpdk")
                     .list();
-            l2s = l2s.stream().filter(l2 -> !DpdkL2s.stream()
-                    .map(L2NetworkVO::getUuid)
-                    .collect(Collectors.toList())
-                    .contains(l2.getUuid()))
-                    .collect(Collectors.toList());
+            l2s.removeIf(l2 -> DpdkL2Uuids.contains(l2.getUuid()));
         }
 
-        return getCandidateL2(clusterVO, l2s, attachClusterL2s);
-    }
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(L2NetworkCandidateFilterExtensionPoint.class),
+                ext -> ext.filterL2NetworkCandidates(l2s, clusterVO));
 
-    private List<L2NetworkData> getCandidateL2(ClusterVO cluster, List<L2NetworkVO> l2s, List<L2NetworkVO> attachedL2s) {
-        List<L2NetworkData> ret = new ArrayList<>();
+        List<String> excludedTypes = Arrays.asList(L2NetworkConstant.VXLAN_NETWORK_TYPE,
+                L2NetworkConstant.HARDWARE_VXLAN_NETWORK_TYPE,
+                L2NetworkConstant.L2_TF_NETWORK_TYPE);
+        l2s.removeIf(l2 -> excludedTypes.contains(l2.getType()));
 
-        List<L2NetworkVO> noVlanL2s = new ArrayList<>();
-        List<L2NetworkVO> vlanL2s = new ArrayList<>();
-        List<L2NetworkVO> vxlanL2s = new ArrayList<>();
-
-        List<L2NetworkVO> attachedNoVlanL2s = new ArrayList<>();
-        List<L2NetworkVO> attachedVlanL2s = new ArrayList<>();
-        List<L2NetworkVO> attachedVxlanL2s = new ArrayList<>();
-
-        classifyL2(l2s, noVlanL2s, vlanL2s, vxlanL2s);
-        classifyL2(attachedL2s, attachedNoVlanL2s, attachedVlanL2s, attachedVxlanL2s);
-
-        List<L2VlanNetworkVO> l2VlanNetworkVOS = new ArrayList<>();
-        if (!vlanL2s.isEmpty()) {
-            l2VlanNetworkVOS = Q.New(L2VlanNetworkVO.class)
-                    .in(L2VlanNetworkVO_.uuid, vlanL2s.stream().map(L2NetworkVO::getUuid).collect(Collectors.toList()))
-                    .list();
-        }
-        List<L2VlanNetworkVO> attachedL2VlanNetworkVOS = new ArrayList<>();
-        if (!attachedVlanL2s.isEmpty()) {
-            attachedL2VlanNetworkVOS = Q.New(L2VlanNetworkVO.class)
-                    .in(L2VlanNetworkVO_.uuid, attachedVlanL2s.stream().map(L2NetworkVO::getUuid).collect(Collectors.toList()))
-                    .list();
-        }
-        final List<L2VlanNetworkVO> attachedVlanL2VOs = attachedL2VlanNetworkVOS;
-
-        if (attachedL2s.isEmpty()) {
-            ret.addAll(getL2DateResult(noVlanL2s));
-            ret.addAll(getL2DateResultForVlanL2(l2VlanNetworkVOS));
-            if (cluster.getHypervisorType().equals("KVM")) {
-                ret.addAll(getL2DateResult(vxlanL2s));
-            }
-            return ret;
+        if (!clusterVO.getHypervisorType().equals("KVM")) {
+            l2s.removeIf(l2 -> L2NetworkConstant.VXLAN_NETWORK_POOL_TYPE.equals(l2.getType()) ||
+                    L2NetworkConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE.equals(l2.getType()));
         }
 
-        //filter novlan l2
-        noVlanL2s = noVlanL2s.stream().filter(noVlanL2 -> !attachedNoVlanL2s.stream()
-                .map(L2NetworkVO::getPhysicalInterface)
-                .collect(Collectors.toList())
-                .contains(noVlanL2.getPhysicalInterface()))
-                .collect(Collectors.toList());
-
-        //filter vlan l2
-        l2VlanNetworkVOS = l2VlanNetworkVOS.stream().filter(vlanL2 -> {
-            return attachedVlanL2VOs.stream()
-                    .noneMatch(attachedL2 -> (vlanL2.getPhysicalInterface().equals(attachedL2.getPhysicalInterface()) && attachedL2.getVlan() == vlanL2.getVlan()));
-        }).collect(Collectors.toList());
-
-        ret.addAll(getL2DateResult(noVlanL2s));
-        ret.addAll(getL2DateResultForVlanL2(l2VlanNetworkVOS));
-        if (cluster.getHypervisorType().equals("KVM")) {
-            ret.addAll(getL2DateResult(vxlanL2s));
+        if (!attachClusterL2s.isEmpty()) {
+            l2s.removeIf(l2 -> {
+                if (L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE.equals(l2.getType()) ||
+                        L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(l2.getType())) {
+                    return attachClusterL2s.stream()
+                            .anyMatch(attachedL2 -> Objects.equals(attachedL2.getPhysicalInterface(), l2.getPhysicalInterface()) &&
+                                    Objects.equals(attachedL2.getVirtualNetworkId(), l2.getVirtualNetworkId()));
+                }
+                return false;
+            });
         }
 
-        return ret;
+        return getL2DateResult(l2s);
     }
 
     private List<L2NetworkData> getL2DateResult(List<L2NetworkVO> l2s) {
@@ -343,6 +295,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
             l2NetworkData.setName(l2NetworkVO.getName());
             l2NetworkData.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
             l2NetworkData.setType(l2NetworkVO.getType());
+            l2NetworkData.setVirtualNetworkId(l2NetworkVO.getVirtualNetworkId());
             l2NetworkData.setZoneUuid(l2NetworkVO.getZoneUuid());
             l2NetworkData.setDescription(l2NetworkVO.getDescription());
             l2NetworkData.setCreateDate(l2NetworkVO.getCreateDate());
@@ -350,36 +303,6 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
             ret.add(l2NetworkData);
         }
         return ret;
-    }
-
-    private List<L2NetworkData> getL2DateResultForVlanL2(List<L2VlanNetworkVO> l2s) {
-        List<L2NetworkData> ret = new ArrayList<>();
-        for (L2VlanNetworkVO l2NetworkVO : l2s) {
-            L2NetworkData l2NetworkData = new L2NetworkData();
-            l2NetworkData.setName(l2NetworkVO.getName());
-            l2NetworkData.setUuid(l2NetworkVO.getUuid());
-            l2NetworkData.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
-            l2NetworkData.setType(l2NetworkVO.getType());
-            l2NetworkData.setZoneUuid(l2NetworkVO.getZoneUuid());
-            l2NetworkData.setDescription(l2NetworkVO.getDescription());
-            l2NetworkData.setCreateDate(l2NetworkVO.getCreateDate());
-            l2NetworkData.setLastOpDate(l2NetworkVO.getLastOpDate());
-            l2NetworkData.setVlan(l2NetworkVO.getVlan());
-            ret.add(l2NetworkData);
-        }
-        return ret;
-    }
-
-    private void classifyL2(List<L2NetworkVO> allL2s,  List<L2NetworkVO> noVlanL2s, List<L2NetworkVO> vlanL2s, List<L2NetworkVO> vxlanL2s) {
-        for (L2NetworkVO l2 : allL2s) {
-            if (l2.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
-                vlanL2s.add(l2);
-            } else if (l2.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)) {
-                noVlanL2s.add(l2);
-            } else if (l2.getType().equals(L2NetworkConstant.VXLAN_NETWORK_POOL_TYPE) || l2.getType().equals(L2NetworkConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE)) {
-                vxlanL2s.add(l2);
-            }
-        }
     }
 
     private void handle(APIGetVSwitchTypesMsg msg) {
