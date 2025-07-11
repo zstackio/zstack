@@ -5,7 +5,6 @@ import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
-import org.zstack.test.compute.hostallocator.HostAllocateExtension
 import org.zstack.test.integration.storage.CephEnv
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec

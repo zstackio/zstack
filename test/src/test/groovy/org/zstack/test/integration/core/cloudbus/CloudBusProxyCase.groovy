@@ -4,7 +4,6 @@ import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.CloudBusCallBack
 import org.zstack.header.message.MessageReply
 import org.zstack.header.message.NeedReplyMessage
-import org.zstack.test.aop.CloudBusAopProxy
 import org.zstack.testlib.SubCase
 
 /**
