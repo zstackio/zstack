@@ -207,5 +207,6 @@
         <class>org.zstack.header.resourceattribute.entity.ResourceAttributeKeyVO</class>
         <class>org.zstack.header.resourceattribute.entity.ResourceAttributeValueVO</class>
         <class>org.zstack.header.resourceattribute.entity.ResourceAttributeKeyResourceTypeVO</class>
+        <class>org.zstack.header.resourceattribute.entity.ResourceAttributeConstraintVO</class>
     </persistence-unit>
 </persistence>

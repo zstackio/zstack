@@ -5,12 +5,16 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.AbstractService;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.Message;
 import org.zstack.header.resourceattribute.AttributeConstant;
 import org.zstack.header.resourceattribute.AttributeErrors;
 import org.zstack.header.resourceattribute.ResourceAttributeMessage;
 import org.zstack.header.resourceattribute.api.APICreateResourceAttributeKeyEvent;
 import org.zstack.header.resourceattribute.api.APICreateResourceAttributeKeyMsg;
+import org.zstack.header.resourceattribute.entity.ResourceAttributeConstraintParam;
+import org.zstack.header.resourceattribute.entity.ResourceAttributeConstraintVO;
+import org.zstack.header.resourceattribute.entity.ResourceAttributeConstraintVO_;
 import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyInventory;
 import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyResourceTypeVO;
 import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyVO;
@@ -19,9 +23,15 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.header.resourceattribute.AttributeConstant.*;
+import static org.zstack.utils.CollectionUtils.isEmpty;
+import static org.zstack.utils.CollectionUtils.transform;
 
 public class ResourceAttributeManager extends AbstractService {
     private static final CLogger logger = Utils.getLogger(ResourceAttributeManager.class);
@@ -84,6 +94,8 @@ public class ResourceAttributeManager extends AbstractService {
             relatedTypes.add(type);
         }
 
+        List<ResourceAttributeConstraintVO> constraints = createConstraints(key.getUuid(), msg.getConstraints());
+
         boolean duplicate;
         synchronized (createLock) {
             duplicate = Q.New(ResourceAttributeKeyVO.class)
@@ -92,6 +104,7 @@ public class ResourceAttributeManager extends AbstractService {
             if (!duplicate) {
                 databaseFacade.persist(key);
                 databaseFacade.persistCollection(relatedTypes);
+                databaseFacade.persistCollection(constraints);
 
                 key = databaseFacade.reload(key);
             }
@@ -109,5 +122,80 @@ public class ResourceAttributeManager extends AbstractService {
     @Override
     public String getId() {
         return bus.makeLocalServiceId(AttributeConstant.SERVICE_ID);
+    }
+
+    public static ErrorCode checkResourceAttributeConstraints(List<ResourceAttributeConstraintParam> constraints) {
+        if (isEmpty(constraints)) {
+            return null;
+        }
+
+        String optionType = null;
+        Set<String> options = new HashSet<>();
+
+        for (ResourceAttributeConstraintParam constraint : constraints) {
+            if (constraint == null) {
+                return err(AttributeErrors.UNSUPPORTED_CONSTRAINTS, "constraint can not be null");
+            }
+
+            String type = constraint.type;
+            if (!VALID_CONSTRAINTS_OPTIONS.contains(type)) {
+                return err(AttributeErrors.UNSUPPORTED_CONSTRAINTS, "unsupported constraints type[%s]", type)
+                        .withOpaque("constraint.type", type);
+            }
+
+            if (CONSTRAINTS_OPTION.equals(type) || CONSTRAINTS_ENUM.equals(type)) {
+                if (optionType == null) {
+                    optionType = type;
+                } else if (!optionType.equals(type)) {
+                    return err(AttributeErrors.UNSUPPORTED_CONSTRAINTS,
+                            "unsupported constraints type[%s]: 'option' and 'enum' can not exist simultaneously", type)
+                        .withOpaque("constraint.type", type);
+                }
+
+                String parameter = constraint.parameter;
+                if (parameter == null || parameter.isEmpty()) {
+                    return err(AttributeErrors.UNSUPPORTED_CONSTRAINTS,
+                            "unsupported constraints type[%s]: 'option' or 'enum' parameter can not be empty", type)
+                        .withOpaque("constraint.type", type)
+                        .withOpaque("constraint.parameter", parameter);
+                }
+
+                if (options.contains(parameter)) {
+                    return err(AttributeErrors.UNSUPPORTED_CONSTRAINTS,
+                            "unsupported constraints type[%s]: 'option' or 'enum' parameter[%s] is duplicated", type, parameter)
+                        .withOpaque("constraint.type", type)
+                        .withOpaque("constraint.parameter", parameter);
+                }
+                options.add(parameter);
+            }
+        }
+
+        return null;
+    }
+
+    public static List<ResourceAttributeConstraintVO> createConstraints(
+            String keyUuid,
+            Collection<ResourceAttributeConstraintParam> constraints) {
+        if (constraints == null) {
+            return new ArrayList<>();
+        }
+        return transform(constraints, c -> createConstraint(keyUuid, c));
+    }
+
+    public static ResourceAttributeConstraintVO createConstraint(String keyUuid, ResourceAttributeConstraintParam constraint) {
+        ResourceAttributeConstraintVO vo = new ResourceAttributeConstraintVO();
+        vo.setKeyUuid(keyUuid);
+        vo.setType(constraint.type);
+        vo.setParameter(constraint.parameter);
+        return vo;
+    }
+
+    public static Set<String> enumOptionsForKeyUuid(String keyUuid) {
+        List<String> options = Q.New(ResourceAttributeConstraintVO.class)
+                .eq(ResourceAttributeConstraintVO_.keyUuid, keyUuid)
+                .eq(ResourceAttributeConstraintVO_.type, CONSTRAINTS_ENUM)
+                .select(ResourceAttributeConstraintVO_.parameter)
+                .listValues();
+        return options.isEmpty() ? null : new HashSet<>(options);
     }
 }

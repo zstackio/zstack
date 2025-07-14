@@ -27,6 +27,9 @@ import org.zstack.header.resourceattribute.api.APIDeleteResourceAttributeValueMs
 import org.zstack.header.resourceattribute.api.APIUpdateResourceAttributeKeyEvent;
 import org.zstack.header.resourceattribute.api.APIUpdateResourceAttributeKeyMsg;
 import org.zstack.header.resourceattribute.entity.CreateResourceAttributeResult;
+import org.zstack.header.resourceattribute.entity.ResourceAttributeConstraintParam;
+import org.zstack.header.resourceattribute.entity.ResourceAttributeConstraintVO;
+import org.zstack.header.resourceattribute.entity.ResourceAttributeConstraintVO_;
 import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyInventory;
 import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyResourceTypeVO;
 import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyResourceTypeVO_;
@@ -48,11 +51,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
+import static java.util.Collections.emptyList;
 import static org.zstack.core.Platform.err;
 import static org.zstack.header.resourceattribute.AttributeErrors.*;
-import static org.zstack.utils.CollectionUtils.transform;
-import static org.zstack.utils.CollectionUtils.transformToSet;
+import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ResourceAttributeBase {
@@ -174,8 +179,19 @@ public class ResourceAttributeBase {
             public void run(SyncTaskChain chain) {
                 APIUpdateResourceAttributeKeyEvent event = new APIUpdateResourceAttributeKeyEvent(msg.getId());
 
+                ErrorCode error = checkConstraints(
+                        msg.getCreateConstraints() == null ? emptyList() : msg.getCreateConstraints(),
+                        msg.getUpdateConstraints() == null ? emptyList() : msg.getUpdateConstraints(),
+                        msg.getDeleteConstraintIds() == null ? emptyList() : msg.getDeleteConstraintIds());
+                if (error != null) {
+                    event.setError(error);
+                    bus.publish(event);
+                    chain.next();
+                    return;
+                }
+
                 if (!CollectionUtils.isEmpty(msg.getResourceTypes())) {
-                    final ErrorCode error = updateTypes();
+                    error = updateTypes();
                     if (error != null) {
                         event.setError(error);
                         bus.publish(event);
@@ -183,6 +199,11 @@ public class ResourceAttributeBase {
                         return;
                     }
                 }
+
+                updateConstraints(
+                        msg.getCreateConstraints() == null ? emptyList() : msg.getCreateConstraints(),
+                        msg.getUpdateConstraints() == null ? emptyList() : msg.getUpdateConstraints(),
+                        msg.getDeleteConstraintIds() == null ? emptyList() : msg.getDeleteConstraintIds());
 
                 boolean update = false;
                 final UpdateQuery sql = SQL.New(ResourceAttributeKeyVO.class)
@@ -204,6 +225,84 @@ public class ResourceAttributeBase {
                 event.setInventory(ResourceAttributeKeyInventory.valueOf(self));
                 bus.publish(event);
                 chain.next();
+            }
+
+            private ErrorCode checkConstraints(
+                    List<ResourceAttributeConstraintParam> constraintsNeedAdd,
+                    List<ResourceAttributeConstraintParam> constraintsNeedUpdate,
+                    List<Long> constraintsNeedDelete) {
+                if (constraintsNeedAdd.isEmpty() && constraintsNeedUpdate.isEmpty() && constraintsNeedDelete.isEmpty()) {
+                    return null;
+                }
+
+                self = databaseFacade.updateAndRefresh(self);
+
+                final Map<Long, ResourceAttributeConstraintParam> idConstraintMap = toMap(self.getConstraints(),
+                        ResourceAttributeConstraintVO::getId, ResourceAttributeConstraintParam::valueOf);
+                for (Long id : constraintsNeedDelete) {
+                    idConstraintMap.remove(id);
+                }
+                for (ResourceAttributeConstraintParam updateItem : constraintsNeedUpdate) {
+                    Long id = updateItem.id;
+                    ResourceAttributeConstraintParam constraint = idConstraintMap.get(id);
+                    if (constraint == null) {
+                        return err(INVALID_CONSTRAINTS_ID, "invalid constraint id[%s]", id)
+                                .withOpaque("constraint.id", id);
+                    }
+                    constraint.parameter = updateItem.parameter;
+                }
+
+                List<ResourceAttributeConstraintParam> list = new ArrayList<>(idConstraintMap.values());
+                list.addAll(constraintsNeedAdd);
+                return ResourceAttributeManager.checkResourceAttributeConstraints(list);
+            }
+
+            @Transactional
+            private void updateConstraints(
+                    List<ResourceAttributeConstraintParam> constraintsNeedAdd,
+                    List<ResourceAttributeConstraintParam> constraintsNeedUpdate,
+                    List<Long> constraintsNeedDelete) {
+                if (constraintsNeedAdd.isEmpty() && constraintsNeedUpdate.isEmpty() && constraintsNeedDelete.isEmpty()) {
+                    return;
+                }
+
+                if (!constraintsNeedDelete.isEmpty()) {
+                    SQL.New(ResourceAttributeConstraintVO.class)
+                            .in(ResourceAttributeConstraintVO_.id, constraintsNeedDelete)
+                            .delete();
+                }
+
+                Map<Long, ResourceAttributeConstraintVO> idConstraintMap = toMap(self.getConstraints(),
+                        ResourceAttributeConstraintVO::getId, Function.identity());
+                if (!constraintsNeedUpdate.isEmpty()) {
+                    for (ResourceAttributeConstraintParam param : constraintsNeedUpdate) {
+                        String oldValue = idConstraintMap.get(param.id).getParameter();
+
+                        SQL.New(ResourceAttributeConstraintVO.class)
+                                .eq(ResourceAttributeConstraintVO_.id, param.id)
+                                .set(ResourceAttributeConstraintVO_.parameter, param.parameter)
+                                .update();
+                        // related value also been updated
+                        SQL.New(ResourceAttributeValueVO.class)
+                                .eq(ResourceAttributeValueVO_.keyUuid, self.getUuid())
+                                .eq(ResourceAttributeValueVO_.value, oldValue)
+                                .set(ResourceAttributeValueVO_.value, param.parameter)
+                                .update();
+                    }
+                }
+
+                if (!constraintsNeedAdd.isEmpty()) {
+                    List<ResourceAttributeConstraintVO> needPersists = new ArrayList<>();
+                    for (ResourceAttributeConstraintParam param : constraintsNeedAdd) {
+                        ResourceAttributeConstraintVO vo = new ResourceAttributeConstraintVO();
+                        vo.setKeyUuid(self.getUuid());
+                        vo.setType(param.type);
+                        vo.setParameter(param.parameter);
+                        needPersists.add(vo);
+                    }
+
+                    databaseFacade.persistCollection(needPersists);
+                }
             }
 
             @Transactional
@@ -284,7 +383,17 @@ public class ResourceAttributeBase {
         List<ErrorableValue<ResourceAttributeValueVO>> values;
     }
 
+    @SuppressWarnings("unchecked")
     private void createResourceAttributeValue(CreateResourceAttributeValueContext context) {
+        final Set<String> optionsMayNull = ResourceAttributeManager.enumOptionsForKeyUuid(self.getUuid());
+        if (optionsMayNull != null && !optionsMayNull.contains(context.value)) {
+            context.values = list(ErrorableValue.ofErrorCode(
+                    err(INVALID_VALUE, "invalid value[%s]: enum constraint", context.value)
+                            .withOpaque("expect.options", optionsMayNull)
+                            .withOpaque("attribute.key", self.getUuid())));
+            return;
+        }
+
         context.values = new ArrayList<>(context.resourceUuids.size());
         Map<String, String> resourceUuidTypeMap = buildResourceUuidTypeMap(context.resourceUuids);
 

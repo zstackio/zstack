@@ -86,3 +86,14 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ResourceAttributeKeyResourceTypeVO` (
     CONSTRAINT fkResourceAttributeKeyResourceTypeVOResourceAttributeKeyVO FOREIGN KEY (keyUuid) REFERENCES ResourceAttributeKeyVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
     CONSTRAINT `uqResourceAttributeKeyResourceTypeVO` UNIQUE(`keyUuid`, `resourceType`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ResourceAttributeConstraintVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `keyUuid` char(32) NOT NULL,
+    `type` varchar(255) NOT NULL,
+    `parameter` varchar(2048) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
+    PRIMARY KEY (`id`),
+    CONSTRAINT fkResourceAttributeConstraintVOResourceAttributeKeyVO FOREIGN KEY (keyUuid) REFERENCES ResourceAttributeKeyVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

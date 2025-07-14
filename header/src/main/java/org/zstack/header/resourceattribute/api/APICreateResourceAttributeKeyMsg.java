@@ -1,6 +1,7 @@
 package org.zstack.header.resourceattribute.api;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.resourceattribute.entity.ResourceAttributeConstraintParam;
 import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyVO;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
@@ -29,6 +30,9 @@ public class APICreateResourceAttributeKeyMsg extends APICreateMessage {
     @APIParam(required = false)
     private List<String> resourceTypes;
 
+    @APIParam(required = false)
+    private List<ResourceAttributeConstraintParam> constraints;
+
     public String getName() {
         return name;
     }
@@ -51,6 +55,14 @@ public class APICreateResourceAttributeKeyMsg extends APICreateMessage {
 
     public void setResourceTypes(List<String> resourceTypes) {
         this.resourceTypes = resourceTypes;
+    }
+
+    public List<ResourceAttributeConstraintParam> getConstraints() {
+        return constraints;
+    }
+
+    public void setConstraints(List<ResourceAttributeConstraintParam> constraints) {
+        this.constraints = constraints;
     }
 
     public static APICreateResourceAttributeKeyMsg __example__() {

@@ -49,6 +49,15 @@ doc {
 					since "4.10.16"
 				}
 				column {
+					name "constraints"
+					enclosedIn "params"
+					desc "属性限制列表"
+					location "body"
+					type "List"
+					optional true
+					since "4.10.16"
+				}
+				column {
 					name "resourceUuid"
 					enclosedIn "params"
 					desc "资源 UUID"

@@ -36,6 +36,11 @@ public class ResourceAttributeKeyVO extends ResourceVO {
     @NoView
     private Set<ResourceAttributeKeyResourceTypeVO> types = new HashSet<>();
 
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "keyUuid", insertable = false, updatable = false)
+    @NoView
+    private Set<ResourceAttributeConstraintVO> constraints = new HashSet<>();
+
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
@@ -79,5 +84,13 @@ public class ResourceAttributeKeyVO extends ResourceVO {
 
     public void setTypes(Set<ResourceAttributeKeyResourceTypeVO> types) {
         this.types = types;
+    }
+
+    public Set<ResourceAttributeConstraintVO> getConstraints() {
+        return constraints;
+    }
+
+    public void setConstraints(Set<ResourceAttributeConstraintVO> constraints) {
+        this.constraints = constraints;
     }
 }
