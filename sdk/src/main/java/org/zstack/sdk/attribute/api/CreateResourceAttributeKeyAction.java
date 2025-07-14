@@ -34,6 +34,9 @@ public class CreateResourceAttributeKeyAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List resourceTypes;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List constraints;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

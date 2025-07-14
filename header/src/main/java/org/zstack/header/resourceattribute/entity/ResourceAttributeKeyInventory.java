@@ -20,6 +20,8 @@ import static org.zstack.utils.CollectionUtils.transform;
 @ExpandedQueries({
         @ExpandedQuery(expandedField = "types", inventoryClass = ResourceAttributeKeyResourceTypeInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "keyUuid", hidden = true),
+        @ExpandedQuery(expandedField = "constraints", inventoryClass = ResourceAttributeConstraintInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "keyUuid", hidden = true),
 })
 @Inventory(mappingVOClass = ResourceAttributeKeyVO.class)
 @PythonClassInventory
@@ -36,6 +38,10 @@ public class ResourceAttributeKeyInventory implements Serializable {
             joinColumn = @JoinColumn(name = "keyUuid", referencedColumnName = "uuid"))
     private List<ResourceAttributeKeyResourceTypeInventory> types;
 
+    @Queryable(mappingClass = ResourceAttributeConstraintInventory.class,
+            joinColumn = @JoinColumn(name = "keyUuid", referencedColumnName = "uuid"))
+    private List<ResourceAttributeConstraintInventory> constraints;
+
     public static ResourceAttributeKeyInventory valueOf(ResourceAttributeKeyVO vo) {
         ResourceAttributeKeyInventory inv = new ResourceAttributeKeyInventory();
         inv.setUuid(vo.getUuid());
@@ -45,6 +51,7 @@ public class ResourceAttributeKeyInventory implements Serializable {
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setResourceTypes(transform(vo.getTypes(), ResourceAttributeKeyResourceTypeVO::getResourceType));
         inv.setTypes(ResourceAttributeKeyResourceTypeInventory.valueOf(vo.getTypes()));
+        inv.setConstraints(ResourceAttributeConstraintInventory.valueOf(vo.getConstraints()));
         return inv;
     }
 
@@ -108,12 +115,21 @@ public class ResourceAttributeKeyInventory implements Serializable {
         this.types = types;
     }
 
+    public List<ResourceAttributeConstraintInventory> getConstraints() {
+        return constraints;
+    }
+
+    public void setConstraints(List<ResourceAttributeConstraintInventory> constraints) {
+        this.constraints = constraints;
+    }
+
     public static ResourceAttributeKeyInventory __example__() {
         ResourceAttributeKeyInventory inventory = new ResourceAttributeKeyInventory();
         inventory.setUuid(StringDSL.createFixedUuid(ResourceAttributeKeyVO.class));
         inventory.setName("OperationsPersonnel");
         inventory.setDescription("Kinny");
         inventory.setResourceTypes(list("VmInstanceVO"));
+        inventory.setConstraints(list(ResourceAttributeConstraintInventory.__example__()));
         inventory.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         inventory.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         return inventory;

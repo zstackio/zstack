@@ -20,4 +20,19 @@
         <id>1003</id>
         <description>Remove resource type not allowed</description>
     </code>
+
+    <code>
+        <id>1101</id>
+        <description>Unsupported constraints</description>
+    </code>
+
+    <code>
+        <id>1102</id>
+        <description>Invalid constraints id</description>
+    </code>
+
+    <code>
+        <id>1200</id>
+        <description>Invalid value</description>
+    </code>
 </error>
