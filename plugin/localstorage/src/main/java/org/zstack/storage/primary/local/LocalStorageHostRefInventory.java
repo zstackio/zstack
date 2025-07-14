@@ -27,6 +27,7 @@ public class LocalStorageHostRefInventory {
     private Long availableCapacity;
     private Long totalPhysicalCapacity;
     private Long availablePhysicalCapacity;
+    private Long systemUsedCapacity;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -38,6 +39,7 @@ public class LocalStorageHostRefInventory {
         inv.setAvailablePhysicalCapacity(vo.getAvailablePhysicalCapacity());
         inv.setTotalCapacity(vo.getTotalCapacity());
         inv.setTotalPhysicalCapacity(vo.getTotalPhysicalCapacity());
+        inv.setSystemUsedCapacity(vo.getSystemUsedCapacity());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
@@ -98,6 +100,14 @@ public class LocalStorageHostRefInventory {
 
     public void setAvailablePhysicalCapacity(Long availablePhysicalCapacity) {
         this.availablePhysicalCapacity = availablePhysicalCapacity;
+    }
+
+    public Long getSystemUsedCapacity() {
+        return systemUsedCapacity;
+    }
+
+    public void setSystemUsedCapacity(Long systemUsedCapacity) {
+        this.systemUsedCapacity = systemUsedCapacity;
     }
 
     public Timestamp getCreateDate() {
