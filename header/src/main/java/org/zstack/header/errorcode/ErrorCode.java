@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class ErrorCode implements Serializable, Cloneable {
@@ -204,19 +205,46 @@ public class ErrorCode implements Serializable, Cloneable {
     }
 
     public String getReadableDetails() {
-        ErrorCode root = this;
-        StringBuffer errorBuf = new StringBuffer();
-        if (CollectionUtils.isNotEmpty(root.causes)) {
-            root.causes.forEach(cause -> {
-                if (errorBuf.length() > 0) {
-                    errorBuf.append(",");
-                }
-                errorBuf.append(cause.getReadableDetails());
-            });
-            return errorBuf.toString().trim();
+        final StringBuilder builder = new StringBuilder(2048);
+        getReadableDetails(builder, 0);
+        return builder.toString();
+    }
+
+    private void getReadableDetails(StringBuilder builder, int level) {
+        if (level > 0) {
+            builder.append("\n");
         }
 
-        return getRootCauseDetails();
+        if (level >= 16) { // may loop
+            builder.append("\n...");
+            return;
+        }
+
+        for (int i = 0; i < level; i++) {
+            builder.append("  ");
+        }
+
+        builder.append(String.format("[%s] %s", code == null ? "???" : code, details == null ? "" : details));
+        if (opaque != null && !opaque.isEmpty()) {
+            for (Map.Entry<String, Object> entry : opaque.entrySet()) {
+                builder.append("\n");
+                for (int i = 0; i < level; i++) {
+                    builder.append("  ");
+                }
+                builder.append(String.format("        * %s: %s", entry.getKey(), JSONObjectUtil.toJsonString(entry.getValue())));
+            }
+        }
+
+        if (cause != null) { // TODO: merge cause to causes
+            cause.getReadableDetails(builder, level + 1);
+        }
+
+        for (ErrorCode causeItem : causes) {
+            if (causeItem == null) {
+                continue;
+            }
+            causeItem.getReadableDetails(builder, level + 1);
+        }
     }
 
     public ErrorCode getRootCause() {
