@@ -38,6 +38,7 @@ import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.addon.backup.ExternalBackupStorageFactory;
+import org.zstack.storage.primary.PrimaryStorageFeatureAllocatorExtensionPoint;
 import org.zstack.storage.snapshot.MarkRootVolumeAsSnapshotExtension;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -53,7 +54,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
         VmAttachVolumeExtensionPoint, VmDetachVolumeExtensionPoint, BeforeTakeLiveSnapshotsOnVolumes,
         CreateTemplateFromVolumeSnapshotExtensionPoint, MarkRootVolumeAsSnapshotExtension, VmInstanceMigrateExtensionPoint,
-        ManagementNodeChangeListener {
+        ManagementNodeChangeListener, PrimaryStorageFeatureAllocatorExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ExternalBackupStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE);
 
@@ -79,6 +80,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     static {
         type.setSupportHeartbeatFile(true);
         type.setSupportStorageTrash(true);
+        type.setSupportSharedVolume(true);
     }
 
     @Override
@@ -948,5 +950,21 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     @Override
     public void iJoin(ManagementNodeInventory inv) {
 
+    }
+
+    @Override
+    public List<PrimaryStorageVO> allocatePrimaryStorage(Set<PrimaryStorageFeature> requiredFeatures, List<PrimaryStorageVO> candidates) {
+        if (requiredFeatures.contains(PrimaryStorageFeature.SHARED_VOLUME)) {
+            List<PrimaryStorageVO> excludeCandidates = candidates.stream()
+                    .filter(v -> PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE.equals(v.getType()))
+                    .filter(v -> !(controllers.containsKey(v.getUuid()) && controllers.get(v.getUuid()).reportCapabilities().isSupportShareableVolume()))
+                    .collect(Collectors.toList());
+
+            logger.info(String.format("exclude external primary storage candidates: %s for shared volume feature", excludeCandidates));
+
+            candidates.removeAll(excludeCandidates);
+        }
+
+        return candidates;
     }
 }

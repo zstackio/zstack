@@ -5,6 +5,7 @@ import org.zstack.header.volume.VolumeProtocol;
 
 import java.util.List;
 
+// TODO Merge with PrimaryStorageFeature
 public class StorageCapabilities {
     private VolumeSnapshotCapability snapshotCapability;
 
@@ -13,10 +14,19 @@ public class StorageCapabilities {
     private boolean supportStorageQos;
 
     private boolean supportLiveExpandVolume;
+    private boolean supportShareableVolume;
     private boolean supportExportVolumeSnapshot;
     public List<String> supportedImageFormats;
     private VolumeProtocol defaultIsoActiveProtocol;
     private VolumeProtocol defaultImageExportProtocol;
+
+    public boolean isSupportShareableVolume() {
+        return supportShareableVolume;
+    }
+
+    public void setSupportShareableVolume(boolean supportShareableVolume) {
+        this.supportShareableVolume = supportShareableVolume;
+    }
 
     public VolumeProtocol getDefaultIsoActiveProtocol() {
         return defaultIsoActiveProtocol;

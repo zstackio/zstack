@@ -78,7 +78,7 @@ import static org.zstack.core.Platform.*;
 public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
         ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, VmInstanceStartExtensionPoint,
         VmInstanceCreateExtensionPoint, InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator,
-        PrimaryStorageSortExtensionPoint {
+        PrimaryStorageSortExtensionPoint, PrimaryStorageFeatureAllocatorExtensionPoint {
     private static final CLogger logger = Utils.getLogger(PrimaryStorageManager.class);
 
     @Autowired
@@ -827,6 +827,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private PrimaryStorageAllocationSpec buildAllocateSpecFromMsg(AllocatePrimaryStorageMsg msg) {
         PrimaryStorageAllocationSpec spec = new PrimaryStorageAllocationSpec();
         spec.setPossiblePrimaryStorageTypes(msg.getPossiblePrimaryStorageTypes());
+        spec.setRequiredFeatures(msg.getRequiredFeatures());
         spec.setExcludePrimaryStorageTypes(msg.getExcludePrimaryStorageTypes());
         spec.setImageUuid(msg.getImageUuid());
         spec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
@@ -1021,6 +1022,18 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
 
         strategy.sort(allocationSpec, primaryStorageVOS);
+    }
+
+    @Override
+    public List<PrimaryStorageVO> allocatePrimaryStorage(Set<PrimaryStorageFeature> requiredFeatures, List<PrimaryStorageVO> candidates) {
+        if (requiredFeatures.contains(PrimaryStorageFeature.SHARED_VOLUME)) {
+            candidates = candidates.stream()
+                    .filter(v -> PrimaryStorageType.getSupportFeaturesTypes(PrimaryStorageType::isSupportSharedVolume)
+                            .contains(v.getType()))
+                    .collect(Collectors.toList());
+        }
+
+        return candidates;
     }
 
     class AutoDeleteTrashTask {

@@ -2,6 +2,7 @@ package org.zstack.header.storage.primary;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  */
@@ -23,6 +24,15 @@ public class PrimaryStorageAllocationSpec {
     private List<String> possiblePrimaryStorageTypes;
     private List<String> excludePrimaryStorageTypes;
     private String backupStorageUuid;
+    private Set<PrimaryStorageFeature> requiredFeatures;
+
+    public Set<PrimaryStorageFeature> getRequiredFeatures() {
+        return requiredFeatures;
+    }
+
+    public void setRequiredFeatures(Set<PrimaryStorageFeature> requiredFeatures) {
+        this.requiredFeatures = requiredFeatures;
+    }
 
     public List<String> getCandidatePrimaryStorageUuids() {
         return candidatePrimaryStorageUuids == null ? Collections.emptyList() : candidatePrimaryStorageUuids;
