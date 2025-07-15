@@ -116,18 +116,6 @@ public class ErrorCode implements Serializable, Cloneable {
         return JSONObjectUtil.toJsonString(this);
     }
 
-    public static ErrorCode fromString(String err) {
-        String arr = err.replace("ErrorCode", "").replace("[", "").replace("]", "").trim();
-        try {
-            String[] items = arr.split(",");
-            ErrorCode code = new ErrorCode(items[0].split("=")[1].trim(), items[1].split("=")[1].trim());
-            code.setDetails(items[2].split("=")[1].trim());
-            return code;
-        } catch (Exception e) {
-            throw new IllegalArgumentException(String.format("Cannot deserialize string[%s] to ErrorCode", err), e);
-        }
-    }
-
     public ErrorCode getCause() {
         return cause;
     }
