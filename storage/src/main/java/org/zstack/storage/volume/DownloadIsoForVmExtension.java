@@ -39,7 +39,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.multiErr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -163,7 +163,7 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
                     return;
                 }
 
-                ErrorCode ec = operr(new ErrorCodeList().causedBy(errorCodes), "unable to download iso to primary storage, becasue: %s",
+                ErrorCode ec = multiErr(errorCodes, "unable to download iso to primary storage, becasue: %s",
                         errorCodes.get(0).getDetails());
 
                 completion.fail(ec);

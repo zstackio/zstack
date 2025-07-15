@@ -91,8 +91,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.i18n;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.longjob.LongJobUtils.buildErrIfCanceled;
 import static org.zstack.utils.CollectionDSL.*;
@@ -4215,7 +4214,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             @Override
                             public void done() {
                                 if (!errorCodes.isEmpty()) {
-                                    trigger.fail(operr( new ErrorCodeList().causedBy(errorCodes), "unable to connect mons"));
+                                    trigger.fail(multiErr(errorCodes, "unable to connect mons"));
                                 } else {
                                     trigger.next();
                                 }
@@ -4254,7 +4253,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             public void done() {
                                 // one fail, all fail
                                 if (!errors.isEmpty()) {
-                                    trigger.fail(operr(new ErrorCodeList().causedBy(errors), "unable to add mon to ceph primary storage"));
+                                    trigger.fail(multiErr(errors, "unable to add mon to ceph primary storage"));
                                 } else {
                                     trigger.next();
                                 }

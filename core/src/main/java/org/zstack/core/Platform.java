@@ -960,6 +960,16 @@ public class Platform {
         return result;
     }
 
+    public static ErrorCode multiErr(Collection<ErrorCode> causes, String fmt, Object...args) {
+        return err(SysErrors.MULTIPLE_REASONS, null, fmt, args)
+                .withCause(causes);
+    }
+
+    public static ErrorCode multiErr(Collection<ErrorCode> causes) {
+        return err(SysErrors.MULTIPLE_REASONS, (ErrorCode) null, "Multiple errors")
+                .withCause(causes);
+    }
+
     private static void findElaborationFromCoreError(ErrorCode cause, ErrorCode result) {
         ErrorCode coreError = cause == null ? getCoreError(result) : getCoreError(cause);
         // use the core cause as elaboration if it existed
