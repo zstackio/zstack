@@ -7,4 +7,8 @@ import org.zstack.core.GlobalPropertyDefinition;
 public class SecurityGroupGlobalProperty {
     @GlobalProperty(name="upgradeSecurityGroup", defaultValue = "false")
     public static boolean UPGRADE_SECURITY_GROUP;
+    @GlobalProperty(name="SecurityGroupRuleIpLimit", defaultValue = "10")
+    public static int IP_GROUP_NUMBER_LIMIT;
+    @GlobalProperty(name="SecurityGroupRulePortLimit", defaultValue = "50")
+    public static int PORT_GROUP_NUMBER_LIMIT;
 }

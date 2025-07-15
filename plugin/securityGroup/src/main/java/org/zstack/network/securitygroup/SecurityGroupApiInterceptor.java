@@ -704,9 +704,9 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         }
         String portArray[];
         if (ports.contains(SecurityGroupConstant.IP_SPLIT)) {
-            String[] tmpPorts = ports.split(String.format("%s|%s", SecurityGroupConstant.IP_SPLIT, SecurityGroupConstant.RANGE_SPLIT));
-            if (tmpPorts.length > SecurityGroupConstant.PORT_GROUP_NUMBER_LIMIT) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid ports[%s], port range[%s] number[%d] is out of max limit[%d]", ports, Arrays.toString(tmpPorts), tmpPorts.length, SecurityGroupConstant.PORT_GROUP_NUMBER_LIMIT));
+            String[] tmpPorts = ports.split(SecurityGroupConstant.IP_SPLIT);
+            if (tmpPorts.length > SecurityGroupGlobalProperty.PORT_GROUP_NUMBER_LIMIT) {
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid ports[%s], port range[%s] number[%d] is out of max limit[%d]", ports, Arrays.toString(tmpPorts), tmpPorts.length, SecurityGroupGlobalProperty.PORT_GROUP_NUMBER_LIMIT));
             }
 
             portArray = ports.split(SecurityGroupConstant.IP_SPLIT);
@@ -759,8 +759,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         String ipArray[];
         if (ips.contains(SecurityGroupConstant.IP_SPLIT)) {
             ipArray = ips.split(SecurityGroupConstant.IP_SPLIT);
-            if (ipArray.length > SecurityGroupConstant.IP_GROUP_NUMBER_LIMIT) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s], ip number[%d] is out of max limit[%d]", ips, ipArray.length, SecurityGroupConstant.IP_GROUP_NUMBER_LIMIT));
+            if (ipArray.length > SecurityGroupGlobalProperty.IP_GROUP_NUMBER_LIMIT) {
+                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s], ip number[%d] is out of max limit[%d]", ips, ipArray.length, SecurityGroupGlobalProperty.IP_GROUP_NUMBER_LIMIT));
             }
             Stream<String> stream = Stream.of(ipArray).distinct();
             if (ipArray.length != stream.count()) {
