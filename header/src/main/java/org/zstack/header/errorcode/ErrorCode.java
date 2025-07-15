@@ -8,6 +8,7 @@ import org.zstack.utils.string.ErrorCodeElaboration;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -150,14 +151,22 @@ public class ErrorCode implements Serializable, Cloneable {
         return this;
     }
 
+    public ErrorCode withCause(Collection<ErrorCode> causes) {
+        this.causes.addAll(causes);
+        return this;
+    }
+
     public ErrorCode causedBy(ErrorCode cause) {
         setCause(cause);
         return this;
     }
 
+    /**
+     * use "withCause"
+     */
+    @Deprecated
     public ErrorCode causedBy(List<ErrorCode> cause) {
-        setCauses(cause);
-        return this;
+        return withCause(cause);
     }
 
     public String getElaboration() {
@@ -168,8 +177,8 @@ public class ErrorCode implements Serializable, Cloneable {
         this.elaboration = elaboration;
     }
 
-    public boolean isError(Enum... errorEnums) {
-        for (Enum e : errorEnums) {
+    public boolean isError(Enum<?>... errorEnums) {
+        for (Enum<?> e : errorEnums) {
             if (e.toString().equals(getCode())) {
                 return true;
             }
@@ -202,7 +211,7 @@ public class ErrorCode implements Serializable, Cloneable {
         sb.append(details == null ? "" : details);
         sb.append(opaque == null ? "" : opaque);
         sb.append(cause == null ? "" : cause.toString());
-        sb.append(causes == null || causes.isEmpty() ? "" : causes.toString());
+        sb.append(causes.isEmpty() ? "" : causes.toString());
         return sb.toString().hashCode();
     }
 

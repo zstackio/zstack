@@ -9,7 +9,6 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.storage.primary.*;
@@ -24,8 +23,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.i18n;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 /**
  * Created by frank on 7/1/2015.
@@ -291,8 +289,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             return;
         }
 
-        ErrorCode err = ret.causes.isEmpty() ? operr(ret.errStr) :
-                operr(new ErrorCodeList().causedBy(ret.causes), ret.errStr);
+        ErrorCode err = ret.causes.isEmpty() ? operr(ret.errStr) : multiErr(ret.causes, ret.errStr);
         trigger.fail(err);
     }
 }

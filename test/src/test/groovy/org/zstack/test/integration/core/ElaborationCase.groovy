@@ -172,7 +172,7 @@ class ElaborationCase extends SubCase {
         def err2 = operr("host[uuid:%s, name:%s] is in state[%s], cannot perform required operation", Platform.uuid, "host-2", "Maintenance") as ErrorCode
 
         list.addAll([err1, err2])
-        def errlist = new ErrorCode().causedBy(list)
+        def errlist = new ErrorCode().withCause(list)
 
         def err = operr(errlist, "unable to commit backup storage because: %s", err1.details)
         assert err.messages.message_cn == "物理机 [host-1] 正处于 [Maintenance] 状态，当前状态不允许进行该操作。,物理机 [host-2] 正处于 [Maintenance] 状态，当前状态不允许进行该操作。"

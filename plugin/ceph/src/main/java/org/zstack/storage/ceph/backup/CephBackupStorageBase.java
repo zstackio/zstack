@@ -58,6 +58,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.zstack.core.Platform.multiErr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.getTaskStage;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
@@ -1896,7 +1897,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                             @Override
                             public void done() {
                                 if (!errorCodes.isEmpty()) {
-                                    trigger.fail(operr(new ErrorCodeList().causedBy(errorCodes), "unable to connect mons"));
+                                    trigger.fail(multiErr(errorCodes, "unable to connect mons"));
                                 } else {
                                     trigger.next();
                                 }
@@ -1939,7 +1940,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                             public void done() {
                                 // one fail, all fail
                                 if (!errors.isEmpty()) {
-                                    trigger.fail(operr(new ErrorCodeList().causedBy(errors), "unable to add mon to ceph backup storage"));
+                                    trigger.fail(multiErr(errors, "unable to add mon to ceph backup storage"));
                                 } else {
                                     trigger.next();
                                 }
