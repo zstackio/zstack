@@ -52,4 +52,12 @@ public class ResourceAttributeKeyInventory  {
         return this.lastOpDate;
     }
 
+    public java.util.List constraints;
+    public void setConstraints(java.util.List constraints) {
+        this.constraints = constraints;
+    }
+    public java.util.List getConstraints() {
+        return this.constraints;
+    }
+
 }

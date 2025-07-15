@@ -2,6 +2,7 @@ package org.zstack.header.resourceattribute.api;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.resourceattribute.ResourceAttributeMessage;
+import org.zstack.header.resourceattribute.entity.ResourceAttributeConstraintParam;
 import org.zstack.header.resourceattribute.entity.ResourceAttributeKeyVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -25,6 +26,18 @@ public class APIUpdateResourceAttributeKeyMsg extends APIMessage implements Reso
     @APIParam(required = false)
     private List<String> resourceTypes;
 
+    @APIParam(required = false)
+    private List<ResourceAttributeConstraintParam> createConstraints;
+
+    @APIParam(required = false)
+    private List<ResourceAttributeConstraintParam> updateConstraints;
+
+    /**
+     * list of ResourceAttributeConstraintVO.id
+     */
+    @APIParam(required = false)
+    private List<Long> deleteConstraintIds;
+
     public String getUuid() {
         return uuid;
     }
@@ -47,6 +60,30 @@ public class APIUpdateResourceAttributeKeyMsg extends APIMessage implements Reso
 
     public void setResourceTypes(List<String> resourceTypes) {
         this.resourceTypes = resourceTypes;
+    }
+
+    public List<ResourceAttributeConstraintParam> getCreateConstraints() {
+        return createConstraints;
+    }
+
+    public void setCreateConstraints(List<ResourceAttributeConstraintParam> createConstraints) {
+        this.createConstraints = createConstraints;
+    }
+
+    public List<ResourceAttributeConstraintParam> getUpdateConstraints() {
+        return updateConstraints;
+    }
+
+    public void setUpdateConstraints(List<ResourceAttributeConstraintParam> updateConstraints) {
+        this.updateConstraints = updateConstraints;
+    }
+
+    public List<Long> getDeleteConstraintIds() {
+        return deleteConstraintIds;
+    }
+
+    public void setDeleteConstraintIds(List<Long> deleteConstraintIds) {
+        this.deleteConstraintIds = deleteConstraintIds;
     }
 
     @Override
