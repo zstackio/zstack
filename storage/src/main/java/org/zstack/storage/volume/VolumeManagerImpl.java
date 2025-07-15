@@ -66,7 +66,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.header.host.HostStatus.Connected;
 
@@ -351,7 +350,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         }
 
                         if (vvo.isShareable()) {
-                            amsg.setPossiblePrimaryStorageTypes(PrimaryStorageType.getSupportFeaturesTypes(PrimaryStorageType::isSupportSharedVolume));
+                            amsg.setRequiredFeatures(Collections.singleton(PrimaryStorageFeature.SHARED_VOLUME));
                         }
 
                         bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);

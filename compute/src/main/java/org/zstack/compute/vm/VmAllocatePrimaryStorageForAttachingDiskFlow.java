@@ -1,13 +1,11 @@
 package org.zstack.compute.vm;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -19,13 +17,10 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.header.volume.VolumeInventory;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.Collections;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
@@ -63,25 +58,8 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
 
         if (volume.isShareable()) {
             String clusterUuid = spec.getVmInventory().getClusterUuid();
-            List<PrimaryStorageVO> vos = SQL.New("select pri" +
-            " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
-                    " where ref.clusterUuid = :clusterUuid" +
-                    " and ref.primaryStorageUuid = pri.uuid" +
-                    " and pri.status = :status" +
-                    " and pri.state = :priState")
-                    .param("clusterUuid", clusterUuid)
-                    .param("status", PrimaryStorageStatus.Connected)
-                    .param("priState", PrimaryStorageState.Enabled)
-                    .list();
-
-            if (CollectionUtils.isNotEmpty(vos)) {
-                amsg.setPossiblePrimaryStorageTypes(vos.stream()
-                        .filter(v -> PrimaryStorageType.valueOf(v.getType()).isSupportSharedVolume())
-                        .map(PrimaryStorageVO::getType)
-                        .collect(Collectors.toList()));
-            }
-
-            amsg.setRequiredClusterUuids(Arrays.asList(clusterUuid));
+            amsg.setRequiredClusterUuids(Collections.singletonList(clusterUuid));
+            amsg.setRequiredFeatures(Collections.singleton(PrimaryStorageFeature.SHARED_VOLUME));
         } else {
             amsg.setRequiredHostUuid(hinv.getUuid());
         }
