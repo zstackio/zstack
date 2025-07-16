@@ -943,7 +943,8 @@ public abstract class HostBase extends AbstractHost {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("ping host failed (%d/%d): %s", currentStep, MAX_PING_CNT, errorCode.toString()));
+                logger.warn(String.format("ping host failed (%d/%d): %s",
+                        currentStep, MAX_PING_CNT, errorCode.getReadableDetails()));
                 errs.add(errorCode);
 
                 if (errs.size() != MAX_PING_CNT) {

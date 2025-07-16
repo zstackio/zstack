@@ -1383,7 +1383,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                logger.warn(errorCode.toString());
+                                logger.warn(errorCode.getReadableDetails());
                                 trigger.rollback();
                             }
                         });

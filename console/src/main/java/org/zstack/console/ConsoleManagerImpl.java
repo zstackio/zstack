@@ -240,7 +240,7 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    logger.warn(errorCode.toString());
+                    logger.warn(errorCode.getReadableDetails());
                     completion.success();
                 }
             });
@@ -254,7 +254,7 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
                 @Override
                 public void fail(ErrorCode errorCode) {
                     //TODO
-                    logger.warn(errorCode.toString());
+                    logger.warn(errorCode.getReadableDetails());
                     completion.success();
                 }
             });
@@ -341,7 +341,7 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
             @Override
             public void fail(ErrorCode errorCode) {
                 dbf.remove(vo);
-                logger.warn(String.format("fail to update console proxy, because: ", errorCode.toString()));
+                logger.warn(String.format("fail to update console proxy:%n%s", errorCode.getReadableDetails()));
                 completion.success();
             }
         });

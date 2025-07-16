@@ -108,7 +108,7 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.warn(errorCode.toString());
+                logger.warn(errorCode.getReadableDetails());
                 // NOTE: we don't know if the failure happens before or after the VIP deleted on the real device,
                 // for example, a message timeout failure happens after the VIP gets really deleted, but an internal error
                 // may happen before so. In both cases, we delete the database reference here so next time the backend

@@ -115,7 +115,7 @@ public abstract class Retry<T> {
                     errorCode.setDescription(i18n("an operation[%s] fails after retrying %s times with the interval %s seconds",
                             __name__, times, interval));
                     errorCode.setDetails(t.getMessage());
-                    logger.warn(errorCode.toString(), t);
+                    logger.warn(errorCode.getReadableDetails(), t);
 
                     if (onFailure(t)) {
                         throw t;

@@ -88,7 +88,7 @@ public class VmInstantiateResourcePostFlow implements Flow {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.warn(errorCode.toString());
+                logger.warn(errorCode.getReadableDetails());
                 trigger.rollback();
             }
         });

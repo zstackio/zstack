@@ -1562,8 +1562,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     nfsFactory.updateNfsHostStatus(pinv.getUuid(), hostUuid, PrimaryStorageHostStatus.Disconnected);
                     errs.add(errorCode);
 
-                    logger.warn(String.format("failed to remount NFS primary storage[uuid:%s, name:%s] on the KVM host[uuid:%s]," +
-                            "%s.", pinv.getUuid(), pinv.getName(), hostUuid, errorCode.toString()));
+                    logger.warn(String.format("failed to remount NFS primary storage[uuid:%s, name:%s] on the KVM host[uuid:%s]:%n%s",
+                            pinv.getUuid(), pinv.getName(), hostUuid, errorCode.getReadableDetails()));
                     compl.done();
                 }
             });
@@ -1751,8 +1751,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                         @Override
                         public void fail(ErrorCode errorCode) {
                             errList.getCauses().add(errorCode);
-                            logger.warn(String.format("fail to mount nfs[uuid:%s] from host[uuid:%s], because:%s"
-                                    , inv.getUuid(), huuid, errorCode.toString()));
+                            logger.warn(String.format("fail to mount nfs[uuid:%s] from host[uuid:%s]:%n%s"
+                                    , inv.getUuid(), huuid, errorCode.getReadableDetails()));
                             nfsFactory.updateNfsHostStatus(inv.getUuid(), huuid, PrimaryStorageHostStatus.Disconnected);
                             completion.done();
                         }

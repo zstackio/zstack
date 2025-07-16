@@ -85,7 +85,7 @@ public class VmInstantiateResourceForChangeImageFlow implements Flow {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.warn(errorCode.toString());
+                logger.warn(errorCode.getReadableDetails());
                 rollbackExtensions(it, spec, chain);
             }
         });

@@ -866,7 +866,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                     @Override
                     public void fail(ErrorCode errorCode) {
                         extpEmitter.failToDetach(self, msg.getClusterUuid());
-                        logger.warn(errorCode.toString());
+                        logger.warn(errorCode.getReadableDetails());
                         reply.setError(err(PrimaryStorageErrors.DETACH_ERROR, errorCode, errorCode.getDetails()));
                         bus.reply(msg, reply);
                         chain.next();

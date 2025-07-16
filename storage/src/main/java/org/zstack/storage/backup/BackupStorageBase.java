@@ -796,7 +796,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.warn(errorCode.toString());
+                logger.warn(errorCode.getReadableDetails());
                 extpEmitter.failToAttach(svo, msg.getZoneUuid());
                 evt.setError(err(BackupStorageErrors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
