@@ -1,7 +1,6 @@
 package org.zstack.storage.ceph.primary;
 
 import org.zstack.header.core.Completion;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.storage.snapshot.VolumeSnapshotDeletionProtector;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.storage.ceph.CephConstants;
@@ -29,7 +28,7 @@ public class CephSnapshotProtector implements VolumeSnapshotDeletionProtector {
             completion.success();
         }
 
-        if (volUuids.stream().noneMatch(it -> snapshot.getPrimaryStorageInstallPath().contains(it))) {
+        if (volUuids.stream().noneMatch(it -> snapshot.getPrimaryStorageInstallPath().contains(it)) && !VolumeSystemTags.FAST_REVERT.hasTag(snapshot.getVolumeUuid())) {
             completion.fail(inerr("the snapshot[name:%s, uuid:%s, path: %s] seems not belong to the volume[uuid:%s]",
                     snapshot.getName(), snapshot.getUuid(), snapshot.getPrimaryStorageInstallPath(), snapshot.getVolumeUuid()));
             return;
