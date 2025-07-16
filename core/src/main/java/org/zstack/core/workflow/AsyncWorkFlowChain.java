@@ -16,6 +16,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.core.Platform.operr;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -346,7 +347,7 @@ public class AsyncWorkFlowChain {
         WorkFlowVO failedFlow = query.find();
         rollback();
         WorkFlowContext ctx = WorkFlowContext.fromBytes(failedFlow.getContext());
-        ErrorCode err = ErrorCode.fromString(failedFlow.getReason());
+        ErrorCode err = operr(failedFlow.getReason());
         tellCallbackFailure(ctx, err);
     }
     

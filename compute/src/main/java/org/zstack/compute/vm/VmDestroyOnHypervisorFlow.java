@@ -25,6 +25,8 @@ import org.zstack.utils.logging.CLogger;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.zstack.core.Platform.operr;
+
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmDestroyOnHypervisorFlow extends NoRollbackFlow {
@@ -53,8 +55,7 @@ public class VmDestroyOnHypervisorFlow extends NoRollbackFlow {
                 CheckVmStateOnHypervisorReply r = reply.castReply();
                 String state = r.getStates().get(vmUuid);
                 if (state == null) {
-                    completion.fail(ErrorCode.fromString(
-                            String.format("null state of the vm[uuid:%s] on the host[uuid:%s]", vmUuid, hostUuid)));
+                    completion.fail(operr("null state of the vm[uuid:%s] on the host[uuid:%s]", vmUuid, hostUuid));
                     return;
                 }
 
