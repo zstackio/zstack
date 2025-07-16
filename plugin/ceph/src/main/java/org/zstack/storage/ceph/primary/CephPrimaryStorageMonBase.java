@@ -425,7 +425,8 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    logger.warn(String.format("ping ceph ps mon[%s] failed (%d/%d): %s", self.getMonAddr(), step, MAX_PING_CNT, errorCode.toString()));
+                    logger.warn(String.format("ping ceph ps mon[%s] failed (%d/%d):%n%s",
+                            self.getMonAddr(), step, MAX_PING_CNT, errorCode.getReadableDetails()));
                     compl.addError(errorCode);
 
                     if (step.equals(MAX_PING_CNT)) {

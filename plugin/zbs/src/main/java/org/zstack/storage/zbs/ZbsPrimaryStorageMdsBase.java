@@ -306,7 +306,8 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            logger.warn(String.format("ping zbs primary storage mds[%s] failed (%d/%d): %s", getSelf().getMdsAddr(), step, MAX_PING_CNT, errorCode.toString()));
+                            logger.warn(String.format("ping zbs primary storage mds[%s] failed (%d/%d):%n%s",
+                                    getSelf().getMdsAddr(), step, MAX_PING_CNT, errorCode.getReadableDetails()));
                             comp.addError(errorCode);
 
                             if (step.equals(MAX_PING_CNT)) {

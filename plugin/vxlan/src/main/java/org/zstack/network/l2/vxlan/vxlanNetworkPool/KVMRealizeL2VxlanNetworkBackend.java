@@ -468,7 +468,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            logger.debug(String.format("check l2 vxlan failed for %s", errorCode.toString()));
+                            logger.debug(String.format("check l2 vxlan failed:%n%s", errorCode.getReadableDetails()));
                             trigger.fail(errorCode);
                         }
                     });
@@ -484,7 +484,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            logger.debug(String.format("realize l2 vxlan failed for %s", errorCode.toString()));
+                            logger.debug(String.format("realize l2 vxlan failed:%n%s", errorCode.getReadableDetails()));
                             trigger.fail(errorCode);
                         }
                     });

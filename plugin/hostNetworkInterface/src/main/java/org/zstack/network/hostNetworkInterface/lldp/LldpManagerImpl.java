@@ -288,7 +288,8 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
 
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.debug(String.format("fail to apply the lldp configuration after host reconnected:%s", errorCode.toString()));
+                logger.debug(String.format("fail to apply the lldp configuration after host reconnected:%n%s",
+                        errorCode.getReadableDetails()));
             }
         });
     }

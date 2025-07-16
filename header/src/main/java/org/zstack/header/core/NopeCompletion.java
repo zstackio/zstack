@@ -20,6 +20,6 @@ public class NopeCompletion extends Completion {
 
     @Override
     public void fail(ErrorCode errorCode) {
-        logger.warn(errorCode.toString());
+        logger.warn(errorCode.getReadableDetails());
     }
 }

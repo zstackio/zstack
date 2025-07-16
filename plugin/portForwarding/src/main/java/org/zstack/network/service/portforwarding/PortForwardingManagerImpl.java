@@ -582,7 +582,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                             @Override
                             public void fail(ErrorCode errorCode) {
                                 //TODO: GC this VIP
-                                logger.warn(errorCode.toString());
+                                logger.warn(errorCode.getReadableDetails());
                                 trigger.next();
                             }
                         });

@@ -316,7 +316,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 @Override
                 public void fail(ErrorCode errorCode) {
                     //TODO: Add GC
-                    logger.warn(errorCode.toString());
+                    logger.warn(errorCode.getReadableDetails());
                 }
             });
         }
