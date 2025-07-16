@@ -15,7 +15,7 @@ public class ZbsGlobalProperty {
     public static String PRIMARY_STORAGE_MODULE_PATH;
     @GlobalProperty(name = "Zbs.primaryStorage.ansiblePlaybook", defaultValue = "zbsp.py")
     public static String PRIMARY_STORAGE_PLAYBOOK_NAME;
-    @GlobalProperty(name = "Zbs.primaryStorage.agentPackageName", defaultValue = "zbsprimarystorage-5.0.0.tar.gz")
+    @GlobalProperty(name = "Zbs.primaryStorage.agentPackageName", defaultValue = "zbsprimarystorage-4.10.0.tar.gz")
     public static String PRIMARY_STORAGE_PACKAGE_NAME;
     @GlobalProperty(name = "Zbs.primaryStorageAgent.port", defaultValue = "7763")
     public static int PRIMARY_STORAGE_AGENT_PORT;

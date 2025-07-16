@@ -50,8 +50,8 @@ import org.zstack.identity.AccountManager;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
-import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupOperationValidator;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -59,6 +59,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -1225,6 +1226,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                 if (deletionPolicy == VolumeDeletionPolicy.Direct) {
                     flow(new NoRollbackFlow() {
+                        final List<VolumeStatus> allowedStatuses = Arrays.asList(VolumeStatus.Ready, VolumeStatus.Migrating);
                         String __name__ = "delete-volume-from-primary-storage";
 
                         @Override
@@ -1235,8 +1237,11 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            if (self.getStatus() == VolumeStatus.Ready &&
-                                 self.getPrimaryStorageUuid() != null) {
+                            if (allowedStatuses.contains(self.getStatus()) && self.getPrimaryStorageUuid() != null) {
+                                if (self.getStatus() == VolumeStatus.Migrating) {
+                                    self.setInstallPath(PathUtil.normalizePathWithoutQuery(self.getInstallPath()));
+                                }
+
                                 DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
                                 dmsg.setVolume(getSelfInventory());
                                 dmsg.setUuid(self.getPrimaryStorageUuid());
