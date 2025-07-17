@@ -55,6 +55,8 @@ public class KVMGuestOsCharacterExtensionPoint implements
                 .eq(VmNicVO_.uuid, nicUuid)
                 .set(VmNicVO_.driverType, driver)
                 .update();
+        logger.info(String.format("NicDriverTypeChange-51: Set nic driver type from guest OS character config after attach nic, nicUuid: %s, vmUuid: %s, driverType: %s",
+            nicUuid, vmInstanceInventory.getUuid(), driver));
         logger.debug(String.format("set nic[uuid:%s] driver type to %s", nicUuid, driver));
         completion.success();
     }

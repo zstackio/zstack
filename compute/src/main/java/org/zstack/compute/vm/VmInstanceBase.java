@@ -2408,8 +2408,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                         vmNicVO.setDeviceId(deviceId);
                         vmNicVO.setInternalName(internalName);
                         vmNicVO.setHypervisorType(spec.getVmInventory().getHypervisorType());
-                        vmNicVO.setDriverType(VmSystemTags.VIRTIO.hasTag(self.getUuid()) ?
-                                nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
+                        String driverType = VmSystemTags.VIRTIO.hasTag(self.getUuid()) ?
+                                nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver();
+                        vmNicVO.setDriverType(driverType);
+                        logger.info(String.format("NicDriverTypeChange-31: Set nic driver type during VM nic creation, nicUuid: %s, vmUuid: %s, driverType: %s, hasVirtioTag: %s",
+                            vmNicVO.getUuid(), self.getUuid(), driverType, VmSystemTags.VIRTIO.hasTag(self.getUuid())));
                         spec.getDestNics().add(0, VmNicInventory.valueOf(vmNicVO));
 
                         trigger.next();
@@ -8556,7 +8559,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         boolean update = false;
 
         if (!msg.getDriverType().equals(nicVO.getDriverType())) {
+            String oldDriverType = nicVO.getDriverType();
             nicVO.setDriverType(msg.getDriverType());
+            logger.info(String.format("NicDriverTypeChange-32: Update nic driver type via API, nicUuid: %s, vmUuid: %s, oldDriverType: %s, newDriverType: %s",
+                msg.getVmNicUuid(), msg.getVmInstanceUuid(), oldDriverType, msg.getDriverType()));
             update = true;
         }
 

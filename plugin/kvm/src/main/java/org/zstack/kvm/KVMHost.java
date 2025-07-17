@@ -4093,6 +4093,8 @@ public class KVMHost extends HostBase implements Host {
             if (to.getUseVirtio() && Q.New(VmNicVO.class)
                     .eq(VmNicVO_.uuid, nic.getUuid()).eq(VmNicVO_.driverType, VmNicDriverType.VIRTIO.toString()).isExists()) {
                 to.setDriverType(VmNicDriverType.VIRTIO.toString());
+                logger.info(String.format("NicDriverTypeChange-41: Set nic driver type to VIRTIO in KVM host, nicUuid: %s, vmUuid: %s, driverType: %s",
+                    nic.getUuid(), nic.getVmInstanceUuid(), VmNicDriverType.VIRTIO.toString()));
             }
         }
 
@@ -4108,8 +4110,13 @@ public class KVMHost extends HostBase implements Host {
         if (to.getDriverType() == null) {
             if (nic.getDriverType() != null) {
                 to.setDriverType(nic.getDriverType());
+                logger.info(String.format("NicDriverTypeChange-42: Set nic driver type from nic inventory in KVM host, nicUuid: %s, vmUuid: %s, driverType: %s",
+                    nic.getUuid(), nic.getVmInstanceUuid(), nic.getDriverType()));
             } else {
-                to.setDriverType(to.getUseVirtio() ? nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
+                String driverType = to.getUseVirtio() ? nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver();
+                to.setDriverType(driverType);
+                logger.info(String.format("NicDriverTypeChange-43: Set nic driver type to default in KVM host, nicUuid: %s, vmUuid: %s, driverType: %s, useVirtio: %s",
+                    nic.getUuid(), nic.getVmInstanceUuid(), driverType, to.getUseVirtio()));
             }
         }
 
