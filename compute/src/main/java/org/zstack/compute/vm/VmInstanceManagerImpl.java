@@ -1075,6 +1075,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
             }
         }
         if (isVirtio) {
+            logger.info(String.format("VIRTIOTagChange-21: Creating VIRTIO tag during VM creation, vmUuid: %s, isVirtio: %s",
+                finalVo.getUuid(), isVirtio));
             SystemTagCreator creator = VmSystemTags.VIRTIO.newSystemTagCreator(finalVo.getUuid());
             creator.recreate = true;
             creator.inherent = false;

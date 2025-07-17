@@ -163,6 +163,8 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
                     .in(VmNicVO_.uuid, pvNics)
                     .set(VmNicVO_.driverType, defaultPVNicDriver)
                     .update();
+            logger.info(String.format("NicDriverTypeChange-15: Initialize nic driver type to PV driver during DB preparation, driverType: %s, nicCount: %d, nicUuids: %s",
+                defaultPVNicDriver, pvNics.size(), pvNics));
         }
 
         if (CollectionUtils.isNotEmpty(defaultNics)) {
@@ -170,6 +172,8 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
                     .in(VmNicVO_.uuid, defaultNics)
                     .set(VmNicVO_.driverType, defaultNicDriver)
                     .update();
+            logger.info(String.format("NicDriverTypeChange-16: Initialize nic driver type to default driver during DB preparation, driverType: %s, nicCount: %d, nicUuids: %s",
+                defaultNicDriver, defaultNics.size(), defaultNics));
         }
     }
 
@@ -213,6 +217,8 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
         }
 
         SQL.New(VmNicVO.class).in(VmNicVO_.uuid, needUpdateNics).set(VmNicVO_.driverType, driverType).update();
+        logger.info(String.format("NicDriverTypeChange-14: Reset nic driver type via SQL update, vmUuid: %s, driverType: %s, nicCount: %d, nicUuids: %s",
+            vmUuid, driverType, needUpdateNics.size(), needUpdateNics));
     }
 
     public void setSupportNicDriverTypes(List<String> supportNicDriverTypes) {
@@ -263,13 +269,19 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
 
         if (driver != null) {
             nic.setDriverType(driver);
+            logger.info(String.format("NicDriverTypeChange-11: Set nic driver type from extension point, nicUuid: %s, vmUuid: %s, driverType: %s",
+                nic.getUuid(), vm.getUuid(), driver));
             return;
         }
 
         if (isImageSupportVirtIo || isParaVirtualization || VmSystemTags.VIRTIO.hasTag(vm.getUuid())) {
             nic.setDriverType(getDefaultPVNicDriver());
+            logger.info(String.format("NicDriverTypeChange-12: Set nic driver type to default PV driver, nicUuid: %s, vmUuid: %s, driverType: %s, isImageSupportVirtIo: %s, isParaVirtualization: %s, hasVirtioTag: %s",
+                nic.getUuid(), vm.getUuid(), getDefaultPVNicDriver(), isImageSupportVirtIo, isParaVirtualization, VmSystemTags.VIRTIO.hasTag(vm.getUuid())));
         } else {
             nic.setDriverType(getDefaultNicDriver());
+            logger.info(String.format("NicDriverTypeChange-13: Set nic driver type to default driver, nicUuid: %s, vmUuid: %s, driverType: %s",
+                nic.getUuid(), vm.getUuid(), getDefaultNicDriver()));
         }
     }
 
@@ -303,12 +315,16 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
         VmSystemTags.VIRTIO.installLifeCycleListener(new SystemTagLifeCycleListener() {
             @Override
             public void tagCreated(SystemTagInventory tag) {
+                logger.info(String.format("VIRTIOTagChange-11: VIRTIO tag created, vmUuid: %s, tagUuid: %s, will reset nic driver to PV driver: %s",
+                    tag.getResourceUuid(), tag.getUuid(), defaultPVNicDriver));
                 resetVmNicDriverType(tag.getResourceUuid(), defaultPVNicDriver);
                 vidm.deleteDeviceAddressesByVmModifyVirtIO(tag.getResourceUuid());
             }
 
             @Override
             public void tagDeleted(SystemTagInventory tag) {
+                logger.info(String.format("VIRTIOTagChange-12: VIRTIO tag deleted, vmUuid: %s, tagUuid: %s, will reset nic driver to default driver: %s",
+                    tag.getResourceUuid(), tag.getUuid(), defaultNicDriver));
                 resetVmNicDriverType(tag.getResourceUuid(), defaultNicDriver);
                 vidm.deleteDeviceAddressesByVmModifyVirtIO(tag.getResourceUuid());
             }

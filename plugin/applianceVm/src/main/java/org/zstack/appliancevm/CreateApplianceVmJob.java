@@ -166,6 +166,8 @@ public class CreateApplianceVmJob implements Job {
                 }
 
                 if (imageVO.getVirtio()) {
+                    logger.info(String.format("VIRTIOTagChange-22: Creating VIRTIO tag during appliance VM creation, vmUuid: %s, imageVirtio: %s",
+                        avo.getUuid(), imageVO.getVirtio()));
                     tagMgr.createNonInherentSystemTag(avo.getUuid(), VmSystemTags.VIRTIO.getTagFormat(), VmInstanceVO.class.getSimpleName());
                 }
 
