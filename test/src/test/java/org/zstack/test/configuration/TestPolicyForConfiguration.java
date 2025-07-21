@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.*;
-import org.zstack.header.identity.StatementEffect;
+import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.SessionInventory;
@@ -85,7 +85,7 @@ public class TestPolicyForConfiguration {
         identityCreator.createUser("user1", "password");
         PolicyStatement s = new PolicyStatement();
         s.setName("allow");
-        s.setEffect(StatementEffect.Allow);
+        s.setEffect(PolicyStatementEffect.Allow);
         s.addAction(String.format("%s:%s", ConfigurationConstant.ACTION_CATEGORY, APICreateInstanceOfferingMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", ConfigurationConstant.ACTION_CATEGORY, APIChangeInstanceOfferingStateMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", ConfigurationConstant.ACTION_CATEGORY, APIUpdateInstanceOfferingMsg.class.getSimpleName()));
@@ -116,7 +116,7 @@ public class TestPolicyForConfiguration {
 
         s = new PolicyStatement();
         s.setName("deny");
-        s.setEffect(StatementEffect.Deny);
+        s.setEffect(PolicyStatementEffect.Deny);
         s.addAction(String.format("%s:%s", ConfigurationConstant.ACTION_CATEGORY, APICreateInstanceOfferingMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", ConfigurationConstant.ACTION_CATEGORY, APIChangeInstanceOfferingStateMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", ConfigurationConstant.ACTION_CATEGORY, APIUpdateInstanceOfferingMsg.class.getSimpleName()));

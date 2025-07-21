@@ -1,7 +1,5 @@
 package org.zstack.header.identity
 
-import org.zstack.header.identity.StatementEffect
-
 doc {
 
 	title "在这里输入结构的名称"
@@ -16,9 +14,9 @@ doc {
 		name "effect"
 		path "org.zstack.header.identity.PolicyStatement.effect"
 		desc "null"
-		type "StatementEffect"
+		type "PolicyStatementEffect"
 		since "0.6"
-		clz StatementEffect.class
+		clz PolicyStatementEffect.class
 	}
 	field {
 		name "principals"

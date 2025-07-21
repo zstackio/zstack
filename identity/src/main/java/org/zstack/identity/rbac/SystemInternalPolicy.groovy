@@ -3,7 +3,7 @@ package org.zstack.identity.rbac
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.InternalPolicy
 import org.zstack.header.identity.PolicyInventory
-import org.zstack.header.identity.StatementEffect
+import org.zstack.header.identity.PolicyStatementEffect
 import org.zstack.header.identity.rbac.RBAC
 
 class SystemInternalPolicy implements InternalPolicy {
@@ -15,7 +15,7 @@ class SystemInternalPolicy implements InternalPolicy {
 
                 statement {
                     name = "normal-account-allowed-apis"
-                    effect = StatementEffect.Allow
+                    effect = PolicyStatementEffect.Allow
 
                     RBAC.permissions.each { info ->
                         info.normalAPIs.each { action(it) }
@@ -24,7 +24,7 @@ class SystemInternalPolicy implements InternalPolicy {
 
                 statement {
                     name = "give-admin-all-apis"
-                    effect = StatementEffect.Allow
+                    effect = PolicyStatementEffect.Allow
 
                     action("**")
 

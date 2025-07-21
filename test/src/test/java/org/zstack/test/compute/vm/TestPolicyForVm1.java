@@ -8,7 +8,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.identity.StatementEffect;
+import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.SessionInventory;
@@ -62,7 +62,7 @@ public class TestPolicyForVm1 {
         UserInventory user = identityCreator.createUser("user", "password");
         PolicyStatement s = new PolicyStatement();
         s.setName("allow");
-        s.setEffect(StatementEffect.Allow);
+        s.setEffect(PolicyStatementEffect.Allow);
         s.addAction(String.format("%s:%s", VmInstanceConstant.ACTION_CATEGORY, APICreateVmInstanceMsg.class.getSimpleName()));
         identityCreator.createPolicy("allow", s);
         identityCreator.attachPolicyToUser("user", "allow");

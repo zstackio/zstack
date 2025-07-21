@@ -14,9 +14,9 @@ doc {
         name "effect"
         path "org.zstack.header.identity.PolicyInventory.Statement.effect"
         desc "声明的效果（许可，禁止）"
-        type "StatementEffect"
+        type "PolicyStatementEffect"
         since "0.6"
-        clz StatementEffect.class
+        clz PolicyStatementEffect.class
     }
     field {
         name "principals"

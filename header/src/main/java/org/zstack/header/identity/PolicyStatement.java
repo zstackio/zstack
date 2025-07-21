@@ -10,7 +10,7 @@ import java.util.List;
 @SDK(sdkClassName = "PolicyStatement")
 public class PolicyStatement {
     private String name;
-    private StatementEffect effect;
+    private PolicyStatementEffect effect;
     private List<String> principals;
     private List<String> actions;
     private List<String> resources;
@@ -31,11 +31,11 @@ public class PolicyStatement {
         this.name = name;
     }
 
-    public StatementEffect getEffect() {
+    public PolicyStatementEffect getEffect() {
         return effect;
     }
 
-    public void setEffect(StatementEffect effect) {
+    public void setEffect(PolicyStatementEffect effect) {
         this.effect = effect;
     }
 
@@ -77,7 +77,7 @@ public class PolicyStatement {
 
     public static final class PolicyStatementBuilder {
         private String name;
-        private StatementEffect effect;
+        private PolicyStatementEffect effect;
         private List<String> principals;
         private List<String> actions;
         private List<String> resources;
@@ -90,7 +90,7 @@ public class PolicyStatement {
             return this;
         }
 
-        public PolicyStatementBuilder effect(StatementEffect effect) {
+        public PolicyStatementBuilder effect(PolicyStatementEffect effect) {
             this.effect = effect;
             return this;
         }

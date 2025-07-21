@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.StatementEffect;
+import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.SessionInventory;
@@ -84,7 +84,7 @@ public class TestPolicyForVip {
         identityCreator.useAccount("test");
         identityCreator.createUser("user1", "password");
         PolicyStatement s = new PolicyStatement();
-        s.setEffect(StatementEffect.Allow);
+        s.setEffect(PolicyStatementEffect.Allow);
         s.setName("allow");
         s.addAction(String.format("%s:%s", VipConstant.ACTION_CATEGORY, APICreateVipMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", VipConstant.ACTION_CATEGORY, APIUpdateVipMsg.class.getSimpleName()));
@@ -102,7 +102,7 @@ public class TestPolicyForVip {
         vip = api.acquireIp(pubL3.getUuid(), session);
         identityCreator.detachPolicyFromUser("user1", "allow");
         s = new PolicyStatement();
-        s.setEffect(StatementEffect.Deny);
+        s.setEffect(PolicyStatementEffect.Deny);
         s.setName("deny");
         s.addAction(String.format("%s:%s", VipConstant.ACTION_CATEGORY, APICreateVipMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", VipConstant.ACTION_CATEGORY, APIUpdateVipMsg.class.getSimpleName()));

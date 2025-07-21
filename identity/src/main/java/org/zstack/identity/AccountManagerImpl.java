@@ -430,10 +430,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
                 try {
                     new Auth().check(api);
-                    ret.put(apiName, StatementEffect.Allow.toString());
+                    ret.put(apiName, PolicyStatementEffect.Allow.toString());
                 } catch (ApiMessageInterceptionException e) {
                     logger.debug(e.getMessage());
-                    ret.put(apiName, StatementEffect.Deny.toString());
+                    ret.put(apiName, PolicyStatementEffect.Deny.toString());
                 }
             } catch (ClassNotFoundException e) {
                 throw new OperationFailureException(argerr("%s is not an API", apiName));
@@ -1264,7 +1264,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         private void useDecision(Decision d, boolean userPolicy) {
             String policyCategory = userPolicy ? "user policy" : "group policy";
 
-            if (d.effect == StatementEffect.Allow) {
+            if (d.effect == PolicyStatementEffect.Allow) {
                 logger.debug(String.format("API[name: %s, action: %s] is approved by a %s[name: %s, uuid: %s]," +
                                 " statement[name: %s, action: %s]", msg.getClass().getSimpleName(), d.action,
                         policyCategory, d.policy.getName(), d.policy.getUuid(), d.statement.getName(), d.actionRule));
@@ -1379,7 +1379,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             String action;
             PolicyStatement statement;
             String actionRule;
-            StatementEffect effect;
+            PolicyStatementEffect effect;
         }
 
         private Decision decide(List<PolicyInventory> userPolicies) {

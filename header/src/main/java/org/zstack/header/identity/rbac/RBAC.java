@@ -4,15 +4,13 @@ import org.apache.commons.lang.StringUtils;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.PolicyStatement;
-import org.zstack.header.identity.StatementEffect;
+import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.message.APIMessage;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class RBAC {
     public static List<Permission> permissions = new ArrayList<>();
@@ -113,12 +111,12 @@ public class RBAC {
         }
 
         public RoleBuilder allow() {
-            role.effect = StatementEffect.Allow;
+            role.effect = PolicyStatementEffect.Allow;
             return this;
         }
 
         public RoleBuilder deny() {
-            role.effect = StatementEffect.Deny;
+            role.effect = PolicyStatementEffect.Deny;
             return this;
         }
 
@@ -155,7 +153,7 @@ public class RBAC {
         private String uuid;
         private String name;
         private Set<String> allowedActions = new HashSet<>();
-        private StatementEffect effect = StatementEffect.Allow;
+        private PolicyStatementEffect effect = PolicyStatementEffect.Allow;
         private boolean adminOnly;
         private boolean predefine = true;
         private List<String> excludedActions = new ArrayList<>();
@@ -184,11 +182,11 @@ public class RBAC {
             this.allowedActions = allowedActions;
         }
 
-        public StatementEffect getEffect() {
+        public PolicyStatementEffect getEffect() {
             return effect;
         }
 
-        public void setEffect(StatementEffect effect) {
+        public void setEffect(PolicyStatementEffect effect) {
             this.effect = effect;
         }
 

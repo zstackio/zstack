@@ -2,8 +2,8 @@ package org.zstack.header.identity.role.api;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.PolicyStatement;
+import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.PolicyVO;
-import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
@@ -70,7 +70,7 @@ public class APICreateRoleMsg extends APICreateMessage {
         msg.setPolicyUuids(asList(uuid()));
 
         PolicyStatement statement = new PolicyStatement();
-        statement.setEffect(StatementEffect.Allow);
+        statement.setEffect(PolicyStatementEffect.Allow);
         statement.setActions(asList("org.zstack.header.vm.APICreateVmInstanceMsg"));
         statement.setName("statement for test");
         msg.setStatements(asList(statement));

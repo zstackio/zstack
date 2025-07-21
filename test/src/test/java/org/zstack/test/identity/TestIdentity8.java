@@ -7,7 +7,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.identity.StatementEffect;
+import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.test.*;
@@ -43,7 +43,7 @@ public class TestIdentity8 {
         PolicyStatement s = new PolicyStatement();
         s.addAction(".*");
         s.setName("test");
-        s.setEffect(StatementEffect.Allow);
+        s.setEffect(PolicyStatementEffect.Allow);
         creator.createPolicy("test", s);
 
         api.deleteAccount(a.getUuid(), creator.getAccountSession());

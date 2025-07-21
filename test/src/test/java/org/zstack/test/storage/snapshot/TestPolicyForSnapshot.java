@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.StatementEffect;
+import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.SessionInventory;
@@ -83,7 +83,7 @@ public class TestPolicyForSnapshot {
         identityCreator.createUser("user1", "password");
         PolicyStatement s = new PolicyStatement();
         s.setName("allow");
-        s.setEffect(StatementEffect.Allow);
+        s.setEffect(PolicyStatementEffect.Allow);
         s.addAction(String.format("%s:%s", VolumeSnapshotConstant.ACTION_CATEGORY, APICreateVolumeSnapshotMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", VolumeSnapshotConstant.ACTION_CATEGORY, APIRevertVolumeFromSnapshotMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", VolumeSnapshotConstant.ACTION_CATEGORY, APIDeleteVolumeSnapshotMsg.class.getSimpleName()));
@@ -114,7 +114,7 @@ public class TestPolicyForSnapshot {
 
         s = new PolicyStatement();
         s.setName("deny");
-        s.setEffect(StatementEffect.Deny);
+        s.setEffect(PolicyStatementEffect.Deny);
         s.addAction(String.format("%s:%s", VolumeSnapshotConstant.ACTION_CATEGORY, APICreateVolumeSnapshotMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", VolumeSnapshotConstant.ACTION_CATEGORY, APIRevertVolumeFromSnapshotMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", VolumeSnapshotConstant.ACTION_CATEGORY, APIDeleteVolumeSnapshotMsg.class.getSimpleName()));
