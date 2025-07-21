@@ -1,6 +1,6 @@
 package org.zstack.sdk.iam2.entity;
 
-import org.zstack.sdk.iam2.entity.State;
+import org.zstack.sdk.iam2.entity.IAM2State;
 
 public class IAM2VirtualIDInventory  {
 
@@ -36,11 +36,11 @@ public class IAM2VirtualIDInventory  {
         return this.type;
     }
 
-    public State state;
-    public void setState(State state) {
+    public IAM2State state;
+    public void setState(IAM2State state) {
         this.state = state;
     }
-    public State getState() {
+    public IAM2State getState() {
         return this.state;
     }
 
