@@ -64,6 +64,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
 import org.zstack.utils.GroovyUtils;
 import org.zstack.utils.HttpServletRequestUtils;
+import org.zstack.utils.TimeUtils;
 import org.zstack.utils.TypeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -83,8 +84,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -96,7 +95,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -118,7 +116,6 @@ public class RestServer implements Component, CloudBusEventListener {
 
     private static final OkHttpClient http;
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-    private static final DateTimeFormatter formatter;
     private static final Set<String> maskSensitiveInfoClassNames = Platform.getReflections()
             .getTypesAnnotatedWith(MaskSensitiveInfo.class).stream()
             .map(Class::getSimpleName).collect(Collectors.toSet());
@@ -154,11 +151,6 @@ public class RestServer implements Component, CloudBusEventListener {
                     .hostnameVerifier(DefaultSSLVerifier::verify)
                     .build();
         }
-
-        formatter = new DateTimeFormatterBuilder()
-                .parseCaseInsensitive()
-                .appendPattern("EEE, dd MMM yyyy HH:mm:ss z")
-                .toFormatter(Locale.ENGLISH);
     }
 
     static class RequestInfo {
@@ -1046,9 +1038,12 @@ public class RestServer implements Component, CloudBusEventListener {
 
         ZonedDateTime date;
         try {
-            date = ZonedDateTime.parse(dateStr, formatter);
+            date = TimeUtils.parseZonedDateTimeByBasicFormatter(dateStr);
         } catch (RuntimeException e) {
-            throw new RestException(HttpStatus.BAD_REQUEST.value(), "'Date' format error, correct format is 'EEE, dd MMM yyyy HH:mm:ss z'");
+            throw new RestException(HttpStatus.BAD_REQUEST.value(),
+                    "Date format error. The 'Date' header must conform to one of the supported RFC 1123 or ISO 8601 formats. " +
+                            "Examples include: 'Thu, 5 Jun 2025 15:47:29 +0800', '2025-06-05T16:08:42+08:00', or '2025-06-05T16:08:42.123Z'."
+            );
         }
 
         ZonedDateTime now = ZonedDateTime.now();

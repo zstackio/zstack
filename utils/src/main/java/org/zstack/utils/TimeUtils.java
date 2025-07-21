@@ -11,8 +11,11 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.Calendar;
+import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -30,6 +33,32 @@ public class TimeUtils {
             "yyyy-MM-dd'T'HH:mm:ss'Z'",
             "yyyy-MM-dd'T'HH:mm:ss.SSSX"
     };
+
+    private static final DateTimeFormatter basicFormatter;
+
+    static {
+        basicFormatter = new DateTimeFormatterBuilder()
+                // Allowed:     "Jan" or "JAN" / "AM" or "am"
+                .parseCaseInsensitive()
+                // Allowed:     "Thu, 26 Oct 2023 10:30:00 GMT"
+                // Not Allowed: "Thu, 26 Oct 2023 10:30:00 Asia/Shanghai"  see more in ZSV-9028
+                .appendOptional(DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH))
+                // Allowed:     "Thu, 5 Jun 2025 15:47:29 +0800"
+                .appendOptional(DateTimeFormatter.RFC_1123_DATE_TIME)
+                // Allowed:     "2023-10-26T10:30:00+08:00"
+                .appendOptional(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+                // Allowed:     "2023-10-26T10:30:00.123+08"
+                .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSxx", Locale.ENGLISH))
+                // Allowed:     "2023-10-26T10:30:00.123+0800"
+                .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.ENGLISH))
+                // Allowed:     "2023-10-26T10:30:00+08:00"
+                .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ENGLISH))
+                // Allowed:     "2023-10-26T10:30:00+08"
+                .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssxx", Locale.ENGLISH))
+                // Allowed:     "2023-10-26T10:30:00+0800"
+                .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ", Locale.ENGLISH))
+                .toFormatter(Locale.ENGLISH);
+    }
 
     private static CLogger logger = Utils.getLogger(TimeUtils.class);
 
@@ -227,5 +256,9 @@ public class TimeUtils {
 
     public static OffsetDateTime offsetDateTimeOf(long timestampInMilli) {
         return OffsetDateTime.ofInstant(Instant.ofEpochMilli(timestampInMilli), ZoneId.systemDefault());
+    }
+
+    public static ZonedDateTime parseZonedDateTimeByBasicFormatter(String text) {
+        return ZonedDateTime.parse(text, basicFormatter);
     }
 }
