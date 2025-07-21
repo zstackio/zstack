@@ -7,9 +7,11 @@ import org.zstack.header.message.OverriddenApiParam;
 import org.zstack.header.message.OverriddenApiParams;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.tag.TagResourceType;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant;
 
+@TagResourceType(SdnControllerVO.class)
 @Action(category = VxlanNetworkPoolConstant.ACTION_CATEGORY)
 @OverriddenApiParams({
         @OverriddenApiParam(field = "physicalInterface", param = @APIParam(maxLength = 1024, required = false)),
@@ -27,6 +29,9 @@ public class APICreateL2HardwareVxlanNetworkMsg extends APICreateL2NetworkMsg {
 
     @APIParam(required = true, resourceType = HardwareL2VxlanNetworkPoolVO.class)
     private String poolUuid;
+
+    @APIParam(required = false, resourceType = H3cSdnControllerTenantVO.class)
+    private String h3cTenantUuid;
 
     public Integer getVni() {
         return vni;
@@ -47,6 +52,14 @@ public class APICreateL2HardwareVxlanNetworkMsg extends APICreateL2NetworkMsg {
 
     public void setPoolUuid(String poolUuid) {
         this.poolUuid = poolUuid;
+    }
+
+    public String getH3cTenantUuid() {
+        return h3cTenantUuid;
+    }
+
+    public void setH3cTenantUuid(String h3cTenantUuid) {
+        this.h3cTenantUuid = h3cTenantUuid;
     }
 
     public static APICreateL2HardwareVxlanNetworkMsg __example__() {

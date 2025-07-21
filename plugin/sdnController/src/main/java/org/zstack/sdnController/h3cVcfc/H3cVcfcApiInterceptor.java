@@ -3,6 +3,7 @@ package org.zstack.sdnController.h3cVcfc;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
@@ -10,6 +11,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.APIAttachL2NetworkToClusterMsg;
 import org.zstack.header.network.l2.APIDetachL2NetworkFromClusterMsg;
 import org.zstack.header.network.l3.APICreateL3NetworkMsg;
+import org.zstack.network.l2.L2NetworkSystemTags;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APIDeleteVxlanL2Network;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.APICreateVniRangeMsg;
@@ -18,6 +20,7 @@ import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerL2;
 import org.zstack.sdnController.SdnControllerManager;
 import org.zstack.sdnController.header.*;
+import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -25,6 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
     private static final CLogger logger = Utils.getLogger(H3cVcfcApiInterceptor.class);
@@ -146,6 +151,37 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
     }
 
     private void validate(APICreateL2HardwareVxlanNetworkMsg msg) {
+        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(msg.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
+        if (poolVO == null) {
+            return;
+        }
+
+        SdnControllerVO sdnControllerVO = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
+        if (sdnControllerVO != null
+                && SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V2.equals(sdnControllerVO.getVendorVersion())) {
+            boolean tenantExist = msg.getH3cTenantUuid() != null &&
+                    Q.New(H3cSdnControllerTenantVO.class)
+                            .eq(H3cSdnControllerTenantVO_.uuid, msg.getH3cTenantUuid())
+                            .isExists();
+            if (!tenantExist) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "h3cTenantUuid uuid tag is necessary for h3c vcfc v2 sdn controller"));
+            }
+        }
+
+        boolean hasSdnControllerTag = msg.getSystemTags() != null &&
+                msg.getSystemTags().stream()
+                        .anyMatch(L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID::isMatch);
+
+        if (!hasSdnControllerTag && poolVO.getSdnControllerUuid() != null) {
+            if (msg.getSystemTags() == null) {
+                msg.setSystemTags(new ArrayList<>());
+            }
+            String tag = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.instantiateTag(
+                    map(e(L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN, poolVO.getSdnControllerUuid()))
+            );
+            msg.getSystemTags().add(tag);
+        }
     }
 
     private void validate(APICreateL2HardwareVxlanNetworkPoolMsg msg) {
@@ -175,7 +211,7 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
         if (!msg.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
             return;
         }
-        if (!validateH3cController(msg)) {
+        if (!validateH3cController(msg) && msg.getVendorVersion().equals(SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V1)) {
             throw new ApiMessageInterceptionException(argerr("H3C VCFC controller must include systemTags vdsUuid::{%s}"));
         }
     }

@@ -19,4 +19,10 @@ public class H3cVcfcSdnControllerSystemTags {
 
     public static String H3C_L2_NETWORK_UUID_TOKEN = "h3cL2NetworkUuid";
     public static PatternedSystemTag H3C_L2_NETWORK_UUID = new PatternedSystemTag(String.format("h3cL2NetworkUuid::{%s}", H3C_L2_NETWORK_UUID_TOKEN), VxlanNetworkVO.class);
+
+    public static String H3C_L2_VROUTER_UUID_TOKEN = "h3cL2RouterUuid";
+    public static PatternedSystemTag H3C_L2_VROUTER_UUID = new PatternedSystemTag(String.format("h3cL2RouterUuid::{%s}", H3C_L2_VROUTER_UUID_TOKEN), VxlanNetworkVO.class);
+
+    public static String H3C_L2_TENANT_UUID_TOKEN = "h3cL2TenantUuid";
+    public static PatternedSystemTag H3C_L2_TENANT_UUID = new PatternedSystemTag(String.format("h3cL2TenantUuid::{%s}", H3C_L2_TENANT_UUID_TOKEN), VxlanNetworkVO.class);
 }

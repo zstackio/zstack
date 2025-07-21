@@ -21,6 +21,9 @@ public class APIAddSdnControllerMsg extends APICreateMessage implements APIAudit
     @APIParam(maxLength = 255)
     private String vendorType;
 
+    @APIParam(required = false, maxLength = 255)
+    private String vendorVersion;
+
     @APIParam(maxLength = 255)
     private String name;
 
@@ -43,6 +46,14 @@ public class APIAddSdnControllerMsg extends APICreateMessage implements APIAudit
 
     public void setVendorType(String vendorType) {
         this.vendorType = vendorType;
+    }
+
+    public String getVendorVersion() {
+        return vendorVersion;
+    }
+
+    public void setVendorVersion(String vendorVersion) {
+        this.vendorVersion = vendorVersion;
     }
 
     public String getIp() {
