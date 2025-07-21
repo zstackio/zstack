@@ -19,8 +19,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.*;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.GetSdnControllerDhcpExtensionPoint;
 import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.header.vm.*;
@@ -31,6 +30,7 @@ import org.zstack.network.securitygroup.SecurityGroupManager;
 import org.zstack.network.securitygroup.SecurityGroupSdnBackend;
 import org.zstack.sdnController.header.*;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -42,7 +42,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         L2NetworkCreateExtensionPoint, L2NetworkDeleteExtensionPoint, InstantiateResourceOnAttachingNicExtensionPoint,
         PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
         ReleaseNetworkServiceOnDetachingNicExtensionPoint, SecurityGroupGetSdnBackendExtensionPoint,
-        GetSdnControllerDhcpExtensionPoint {
+        GetSdnControllerDhcpExtensionPoint, AfterAddIpRangeExtensionPoint, IpRangeDeletionExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SdnControllerManagerImpl.class);
 
     @Autowired
@@ -55,6 +55,8 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     private TagManager tagMgr;
     @Autowired
     private SecurityGroupManager sgMgr;
+    @Autowired
+    private SdnControllerPingTracker pingTracker;
 
     private Map<String, SdnControllerFactory> sdnControllerFactories = Collections.synchronizedMap(new HashMap<String, SdnControllerFactory>());
 
@@ -181,6 +183,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
                     @Override
                     public void handle(Map data) {
                         logger.debug(String.format("successfully create sdn controller"));
+                        pingTracker.track(vo.getUuid());
                         completion.success();
                     }
                 });
@@ -199,6 +202,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
         SdnControllerVO vo = new SdnControllerVO();
         vo.setVendorType(msg.getVendorType());
+        vo.setVendorVersion(msg.getVendorVersion() == null ? SdnControllerConstant.DEFAULT_VENDOR_VERSION : msg.getVendorVersion());
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
         } else {
@@ -240,30 +244,36 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             completion.success();
             return;
         }
+        SdnControllerVO sdnControllerVO = getSdnControllerVO(l2Network);
+        if (sdnControllerVO == null) {
+            String sdnControllerUuid = null;
+            List<String> sysTags = msg.getSystemTags();
+            if (sysTags == null || sysTags.isEmpty()) {
+                completion.fail(operr("cannot create sdn l2 network because sdn controller uuid is missing from systemTags in API message"));
+                return;
+            }
+            for (String systag : sysTags) {
+                if (L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.isMatch(systag)) {
+                    sdnControllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByTag(
+                            systag, L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
+                }
+            }
 
-        String sdnControllerUuid = null;
-        for (String systag : msg.getSystemTags()) {
-            if (L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.isMatch(systag)) {
-                sdnControllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByTag(
-                        systag, L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
+            if (sdnControllerUuid == null) {
+                completion.fail(operr("cannot create sdn l2 network because sdn controller uuid is missing from API message"));
+                return;
+            }
+            sdnControllerVO = dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
+            if (sdnControllerVO == null) {
+                completion.fail(operr("cannot find sdn controller for l2 network[uuid:%s, vswitchType:%s]",
+                        l2Network.getUuid(), l2Network.getvSwitchType()));
+                return;
             }
         }
 
-        if (sdnControllerUuid == null) {
-            completion.fail(operr("can not create sdn l2 network because there is not sdn controller uuid in api message"));
-            return;
-        }
-
-        SdnControllerVO vo = dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
-        if (vo == null) {
-            completion.fail(operr("can not found sdn controller for l2 network[uuid:%s, vswitchType:%s]",
-                    l2Network.getUuid(), l2Network.getvSwitchType()));
-            return;
-        }
-
-        SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
-        SdnControllerL2 controller = factory.getSdnControllerL2(vo);
-        controller.createL2Network(l2Network, msg.getSystemTags(), completion);
+        SdnControllerFactory factory = getSdnControllerFactory(sdnControllerVO.getVendorType());
+        SdnControllerL2 controller = factory.getSdnControllerL2(sdnControllerVO);
+        controller.createL2Network(l2Network, msg, completion);
     }
 
     @Override
@@ -730,4 +740,91 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     }
 
 
+    @Override
+    public void afterAddIpRange(IpRangeInventory ipr, List<String> systemTags) {
+        L3NetworkVO l3vo = dbf.findByUuid(ipr.getL3NetworkUuid(), L3NetworkVO.class);
+        if (l3vo == null) {
+            logger.warn(String.format(
+                    "l3 network[uuid:%s] not found when adding ipRange[uuid:%s], skip syncing to sdn controller",
+                    ipr.getL3NetworkUuid(), ipr.getUuid()));
+            return;
+        }
+        L3NetworkInventory l3Network = L3NetworkInventory.valueOf(l3vo);
+        SdnControllerVO sdnControllerVO = getSdnControllerVO(l3Network);
+        if (sdnControllerVO == null) {
+            return;
+        }
+        SdnControllerFactory factory = getSdnControllerFactory(sdnControllerVO.getVendorType());
+        SdnControllerL2 controller = factory.getSdnControllerL2(sdnControllerVO);
+        controller.addL3NetworkIpRange(l3Network, ipr, new Completion(null) {
+            @Override
+            public void success() {
+                logger.debug(String.format("success to create l3 network[uuid:%s] ipRange on sdn controller[uuid:%s]",
+                        l3Network.getUuid(), sdnControllerVO.getUuid()));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("failed to create l3 network[uuid:%s] ipRange on sdn controller[uuid:%s], because: %s",
+                        l3Network.getUuid(), sdnControllerVO.getUuid(), errorCode.getDetails()));
+            }
+        });
+    }
+
+    @Override
+    public void preDeleteIpRange(IpRangeInventory ipRange) {
+    }
+
+    @Override
+    public void beforeDeleteIpRange(IpRangeInventory ipRange) {
+    }
+
+    @Override
+    public void afterDeleteIpRange(IpRangeInventory ipRange) {
+        L3NetworkVO l3vo = dbf.findByUuid(ipRange.getL3NetworkUuid(), L3NetworkVO.class);
+        if (l3vo == null) {
+            logger.warn(String.format("l3 network[uuid:%s] not found when deleting ipRange[uuid:%s], skip syncing to sdn controller",
+                    ipRange.getL3NetworkUuid(), ipRange.getUuid()));
+            return;
+        }
+        L3NetworkInventory l3Network = L3NetworkInventory.valueOf(l3vo);
+        SdnControllerVO sdnControllerVO = getSdnControllerVO(l3Network);
+        if (sdnControllerVO == null) {
+            return;
+        }
+        SdnControllerFactory factory = getSdnControllerFactory(sdnControllerVO.getVendorType());
+        SdnControllerL2 controller = factory.getSdnControllerL2(sdnControllerVO);
+        controller.deleteL3NetworkIpRange(l3Network, ipRange, new Completion(null) {
+            @Override
+            public void success() {
+                logger.debug(String.format("success to delete l3 network[uuid:%s] ipRange on sdn controller[uuid:%s]",
+                        l3Network.getUuid(), sdnControllerVO.getUuid()));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("failed to delete l3 network[uuid:%s] ipRange on sdn controller[uuid:%s], because: %s",
+                        l3Network.getUuid(), sdnControllerVO.getUuid(), errorCode.getDetails()));
+            }
+        });
+    }
+
+    @Override
+    public void failedToDeleteIpRange(IpRangeInventory ipRange, ErrorCode errorCode) {
+    }
+
+    private SdnControllerVO getSdnControllerVO(L2NetworkInventory l2Network) {
+        String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL2Uuid(l2Network.getUuid());
+        if (sdnControllerUuid == null) {
+            return null;
+        }
+        return dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
+    }
+    private SdnControllerVO getSdnControllerVO(L3NetworkInventory l3Network) {
+        String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(l3Network.getUuid());
+        if (sdnControllerUuid == null) {
+            return null;
+        }
+        return dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
+    }
 }

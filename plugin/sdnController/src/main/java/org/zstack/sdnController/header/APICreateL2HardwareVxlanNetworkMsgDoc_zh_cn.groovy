@@ -148,6 +148,15 @@ doc {
 					optional true
 					since "4.8.0"
 				}
+				column {
+					name "h3cTenantUuid"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "5.3.28"
+				}
 			}
         }
 

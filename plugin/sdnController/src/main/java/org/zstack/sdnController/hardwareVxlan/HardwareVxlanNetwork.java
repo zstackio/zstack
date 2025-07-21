@@ -38,11 +38,11 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     }
 
     @Override
-    public void createVxlanNetworkOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+    public void createVxlanNetworkOnSdnController(L2VxlanNetworkInventory vxlan, APICreateL2NetworkMsg msg, Completion completion) {
         HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
         SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
         SdnControllerL2 sdnController = sdnControllerManager.getSdnControllerL2(sdn);
-        sdnController.createL2Network(vxlan, systemTags, completion);
+        sdnController.createL2Network(vxlan, msg, completion);
     }
 
     @Override

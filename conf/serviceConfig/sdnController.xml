@@ -35,4 +35,8 @@
         <name>org.zstack.sdnController.header.APIQuerySdnControllerMsg</name>
         <serviceId>query</serviceId>
     </message>
+
+    <message>
+        <name>org.zstack.sdnController.header.APIPullSdnControllerTenantMsg</name>
+    </message>
 </service>

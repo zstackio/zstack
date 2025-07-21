@@ -619,6 +619,7 @@ public class SourceClassMap {
 			put("org.zstack.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct", "org.zstack.sdk.ResourceBindableConfigStruct");
 			put("org.zstack.resourceconfig.ResourceConfigInventory", "org.zstack.sdk.ResourceConfigInventory");
 			put("org.zstack.resourceconfig.ResourceConfigStruct", "org.zstack.sdk.ResourceConfigStruct");
+			put("org.zstack.sdnController.header.H3cSdnControllerTenantInventory", "org.zstack.sdk.H3cSdnControllerTenantInventory");
 			put("org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdnController.header.SdnControllerHostRefInventory", "org.zstack.sdk.SdnControllerHostRefInventory");
 			put("org.zstack.sdnController.header.SdnControllerInventory", "org.zstack.sdk.SdnControllerInventory");
@@ -1036,6 +1037,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GuestVmScriptExecutedRecordDetailInventory", "org.zstack.guesttools.GuestVmScriptExecutedRecordDetailInventory");
 			put("org.zstack.sdk.GuestVmScriptExecutedRecordInventory", "org.zstack.guesttools.GuestVmScriptExecutedRecordInventory");
 			put("org.zstack.sdk.GuestVmScriptInventory", "org.zstack.guesttools.GuestVmScriptInventory");
+			put("org.zstack.sdk.H3cSdnControllerTenantInventory", "org.zstack.sdnController.header.H3cSdnControllerTenantInventory");
 			put("org.zstack.sdk.HaStrategyConditionInventory", "org.zstack.ha.HaStrategyConditionInventory");
 			put("org.zstack.sdk.HaiTaiSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.haitai.HaiTaiSecretResourcePoolInventory");
 			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");

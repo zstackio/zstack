@@ -284,6 +284,17 @@ public class L3BasicNetwork implements L3Network {
                 });
                 trigger.next();
             }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "after-delete-ip-range";
+
+            @Override
+            public void run (FlowTrigger trigger, Map data){
+                CollectionUtils.safeForEach(
+                        pluginRgty.getExtensionList(AfterDeleteIpRangeExtensionPoint.class),
+                        ext -> ext.afterDeleteIpRange(inv)
+                );
+                trigger.next();
+            }
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
