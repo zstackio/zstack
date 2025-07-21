@@ -3,18 +3,23 @@ package org.zstack.sdnController.h3cVcfc;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.APIAttachL2NetworkToClusterMsg;
 import org.zstack.header.network.l2.APIDetachL2NetworkFromClusterMsg;
+import org.zstack.header.network.l3.APIAddIpRangeByNetworkCidrMsg;
+import org.zstack.header.network.l3.APIAddIpRangeMsg;
 import org.zstack.header.network.l3.APICreateL3NetworkMsg;
+import org.zstack.header.network.l3.L3NetworkCategory;
+import org.zstack.network.l2.L2NetworkSystemTags;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APIDeleteVxlanL2Network;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.APICreateVniRangeMsg;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
-import org.zstack.sdnController.SdnController;
+import org.zstack.network.l3.L3NetworkHelper;
 import org.zstack.sdnController.SdnControllerL2;
 import org.zstack.sdnController.SdnControllerManager;
 import org.zstack.sdnController.header.*;
@@ -25,6 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
     private static final CLogger logger = Utils.getLogger(H3cVcfcApiInterceptor.class);
@@ -55,6 +62,8 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
         ret.add(APIDeleteVxlanL2Network.class);
         ret.add(APIRemoveSdnControllerMsg.class);
         ret.add(APICreateL3NetworkMsg.class);
+        ret.add(APIAddIpRangeMsg.class);
+        ret.add(APIAddIpRangeByNetworkCidrMsg.class);
         return ret;
     }
 
@@ -83,6 +92,10 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
             validate((APIRemoveSdnControllerMsg) msg);
         } else if (msg instanceof APICreateL3NetworkMsg) {
             validate((APICreateL3NetworkMsg) msg);
+        } else if (msg instanceof APIAddIpRangeMsg) {
+            validate((APIAddIpRangeMsg) msg);
+        } else if (msg instanceof APIAddIpRangeByNetworkCidrMsg) {
+            validate((APIAddIpRangeByNetworkCidrMsg) msg);
         }
 
         setServiceId(msg);
@@ -100,7 +113,7 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
     private void validate(APICreateVniRangeMsg msg) {
         VxlanNetworkPoolVO pool = dbf.findByUuid(msg.getL2NetworkUuid(), VxlanNetworkPoolVO.class);
         if ( pool == null ) {
-            throw new ApiMessageInterceptionException(argerr("unable create vni range, because l2 uuid[%s] is not vxlan network pool",msg.getL2NetworkUuid()));
+            throw new ApiMessageInterceptionException(argerr("Could not create VNI range because the specified L2 network [uuid:%s] is not a VXLAN network pool", msg.getL2NetworkUuid()));
         }
 
         HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(msg.getL2NetworkUuid(), HardwareL2VxlanNetworkPoolVO.class);
@@ -115,7 +128,7 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
 
         // user's vni must <= 4094
         if (msg.getStartVni() > 4094 || msg.getEndVni() > 4094) {
-            throw new ApiMessageInterceptionException(argerr("the vni range:[%s.%s} is illegal, because h3c's controller uses vni as vlan id", msg.getStartVni(), msg.getEndVni()));
+            throw new ApiMessageInterceptionException(argerr("Could not create VNI range [%s-%s] because H3C controllers use VNI as VLAN ID and the range must be within 1-4094", msg.getStartVni(), msg.getEndVni()));
         }
 
         SdnControllerL2 sdnController = sdnControllerManager.getSdnControllerL2(vo);
@@ -130,10 +143,57 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
                 return;
             }
         }
-        throw new ApiMessageInterceptionException(argerr("the vni range:[%s.%s} is illegal, must covered by a sdn's vniRange", userVniRange.startVni, userVniRange.endVni));
+        throw new ApiMessageInterceptionException(argerr("Could not create VNI range [%s-%s] because it is not covered by any of the SDN controller's configured VNI ranges", userVniRange.startVni, userVniRange.endVni));
+    }
+
+    private void validate(APIAddIpRangeMsg msg) {
+        String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(msg.getL3NetworkUuid());
+        if (sdnControllerUuid == null) {
+            return;
+        }
+        SdnControllerVO vo = dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
+        if (vo == null) {
+            return;
+        }
+        if (!vo.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
+            return;
+        }
+        if (vo.getStatus() != SdnControllerStatus.Connected) {
+            throw new ApiMessageInterceptionException(argerr("Could not add IP range because the SDN controller [uuid:%s] is not connected. Current status: %s", 
+                    sdnControllerUuid, vo.getStatus()));
+        }
+    }
+
+    private void validate(APIAddIpRangeByNetworkCidrMsg msg) {
+        String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(msg.getL3NetworkUuid());
+        if (sdnControllerUuid == null) {
+            return;
+        }
+        SdnControllerVO vo = dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
+        if (vo == null) {
+            return;
+        }
+        if (!vo.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
+            return;
+        }
+        if (vo.getStatus() != SdnControllerStatus.Connected) {
+            throw new ApiMessageInterceptionException(argerr("Could not add IP range by network CIDR because the SDN controller [uuid:%s] is not connected. Current status: %s", 
+                    sdnControllerUuid, vo.getStatus()));
+        }
     }
 
     private void validate(APICreateL3NetworkMsg msg) {
+        String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL2Uuid(msg.getL2NetworkUuid());
+        if (sdnControllerUuid == null) {
+            return;
+        }
+        SdnControllerVO vo = dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
+        if (SdnControllerConstant.H3C_VCFC_CONTROLLER.equals(vo.getVendorType()) &&
+                SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V2.equals(vo.getVendorVersion()) &&
+                L3NetworkCategory.Public.toString().equals(msg.getCategory())) {
+            throw new ApiMessageInterceptionException(argerr("can not create l3 network" +
+                    "because H3C VCFC V2 SDN controller does not support l3[type:%s, category:%s]", msg.getType(), msg.getCategory()));
+        }
     }
 
     private void validate(APIRemoveSdnControllerMsg msg) {
@@ -146,6 +206,37 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
     }
 
     private void validate(APICreateL2HardwareVxlanNetworkMsg msg) {
+        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(msg.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
+        if (poolVO == null) {
+            return;
+        }
+
+        SdnControllerVO sdnControllerVO = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
+        if (sdnControllerVO != null
+                && SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V2.equals(sdnControllerVO.getVendorVersion())) {
+            boolean tenantExist = msg.getH3cTenantUuid() != null &&
+                    Q.New(H3cSdnControllerTenantVO.class)
+                            .eq(H3cSdnControllerTenantVO_.uuid, msg.getH3cTenantUuid())
+                            .isExists();
+            if (!tenantExist) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "Could not create hardware VXLAN network because tenant UUID is a mandatory parameter for the H3C VCFC V2 controller"));
+            }
+        }
+
+        boolean hasSdnControllerTag = msg.getSystemTags() != null &&
+                msg.getSystemTags().stream()
+                        .anyMatch(L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID::isMatch);
+
+        if (!hasSdnControllerTag && poolVO.getSdnControllerUuid() != null) {
+            if (msg.getSystemTags() == null) {
+                msg.setSystemTags(new ArrayList<>());
+            }
+            String tag = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.instantiateTag(
+                    map(e(L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN, poolVO.getSdnControllerUuid()))
+            );
+            msg.getSystemTags().add(tag);
+        }
     }
 
     private void validate(APICreateL2HardwareVxlanNetworkPoolMsg msg) {
@@ -175,8 +266,8 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
         if (!msg.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
             return;
         }
-        if (!validateH3cController(msg)) {
-            throw new ApiMessageInterceptionException(argerr("H3C VCFC controller must include systemTags vdsUuid::{%s}"));
+        if (!validateH3cController(msg) && msg.getVendorVersion().equals(SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V1)) {
+            throw new ApiMessageInterceptionException(argerr("Could not add H3C VCFC controller because VDS UUID system tag is required for H3C VCFC V1 controllers"));
         }
     }
 }

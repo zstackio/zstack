@@ -14,4 +14,7 @@ public class H3cVcfcSdnControllerGlobalProperty {
     /* default timeout 30 seconds */
     @GlobalProperty(name="H3c.Timeout", defaultValue = "30000000")
     public static Long H3C_CONTROLLER_TIMEOUT;
+
+    @GlobalProperty(name="H3c.Mgtip.Is.LeaderIp", defaultValue = "true")
+    public static Boolean H3C_MGT_IP_IS_LEADER_IP;
 }

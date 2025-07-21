@@ -9,6 +9,7 @@ import org.zstack.core.MessageCommandRecorder;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -53,10 +54,22 @@ public class H3cVcfcHttpClient<T> {
 
         switch (action) {
             case "GET": {
-                return restf.syncJsonGet(buildUrl(ip, url), httpBody, headers, responseClass);
+                String fullUrl = buildUrl(ip, url);
+                if (body != null) {
+                    Map<String, Object> params = JSONObjectUtil.rehashObject(body, Map.class);
+                    UriComponentsBuilder ub = UriComponentsBuilder.fromUriString(fullUrl);
+                    for (Map.Entry<String, Object> entry : params.entrySet()) {
+                        ub.queryParam(entry.getKey(), entry.getValue());
+                    }
+                    fullUrl = ub.build().toUriString();
+                }
+                return restf.syncJsonGet(fullUrl, null, headers, responseClass);
             }
             case "DELETE": {
                 return restf.syncJsonDelete(buildUrl(ip, url), httpBody, headers, responseClass);
+            }
+            case "PUT": {
+                return restf.syncJsonPut(buildUrl(ip, url), httpBody, headers, responseClass);
             }
             default: {
                 if (url.equals(H3cVcfcCommands.H3C_VCFC_L2_NETWORKS)) {
