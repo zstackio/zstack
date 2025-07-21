@@ -6715,7 +6715,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 vo.setIpInLong(IPv6NetworkUtils.ipv6AddressToBigInteger(nicIpAddressInfo.ipv6Address).longValue());
                                 vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(nicIpAddressInfo.ipv6Address));
                                 vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(nicIpAddressInfo.ipv6Address + "/" + nicIpAddressInfo.ipv6Prefix));
-                                vo.setGateway(nicIpAddressInfo.ipv6Gateway.isEmpty() ? "" : IPv6NetworkUtils.getIpv6AddressCanonicalString(nicIpAddressInfo.ipv6Gateway));
+                                vo.setGateway(StringUtils.isEmpty(nicIpAddressInfo.ipv6Gateway) ?
+                                        null : IPv6NetworkUtils.getIpv6AddressCanonicalString(nicIpAddressInfo.ipv6Gateway));
                                 vo.setIpVersion(IPv6Constants.IPv6);
                                 vo.setVmNicUuid(msg.getVmNicUuid());
                                 vo.setL3NetworkUuid(msg.getDestL3NetworkUuid());

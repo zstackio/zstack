@@ -166,8 +166,7 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
                 .eq(L3NetworkVO_.uuid, l3Uuid)
                 .findValue();
         // vpc network does not need to enable ra
-        boolean isBasicNetwork = L3NetworkConstant.L3_BASIC_NETWORK_TYPE.equals(l3Type);
-        if (!isBasicNetwork) {
+        if (L3NetworkType.valueOf(l3Type).isMandatoryIpAllocation()) {
             return false;
         }
 
