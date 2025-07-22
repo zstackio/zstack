@@ -20,6 +20,9 @@ public class APIUpdateResourceAttributeKeyMsg extends APIMessage implements Reso
     @APIParam(required = true, resourceType = ResourceAttributeKeyVO.class)
     private String uuid;
 
+    @APIParam(required = false, emptyString = false)
+    private String name;
+
     @APIParam(required = false)
     private String description;
 
@@ -44,6 +47,14 @@ public class APIUpdateResourceAttributeKeyMsg extends APIMessage implements Reso
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getDescription() {

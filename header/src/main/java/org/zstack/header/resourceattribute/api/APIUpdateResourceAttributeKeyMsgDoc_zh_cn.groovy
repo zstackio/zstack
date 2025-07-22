@@ -31,6 +31,15 @@ doc {
 					since "4.10.16"
 				}
 				column {
+					name "name"
+					enclosedIn "updateResourceAttributeKey"
+					desc "键名称"
+					location "body"
+					type "String"
+					optional true
+					since "4.10.16"
+				}
+				column {
 					name "description"
 					enclosedIn "updateResourceAttributeKey"
 					desc "资源的详细描述"

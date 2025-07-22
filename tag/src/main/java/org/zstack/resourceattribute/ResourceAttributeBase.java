@@ -208,6 +208,9 @@ public class ResourceAttributeBase {
                 if (msg.getDescription() != null) {
                     self.setDescription(msg.getDescription());
                 }
+                if (msg.getName() != null) {
+                    self.setName(msg.getName());
+                }
                 self = databaseFacade.updateAndRefresh(self);
                 event.setInventory(ResourceAttributeKeyInventory.valueOf(self));
                 bus.publish(event);
