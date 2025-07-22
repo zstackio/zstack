@@ -17,10 +17,8 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.ExceptionSafe;
-import org.zstack.header.core.NopeCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -39,7 +37,7 @@ import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceMessa
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO;
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO_;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
+import org.zstack.header.vm.devices.*;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -54,6 +52,7 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.zql.ZQL;
 
@@ -1200,6 +1199,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             handle((APICheckVolumeSnapshotGroupAvailabilityMsg) msg);
         } else if (msg instanceof APIGetMemorySnapshotGroupReferenceMsg) {
             handle((APIGetMemorySnapshotGroupReferenceMsg) msg);
+        } else if (msg instanceof APICheckMemorySnapshotGroupConflictMsg) {
+            handle((APICheckMemorySnapshotGroupConflictMsg) msg);
         } else  {
             bus.dealWithUnknownMessage(msg);
         }
@@ -1216,6 +1217,67 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         }
 
         reply.setError(operr("this resource type %s does not support querying memory snapshot references", msg.getResourceType()));
+        bus.reply(msg, reply);
+    }
+
+    private void handle(APICheckMemorySnapshotGroupConflictMsg msg) {
+        APICheckMemorySnapshotGroupConflictReply reply = new APICheckMemorySnapshotGroupConflictReply();
+
+        VmInstanceResourceMetadataGroupVO metadataGroupVO = Q.New(VmInstanceResourceMetadataGroupVO.class)
+                .eq(VmInstanceResourceMetadataGroupVO_.resourceUuid, msg.getUuid()).find();
+        if (metadataGroupVO == null) {
+            throw new ApiMessageInterceptionException(
+                    operr("cannot find VmInstanceResourceMetadataGroupVO of the memory snapshot group[uuid:%s]", msg.getUuid()));
+        }
+        // Retrieve ArchiveVmNicBundle archives related to memory snapshot groups
+        List<VmNicInventory> vmNics = metadataGroupVO.getAddressList().stream()
+                .filter(vo -> Objects.equals(vo.getMetadataClass(), ArchiveVmNicBundle.class.getCanonicalName()))
+                .map(vo -> JSONObjectUtil.toObject(vo.getMetadata(), ArchiveVmNicBundle.class).getVmNicInventory())
+                .filter(Objects::nonNull).collect(Collectors.toList());
+
+        // Collect IP and MAC from memory snapshot vmNic
+        Set<String> groupIps = vmNics.stream().map(VmNicInventory::getIp).filter(Objects::nonNull).collect(Collectors.toSet());
+        Set<String> groupMacs = vmNics.stream().map(VmNicInventory::getMac).filter(Objects::nonNull).collect(Collectors.toSet());
+
+        String groupVmUuid = Q.New(VolumeSnapshotGroupVO.class).eq(VolumeSnapshotGroupVO_.uuid, msg.getUuid()).select(VolumeSnapshotGroupVO_.vmInstanceUuid).findValue();
+
+        List<VmNicConflictEntry> vmNetworkConflictEntries = new ArrayList<>();
+        Set<String> conflictVmUuids = new HashSet<>();
+
+        long count = Q.New(VmNicVO.class).notEq(VmNicVO_.vmInstanceUuid, groupVmUuid).count();
+        String sql = String.format("select vmNicVO from VmNicVO vmNicVO where vmNicVO.vmInstanceUuid != '%s'", groupVmUuid);
+        SQL.New(sql, VmNicVO.class).limit(100).paginate(count, (List<VmNicVO> vmNicVOs) -> vmNicVOs.forEach(vmNicVO -> {
+            String vmUuid = vmNicVO.getVmInstanceUuid();
+            String ip = vmNicVO.getIp();
+            String mac = vmNicVO.getMac();
+
+            boolean isConflict = false;
+            VmNicConflictEntry vmNicConflictEntry = new VmNicConflictEntry();
+            if (ip != null && groupIps.contains(ip)) {
+                vmNicConflictEntry.setIp(ip);
+                isConflict = true;
+            }
+            if (mac != null && groupMacs.contains(mac)) {
+                vmNicConflictEntry.setMac(mac);
+                isConflict = true;
+            }
+
+            if (!isConflict) {
+                return;
+            }
+            vmNicConflictEntry.setVmNicName(vmNicVO.getInternalName());
+            vmNicConflictEntry.setVmInstanceUuid(vmUuid);
+            conflictVmUuids.add(vmUuid);
+            vmNetworkConflictEntries.add(vmNicConflictEntry);
+        }));
+
+        if (!conflictVmUuids.isEmpty()) {
+            List<Tuple> conflictVmNames = Q.New(VmInstanceVO.class).in(VmInstanceVO_.uuid, conflictVmUuids).select(VmInstanceVO_.uuid, VmInstanceVO_.name).listTuple();
+            Map<String, String> vmNameByVmUuid = conflictVmNames.stream().collect(Collectors.toMap(t -> t.get(0, String.class), t -> t.get(1, String.class)));
+            vmNetworkConflictEntries.forEach(vmNicConflictEntry -> vmNicConflictEntry.setVmInstanceName(vmNameByVmUuid.get(vmNicConflictEntry.getVmInstanceUuid())));
+        }
+
+        reply.setVmNicConflict(vmNetworkConflictEntries);
         bus.reply(msg, reply);
     }
 
