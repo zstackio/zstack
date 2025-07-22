@@ -1238,6 +1238,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                 if (deletionPolicy == VolumeDeletionPolicy.Direct) {
                     flow(new NoRollbackFlow() {
+                        final List<VolumeStatus> allowedStatuses = Arrays.asList(VolumeStatus.Ready, VolumeStatus.Migrating);
                         String __name__ = "delete-volume-from-primary-storage";
 
                         @Override
@@ -1248,8 +1249,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            if (self.getStatus() == VolumeStatus.Ready &&
-                                 self.getPrimaryStorageUuid() != null) {
+                            if (allowedStatuses.contains(self.getStatus()) && self.getPrimaryStorageUuid() != null) {
                                 DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
                                 dmsg.setVolume(getSelfInventory());
                                 dmsg.setUuid(self.getPrimaryStorageUuid());
