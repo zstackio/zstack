@@ -35,11 +35,14 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -125,10 +128,10 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
             return;
         }
 
-        SimpleQuery<ConsoleProxyVO> q = dbf.createQuery(ConsoleProxyVO.class);
-        q.add(ConsoleProxyVO_.vmInstanceUuid, SimpleQuery.Op.EQ, vm.getUuid());
-        q.add(ConsoleProxyVO_.status, SimpleQuery.Op.EQ, ConsoleProxyStatus.Active);
-        final ConsoleProxyVO vo = q.find();
+        ConsoleProxyVO vo = Q.New(ConsoleProxyVO.class)
+                .eq(ConsoleProxyVO_.vmInstanceUuid, vm.getUuid())
+                .eq(ConsoleProxyVO_.status, ConsoleProxyStatus.Active)
+                .find();
 
         if (vo == null) {
             // new console proxy
@@ -152,88 +155,84 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
         if (vo.getTargetHostname().equals(hostIp)) {
             // vm is on the same host
             updateConsoleProxy(vm, vo, complete);
-        } else {
-            // vm is on another host
-            FlowChain chain = FlowChainBuilder.newShareFlowChain();
-            chain.setName(String.format("recreate-console-for-vm-%s", vm.getUuid()));
-            chain.then(new ShareFlow() {
-                ConsoleInventory ret;
-
-                @Override
-                public void setup() {
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "delete-old-console";
-
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            deleteConsoleSession(vm, new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-                    });
-
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "create-new-console";
-
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            ConsoleProxy proxy = getConsoleProxy(session, vm);
-                            establishNewProxy(proxy, vm, new ReturnValueCompletion<ConsoleInventory>(trigger) {
-                                @Override
-                                public void success(ConsoleInventory returnValue) {
-                                    ret = returnValue;
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-                    });
-
-                    done(new FlowDoneHandler(complete) {
-                        @Override
-                        public void handle(Map data) {
-                            complete.success(ret);
-                        }
-                    });
-
-                    error(new FlowErrorHandler(complete) {
-                        @Override
-                        public void handle(ErrorCode errCode, Map data) {
-                            complete.fail(errCode);
-                        }
-                    });
-                }
-            }).start();
+            return;
         }
+
+        // vm is on another host
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("recreate-console-for-vm-%s", vm.getUuid()));
+        chain.then(new ShareFlow() {
+            ConsoleInventory ret;
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-old-console";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        deleteConsoleSession(vm, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "create-new-console";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        ConsoleProxy proxy = getConsoleProxy(session, vm);
+                        establishNewProxy(proxy, vm, new ReturnValueCompletion<ConsoleInventory>(trigger) {
+                            @Override
+                            public void success(ConsoleInventory returnValue) {
+                                ret = returnValue;
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(complete) {
+                    @Override
+                    public void handle(Map data) {
+                        complete.success(ret);
+                    }
+                });
+
+                error(new FlowErrorHandler(complete) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        complete.fail(errCode);
+                    }
+                });
+            }
+        }).start();
+
     }
 
     @Transactional(readOnly = true)
     protected String getHostIp(VmInstanceInventory vm) {
-        String sql = "select h.managementIp from HostVO h, VmInstanceVO vm where h.uuid = vm.hostUuid and vm.uuid = :uuid";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("uuid", vm.getUuid());
-        List<String> ret = q.getResultList();
-        if (!ret.isEmpty()) {
-            return ret.get(0);
-        }
-
-        // FIXME
-        sql = "select g.managementIp from BareMetal2GatewayVO g, BareMetal2InstanceVO bm where g.uuid = bm.gatewayUuid and bm.uuid = :uuid";
-        q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("uuid", vm.getUuid());
-        ret = q.getResultList();
+        List<String> ret = Q.New(HostVO.class, VmInstanceVO.class)
+                .table0()
+                    .eq(HostVO_.uuid).table1(VmInstanceVO_.hostUuid)
+                    .select(HostVO_.managementIp)
+                .table1()
+                    .eq(VmInstanceVO_.uuid, vm.getUuid())
+                .list();
         return ret.isEmpty() ? null : ret.get(0);
     }
 
