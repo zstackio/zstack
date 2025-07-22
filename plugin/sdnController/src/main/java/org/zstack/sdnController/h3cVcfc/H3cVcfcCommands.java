@@ -98,7 +98,7 @@ public class H3cVcfcCommands {
         public String type;
     }
     public static class GetH3cTenantsRsp extends H3cRsp {
-        public List<H3cTenantStruct> tenants;
+        public List<H3cVcfcCommands.H3cTenantStruct> tenants;
     }
 
     public static class GetH3cTeamLederIpCmd extends H3cCmd {

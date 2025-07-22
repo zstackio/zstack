@@ -1464,6 +1464,17 @@ public class L3BasicNetwork implements L3Network {
             });
         }
 
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterDeleteIpRangeExtensionPoint.class), ext -> {
+                    ext.afterDeleteIpRange(IpRangeInventory.valueOf(vo));
+                });
+                trigger.next();
+            }
+        });
+
+
         chain.done(new FlowDoneHandler(msg) {
             @Override
             public void handle(Map data) {

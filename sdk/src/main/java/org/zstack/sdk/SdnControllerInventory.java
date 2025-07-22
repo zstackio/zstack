@@ -20,6 +20,14 @@ public class SdnControllerInventory  {
         return this.vendorType;
     }
 
+    public java.lang.String vendorVersion;
+    public void setVendorVersion(java.lang.String vendorVersion) {
+        this.vendorVersion = vendorVersion;
+    }
+    public java.lang.String getVendorVersion() {
+        return this.vendorVersion;
+    }
+
     public java.lang.String name;
     public void setName(java.lang.String name) {
         this.name = name;

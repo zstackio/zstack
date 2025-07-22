@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddSdnControllerAction extends AbstractAction {
+public class PullSdnControllerTenantAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddSdnControllerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddSdnControllerResult value;
+        public org.zstack.sdk.PullSdnControllerTenantResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,8 @@ public class AddSdnControllerAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vendorType;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vendorVersion;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ip;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String userName;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String password;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -84,8 +60,8 @@ public class AddSdnControllerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddSdnControllerResult value = res.getResult(org.zstack.sdk.AddSdnControllerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddSdnControllerResult() : value; 
+        org.zstack.sdk.PullSdnControllerTenantResult value = res.getResult(org.zstack.sdk.PullSdnControllerTenantResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PullSdnControllerTenantResult() : value; 
 
         return ret;
     }
@@ -114,11 +90,11 @@ public class AddSdnControllerAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/sdn-controllers";
+        info.httpMethod = "PUT";
+        info.path = "/sdn-controllers/{uuid}/tenant/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "pullSdnControllerTenant";
         return info;
     }
 

@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -34,6 +35,8 @@ import org.zstack.header.network.l2.SdnControllerDeleteExtensionPoint;
 import org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO;
 import org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO_;
 import org.zstack.sdnController.header.*;
+import org.zstack.sdnController.h3cVcfc.H3cVcfcV2Commands;
+import org.zstack.sdnController.h3cVcfc.H3cVcfcV2SdnController;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -44,6 +47,7 @@ import java.util.*;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.sdnController.header.SdnControllerFlowDataParam.SDN_CONTROLLER_UUID;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -99,8 +103,12 @@ public class SdnControllerBase {
             handle((APIReconnectSdnControllerMsg) msg);
         } else if (msg instanceof APISdnControllerChangeHostMsg) {
             handle((APISdnControllerChangeHostMsg) msg);
+        } else if (msg instanceof APIPullSdnControllerTenantMsg) {
+            handle((APIPullSdnControllerTenantMsg) msg);
         } else if (msg instanceof SdnControllerRemoveHostMsg) {
             handle((SdnControllerRemoveHostMsg) msg);
+        } else if (msg instanceof PullSdnControllerTenantMsg) {
+            handle((PullSdnControllerTenantMsg) msg);
         } else if (msg instanceof ReconnectSdnControllerMsg) {
             handle((ReconnectSdnControllerMsg) msg);
         } else {
@@ -838,5 +846,201 @@ public class SdnControllerBase {
 
         event.setInventory(SdnControllerInventory.valueOf(vo));
         bus.publish(event);
+    }
+
+    private void handle(APIPullSdnControllerTenantMsg amsg) {
+        APIPullSdnControllerTenantEvent event = new APIPullSdnControllerTenantEvent(amsg.getId());
+
+        PullSdnControllerTenantMsg msg = PullSdnControllerTenantMsg.fromApi(amsg);
+        pullSdnControllerTenant(msg, new Completion(msg) {
+            @Override
+            public void success() {
+                // After synchronization is complete, query and return the latest tenant data
+                List<H3cSdnControllerTenantVO> tenantVOs = Q.New(H3cSdnControllerTenantVO.class)
+                        .eq(H3cSdnControllerTenantVO_.sdnControllerUuid, msg.getSdnControllerUuid())
+                        .list();
+                List<H3cSdnControllerTenantInventory> inventories = H3cSdnControllerTenantInventory.valueOf(tenantVOs);
+                event.setInventories(inventories);
+                bus.publish(event);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                event.setError(errorCode);
+                bus.publish(event);
+            }
+        });
+    }
+
+    private void handle(PullSdnControllerTenantMsg msg) {
+        PullSdnControllerTenantReply reply = new PullSdnControllerTenantReply();
+
+        pullSdnControllerTenant(msg, new Completion(msg) {
+            @Override
+            public void success() {
+                // After synchronization is complete, query and return the latest tenant data
+                List<H3cSdnControllerTenantVO> tenantVOs = Q.New(H3cSdnControllerTenantVO.class)
+                        .eq(H3cSdnControllerTenantVO_.sdnControllerUuid, msg.getSdnControllerUuid())
+                        .list();
+                List<H3cSdnControllerTenantInventory> inventories = H3cSdnControllerTenantInventory.valueOf(tenantVOs);
+                reply.setInventories(inventories);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void pullSdnControllerTenant(PullSdnControllerTenantMsg msg, Completion completion) {
+        // Only H3C VCFC V2 controllers support this operation, already validated in interceptor
+        // But confirm again here to ensure type safety
+        if (!SdnControllerConstant.H3C_VCFC_CONTROLLER.equals(self.getVendorType()) ||
+            !SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V2.equals(self.getVendorVersion())) {
+            completion.fail(operr("Pull tenant operation is only supported for H3C VCFC V2 controllers"));
+            return;
+        }
+
+        // Get the correct controller instance through factory
+        SdnControllerFactory factory = sdnMgr.getSdnControllerFactory(self.getVendorType());
+        H3cVcfcV2SdnController h3cController = (H3cVcfcV2SdnController) factory.getSdnController(self);
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("pull-tenant-for-h3c-sdn-%s", self.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "pull-h3c-vds-tenant";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                try {
+                    // Directly get all tenant information
+                    h3cController.getH3cControllerToken(new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            List<H3cVcfcV2Commands.H3cTenantStruct> apiTenants = h3cController.getAllH3cTenants();
+                            syncTenantData(msg.getSdnControllerUuid(), apiTenants, trigger);
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                } catch (Exception e) {
+                    trigger.fail(operr("Failed to pull tenant data: %s", e.getMessage()));
+                }
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "pull-h3c-vni-ranges";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                h3cController.getH3cVniRanges(new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
+    private void syncTenantData(String sdnControllerUuid, List<H3cVcfcV2Commands.H3cTenantStruct> apiTenants, FlowTrigger trigger) {
+        // Query existing tenant records in database
+        List<H3cSdnControllerTenantVO> existingTenants = Q.New(H3cSdnControllerTenantVO.class)
+                .eq(H3cSdnControllerTenantVO_.sdnControllerUuid, sdnControllerUuid)
+                .list();
+
+        // Create mapping table for easy lookup
+        Map<String, H3cSdnControllerTenantVO> existingTenantMap = new HashMap<>();
+        for (H3cSdnControllerTenantVO tenant : existingTenants) {
+            String key = generateTenantKey(tenant.getTenantUuid(), tenant.getVdsUuid());
+            existingTenantMap.put(key, tenant);
+        }
+
+        Set<String> apiTenantKeys = new HashSet<>();
+        List<H3cSdnControllerTenantVO> tenantsToSave = new ArrayList<>();
+
+        // Process tenant data returned by API
+        for (H3cVcfcV2Commands.H3cTenantStruct apiTenant : apiTenants) {
+            if (apiTenant.vds_list != null && !apiTenant.vds_list.isEmpty()) {
+                String vdsUuid = apiTenant.vds_list.get(0);
+                String key = generateTenantKey(apiTenant.id, vdsUuid);
+                apiTenantKeys.add(key);
+
+                H3cSdnControllerTenantVO existingTenant = existingTenantMap.get(key);
+                if (existingTenant == null) {
+                    // New tenant, create record
+                    H3cSdnControllerTenantVO newTenant = new H3cSdnControllerTenantVO();
+                    newTenant.setUuid(Platform.getUuid());
+                    newTenant.setSdnControllerUuid(sdnControllerUuid);
+                    newTenant.setTenantUuid(apiTenant.id);
+                    newTenant.setVdsUuid(vdsUuid);
+                    newTenant.setTenantName(apiTenant.name);
+                    newTenant.setVdsName(getVdsName(vdsUuid)); // Get VDS name
+                    newTenant.setCloudDomainName(apiTenant.cloud_domain_name);
+                    newTenant.setStatus(SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATUS_ENABLE);
+                    tenantsToSave.add(newTenant);
+                } else {
+                    // Existing tenant, check if update is needed
+                    boolean needUpdate = false;
+                    if (!Objects.equals(existingTenant.getTenantName(), apiTenant.name)) {
+                        existingTenant.setTenantName(apiTenant.name);
+                        needUpdate = true;
+                    }
+                    if (!Objects.equals(existingTenant.getCloudDomainName(), apiTenant.cloud_domain_name)) {
+                        existingTenant.setCloudDomainName(apiTenant.cloud_domain_name);
+                        needUpdate = true;
+                    }
+                    if (needUpdate) {
+                        tenantsToSave.add(existingTenant);
+                    }
+                }
+            }
+        }
+
+        // Handle tenants that exist in database but not in API (soft delete)
+        for (H3cSdnControllerTenantVO existingTenant : existingTenants) {
+            String key = generateTenantKey(existingTenant.getTenantUuid(), existingTenant.getVdsUuid());
+            if (!apiTenantKeys.contains(key) && !SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATUS_DISABLE.equals(existingTenant.getStatus())) {
+                existingTenant.setStatus(SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATUS_DISABLE);
+                tenantsToSave.add(existingTenant);
+            }
+        }
+
+        // Batch save updates
+        if (!tenantsToSave.isEmpty()) {
+            dbf.updateCollection(tenantsToSave);
+        }
+
+        trigger.next();
+    }
+
+    private String generateTenantKey(String tenantUuid, String vdsUuid) {
+        return String.format("%s-%s", tenantUuid != null ? tenantUuid : "", vdsUuid != null ? vdsUuid : "");
+    }
+
+    private String getVdsName(String vdsUuid) {
+        // TODO: Implement logic to get VDS name
+        // May need to query related VDS table or get VDS name from other sources
+        return vdsUuid; // Temporarily return UUID as name
     }
 }

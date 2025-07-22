@@ -11,26 +11,25 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.network.l2.APIAttachL2NetworkToClusterMsg;
-import org.zstack.header.network.l2.APICreateL2NoVlanNetworkMsg;
-import org.zstack.header.network.l2.APICreateL2VlanNetworkMsg;
 import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.APIAttachL3NetworkToVmMsg;
 import org.zstack.header.vm.APIChangeVmNicNetworkMsg;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
-import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
 import org.zstack.network.l3.L3NetworkHelper;
 import org.zstack.network.securitygroup.*;
 import org.zstack.sdnController.header.*;
-import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
+import java.util.List;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.argerr;
@@ -61,6 +60,7 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         ret.add(APIAddSecurityGroupRuleMsg.class);
         ret.add(APIAttachL3NetworkToVmMsg.class);
         ret.add(APIChangeVmNicNetworkMsg.class);
+        ret.add(APIPullSdnControllerTenantMsg.class);
 
         return ret;
     }
@@ -90,6 +90,8 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
             validate((APIAttachL3NetworkToVmMsg) msg);
         } else if (msg instanceof APIChangeVmNicNetworkMsg) {
             validate((APIChangeVmNicNetworkMsg) msg);
+        } else if (msg instanceof APIPullSdnControllerTenantMsg) {
+            validate((APIPullSdnControllerTenantMsg) msg);
         }
 
         setServiceId(msg);
@@ -107,6 +109,16 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         if (controllerVO == null) {
             throw new ApiMessageInterceptionException(argerr("could not attach l3network to vm, " +
                             "because sdn controller[uuid:%s] is not find", sdnControlerUuid));
+        }
+
+        if (controllerVO.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER) &&
+            controllerVO.getVendorVersion().equals(SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V2)) {
+            validateH3cTenantStatus(msg.getL3NetworkUuid(), sdnControlerUuid);
+            return;
+        }
+
+        if (controllerVO.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
+            return;
         }
 
         VmInstanceVO vmVo = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
@@ -129,7 +141,7 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         if (sdnControlerUuid == null) {
             return;
         }
-        
+
         SdnControllerVO controllerVO = dbf.findByUuid(sdnControlerUuid, SdnControllerVO.class);
         if (controllerVO == null) {
             throw new ApiMessageInterceptionException(argerr("could not change vmnic to l3network[uuid:%s], " +
@@ -284,6 +296,51 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
 
         if (msg.getNicNames().size() > 1 && msg.getBondMode() == null) {
             msg.setBondMode(refVO.getBondMode());
+        }
+    }
+
+    private void validateH3cTenantStatus(String l3NetworkUuid, String sdnControllerUuid) {
+        String l2NetworkUuid = Q.New(L3NetworkVO.class)
+                .eq(L3NetworkVO_.uuid, l3NetworkUuid)
+                .select(L3NetworkVO_.l2NetworkUuid)
+                .findValue();
+        if (l2NetworkUuid == null) {
+            return;
+        }
+        VxlanNetworkVO vxlanVO = Q.New(VxlanNetworkVO.class)
+                .eq(VxlanNetworkVO_.uuid, l2NetworkUuid)
+                .find();
+        if (vxlanVO == null) {
+            return;
+        }
+        HardwareL2VxlanNetworkPoolVO poolVO = Q.New(HardwareL2VxlanNetworkPoolVO.class)
+                .eq(HardwareL2VxlanNetworkPoolVO_.uuid, vxlanVO.getPoolUuid())
+                .find();
+        if (poolVO == null || !sdnControllerUuid.equals(poolVO.getSdnControllerUuid())) {
+            return;
+        }
+        List<H3cSdnControllerTenantVO> disabledTenants = Q.New(H3cSdnControllerTenantVO.class)
+                .eq(H3cSdnControllerTenantVO_.sdnControllerUuid, sdnControllerUuid)
+                .eq(H3cSdnControllerTenantVO_.status, SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATUS_DISABLE)
+                .list();
+        if (!disabledTenants.isEmpty()) {
+            throw new ApiMessageInterceptionException(argerr("Cannot attach L3 network to VM because some tenants in SDN controller[uuid:%s] have been deleted. " +
+                    "Please run tenant synchronization first to update tenant status", sdnControllerUuid));
+        }
+    }
+
+    private void validate(APIPullSdnControllerTenantMsg msg) {
+        SdnControllerVO sdnControllerVO = dbf.findByUuid(msg.getSdnControllerUuid(), SdnControllerVO.class);
+        if (sdnControllerVO == null) {
+            throw new ApiMessageInterceptionException(argerr("SDN controller[uuid:%s] not found", msg.getSdnControllerUuid()));
+        }
+
+        // Only H3C_VCFC_CONTROLLER with vendorVersion H3C_VCFC_VENDOR_VERSION_V2 supports pull tenant operation
+        if (!SdnControllerConstant.H3C_VCFC_CONTROLLER.equals(sdnControllerVO.getVendorType()) ||
+            !SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V2.equals(sdnControllerVO.getVendorVersion())) {
+            throw new ApiMessageInterceptionException(argerr("Pull tenant operation is not supported for SDN controller[uuid:%s, vendorType:%s, vendorVersion:%s]. " +
+                    "Only H3C VCFC V2 controllers support this operation",
+                    msg.getSdnControllerUuid(), sdnControllerVO.getVendorType(), sdnControllerVO.getVendorVersion()));
         }
     }
 
