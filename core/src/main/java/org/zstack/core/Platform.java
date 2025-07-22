@@ -34,6 +34,7 @@ import org.zstack.utils.*;
 import org.zstack.utils.data.StringTemplate;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.string.ErrorCodeElaboration;
@@ -54,6 +55,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -728,6 +730,21 @@ public class Platform {
             return getManagementServerIp();
         }
         return ZSha2Helper.getInfo(false).getDbvip();
+    }
+
+    public static String getManagementServerVipBaseUrl() {
+        String ipAddress = getManagementServerVip();
+        int port = getManagementNodeServicePort();
+        String formattedIp;
+
+
+        if (IPv6NetworkUtils.isIpv6Address(ipAddress)) {
+            formattedIp = String.format("[%s]", ipAddress);
+        } else {
+            formattedIp = ipAddress;
+        }
+
+        return String.format("http://%s:%d", formattedIp, port);
     }
 
     public static String getCanonicalServerIp() {
