@@ -168,7 +168,7 @@ public class StaticIpOperator {
                     setStaticIp(vmUuid, l3Uuid, info.ipv4Address);
 
                     info.ipv4Netmask = vmNicParam.getNetmask();
-                    info.ipv4Gateway = vmNicParam.getGateway() != null ? vmNicParam.getGateway() : "";
+                    info.ipv4Gateway = vmNicParam.getGateway();
                     NormalIpRangeVO ipRangeVO = Q.New(NormalIpRangeVO.class)
                             .eq(NormalIpRangeVO_.l3NetworkUuid, l3Uuid)
                             .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4)
@@ -191,7 +191,7 @@ public class StaticIpOperator {
                     setStaticIp(vmUuid, l3Uuid, info.ipv6Address);
 
                     info.ipv6Prefix = vmNicParam.getIpv6Prefix();
-                    info.ipv6Gateway = vmNicParam.getIpv6Gateway() != null ? vmNicParam.getIpv6Gateway() : "";
+                    info.ipv6Gateway = vmNicParam.getIpv6Gateway();
                     NormalIpRangeVO ipRangeVO = Q.New(NormalIpRangeVO.class)
                             .eq(NormalIpRangeVO_.l3NetworkUuid, l3Uuid)
                             .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6)
