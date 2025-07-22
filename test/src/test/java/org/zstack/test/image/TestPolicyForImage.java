@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
-import org.zstack.header.identity.StatementEffect;
+import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.SessionInventory;
@@ -89,7 +89,7 @@ public class TestPolicyForImage {
         identityCreator.createUser("user1", "password");
         PolicyStatement s = new PolicyStatement();
         s.setName("allow");
-        s.setEffect(StatementEffect.Allow);
+        s.setEffect(PolicyStatementEffect.Allow);
         s.addAction(String.format("%s:%s", ImageConstant.ACTION_CATEGORY, APIAddImageMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", ImageConstant.ACTION_CATEGORY, APIUpdateImageMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", ImageConstant.ACTION_CATEGORY, APIChangeImageStateMsg.class.getSimpleName()));
@@ -106,7 +106,7 @@ public class TestPolicyForImage {
         identityCreator.detachPolicyFromUser("user1", "allow");
         s = new PolicyStatement();
         s.setName("deny");
-        s.setEffect(StatementEffect.Deny);
+        s.setEffect(PolicyStatementEffect.Deny);
         s.addAction(String.format("%s:%s", ImageConstant.ACTION_CATEGORY, APIAddImageMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", ImageConstant.ACTION_CATEGORY, APIUpdateImageMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", ImageConstant.ACTION_CATEGORY, APIChangeImageStateMsg.class.getSimpleName()));

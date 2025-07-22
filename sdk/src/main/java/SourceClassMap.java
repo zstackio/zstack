@@ -272,11 +272,11 @@ public class SourceClassMap {
 			put("org.zstack.header.identity.AccountResourceRefInventory", "org.zstack.sdk.AccountResourceRefInventory");
 			put("org.zstack.header.identity.PolicyInventory", "org.zstack.sdk.PolicyInventory");
 			put("org.zstack.header.identity.PolicyStatement", "org.zstack.sdk.PolicyStatement");
+			put("org.zstack.header.identity.PolicyStatementEffect", "org.zstack.sdk.PolicyStatementEffect");
 			put("org.zstack.header.identity.Quota$QuotaUsage", "org.zstack.sdk.QuotaUsage");
 			put("org.zstack.header.identity.QuotaInventory", "org.zstack.sdk.QuotaInventory");
 			put("org.zstack.header.identity.SessionInventory", "org.zstack.sdk.SessionInventory");
 			put("org.zstack.header.identity.SharedResourceInventory", "org.zstack.sdk.SharedResourceInventory");
-			put("org.zstack.header.identity.StatementEffect", "org.zstack.sdk.PolicyStatementEffect");
 			put("org.zstack.header.identity.UserGroupInventory", "org.zstack.sdk.UserGroupInventory");
 			put("org.zstack.header.identity.UserInventory", "org.zstack.sdk.UserInventory");
 			put("org.zstack.header.identity.login.LoginAuthenticationProcedureDesc", "org.zstack.sdk.LoginAuthenticationProcedureDesc");
@@ -1250,7 +1250,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PolicyRouteTableRouteEntryInventory", "org.zstack.policyRoute.PolicyRouteTableRouteEntryInventory");
 			put("org.zstack.sdk.PolicyRouteTableVRouterRefInventory", "org.zstack.policyRoute.PolicyRouteTableVRouterRefInventory");
 			put("org.zstack.sdk.PolicyStatement", "org.zstack.header.identity.PolicyStatement");
-			put("org.zstack.sdk.PolicyStatementEffect", "org.zstack.header.identity.StatementEffect");
+			put("org.zstack.sdk.PolicyStatementEffect", "org.zstack.header.identity.PolicyStatementEffect");
 			put("org.zstack.sdk.PortForwardingRuleInventory", "org.zstack.network.service.portforwarding.PortForwardingRuleInventory");
 			put("org.zstack.sdk.PortMirrorInventory", "org.zstack.header.portMirror.PortMirrorInventory");
 			put("org.zstack.sdk.PortMirrorSessionInventory", "org.zstack.header.portMirror.PortMirrorSessionInventory");

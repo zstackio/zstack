@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.StatementEffect;
+import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.SessionInventory;
@@ -68,7 +68,7 @@ public class TestPolicyForL3Network {
 
         PolicyStatement s = new PolicyStatement();
         s.setName("allow");
-        s.setEffect(StatementEffect.Allow);
+        s.setEffect(PolicyStatementEffect.Allow);
         s.addAction(String.format("%s:%s", L3NetworkConstant.ACTION_CATEGORY, APICreateL3NetworkMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", L3NetworkConstant.ACTION_CATEGORY, APIChangeL3NetworkStateMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", L3NetworkConstant.ACTION_CATEGORY, APIUpdateL3NetworkMsg.class.getSimpleName()));
@@ -102,7 +102,7 @@ public class TestPolicyForL3Network {
 
         s = new PolicyStatement();
         s.setName("deny");
-        s.setEffect(StatementEffect.Deny);
+        s.setEffect(PolicyStatementEffect.Deny);
         s.addAction(String.format("%s:%s", L3NetworkConstant.ACTION_CATEGORY, APICreateL3NetworkMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", L3NetworkConstant.ACTION_CATEGORY, APIChangeL3NetworkStateMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", L3NetworkConstant.ACTION_CATEGORY, APIUpdateL3NetworkMsg.class.getSimpleName()));

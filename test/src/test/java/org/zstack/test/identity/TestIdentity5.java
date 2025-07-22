@@ -8,7 +8,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.identity.*;
-import org.zstack.header.identity.StatementEffect;
+import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
@@ -39,7 +39,7 @@ public class TestIdentity5 {
 
         PolicyStatement s = new PolicyStatement();
         s.addAction(".*");
-        s.setEffect(StatementEffect.Allow);
+        s.setEffect(PolicyStatementEffect.Allow);
         PolicyInventory p = creator.createPolicy("test", s);
         creator.attachPolicyToUser("test", "test");
 

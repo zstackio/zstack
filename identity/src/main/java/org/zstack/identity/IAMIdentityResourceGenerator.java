@@ -10,7 +10,6 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static org.zstack.utils.CollectionDSL.list;
@@ -49,7 +48,7 @@ public class IAMIdentityResourceGenerator implements IdentityResourceGenerateExt
         readAPIs.add(APIUpdateUserMsg.class.getName());
 
         PolicyStatement s = PolicyStatement.builder().name("read-apis-for-normal-account")
-                .effect(StatementEffect.Allow)
+                .effect(PolicyStatementEffect.Allow)
                 .actions(readAPIs)
                 .build();
 

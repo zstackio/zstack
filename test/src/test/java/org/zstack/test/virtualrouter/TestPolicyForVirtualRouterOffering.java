@@ -9,7 +9,7 @@ import org.zstack.header.configuration.APICreateInstanceOfferingEvent;
 import org.zstack.header.configuration.APIDeleteInstanceOfferingMsg;
 import org.zstack.header.configuration.ConfigurationConstant;
 import org.zstack.header.configuration.InstanceOfferingInventory;
-import org.zstack.header.identity.StatementEffect;
+import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.SessionInventory;
@@ -74,7 +74,7 @@ public class TestPolicyForVirtualRouterOffering {
         identityCreator.createUser("user1", "password");
         PolicyStatement s = new PolicyStatement();
         s.setName("allow");
-        s.setEffect(StatementEffect.Allow);
+        s.setEffect(PolicyStatementEffect.Allow);
         s.addAction(String.format("%s:%s", VirtualRouterConstant.ACTION_CATEGORY, APICreateVirtualRouterOfferingMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", ConfigurationConstant.ACTION_CATEGORY, APIDeleteInstanceOfferingMsg.class.getSimpleName()));
         identityCreator.createPolicy("allow", s);
@@ -86,7 +86,7 @@ public class TestPolicyForVirtualRouterOffering {
 
         s = new PolicyStatement();
         s.setName("deny");
-        s.setEffect(StatementEffect.Deny);
+        s.setEffect(PolicyStatementEffect.Deny);
         s.addAction(String.format("%s:%s", VirtualRouterConstant.ACTION_CATEGORY, APICreateVirtualRouterOfferingMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", ConfigurationConstant.ACTION_CATEGORY, APIDeleteInstanceOfferingMsg.class.getSimpleName()));
         identityCreator.createPolicy("deny", s);

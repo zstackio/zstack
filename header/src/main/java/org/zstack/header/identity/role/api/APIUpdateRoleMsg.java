@@ -3,7 +3,7 @@ package org.zstack.header.identity.role.api;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.PolicyVO;
-import org.zstack.header.identity.StatementEffect;
+import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.role.RoleVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -76,7 +76,7 @@ public class APIUpdateRoleMsg extends APIMessage implements RoleMessage {
         msg.setName("role-1");
         msg.setPolicyUuids(Arrays.asList(uuid()));
         PolicyStatement policy = new PolicyStatement();
-        policy.setEffect(StatementEffect.Allow);
+        policy.setEffect(PolicyStatementEffect.Allow);
         policy.setName("test role");
         policy.setActions(Arrays.asList("org.zstack.header.identity.role.api.APIUpdateRoleMsg"));
         msg.setStatements(Arrays.asList(new PolicyStatement()));

@@ -2,7 +2,7 @@ package org.zstack.header.identity.role.api;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.PolicyStatement;
-import org.zstack.header.identity.StatementEffect;
+import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.role.RoleVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -48,7 +48,7 @@ public class APIAddPolicyStatementsToRoleMsg extends APIMessage implements RoleM
 
         PolicyStatement state = new PolicyStatement();
         state.setName("state-1");
-        state.setEffect(StatementEffect.Allow);
+        state.setEffect(PolicyStatementEffect.Allow);
         state.setActions(asList("accpet"));
 
         msg.setStatements(asList(state));

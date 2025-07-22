@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.StatementEffect;
+import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.UserInventory;
@@ -51,7 +51,7 @@ public class TestPolicyForVm6 {
 
         PolicyStatement s = new PolicyStatement();
         s.setName("allow");
-        s.setEffect(StatementEffect.Allow);
+        s.setEffect(PolicyStatementEffect.Allow);
         s.addAction(String.format("%s:%s", VmInstanceConstant.ACTION_CATEGORY, APICreateVmInstanceMsg.class.getName()));
         s.addAction(String.format("%s:%s", VmInstanceConstant.ACTION_CATEGORY, APIDestroyVmInstanceMsg.class.getName()));
         identityCreator.createPolicy("allow", s);
@@ -59,7 +59,7 @@ public class TestPolicyForVm6 {
 
         s = new PolicyStatement();
         s.setName("deny");
-        s.setEffect(StatementEffect.Deny);
+        s.setEffect(PolicyStatementEffect.Deny);
         s.addAction(String.format("%s:%s", VmInstanceConstant.ACTION_CATEGORY, APIRebootVmInstanceMsg.class.getName()));
         identityCreator.createPolicy("deny", s);
         identityCreator.attachPolicyToUser("user", "deny");
@@ -68,37 +68,37 @@ public class TestPolicyForVm6 {
                 APIRebootVmInstanceMsg.class.getName(), APIStartVmInstanceMsg.class.getName());
 
         Map<String, String> ret = api.checkUserPolicy(apiNames, user.getUuid(), null);
-        Assert.assertEquals(StatementEffect.Allow.toString(), ret.get(APICreateVmInstanceMsg.class.getName()));
-        Assert.assertEquals(StatementEffect.Allow.toString(), ret.get(APIDestroyVmInstanceMsg.class.getName()));
-        Assert.assertEquals(StatementEffect.Deny.toString(), ret.get(APIRebootVmInstanceMsg.class.getName()));
-        Assert.assertEquals(StatementEffect.Deny.toString(), ret.get(APIStartVmInstanceMsg.class.getName()));
+        Assert.assertEquals(PolicyStatementEffect.Allow.toString(), ret.get(APICreateVmInstanceMsg.class.getName()));
+        Assert.assertEquals(PolicyStatementEffect.Allow.toString(), ret.get(APIDestroyVmInstanceMsg.class.getName()));
+        Assert.assertEquals(PolicyStatementEffect.Deny.toString(), ret.get(APIRebootVmInstanceMsg.class.getName()));
+        Assert.assertEquals(PolicyStatementEffect.Deny.toString(), ret.get(APIStartVmInstanceMsg.class.getName()));
 
         SessionInventory session = identityCreator.userLogin(user.getName(), "password");
         ret = api.checkUserPolicy(apiNames, null, session);
-        Assert.assertEquals(StatementEffect.Allow.toString(), ret.get(APICreateVmInstanceMsg.class.getName()));
-        Assert.assertEquals(StatementEffect.Allow.toString(), ret.get(APIDestroyVmInstanceMsg.class.getName()));
-        Assert.assertEquals(StatementEffect.Deny.toString(), ret.get(APIRebootVmInstanceMsg.class.getName()));
-        Assert.assertEquals(StatementEffect.Deny.toString(), ret.get(APIStartVmInstanceMsg.class.getName()));
+        Assert.assertEquals(PolicyStatementEffect.Allow.toString(), ret.get(APICreateVmInstanceMsg.class.getName()));
+        Assert.assertEquals(PolicyStatementEffect.Allow.toString(), ret.get(APIDestroyVmInstanceMsg.class.getName()));
+        Assert.assertEquals(PolicyStatementEffect.Deny.toString(), ret.get(APIRebootVmInstanceMsg.class.getName()));
+        Assert.assertEquals(PolicyStatementEffect.Deny.toString(), ret.get(APIStartVmInstanceMsg.class.getName()));
 
         identityCreator.createGroup("group");
         identityCreator.addUserToGroup("user", "group");
         s = new PolicyStatement();
         s.setName("group-allow");
-        s.setEffect(StatementEffect.Allow);
+        s.setEffect(PolicyStatementEffect.Allow);
         s.addAction(String.format("%s:%s", VmInstanceConstant.ACTION_CATEGORY, APIStartVmInstanceMsg.class.getName()));
         identityCreator.createPolicy("group-allow", s);
         identityCreator.attachPolicyToGroup("group", "group-allow");
         ret = api.checkUserPolicy(apiNames, null, session);
-        Assert.assertEquals(StatementEffect.Allow.toString(), ret.get(APICreateVmInstanceMsg.class.getName()));
-        Assert.assertEquals(StatementEffect.Allow.toString(), ret.get(APIDestroyVmInstanceMsg.class.getName()));
-        Assert.assertEquals(StatementEffect.Deny.toString(), ret.get(APIRebootVmInstanceMsg.class.getName()));
-        Assert.assertEquals(StatementEffect.Allow.toString(), ret.get(APIStartVmInstanceMsg.class.getName()));
+        Assert.assertEquals(PolicyStatementEffect.Allow.toString(), ret.get(APICreateVmInstanceMsg.class.getName()));
+        Assert.assertEquals(PolicyStatementEffect.Allow.toString(), ret.get(APIDestroyVmInstanceMsg.class.getName()));
+        Assert.assertEquals(PolicyStatementEffect.Deny.toString(), ret.get(APIRebootVmInstanceMsg.class.getName()));
+        Assert.assertEquals(PolicyStatementEffect.Allow.toString(), ret.get(APIStartVmInstanceMsg.class.getName()));
 
         // user can test own permissions
         ret = api.checkUserPolicy(apiNames, user.getUuid(), session);
-        Assert.assertEquals(StatementEffect.Allow.toString(), ret.get(APICreateVmInstanceMsg.class.getName()));
-        Assert.assertEquals(StatementEffect.Allow.toString(), ret.get(APIDestroyVmInstanceMsg.class.getName()));
-        Assert.assertEquals(StatementEffect.Deny.toString(), ret.get(APIRebootVmInstanceMsg.class.getName()));
-        Assert.assertEquals(StatementEffect.Allow.toString(), ret.get(APIStartVmInstanceMsg.class.getName()));
+        Assert.assertEquals(PolicyStatementEffect.Allow.toString(), ret.get(APICreateVmInstanceMsg.class.getName()));
+        Assert.assertEquals(PolicyStatementEffect.Allow.toString(), ret.get(APIDestroyVmInstanceMsg.class.getName()));
+        Assert.assertEquals(PolicyStatementEffect.Deny.toString(), ret.get(APIRebootVmInstanceMsg.class.getName()));
+        Assert.assertEquals(PolicyStatementEffect.Allow.toString(), ret.get(APIStartVmInstanceMsg.class.getName()));
     }
 }

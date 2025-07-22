@@ -7,7 +7,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.StatementEffect;
+import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -92,7 +92,7 @@ public class TestVirtualRouterLbPolicy {
         identityCreator.createUser("user1", "password");
         PolicyStatement s = new PolicyStatement();
         s.setName("allow");
-        s.setEffect(StatementEffect.Allow);
+        s.setEffect(PolicyStatementEffect.Allow);
         s.addAction(String.format("%s:%s", LoadBalancerConstants.ACTION_CATEGORY, APICreateLoadBalancerMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", LoadBalancerConstants.ACTION_CATEGORY, APICreateLoadBalancerListenerMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", LoadBalancerConstants.ACTION_CATEGORY, APIAddVmNicToLoadBalancerMsg.class.getSimpleName()));
@@ -124,7 +124,7 @@ public class TestVirtualRouterLbPolicy {
         listener.setLoadBalancerUuid(lb.getUuid());
         listener = api.createLoadBalancerListener(listener, userSession);
         s.setName("deny");
-        s.setEffect(StatementEffect.Deny);
+        s.setEffect(PolicyStatementEffect.Deny);
         s.addAction(String.format("%s:%s", LoadBalancerConstants.ACTION_CATEGORY, APICreateLoadBalancerMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", LoadBalancerConstants.ACTION_CATEGORY, APICreateLoadBalancerListenerMsg.class.getSimpleName()));
         s.addAction(String.format("%s:%s", LoadBalancerConstants.ACTION_CATEGORY, APIAddVmNicToLoadBalancerMsg.class.getSimpleName()));

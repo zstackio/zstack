@@ -30,7 +30,7 @@ public class APIQueryPolicyReply extends APIQueryReply {
         inventory.setName("USER-RESET-PASSWORD");
         PolicyStatement s = new PolicyStatement();
         s.setName(String.format("user-reset-password-%s", inventory.getUuid()));
-        s.setEffect(StatementEffect.Allow);
+        s.setEffect(PolicyStatementEffect.Allow);
         s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, APIUpdateUserMsg.class.getSimpleName()));
         inventory.setStatements(list(s));
 

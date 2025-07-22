@@ -1,7 +1,7 @@
 package org.zstack.header.identity.role.api;
 
 import org.zstack.header.identity.PolicyStatement;
-import org.zstack.header.identity.StatementEffect;
+import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.role.RoleInventory;
 import org.zstack.header.identity.role.RolePolicyStatementInventory;
 import org.zstack.header.identity.role.RoleState;
@@ -43,7 +43,7 @@ public class APIUpdateRoleEvent extends APIEvent {
         role.setName("role-1");
         RolePolicyStatementInventory inv = new RolePolicyStatementInventory();
         PolicyStatement statement = new PolicyStatement();
-        statement.setEffect(StatementEffect.Allow);
+        statement.setEffect(PolicyStatementEffect.Allow);
         statement.setActions(asList("org.zstack.header.vm.APICreateVmInstanceMsg"));
         statement.setName("statement for test");
 
