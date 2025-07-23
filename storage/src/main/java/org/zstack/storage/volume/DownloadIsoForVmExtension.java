@@ -12,6 +12,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageStatus;
@@ -40,7 +41,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.multiErr;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.transform;
 
 /**
  * Created by frank on 5/23/2015.
@@ -74,7 +77,7 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
             return;
         }
 
-        List<String> isoUuids = spec.getCdRomSpecs().stream().map(CdRomSpec::getImageUuid).collect(Collectors.toList());
+        List<String> isoUuids = transform(spec.getCdRomSpecs(), CdRomSpec::getImageUuid);
         if (isoUuids.isEmpty()) {
             completion.success();
             return;
@@ -87,10 +90,8 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
             assert cdRomSpec.getBackupStorageUuid() != null : "backup storage uuid cannot be null";
         });
 
-        List<DownloadIsoToPrimaryStorageMsg> msgs = CollectionUtils.transformToList(spec.getCdRomSpecs(),
-             new Function<DownloadIsoToPrimaryStorageMsg, CdRomSpec>() {
-                @Override
-                public DownloadIsoToPrimaryStorageMsg call(CdRomSpec cdRomSpec) {
+        List<DownloadIsoToPrimaryStorageMsg> msgs = CollectionUtils.transformAndRemoveNull(spec.getCdRomSpecs(),
+                cdRomSpec -> {
                     if (cdRomSpec.getImageUuid() == null) {
                         return null;
                     }
@@ -99,17 +100,20 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
                     ImageSpec imageSpec = new ImageSpec();
                     final ImageInventory iso = ImageInventory.valueOf(dbf.findByUuid(cdRomSpec.getImageUuid(), ImageVO.class));
                     imageSpec.setInventory(iso);
-                    imageSpec.setSelectedBackupStorage(CollectionUtils.find(iso.getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
-                        @Override
-                        public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
-                            return arg.getBackupStorageUuid().equals(cdRomSpec.getBackupStorageUuid()) &&
-                                    ImageStatus.Ready.toString().equals(arg.getStatus())? arg : null;
-                        }
-                    }));
+                    imageSpec.setSelectedBackupStorage(CollectionUtils.findOneOrNull(iso.getBackupStorageRefs(),
+                            arg -> arg.getBackupStorageUuid().equals(cdRomSpec.getBackupStorageUuid()) &&
+                                    ImageStatus.Ready.toString().equals(arg.getStatus())));
+                    if (imageSpec.getSelectedBackupStorage() == null) {
+                        throw new OperationFailureException(operr(
+                                "failed to select backup storage to download iso[uuid=%s]", cdRomSpec.getImageUuid())
+                                .withOpaque("image.uuid", iso.getUuid())
+                                .withOpaque("backup.storage.refs",
+                                        transform(iso.getBackupStorageRefs(), ImageBackupStorageRefInventory::getBackupStorageUuid)));
+                    }
 
                     if (VmOperation.NewCreate == spec.getCurrentVmOperation()) {
                         VolumeSpec vspec = spec.getVolumeSpecs().stream().filter(it -> VolumeType.Root.toString().equals(it.getType()))
-                                .findFirst().orElse(spec.getVolumeSpecs().get(0));;
+                                .findFirst().orElse(spec.getVolumeSpecs().get(0));
                         PrimaryStorageInventory pinv = vspec.getPrimaryStorageInventory();
                         psUuid = pinv.getUuid();
                     } else {
@@ -124,11 +128,10 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
                     bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, psUuid);
                     return msg;
                 }
-             }
         );
 
         List<ErrorCode> errorCodes = new ArrayList<>();
-        new While<>(msgs).all((msg, whileCompletion) -> {
+        new While<>(msgs).step((msg, whileCompletion) -> {
             bus.send(msg, new CloudBusCallBack(completion) {
                 @Override
                 public void run(MessageReply reply) {
@@ -155,7 +158,7 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
                     whileCompletion.done();
                 }
             });
-        }).run(new WhileDoneCompletion(completion) {
+        }, 3).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (errorCodes.isEmpty()) {
@@ -163,9 +166,7 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
                     return;
                 }
 
-                ErrorCode ec = multiErr(errorCodes, "unable to download iso to primary storage, becasue: %s",
-                        errorCodes.get(0).getDetails());
-
+                ErrorCode ec = multiErr(errorCodes, "unable to download iso to primary storage");
                 completion.fail(ec);
             }
         });

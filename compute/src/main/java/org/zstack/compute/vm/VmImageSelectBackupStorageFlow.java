@@ -11,25 +11,25 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
-import org.zstack.utils.function.Function;
 
 import javax.persistence.TypedQuery;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
+import static org.zstack.utils.CollectionUtils.findOneOrNull;
 
 /**
  */
@@ -134,56 +134,63 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public void run(FlowTrigger trigger, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        final VmOperation operation = spec.getCurrentVmOperation();
 
-        if (VmOperation.NewCreate == spec.getCurrentVmOperation()
-                || VmOperation.ChangeImage == spec.getCurrentVmOperation()) {
-            if (spec.getImageSpec().getInventory() == null) {
-                trigger.next();
-                return;
-            }
-
-            final String bsUuid = findBackupStorage(spec, spec.getImageSpec().getInventory().getUuid());
-            spec.getImageSpec().setSelectedBackupStorage(CollectionUtils.find(
-                    spec.getImageSpec().getInventory().getBackupStorageRefs(),
-                    new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
-                        @Override
-                        public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
-                            return arg.getBackupStorageUuid().equals(bsUuid)
-                                    && ImageStatus.Ready.toString().equals(arg.getStatus())
-                                    ? arg : null;
-                        }
-                    }));
-
-            if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
-                spec.getCdRomSpecs().get(0).setBackupStorageUuid(bsUuid);
-            }
-
-            spec.getCdRomSpecs().forEach(cdRomSpec -> {
-                if (cdRomSpec.getBackupStorageUuid() != null) {
-                    return;
-                }
-                if (cdRomSpec.getImageUuid() == null) {
-                    return;
-                }
-                cdRomSpec.setBackupStorageUuid(
-                        findIsoBsUuidInTheZone(cdRomSpec.getImageUuid(), spec.getVmInventory().getZoneUuid())
-                );
-            });
-        } else if ((VmOperation.Start == spec.getCurrentVmOperation()
-                || VmOperation.Reboot == spec.getCurrentVmOperation())
-                && !spec.getCdRomSpecs().isEmpty()) {
-            spec.getCdRomSpecs().forEach(cdRomSpec -> {
-                if (cdRomSpec.getImageUuid() == null) {
-                    return;
-                }
-                cdRomSpec.setBackupStorageUuid(
-                        findIsoBsUuidInTheZone(cdRomSpec.getImageUuid(), spec.getVmInventory().getZoneUuid())
-                );
-            });
+        if (VmOperation.NewCreate == operation || VmOperation.ChangeImage == operation) {
+            runWithNewCreateOrChangeImageOperation(spec);
+        } else if (VmOperation.Start == operation || VmOperation.Reboot == operation) {
+            runWithStartOrRebootOperation(spec);
         }
 
         trigger.next();
+    }
+
+    private void runWithNewCreateOrChangeImageOperation(VmInstanceSpec spec) {
+        final VmInstanceSpec.ImageSpec imageSpec = spec.getImageSpec();
+        if (imageSpec.getInventory() != null) {
+            final ImageInventory image = imageSpec.getInventory();
+            final String bsUuid = findBackupStorage(spec, image.getUuid());
+
+            imageSpec.setSelectedBackupStorage(findOneOrNull(
+                    image.getBackupStorageRefs(),
+                    arg -> arg.getBackupStorageUuid().equals(bsUuid) && ImageStatus.Ready.toString().equals(arg.getStatus())));
+
+            if (ImageMediaType.ISO.toString().equals(image.getMediaType())) {
+                VmInstanceSpec.CdRomSpec cdRomSpec = findOneOrNull(
+                        spec.getCdRomSpecs(),
+                        cdromSpec -> Objects.equals(cdromSpec.getImageUuid(), image.getUuid()));
+                if (cdRomSpec != null) {
+                    cdRomSpec.setBackupStorageUuid(bsUuid);
+                }
+            }
+        }
+
+        for (VmInstanceSpec.CdRomSpec cdRomSpec : spec.getCdRomSpecs()) {
+            if (cdRomSpec.getBackupStorageUuid() != null) {
+                continue;
+            }
+            if (cdRomSpec.getImageUuid() == null) {
+                continue;
+            }
+            cdRomSpec.setBackupStorageUuid(
+                    findIsoBsUuidInTheZone(cdRomSpec.getImageUuid(), spec.getVmInventory().getZoneUuid()));
+        }
+    }
+
+    private void runWithStartOrRebootOperation(VmInstanceSpec spec) {
+        if (spec.getCdRomSpecs().isEmpty()) {
+            return;
+        }
+
+        for (VmInstanceSpec.CdRomSpec cdRomSpec : spec.getCdRomSpecs()) {
+            if (cdRomSpec.getImageUuid() == null) {
+                continue;
+            }
+            cdRomSpec.setBackupStorageUuid(
+                    findIsoBsUuidInTheZone(cdRomSpec.getImageUuid(), spec.getVmInventory().getZoneUuid()));
+        }
     }
 }
