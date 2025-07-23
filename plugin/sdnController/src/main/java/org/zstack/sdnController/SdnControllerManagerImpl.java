@@ -21,7 +21,8 @@ import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.service.GetSdnControllerDhcpExtensionPoint;
+import org.zstack.header.network.l3.SdnControllerL3;
+import org.zstack.header.network.service.GetSdnControllerExtensionPoint;
 import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.header.vm.*;
 import org.zstack.network.l2.L2NetworkSystemTags;
@@ -42,7 +43,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         L2NetworkCreateExtensionPoint, L2NetworkDeleteExtensionPoint, InstantiateResourceOnAttachingNicExtensionPoint,
         PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
         ReleaseNetworkServiceOnDetachingNicExtensionPoint, SecurityGroupGetSdnBackendExtensionPoint,
-        GetSdnControllerDhcpExtensionPoint {
+        GetSdnControllerExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SdnControllerManagerImpl.class);
 
     @Autowired
@@ -55,6 +56,8 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     private TagManager tagMgr;
     @Autowired
     private SecurityGroupManager sgMgr;
+    @Autowired
+    private SdnControllerPingTracker pingTracker;
 
     private Map<String, SdnControllerFactory> sdnControllerFactories = Collections.synchronizedMap(new HashMap<String, SdnControllerFactory>());
 
@@ -107,6 +110,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        msg.setResourceUuid(vo.getUuid());
                         controller.preInitSdnController(msg, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -181,6 +185,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
                     @Override
                     public void handle(Map data) {
                         logger.debug(String.format("successfully create sdn controller"));
+                        pingTracker.track(vo.getUuid());
                         completion.success();
                     }
                 });
@@ -285,6 +290,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     public void deleteL2Network(L2NetworkInventory inv, NoErrorCompletion completion) {
         VSwitchType vSwitchType = VSwitchType.valueOf(inv.getvSwitchType());
         if (vSwitchType.getSdnControllerType() == null) {
+            //hardware vxlan will go this path
             completion.done();
             return;
         }
@@ -697,6 +703,22 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         }
         SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
         return factory.getSdnControllerDhcp(vo);
+    }
+
+    @Override
+    public SdnControllerL3 getSdnControllerL3(String l2Uuid) {
+        String controllerUuid = L3NetworkHelper.getSdnControllerUuidFromL2Uuid(l2Uuid);
+        if (controllerUuid == null) {
+            return null;
+        }
+
+        SdnControllerVO vo = dbf.findByUuid(controllerUuid, SdnControllerVO.class);
+        if (vo == null) {
+            throw new CloudRuntimeException(String.format("can not find sdn controller[uuid:%s] for l2 network[uuid:%s]",
+                    controllerUuid, l2Uuid));
+        }
+        SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
+        return factory.getSdnControllerL3(vo);
     }
 
     @Override

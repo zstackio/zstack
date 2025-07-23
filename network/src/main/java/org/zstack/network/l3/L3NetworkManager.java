@@ -33,4 +33,6 @@ public interface L3NetworkManager {
     boolean applyNetworkServiceWhenVmStateChange(String type);
 
     SdnControllerDhcp getSdnControllerDhcp(String l3Uuid);
+
+    SdnControllerL3 getSdnControllerL3(String l2Uuid);
 }

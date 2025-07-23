@@ -42,8 +42,7 @@ public class NormalIpRangeFactory implements IpRangeFactory {
     }
 
     @Override
-    public void createIpRange(List<IpRangeInventory> iprs, APICreateMessage msg, ReturnValueCompletion<List<IpRangeInventory>> completion) {
-        FlowChain chain = new SimpleFlowChain();
+    public void createIpRange(List<IpRangeInventory> iprs, APICreateMessage msg, ReturnValueCompletion<List<IpRangeInventory>> completion) {FlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("add-iprange-to-l3-%s", iprs.get(0).getL3NetworkUuid()));
         chain.then(new Flow() {
             String __name__ = "save-db";
@@ -126,6 +125,31 @@ public class NormalIpRangeFactory implements IpRangeFactory {
                 }
 
                 sdnDhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(l3vo)), false, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "add-sdn-subnet";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                L3NetworkVO l3vo = dbf.findByUuid(iprs.get(0).getL3NetworkUuid(), L3NetworkVO.class);
+                SdnControllerL3 sdnL3 = l3Mgr.getSdnControllerL3(l3vo.getL2NetworkUuid());
+                if (sdnL3 == null) {
+                    trigger.next();
+                    return;
+                }
+
+                List<IpRangeVO> vos = (List<IpRangeVO>) data.get("IpRangeVO");
+                sdnL3.createIpRange(IpRangeInventory.valueOf(vos.get(0)), new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();

@@ -1,5 +1,6 @@
 package org.zstack.network.l3;
 
+import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.tag.PatternedSystemTag;
@@ -27,4 +28,8 @@ public class L3NetworkSystemTags {
     public static String ENABLE_DHCP_TOKEN = "enableDHCP";
 
     public static PatternedSystemTag ENABLE_DHCP = new PatternedSystemTag(String.format("enableDHCP::{%s}",ENABLE_DHCP_TOKEN), L3NetworkVO.class);
+
+    public static String L3_NETWORK_HUAWEI_LOGICAL_ROUTER_TOKEN = "logicalRouterUuid";
+    public static PatternedSystemTag L3_NETWORK_HUAWEI_LOGICAL_ROUTER = new PatternedSystemTag(String.format("logicalRouterUuid::{%s}",
+            L3_NETWORK_HUAWEI_LOGICAL_ROUTER_TOKEN), L3NetworkVO.class);
 }

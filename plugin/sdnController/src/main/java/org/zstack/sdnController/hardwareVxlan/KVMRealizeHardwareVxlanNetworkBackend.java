@@ -49,7 +49,8 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
 
     @Override
     public void realize(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
-        final L2VxlanNetworkInventory vxlan = (L2VxlanNetworkInventory) l2Network;
+        HardwareL2VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), HardwareL2VxlanNetworkVO.class);
+        final HardwareL2VxlanNetworkInventory vxlan = HardwareL2VxlanNetworkInventory.valueOf(vo);
         HostInventory host = HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class));
 
         HardwareVxlanHelper.VxlanHostMappingStruct struct = HardwareVxlanHelper.getHardwareVxlanMappingVxlanId(vxlan, host);
@@ -112,7 +113,8 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
     }
 
     public void check(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
-        final L2VxlanNetworkInventory vxlan = (L2VxlanNetworkInventory) l2Network;
+        HardwareL2VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), HardwareL2VxlanNetworkVO.class);
+        final HardwareL2VxlanNetworkInventory vxlan = HardwareL2VxlanNetworkInventory.valueOf(vo);
 
         HostInventory host = HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class));
         HardwareVxlanHelper.VxlanHostMappingStruct struct = HardwareVxlanHelper.getHardwareVxlanMappingVxlanId(vxlan, host);
@@ -182,7 +184,8 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
 
     @Override
 	public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
-        L2VxlanNetworkInventory vxlan = L2VxlanNetworkInventory.valueOf(dbf.findByUuid(l2Network.getUuid(), VxlanNetworkVO.class));
+        HardwareL2VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), HardwareL2VxlanNetworkVO.class);
+        final HardwareL2VxlanNetworkInventory vxlan = HardwareL2VxlanNetworkInventory.valueOf(vo);
         VmInstanceVO vm = dbf.findByUuid(nic.getVmInstanceUuid(), VmInstanceVO.class);
 
         /* TODO vm must have hostUuid */
@@ -196,15 +199,6 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
 		return to;
 	}
-
-    @Override
-    public String getBridgeName(L2NetworkInventory l2Network) {
-        VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), VxlanNetworkVO.class);
-       /*
-       * to be done */
-
-        return makeBridgeName(l2Network.getUuid(), vo.getVni());
-    }
 
     public void delete(L2NetworkInventory l2Network, String hostUuid, Completion completion) {
         completion.success();

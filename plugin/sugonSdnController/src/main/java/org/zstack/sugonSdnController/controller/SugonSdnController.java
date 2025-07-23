@@ -130,8 +130,9 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
         completion.success();
     }
 
+
     @Override
-    public void attachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+    public void attachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> clusterUuids, List<String> systemTags, Completion completion) {
         completion.success();
     }
 

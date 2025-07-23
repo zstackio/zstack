@@ -284,7 +284,7 @@ public class H3cVcfcSdnController implements SdnController, SdnControllerL2 {
         networkCmd.network_type = "VXLAN";
         networkCmd.original_network_type = "VXLAN";
         networkCmd.domain = vdsUuid;
-        networkCmd.segmentation_id = vo.getVni();
+        networkCmd.segmentation_id = vo.getVirtualNetworkId();
         networkCmd.external = false;
         networkCmd.force_flat = false;
 
@@ -343,7 +343,7 @@ public class H3cVcfcSdnController implements SdnController, SdnControllerL2 {
 
     @Override
     @SdnControllerLog
-    public void attachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+    public void attachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> clusterUuids, List<String> systemTags, Completion completion) {
         completion.success();
     }
 

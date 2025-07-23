@@ -242,7 +242,6 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
         return to;
     }
 
-    @Override
     public String getBridgeName(L2NetworkInventory l2Network) {
         return makeBridgeName(l2Network.getUuid());
     }

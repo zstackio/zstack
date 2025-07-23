@@ -29,7 +29,7 @@ public class HardwareVxlanHelper {
         }
     }
 
-    public static VxlanHostMappingStruct getHardwareVxlanMappingVxlanId(L2VxlanNetworkInventory vxlan, HostInventory host) {
+    public static VxlanHostMappingStruct getHardwareVxlanMappingVxlanId(HardwareL2VxlanNetworkInventory vxlan, HostInventory host) {
         String phyNic = Q.New(HardwareL2VxlanNetworkPoolVO.class)
                 .eq(HardwareL2VxlanNetworkPoolVO_.uuid, vxlan.getPoolUuid())
                 .select(HardwareL2VxlanNetworkPoolVO_.physicalInterface).findValue();
@@ -63,7 +63,11 @@ public class HardwareVxlanHelper {
             return struct;
         }
 
-        struct.setVlanId(vxlan.getVni());
+        if (vxlan.getVlan() != 0) {
+            struct.setVlanId(vxlan.getVlan());
+        } else {
+            struct.setVlanId(vxlan.getVirtualNetworkId());
+        }
         struct.setPhysicalInterface(phyNic);
         return struct;
     }

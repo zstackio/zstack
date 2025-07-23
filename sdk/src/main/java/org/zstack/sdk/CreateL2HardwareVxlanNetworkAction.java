@@ -31,6 +31,9 @@ public class CreateL2HardwareVxlanNetworkAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String poolUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,4095L}, noTrim = false)
+    public java.lang.Integer vlan;
+
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 

@@ -83,7 +83,7 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
     }
 
     @Override
-    protected L2NetworkInventory getSelfInventory() {
+    protected L2VxlanNetworkInventory getSelfInventory() {
         return L2VxlanNetworkInventory.valueOf(getSelf());
     }
 

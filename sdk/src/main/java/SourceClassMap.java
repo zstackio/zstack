@@ -509,6 +509,10 @@ public class SourceClassMap {
 			put("org.zstack.network.hostNetworkInterface.HostNetworkInterfaceInventory", "org.zstack.sdk.HostNetworkInterfaceInventory");
 			put("org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpInventory", "org.zstack.sdk.HostNetworkInterfaceLldpInventory");
 			put("org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpRefInventory", "org.zstack.sdk.HostNetworkInterfaceLldpRefInventory");
+			put("org.zstack.network.huawei.imaster.HuaweiIMasterFabricInventory", "org.zstack.sdk.HuaweiIMasterFabricInventory");
+			put("org.zstack.network.huawei.imaster.HuaweiIMasterLogicalNetworkInventory", "org.zstack.sdk.HuaweiIMasterLogicalNetworkInventory");
+			put("org.zstack.network.huawei.imaster.HuaweiIMasterTenantInventory", "org.zstack.sdk.HuaweiIMasterTenantInventory");
+			put("org.zstack.network.huawei.imaster.HuaweiIMasterVRouterInventory", "org.zstack.sdk.HuaweiIMasterVRouterInventory");
 			put("org.zstack.network.l2.virtualSwitch.header.L2PortGroupNetworkInventory", "org.zstack.sdk.L2PortGroupNetworkInventory");
 			put("org.zstack.network.l2.virtualSwitch.header.L2PortGroupVlanMode", "org.zstack.sdk.L2PortGroupVlanMode");
 			put("org.zstack.network.l2.virtualSwitch.header.L2VirtualSwitchNetworkInventory", "org.zstack.sdk.L2VirtualSwitchNetworkInventory");
@@ -611,6 +615,7 @@ public class SourceClassMap {
 			put("org.zstack.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct", "org.zstack.sdk.ResourceBindableConfigStruct");
 			put("org.zstack.resourceconfig.ResourceConfigInventory", "org.zstack.sdk.ResourceConfigInventory");
 			put("org.zstack.resourceconfig.ResourceConfigStruct", "org.zstack.sdk.ResourceConfigStruct");
+			put("org.zstack.sdnController.header.HardwareL2VxlanNetworkInventory", "org.zstack.sdk.HardwareL2VxlanNetworkInventory");
 			put("org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdnController.header.SdnControllerHostRefInventory", "org.zstack.sdk.SdnControllerHostRefInventory");
 			put("org.zstack.sdnController.header.SdnControllerInventory", "org.zstack.sdk.SdnControllerInventory");
@@ -1025,6 +1030,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GuestVmScriptInventory", "org.zstack.guesttools.GuestVmScriptInventory");
 			put("org.zstack.sdk.HaStrategyConditionInventory", "org.zstack.ha.HaStrategyConditionInventory");
 			put("org.zstack.sdk.HaiTaiSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.haitai.HaiTaiSecretResourcePoolInventory");
+			put("org.zstack.sdk.HardwareL2VxlanNetworkInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkInventory");
 			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdk.HbaDeviceInventory", "org.zstack.storage.device.hba.HbaDeviceInventory");
 			put("org.zstack.sdk.HostConnectedStatus", "org.zstack.zops.HostConnectedStatus");
@@ -1045,6 +1051,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HostOsCategoryInventory", "org.zstack.kvm.hypervisor.datatype.HostOsCategoryInventory");
 			put("org.zstack.sdk.HostPhysicalMemoryInventory", "org.zstack.header.host.HostPhysicalMemoryInventory");
 			put("org.zstack.sdk.HostSchedulingRuleGroupInventory", "org.zstack.header.vmscheduling.HostSchedulingRuleGroupInventory");
+			put("org.zstack.sdk.HuaweiIMasterFabricInventory", "org.zstack.network.huawei.imaster.HuaweiIMasterFabricInventory");
+			put("org.zstack.sdk.HuaweiIMasterLogicalNetworkInventory", "org.zstack.network.huawei.imaster.HuaweiIMasterLogicalNetworkInventory");
+			put("org.zstack.sdk.HuaweiIMasterTenantInventory", "org.zstack.network.huawei.imaster.HuaweiIMasterTenantInventory");
+			put("org.zstack.sdk.HuaweiIMasterVRouterInventory", "org.zstack.network.huawei.imaster.HuaweiIMasterVRouterInventory");
 			put("org.zstack.sdk.HwMonitorStatus", "org.zstack.header.host.HwMonitorStatus");
 			put("org.zstack.sdk.HybridAccountInventory", "org.zstack.hybrid.account.HybridAccountInventory");
 			put("org.zstack.sdk.HybridConnectionType", "org.zstack.header.aliyun.network.HybridConnectionType");
