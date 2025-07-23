@@ -87,6 +87,17 @@ public class ResourceAttributeApiInterceptor implements ApiMessageInterceptor {
             msg.setResourceTypes(checkAttributeResourceTypeOrThrow(msg.getResourceTypes()));
         }
 
+        if (msg.getName() != null) {
+            boolean duplicateName = Q.New(ResourceAttributeKeyVO.class)
+                    .eq(ResourceAttributeKeyVO_.name, msg.getName())
+                    .notEq(ResourceAttributeKeyVO_.uuid, msg.getKeyUuid())
+                    .isExists();
+            if (duplicateName) {
+                throw new ApiMessageInterceptionException(err(DUPLICATED_ATTRIBUTE,
+                        "duplicate resource attribute key name[%s]", msg.getName()));
+            }
+        }
+
         // update constraints: only support to update parameter
         // ResourceAttributeConstraintParam.type will be set
         if (!CollectionUtils.isEmpty(msg.getUpdateConstraints())) {
