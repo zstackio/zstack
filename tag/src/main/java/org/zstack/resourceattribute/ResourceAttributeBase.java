@@ -10,6 +10,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -205,13 +206,19 @@ public class ResourceAttributeBase {
                         msg.getUpdateConstraints() == null ? emptyList() : msg.getUpdateConstraints(),
                         msg.getDeleteConstraintIds() == null ? emptyList() : msg.getDeleteConstraintIds());
 
-                if (msg.getDescription() != null) {
-                    self.setDescription(msg.getDescription());
+                if (msg.getName() != null || msg.getDescription() != null) {
+                    final UpdateQuery updates = SQL.New(ResourceAttributeKeyVO.class)
+                            .eq(ResourceAttributeKeyVO_.uuid, msg.getUuid());
+                    if (msg.getDescription() != null) {
+                        updates.set(ResourceAttributeKeyVO_.description, msg.getDescription());
+                    }
+                    if (msg.getName() != null) {
+                        updates.set(ResourceAttributeKeyVO_.name, msg.getName());
+                    }
+                    updates.update();
                 }
-                if (msg.getName() != null) {
-                    self.setName(msg.getName());
-                }
-                self = databaseFacade.updateAndRefresh(self);
+
+                self = databaseFacade.reload(self);
                 event.setInventory(ResourceAttributeKeyInventory.valueOf(self));
                 bus.publish(event);
                 chain.next();
