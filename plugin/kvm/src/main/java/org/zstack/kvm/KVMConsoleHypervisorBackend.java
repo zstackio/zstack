@@ -4,8 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.Q;
 import org.zstack.header.console.ConsoleHypervisorBackend;
 import org.zstack.header.console.ConsoleUrl;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -62,7 +61,8 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
                 KVMHostAsyncHttpCallReply kreply = reply.castReply();
                 GetVncPortResponse rsp = kreply.toResponse(GetVncPortResponse.class);
                 if (!rsp.isSuccess()) {
-                    complete.fail(operr("operation error, because:%s", rsp.getError()));
+                    complete.fail(operr("failed to get VNC port from VM[%s]", vm.getUuid())
+                            .withOpaque("command.error", rsp.getError()));
                     return;
                 }
 
@@ -71,10 +71,10 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
                     return;
                 }
 
-                SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
-                q.select(HostVO_.managementIp);
-                q.add(HostVO_.uuid, Op.EQ, vm.getHostUuid());
-                String mgmtIp = q.findValue();
+                String mgmtIp = Q.New(HostVO.class)
+                        .eq(HostVO_.uuid, vm.getHostUuid())
+                        .select(HostVO_.managementIp)
+                        .findValue();
                 try {
                     // see https://tools.ietf.org/html/rfc7869#section-2.1
                     URI uri = new URI(String.format("vnc://%s:%s/", mgmtIp, rsp.getPort()));
