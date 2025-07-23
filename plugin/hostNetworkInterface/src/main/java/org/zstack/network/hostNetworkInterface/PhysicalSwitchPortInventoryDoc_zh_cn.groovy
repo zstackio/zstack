@@ -1,25 +1,11 @@
-package org.zstack.network.l2.vxlan.vxlanNetwork
+package org.zstack.network.hostNetworkInterface
 
-import java.lang.Integer
-import java.lang.Boolean
 import java.sql.Timestamp
 
 doc {
 
 	title "在这里输入结构的名称"
 
-	field {
-		name "vni"
-		desc ""
-		type "Integer"
-		since "5.3.28"
-	}
-	field {
-		name "poolUuid"
-		desc ""
-		type "String"
-		since "5.3.28"
-	}
 	field {
 		name "uuid"
 		desc "资源的UUID，唯一标示该资源"
@@ -39,43 +25,31 @@ doc {
 		since "5.3.28"
 	}
 	field {
-		name "zoneUuid"
-		desc "区域UUID"
-		type "String"
-		since "5.3.28"
-	}
-	field {
-		name "physicalInterface"
+		name "ethTrunkName"
 		desc ""
 		type "String"
 		since "5.3.28"
 	}
 	field {
-		name "type"
+		name "portType"
 		desc ""
 		type "String"
 		since "5.3.28"
 	}
 	field {
-		name "vSwitchType"
+		name "peerInterfaceUuid"
 		desc ""
 		type "String"
 		since "5.3.28"
 	}
 	field {
-		name "virtualNetworkId"
+		name "switchUuid"
 		desc ""
-		type "Integer"
+		type "String"
 		since "5.3.28"
 	}
 	field {
-		name "isolated"
-		desc ""
-		type "Boolean"
-		since "5.3.28"
-	}
-	field {
-		name "pvlan"
+		name "sdnControllerUuid"
 		desc ""
 		type "String"
 		since "5.3.28"
@@ -90,12 +64,6 @@ doc {
 		name "lastOpDate"
 		desc "最后一次修改时间"
 		type "Timestamp"
-		since "5.3.28"
-	}
-	field {
-		name "attachedClusterUuids"
-		desc ""
-		type "List"
 		since "5.3.28"
 	}
 }

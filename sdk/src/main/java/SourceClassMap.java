@@ -507,12 +507,15 @@ public class SourceClassMap {
 			put("org.zstack.nas.NasProtocolType", "org.zstack.sdk.NasProtocolType");
 			put("org.zstack.network.hostNetworkInterface.HostNetworkBondingInventory", "org.zstack.sdk.HostNetworkBondingInventory");
 			put("org.zstack.network.hostNetworkInterface.HostNetworkInterfaceInventory", "org.zstack.sdk.HostNetworkInterfaceInventory");
+			put("org.zstack.network.hostNetworkInterface.PhysicalSwitchInventory", "org.zstack.sdk.PhysicalSwitchInventory");
+			put("org.zstack.network.hostNetworkInterface.PhysicalSwitchPortInventory", "org.zstack.sdk.PhysicalSwitchPortInventory");
 			put("org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpInventory", "org.zstack.sdk.HostNetworkInterfaceLldpInventory");
 			put("org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpRefInventory", "org.zstack.sdk.HostNetworkInterfaceLldpRefInventory");
 			put("org.zstack.network.huawei.imaster.HuaweiIMasterFabricInventory", "org.zstack.sdk.HuaweiIMasterFabricInventory");
-			put("org.zstack.network.huawei.imaster.HuaweiIMasterLogicalNetworkInventory", "org.zstack.sdk.HuaweiIMasterLogicalNetworkInventory");
+			put("org.zstack.network.huawei.imaster.HuaweiIMasterSdnControllerInventory", "org.zstack.sdk.HuaweiIMasterSdnControllerInventory");
 			put("org.zstack.network.huawei.imaster.HuaweiIMasterTenantInventory", "org.zstack.sdk.HuaweiIMasterTenantInventory");
 			put("org.zstack.network.huawei.imaster.HuaweiIMasterVRouterInventory", "org.zstack.sdk.HuaweiIMasterVRouterInventory");
+			put("org.zstack.network.huawei.imaster.HuaweiIMasterVpcInventory", "org.zstack.sdk.HuaweiIMasterVpcInventory");
 			put("org.zstack.network.l2.virtualSwitch.header.L2PortGroupNetworkInventory", "org.zstack.sdk.L2PortGroupNetworkInventory");
 			put("org.zstack.network.l2.virtualSwitch.header.L2PortGroupVlanMode", "org.zstack.sdk.L2PortGroupVlanMode");
 			put("org.zstack.network.l2.virtualSwitch.header.L2VirtualSwitchNetworkInventory", "org.zstack.sdk.L2VirtualSwitchNetworkInventory");
@@ -1052,9 +1055,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HostPhysicalMemoryInventory", "org.zstack.header.host.HostPhysicalMemoryInventory");
 			put("org.zstack.sdk.HostSchedulingRuleGroupInventory", "org.zstack.header.vmscheduling.HostSchedulingRuleGroupInventory");
 			put("org.zstack.sdk.HuaweiIMasterFabricInventory", "org.zstack.network.huawei.imaster.HuaweiIMasterFabricInventory");
-			put("org.zstack.sdk.HuaweiIMasterLogicalNetworkInventory", "org.zstack.network.huawei.imaster.HuaweiIMasterLogicalNetworkInventory");
+			put("org.zstack.sdk.HuaweiIMasterSdnControllerInventory", "org.zstack.network.huawei.imaster.HuaweiIMasterSdnControllerInventory");
 			put("org.zstack.sdk.HuaweiIMasterTenantInventory", "org.zstack.network.huawei.imaster.HuaweiIMasterTenantInventory");
 			put("org.zstack.sdk.HuaweiIMasterVRouterInventory", "org.zstack.network.huawei.imaster.HuaweiIMasterVRouterInventory");
+			put("org.zstack.sdk.HuaweiIMasterVpcInventory", "org.zstack.network.huawei.imaster.HuaweiIMasterVpcInventory");
 			put("org.zstack.sdk.HwMonitorStatus", "org.zstack.header.host.HwMonitorStatus");
 			put("org.zstack.sdk.HybridAccountInventory", "org.zstack.hybrid.account.HybridAccountInventory");
 			put("org.zstack.sdk.HybridConnectionType", "org.zstack.header.aliyun.network.HybridConnectionType");
@@ -1247,6 +1251,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PciDeviceVirtStatus", "org.zstack.pciDevice.virtual.PciDeviceVirtStatus");
 			put("org.zstack.sdk.PendingTaskInfo", "org.zstack.header.core.progress.PendingTaskInfo");
 			put("org.zstack.sdk.PhysicalDriveSmartSelfTestHistoryInventory", "org.zstack.storage.device.localRaid.PhysicalDriveSmartSelfTestHistoryInventory");
+			put("org.zstack.sdk.PhysicalSwitchInventory", "org.zstack.network.hostNetworkInterface.PhysicalSwitchInventory");
+			put("org.zstack.sdk.PhysicalSwitchPortInventory", "org.zstack.network.hostNetworkInterface.PhysicalSwitchPortInventory");
 			put("org.zstack.sdk.PluginDriverInventory", "org.zstack.header.core.external.plugin.PluginDriverInventory");
 			put("org.zstack.sdk.PluginSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.plugin.PluginSecretResourcePoolInventory");
 			put("org.zstack.sdk.PolicyInventory", "org.zstack.header.identity.PolicyInventory");

@@ -1,25 +1,12 @@
-package org.zstack.network.l2.vxlan.vxlanNetwork
+package org.zstack.network.hostNetworkInterface
 
-import java.lang.Integer
-import java.lang.Boolean
 import java.sql.Timestamp
+import org.zstack.network.hostNetworkInterface.PhysicalSwitchPortInventory
 
 doc {
 
 	title "在这里输入结构的名称"
 
-	field {
-		name "vni"
-		desc ""
-		type "Integer"
-		since "5.3.28"
-	}
-	field {
-		name "poolUuid"
-		desc ""
-		type "String"
-		since "5.3.28"
-	}
 	field {
 		name "uuid"
 		desc "资源的UUID，唯一标示该资源"
@@ -39,43 +26,31 @@ doc {
 		since "5.3.28"
 	}
 	field {
-		name "zoneUuid"
-		desc "区域UUID"
-		type "String"
-		since "5.3.28"
-	}
-	field {
-		name "physicalInterface"
+		name "ip"
 		desc ""
 		type "String"
 		since "5.3.28"
 	}
 	field {
-		name "type"
+		name "mac"
 		desc ""
 		type "String"
 		since "5.3.28"
 	}
 	field {
-		name "vSwitchType"
+		name "mode"
 		desc ""
 		type "String"
 		since "5.3.28"
 	}
 	field {
-		name "virtualNetworkId"
+		name "softwareVersion"
 		desc ""
-		type "Integer"
+		type "String"
 		since "5.3.28"
 	}
 	field {
-		name "isolated"
-		desc ""
-		type "Boolean"
-		since "5.3.28"
-	}
-	field {
-		name "pvlan"
+		name "sdnControllerUuid"
 		desc ""
 		type "String"
 		since "5.3.28"
@@ -92,10 +67,12 @@ doc {
 		type "Timestamp"
 		since "5.3.28"
 	}
-	field {
-		name "attachedClusterUuids"
-		desc ""
+	ref {
+		name "ports"
+		path "org.zstack.network.hostNetworkInterface.PhysicalSwitchInventory.ports"
+		desc "null"
 		type "List"
 		since "5.3.28"
+		clz PhysicalSwitchPortInventory.class
 	}
 }

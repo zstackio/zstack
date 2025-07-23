@@ -32,31 +32,36 @@ public class SdnControllerInventory implements Serializable {
     private List<HardwareL2VxlanNetworkPoolInventory> vxlanPools;
     private List<SdnControllerHostRefInventory> hostRefs;
 
-    public static SdnControllerInventory valueOf(SdnControllerVO vo) {
-        SdnControllerInventory inv = new SdnControllerInventory();
-        inv.setUuid(vo.getUuid());
-        inv.setVendorType(vo.getVendorType());
-        inv.setDescription(vo.getDescription());
-        inv.setName(vo.getName());
-        inv.setIp(vo.getIp());
-        inv.setUsername(vo.getUsername());
-        inv.setPassword(vo.getPassword());
-        inv.setStatus(vo.getStatus());
-        inv.setCreateDate(vo.getCreateDate());
-        inv.setLastOpDate(vo.getLastOpDate());
-        inv.vniRanges = new ArrayList<>();
+    public SdnControllerInventory() {
+    }
+
+    public SdnControllerInventory(SdnControllerVO vo) {
+        this.setUuid(vo.getUuid());
+        this.setVendorType(vo.getVendorType());
+        this.setDescription(vo.getDescription());
+        this.setName(vo.getName());
+        this.setIp(vo.getIp());
+        this.setUsername(vo.getUsername());
+        this.setPassword(vo.getPassword());
+        this.setStatus(vo.getStatus());
+        this.setCreateDate(vo.getCreateDate());
+        this.setLastOpDate(vo.getLastOpDate());
+        this.vniRanges = new ArrayList<>();
         if (vo.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
             List<Map<String, String>> tokenList = H3cVcfcSdnControllerSystemTags.H3C_VNI_RANGE.getTokensOfTagsByResourceUuid(vo.getUuid());
             for (Map<String, String> tokens : tokenList) {
                 SdnVniRange range = new SdnVniRange();
                 range.startVni = Integer.valueOf(tokens.get(H3cVcfcSdnControllerSystemTags.H3C_START_VNI_TOKEN));
                 range.endVni = Integer.valueOf(tokens.get(H3cVcfcSdnControllerSystemTags.H3C_END_VNI_TOKEN));
-                inv.vniRanges.add(range);
+                this.vniRanges.add(range);
             }
         }
-        inv.setVxlanPools(HardwareL2VxlanNetworkPoolInventory.valueOf2(vo.getVxlanPools()));
-        inv.setHostRefs(SdnControllerHostRefInventory.valueOf(vo.getHostRefVOS()));
-        return inv;
+        this.setVxlanPools(HardwareL2VxlanNetworkPoolInventory.valueOf2(vo.getVxlanPools()));
+        this.setHostRefs(SdnControllerHostRefInventory.valueOf(vo.getHostRefVOS()));
+    }
+
+    public static SdnControllerInventory valueOf(SdnControllerVO vo) {
+        return new SdnControllerInventory(vo);
     }
 
     public static List<SdnControllerInventory> valueOf(Collection<SdnControllerVO> vos) {

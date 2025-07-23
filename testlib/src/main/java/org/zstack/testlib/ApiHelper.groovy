@@ -27611,6 +27611,33 @@ abstract class ApiHelper {
     }
 
 
+    def pullHuaweiIMasterController(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.PullHuaweiIMasterControllerAction.class) Closure c) {
+        def a = new org.zstack.sdk.PullHuaweiIMasterControllerAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def pushLicenseAddOnsUsage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.PushLicenseAddOnsUsageAction.class) Closure c) {
         def a = new org.zstack.sdk.PushLicenseAddOnsUsageAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -32802,6 +32829,35 @@ abstract class ApiHelper {
 
     def queryPhysicalDriveSelfTestHistory(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryPhysicalDriveSelfTestHistoryAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryPhysicalDriveSelfTestHistoryAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryPhysicalSwitch(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryPhysicalSwitchAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryPhysicalSwitchAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

@@ -23,6 +23,7 @@ public class PhysicalSwitchPortInventory implements Serializable {
     private String portType;
     private String peerInterfaceUuid;
     private String switchUuid;
+    private String sdnControllerUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -37,6 +38,7 @@ public class PhysicalSwitchPortInventory implements Serializable {
         inv.setSwitchUuid(vo.getSwitchUuid());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
+        inv.setSdnControllerUuid(vo.getSdnControllerUuid());
         return inv;
     }
 
@@ -118,5 +120,13 @@ public class PhysicalSwitchPortInventory implements Serializable {
 
     public void setSwitchUuid(String switchUuid) {
         this.switchUuid = switchUuid;
+    }
+
+    public String getSdnControllerUuid() {
+        return sdnControllerUuid;
+    }
+
+    public void setSdnControllerUuid(String sdnControllerUuid) {
+        this.sdnControllerUuid = sdnControllerUuid;
     }
 }

@@ -167,6 +167,43 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
                 refVO.setLastOpDate(new Timestamp(System.currentTimeMillis()));
                 dbf.updateAndRefresh(refVO);
             }
+
+            /* link host network interface to physical interface based on:
+            HostNetworkInterfaceLldpRefVO.systemName == PhysicalSwitchVO.name
+                && HostNetworkInterfaceLldpRefVO.portId == PhysicalSwitchPortVO.name
+            > select lldpUuid,chassisId,systemName,portId,aggregationPortId from HostNetworkInterfaceLldpRefVO;     +----------------------------------+-------------------+------------+------------+-------------------+
+| lldpUuid                         | chassisId         | systemName | portId     | aggregationPortId |
++----------------------------------+-------------------+------------+------------+-------------------+
+| 0a89ae9894274b608b3e5cd29b20e216 | c0:e3:fb:65:ab:d1 | huawei_152 | 10GE1/0/13 |              NULL |
+| d3905992b4c043099c86785b0ee3186d | c0:e3:fb:65:ab:d1 | huawei_152 | 10GE1/0/11 |                 1 |
++----------------------------------+-------------------+------------+------------+-------------------+
+ select uuid,name,mac from PhysicalSwitchVO;
++----------------------------------+------------+-------------------+
+| uuid                             | name       | mac               |
++----------------------------------+------------+-------------------+
+| b9d708c427c630b1b9fffe2d989c3a48 | huawei_152 | C0:E3:FB:65:AB:D1 |
++----------------------------------+------------+-------------------+
+1 row in set (0.000 sec)
+select name,ethTrunkName,switchUuid from PhysicalSwitchPortVO limit 1;
++------------+--------------+----------------------------------+
+| name       | ethTrunkName | switchUuid                       |
++------------+--------------+----------------------------------+
+| 10GE1/0/30 | NULL         | b9d708c427c630b1b9fffe2d989c3a48 |
++------------+--------------+----------------------------------+
+            */
+            PhysicalSwitchVO switchVO = Q.New(PhysicalSwitchVO.class)
+                    .eq(PhysicalSwitchVO_.name, refVO.getSystemName()).limit(1).find();
+            if (switchVO != null) {
+                PhysicalSwitchPortVO physicalSwitchPortVO = Q.New(PhysicalSwitchPortVO.class)
+                        .eq(PhysicalSwitchPortVO_.switchUuid, switchVO.getUuid())
+                        .eq(PhysicalSwitchPortVO_.name, refVO.getPortId()).limit(1).find();
+                if (physicalSwitchPortVO != null) {
+                    logger.debug(String.format("link host network interface[uuid:%s] to physical switch port[uuid:%s,name:%s]",
+                            interfaceUuid, physicalSwitchPortVO.getUuid(), physicalSwitchPortVO.getName()));
+                    physicalSwitchPortVO.setPeerInterfaceUuid(interfaceUuid);
+                    dbf.update(physicalSwitchPortVO);
+                }
+            }
         }
     }
 

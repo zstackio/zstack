@@ -52,6 +52,14 @@ public class HuaweiIMasterVRouterInventory  {
         return this.fabricUuid;
     }
 
+    public java.lang.Boolean deleted;
+    public void setDeleted(java.lang.Boolean deleted) {
+        this.deleted = deleted;
+    }
+    public java.lang.Boolean getDeleted() {
+        return this.deleted;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

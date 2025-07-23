@@ -36,6 +36,9 @@ public class PhysicalSwitchPortVO extends ResourceVO implements ToInventory, Own
     @Column
     @ForeignKey(parentEntityClass = HostNetworkInterfaceVO.class, parentKey = "uuid")
     private String peerInterfaceUuid;
+
+    @Column
+    private String sdnControllerUuid;
     
     @Column
     private Timestamp createDate;
@@ -123,5 +126,25 @@ public class PhysicalSwitchPortVO extends ResourceVO implements ToInventory, Own
     @Override
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
+    }
+
+    public String getSdnControllerUuid() {
+        return sdnControllerUuid;
+    }
+
+    public void setSdnControllerUuid(String sdnControllerUuid) {
+        this.sdnControllerUuid = sdnControllerUuid;
+    }
+
+    public void copyFromAnother(PhysicalSwitchPortVO vo) {
+        this.name = vo.name;
+        this.description = vo.description;
+        this.ethTrunkName = vo.ethTrunkName;
+        this.portType = vo.portType;
+        this.switchUuid = vo.switchUuid;
+        this.sdnControllerUuid = vo.sdnControllerUuid;
+        if (vo.getPeerInterfaceUuid() != null) {
+            this.peerInterfaceUuid = vo.getPeerInterfaceUuid();
+        }
     }
 }
