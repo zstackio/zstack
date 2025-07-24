@@ -16,7 +16,6 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.CollectionUtils
 import org.zstack.utils.data.SizeUnit
-import org.zstack.utils.function.Function
 import org.zstack.utils.gson.JSONObjectUtil
 
 /**
@@ -145,20 +144,14 @@ class CheckFlatDhcpWorkCase extends SubCase{
         final L3NetworkInventory l31 = env.inventoryByName("l3-1")
         final L3NetworkInventory l32 = env.inventoryByName("l3-2")
 
-        VmNicInventory n = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid().equals(l31.getUuid()) ? arg : null
-            }
-        })
-        assert n.getDeviceId() ==0
+        VmNicInventory n = CollectionUtils.findOneOrNull(vm.getVmNics(),
+                {VmNicInventory it -> (it.getL3NetworkUuid() == l31.getUuid()) })
+        assert n != null
+        assert n.getDeviceId() == 0
 
-        n = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid().equals(l32.getUuid()) ? arg : null
-            }
-        })
+        n = CollectionUtils.findOneOrNull(vm.getVmNics(),
+                {VmNicInventory it -> (it.getL3NetworkUuid() == l32.getUuid()) })
+        assert n != null
         assert n.getDeviceId() == 1
 
         List<FlatDhcpBackend.DhcpInfo> dhcpInfoList = new ArrayList<FlatDhcpBackend.DhcpInfo>()
