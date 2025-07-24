@@ -4,51 +4,32 @@ import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
-import org.zstack.core.db.SQL
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.network.service.flat.BridgeNameFinder
-import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmNicVO
-import org.zstack.header.vm.VmNicVO_
-import org.zstack.header.vm.VmUpdateNicOnHypervisorMsg
-import org.zstack.header.vm.VmUpdateNicOnHypervisorReply
-import org.zstack.header.network.l3.UsedIpVO
-import org.zstack.header.network.service.NetworkServiceProviderVO
-import org.zstack.header.network.service.NetworkServiceProviderVO_
 import org.zstack.header.network.service.NetworkServiceType
-import org.zstack.network.service.portforwarding.PortForwardingProtocolType
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO
 import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO_
 import org.zstack.network.securitygroup.VmNicSecurityTO
 import org.zstack.network.service.eip.EipConstant
-import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.userdata.UserdataConstant
-import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
-import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 
 import org.zstack.network.service.flat.FlatDhcpBackend
 import org.zstack.network.service.flat.FlatUserdataBackend
 import org.zstack.network.service.flat.FlatEipBackend
-import org.zstack.network.service.flat.FlatNetworkSystemTags
-import org.zstack.network.service.userdata.UserdataGlobalProperty
 
 import org.zstack.kvm.KVMSecurityGroupBackend
-import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg
 import org.zstack.sdk.*
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
-import org.zstack.test.integration.networkservice.provider.flat.FlatNetworkServiceEnv
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.CollectionUtils
-import org.zstack.utils.function.Function
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.network.IPv6Constants
 import org.zstack.utils.gson.JSONObjectUtil
-
-import static org.zstack.utils.CollectionDSL.list
 
 class FlatChangeVmIpCase extends SubCase{
 
@@ -562,12 +543,10 @@ class FlatChangeVmIpCase extends SubCase{
             l3NetworkUuids = [flat_l3.uuid, flat_l3_2.uuid]
             defaultL3NetworkUuid = flat_l3.uuid
         }
-        VmNicInventory vmNic = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid().equals(flat_l3_2.getUuid()) ? arg : null
-            }
-        })
+
+        VmNicInventory vmNic = CollectionUtils.findOneOrNull(vm.vmNics, { VmNicInventory it -> it.l3NetworkUuid == flat_l3_2.uuid })
+        assert vmNic != null
+
         VmNicVO vmNicVO = dbFindByUuid(vmNic.uuid, VmNicVO.class)
         String ip1 = vmNicVO.getIp()
 

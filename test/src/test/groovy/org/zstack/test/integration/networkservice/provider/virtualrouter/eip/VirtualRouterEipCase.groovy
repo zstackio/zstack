@@ -16,7 +16,6 @@ import org.zstack.test.integration.networkservice.provider.NetworkServiceProvide
 import org.zstack.test.integration.networkservice.provider.virtualrouter.VirtualRouterNetworkServiceEnv
 import org.zstack.testlib.*
 import org.zstack.utils.CollectionUtils
-import org.zstack.utils.function.Function
 import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.persistence.Tuple
@@ -108,11 +107,7 @@ class VirtualRouterEipCase extends SubCase {
     }
 
     void testVirtualRouterDHCP() {
-        VmNicInventory defaultNic = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            VmNicInventory call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid()) ? arg : null
-            }
-        })
+        def defaultNic = CollectionUtils.findOneOrNull(vm.getVmNics(), { VmNicInventory it -> it.l3NetworkUuid == vm.defaultL3NetworkUuid })
         assert defaultNic != null
 
         final List<String> l3s = CollectionUtils.transformAndRemoveNull(vm.getVmNics(),

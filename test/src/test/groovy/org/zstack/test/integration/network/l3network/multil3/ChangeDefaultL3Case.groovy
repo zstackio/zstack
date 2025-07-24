@@ -16,7 +16,6 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.CollectionUtils
 import org.zstack.utils.data.SizeUnit
-import org.zstack.utils.function.Function
 import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.concurrent.TimeUnit
@@ -188,30 +187,21 @@ use:
         L3NetworkInventory l3_4 = env.inventoryByName("l3-4")
         VmInstanceInventory vmi = env.inventoryByName("vm")
 
-        VmNicInventory nic1 = CollectionUtils.find(vmi.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid().equals(l31i.getUuid()) ? arg : null;
-            }
-        });
-        VmNicInventory nic2 = CollectionUtils.find(vmi.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid().equals(l32i.getUuid()) ? arg : null;
-            }
-        });
-        VmNicInventory nic3 = CollectionUtils.find(vmi.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid().equals(l3_3.getUuid()) ? arg : null;
-            }
-        });
-        VmNicInventory nic4 = CollectionUtils.find(vmi.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid().equals(l3_4.getUuid()) ? arg : null;
-            }
-        });
+        VmNicInventory nic1 = CollectionUtils.findOneOrNull(vmi.getVmNics(),
+                { VmNicInventory it -> (it.getL3NetworkUuid() == l31i.getUuid()) })
+        assert nic1 != null
+
+        VmNicInventory nic2 = CollectionUtils.findOneOrNull(vmi.getVmNics(),
+                { VmNicInventory it -> (it.getL3NetworkUuid() == l32i.getUuid()) })
+        assert nic2 != null
+
+        VmNicInventory nic3 = CollectionUtils.findOneOrNull(vmi.getVmNics(),
+                { VmNicInventory it -> (it.getL3NetworkUuid() == l3_3.getUuid()) })
+        assert nic3 != null
+
+        VmNicInventory nic4 = CollectionUtils.findOneOrNull(vmi.getVmNics(),
+                { VmNicInventory it -> (it.getL3NetworkUuid() == l3_4.getUuid()) })
+        assert nic4 != null
 
         FlatDhcpBackend.ResetDefaultGatewayCmd cmd = null
         env.afterSimulator(FlatDhcpBackend.RESET_DEFAULT_GATEWAY_PATH){ rsp, HttpEntity<String> e ->
