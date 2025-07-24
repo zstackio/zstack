@@ -3055,8 +3055,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         List<CdRomSpec> cdRomSpecs = spec.getCdRomSpecs().stream()
                 .filter(cdRom -> cdRom.getImageUuid() != null)
                 .collect(Collectors.toList());
-        if (spec.getCurrentVmOperation() == VmOperation.NewCreate && !cdRomSpecs.isEmpty()) {
-            ImageVO imageVO = dbf.findByUuid(spec.getVmInventory().getImageUuid(), ImageVO.class);
+        String cdromImageUuid = cdRomSpecs.isEmpty() ? null : cdRomSpecs.get(0).getImageUuid();
+        String imageUuidNullable = spec.getVmInventory().getImageUuid();
+
+        if (spec.getCurrentVmOperation() == VmOperation.NewCreate && cdromImageUuid != null) {
+            ImageVO imageVO = dbf.findByUuid(imageUuidNullable == null ? cdromImageUuid: imageUuidNullable, ImageVO.class);
             assert imageVO != null;
 
             if (imageVO.getMediaType() == ImageMediaType.ISO) {

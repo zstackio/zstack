@@ -155,7 +155,13 @@ public class VmSystemTags {
     public static String CD_ROM_2 = "cdrom2";
     public static PatternedSystemTag CREATE_VM_CD_ROM_LIST = new PatternedSystemTag(String.format("cdroms::{%s}::{%s}::{%s}", CD_ROM_0, CD_ROM_1, CD_ROM_2), VmInstanceVO.class);
 
+    @Deprecated
     public static String CREATE_WITHOUT_CD_ROM_TOKEN = "createWithoutCdRom";
+    /**
+     * Deprecated. If VM has no cdrom, it will have 0 "CdRomVO".
+     * Please use "cdroms::None::None::None" system tag instead when creating VM.
+     */
+    @Deprecated
     public static PatternedSystemTag CREATE_WITHOUT_CD_ROM = new PatternedSystemTag(String.format("createWithoutCdRom::{%s}", CREATE_WITHOUT_CD_ROM_TOKEN), VmInstanceVO.class);
 
     public static String CD_ROM_UUID_TOKEN = "cdromUuid";
