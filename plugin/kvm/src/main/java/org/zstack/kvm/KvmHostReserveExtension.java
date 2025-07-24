@@ -43,7 +43,8 @@ public class KvmHostReserveExtension implements HostReservedCapacityExtensionPoi
     @Override
     public ReservedHostCapacity getReservedHostCapacity(String hostUuid) {
         ReservedHostCapacity hc = new ReservedHostCapacity();
-        hc.setReservedCpuCapacity(reserve.getReservedCpuCapacity());
+        String reserveCpu = rcf.getResourceConfigValue(KVMGlobalConfig.RESERVED_CPU_CAPACITY, hostUuid, String.class);
+        hc.setReservedCpuCapacity(SizeUtils.sizeStringToBytes(reserveCpu));
         String reserveMem = rcf.getResourceConfigValue(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY, hostUuid, String.class);
         hc.setReservedMemoryCapacity(SizeUtils.sizeStringToBytes(reserveMem));
         return hc;
@@ -52,18 +53,23 @@ public class KvmHostReserveExtension implements HostReservedCapacityExtensionPoi
     @Override
     public Map<String, ReservedHostCapacity> getReservedHostsCapacity(List<String> hostUuids) {
         Map<String, ReservedHostCapacity> results = new HashMap<>();
-        Map<String, String> values = rcf.getResourceConfigValues(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY, hostUuids, String.class);
+
+        Map<String, String> memoryValues = rcf.getResourceConfigValues(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY, hostUuids, String.class);
+        Map<String, String> cpuValues = rcf.getResourceConfigValues(KVMGlobalConfig.RESERVED_CPU_CAPACITY, hostUuids, String.class);
 
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format("KvmHostReserveExtension get reserved memory capacity for hosts %s, resource config values are %s", hostUuids, JSONObjectUtil.toJsonString(values)));
+            logger.trace(String.format("KvmHostReserveExtension get reserved capacity for hosts %s, memory config: %s, cpu config: %s",
+                    hostUuids, JSONObjectUtil.toJsonString(memoryValues), JSONObjectUtil.toJsonString(cpuValues)));
         }
 
-        values.forEach((hostUuid, reserveMem) -> {
+        for (String hostUuid : hostUuids) {
+            String reserveMem = memoryValues.get(hostUuid);
+            String reserveCpu = cpuValues.get(hostUuid);
             ReservedHostCapacity hc = new ReservedHostCapacity();
-            hc.setReservedCpuCapacity(reserve.getReservedCpuCapacity());
-            hc.setReservedMemoryCapacity(SizeUtils.sizeStringToBytes(reserveMem));
+            hc.setReservedCpuCapacity(SizeUtils.sizeStringToBytes(reserveCpu != null ? reserveCpu : "0"));
+            hc.setReservedMemoryCapacity(SizeUtils.sizeStringToBytes(reserveMem != null ? reserveMem : "0"));
             results.put(hostUuid, hc);
-        });
+        }
 
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("KvmHostReserveExtension returns %s for hosts %s", JSONObjectUtil.toJsonString(results), hostUuids));
@@ -91,6 +97,12 @@ public class KvmHostReserveExtension implements HostReservedCapacityExtensionPoi
                 reserve.setReservedMemoryCapacity(SizeUtils.sizeStringToBytes(newConfig.value()));
             }
         });
+
+        ResourceConfig reservedCpuConfig = rcf.getResourceConfig(KVMGlobalConfig.RESERVED_CPU_CAPACITY.getIdentity());
+        reservedCpuConfig.installLocalUpdateExtension((config, resourceUuid, resourceType, oldValue, newValue) ->
+                recalculateHostCapacity(resourceUuid, resourceType));
+        reservedCpuConfig.installLocalDeleteExtension((config, resourceUuid, resourceType, originValue) ->
+                recalculateHostCapacity(resourceUuid, resourceType));
 
         ResourceConfig reservedConfig = rcf.getResourceConfig(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.getIdentity());
         reservedConfig.installLocalUpdateExtension((config, resourceUuid, resourceType, oldValue, newValue) ->

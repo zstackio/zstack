@@ -22,6 +22,7 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig VM_MIGRATION_QUANTITY = new GlobalConfig(CATEGORY, "vm.migrationQuantity");
     @GlobalConfigValidation(numberGreaterThan = -1)
+    @BindResourceConfig({HostVO.class})
     public static GlobalConfig RESERVED_CPU_CAPACITY = new GlobalConfig(CATEGORY, "reservedCpu");
     @GlobalConfigValidation
     @BindResourceConfig({HostVO.class, ClusterVO.class, ZoneVO.class})
