@@ -143,6 +143,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             handle((BatchSyncManagedActiveVolumeSizeMsg) msg);
         } else if (msg instanceof BatchSyncActiveVolumeSizeOnHostMsg) {
             handle((BatchSyncActiveVolumeSizeOnHostMsg) msg);
+        } else if (msg instanceof CreateDataVolumeMsg) {
+            handle((CreateDataVolumeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -1001,8 +1003,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         });
     }
 
-    private void handle(APICreateDataVolumeMsg msg) {
-        APICreateDataVolumeEvent evt = new APICreateDataVolumeEvent(msg.getId());
+    private void handle(CreateDataVolumeMsg msg) {
+        CreateVolumeReply creply = new CreateVolumeReply();
         pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class).forEach(extensionPoint -> {
             extensionPoint.preCreateVolume(msg);
         });
@@ -1020,7 +1022,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setActualSize(0L);
         vo.setType(VolumeType.Data);
         vo.setStatus(VolumeStatus.NotInstantiated);
-        vo.setAccountUuid(msg.getSession().getAccountUuid());
+        vo.setAccountUuid(msg.getAccountUuid());
 
         if (msg.getSystemTags() != null) {
             Iterator<String> iterators = msg.getSystemTags().iterator();
@@ -1053,7 +1055,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             }
         }.execute();
 
-        tagMgr.createTagsFromAPICreateMessage(msg, finalVo1.getUuid(), VolumeVO.class.getSimpleName());
+        if (msg.getApiMsg() != null) {
+            tagMgr.createTagsFromAPICreateMessage(msg.getApiMsg(), finalVo1.getUuid(), VolumeVO.class.getSimpleName());
+        }
+
         for (CreateDataVolumeExtensionPoint ext : exts) {
             ext.afterCreateVolume(vo);
         }
@@ -1072,9 +1077,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vo));
 
             VolumeInventory inv = VolumeInventory.valueOf(vo);
-            evt.setInventory(inv);
+            creply.setInventory(inv);
             logger.debug(String.format("Successfully created data volume[name:%s, uuid:%s, size:%s]", inv.getName(), inv.getUuid(), inv.getSize()));
-            bus.publish(evt);
+            bus.reply(msg, creply);
             return;
         }
 
@@ -1090,11 +1095,37 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
                     dbf.remove(finalVo);
+                    creply.setError(reply.getError());
+                } else {
+                    creply.setInventory(((InstantiateVolumeReply) reply).getVolume());
+                }
+                bus.reply(msg, creply);
+            }
+        });
+    }
+
+    private void handle(APICreateDataVolumeMsg msg) {
+        APICreateDataVolumeEvent evt = new APICreateDataVolumeEvent(msg.getId());
+        CreateDataVolumeMsg cmsg = new CreateDataVolumeMsg();
+        cmsg.setAccountUuid(msg.getSession().getAccountUuid());
+        cmsg.setDiskSize(msg.getDiskSize());
+        cmsg.setName(msg.getName());
+        cmsg.setResourceUuid(msg.getResourceUuid());
+        cmsg.setSystemTags(msg.getSystemTags());
+        cmsg.setDiskOfferingUuid(msg.getDiskOfferingUuid());
+        cmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        cmsg.setDescription(msg.getDescription());
+        cmsg.setApiMsg(msg);
+        bus.makeLocalServiceId(cmsg, VolumeConstant.SERVICE_ID);
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                CreateVolumeReply cr = reply.castReply();
+                if (!reply.isSuccess()) {
                     evt.setError(reply.getError());
                 } else {
-                    evt.setInventory(((InstantiateVolumeReply) reply).getVolume());
+                    evt.setInventory(cr.getInventory());
                 }
-
                 bus.publish(evt);
             }
         });
