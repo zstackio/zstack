@@ -90,7 +90,10 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
 
         final List<SNATInfo> snatInfo = new ArrayList<SNATInfo>();
         List<VmNicInventory> pubNics = new ArrayList<>();
-        pubNics.add(vr.getPublicNic());
+        VmNicInventory publicNic = vr.getPublicNic();
+        if (publicNic != null) {
+            pubNics.add(publicNic);
+        }
         pubNics.addAll(vr.getAdditionalPublicNics());
         for (VmNicInventory pubNic : pubNics) {
             if (pubNic.isIpv6OnlyNic()) {

@@ -153,7 +153,10 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
 
         final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<VirtualRouterCommands.SNATInfo>();
         List<VmNicInventory> pubNics = new ArrayList<>();
-        pubNics.add(vr.getPublicNic());
+        VmNicInventory publicNic = vr.getPublicNic();
+        if (publicNic != null) {
+            pubNics.add(publicNic);
+        }
         pubNics.addAll(vr.getAdditionalPublicNics());
 
         for (VmNicInventory pubNic : pubNics) {
@@ -360,7 +363,10 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
 
         final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<VirtualRouterCommands.SNATInfo>();
         List<VmNicInventory> pubNics = new ArrayList<>();
-        pubNics.add(vr.getPublicNic());
+        VmNicInventory publicNic = vr.getPublicNic();
+        if (publicNic != null) {
+            pubNics.add(publicNic);
+        }
         pubNics.addAll(vr.getAdditionalPublicNics());
 
         for (VmNicInventory pubnic : pubNics) {
