@@ -2408,6 +2408,7 @@ ${fieldStr}
             }
 
             return """\t\t\tparams {
+
 ${cols.join("\n")}
 \t\t\t}"""
         }
