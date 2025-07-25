@@ -44,11 +44,11 @@ public class VolumeCbtBackupInfo  {
         return this.metadata;
     }
 
-    public java.lang.String nbdPort;
-    public void setNbdPort(java.lang.String nbdPort) {
+    public java.lang.Long nbdPort;
+    public void setNbdPort(java.lang.Long nbdPort) {
         this.nbdPort = nbdPort;
     }
-    public java.lang.String getNbdPort() {
+    public java.lang.Long getNbdPort() {
         return this.nbdPort;
     }
 
