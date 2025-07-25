@@ -39,6 +39,10 @@ public class L3NetworkType {
         this.mandatoryIpAllocation = mandatoryIpAllocation;
     }
 
+    public boolean enableRa() {
+        return !mandatoryIpAllocation;
+    }
+
     public static boolean hasType(String typeName) {
         return types.containsKey(typeName);
     }
