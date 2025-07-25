@@ -108,4 +108,11 @@ public class RBACInfo implements RBACDescription {
                 .excludeActions(APICreateVmInstanceMsg.class)
                 .build();
     }
+
+    @Override
+    public void globalReadableResources() {
+        attributeSupportResourceBuilder()
+                .resources(VmInstanceVO.class)
+                .build();
+    }
 }

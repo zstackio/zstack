@@ -21,6 +21,7 @@ class SpringSpec {
             "NetworkService.xml",
             "volumeSnapshot.xml",
             "tag.xml",
+            "resourceAttributes.xml",
             "core.xml",
     ]
 

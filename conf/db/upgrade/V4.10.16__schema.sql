@@ -53,3 +53,47 @@ SELECT
     e.defaultProtocol as protocol
 FROM PrimaryStorageHostRefVO p LEFT JOIN ExternalPrimaryStorageVO e ON p.primaryStorageUuid = e.uuid
 ORDER BY p.id;
+
+-- Feature: Customer Resource Attributes | ZSV-???
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ResourceAttributeKeyVO` (
+    `uuid` char(32) NOT NULL UNIQUE,
+    `name` varchar(255) NOT NULL,
+    `description` varchar(2048) DEFAULT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ResourceAttributeValueVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `keyUuid` char(32) NOT NULL,
+    `value` varchar(2048) NOT NULL,
+    `resourceUuid` char(32) NOT NULL,
+    `resourceType` varchar(255) NOT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
+    PRIMARY KEY (`id`),
+    CONSTRAINT fkResourceAttributeValueVOResourceAttributeKeyVO FOREIGN KEY (keyUuid) REFERENCES ResourceAttributeKeyVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
+    CONSTRAINT fkResourceAttributeValueVOResourceVO FOREIGN KEY (resourceUuid) REFERENCES ResourceVO (uuid) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ResourceAttributeKeyResourceTypeVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `keyUuid` char(32) NOT NULL,
+    `resourceType` varchar(255) NOT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
+    PRIMARY KEY (`id`),
+    CONSTRAINT fkResourceAttributeKeyResourceTypeVOResourceAttributeKeyVO FOREIGN KEY (keyUuid) REFERENCES ResourceAttributeKeyVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
+    CONSTRAINT `uqResourceAttributeKeyResourceTypeVO` UNIQUE(`keyUuid`, `resourceType`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ResourceAttributeConstraintVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `keyUuid` char(32) NOT NULL,
+    `type` varchar(255) NOT NULL,
+    `parameter` varchar(2048) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
+    PRIMARY KEY (`id`),
+    CONSTRAINT fkResourceAttributeConstraintVOResourceAttributeKeyVO FOREIGN KEY (keyUuid) REFERENCES ResourceAttributeKeyVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

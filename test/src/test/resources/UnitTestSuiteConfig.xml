@@ -24,6 +24,7 @@
     <Import resource="unitTestSuiteXml/eip.xml"/>
     <Import resource="unitTestSuiteXml/snapshot.xml"/>
     <Import resource="unitTestSuiteXml/tag.xml"/>
+    <Import resource="unitTestSuiteXml/resourceAttributes.xml"/>
     <Import resource="unitTestSuiteXml/managementNode.xml"/>
     <!--
     <Import resource="unitTestSuiteXml/iscsiFilesystemPrimaryStorage.xml"/>

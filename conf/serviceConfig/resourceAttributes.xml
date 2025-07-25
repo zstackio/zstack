@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>resourceAttribute</id>
+    <interceptor>ResourceAttributeApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.resourceattribute.api.APIQueryResourceAttributeKeyMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.resourceattribute.api.APIQueryResourceAttributeValueMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.resourceattribute.api.APICreateResourceAttributeKeyMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.resourceattribute.api.APICreateResourceAttributeValueMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.resourceattribute.api.APIUpdateResourceAttributeKeyMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.resourceattribute.api.APIDeleteResourceAttributeKeyMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.resourceattribute.api.APIDeleteResourceAttributeValueMsg</name>
+    </message>
+</service>
