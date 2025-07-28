@@ -98,6 +98,8 @@ public class ChangeIAM2VirtualIDGroupStateAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "changeIAM2VirtualIDGroupState";
+        info.morphTransform = "IAM2";
+
         return info;
     }
 

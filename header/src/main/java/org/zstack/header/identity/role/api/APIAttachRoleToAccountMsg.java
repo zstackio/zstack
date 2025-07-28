@@ -1,6 +1,7 @@
 package org.zstack.header.identity.role.api;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.Constants;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.identity.role.RoleVO;
 import org.zstack.header.message.APIMessage;
@@ -11,7 +12,8 @@ import org.zstack.header.rest.RestRequest;
         path = "/identities/accounts/{accountUuid}/roles/{roleUuid}",
         method = HttpMethod.POST,
         parameterName = "params",
-        responseClass = APIAttachRoleToAccountEvent.class
+        responseClass = APIAttachRoleToAccountEvent.class,
+        morphTransform = Constants.MorphTransformIAM1
 )
 public class APIAttachRoleToAccountMsg extends APIMessage implements RoleMessage {
     @APIParam(resourceType = RoleVO.class)

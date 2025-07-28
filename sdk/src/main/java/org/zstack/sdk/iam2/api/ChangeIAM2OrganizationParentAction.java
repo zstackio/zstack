@@ -98,6 +98,8 @@ public class ChangeIAM2OrganizationParentAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "changeIAM2OrganizationParent";
+        info.morphTransform = "IAM2";
+
         return info;
     }
 

@@ -2,6 +2,7 @@ package org.zstack.resourceconfig;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.core.Platform;
+import org.zstack.header.Constants;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
@@ -10,7 +11,8 @@ import org.zstack.header.vo.ResourceVO;
 @RestRequest(path = "/resource-configurations/{category}/{name}/{resourceUuid}/actions",
         method = HttpMethod.PUT,
         isAction = true,
-        responseClass = APIUpdateResourceConfigEvent.class)
+        responseClass = APIUpdateResourceConfigEvent.class,
+        morphTransform = Constants.MorphTransformIAM2)
 public class APIUpdateResourceConfigMsg extends APIMessage implements ResourceConfigMessage {
     @APIParam
     private String category;

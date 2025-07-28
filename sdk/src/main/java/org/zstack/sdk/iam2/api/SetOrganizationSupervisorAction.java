@@ -98,6 +98,8 @@ public class SetOrganizationSupervisorAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "setOrganizationSupervisor";
+        info.morphTransform = "IAM2";
+
         return info;
     }
 

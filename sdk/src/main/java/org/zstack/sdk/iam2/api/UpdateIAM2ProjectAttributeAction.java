@@ -98,6 +98,8 @@ public class UpdateIAM2ProjectAttributeAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "updateIAM2ProjectAttribute";
+        info.morphTransform = "IAM2";
+
         return info;
     }
 
