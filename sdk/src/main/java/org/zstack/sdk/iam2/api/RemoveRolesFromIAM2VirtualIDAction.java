@@ -101,6 +101,8 @@ public class RemoveRolesFromIAM2VirtualIDAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
+        info.morphTransform = "IAM2";
+
         return info;
     }
 

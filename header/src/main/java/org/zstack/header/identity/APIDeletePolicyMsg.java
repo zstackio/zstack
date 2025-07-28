@@ -1,6 +1,7 @@
 package org.zstack.header.identity;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.Constants;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
@@ -14,7 +15,8 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/accounts/policies/{uuid}",
         method = HttpMethod.DELETE,
-        responseClass = APIDeletePolicyEvent.class
+        responseClass = APIDeletePolicyEvent.class,
+        morphTransform = Constants.MorphTransformIAM1
 )
 public class APIDeletePolicyMsg extends APIDeleteMessage implements AccountMessage {
     @APIParam(resourceType = PolicyVO.class, successIfResourceNotExisting = true)

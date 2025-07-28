@@ -1,6 +1,7 @@
 package org.zstack.header.identity;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.Constants;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
@@ -13,7 +14,8 @@ import org.zstack.header.rest.RestRequest;
         path = "/accounts",
         method = HttpMethod.POST,
         parameterName = "params",
-        responseClass = APICreateAccountEvent.class
+        responseClass = APICreateAccountEvent.class,
+        morphTransform = Constants.MorphTransformIAM1
 )
 public class APICreateAccountMsg extends APICreateMessage implements APIAuditor {
     @APIParam(maxLength = 255)
