@@ -46,7 +46,7 @@ public class VirtualRouterSyncVipForNewCreateFlow implements Flow {
         final VmNicInventory publicNic = vr.getPublicNic();
         List<String> l3Uuids = guestNics.stream().map(n -> n.getL3NetworkUuid()).collect(Collectors.toList());
         List<String> vipUuids = new ArrayList<String>();
-        if (vrMgr.isL3NetworksNeedingNetworkServiceByVirtualRouter(l3Uuids, EipConstant.EIP_NETWORK_SERVICE_TYPE) &&
+        if (publicNic != null && vrMgr.isL3NetworksNeedingNetworkServiceByVirtualRouter(l3Uuids, EipConstant.EIP_NETWORK_SERVICE_TYPE) &&
                 !(VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(vr.getUuid()) && !VirtualRouterSystemTags.VR_EIP_ROLE.hasTag(vr.getUuid()))) {
             vipUuids.addAll(new Callable<List<String>>() {
                 @Override

@@ -1116,7 +1116,27 @@ public class VirtualRouter extends ApplianceVmBase {
             usedIpVO.setMetaData(GUEST_NIC_MASK.toString());
             dbf.updateAndRefresh(usedIpVO);
         } else {
-            vo.setMetaData(ADDITIONAL_PUBLIC_NIC_MASK.toString());
+            VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class)
+                    .eq(VirtualRouterVmVO_.uuid, self.getUuid())
+                    .find();
+            boolean isOfferingPubNic = vrVO.getPublicNetworkUuid() != null &&
+                    vrVO.getPublicNetworkUuid().equals(l3NetworkVO.getUuid());
+            if (isOfferingPubNic) {
+                VirtualRouterOfferingVO offering = Q.New(VirtualRouterOfferingVO.class)
+                        .eq(VirtualRouterOfferingVO_.uuid, vrVO.getInstanceOfferingUuid())
+                        .find();
+                if (offering == null) {
+                    vo.setMetaData(VirtualRouterNicMetaData.PUBLIC_NIC_MASK.toString());
+                } else {
+                    boolean hasSeparatePublic = offering.getPublicNetworkUuid() != null &&
+                            !offering.getManagementNetworkUuid().equals(offering.getPublicNetworkUuid());
+                    vo.setMetaData(hasSeparatePublic
+                            ? VirtualRouterNicMetaData.PUBLIC_NIC_MASK.toString()
+                            : VirtualRouterNicMetaData.PUBLIC_AND_MANAGEMENT_NIC_MASK.toString());
+                }
+            } else {
+                vo.setMetaData(ADDITIONAL_PUBLIC_NIC_MASK.toString());
+            }
         }
         vo = dbf.updateAndRefresh(vo);
         logger.debug(String.format("updated metadata of vmnic[uuid: %s]", vo.getUuid()));

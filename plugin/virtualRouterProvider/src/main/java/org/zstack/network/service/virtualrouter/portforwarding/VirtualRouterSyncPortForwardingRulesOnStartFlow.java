@@ -65,11 +65,14 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
             }
 
             List<String> pubL3Uuids = new ArrayList<>();
-            pubL3Uuids.add(vr.getPublicNic().getL3NetworkUuid());
+            VmNicInventory publicNic = vr.getPublicNic();
             pubL3Uuids.addAll(vr.getAdditionalPublicNics().stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()));
-            if (!vr.getPublicNic().getL3NetworkUuid().equals(vr.getManagementNetworkUuid())) {
-                /* in old code, pf can be configured on management nic */
-                pubL3Uuids.add(vr.getManagementNetworkUuid());
+            if (publicNic != null) {
+                pubL3Uuids.add(publicNic.getL3NetworkUuid());
+                if (!publicNic.getL3NetworkUuid().equals(vr.getManagementNetworkUuid())) {
+                    /* in old code, pf can be configured on management nic */
+                    pubL3Uuids.add(vr.getManagementNetworkUuid());
+                }
             }
 
             String sql = "select rule from PortForwardingRuleVO rule, VipVO vip, VmNicVO nic where " +
