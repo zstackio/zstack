@@ -1150,7 +1150,12 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
     @Override
     public void preBeforeInstantiateVmResource(VmInstanceSpec spec) throws VmInstantiateResourceException {
-        // do nothing
+        List<CephPrimaryStorageCheckInstanceTypeExtensionPoint> exts = pluginRgty.getExtensionList(CephPrimaryStorageCheckInstanceTypeExtensionPoint.class);
+        for (CephPrimaryStorageCheckInstanceTypeExtensionPoint ext : exts) {
+            VolumeVO vo = Q.New(VolumeVO.class)
+                    .eq(VolumeVO_.uuid, spec.getDestRootVolume().getUuid()).find();
+            ext.convertToBlockVolume(vo);
+        }
     }
 
     @Override

@@ -7,6 +7,7 @@ public interface ImageConstant {
     enum ImageMediaType {
         RootVolumeTemplate,
         DataVolumeTemplate,
+        VolumeRecoveringTemplate,
         ISO,
     }
 
