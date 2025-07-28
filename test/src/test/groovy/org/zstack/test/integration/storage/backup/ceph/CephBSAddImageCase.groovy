@@ -6,14 +6,14 @@ import org.zstack.core.db.SQL
 import org.zstack.header.image.*
 import org.zstack.header.storage.backup.BackupStorageVO
 import org.zstack.header.storage.backup.BackupStorageVO_
+import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.ImageInventory
-import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.VolumeInventory
 import org.zstack.storage.ceph.backup.CephBackupStorageBase
-import org.zstack.storage.ceph.backup.CephBackupStorageMonVO
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -27,6 +27,7 @@ class CephBSAddImageCase extends SubCase{
     EnvSpec env
     int failCount = 0
     final bsMonsCount = 2
+    SessionInventory normalSession
 
     @Override
     void setup() {
@@ -97,6 +98,7 @@ class CephBSAddImageCase extends SubCase{
     @Override
     void test() {
         env.create {
+            prepare()
             simulatorEnv()
             testImageBackupStorageRefVOWhenAddImage()
             testUploadImage()
@@ -105,7 +107,31 @@ class CephBSAddImageCase extends SubCase{
         }
     }
 
+    void prepare() {
+        def account1 = createAccount {
+            name = "test"
+            password = "password"
+        } as AccountInventory
+        attachPredefineRoles(account1.uuid, "image")
+
+        normalSession = logInByAccount {
+            accountName = "test"
+            password = "password"
+        } as SessionInventory
+    }
+
     void simulatorEnv() {
+        env.preSimulator(CephBackupStorageBase.GET_LOCAL_FILE_SIZE) { HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, CephBackupStorageBase.DownloadCmd.class)
+            if (cmd.url.startsWith("file:/")) {
+                if (++failCount < bsMonsCount) {
+                    throw new Exception("on purpose")
+                } else {
+                    failCount = 0
+                }
+            }
+        }
+
         env.preSimulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) { HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.body, CephBackupStorageBase.DownloadCmd.class)
             if (cmd.url.startsWith("file:/")) {
@@ -175,6 +201,14 @@ class CephBSAddImageCase extends SubCase{
             format = ImageConstant.ISO_FORMAT_STRING
         }
 
+        def newImage5 = addImage {
+            name = "newImage5"
+            url = "file:///my-site/foo.iso"
+            backupStorageUuids = [bs.uuid]
+            format = ImageConstant.ISO_FORMAT_STRING
+            sessionId = normalSession.uuid
+        } as ImageInventory
+
         assert 1 == Q.New(ImageBackupStorageRefVO.class)
                 .eq(ImageBackupStorageRefVO_.imageUuid, newImage.uuid)
                 .count()
@@ -189,6 +223,9 @@ class CephBSAddImageCase extends SubCase{
                 .count()
         assert 2 == Q.New(ImageBackupStorageRefVO.class)
                 .eq(ImageBackupStorageRefVO_.imageUuid, newImage4.uuid)
+                .count()
+        assert 1 == Q.New(ImageBackupStorageRefVO.class)
+                .eq(ImageBackupStorageRefVO_.imageUuid, newImage5.uuid)
                 .count()
     }
 
