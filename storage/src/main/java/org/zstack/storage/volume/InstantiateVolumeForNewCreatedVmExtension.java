@@ -213,9 +213,10 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
         ImageSpec image = spec.getImageSpec();
         boolean recovering = false;
         try {
-            recovering = image.getSelectedBackupStorage().getInstallPath().startsWith("nbd://");
+            recovering = image.getSelectedBackupStorage().getInstallPath().startsWith("nbd://") || ImageMediaType.VolumeRecoveringTemplate.toString().equals(image.getInventory().getMediaType());
         } catch (NullPointerException ignored) {
         }
+
         if (recovering) {
             InstantiateVolumeMsg cmsg = fillMsg(new InstantiateRootVolumeForRecoveryMsg(), spec.getDestRootVolume(), spec);
             ((InstantiateRootVolumeForRecoveryMsg) cmsg).setSelectedBackupStorage(image.getSelectedBackupStorage());
@@ -269,6 +270,7 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
         msg.setPrimaryStorageAllocated(true);
         msg.setSkipIfExisting(spec.isInstantiateResourcesSkipExisting());
         msg.setAllocatedInstallUrl(spec.getAllocatedUrlFromVolumeSpecs(volume.getUuid()));
+        msg.setSystemTags(spec.getRootVolumeSystemTags());
         bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, volume.getUuid());
         return msg;
     }

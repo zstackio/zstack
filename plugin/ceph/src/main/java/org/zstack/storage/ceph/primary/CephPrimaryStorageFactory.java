@@ -1158,7 +1158,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
     @Override
     public void preBeforeInstantiateVmResource(VmInstanceSpec spec) throws VmInstantiateResourceException {
-        // do nothing
+
     }
 
     @Override
