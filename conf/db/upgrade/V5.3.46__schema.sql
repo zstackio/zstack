@@ -1,0 +1,1 @@
+DELETE FROM UserTagVO WHERE uuid = 'a4de80903e57422699fb05bd367a3cb4';
