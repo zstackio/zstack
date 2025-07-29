@@ -520,6 +520,110 @@ public class RESTFacadeImpl implements RESTFacade {
         return syncJsonPost(url, body == null ? null : JSONObjectUtil.toJsonString(body),null, returnClass, unit, timeout);
     }
 
+    public <T> RestHttp<T> http(Class<T> returnClass) {
+        RestHttp<T> http = new RestHttp<>(returnClass)
+                .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE);
+
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            http.retryIfException(ResourceAccessException.class);
+        } else {
+            http.retryIfException(ResourceAccessException.class, HttpStatusCodeException.class);
+        }
+
+        return http
+                .withHandler(this::syncJson)
+                .withErrorCodeBuilder((e, http2) -> {
+                    if (e instanceof HttpStatusCodeException) {
+                        final HttpStatusCodeException exception = (HttpStatusCodeException) e;
+                        return operr("failed to %s to %s, status code: %s, response body: %s",
+                                http2.getMethod().toString().toLowerCase(),
+                                http2.getPath(),
+                                exception.getStatusCode(), exception.getResponseBodyAsString());
+                    } else if (e instanceof ResourceAccessException) {
+                        return operr("failed to %s to %s, IO Error: %s",
+                                http2.getMethod().toString().toLowerCase(),
+                                http2.getPath(),
+                                e.getMessage());
+                    }
+                    return null;
+                });
+    }
+
+    protected <T> ResponseEntity<String> syncJson(RestHttp<T> http) {
+        String body = http.getBody() == null ? "" : http.getBody();
+
+        HttpHeaders requestHeaders = new HttpHeaders();
+        requestHeaders.setAll(http.getHeaders());
+        requestHeaders.setContentLength(body.length());
+        HttpEntity<String> req = new HttpEntity<>(body, requestHeaders);
+        ResponseEntity<String> rsp = syncRawJson(req, http);
+
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("[http response(url: %s)] %s", http.getPath(), rsp.getBody()));
+        }
+        return rsp;
+    }
+
+    public <T> ResponseEntity<String> syncRawJson(HttpEntity<String> req, RestHttp<T> http) {
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("json %s[%s], %s", http.getMethod().toString().toLowerCase(), http.getPath(), req));
+        }
+
+        ResponseEntity<String> rsp;
+        final String url = http.getPath();
+        final HttpMethod method = http.getMethod();
+
+        try {
+            if (http.isRetry()) {
+                rsp = new Retry<ResponseEntity<String>>() {
+                    {
+                        retryConditions.addAll(http.getRetryIfExceptionMatched());
+                        times = http.getRetryTimes();
+                        interval = http.getRetryIntervalInSeconds();
+                    }
+
+                    @Override
+                    protected ResponseEntity<String> call() {
+                        if (http.isTimeoutEnabled()) {
+                            return template.exchange(url, method, req, String.class);
+                        } else {
+                            final long millis = http.getTimeoutInMillis();
+                            return template.exchange(url, method, req, String.class, Platform.getUuid(), millis, millis);
+                        }
+                    }
+                }.run();
+            } else {
+                rsp = (http.isTimeoutEnabled()) ?
+                        template.exchange(url, method, req, String.class,
+                                Platform.getUuid(), http.getTimeoutInMillis(), http.getTimeoutInMillis()) :
+                        template.exchange(url, method, req, String.class);
+            }
+        } catch (Exception e) {
+            if (http.getErrorCodeBuilder() != null) {
+                ErrorCode errorCode = http.getErrorCodeBuilder().apply(e, http);
+                if (errorCode != null) {
+                    throw new OperationFailureException(errorCode);
+                }
+            }
+            throw e;
+        }
+
+        boolean valid = false;
+        if (method == HttpMethod.DELETE && rsp.getStatusCode() == org.springframework.http.HttpStatus.NO_CONTENT) {
+            valid = true;
+        } else if (method == HttpMethod.POST && rsp.getStatusCode() == org.springframework.http.HttpStatus.CREATED) {
+            valid = true;
+        } else if (rsp.getStatusCode() == org.springframework.http.HttpStatus.OK || rsp.getStatusCode() == org.springframework.http.HttpStatus.ACCEPTED) {
+            valid = true;
+        }
+
+        if (!valid) {
+            throw new OperationFailureException(operr("failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, rsp.getStatusCode(), rsp.getBody()));
+        }
+
+        return rsp;
+    }
+
     @Override
     public <T> T syncJsonPost(String url, String body, Class<T> returnClass) {
         return syncJsonPost(url, body, null, returnClass, null, -1);
