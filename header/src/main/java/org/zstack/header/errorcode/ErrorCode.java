@@ -39,6 +39,11 @@ public class ErrorCode implements Serializable, Cloneable {
         opaque.put(key, value);
     }
 
+    public ErrorCode withOpaque(String key, Object value) {
+        putToOpaque(key,value);
+        return this;
+    }
+
     public Object getFromOpaque(String key) {
         return opaque == null ? null : opaque.get(key);
     }

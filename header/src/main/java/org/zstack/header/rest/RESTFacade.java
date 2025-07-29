@@ -64,6 +64,8 @@ public interface RESTFacade {
 
     <T> T syncJsonPut(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout);
 
+    <T> RestHttp<T> http(Class<T> returnClass);
+
     ResponseEntity<String> syncRawJson(String url, HttpEntity<String> req, HttpMethod method, TimeUnit unit, long timeout);
 
     HttpHeaders syncHead(String url);
