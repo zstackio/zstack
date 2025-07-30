@@ -104,47 +104,84 @@ public class VmInstanceHelper {
             }
         }
 
-        // smaller taking precedence
         if (msg.getHostUuid() != null) {
-            msg.setClusterUuid(null);
-            msg.setZoneUuid(null);
-        } else if (msg.getClusterUuid() != null) {
-            msg.setZoneUuid(null);
-        }
-
-        if (msg.getZoneUuid() != null) {
-            SimpleQuery<ZoneVO> zq = dbf.createQuery(ZoneVO.class);
-            zq.select(ZoneVO_.state);
-            zq.add(ZoneVO_.uuid, SimpleQuery.Op.EQ, msg.getZoneUuid());
-            ZoneState zoneState = zq.findValue();
-            if (zoneState == ZoneState.Disabled) {
-                throw new ApiMessageInterceptionException(operr("zone[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getZoneUuid()));
+            final Tuple tuple = Q.New(HostVO.class)
+                    .eq(HostVO_.uuid, msg.getHostUuid())
+                    .select(HostVO_.clusterUuid, HostVO_.zoneUuid, HostVO_.state, HostVO_.status)
+                    .findTuple();
+            String expectClusterUuid = tuple.get(0, String.class);
+            String expectZoneUuid = tuple.get(1, String.class);
+            if (msg.getClusterUuid() != null && !Objects.equals(msg.getClusterUuid(), expectClusterUuid)) {
+                throw new ApiMessageInterceptionException(
+                        argerr("host[uuid:%s] is specified but it's not in cluster[uuid:%s], can not create vm from it",
+                        msg.getHostUuid(), expectClusterUuid)
+                        .withOpaque("host.uuid", msg.getHostUuid())
+                        .withOpaque("expect.cluster.uuid", expectClusterUuid)
+                        .withOpaque("actual.cluster.uuid", msg.getClusterUuid()));
             }
+
+            if (msg.getZoneUuid() != null && !Objects.equals(msg.getZoneUuid(), expectZoneUuid)) {
+                throw new ApiMessageInterceptionException(
+                        argerr("host[uuid:%s] is specified but it's not in cluster[uuid:%s], can not create vm from it",
+                        msg.getHostUuid(), expectClusterUuid)
+                        .withOpaque("host.uuid", msg.getHostUuid())
+                        .withOpaque("expect.zone.uuid", expectZoneUuid)
+                        .withOpaque("actual.zone.uuid", msg.getZoneUuid()));
+            }
+
+            HostState hostState = tuple.get(2, HostState.class);
+            if (hostState == HostState.Disabled) {
+                throw new ApiMessageInterceptionException(
+                        argerr("host[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getHostUuid())
+                        .withOpaque("host.uuid", msg.getHostUuid()));
+            }
+
+            HostStatus connectionState = tuple.get(3, HostStatus.class);
+            if (connectionState != HostStatus.Connected) {
+                throw new ApiMessageInterceptionException(
+                        argerr("host[uuid:%s] is specified but it's connection status is %s, can not create vm from it",
+                        msg.getHostUuid(), connectionState)
+                        .withOpaque("host.uuid", msg.getHostUuid()));
+            }
+
+            msg.setClusterUuid(expectClusterUuid);
+            msg.setZoneUuid(expectZoneUuid);
         }
 
         if (msg.getClusterUuid() != null) {
-            SimpleQuery<ClusterVO> cq = dbf.createQuery(ClusterVO.class);
-            cq.select(ClusterVO_.state);
-            cq.add(ClusterVO_.uuid, SimpleQuery.Op.EQ, msg.getClusterUuid());
-            ClusterState clusterState = cq.findValue();
-            if (clusterState == ClusterState.Disabled) {
-                throw new ApiMessageInterceptionException(operr("cluster[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getClusterUuid()));
+            final Tuple tuple = Q.New(ClusterVO.class)
+                    .eq(ClusterVO_.uuid, msg.getClusterUuid())
+                    .select(ClusterVO_.zoneUuid, ClusterVO_.state)
+                    .findTuple();
+            String expectZoneUuid = tuple.get(0, String.class);
+            if (msg.getZoneUuid() != null && !Objects.equals(msg.getZoneUuid(), expectZoneUuid)) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cluster[uuid:%s] is specified but it's not in zone[uuid:%s], can not create vm from it",
+                        msg.getClusterUuid(), expectZoneUuid)
+                        .withOpaque("cluster.uuid", msg.getClusterUuid())
+                        .withOpaque("expect.zone.uuid", expectZoneUuid)
+                        .withOpaque("actual.zone.uuid", msg.getZoneUuid()));
             }
+
+            ClusterState clusterState = tuple.get(1, ClusterState.class);
+            if (clusterState == ClusterState.Disabled) {
+                throw new ApiMessageInterceptionException(
+                        argerr("cluster[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getClusterUuid())
+                        .withOpaque("cluster.uuid", msg.getClusterUuid()));
+            }
+
+            msg.setZoneUuid(expectZoneUuid);
         }
 
-        if (msg.getHostUuid() != null) {
-            SimpleQuery<HostVO> hq = dbf.createQuery(HostVO.class);
-            hq.select(HostVO_.state, HostVO_.status);
-            hq.add(HostVO_.uuid, SimpleQuery.Op.EQ, msg.getHostUuid());
-            Tuple t = hq.findTuple();
-            HostState hostState = t.get(0, HostState.class);
-            if (hostState == HostState.Disabled) {
-                throw new ApiMessageInterceptionException(operr("host[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getHostUuid()));
-            }
-
-            HostStatus connectionState = t.get(1, HostStatus.class);
-            if (connectionState != HostStatus.Connected) {
-                throw new ApiMessageInterceptionException(operr("host[uuid:%s] is specified but it's connection status is %s, can not create vm from it", msg.getHostUuid(), connectionState));
+        if (msg.getZoneUuid() != null) {
+            ZoneState zoneState = Q.New(ZoneVO.class)
+                    .eq(ZoneVO_.uuid, msg.getZoneUuid())
+                    .select(ZoneVO_.state)
+                    .findValue();
+            if (zoneState == ZoneState.Disabled) {
+                throw new ApiMessageInterceptionException(
+                        argerr("zone[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getZoneUuid())
+                        .withOpaque("zone.uuid", msg.getZoneUuid()));
             }
         }
 

@@ -1,5 +1,6 @@
 package org.zstack.test.integration.kvm.vm
 
+import org.zstack.header.errorcode.SysErrors
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.CreateVmInstanceAction
 import org.zstack.sdk.HostInventory
@@ -181,6 +182,15 @@ class CreateVmMatchWrongClusterHostOrWrongPrimaryStorageHostCase extends SubCase
         action3.instanceOfferingUuid = instanceOffering.uuid
         action3.sessionId = adminSession()
         CreateVmInstanceAction.Result result3 = action3.call()
-        assert result3.error == null
+        assert result3.error != null
+
+        def error3 = result3.error
+        assert error3.code == SysErrors.INVALID_ARGUMENT_ERROR.toString()
+        assert error3.opaque["host.uuid"]
+        assert error3.opaque["host.uuid"] == host1.uuid
+        assert error3.opaque["expect.cluster.uuid"]
+        assert error3.opaque["expect.cluster.uuid"] == cluster1.uuid
+        assert error3.opaque["actual.cluster.uuid"]
+        assert error3.opaque["actual.cluster.uuid"] == cluster2.uuid
     }
 }
