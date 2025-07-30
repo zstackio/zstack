@@ -519,6 +519,15 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
             if (rsp == null || rsp.tenants == null) {
                 return new ArrayList<>();
             }
+            
+            // Validate response by checking for default tenant presence
+            boolean hasDefaultTenant = rsp.tenants.stream()
+                    .anyMatch(tenant -> SdnControllerConstant.H3C_SDN_CONTROLLER_DEFAULT_TENANT_ID.equals(tenant.id));
+            
+            if (!hasDefaultTenant) {
+                throw new RuntimeException(String.format("No default tenant found in SDN controller [ip:%s]", self.getIp()));
+            }
+            
             return rsp.tenants;
         } catch (Exception e) {
             logger.error("Failed to get all tenants from SDN controller: " + e.getMessage(), e);

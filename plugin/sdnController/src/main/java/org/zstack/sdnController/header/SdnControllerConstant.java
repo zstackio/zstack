@@ -30,6 +30,9 @@ public class SdnControllerConstant {
     public static final String H3C_SDN_CONTROLLER_TENANT_STATUS_ENABLE = "enable";
     public static final String H3C_SDN_CONTROLLER_TENANT_STATUS_DISABLE = "disable";
 
+    // H3C SDN Controller Default Tenant ID (cannot be deleted)
+    public static final String H3C_SDN_CONTROLLER_DEFAULT_TENANT_ID = "ffffffff-0000-0000-0000-000000000001";
+
     public static final String TF_CONTROLLER = "TF";
 
     public static final String SDN_CONTROLLER_VROUTER_PREFIX = "VR_";
