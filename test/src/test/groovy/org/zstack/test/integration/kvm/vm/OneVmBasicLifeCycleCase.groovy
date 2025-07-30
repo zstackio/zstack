@@ -237,8 +237,10 @@ test a VM's start/stop/reboot/destroy/recover operations
                 delegate.strategy = VmCreationStrategy.JustCreate.toString()
             }
         }) {
-            assert delegate.code == "SYS.1006"
+            assert delegate.code == "SYS.1007"
             assert delegate.details.contains(zoneInventory.uuid)
+            assert delegate.opaque["zone.uuid"]
+            assert delegate.opaque["zone.uuid"] == zoneInventory.uuid
         }
 
         changeZoneState {
@@ -266,8 +268,10 @@ test a VM's start/stop/reboot/destroy/recover operations
                 delegate.strategy = VmCreationStrategy.JustCreate.toString()
             }
         }) {
-            assert delegate.code == "SYS.1006"
+            assert delegate.code == "SYS.1007"
             assert delegate.details.contains(clusterInventory.uuid)
+            assert delegate.opaque["cluster.uuid"]
+            assert delegate.opaque["cluster.uuid"] == clusterInventory.uuid
         }
 
         changeClusterState {
