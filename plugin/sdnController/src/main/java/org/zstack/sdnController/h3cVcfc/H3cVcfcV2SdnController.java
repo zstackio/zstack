@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.http.HttpMethod;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -169,7 +170,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
                 subnet = (H3cVcfcV2Commands.SubnetCmd) createSubnets(asList(newSubnet)).get(0);
             }
             if (subnet == null) {
-                completion.fail(operr("addL3NetworkIpRangeOnController failed because subnet is null"));
+                completion.fail(operr("Could not add IP range because subnet creation failed on the SDN controller"));
                 return;
             }
             if (!Q.New(H3cSdnSubnetIpRangeRefVO.class)
@@ -191,7 +192,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
             }
             completion.success();
         } catch (Exception e) {
-            completion.fail(operr("addL3NetworkIpRangeOnController failed because %s", e.getMessage()));
+            completion.fail(operr("Could not add IP range to L3 network because %s", e.getMessage()));
         }
     }
 
@@ -225,7 +226,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
             }
             completion.success();
         } catch (Exception e) {
-            completion.fail(operr("deleteL3NetworkIpRangeOnController failed because %s", e.getMessage()));
+            completion.fail(operr("Could not delete IP range from L3 network because %s", e.getMessage()));
         }
     }
 
@@ -254,16 +255,16 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
 
         try {
             H3cVcfcV2Commands.GetH3cTeamLederIpReply rsp = new H3cVcfcHttpClient<>(getGetH3cTeamLederIpReplyClass())
-                    .syncCall("GET", self.getIp(), getH3cVcfcTeamLeaderIpPath(), cmd, getH3cHeaders(token));
+                    .syncCall(HttpMethod.GET.name(), self.getIp(), getH3cVcfcTeamLeaderIpPath(), cmd, getH3cHeaders(token));
             if (rsp == null) {
-                completion.fail(operr("get leader of sdn controller [ip:%s] failed", self.getIp()));
+                completion.fail(operr("Could not determine cluster leader because the SDN controller [ip:%s] did not respond", self.getIp()));
                 return;
             }
 
             leaderIp = rsp.ip;
             completion.success();
         } catch (Exception e) {
-            completion.fail(operr("get token of sdn controller [ip:%s] failed because %s", self.getIp(), e.getMessage()));
+            completion.fail(operr("Could not determine cluster leader for SDN controller [ip:%s] because %s", self.getIp(), e.getMessage()));
         }
     }
 
@@ -277,9 +278,9 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
 
         try {
             H3cVcfcV2Commands.LoginRsp rsp = new H3cVcfcHttpClient<>(getLoginRspClass())
-                    .syncCall("POST", self.getIp(), getH3cVcfcGetTokenPath(), cmd, getH3cHeaders());
+                    .syncCall(HttpMethod.POST.name(), self.getIp(), getH3cVcfcGetTokenPath(), cmd, getH3cHeaders());
             if (rsp == null) {
-                completion.fail(operr("get token of sdn controller [ip:%s] failed", self.getIp()));
+                completion.fail(operr("Could not authenticate with SDN controller because controller [ip:%s] did not respond", self.getIp()));
                 return;
             }
 
@@ -287,7 +288,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
 
             completion.success();
         } catch (Exception e) {
-            completion.fail(operr("get token of sdn controller [ip:%s] failed because %s", self.getIp(), e.getMessage()));
+            completion.fail(operr("Could not authenticate with SDN controller [ip:%s] because %s", self.getIp(), e.getMessage()));
         }
     }
 
@@ -296,9 +297,9 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
         H3cVcfcV2Commands.GetH3cVniRangeCmd cmd = getGetH3cVniRangeCmd();
         try {
             H3cVcfcV2Commands.GetH3cVniRangeRsp rsp = new H3cVcfcHttpClient<>(getGetH3cVniRangeRspClass())
-                    .syncCall("GET", self.getIp(), getH3cVcfcVniRangesPath(), cmd, getH3cHeaders(token));
+                    .syncCall(HttpMethod.GET.name(), self.getIp(), getH3cVcfcVniRangesPath(), cmd, getH3cHeaders(token));
             if (rsp == null) {
-                completion.fail(operr("get vni range on sdn controller [ip:%s] failed", self.getIp()));
+                completion.fail(operr("Could not retrieve VNI ranges because the SDN controller [ip:%s] did not respond", self.getIp()));
                 return;
             }
             // Delete previous inherent VNI range tags before creating new ones
@@ -321,13 +322,13 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
             }
 
             if (count == 0) {
-                completion.fail(operr("there is no vni range on sdn controller [ip:%s]", self.getIp()));
+                completion.fail(operr("Could not initialize SDN controller because no VNI ranges are configured on controller [ip:%s]", self.getIp()));
                 return;
             }
 
             completion.success();
         } catch (Exception e) {
-            completion.fail(operr("get sdn controller [ip:%s] vni range failed because %s", self.getIp(), e.getLocalizedMessage()));
+            completion.fail(operr("Could not retrieve VNI ranges from SDN controller [ip:%s] because %s", self.getIp(), e.getLocalizedMessage()));
         }
     }
 
@@ -384,7 +385,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
     private void doCreateVxlanNetworkOnController(L2NetworkInventory vxlan, APICreateL2HardwareVxlanNetworkMsg msg, Completion completion) {
         VxlanNetworkVO vo = dbf.findByUuid(vxlan.getUuid(), VxlanNetworkVO.class);
         if (msg.getH3cTenantUuid() == null) {
-            completion.fail(operr("cannot find tenant uuid in system tags for vxlan network [uuid:%s]", vxlan.getUuid()));
+            completion.fail(operr("Could not create hardware VXLAN network because H3C tenant UUID is a mandatory parameter for the H3C VCFC V2 controller"));
             return;
         }
         H3cSdnControllerTenantVO tenantVO = Q.New(H3cSdnControllerTenantVO.class)
@@ -393,7 +394,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
                 .limit(1)
                 .find();
         if (tenantVO == null) {
-            completion.fail(operr("cannot find tenant in sdn controller for vxlan network [uuid:%s]", vxlan.getUuid()));
+            completion.fail(operr("Could not create hardware VXLAN network because the specified tenant does not exist in the SDN controller"));
             return;
         }
 
@@ -412,9 +413,9 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
         cmd.networks.add(networkCmd);
         try {
             H3cVcfcV2Commands.CreateH3cNetworksRsp rsp = new H3cVcfcHttpClient<>(getCreateH3cNetworksRspClass())
-                    .syncCall("POST", leaderIp, getH3cVcfcL2NetworksPath(), cmd, getH3cHeaders(token));
+                    .syncCall(HttpMethod.POST.name(), leaderIp, getH3cVcfcL2NetworksPath(), cmd, getH3cHeaders(token));
             if (rsp == null) {
-                completion.fail(operr("create vxlan network on sdn controller [ip:%s] failed", self.getIp()));
+                completion.fail(operr("Could not create VXLAN network because the SDN controller [ip:%s] did not respond", self.getIp()));
                 return;
             }
             H3cVcfcV2Commands.NetworkCmd network = rsp.networks.get(0);
@@ -446,7 +447,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
             }
             completion.success();
         } catch (Exception e) {
-            completion.fail(operr("create vxlan network on sdn controller [ip:%s] failed because %s", self.getIp(), e.getMessage()));
+            completion.fail(operr("Could not create VXLAN network on SDN controller [ip:%s] because %s", self.getIp(), e.getMessage()));
         }
     }
 
@@ -469,7 +470,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
         try {
             String h3cL2NetworkUuid = H3cVcfcSdnControllerSystemTags.H3C_L2_NETWORK_UUID.getTokenByResourceUuid(vxlan.getUuid(), H3cVcfcSdnControllerSystemTags.H3C_L2_NETWORK_UUID_TOKEN);
             H3cVcfcV2Commands.DeleteH3cNetworksRsp rsp = new H3cVcfcHttpClient<>(getDeleteH3cNetworksRspClass())
-                    .syncCall("DELETE", leaderIp, String.format("%s/%s", getH3cVcfcL2NetworksPath(), h3cL2NetworkUuid), cmd, getH3cHeaders(token));
+                    .syncCall(HttpMethod.DELETE.name(), leaderIp, String.format("%s/%s", getH3cVcfcL2NetworksPath(), h3cL2NetworkUuid), cmd, getH3cHeaders(token));
 
             String h3cL2VRouterUuid = H3cVcfcSdnControllerSystemTags.H3C_L2_VROUTER_UUID.getTokenByResourceUuid(vxlan.getUuid(), H3cVcfcSdnControllerSystemTags.H3C_L2_VROUTER_UUID_TOKEN);
             if(h3cL2VRouterUuid != null) {
@@ -478,7 +479,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
 
             completion.success();
         } catch (Exception e) {
-            completion.fail(operr("delete vxlan network on sdn controller [ip:%s] failed because %s", self.getIp(), e.getMessage()));
+            completion.fail(operr("Could not delete VXLAN network on SDN controller [ip:%s] because %s", self.getIp(), e.getMessage()));
         }
     }
 
@@ -515,7 +516,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
         H3cVcfcV2Commands.GetH3cTenantsCmd cmd = new H3cVcfcV2Commands.GetH3cTenantsCmd();
         try {
             H3cVcfcV2Commands.GetH3cTenantsRsp rsp = new H3cVcfcHttpClient<>(getGetH3cTenantsRspClass())
-                    .syncCall("GET", self.getIp(), H3cVcfcV2Commands.H3C_VCFC_TENANTS, cmd, getH3cHeaders(token));
+                    .syncCall(HttpMethod.GET.name(), self.getIp(), H3cVcfcV2Commands.H3C_VCFC_TENANTS, cmd, getH3cHeaders(token));
             if (rsp == null || rsp.tenants == null) {
                 return new ArrayList<>();
             }
@@ -540,7 +541,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
         cmd.network_id = networkUuid;
         try {
             H3cVcfcV2Commands.GetH3cSubnetsRsp rsp = new H3cVcfcHttpClient<>(getGetH3cSubnetsRspClass())
-                    .syncCall("GET", self.getIp(), H3cVcfcV2Commands.H3C_VCFC_SUBNETS, cmd, getH3cHeaders(token));
+                    .syncCall(HttpMethod.GET.name(), self.getIp(), H3cVcfcV2Commands.H3C_VCFC_SUBNETS, cmd, getH3cHeaders(token));
             if (rsp == null || rsp.subnets == null) {
                 return new ArrayList<>();
             }
@@ -556,7 +557,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
         cmd.subnets = subnets;
         try {
             H3cVcfcV2Commands.CreateH3cSubnetsRsp rsp = new H3cVcfcHttpClient<>(H3cVcfcV2Commands.CreateH3cSubnetsRsp.class)
-                    .syncCall("POST", self.getIp(), H3cVcfcV2Commands.H3C_VCFC_SUBNETS, cmd, getH3cHeaders(token));
+                    .syncCall(HttpMethod.POST.name(), self.getIp(), H3cVcfcV2Commands.H3C_VCFC_SUBNETS, cmd, getH3cHeaders(token));
             if (rsp == null || rsp.subnets == null) {
                 return new ArrayList<>();
             }
@@ -571,7 +572,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
         H3cVcfcCommands.H3cCmd cmd = new H3cVcfcCommands.H3cCmd();
         try {
             H3cVcfcCommands.H3cRsp rsp = new H3cVcfcHttpClient<>(H3cVcfcCommands.H3cRsp.class)
-                    .syncCall("DELETE", self.getIp(), String.format("%s/%s", H3cVcfcV2Commands.H3C_VCFC_SUBNETS, subnetId), cmd, getH3cHeaders(token));
+                    .syncCall(HttpMethod.DELETE.name(), self.getIp(), String.format("%s/%s", H3cVcfcV2Commands.H3C_VCFC_SUBNETS, subnetId), cmd, getH3cHeaders(token));
         } catch (Exception e) {
             logger.error("Failed to delete subnets on SDN controller: " + e.getMessage(), e);
             throw new RuntimeException(String.format("failed to delete subnets on SDN controller [ip:%s], error: %s", self.getIp(), e.getMessage()), e);
@@ -597,7 +598,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
         cmd.routers.add(routerCmd);
         try {
             H3cVcfcV2Commands.CreateH3cRoutersRsp rsp = new H3cVcfcHttpClient<>(H3cVcfcV2Commands.CreateH3cRoutersRsp.class)
-                    .syncCall("POST", leaderIp, H3cVcfcV2Commands.H3C_VCFC_ROUTERS, cmd, getH3cHeaders(token));
+                    .syncCall(HttpMethod.POST.name(), leaderIp, H3cVcfcV2Commands.H3C_VCFC_ROUTERS, cmd, getH3cHeaders(token));
             if (rsp == null || rsp.routers == null || rsp.routers.isEmpty()) {
                 logger.warn(String.format("create virtual router on sdn controller [ip:%s] failed", self.getIp()));
                 return null;
@@ -617,7 +618,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
         H3cVcfcV2Commands.DeleteH3cRoutersCmd cmd = new H3cVcfcV2Commands.DeleteH3cRoutersCmd();
         try {
             H3cVcfcV2Commands.DeleteH3cRoutersRsp rsp = new H3cVcfcHttpClient<>(H3cVcfcV2Commands.DeleteH3cRoutersRsp.class)
-                    .syncCall("DELETE", leaderIp, String.format("%s/%s", H3cVcfcV2Commands.H3C_VCFC_ROUTERS, routerId), cmd, getH3cHeaders(token));
+                    .syncCall(HttpMethod.DELETE.name(), leaderIp, String.format("%s/%s", H3cVcfcV2Commands.H3C_VCFC_ROUTERS, routerId), cmd, getH3cHeaders(token));
             if (rsp == null) {
                 logger.warn(String.format("delete virtual router on sdn controller [ip:%s] failed", self.getIp()));
                 return;
@@ -637,7 +638,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
 
         try {
             H3cVcfcV2Commands.AddRouterInterfaceRsp rsp = new H3cVcfcHttpClient<>(H3cVcfcV2Commands.AddRouterInterfaceRsp.class)
-                    .syncCall("PUT", self.getIp(), String.format("%s/%s/add_router_interface", H3cVcfcV2Commands.H3C_VCFC_ROUTERS, routerId), cmd, getH3cHeaders(token));
+                    .syncCall(HttpMethod.PUT.name(), self.getIp(), String.format("%s/%s/add_router_interface", H3cVcfcV2Commands.H3C_VCFC_ROUTERS, routerId), cmd, getH3cHeaders(token));
             if (rsp == null) {
                 logger.warn(String.format("add router interface on sdn controller [ip:%s] failed for router [id:%s] subnet [id:%s]",
                         self.getIp(), routerId, subnetId));
@@ -657,7 +658,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
 
         try {
             H3cVcfcV2Commands.RemoveRouterInterfaceRsp rsp = new H3cVcfcHttpClient<>(H3cVcfcV2Commands.RemoveRouterInterfaceRsp.class)
-                    .syncCall("PUT", self.getIp(), String.format("%s/%s/remove_router_interface", H3cVcfcV2Commands.H3C_VCFC_ROUTERS, routerId), cmd, getH3cHeaders(token));
+                    .syncCall(HttpMethod.PUT.name(), self.getIp(), String.format("%s/%s/remove_router_interface", H3cVcfcV2Commands.H3C_VCFC_ROUTERS, routerId), cmd, getH3cHeaders(token));
             if (rsp == null) {
                 logger.warn(String.format("remove router interface on sdn controller [ip:%s] failed for router [id:%s] subnet [id:%s]",
                         self.getIp(), routerId, subnetId));
