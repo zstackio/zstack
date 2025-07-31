@@ -11,16 +11,16 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.APIAttachL2NetworkToClusterMsg;
 import org.zstack.header.network.l2.APIDetachL2NetworkFromClusterMsg;
 import org.zstack.header.network.l3.APICreateL3NetworkMsg;
+import org.zstack.header.network.l3.L3NetworkCategory;
 import org.zstack.network.l2.L2NetworkSystemTags;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APIDeleteVxlanL2Network;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.APICreateVniRangeMsg;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
-import org.zstack.sdnController.SdnController;
+import org.zstack.network.l3.L3NetworkHelper;
 import org.zstack.sdnController.SdnControllerL2;
 import org.zstack.sdnController.SdnControllerManager;
 import org.zstack.sdnController.header.*;
-import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -139,6 +139,17 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
     }
 
     private void validate(APICreateL3NetworkMsg msg) {
+        String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL2Uuid(msg.getL2NetworkUuid());
+        if (sdnControllerUuid == null) {
+            return;
+        }
+        SdnControllerVO vo = dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
+        if (SdnControllerConstant.H3C_VCFC_CONTROLLER.equals(vo.getVendorType()) &&
+                SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V2.equals(vo.getVendorVersion()) &&
+                L3NetworkCategory.Public.toString().equals(msg.getCategory())) {
+            throw new ApiMessageInterceptionException(argerr("can not create l3 network" +
+                    "because H3C VCFC V2 SDN controller does not support l3[type:%s, category:%s]", msg.getType(), msg.getCategory()));
+        }
     }
 
     private void validate(APIRemoveSdnControllerMsg msg) {
