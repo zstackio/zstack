@@ -410,6 +410,7 @@ public class SourceClassMap {
 			put("org.zstack.license.LicenseInventory", "org.zstack.sdk.LicenseInventory");
 			put("org.zstack.license.UKeyInventory", "org.zstack.sdk.UKeyInventory");
 			put("org.zstack.license.UKeyStatus", "org.zstack.sdk.UKeyStatus");
+			put("org.zstack.license.entity.UpdateLicenseView", "org.zstack.sdk.UpdateLicenseView");
 			put("org.zstack.loginControl.entity.AccessControlRuleInventory", "org.zstack.sdk.AccessControlRuleInventory");
 			put("org.zstack.loginControl.entity.ControlStrategy", "org.zstack.sdk.ControlStrategy");
 			put("org.zstack.mevoco.ShareableVolumeVmInstanceRefInventory", "org.zstack.sdk.ShareableVolumeVmInstanceRefInventory");
@@ -1235,6 +1236,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory");
 			put("org.zstack.sdk.UKeyInventory", "org.zstack.license.UKeyInventory");
 			put("org.zstack.sdk.UKeyStatus", "org.zstack.license.UKeyStatus");
+			put("org.zstack.sdk.UpdateLicenseView", "org.zstack.license.entity.UpdateLicenseView");
 			put("org.zstack.sdk.UplinkGroupInventory", "org.zstack.network.l2.virtualSwitch.header.UplinkGroupInventory");
 			put("org.zstack.sdk.UplinkGroupType", "org.zstack.network.l2.virtualSwitch.header.UplinkGroupType");
 			put("org.zstack.sdk.UsageReport", "org.zstack.header.storage.primary.UsageReport");
