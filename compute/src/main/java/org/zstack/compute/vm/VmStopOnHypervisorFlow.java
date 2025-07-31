@@ -52,6 +52,7 @@ public class VmStopOnHypervisorFlow extends NoRollbackFlow {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
+                    data.put(VmStopOnHypervisorFlow.class.getName(), true);
                     chain.next();
                     return;
                 }
