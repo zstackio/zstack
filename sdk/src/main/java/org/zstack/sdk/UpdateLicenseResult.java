@@ -1,14 +1,14 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.LicenseInventory;
+
 
 public class UpdateLicenseResult {
-    public LicenseInventory inventory;
-    public void setInventory(LicenseInventory inventory) {
-        this.inventory = inventory;
+    public java.util.List results;
+    public void setResults(java.util.List results) {
+        this.results = results;
     }
-    public LicenseInventory getInventory() {
-        return this.inventory;
+    public java.util.List getResults() {
+        return this.results;
     }
 
 }

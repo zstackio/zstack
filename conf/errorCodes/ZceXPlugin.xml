@@ -55,4 +55,9 @@
         <id>4002</id>
         <description>ZCE-X Token Is Missing</description>
     </code>
+
+    <code>
+        <id>5001</id>
+        <description>Missing ZCE-X License</description>
+    </code>
 </error>
