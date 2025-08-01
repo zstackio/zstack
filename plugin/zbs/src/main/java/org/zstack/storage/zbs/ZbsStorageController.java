@@ -158,16 +158,16 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void deployClient(HostInventory h, Completion comp) {
-        String clientPassword = Q.New(KVMHostVO.class).select(KVMHostVO_.password).eq(KVMHostVO_.uuid, h.getUuid()).findValue();
-        if (clientPassword == null) {
-            comp.fail(operr("failed to get client[uuid:%s] password", h.getUuid()));
+        KVMHostVO host = Q.New(KVMHostVO.class).eq(KVMHostVO_.uuid, h.getUuid()).find();
+        if (host == null) {
+            comp.fail(operr("cannot found kvm host[uuid:%s], unable to deploy client", h.getUuid()));
             return;
         }
 
         DeployClientCmd cmd = new DeployClientCmd();
         cmd.setIp(h.getManagementIp());
-        cmd.setPassword(clientPassword);
-
+        cmd.setPassword(host.getPassword());
+        cmd.setPort(host.getPort());
         httpCall(DEPLOY_CLIENT_PATH, cmd, DeployClientRsp.class, new ReturnValueCompletion<DeployClientRsp>(comp) {
             @Override
             public void success(DeployClientRsp returnValue) {
@@ -319,19 +319,17 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                                 .list();
 
                         new While<>(hosts).each((h, comp) -> {
-                            String clientPassword = Q.New(KVMHostVO.class)
-                                    .select(KVMHostVO_.password)
-                                    .eq(KVMHostVO_.uuid, h.getUuid())
-                                    .findValue();
-
-                            if (clientPassword == null) {
-                                comp.addError(operr("failed to get ZBS client[uuid:%s] password.", h.getUuid()));
+                            KVMHostVO host = Q.New(KVMHostVO.class).eq(KVMHostVO_.uuid, h.getUuid()).find();
+                            if (host == null) {
+                                comp.addError(operr("cannot found kvm host[uuid:%s], unable to deploy client", h.getUuid()));
+                                comp.allDone();
+                                return;
                             }
 
                             DeployClientCmd cmd = new DeployClientCmd();
                             cmd.setIp(h.getManagementIp());
-                            cmd.setPassword(clientPassword);
-
+                            cmd.setPassword(host.getPassword());
+                            cmd.setPort(host.getPort());
                             httpCall(DEPLOY_CLIENT_PATH, cmd, DeployClientRsp.class, new ReturnValueCompletion<DeployClientRsp>(comp) {
                                 @Override
                                 public void success(DeployClientRsp returnValue) {
@@ -341,7 +339,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                                 @Override
                                 public void fail(ErrorCode errorCode) {
                                     comp.addError(errorCode);
-                                    comp.done();
+                                    comp.allDone();
                                 }
                             });
                         }).run(new WhileDoneCompletion(trigger) {
@@ -1586,6 +1584,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static class DeployClientCmd extends AgentCommand {
         private String ip;
         private String password;
+        private Integer port;
 
         public String getIp() {
             return ip;
@@ -1601,6 +1600,14 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         public void setPassword(String password) {
             this.password = password;
+        }
+
+        public Integer getPort() {
+            return port;
+        }
+
+        public void setPort(Integer port) {
+            this.port = port;
         }
     }
 

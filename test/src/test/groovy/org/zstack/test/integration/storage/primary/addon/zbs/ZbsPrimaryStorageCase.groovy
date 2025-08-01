@@ -186,6 +186,17 @@ class ZbsPrimaryStorageCase extends SubCase {
 
         updateExternalPrimaryStorage {
             uuid = ps.uuid
+            config = "{\"mdsUrls\":[\"root:password@127.0.1.1:33\",\"root:password@127.0.1.2\"],\"logicalPoolName\":\"lpool1\"}"
+        }
+
+        addonInfo = Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.addonInfo)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                .findValue()
+        assert addonInfo.contains("\"port\":33,\"addr\":\"127.0.1.1\"")
+
+        updateExternalPrimaryStorage {
+            uuid = ps.uuid
             config = "{\"mdsUrls\":[\"root:password@127.0.1.1\",\"root:password@127.0.1.2\",\"root:password@127.0.1.3\"],\"logicalPoolName\":\"lpool1\"}"
         }
 
