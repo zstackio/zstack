@@ -964,6 +964,13 @@ public class SdnControllerBase {
     }
 
     private void syncTenantData(String sdnControllerUuid, List<H3cVcfcV2Commands.H3cTenantStruct> apiTenants, FlowTrigger trigger) {
+        // Check if API response is valid (non-empty list indicates valid response with default tenant)
+        if (apiTenants == null || apiTenants.isEmpty()) {
+            logger.warn(String.format("Failed to pull tenant data for sdn controller [%s], no tenant data returned by API", sdnControllerUuid));
+            trigger.next();
+            return;
+        }
+        
         // Query existing tenant records in database
         List<H3cSdnControllerTenantVO> existingTenants = Q.New(H3cSdnControllerTenantVO.class)
                 .eq(H3cSdnControllerTenantVO_.sdnControllerUuid, sdnControllerUuid)
@@ -1008,6 +1015,11 @@ public class SdnControllerBase {
                     }
                     if (!Objects.equals(existingTenant.getCloudDomainName(), apiTenant.cloud_domain_name)) {
                         existingTenant.setCloudDomainName(apiTenant.cloud_domain_name);
+                        needUpdate = true;
+                    }
+                    // Ensure tenants found in API response are marked as enabled
+                    if (!SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATUS_ENABLE.equals(existingTenant.getStatus())) {
+                        existingTenant.setStatus(SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATUS_ENABLE);
                         needUpdate = true;
                     }
                     if (needUpdate) {
