@@ -7,6 +7,7 @@ import org.apache.commons.net.util.SubnetUtils;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.network.IPv6Constants;
@@ -274,5 +275,12 @@ public class IpRangeHelper {
         }
 
         return null;
+    }
+
+    public static Boolean checkIpRangeConflict(UsedIpVO usedIp) {
+        if (IpRangeHelper.getIpRangeUuid(usedIp.getL3NetworkUuid(), usedIp.getIp()) == null) {
+            return Boolean.TRUE;
+        }
+        return Boolean.FALSE;
     }
 }
