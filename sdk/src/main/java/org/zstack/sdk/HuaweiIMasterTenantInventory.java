@@ -44,12 +44,12 @@ public class HuaweiIMasterTenantInventory  {
         return this.sdnControllerUuid;
     }
 
-    public java.lang.Boolean deleted;
-    public void setDeleted(java.lang.Boolean deleted) {
-        this.deleted = deleted;
+    public java.lang.String state;
+    public void setState(java.lang.String state) {
+        this.state = state;
     }
-    public java.lang.Boolean getDeleted() {
-        return this.deleted;
+    public java.lang.String getState() {
+        return this.state;
     }
 
     public java.sql.Timestamp createDate;
