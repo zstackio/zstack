@@ -89,6 +89,8 @@ public class CheckIAM2VirtualIDConfigFileAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "checkIAM2VirtualIDConfigFile";
+        info.morphTransform = "IAM2";
+
         return info;
     }
 

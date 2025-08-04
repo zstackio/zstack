@@ -1,6 +1,7 @@
 package org.zstack.header.identity;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.Constants;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
@@ -13,7 +14,8 @@ import org.zstack.header.rest.RestRequest;
         path = "/accounts/quotas/actions",
         responseClass = APIUpdateQuotaEvent.class,
         isAction = true,
-        method = HttpMethod.PUT
+        method = HttpMethod.PUT,
+        morphTransform = Constants.MorphTransformIAM1
 )
 public class APIUpdateQuotaMsg extends APIMessage implements AccountMessage {
     @APIParam(resourceType = AccountVO.class)

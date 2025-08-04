@@ -110,6 +110,8 @@ public class CreateAccountAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
+        info.morphTransform = "IAM1";
+
         return info;
     }
 

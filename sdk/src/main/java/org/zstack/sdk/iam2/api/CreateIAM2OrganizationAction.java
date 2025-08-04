@@ -119,6 +119,8 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
+        info.morphTransform = "IAM2";
+
         return info;
     }
 

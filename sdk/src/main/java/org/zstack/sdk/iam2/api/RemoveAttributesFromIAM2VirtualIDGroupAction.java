@@ -98,6 +98,8 @@ public class RemoveAttributesFromIAM2VirtualIDGroupAction extends AbstractAction
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
+        info.morphTransform = "IAM2";
+
         return info;
     }
 

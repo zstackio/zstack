@@ -1,6 +1,7 @@
 package org.zstack.header.identity;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.Constants;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -13,7 +14,8 @@ import java.io.Serializable;
         path = "/accounts/{uuid}",
         method = HttpMethod.PUT,
         isAction = true,
-        responseClass = APIUpdateAccountEvent.class
+        responseClass = APIUpdateAccountEvent.class,
+        morphTransform = Constants.MorphTransformIAM1
 )
 public class APIUpdateAccountMsg extends APIMessage implements AccountMessage, Serializable {
     @APIParam(resourceType = AccountVO.class, checkAccount = true, operationTarget = true)

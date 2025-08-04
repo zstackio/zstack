@@ -21,4 +21,5 @@ public @interface RestRequest {
     String[] mappingFields() default {};
     Class responseClass();
     String category() default "";
+    String morphTransform() default "";
 }
