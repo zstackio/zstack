@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class HuaweiIMasterFabricInventory  {
+public class PhysicalSwitchInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -28,20 +28,44 @@ public class HuaweiIMasterFabricInventory  {
         return this.description;
     }
 
+    public java.lang.String ip;
+    public void setIp(java.lang.String ip) {
+        this.ip = ip;
+    }
+    public java.lang.String getIp() {
+        return this.ip;
+    }
+
+    public java.lang.String mac;
+    public void setMac(java.lang.String mac) {
+        this.mac = mac;
+    }
+    public java.lang.String getMac() {
+        return this.mac;
+    }
+
+    public java.lang.String mode;
+    public void setMode(java.lang.String mode) {
+        this.mode = mode;
+    }
+    public java.lang.String getMode() {
+        return this.mode;
+    }
+
+    public java.lang.String softwareVersion;
+    public void setSoftwareVersion(java.lang.String softwareVersion) {
+        this.softwareVersion = softwareVersion;
+    }
+    public java.lang.String getSoftwareVersion() {
+        return this.softwareVersion;
+    }
+
     public java.lang.String sdnControllerUuid;
     public void setSdnControllerUuid(java.lang.String sdnControllerUuid) {
         this.sdnControllerUuid = sdnControllerUuid;
     }
     public java.lang.String getSdnControllerUuid() {
         return this.sdnControllerUuid;
-    }
-
-    public java.lang.Boolean deleted;
-    public void setDeleted(java.lang.Boolean deleted) {
-        this.deleted = deleted;
-    }
-    public java.lang.Boolean getDeleted() {
-        return this.deleted;
     }
 
     public java.sql.Timestamp createDate;
@@ -58,6 +82,14 @@ public class HuaweiIMasterFabricInventory  {
     }
     public java.sql.Timestamp getLastOpDate() {
         return this.lastOpDate;
+    }
+
+    public java.util.List ports;
+    public void setPorts(java.util.List ports) {
+        this.ports = ports;
+    }
+    public java.util.List getPorts() {
+        return this.ports;
     }
 
 }

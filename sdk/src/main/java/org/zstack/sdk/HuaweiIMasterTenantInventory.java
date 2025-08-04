@@ -36,6 +36,22 @@ public class HuaweiIMasterTenantInventory  {
         return this.fabricIds;
     }
 
+    public java.lang.String sdnControllerUuid;
+    public void setSdnControllerUuid(java.lang.String sdnControllerUuid) {
+        this.sdnControllerUuid = sdnControllerUuid;
+    }
+    public java.lang.String getSdnControllerUuid() {
+        return this.sdnControllerUuid;
+    }
+
+    public java.lang.Boolean deleted;
+    public void setDeleted(java.lang.Boolean deleted) {
+        this.deleted = deleted;
+    }
+    public java.lang.Boolean getDeleted() {
+        return this.deleted;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

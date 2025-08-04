@@ -2,6 +2,7 @@ package org.zstack.network.hostNetworkInterface;
 
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.vm.VmNicInventory;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -23,8 +24,10 @@ public class PhysicalSwitchInventory implements Serializable {
     private String mac;
     private String mode;
     private String softwareVersion;
+    private String sdnControllerUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
+    private List<PhysicalSwitchPortInventory> ports;
 
     public static PhysicalSwitchInventory valueOf(PhysicalSwitchVO vo) {
         PhysicalSwitchInventory inv = new PhysicalSwitchInventory();
@@ -35,8 +38,10 @@ public class PhysicalSwitchInventory implements Serializable {
         inv.setMac(vo.getMac());
         inv.setMode(vo.getMode());
         inv.setSoftwareVersion(vo.getSoftwareVersion());
+        inv.setSdnControllerUuid(vo.getSdnControllerUuid());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
+        inv.setPorts(PhysicalSwitchPortInventory.valueOf(vo.getPorts()));
         return inv;
     }
 
@@ -118,5 +123,21 @@ public class PhysicalSwitchInventory implements Serializable {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public List<PhysicalSwitchPortInventory> getPorts() {
+        return ports;
+    }
+
+    public void setPorts(List<PhysicalSwitchPortInventory> ports) {
+        this.ports = ports;
+    }
+
+    public String getSdnControllerUuid() {
+        return sdnControllerUuid;
+    }
+
+    public void setSdnControllerUuid(String sdnControllerUuid) {
+        this.sdnControllerUuid = sdnControllerUuid;
     }
 }

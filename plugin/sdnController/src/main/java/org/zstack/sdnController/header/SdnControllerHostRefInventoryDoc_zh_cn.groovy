@@ -4,60 +4,60 @@ package org.zstack.sdnController.header
 
 doc {
 
-	title "SDN控制器物理机清单"
+	title "在这里输入结构的名称"
 
 	field {
 		name "sdnControllerUuid"
-		desc "SDN控制器Uuid"
+		desc ""
 		type "String"
-		since "5.3.0"
+		since "5.3.28"
 	}
 	field {
 		name "hostUuid"
 		desc "物理机UUID"
 		type "String"
-		since "5.3.0"
+		since "5.3.28"
 	}
 	field {
 		name "vSwitchType"
-		desc "虚拟交换机类型"
+		desc ""
 		type "String"
-		since "5.3.0"
+		since "5.3.28"
 	}
 	field {
 		name "vtepIp"
-		desc "物理机VTEP IP"
+		desc ""
 		type "String"
-		since "5.3.0"
+		since "5.3.28"
 	}
 	field {
 		name "nicPciAddresses"
-		desc "物理机网卡和PCI地址映射"
+		desc ""
 		type "String"
-		since "5.3.0"
+		since "5.3.28"
 	}
 	field {
 		name "nicDrivers"
-		desc "物理机网卡和驱动类型映射"
+		desc ""
 		type "String"
-		since "5.3.0"
+		since "5.3.28"
 	}
 	field {
 		name "netmask"
-		desc "物理机VTEP IP掩码"
+		desc ""
 		type "String"
-		since "5.3.0"
+		since "5.3.28"
 	}
 	field {
 		name "bondMode"
-		desc "物理机网卡bond模式"
+		desc ""
 		type "String"
-		since "5.3.0"
+		since "5.3.28"
 	}
 	field {
 		name "lacpMode"
-		desc "物理机网卡LACP模式"
+		desc ""
 		type "String"
-		since "5.3.0"
+		since "5.3.28"
 	}
 }

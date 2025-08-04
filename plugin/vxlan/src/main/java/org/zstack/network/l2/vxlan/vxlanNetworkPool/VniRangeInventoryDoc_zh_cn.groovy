@@ -1,8 +1,6 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool
 
 import java.lang.Integer
-import java.lang.Integer
-import java.sql.Timestamp
 import java.sql.Timestamp
 
 doc {

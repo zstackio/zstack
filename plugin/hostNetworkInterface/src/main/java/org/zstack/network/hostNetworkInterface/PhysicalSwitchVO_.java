@@ -17,6 +17,7 @@ public class PhysicalSwitchVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<PhysicalSwitchVO, String> mac;
     public static volatile SingularAttribute<PhysicalSwitchVO, String> mode;
     public static volatile SingularAttribute<PhysicalSwitchVO, String> softwareVersion;
+    public static volatile SingularAttribute<PhysicalSwitchVO, String> sdnControllerUuid;
     public static volatile SingularAttribute<PhysicalSwitchVO, Timestamp> createDate;
     public static volatile SingularAttribute<PhysicalSwitchVO, Timestamp> lastOpDate;
 }

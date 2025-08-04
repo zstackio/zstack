@@ -824,6 +824,10 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
     }
 
     protected void afterAttachVxlanPoolFromClusterFailed(APIAttachL2NetworkToClusterMsg msg) {
+        if (msg.getSystemTags() == null) {
+            return;
+        }
+
         for (String tag : msg.getSystemTags()) {
             VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.delete(msg.getL2NetworkUuid(), tag);
         }

@@ -86,8 +86,6 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
             validate((APISetVmNicSecurityGroupMsg) msg);
         } else if (msg instanceof APIAddSecurityGroupRuleMsg) {
             validate((APIAddSecurityGroupRuleMsg) msg);
-        } else if (msg instanceof APIAttachL3NetworkToVmMsg) {
-            validate((APIAttachL3NetworkToVmMsg) msg);
         } else if (msg instanceof APIChangeVmNicNetworkMsg) {
             validate((APIChangeVmNicNetworkMsg) msg);
         }
@@ -95,33 +93,6 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         setServiceId(msg);
 
         return msg;
-    }
-
-    private void validate(APIAttachL3NetworkToVmMsg msg) {
-        String sdnControlerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(msg.getL3NetworkUuid());
-        if (sdnControlerUuid == null) {
-            return;
-        }
-
-        SdnControllerVO controllerVO = dbf.findByUuid(sdnControlerUuid, SdnControllerVO.class);
-        if (controllerVO == null) {
-            throw new ApiMessageInterceptionException(argerr("could not attach l3network to vm, " +
-                            "because sdn controller[uuid:%s] is not find", sdnControlerUuid));
-        }
-
-        VmInstanceVO vmVo = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
-        boolean found = false;
-        for (SdnControllerHostRefVO ref : controllerVO.getHostRefVOS()) {
-            if (ref.getHostUuid().equals(vmVo.getHostUuid())) {
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            throw new ApiMessageInterceptionException(argerr("could not attach l3network to vm, " +
-                    "because host[uuid:%s] of vm is not attached to sdn controller[uuid:%s]",
-                    vmVo.getHostUuid(), sdnControlerUuid));
-        }
     }
 
     private void validate(APIChangeVmNicNetworkMsg msg) {
@@ -205,16 +176,16 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
 
     private void validate(APIAddSdnControllerMsg msg) {
         if (!SdnControllerType.getAllTypeNames().contains(msg.getVendorType())) {
-            throw new ApiMessageInterceptionException(argerr("Sdn controller type: %s in not in the supported list: %s ", msg.getVendorType(), SdnControllerType.getAllTypeNames()));
+            throw new ApiMessageInterceptionException(argerr("could not add sdn controller because type: %s in not in the supported list: %s", msg.getVendorType(), SdnControllerType.getAllTypeNames()));
         }
 
         if (!NetworkUtils.isUnicastIPAddress(msg.getIp())) {
-            throw new ApiMessageInterceptionException(argerr("Sdn controller ip[%s] is not an unicast address ", msg.getIp()));
+            throw new ApiMessageInterceptionException(argerr("could not add sdn controller because ip[%s] is not an unicast address", msg.getIp()));
         }
 
         boolean existed = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.ip, msg.getIp()).isExists();
         if (existed) {
-            throw new ApiMessageInterceptionException(argerr("Sdn controller with ip [%s] is already added ", msg.getIp()));
+            throw new ApiMessageInterceptionException(argerr("could not add sdn controller because controller [ip:%s] is already added", msg.getIp()));
         }
     }
 

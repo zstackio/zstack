@@ -9,7 +9,7 @@ import org.zstack.core.config.GlobalConfigValidation;
  */
 @GlobalConfigDefinition
 public class SdnControllerGlobalConfig {
-    public static final String CATEGORY = "sdn-controller";
+    public static final String CATEGORY = "sdnController";
 
     @GlobalConfigValidation(numberGreaterThan = 1)
     @GlobalConfigDef(defaultValue = "60", type = Long.class, description = "The interval management server sends ping command to sdn controller, in seconds")

@@ -17,6 +17,7 @@ public class PhysicalSwitchPortVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<PhysicalSwitchPortVO, String> portType;
     public static volatile SingularAttribute<PhysicalSwitchPortVO, String> peerInterfaceUuid;
     public static volatile SingularAttribute<PhysicalSwitchPortVO, String> switchUuid;
+    public static volatile SingularAttribute<PhysicalSwitchPortVO, String> sdnControllerUuid;
     public static volatile SingularAttribute<PhysicalSwitchPortVO, Timestamp> createDate;
     public static volatile SingularAttribute<PhysicalSwitchPortVO, Timestamp> lastOpDate;
 }

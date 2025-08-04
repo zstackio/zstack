@@ -2,11 +2,15 @@ package org.zstack.network.hostNetworkInterface;
 
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.tag.AutoDeleteTag;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vo.NoView;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ToInventory;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Physical Switch Value Object
@@ -33,6 +37,9 @@ public class PhysicalSwitchVO extends ResourceVO implements ToInventory, OwnedBy
     
     @Column
     private String softwareVersion;
+
+    @Column
+    private String sdnControllerUuid;
     
     @Column
     private Timestamp createDate;
@@ -42,7 +49,12 @@ public class PhysicalSwitchVO extends ResourceVO implements ToInventory, OwnedBy
     
     @Transient
     private String accountUuid;
-    
+
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "switchUuid", insertable = false, updatable = false)
+    @NoView
+    private Set<PhysicalSwitchPortVO> ports = new HashSet<PhysicalSwitchPortVO>();
+
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
@@ -120,5 +132,31 @@ public class PhysicalSwitchVO extends ResourceVO implements ToInventory, OwnedBy
     @Override
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
+    }
+
+    public Set<PhysicalSwitchPortVO> getPorts() {
+        return ports;
+    }
+
+    public void setPorts(Set<PhysicalSwitchPortVO> ports) {
+        this.ports = ports;
+    }
+
+    public String getSdnControllerUuid() {
+        return sdnControllerUuid;
+    }
+
+    public void setSdnControllerUuid(String sdnControllerUuid) {
+        this.sdnControllerUuid = sdnControllerUuid;
+    }
+
+    public void copyFromAnother(PhysicalSwitchVO vo) {
+        this.name = vo.name;
+        this.description = vo.description;
+        this.ip = vo.ip;
+        this.mac = vo.mac;
+        this.mode = vo.mode;
+        this.softwareVersion = vo.softwareVersion;
+        this.sdnControllerUuid = vo.sdnControllerUuid;
     }
 }

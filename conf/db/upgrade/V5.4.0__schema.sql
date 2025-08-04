@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PhysicalSwitchVO` (
     `mac` varchar(32) NOT NULL,
     `mode` varchar(128) NOT NULL,
     `softwareVersion` varchar(128) NOT NULL,
+    `sdnControllerUuid` varchar(32) DEFAULT NULL,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`)
@@ -19,6 +20,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PhysicalSwitchPortVO` (
     `portType` varchar(64) NOT NULL,
     `peerInterfaceUuid` varchar(32) DEFAULT NULL,
     `switchUuid` varchar(32) NOT NULL,
+    `sdnControllerUuid` varchar(32) DEFAULT NULL,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`),
@@ -31,6 +33,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HuaweiIMasterFabricVO` (
     `name` varchar(255) NOT NULL,
     `sdnControllerUuid` varchar(32) NOT NULL,
     `description` varchar(2048) DEFAULT NULL,
+    `deleted` BOOLEAN NOT NULL DEFAULT FALSE,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`),
@@ -43,24 +46,26 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HuaweiIMasterTenantVO` (
     `description` varchar(2048) DEFAULT NULL,
     `fabricIds` varchar(2048) NOT NULL,
     `sdnControllerUuid` varchar(32) NOT NULL,
+    `deleted` BOOLEAN NOT NULL DEFAULT FALSE,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`),
     CONSTRAINT `fkHuaweiIMasterTenantVOSdnControllerVO` FOREIGN KEY (`sdnControllerUuid`) REFERENCES `SdnControllerVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `zstack`.`HuaweiIMasterLogicalNetworkVO` (
+CREATE TABLE IF NOT EXISTS `zstack`.`HuaweiIMasterVpcVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `name` varchar(255) NOT NULL,
     `description` varchar(2048) DEFAULT NULL,
     `tenantId` varchar(32) NOT NULL,
     `fabricId` varchar(2048) NOT NULL,
     `sdnControllerUuid` varchar(32) NOT NULL,
+    `deleted` BOOLEAN NOT NULL DEFAULT FALSE,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`),
-    CONSTRAINT `fkHuaweiIMasterLogicalNetworkVOTenantVO` FOREIGN KEY (`tenantId`) REFERENCES `HuaweiIMasterTenantVO` (`uuid`) ON DELETE CASCADE,
-    CONSTRAINT `fkHuaweiIMasterLogicalNetworkVOSdnControllerVO` FOREIGN KEY (`sdnControllerUuid`) REFERENCES `SdnControllerVO` (`uuid`) ON DELETE CASCADE
+    CONSTRAINT `fkHuaweiIMasterVpcVOTenantVO` FOREIGN KEY (`tenantId`) REFERENCES `HuaweiIMasterTenantVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkHuaweiIMasterVpcVOSdnControllerVO` FOREIGN KEY (`sdnControllerUuid`) REFERENCES `SdnControllerVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`HuaweiIMasterVRouterVO` (
@@ -71,10 +76,11 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HuaweiIMasterVRouterVO` (
     `tenantId` varchar(32) NOT NULL,
     `fabricUuid` varchar(32) NOT NULL,
     `sdnControllerUuid` varchar(32) NOT NULL,
+    `deleted` BOOLEAN NOT NULL DEFAULT FALSE,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`),
-    CONSTRAINT `fkHuaweiIMasterVRouterVOLogicalNetworkVO` FOREIGN KEY (`logicalNetworkId`) REFERENCES `HuaweiIMasterLogicalNetworkVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkHuaweiIMasterVRouterVOLogicalNetworkVO` FOREIGN KEY (`logicalNetworkId`) REFERENCES `HuaweiIMasterVpcVO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkHuaweiIMasterVRouterVOTenantVO` FOREIGN KEY (`tenantId`) REFERENCES `HuaweiIMasterTenantVO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkHuaweiIMasterVRouterVOHuaweiIMasterFabricVO` FOREIGN KEY (`fabricUuid`) REFERENCES `HuaweiIMasterFabricVO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkHuaweiIMasterVRouterVOSdnControllerVO` FOREIGN KEY (`sdnControllerUuid`) REFERENCES `SdnControllerVO` (`uuid`) ON DELETE CASCADE
@@ -85,4 +91,10 @@ CREATE TABLE  IF NOT EXISTS `HardwareL2VxlanNetworkVO` (
   `vlan` int unsigned NOT NULL,
   PRIMARY KEY  (`uuid`),
   CONSTRAINT fkHardwareL2VxlanNetworkVOL2NetworkEO FOREIGN KEY (uuid) REFERENCES L2NetworkEO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`HuaweiIMasterSdnControllerVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT fkHuaweiIMasterSdnControllerVOSdnControllerVO FOREIGN KEY (uuid) REFERENCES SdnControllerVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class HuaweiIMasterLogicalNetworkInventory  {
+public class HuaweiIMasterVpcInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -42,6 +42,22 @@ public class HuaweiIMasterLogicalNetworkInventory  {
     }
     public java.lang.String getFabricId() {
         return this.fabricId;
+    }
+
+    public java.lang.String sdnControllerUuid;
+    public void setSdnControllerUuid(java.lang.String sdnControllerUuid) {
+        this.sdnControllerUuid = sdnControllerUuid;
+    }
+    public java.lang.String getSdnControllerUuid() {
+        return this.sdnControllerUuid;
+    }
+
+    public java.lang.Boolean deleted;
+    public void setDeleted(java.lang.Boolean deleted) {
+        this.deleted = deleted;
+    }
+    public java.lang.Boolean getDeleted() {
+        return this.deleted;
     }
 
     public java.sql.Timestamp createDate;

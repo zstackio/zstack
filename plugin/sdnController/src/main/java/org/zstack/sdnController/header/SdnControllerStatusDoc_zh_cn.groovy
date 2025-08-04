@@ -4,24 +4,24 @@ package org.zstack.sdnController.header
 
 doc {
 
-	title "SDN控制器状态清单"
+	title "在这里输入结构的名称"
 
 	field {
 		name "Connecting"
-		desc "连接中"
+		desc ""
 		type "SdnControllerStatus"
-		since "5.3.0"
+		since "5.3.28"
 	}
 	field {
 		name "Connected"
-		desc "已连接"
+		desc ""
 		type "SdnControllerStatus"
-		since "5.3.0"
+		since "5.3.28"
 	}
 	field {
 		name "Disconnected"
-		desc "已失联"
+		desc ""
 		type "SdnControllerStatus"
-		since "5.3.0"
+		since "5.3.28"
 	}
 }
