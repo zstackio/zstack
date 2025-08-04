@@ -29,7 +29,6 @@ import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.header.ShareResourceContext;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceSystemTag;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -57,7 +56,7 @@ import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.*;
 
 public class L3NetworkManagerImpl extends AbstractService implements L3NetworkManager, ReportQuotaExtensionPoint,
-        ResourceOwnerPreChangeExtensionPoint, PrepareDbInitialValueExtensionPoint {
+        ResourceOwnerPreChangeExtensionPoint, PrepareDbInitialValueExtensionPoint, CheckIpAddressAvailabilityExtensionPoint {
     private static final CLogger logger = Utils.getLogger(L3NetworkManagerImpl.class);
 
     @Autowired
@@ -206,7 +205,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     IpCapacity element = elements.getOrDefault(elementUuid, new IpCapacity());
                     elements.put(elementUuid, element);
                     if (ipVersion == IPv6Constants.IPv4) {
-                        if (NetworkUtils.isValidIpRange(sip, eip)) {
+                        if (NetworkUtils.isValidIpv4Range(sip, eip)) {
                             int t = NetworkUtils.getTotalIpInRange(sip, eip);
                             element.total += t;
                             element.total = Math.min(element.total, Integer.MAX_VALUE);
@@ -738,7 +737,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     public void prepareDbInitialValue() {
         List<IpRangeVO> ipRangeVOS = Q.New(IpRangeVO.class).isNull(IpRangeVO_.prefixLen).list();
         for (IpRangeVO ipr : ipRangeVOS) {
-            ipr.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(ipr.getNetmask()));
+            ipr.setPrefixLen(NetworkUtils.getPrefixLengthFromNetmask(ipr.getNetmask()));
         }
         if (!ipRangeVOS.isEmpty()) {
             dbf.updateCollection(ipRangeVOS);
@@ -775,5 +774,13 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         }
 
         return ret;
+    }
+
+    @Override
+    public void check(CheckIpAvailabilityStruct struct, ReturnValueCompletion<CheckIpAvailabilityResult> completion) {
+        L3NetworkVO vo = dbf.findByUuid(struct.getL3NetworkUuid(), L3NetworkVO.class);
+        L3NetworkFactory factory = getL3NetworkFactory(L3NetworkType.valueOf(vo.getType()));
+        L3Network nw = factory.getL3Network(vo);
+        completion.success(nw.checkIpAvailability(struct));
     }
 }

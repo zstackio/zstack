@@ -1,12 +1,11 @@
 package org.zstack.header.network.l3;
 
-import org.zstack.header.message.MessageReply;
 
 /**
  * Created by frank on 1/21/2016.
  */
-public class CheckIpAvailabilityReply extends MessageReply {
-    private boolean available;
+public class CheckIpAvailabilityResult {
+    private boolean available = true;
     private String reason;
 
     public boolean isAvailable() {

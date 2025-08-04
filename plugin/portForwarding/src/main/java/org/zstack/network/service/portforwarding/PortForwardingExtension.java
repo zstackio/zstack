@@ -267,4 +267,14 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension imp
         map.put(providerType.toString(), structs);
         releaseNetworkService(map.entrySet().iterator(), completion);
     }
+
+    @Override
+    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, Completion completion) {
+        completion.success();
+    }
+
+    @Override
+    public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+        completion.success();
+    }
 }

@@ -2,20 +2,16 @@ package org.zstack.test.integration.kvm.vm
 
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmNicManager
-import org.zstack.core.db.Q
-import org.zstack.core.db.SQL
-import org.zstack.header.image.ImageVO
-import org.zstack.header.image.ImageVO_
-import org.zstack.header.vm.VmNicVO
-import org.zstack.header.vm.VmNicVO_
+import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-import org.zstack.utils.gson.JSONObjectUtil
+
 
 class ChangeVmNicFailedCase extends SubCase {
     EnvSpec env
@@ -94,6 +90,11 @@ class ChangeVmNicFailedCase extends SubCase {
                     l3Network {
                         name = "l3"
 
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE
+                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
+                        }
+
                         ip {
                             startIp = "192.168.100.10"
                             endIp = "192.168.100.100"
@@ -105,6 +106,11 @@ class ChangeVmNicFailedCase extends SubCase {
                     l3Network {
                         name = "pubL3"
                         category = "Public"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE
+                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
+                        }
 
                         ip {
                             startIp = "12.16.10.10"

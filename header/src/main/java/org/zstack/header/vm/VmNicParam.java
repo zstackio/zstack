@@ -18,7 +18,7 @@ public class VmNicParam implements Serializable {
 
     private String ip6;
 
-    private String ipv6Prefix;
+    private Integer ipv6Prefix;
 
     private String ipv6Gateway;
 
@@ -37,6 +37,10 @@ public class VmNicParam implements Serializable {
     private Integer multiQueueNum;
 
     private String vfParentUuid;
+
+    private boolean isDefaultNic = false;
+
+    private List<String> sgUuids;
 
     public String getL3NetworkUuid() {
         return l3NetworkUuid;
@@ -94,11 +98,11 @@ public class VmNicParam implements Serializable {
         this.ip6 = ip6;
     }
 
-    public String getIpv6Prefix() {
+    public Integer getIpv6Prefix() {
         return ipv6Prefix;
     }
 
-    public void setIpv6Prefix(String ipv6Prefix) {
+    public void setIpv6Prefix(Integer ipv6Prefix) {
         this.ipv6Prefix = ipv6Prefix;
     }
 
@@ -176,5 +180,21 @@ public class VmNicParam implements Serializable {
 
     public void setVfParentUuid(String vfParentUuid) {
         this.vfParentUuid = vfParentUuid;
+    }
+
+    public boolean isDefaultNic() {
+        return isDefaultNic;
+    }
+
+    public void setDefaultNic(boolean defaultNic) {
+        this.isDefaultNic = defaultNic;
+    }
+
+    public List<String> getSgUuids() {
+        return sgUuids;
+    }
+
+    public void setSgUuids(List<String> sgUuids) {
+        this.sgUuids = sgUuids;
     }
 }

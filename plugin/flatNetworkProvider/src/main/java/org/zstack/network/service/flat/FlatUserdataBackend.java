@@ -1,5 +1,6 @@
 package org.zstack.network.service.flat;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.UserdataBuilder;
@@ -31,10 +32,7 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkUpdateExtensionPoint;
-import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
 import org.zstack.kvm.*;
@@ -200,6 +198,13 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     }
 
                     if (bridgeNames.get(l.l3Uuid) == null) {
+                        continue;
+                    }
+
+                    if (l.netmask == null) {
+                        /* user data config need netmask */
+                        logger.info(String.format("can not get netmask for vmnic[ip:%s] for vm[uuid:%s]",
+                                l.vmIp, vmuuid));
                         continue;
                     }
 
@@ -578,8 +583,17 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
             return;
         }
 
-        if (!defaultL3.getIpVersions().contains(IPv6Constants.IPv4)) {
+        UsedIpVO ipv4 = Q.New(UsedIpVO.class).eq(UsedIpVO_.vmNicUuid, destNic.getUuid())
+                .eq(UsedIpVO_.ipVersion, IPv6Constants.IPv4).limit(1).find();
+        if (ipv4 == null) {
             // userdata depends on the ipv4 address
+            completion.success();
+            return;
+        }
+        if (StringUtils.isEmpty(ipv4.getNetmask())) {
+            // userdata depends on the ipv4 netmask
+            logger.info(String.format("can not get netmask for vmnic[ip:%s] for vm[uuid:%s]",
+                    ipv4.getIp(), struct.getVmUuid()));
             completion.success();
             return;
         }
@@ -635,8 +649,8 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         uto.metadata = to;
                         uto.userdataList = struct.getUserdataList();
                         uto.dhcpServerIp = dhcpServerIp;
-                        uto.vmIp = destNic.getIp();
-                        uto.netmask = destNic.getNetmask();
+                        uto.vmIp = ipv4.getIp();
+                        uto.netmask = ipv4.getNetmask();
                         uto.bridgeName = new BridgeNameFinder().findByL3UuidOnHost(struct.getL3NetworkUuid(), struct.getHostUuid());
                         uto.virtualNetworkId = new BridgeVirtualNetworkIdFinder()
                                 .findByL2Uuid(defaultL3.getL2NetworkUuid(), struct.getHostUuid(),false);
@@ -707,7 +721,14 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
             }
         });
 
-        if (destNic == null || destNic.getIp() == null) {
+        if (destNic == null) {
+            completion.success();
+            return;
+        }
+
+        UsedIpInventory ipv4 = destNic.getUsedIps().stream().filter(ip -> ip.getIpVersion() == IPv6Constants.IPv4).findAny().orElse(null);
+        if (ipv4 == null) {
+            // userdata depends on the ipv4 address
             completion.success();
             return;
         }
@@ -726,7 +747,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         cmd.hostUuid = struct.getHostUuid();
                         cmd.bridgeName = new BridgeNameFinder().findByL3UuidOnHost(struct.getL3NetworkUuid(), struct.getHostUuid());
                         cmd.namespaceName = FlatDhcpBackend.makeNamespaceName(cmd.bridgeName, struct.getL3NetworkUuid());
-                        cmd.vmIp = destNic.getIp();
+                        cmd.vmIp = ipv4.getIp();
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                         msg.setHostUuid(struct.getHostUuid());

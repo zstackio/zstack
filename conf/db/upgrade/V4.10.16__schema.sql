@@ -97,3 +97,22 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ResourceAttributeConstraintVO` (
     PRIMARY KEY (`id`),
     CONSTRAINT fkResourceAttributeConstraintVOResourceAttributeKeyVO FOREIGN KEY (keyUuid) REFERENCES ResourceAttributeKeyVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Feature: improve ipv6 | ZSV-8660
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ReservedIpRangeVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
+    `l3NetworkUuid` varchar(32) NOT NULL COMMENT 'l3 network uuid',
+    `name` varchar(255) DEFAULT NULL COMMENT 'name',
+    `description` varchar(2048) DEFAULT NULL COMMENT 'description',
+    `ipVersion` int(10) unsigned DEFAULT 4 COMMENT 'ip range version',
+    `startIp` varchar(64) NOT NULL COMMENT 'start ip',
+    `endIp` varchar(64) NOT NULL COMMENT 'end ip',
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP COMMENT 'last operation date',
+    `createDate` timestamp,
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT `fkReservedIpRangeVOL3NetworkEO` FOREIGN KEY (`l3NetworkUuid`) REFERENCES `L3NetworkEO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+update EventSubscriptionVO set name = 'VM NIC IP Changed (GuestTools Is Required)' where uuid='98536fa94e3f4481a38331a989132b7c';
+update EventSubscriptionVO set name = 'NIC IP Configured in VM has been Occupied or in the Reserved Range (GuestTools Is Required)' where uuid='4a3494bcdbac4eaab9e9e56e27d74a2a';

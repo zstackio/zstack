@@ -13,7 +13,7 @@ public class ChangeVmNicNetworkMsg extends NeedReplyMessage implements VmInstanc
     private String destL3NetworkUuid;
     private String vmInstanceUuid;
     private Map<String, List<String>> requiredIpMap;
-    private String staticIp;
+    private List<VmNicParam> vmNicParams;
 
     public String getVmNicUuid() {
         return vmNicUuid;
@@ -48,11 +48,11 @@ public class ChangeVmNicNetworkMsg extends NeedReplyMessage implements VmInstanc
         this.requiredIpMap = requiredIpMap;
     }
 
-    public String getStaticIp() {
-        return staticIp;
+    public List<VmNicParam> getVmNicParams() {
+        return vmNicParams;
     }
 
-    public void setStaticIp(String staticIp) {
-        this.staticIp = staticIp;
+    public void setVmNicParams(List<VmNicParam> vmNicParams) {
+        this.vmNicParams = vmNicParams;
     }
 }
