@@ -5,6 +5,7 @@ import org.zstack.utils.CollectionDSL;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Allocate PrimaryStorage
@@ -21,6 +22,7 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private String backupStorageUuid;
     private List<String> possiblePrimaryStorageTypes;
     private List<String> excludePrimaryStorageTypes;
+    private Set<PrimaryStorageFeature> requiredFeatures;
 
     private Long totalSize = null;
     private long size;
@@ -42,6 +44,14 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private String volumeUuid;
     private boolean noOverProvisioning;
     private String purpose;
+
+    public Set<PrimaryStorageFeature> getRequiredFeatures() {
+        return requiredFeatures;
+    }
+
+    public void setRequiredFeatures(Set<PrimaryStorageFeature> requiredFeatures) {
+        this.requiredFeatures = requiredFeatures;
+    }
 
     public List<String> getExcludePrimaryStorageTypes() {
         return excludePrimaryStorageTypes;

@@ -24,6 +24,7 @@
             <zstack:extension interface="org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigValidator" />
             <zstack:extension interface="org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidator" />
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageSortExtensionPoint"/>
+            <zstack:extension interface="org.zstack.storage.primary.PrimaryStorageFeatureAllocatorExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
@@ -39,6 +40,7 @@
             <list>
                 <value>org.zstack.storage.primary.PrimaryStorageMainAllocatorFlow</value>
                 <value>org.zstack.storage.primary.PrimaryStorageAvoidAllocatorFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageFeatureAllocatorFlow</value>
                 <value>org.zstack.storage.primary.PrimaryStorageTagAllocatorFlow</value>
                 <value>org.zstack.storage.primary.PrimaryStorageReservedCapacityAllocatorFlow</value>
             </list>
@@ -63,6 +65,7 @@
             <list>
                 <value>org.zstack.storage.primary.PrimaryStorageMainAllocatorFlow</value>
                 <value>org.zstack.storage.primary.PrimaryStorageAvoidAllocatorFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageFeatureAllocatorFlow</value>
                 <value>org.zstack.storage.primary.PrimaryStorageTagAllocatorFlow</value>
                 <value>org.zstack.storage.primary.PrimaryStorageReservedCapacityAllocatorFlow</value>
             </list>
@@ -87,6 +90,7 @@
             <list>
                 <value>org.zstack.storage.primary.PrimaryStorageMainAllocatorFlow</value>
                 <value>org.zstack.storage.primary.PrimaryStorageAvoidAllocatorFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageFeatureAllocatorFlow</value>
                 <value>org.zstack.storage.primary.PrimaryStorageTagAllocatorFlow</value>
                 <value>org.zstack.storage.primary.PrimaryStorageReservedCapacityAllocatorFlow</value>
             </list>
@@ -111,6 +115,7 @@
             <list>
                 <value>org.zstack.storage.primary.PrimaryStorageMainAllocatorFlow</value>
                 <value>org.zstack.storage.primary.PrimaryStorageAvoidAllocatorFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageFeatureAllocatorFlow</value>
                 <value>org.zstack.storage.primary.PrimaryStorageTagAllocatorFlow</value>
                 <value>org.zstack.storage.primary.PrimaryStorageReservedCapacityAllocatorFlow</value>
             </list>
