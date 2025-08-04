@@ -1,53 +1,81 @@
 package org.zstack.cbd;
 
+import java.util.Objects;
+
 /**
  * @author Xingwei Yu
  * @date 2024/4/10 23:18
  */
 public class MdsInfo {
-    private String sshUsername;
-    private String sshPassword;
-    private int sshPort = 22;
-    private String mdsAddr;
-    private MdsStatus mdsStatus;
+    private String username;
+    private String password;
+    private int port = 22;
+    private String addr;
+    private String externalAddr;
+    private MdsStatus status;
 
-    public String getSshUsername() {
-        return sshUsername;
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+
+        MdsInfo other = (MdsInfo) obj;
+        return Objects.equals(addr, other.addr) &&
+                Objects.equals(port, other.port) &&
+                Objects.equals(username, other.username) &&
+                Objects.equals(password, other.password);
     }
 
-    public void setSshUsername(String sshUsername) {
-        this.sshUsername = sshUsername;
+    @Override
+    public int hashCode() {
+        return Objects.hash(addr, port, username, password);
     }
 
-    public String getSshPassword() {
-        return sshPassword;
+    public String getUsername() {
+        return username;
     }
 
-    public void setSshPassword(String sshPassword) {
-        this.sshPassword = sshPassword;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
-    public int getSshPort() {
-        return sshPort;
+    public String getPassword() {
+        return password;
     }
 
-    public void setSshPort(int sshPort) {
-        this.sshPort = sshPort;
+    public void setPassword(String password) {
+        this.password = password;
     }
 
-    public String getMdsAddr() {
-        return mdsAddr;
+    public int getPort() {
+        return port;
     }
 
-    public void setMdsAddr(String mdsAddr) {
-        this.mdsAddr = mdsAddr;
+    public void setPort(int port) {
+        this.port = port;
     }
 
-    public MdsStatus getMdsStatus() {
-        return mdsStatus;
+    public String getAddr() {
+        return addr;
     }
 
-    public void setMdsStatus(MdsStatus mdsStatus) {
-        this.mdsStatus = mdsStatus;
+    public void setAddr(String addr) {
+        this.addr = addr;
+    }
+
+    public String getExternalAddr() {
+        return externalAddr;
+    }
+
+    public void setExternalAddr(String externalAddr) {
+        this.externalAddr = externalAddr;
+    }
+
+    public MdsStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(MdsStatus status) {
+        this.status = status;
     }
 }

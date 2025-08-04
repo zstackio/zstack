@@ -44,24 +44,24 @@ public abstract class ZbsMdsBase {
     public abstract void ping(Completion completion);
     protected abstract String makeHttpPath(String ip, String path);
 
-    protected void checkTools() {
+    protected void checkSshAndTools() {
         Ssh ssh = new Ssh();
         try {
-            ssh.setHostname(self.getMdsAddr()).setUsername(self.getSshUsername()).setPassword(self.getSshPassword()).setPort(self.getSshPort())
+            ssh.setHostname(self.getAddr()).setUsername(self.getUsername()).setPassword(self.getPassword()).setPort(self.getPort())
                     .checkTool("zbs").setTimeout(60).runErrorByExceptionAndClose();
         } catch (SshException e) {
-            throw new OperationFailureException(operr("The problem may be caused by zbs-tool is missing on mds node."));
+            throw new OperationFailureException(operr("failed to SSH or zbs-tools was not installed in MDS[%s], you need to check the SSH configuration and dependencies", self.getAddr()));
         }
     }
 
-    protected void checkHealth() {
+    protected void checkStorageHealth() {
         Ssh ssh = new Ssh();
         SshResult ret = null;
         try {
-            ret = ssh.setHostname(self.getMdsAddr()).setUsername(self.getSshUsername()).setPassword(self.getSshPassword()).setPort(self.getSshPort())
+            ret = ssh.setHostname(self.getAddr()).setUsername(self.getUsername()).setPassword(self.getPassword()).setPort(self.getPort())
                     .shell("zbs status mds --format json").setTimeout(60).runAndClose();
         } catch (SshException e) {
-            throw new OperationFailureException(operr("The problem may be caused by zbs storage health issue."));
+            throw new OperationFailureException(operr("failed to get MDS[%s] metadata, you need to check the ZBS configuration", self.getAddr()));
         }
 
         if (ret.getReturnCode() != 0) {
@@ -103,9 +103,9 @@ public abstract class ZbsMdsBase {
         };
 
         if (unit == null) {
-            restf.asyncJsonPost(makeHttpPath(self.getMdsAddr(), path), cmd, callback);
+            restf.asyncJsonPost(makeHttpPath(self.getAddr(), path), cmd, callback);
         } else {
-            restf.asyncJsonPost(makeHttpPath(self.getMdsAddr(), path), cmd, callback, unit, timeout);
+            restf.asyncJsonPost(makeHttpPath(self.getAddr(), path), cmd, callback, unit, timeout);
         }
     }
 
@@ -142,7 +142,7 @@ public abstract class ZbsMdsBase {
 
     public static class AgentCommand {
         private String uuid;
-        private String mdsAddr;
+        private String addr;
 
         public String getUuid() {
             return uuid;
@@ -152,12 +152,12 @@ public abstract class ZbsMdsBase {
             this.uuid = uuid;
         }
 
-        public String getMdsAddr() {
-            return mdsAddr;
+        public String getAddr() {
+            return addr;
         }
 
-        public void setMdsAddr(String mdsAddr) {
-            this.mdsAddr = mdsAddr;
+        public void setAddr(String addr) {
+            this.addr = addr;
         }
     }
 }

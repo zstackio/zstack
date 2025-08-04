@@ -52,6 +52,13 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
+            simulator(ZbsPrimaryStorageMdsBase.SYNC_METADATA_PATH) {
+                ZbsPrimaryStorageMdsBase.SyncMetadataRsp rsp = new ZbsPrimaryStorageMdsBase.SyncMetadataRsp()
+                rsp.success = true
+                rsp.externalAddr = "127.0.0.1"
+                return rsp
+            }
+
             simulator(ZbsStorageController.DEPLOY_CLIENT_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 ZbsStorageController.DeployClientCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.DeployClientCmd.class)
                 ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
@@ -86,7 +93,7 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 logicalPoolInfo.setRawUsedSize(968884224);
                 logicalPoolInfo.setPhysicalPoolName("pool1");
                 logicalPoolInfo.setCapacity(579933831168);
-                logicalPoolInfo.setLogicalPoolName(cmd.logicalPoolName);
+                logicalPoolInfo.setLogicalPoolName(cmd.logicalPool);
                 logicalPoolInfo.setUserPolicy("eyJwb2xpY3kiIDogMX0=");
                 logicalPoolInfo.setAllocatedSize(3221225472);
 
