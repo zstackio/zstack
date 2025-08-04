@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateAccountAction extends AbstractAction {
+public class UpdateSSOClientAttributeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateAccountAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateAccountResult value;
+        public org.zstack.sdk.UpdateSSOClientAttributeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,23 +25,17 @@ public class CreateAccountAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String password;
-
-    @Param(required = false, validValues = {"SystemAdmin","Normal","ThirdParty"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    public java.lang.String value;
 
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String purpose;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -75,8 +69,8 @@ public class CreateAccountAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateAccountResult value = res.getResult(org.zstack.sdk.CreateAccountResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateAccountResult() : value; 
+        org.zstack.sdk.UpdateSSOClientAttributeResult value = res.getResult(org.zstack.sdk.UpdateSSOClientAttributeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateSSOClientAttributeResult() : value; 
 
         return ret;
     }
@@ -105,11 +99,11 @@ public class CreateAccountAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/accounts";
+        info.httpMethod = "PUT";
+        info.path = "/sso/client/attributes/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updateSSOClientAttribute";
         return info;
     }
 
