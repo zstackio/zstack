@@ -44,6 +44,8 @@ import java.util.*;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
+import static org.zstack.sdnController.header.SdnControllerFlowDataParam.SDN_CONTROLLER_PASSWORD;
 import static org.zstack.sdnController.header.SdnControllerFlowDataParam.SDN_CONTROLLER_UUID;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -106,6 +108,8 @@ public class SdnControllerBase {
             handle((APIReconnectSdnControllerMsg) msg);
         } else if (msg instanceof APISdnControllerChangeHostMsg) {
             handle((APISdnControllerChangeHostMsg) msg);
+        } else if (msg instanceof APIChangeSdnControllerMsg) {
+            handle((APIChangeSdnControllerMsg) msg);
         } else if (msg instanceof SdnControllerRemoveHostMsg) {
             handle((SdnControllerRemoveHostMsg) msg);
         } else if (msg instanceof ReconnectSdnControllerMsg) {
@@ -134,6 +138,121 @@ public class SdnControllerBase {
         d.setNewStatus(status.toString());
         d.setInv(SdnControllerInventory.valueOf(self));
         evtf.fire(SdnControllerCanonicalEvents.SDNCONTROLLER_STATUS_CHANGED_PATH, d);
+    }
+
+    private void doChangeSdnController(APIChangeSdnControllerMsg msg, Completion completion) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("change-sdn-controller-%s-%s", self.getUuid(), self.getName()));
+        chain.then(new Flow() {
+            String __name__ = "change-sdn-controller-db";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (msg.getPassword().equals(self.getPassword())) {
+                    trigger.next();
+                    return;
+                }
+
+                chain.getData().put(SDN_CONTROLLER_PASSWORD, self.getPassword());
+                self.setPassword(msg.getPassword());
+                self = dbf.updateAndRefresh(self);
+                trigger.next();
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                String password = chain.getData().get(SDN_CONTROLLER_PASSWORD).toString();
+                if (password != null) {
+                    self.setPassword(password);
+                    self = dbf.updateAndRefresh(self);
+                }
+                trigger.rollback();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "ping-sdn-controller";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                String password = chain.getData().get(SDN_CONTROLLER_PASSWORD).toString();
+                if (password == null) {
+                    // password not changed
+                    trigger.next();
+                    return;
+                }
+
+                SdnControllerPingMsg pmsg = new SdnControllerPingMsg();
+                pmsg.setSdnControllerUuid(self.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(pmsg, SdnControllerConstant.SERVICE_ID, self.getUuid());
+                bus.send(pmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(operr("ping sdn controller failed, error: %s", reply.getError().getDetails()));
+                        } else {
+                            trigger.next();
+                        }
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
+    private void changeSdnController(APIChangeSdnControllerMsg msg, Completion completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return getSdnControllerSignature();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doChangeSdnController(msg, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        completion.success();
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("change-sdn-controller-%s", self.getUuid());
+            }
+        });
+    }
+
+    private void handle(APIChangeSdnControllerMsg msg) {
+        APIChangeSdnControllerEvent event = new APIChangeSdnControllerEvent(msg.getId());
+        changeSdnController(msg, new Completion(msg) {
+            @Override
+            public void success() {
+                event.setInventory(SdnControllerInventory.valueOf(dbf.findByUuid(msg.getSdnControllerUuid(), SdnControllerVO.class)));
+                bus.publish(event);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                event.setError(errorCode);
+                bus.publish(event);
+            }
+        });
     }
 
     private void handle(APIReconnectSdnControllerMsg msg) {
