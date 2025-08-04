@@ -117,6 +117,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                             runner.installChecker(callBackChecker);
                             runner.setUsername(getSelf().getUsername());
                             runner.setPassword(getSelf().getPassword());
+                            runner.setSshPort(getSelf().getPort());
                             runner.setTargetIp(getSelf().getAddr());
                             runner.setTargetUuid(getSelf().getAddr());
                             runner.setAgentPort(ZbsGlobalProperty.PRIMARY_STORAGE_AGENT_PORT);
