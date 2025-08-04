@@ -50,6 +50,7 @@
             <zstack:extension interface="org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint" />
             <zstack:extension interface="org.zstack.header.storage.primary.PSCapacityExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.storage.primary.RecalculatePrimaryStorageCapacityExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.storage.snapshot.VolumeInnerSnapshotPathParser" />
         </zstack:plugin>
     </bean>
 

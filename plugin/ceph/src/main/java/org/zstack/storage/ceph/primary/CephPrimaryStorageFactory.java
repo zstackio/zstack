@@ -89,7 +89,8 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         KvmSetupSelfFencerExtensionPoint, KVMPreAttachIsoExtensionPoint, Component, PostMarkRootVolumeAsSnapshotExtension,
         BeforeTakeLiveSnapshotsOnVolumes, VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint,
         InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator, MarkRootVolumeAsSnapshotExtension,
-        VmCapabilitiesExtensionPoint, PreVmInstantiateResourceExtensionPoint, PSCapacityExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint {
+        VmCapabilitiesExtensionPoint, PreVmInstantiateResourceExtensionPoint, PSCapacityExtensionPoint,
+        RecalculatePrimaryStorageCapacityExtensionPoint, VolumeInnerSnapshotPathParser {
     private static final CLogger logger = Utils.getLogger(CephPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
@@ -1256,6 +1257,15 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         }
 
         return getPreAllocatedInstallUrl(msg, psInv.getUuid());
+    }
+
+    @Override
+    public String getVolumePathFromSnapshot(VolumeSnapshotInventory snapshot) {
+        if (StringUtils.isEmpty(snapshot.getPrimaryStorageInstallPath())) {
+            return null;
+        }
+
+        return snapshot.getPrimaryStorageInstallPath().split("@")[0];
     }
 
     @Override

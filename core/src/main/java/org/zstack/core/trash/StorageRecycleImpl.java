@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.inerr;
 
@@ -87,6 +88,8 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
         }
 
         vo = dbf.persistAndRefresh(vo);
+        logger.debug(String.format("create trash for volume[uuid:%s, installPath:%s] on primary storage[uuid:%s], trashId: %s, type: %s",
+                vol.getUuid(), vol.getInstallPath(), vol.getPrimaryStorageUuid(), vo.getTrashId(), type));
         return InstallPathRecycleInventory.valueOf(vo);
     }
 
@@ -103,6 +106,8 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
         vo.setSize(image.getSize());
 
         vo = dbf.persistAndRefresh(vo);
+        logger.debug(String.format("create trash for image[uuid:%s, installPath:%s] on backup storage[uuid:%s], trashId: %s, type: %s",
+                image.getUuid(), image.getUrl(), image.getDescription(), vo.getTrashId(), type));
         return InstallPathRecycleInventory.valueOf(vo);
     }
 
@@ -123,6 +128,8 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
         }
 
         vo = dbf.persistAndRefresh(vo);
+        logger.debug(String.format("create trash for volume snapshot[uuid:%s, installPath:%s] on primary storage[uuid:%s], trashId: %s, type: %s",
+                snapshot.getUuid(), snapshot.getPrimaryStorageInstallPath(), snapshot.getPrimaryStorageUuid(), vo.getTrashId(), type));
         return InstallPathRecycleInventory.valueOf(vo);
     }
 
@@ -295,6 +302,7 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
     public void removeFromDb(Long trashId) {
         DebugUtils.Assert(trashId != null, "trashId is not allowed null here");
         UpdateQuery.New(InstallPathRecycleVO.class).eq(InstallPathRecycleVO_.trashId, trashId).delete();
+        logger.debug(String.format("remove trash[trashId:%s] from db", trashId));
     }
 
     private void deleteTrashForVolume(String resourceUuid, String primaryStorageUuid, NoErrorCompletion completion) {
@@ -408,14 +416,11 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
 
     @Override
     public List<String> findTrashInstallPath(String installPath, String storageUuid) {
-        List<String> trashInstallPath = new ArrayList<>();
-        List<InstallPathRecycleVO> vos = Q.New(InstallPathRecycleVO.class).eq(InstallPathRecycleVO_.storageUuid, storageUuid).list();
-        for (InstallPathRecycleVO vo: vos) {
-            if (vo.getInstallPath().startsWith(installPath)) {
-                trashInstallPath.add(vo.getInstallPath().substring(installPath.length()));
-            }
-        }
-        return trashInstallPath;
+        List<String> absPaths = Q.New(InstallPathRecycleVO.class).select(InstallPathRecycleVO_.installPath)
+                .eq(InstallPathRecycleVO_.storageUuid, storageUuid)
+                .like(InstallPathRecycleVO_.installPath, String.format("%s%%", installPath))
+                .listValues();
+        return absPaths.stream().map(it -> it.substring(installPath.length())).collect(Collectors.toList());
     }
 
     @Override
