@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryVmInstanceDeviceAddressArchiveAction extends QueryAction {
+public class QueryVmInstanceResourceMetadataArchiveAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryVmInstanceDeviceAddressArchiveAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryVmInstanceDeviceAddressArchiveResult value;
+        public org.zstack.sdk.QueryVmInstanceResourceMetadataArchiveResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryVmInstanceDeviceAddressArchiveAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryVmInstanceDeviceAddressArchiveResult value = res.getResult(org.zstack.sdk.QueryVmInstanceDeviceAddressArchiveResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryVmInstanceDeviceAddressArchiveResult() : value; 
+        org.zstack.sdk.QueryVmInstanceResourceMetadataArchiveResult value = res.getResult(org.zstack.sdk.QueryVmInstanceResourceMetadataArchiveResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVmInstanceResourceMetadataArchiveResult() : value; 
 
         return ret;
     }
@@ -65,7 +65,7 @@ public class QueryVmInstanceDeviceAddressArchiveAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/vmInstance/device/address/archive";
+        info.path = "/vmInstance/resource/metadata/archive";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

@@ -12,14 +12,14 @@ import static java.util.Arrays.asList;
 /**
  * Created by LiangHanYu on 2022/6/17 17:31
  */
-@AutoQuery(replyClass = APIQueryVmInstanceDeviceAddressArchiveReply.class, inventoryClass = VmInstanceDeviceAddressArchiveInventory.class)
+@AutoQuery(replyClass = APIQueryVmInstanceResourceMetadataArchiveReply.class, inventoryClass = VmInstanceResourceMetadataArchiveInventory.class)
 @RestRequest(
-        path = "/vmInstance/device/address/archive",
-        optionalPaths = {"/vmInstance/device/address/archive/{uuid}"},
+        path = "/vmInstance/resource/metadata/archive",
+        optionalPaths = {"/vmInstance/resource/metadata/archive/{uuid}"},
         method = HttpMethod.GET,
-        responseClass = APIQueryVmInstanceDeviceAddressArchiveReply.class
+        responseClass = APIQueryVmInstanceResourceMetadataArchiveReply.class
 )
-public class APIQueryVmInstanceDeviceAddressArchiveMsg extends APIQueryMessage {
+public class APIQueryVmInstanceResourceMetadataArchiveMsg extends APIQueryMessage {
     public static List<String> __example__() {
         return asList("uuid=" + uuid());
     }

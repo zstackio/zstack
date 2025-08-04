@@ -53,3 +53,24 @@ SELECT
     e.defaultProtocol as protocol
 FROM PrimaryStorageHostRefVO p LEFT JOIN ExternalPrimaryStorageVO e ON p.primaryStorageUuid = e.uuid
 ORDER BY p.id;
+
+DROP PROCEDURE IF EXISTS `UPGRADE_VM_METADATA_TABLES_IDEMPOTENT`;
+DELIMITER $$
+CREATE PROCEDURE `UPGRADE_VM_METADATA_TABLES_IDEMPOTENT`()
+BEGIN
+    SET FOREIGN_KEY_CHECKS = 0;
+
+    CALL RENAME_TABLE('VmInstanceDeviceAddressVO', 'VmInstanceResourceMetadataVO');
+    CALL RENAME_TABLE('VmInstanceDeviceAddressGroupVO', 'VmInstanceResourceMetadataGroupVO');
+    CALL RENAME_TABLE('VmInstanceDeviceAddressArchiveVO', 'VmInstanceResourceMetadataArchiveVO');
+
+    CALL GENERIC_ADD_FOREIGN_KEY('VmInstanceResourceMetadataVO','fkVmInstanceResourceMetadataVOVmInstanceEO', 'vmInstanceUuid', 'VmInstanceEO', 'uuid', 'CASCADE');
+    CALL GENERIC_ADD_FOREIGN_KEY('VmInstanceResourceMetadataGroupVO','fkVmInstanceResourceMetadataGroupVOVmInstanceEO', 'vmInstanceUuid', 'VmInstanceEO', 'uuid', 'CASCADE');
+    CALL GENERIC_ADD_FOREIGN_KEY('VmInstanceResourceMetadataArchiveVO','fkVmInstanceResourceMetadataArchiveVOVmInstanceEO', 'vmInstanceUuid', 'VmInstanceEO', 'uuid', 'CASCADE');
+    CALL GENERIC_ADD_FOREIGN_KEY('VmInstanceResourceMetadataArchiveVO','fkVmMetadataArchiveVOVmMetadataGroupVO', 'addressGroupUuid', 'VmInstanceResourceMetadataGroupVO', 'uuid', 'CASCADE');
+
+    SET FOREIGN_KEY_CHECKS = 1;
+END $$
+DELIMITER ;
+
+CALL UPGRADE_VM_METADATA_TABLES_IDEMPOTENT();

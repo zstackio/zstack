@@ -10,8 +10,8 @@ import java.util.stream.Collectors;
 /**
  * Created by LiangHanYu on 2022/6/17 17:24
  */
-@Inventory(mappingVOClass = VmInstanceDeviceAddressArchiveVO.class)
-public class VmInstanceDeviceAddressArchiveInventory {
+@Inventory(mappingVOClass = VmInstanceResourceMetadataArchiveVO.class)
+public class VmInstanceResourceMetadataArchiveInventory {
     private long id;
     private String resourceUuid;
     private String vmInstanceUuid;
@@ -22,9 +22,9 @@ public class VmInstanceDeviceAddressArchiveInventory {
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
-    public static VmInstanceDeviceAddressArchiveInventory valueOf(VmInstanceDeviceAddressArchiveVO vo) {
-        VmInstanceDeviceAddressArchiveInventory inv = new VmInstanceDeviceAddressArchiveInventory();
-        inv.setId(1);
+    public static VmInstanceResourceMetadataArchiveInventory valueOf(VmInstanceResourceMetadataArchiveVO vo) {
+        VmInstanceResourceMetadataArchiveInventory inv = new VmInstanceResourceMetadataArchiveInventory();
+        inv.setId(vo.getId());
         inv.setResourceUuid(vo.getResourceUuid());
         inv.setDeviceAddress(vo.getDeviceAddress());
         inv.setAddressGroupUuid(vo.getAddressGroupUuid());
@@ -36,8 +36,8 @@ public class VmInstanceDeviceAddressArchiveInventory {
         return inv;
     }
 
-    public static List<VmInstanceDeviceAddressArchiveInventory> valueOf(Collection<VmInstanceDeviceAddressArchiveVO> vos) {
-        return vos.stream().map(VmInstanceDeviceAddressArchiveInventory::valueOf).collect(Collectors.toList());
+    public static List<VmInstanceResourceMetadataArchiveInventory> valueOf(Collection<VmInstanceResourceMetadataArchiveVO> vos) {
+        return vos.stream().map(VmInstanceResourceMetadataArchiveInventory::valueOf).collect(Collectors.toList());
     }
 
     public long getId() {

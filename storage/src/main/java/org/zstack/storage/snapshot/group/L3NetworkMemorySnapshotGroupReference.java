@@ -7,8 +7,8 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.vm.ArchiveVmNicBundle;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO_;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataArchiveVO;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataArchiveVO_;
 
 import javax.persistence.TypedQuery;
 import java.util.List;
@@ -27,16 +27,16 @@ public class L3NetworkMemorySnapshotGroupReference implements MemorySnapshotGrou
 
     @Override
     public List<VolumeSnapshotGroupInventory> getVolumeSnapshotGroupReferenceList(String resourceUuid) {
-        List<String> quotedArchiveGroupList = Q.New(VmInstanceDeviceAddressArchiveVO.class)
-                .select(VmInstanceDeviceAddressArchiveVO_.addressGroupUuid)
-                .eq(VmInstanceDeviceAddressArchiveVO_.metadataClass, ArchiveVmNicBundle.class.getCanonicalName())
-                .like(VmInstanceDeviceAddressArchiveVO_.metadata, String.format("%%\"l3NetworkUuid\":\"%s\"%%", resourceUuid)).listValues();
+        List<String> quotedArchiveGroupList = Q.New(VmInstanceResourceMetadataArchiveVO.class)
+                .select(VmInstanceResourceMetadataArchiveVO_.addressGroupUuid)
+                .eq(VmInstanceResourceMetadataArchiveVO_.metadataClass, ArchiveVmNicBundle.class.getCanonicalName())
+                .like(VmInstanceResourceMetadataArchiveVO_.metadata, String.format("%%\"l3NetworkUuid\":\"%s\"%%", resourceUuid)).listValues();
 
         if (quotedArchiveGroupList.isEmpty()) {
             return null;
         }
 
-        String sql = "select snapshotGroup from VolumeSnapshotGroupVO snapshotGroup, VmInstanceDeviceAddressGroupVO deviceAddressGroup where snapshotGroup.uuid = deviceAddressGroup.resourceUuid and deviceAddressGroup.uuid in :addressGroupUuids";
+        String sql = "select snapshotGroup from VolumeSnapshotGroupVO snapshotGroup, VmInstanceResourceMetadataGroupVO deviceAddressGroup where snapshotGroup.uuid = deviceAddressGroup.resourceUuid and deviceAddressGroup.uuid in :addressGroupUuids";
         TypedQuery<VolumeSnapshotGroupVO> q = dbf.getEntityManager().createQuery(sql, VolumeSnapshotGroupVO.class);
         q.setParameter("addressGroupUuids", quotedArchiveGroupList);
         List<VolumeSnapshotGroupVO> result = q.getResultList();

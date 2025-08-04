@@ -49,7 +49,7 @@ import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -134,7 +134,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     @Autowired
     private ResourceConfigFacade rcf;
     @Autowired
-    private VmInstanceDeviceManager vidm;
+    private VmInstanceResourceMetadataManager vidm;
     @Autowired
     private VmNicManager vmNicManager;
 
@@ -778,7 +778,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
 
     private void cleanDeviceAddress(SystemTagInventory tag) {
         VolumeVO volume = dbf.findByUuid(tag.getResourceUuid(), VolumeVO.class);
-        vidm.deleteVmDeviceAddress(volume.getUuid(), volume.getVmInstanceUuid());
+        vidm.deleteVmResourceMetadata(volume.getUuid(), volume.getVmInstanceUuid());
     }
 
     private void configKVMDeviceType() {
