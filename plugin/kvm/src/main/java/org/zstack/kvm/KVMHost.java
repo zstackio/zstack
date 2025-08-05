@@ -4482,10 +4482,12 @@ public class KVMHost extends HostBase implements Host {
                     logger.debug(info);
                     extEmitter.startVmOnKvmSuccess(KVMHostInventory.valueOf(getSelf()), spec);
                 } else {
-                    reply.setError(err(HostErrors.FAILED_TO_START_VM_ON_HYPERVISOR, "failed to start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+                    reply.setError(err(HostErrors.FAILED_TO_START_VM_ON_HYPERVISOR,
+                            "failed to start vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s]",
                             spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
-                            self.getUuid(), self.getManagementIp(), ret.getError()));
-                    logger.warn(reply.getError().getDetails());
+                            self.getUuid(), self.getManagementIp())
+                            .withOpaque("response.error", ret.getError()));
+                    logger.warn(reply.getError().getReadableDetails());
                     extEmitter.startVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), spec, reply.getError());
                 }
 

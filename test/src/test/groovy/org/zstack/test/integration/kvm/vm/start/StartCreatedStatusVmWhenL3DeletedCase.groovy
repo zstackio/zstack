@@ -54,7 +54,9 @@ class StartCreatedStatusVmWhenL3DeletedCase extends SubCase {
         )
         StartVmInstanceAction.Result result = startVmInstanceAction.call()
         assert null != result.error
-        assert result.error.cause.code == SysErrors.OPERATION_ERROR.toString()
+        assert result.error.code == "VM.1001"
+        assert result.error.causes.size() > 0
+        assert result.error.causes[0]["code"] == SysErrors.OPERATION_ERROR.toString()
     }
 
     @Override

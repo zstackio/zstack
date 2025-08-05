@@ -7894,7 +7894,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 StartVmInstanceReply reply = new StartVmInstanceReply();
-                reply.setError(err(VmErrors.START_ERROR, errorCode, errorCode.getDetails()));
+                reply.setError(err(VmErrors.START_ERROR, "failed to start VM[uuid:%s]", self.getUuid())
+                        .withCause(errorCode));
                 bus.reply(msg, reply);
                 taskChain.next();
             }
@@ -7918,7 +7919,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 APIStartVmInstanceEvent evt = new APIStartVmInstanceEvent(msg.getId());
-                evt.setError(err(VmErrors.START_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(err(VmErrors.START_ERROR, "failed to start VM[uuid:%s]", self.getUuid())
+                        .withCause(errorCode));
                 bus.publish(evt);
                 taskChain.next();
             }
