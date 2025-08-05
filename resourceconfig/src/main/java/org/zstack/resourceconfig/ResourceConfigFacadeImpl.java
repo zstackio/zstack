@@ -193,7 +193,7 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
     public <T> T getResourceConfigValue(GlobalConfig gc, String resourceUuid, Class<T> clz) {
         ResourceConfig rc = resourceConfigs.get(gc.getIdentity());
         if (rc == null) {
-            logger.debug(String.format("resource[uuid:%s] is not bound to global config[category:%s, name:%s], use global config instead", resourceUuid, gc.getCategory(), gc.getName()));
+            logger.trace(String.format("no resource config[category:%s, name:%s] found, use global config instead", gc.getCategory(), gc.getName()));
             return gc.value(clz);
         }
 
@@ -204,7 +204,7 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
     public <T> T getResourceConfigValueByResourceType(GlobalConfig gc, String resourceUuid, String resourceType, Class<T> clz) {
         ResourceConfig rc = resourceConfigs.get(gc.getIdentity());
         if (rc == null) {
-            logger.debug(String.format("resource[uuid:%s] is not bound to global config[category:%s, name:%s]", resourceUuid, gc.getCategory(), gc.getName()));
+            logger.trace(String.format("no resource config[category:%s, name:%s] found", gc.getCategory(), gc.getName()));
             return null;
         }
         return rc.getResourceConfigValueByResourceType(resourceUuid, resourceType, clz);
@@ -214,8 +214,7 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
     public <T> Map<String, T> getResourceConfigValues(GlobalConfig gc, List<String> resourceUuids, Class<T> clz) {
         ResourceConfig rc = resourceConfigs.get(gc.getIdentity());
         if (rc == null) {
-            logger.debug(String.format("resource is not bound to global config[category:%s, name:%s], " +
-                    "use global config instead", gc.getCategory(), gc.getName()));
+            logger.trace(String.format("no resource config[category:%s, name:%s] found, use global config instead", gc.getCategory(), gc.getName()));
 
             Map<String, T> result = new HashMap<>();
             resourceUuids.forEach(resourceUuid -> result.put(resourceUuid, gc.value(clz)));
@@ -231,8 +230,7 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
         resourceUuids.forEach(uuid -> {
             ResourceConfig rc = resourceConfigs.get(gc.getIdentity());
             if (rc == null) {
-                logger.debug(String.format("resource[uuid:%s] is not bound to global config[category:%s, name:%s], " +
-                        "use global config instead", uuid, gc.getCategory(), gc.getName()));
+                logger.trace(String.format("no resource config[category:%s, name:%s] found, use global config instead", gc.getCategory(), gc.getName()));
                 resourceConfigMap.put(uuid, gc.value(clz));
                 return;
             }
