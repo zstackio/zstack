@@ -13,7 +13,7 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 
-@RestRequest(path = "/identities/roles", method = HttpMethod.POST, responseClass = APICreateRoleEvent.class, parameterName = "params", morphTransform = Constants.MorphTransformIAM2)
+@RestRequest(path = "/identities/roles", method = HttpMethod.POST, responseClass = APICreateRoleEvent.class, parameterName = "params", morphTransform = Constants.MORPH_TRANSFORM_IAM2)
 public class APICreateRoleMsg extends APICreateMessage {
     @APIParam(maxLength = 255)
     private String name;

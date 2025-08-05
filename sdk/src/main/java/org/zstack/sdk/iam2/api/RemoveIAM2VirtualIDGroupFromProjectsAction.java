@@ -99,7 +99,6 @@ public class RemoveIAM2VirtualIDGroupFromProjectsAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "";
         info.morphTransform = "IAM2";
-
         return info;
     }
 

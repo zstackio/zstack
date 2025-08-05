@@ -108,7 +108,6 @@ public class UpdateAccountAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "updateAccount";
         info.morphTransform = "IAM1";
-
         return info;
     }
 

@@ -20,7 +20,7 @@ import java.util.List;
         method = HttpMethod.PUT,
         isAction = true,
         responseClass = APIUpdateRoleEvent.class,
-        morphTransform = Constants.MorphTransformIAM1)
+        morphTransform = Constants.MORPH_TRANSFORM_IAM1)
 public class APIUpdateRoleMsg extends APIMessage implements RoleMessage {
     @APIParam(resourceType = RoleVO.class)
     private String uuid;

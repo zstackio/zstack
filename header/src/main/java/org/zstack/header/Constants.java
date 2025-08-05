@@ -17,6 +17,6 @@ public interface Constants {
 
     String UUID_FOR_EXAMPLE = "UUID_FOR_EXAMPLE";
 
-    String MorphTransformIAM1 = "IAM1";
-    String MorphTransformIAM2 = "IAM2";
+    String MORPH_TRANSFORM_IAM1 = "IAM1";
+    String MORPH_TRANSFORM_IAM2 = "IAM2";
 }

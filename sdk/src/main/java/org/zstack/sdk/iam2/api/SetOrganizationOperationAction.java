@@ -99,7 +99,6 @@ public class SetOrganizationOperationAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "setOrganizationOperation";
         info.morphTransform = "IAM2";
-
         return info;
     }
 

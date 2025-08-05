@@ -5,10 +5,9 @@ import org.zstack.header.Constants;
 import org.zstack.header.identity.role.RoleVO;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.network.l3.APIAddDnsToL3NetworkMsg;
 import org.zstack.header.rest.RestRequest;
 
-@RestRequest(path = "/identities/roles/{uuid}", method = HttpMethod.DELETE, responseClass = APIDeleteRoleEvent.class, morphTransform = Constants.MorphTransformIAM2)
+@RestRequest(path = "/identities/roles/{uuid}", method = HttpMethod.DELETE, responseClass = APIDeleteRoleEvent.class, morphTransform = Constants.MORPH_TRANSFORM_IAM2)
 public class APIDeleteRoleMsg extends APIDeleteMessage implements RoleMessage {
     @APIParam(resourceType = RoleVO.class, successIfResourceNotExisting = true)
     private String uuid;
