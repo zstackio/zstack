@@ -16,14 +16,13 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.ForEachFunction;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import static org.zstack.core.Platform.inerr;
 
@@ -41,7 +40,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private List<Flow> flows = new ArrayList<>();
     private final Stack<Flow> rollBackFlows = new Stack<>();
     private final List<Flow> skippedFlows = new ArrayList<>();
-    private Map data = new HashMap();
+    private Map<Object, Object> data = new HashMap<>();
     private int currentLoop = 0;
     private Iterator<Flow> it;
     private boolean isStart = false;
@@ -59,7 +58,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private boolean enableDebugLog = true;
     private FlowMarshaller flowMarshaller;
     private List<FlowChainProcessor> processors;
-    private java.util.function.Function<Map, ErrorCode> preCheck;
+    private Function<Map, ErrorCode> preCheck;
     private List<List<Runnable>> afterDone = new ArrayList<>();
     private List<List<Runnable>> afterError = new ArrayList<>();
     private List<List<Runnable>> afterFinal = new ArrayList<>();
@@ -420,7 +419,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     private void callErrorHandler(boolean info) {
         if (info) {
-            printDebugLog(String.format("[FlowChain(%s): %s] rolled back all flows because error%s", id, name, errorCode));
+            printDebugLog(String.format("[FlowChain(%s): %s] rolled back all flows because error:\n%s",
+                    id, name, errorCode == null ? "" : errorCode.getReadableDetails()));
         }
 
         if (errorHandler != null) {
@@ -434,15 +434,12 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         if (!afterError.isEmpty()) {
             Collections.reverse(afterError);
 
-            for (List errors : afterError) {
-                CollectionUtils.safeForEach(errors, new ForEachFunction<Runnable>() {
-                    @Override
-                    public void run(Runnable arg) {
-                        if (logger.isTraceEnabled() && enableDebugLog) {
-                            logger.trace(String.format("call after error handler %s", arg.getClass()));
-                        }
-                        arg.run();
+            for (List<Runnable> errors : afterError) {
+                CollectionUtils.safeForEach(errors, arg -> {
+                    if (logger.isTraceEnabled() && enableDebugLog) {
+                        logger.trace(String.format("call after error handler %s", arg.getClass()));
                     }
+                    arg.run();
                 });
             }
         }
@@ -498,12 +495,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         }
 
         if (skipRestRollbacks) {
-            List<String> restRollbackNames = CollectionUtils.transformToList(rollBackFlows, new Function<String, Flow>() {
-                @Override
-                public String call(Flow arg) {
-                    return arg.getClass().getSimpleName();
-                }
-            });
+            List<String> restRollbackNames = CollectionUtils.transformAndRemoveNull(rollBackFlows, arg -> arg.getClass().getSimpleName());
 
             printDebugLog(String.format("[FlowChain(%s): %s] we are instructed to skip rollbacks for remaining flows%s",
                     id, name, restRollbackNames));
@@ -550,16 +542,13 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         if (!afterFinal.isEmpty()) {
             Collections.reverse(afterFinal);
 
-            for (List finals : afterFinal) {
-                CollectionUtils.safeForEach(finals, new ForEachFunction<Runnable>() {
-                    @Override
-                    public void run(Runnable arg) {
-                        if (logger.isTraceEnabled() && enableDebugLog) {
-                            logger.trace(String.format("call after final handler %s", arg.getClass()));
-                        }
-
-                        arg.run();
+            for (List<Runnable> finals : afterFinal) {
+                CollectionUtils.safeForEach(finals, arg -> {
+                    if (logger.isTraceEnabled() && enableDebugLog) {
+                        logger.trace(String.format("call after final handler %s", arg.getClass()));
                     }
+
+                    arg.run();
                 });
             }
         }
@@ -583,15 +572,12 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         if (!afterDone.isEmpty()) {
             Collections.reverse(afterDone);
 
-            for (List dones : afterDone) {
-                CollectionUtils.safeForEach(dones, new ForEachFunction<Runnable>() {
-                    @Override
-                    public void run(Runnable arg) {
-                        if (logger.isTraceEnabled() && enableDebugLog) {
-                            logger.trace(String.format("call after done handler %s", arg.getClass()));
-                        }
-                        arg.run();
+            for (List<Runnable> dones : afterDone) {
+                CollectionUtils.safeForEach(dones, arg -> {
+                    if (logger.isTraceEnabled() && enableDebugLog) {
+                        logger.trace(String.format("call after done handler %s", arg.getClass()));
                     }
+                    arg.run();
                 });
             }
         }
@@ -667,7 +653,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         }
 
         if (data == null) {
-            data = new HashMap<String, Object>();
+            data = new HashMap<>();
         }
 
         isStart = true;
@@ -678,12 +664,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         printDebugLog(String.format("[FlowChain(%s): %s] starts", id, name));
 
         if (logger.isTraceEnabled() && enableDebugLog) {
-            List<String> names = CollectionUtils.transformToList(flows, new Function<String, Flow>() {
-                @Override
-                public String call(Flow arg) {
-                    return String.format("%s[%s]", arg.getClass(), getFlowNameWithoutLocation(arg));
-                }
-            });
+            List<String> names = CollectionUtils.transformAndRemoveNull(flows, arg -> String.format("%s[%s]", arg.getClass(), getFlowNameWithoutLocation(arg)));
             logger.trace(String.format("execution path:\n%s", StringUtils.join(names, " -->\n")));
         }
 
