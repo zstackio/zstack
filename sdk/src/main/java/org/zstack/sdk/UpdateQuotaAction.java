@@ -102,7 +102,6 @@ public class UpdateQuotaAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "updateQuota";
         info.morphTransform = "IAM1";
-
         return info;
     }
 

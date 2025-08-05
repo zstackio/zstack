@@ -99,7 +99,6 @@ public class UpdateIAM2VirtualIDGroupAttributeAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "updateIAM2VirtualIDGroupAttribute";
         info.morphTransform = "IAM2";
-
         return info;
     }
 

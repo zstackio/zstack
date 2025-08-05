@@ -99,7 +99,6 @@ public class DetachPriceTableFromAccountAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "";
         info.morphTransform = "IAM1";
-
         return info;
     }
 

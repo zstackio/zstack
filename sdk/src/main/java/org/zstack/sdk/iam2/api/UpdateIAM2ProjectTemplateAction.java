@@ -108,7 +108,6 @@ public class UpdateIAM2ProjectTemplateAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "updateIAM2ProjectTemplate";
         info.morphTransform = "IAM2";
-
         return info;
     }
 

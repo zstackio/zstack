@@ -19,7 +19,7 @@ import static org.zstack.utils.CollectionDSL.list;
         method = HttpMethod.POST,
         responseClass = APICreatePolicyEvent.class,
         parameterName = "params",
-        morphTransform = Constants.MorphTransformIAM1
+        morphTransform = Constants.MORPH_TRANSFORM_IAM1
 )
 public class APICreatePolicyMsg extends APICreateMessage implements AccountMessage, APIAuditor {
     @APIParam(maxLength = 255)

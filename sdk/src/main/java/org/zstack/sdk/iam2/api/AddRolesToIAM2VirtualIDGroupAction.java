@@ -102,7 +102,6 @@ public class AddRolesToIAM2VirtualIDGroupAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "params";
         info.morphTransform = "IAM2";
-
         return info;
     }
 

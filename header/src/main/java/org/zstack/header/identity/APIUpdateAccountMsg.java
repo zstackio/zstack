@@ -15,7 +15,7 @@ import java.io.Serializable;
         method = HttpMethod.PUT,
         isAction = true,
         responseClass = APIUpdateAccountEvent.class,
-        morphTransform = Constants.MorphTransformIAM1
+        morphTransform = Constants.MORPH_TRANSFORM_IAM1
 )
 public class APIUpdateAccountMsg extends APIMessage implements AccountMessage, Serializable {
     @APIParam(resourceType = AccountVO.class, checkAccount = true, operationTarget = true)

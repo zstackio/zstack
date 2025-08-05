@@ -99,7 +99,6 @@ public class AttachIAM2ProjectToIAM2OrganizationAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "params";
         info.morphTransform = "IAM2";
-
         return info;
     }
 

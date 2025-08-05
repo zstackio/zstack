@@ -99,7 +99,6 @@ public class ChangeIAM2OrganizationStateAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "changeIAM2OrganizationState";
         info.morphTransform = "IAM2";
-
         return info;
     }
 

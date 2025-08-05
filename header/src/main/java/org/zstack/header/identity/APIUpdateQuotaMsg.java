@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIUpdateQuotaEvent.class,
         isAction = true,
         method = HttpMethod.PUT,
-        morphTransform = Constants.MorphTransformIAM1
+        morphTransform = Constants.MORPH_TRANSFORM_IAM1
 )
 public class APIUpdateQuotaMsg extends APIMessage implements AccountMessage {
     @APIParam(resourceType = AccountVO.class)

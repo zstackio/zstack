@@ -96,7 +96,6 @@ public class DeleteIAM2ProjectTemplateAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "";
         info.morphTransform = "IAM2";
-
         return info;
     }
 

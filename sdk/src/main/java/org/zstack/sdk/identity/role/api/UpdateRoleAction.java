@@ -108,7 +108,6 @@ public class UpdateRoleAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "updateRole";
         info.morphTransform = "IAM1";
-
         return info;
     }
 
