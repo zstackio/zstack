@@ -1,9 +1,13 @@
 package org.zstack.test.integration.network.sdnController
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.header.network.l3.L3NetworkConstant
 import org.zstack.sdk.*
+import org.zstack.sdnController.SdnControllerGlobalConfig
+import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands
+import org.zstack.sdnController.h3cVcfc.H3cVcfcV2Commands
 import org.zstack.sdnController.h3cVcfc.H3cVcfcSdnControllerSystemTags
 import org.zstack.sdnController.header.H3cSdnControllerTenantVO
 import org.zstack.sdnController.header.H3cSdnControllerTenantVO_
@@ -11,6 +15,7 @@ import org.zstack.sdnController.header.SdnControllerConstant
 import org.zstack.sdnController.header.SdnControllerVO
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.gson.JSONObjectUtil
 /**
  * Created by shixin on 2019/09/30.
  */
@@ -36,6 +41,8 @@ class SdnControllerCase extends SubCase {
             dbf = bean(DatabaseFacade.class)
             testSdnControllerApi()
             testH3cV2ControllerApi()
+            testSdnControllerPing()
+            testSdnControllerReconnect()
         }
     }
 
@@ -62,68 +69,62 @@ class SdnControllerCase extends SubCase {
             systemTags = [String.format("vdsUuid::%s", h3cVdsUuid), String.format("tenantUuid::%s", inputTenantUuid), String.format("startVni::%s::endVni::%s", sVni, eVni)]
         }
 
-        // 测试 pullSdnControllerTenant 功能
         testPullSdnControllerTenant(sdn2)
     }
 
     void testPullSdnControllerTenant(SdnControllerInventory sdn) {
-        // 测试只有 H3C VCFC V2 控制器支持 pull tenant 操作
-
-        // 1. 首次拉取租户信息
+        // Test pull tenant operation (only supported by H3C VCFC V2)
+        // 1. First pull tenant information
         def result = pullSdnControllerTenant {
             uuid = sdn.uuid
         } as List<H3cSdnControllerTenantInventory>
 
-        // 验证返回的租户信息
-        assert result.size() >= 0  // 可能为空，因为是首次同步
+        assert result.size() > 0
 
-        // 2. 查询数据库中的租户记录
+        // 2. Query tenant records in database
         def tenantVOs = Q.New(H3cSdnControllerTenantVO.class)
                 .eq(H3cSdnControllerTenantVO_.sdnControllerUuid, sdn.uuid)
                 .list()
 
-        // 验证同步的数据
-        // 根据真实 mock 数据，应该有 3 个租户，每个都有 VDS 关联
-        // Test 租户关联 1 个 VDS，default 租户关联 1 个 VDS，sr 租户关联 1 个 VDS
-        // 所以应该有 3 条记录（1+1+1=3）
+        // Should have 3 tenant records based on mock data
         assert tenantVOs.size() == 3
 
-        // 验证 Test 租户的数据
+        // Verify Test tenant data
         def testTenantRecords = tenantVOs.findAll { it.tenantUuid == "03e01b37-8440-471a-aa8f-8d1fb8cc1381" }
-        assert testTenantRecords.size() == 1  // 关联到 1 个 VDS
+        assert testTenantRecords.size() == 1
         assert testTenantRecords[0].tenantName == "Test"
-        assert testTenantRecords[0].status == SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATUS_ENABLE
+        assert testTenantRecords[0].state == SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATE_ENABLE
         assert testTenantRecords[0].vdsUuid == "eb32cf5e-04e9-42ad-b64c-2c3f9bacd3cc"
 
-        // 验证 default 租户的数据
+        // Verify default tenant data
         def defaultTenantRecords = tenantVOs.findAll { it.tenantUuid == "ffffffff-0000-0000-0000-000000000001" }
-        assert defaultTenantRecords.size() == 1  // 关联到 1 个 VDS
+        assert defaultTenantRecords.size() == 1
         assert defaultTenantRecords[0].tenantName == "default"
-        assert defaultTenantRecords[0].status == SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATUS_ENABLE
+        assert defaultTenantRecords[0].state == SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATE_ENABLE
         assert defaultTenantRecords[0].vdsUuid == "ffffffff-0000-0000-0000-000000000001"
 
-        // 验证 sr 租户的数据
+        // Verify sr tenant data
         def srTenantRecords = tenantVOs.findAll { it.tenantUuid == "c9d49b6f-d2cd-4636-b9d4-be0f9c9c7783" }
-        assert srTenantRecords.size() == 1  // 关联到 1 个 VDS
+        assert srTenantRecords.size() == 1
         assert srTenantRecords[0].tenantName == "sr"
-        assert srTenantRecords[0].status == SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATUS_ENABLE
+        assert srTenantRecords[0].state == SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATE_ENABLE
         assert srTenantRecords[0].vdsUuid == "ffffffff-0000-0000-0000-000000000001"
 
-        // 3. 再次拉取，验证幂等性
+        // 3. Pull again to verify idempotency
         def result2 = pullSdnControllerTenant {
             uuid = sdn.uuid
         } as List<H3cSdnControllerTenantInventory>
 
-        assert result2.size() == 3  // 应该返回所有同步的记录
+        assert result2.size() == 3
 
-        // 验证数据库记录数量没有变化
+        // Verify database record count unchanged
         def tenantVOs2 = Q.New(H3cSdnControllerTenantVO.class)
                 .eq(H3cSdnControllerTenantVO_.sdnControllerUuid, sdn.uuid)
                 .list()
-        assert tenantVOs2.size() == 3  // 记录数量应该保持不变
+        assert tenantVOs2.size() == 3
 
-        // 4. 测试不支持的控制器版本
-        // 创建一个 V1 版本的控制器
+        // 4. Test unsupported controller version
+        // Create a V1 controller
         SdnControllerInventory sdnV1 = addSdnController {
             vendorType = SdnControllerConstant.H3C_VCFC_CONTROLLER
             name = "sdn-v1"
@@ -134,7 +135,7 @@ class SdnControllerCase extends SubCase {
             systemTags = ["vdsUuid::test-vds-uuid"]
         }
 
-        // 尝试对 V1 控制器执行 pull tenant 操作，应该失败
+        // Pull tenant operation should fail for V1 controller
         expectError {
             pullSdnControllerTenant {
                 uuid = sdnV1.uuid
@@ -361,5 +362,138 @@ class SdnControllerCase extends SubCase {
 
         vxlanNetworks = queryL2Network {conditions=["type=" + SdnControllerConstant.HARDWARE_VXLAN_NETWORK_TYPE]}
         assert vxlanNetworks.size() == 0
+    }
+
+    void testSdnControllerPing() {
+        // Setup mock simulator for successful controller creation
+        env.simulator(H3cVcfcV2Commands.H3C_VCFC_GET_TOKEN) { HttpEntity<String> e, EnvSpec spec ->
+            def rsp = new H3cVcfcV2Commands.LoginRsp()
+            rsp.record = new H3cVcfcV2Commands.LoginReply()
+            rsp.record.token = "init-token-12345"
+            rsp.record.userName = "user"
+            rsp.record.domainName = "default"
+            return rsp
+        }
+
+        // Create H3C V2 SDN controller
+        SdnControllerInventory sdn = addSdnController {
+            vendorType = SdnControllerConstant.H3C_VCFC_CONTROLLER
+            name = "sdn-ping-test"
+            ip = "192.168.1.10"
+            userName = "user"
+            password = "password"
+            vendorVersion = SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V2
+        }
+
+        // Verify initial status is Connected
+        assert sdn.status == org.zstack.sdk.SdnControllerStatus.Connected
+
+        // Set ping interval to 1 second for testing
+        SdnControllerGlobalConfig.PING_INTERVAL.updateValue(1)
+
+        // Mock token retrieval failure to simulate ping failure
+        env.simulator(H3cVcfcV2Commands.H3C_VCFC_GET_TOKEN) { HttpEntity<String> e, EnvSpec spec ->
+            def rsp = new H3cVcfcV2Commands.LoginRsp()
+            rsp.record = null
+            return rsp
+        }
+
+        // Wait for ping failure, status should change to Disconnected
+        retryInSecs(10) {
+            SdnControllerInventory currentSdn = querySdnController { conditions = ["uuid=${sdn.uuid}".toString()] }[0]
+            assert currentSdn.status == org.zstack.sdk.SdnControllerStatus.Disconnected
+        }
+
+        // Mock token retrieval success to simulate ping recovery
+        env.simulator(H3cVcfcV2Commands.H3C_VCFC_GET_TOKEN) { HttpEntity<String> e, EnvSpec spec ->
+            def rsp = new H3cVcfcV2Commands.LoginRsp()
+            rsp.record = new H3cVcfcV2Commands.LoginReply()
+            rsp.record.token = "test-token-12345"
+            rsp.record.userName = "user"
+            rsp.record.domainName = "default"
+            return rsp
+        }
+
+        // Wait for ping success, status should change to Connected
+        retryInSecs(10) {
+            SdnControllerInventory currentSdn = querySdnController { conditions = ["uuid=${sdn.uuid}".toString()] }[0]
+            assert currentSdn.status == org.zstack.sdk.SdnControllerStatus.Connected
+        }
+
+        // Cleanup
+        removeSdnController {
+            uuid = sdn.uuid
+        }
+    }
+
+    void testSdnControllerReconnect() {
+        // Setup mock simulator for successful controller creation
+        env.simulator(H3cVcfcV2Commands.H3C_VCFC_GET_TOKEN) { HttpEntity<String> e, EnvSpec spec ->
+            def rsp = new H3cVcfcV2Commands.LoginRsp()
+            rsp.record = new H3cVcfcV2Commands.LoginReply()
+            rsp.record.token = "init-token-67890"
+            rsp.record.userName = "user"
+            rsp.record.domainName = "default"
+            return rsp
+        }
+
+        // Create H3C V2 SDN controller
+        SdnControllerInventory sdn = addSdnController {
+            vendorType = SdnControllerConstant.H3C_VCFC_CONTROLLER
+            name = "sdn-reconnect-test"
+            ip = "192.168.1.20"
+            userName = "user"
+            password = "password"
+            vendorVersion = SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V2
+        }
+
+        // Verify initial status is Connected
+        assert sdn.status == org.zstack.sdk.SdnControllerStatus.Connected
+
+        // Mock successful token retrieval for reconnect
+        boolean reconnectCalled = false
+        env.simulator(H3cVcfcV2Commands.H3C_VCFC_GET_TOKEN) { HttpEntity<String> e, EnvSpec spec ->
+            reconnectCalled = true
+            def rsp = new H3cVcfcV2Commands.LoginRsp()
+            rsp.record = new H3cVcfcV2Commands.LoginReply()
+            rsp.record.token = "reconnect-token-67890"
+            rsp.record.userName = "user"
+            rsp.record.domainName = "default"
+            return rsp
+        }
+
+        // Manually trigger reconnect
+        reconnectSdnController {
+            sdnControllerUuid = sdn.uuid
+        }
+
+        // Verify reconnect called token retrieval
+        assert reconnectCalled
+
+        // Verify status remains Connected
+        SdnControllerInventory currentSdn = querySdnController { conditions = ["uuid=${sdn.uuid}".toString()] }[0]
+        assert currentSdn.status == org.zstack.sdk.SdnControllerStatus.Connected
+
+        // Test reconnect failure scenario
+        reconnectCalled = false
+        env.simulator(H3cVcfcV2Commands.H3C_VCFC_GET_TOKEN) { HttpEntity<String> e, EnvSpec spec ->
+            reconnectCalled = true
+            throw new RuntimeException("Connection failed")
+        }
+
+        // Manually trigger reconnect, expect failure
+        expect(AssertionError.class) {
+            reconnectSdnController {
+                sdnControllerUuid = sdn.uuid
+            }
+        }
+
+        // Verify reconnect called token retrieval
+        assert reconnectCalled
+
+        // Cleanup
+        removeSdnController {
+            uuid = sdn.uuid
+        }
     }
 }

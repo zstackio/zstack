@@ -321,7 +321,7 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         }
         List<H3cSdnControllerTenantVO> disabledTenants = Q.New(H3cSdnControllerTenantVO.class)
                 .eq(H3cSdnControllerTenantVO_.sdnControllerUuid, sdnControllerUuid)
-                .eq(H3cSdnControllerTenantVO_.status, SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATUS_DISABLE)
+                .eq(H3cSdnControllerTenantVO_.state, SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATE_DISABLE)
                 .list();
         if (!disabledTenants.isEmpty()) {
             throw new ApiMessageInterceptionException(argerr("Cannot attach L3 network to VM because some tenants in SDN controller[uuid:%s] have been deleted. " +

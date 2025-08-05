@@ -18,6 +18,8 @@ public interface SdnController {
 
     void deleteSdnController(SdnControllerDeletionMsg msg, SdnControllerInventory sdn, Completion completion);
 
+    default void reconnectSdnController(Completion completion) {completion.success();};
+
     default void addHost(APISdnControllerAddHostMsg msg, Completion completion) {completion.success();};
     default void removeHost(SdnControllerRemoveHostMsg msg, Completion completion) {completion.success();};
 

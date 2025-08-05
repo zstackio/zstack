@@ -25,7 +25,7 @@ public class H3cSdnControllerTenantInventory {
     private String tenantName;
     private String vdsName;
     private String cloudDomainName;
-    private String status;
+    private String state;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -38,7 +38,7 @@ public class H3cSdnControllerTenantInventory {
         inv.setTenantName(vo.getTenantName());
         inv.setVdsName(vo.getVdsName());
         inv.setCloudDomainName(vo.getCloudDomainName());
-        inv.setStatus(vo.getStatus());
+        inv.setState(vo.getState());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
@@ -108,12 +108,12 @@ public class H3cSdnControllerTenantInventory {
         this.cloudDomainName = cloudDomainName;
     }
 
-    public String getStatus() {
-        return status;
+    public String getState() {
+        return state;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setState(String state) {
+        this.state = state;
     }
 
     public Timestamp getCreateDate() {

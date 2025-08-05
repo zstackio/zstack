@@ -94,4 +94,13 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="SdnControllerPingTracker" class="org.zstack.sdnController.SdnControllerPingTracker">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" order="-100"/>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.network.l2.SdnControllerDeleteExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
 </beans>

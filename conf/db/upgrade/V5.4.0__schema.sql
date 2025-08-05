@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`H3cSdnControllerTenantVO` (
     `tenantName` varchar(255) DEFAULT NULL,
     `vdsName` varchar(255) DEFAULT NULL,
     `cloudDomainName` varchar(255) DEFAULT NULL,
-    `status` varchar(32) DEFAULT NULL,
+    `state` varchar(32) NOT NULL DEFAULT "Enabled",
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`),

@@ -16,7 +16,7 @@ public class H3cSdnControllerTenantVO_ {
     public static volatile SingularAttribute<H3cSdnControllerTenantVO, String> tenantName;
     public static volatile SingularAttribute<H3cSdnControllerTenantVO, String> vdsName;
     public static volatile SingularAttribute<H3cSdnControllerTenantVO, String> cloudDomainName;
-    public static volatile SingularAttribute<H3cSdnControllerTenantVO, String> status;
+    public static volatile SingularAttribute<H3cSdnControllerTenantVO, String> state;
     public static volatile SingularAttribute<H3cSdnControllerTenantVO, Timestamp> createDate;
     public static volatile SingularAttribute<H3cSdnControllerTenantVO, Timestamp> lastOpDate;
 }
