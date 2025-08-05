@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.POST,
         parameterName = "params",
         responseClass = APIAttachRoleToAccountEvent.class,
-        morphTransform = Constants.MorphTransformIAM1
+        morphTransform = Constants.MORPH_TRANSFORM_IAM1
 )
 public class APIAttachRoleToAccountMsg extends APIMessage implements RoleMessage {
     @APIParam(resourceType = RoleVO.class)

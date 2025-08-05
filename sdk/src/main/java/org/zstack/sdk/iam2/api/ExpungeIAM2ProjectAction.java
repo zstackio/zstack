@@ -96,7 +96,6 @@ public class ExpungeIAM2ProjectAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "expungeIAM2Project";
         info.morphTransform = "IAM2";
-
         return info;
     }
 

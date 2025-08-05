@@ -12,7 +12,7 @@ import org.zstack.header.vo.ResourceVO;
         method = HttpMethod.PUT,
         isAction = true,
         responseClass = APIUpdateResourceConfigEvent.class,
-        morphTransform = Constants.MorphTransformIAM2)
+        morphTransform = Constants.MORPH_TRANSFORM_IAM2)
 public class APIUpdateResourceConfigMsg extends APIMessage implements ResourceConfigMessage {
     @APIParam
     private String category;

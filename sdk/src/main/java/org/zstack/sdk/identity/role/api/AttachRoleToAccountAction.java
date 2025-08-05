@@ -99,7 +99,6 @@ public class AttachRoleToAccountAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "params";
         info.morphTransform = "IAM1";
-
         return info;
     }
 

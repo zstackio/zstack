@@ -99,7 +99,6 @@ public class RemoveAttributesFromIAM2ProjectAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "";
         info.morphTransform = "IAM2";
-
         return info;
     }
 

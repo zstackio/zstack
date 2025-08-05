@@ -105,7 +105,6 @@ public class UpdateResourceConfigAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "updateResourceConfig";
         info.morphTransform = "IAM2";
-
         return info;
     }
 

@@ -99,7 +99,6 @@ public class SetIAM2ProjectRetirePolicyAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "setIAM2ProjectRetirePolicy";
         info.morphTransform = "IAM2";
-
         return info;
     }
 

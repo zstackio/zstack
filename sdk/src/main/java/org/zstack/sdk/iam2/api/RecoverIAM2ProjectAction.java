@@ -96,7 +96,6 @@ public class RecoverIAM2ProjectAction extends AbstractAction {
         info.needPoll = true;
         info.parameterName = "recoverIAM2Project";
         info.morphTransform = "IAM2";
-
         return info;
     }
 
