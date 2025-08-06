@@ -37,7 +37,7 @@ public class H3cSdnControllerTenantVO {
         @Column
         private String cloudDomainName;
         @Column
-        private String status;
+        private String state;
 
         @Column
         private Timestamp createDate;
@@ -106,12 +106,12 @@ public class H3cSdnControllerTenantVO {
                 this.cloudDomainName = cloudDomainName;
         }
 
-        public String getStatus() {
-                return status;
+        public String getState() {
+                return state;
         }
 
-        public void setStatus(String status) {
-                this.status = status;
+        public void setState(String state) {
+                this.state = state;
         }
 
         public Timestamp getCreateDate() {

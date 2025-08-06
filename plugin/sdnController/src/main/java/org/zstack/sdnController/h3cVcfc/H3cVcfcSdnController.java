@@ -18,10 +18,8 @@ import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
-import org.zstack.sdnController.SdnController;
-import org.zstack.sdnController.SdnControllerL2;
+import org.zstack.sdnController.*;
 import org.zstack.sdnController.header.*;
-import org.zstack.sdnController.SdnControllerLog;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -224,7 +222,11 @@ public class H3cVcfcSdnController implements SdnController, SdnControllerL2 {
 
     @Override
     public void handleMessage(SdnControllerMessage msg) {
-        bus.dealWithUnknownMessage((Message) msg);
+        if (msg instanceof SdnControllerPingMsg) {
+            handle((SdnControllerPingMsg)msg);
+        } else {
+            bus.dealWithUnknownMessage((Message) msg);
+        }
     }
 
     @Override
@@ -487,6 +489,39 @@ public class H3cVcfcSdnController implements SdnController, SdnControllerL2 {
         } catch (Exception e) {
             completion.fail(operr("Could not authenticate with SDN controller [ip:%s] because %s", self.getIp(), e.getMessage()));
         }
+    }
+
+    void handle(SdnControllerPingMsg msg) {
+        SdnControllerPingReply reply = new SdnControllerPingReply();
+        
+        getH3cControllerToken(new Completion(msg) {
+            @Override
+            public void success() {
+                reply.setSuccess(true);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    public void reconnectSdnController(Completion completion) {
+        getH3cControllerToken(new Completion(completion) {
+            @Override
+            public void success() {
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     // Protected methods for H3cVcfcCommands access, for subclass override

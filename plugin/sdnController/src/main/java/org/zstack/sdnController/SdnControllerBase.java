@@ -20,7 +20,6 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -67,6 +66,8 @@ public class SdnControllerBase {
     SdnControllerManager sdnMgr;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private SdnControllerPingTracker pingTracker;
 
     public SdnControllerVO self;
 
@@ -218,6 +219,24 @@ public class SdnControllerBase {
             public void rollback(FlowRollback trigger, Map data) {
                 changeSdnControllerStatus(SdnControllerStatus.Disconnected);
                 trigger.rollback();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "reconnect-to-sdn-controller";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                SdnController controller = getSdnController();
+                controller.reconnectSdnController(new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
             }
         }).then(new NoRollbackFlow() {
             String __name__ = "change-sdn-controller-status-to-connected";
@@ -702,6 +721,7 @@ public class SdnControllerBase {
             String __name__ = "delete-sdn-controller-on-db";
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                pingTracker.untrack(msg.getSdnControllerUuid());
                 dbf.removeByPrimaryKey(msg.getSdnControllerUuid(), SdnControllerVO.class);
                 trigger.next();
             }
@@ -1004,7 +1024,7 @@ public class SdnControllerBase {
                     newTenant.setTenantName(apiTenant.name);
                     newTenant.setVdsName(getVdsName(vdsUuid)); // Get VDS name
                     newTenant.setCloudDomainName(apiTenant.cloud_domain_name);
-                    newTenant.setStatus(SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATUS_ENABLE);
+                    newTenant.setState(SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATE_ENABLE);
                     tenantsToSave.add(newTenant);
                 } else {
                     // Existing tenant, check if update is needed
@@ -1018,8 +1038,8 @@ public class SdnControllerBase {
                         needUpdate = true;
                     }
                     // Ensure tenants found in API response are marked as enabled
-                    if (!SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATUS_ENABLE.equals(existingTenant.getStatus())) {
-                        existingTenant.setStatus(SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATUS_ENABLE);
+                    if (!SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATE_ENABLE.equals(existingTenant.getState())) {
+                        existingTenant.setState(SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATE_ENABLE);
                         needUpdate = true;
                     }
                     if (needUpdate) {
@@ -1032,8 +1052,8 @@ public class SdnControllerBase {
         // Handle tenants that exist in database but not in API (soft delete)
         for (H3cSdnControllerTenantVO existingTenant : existingTenants) {
             String key = generateTenantKey(existingTenant.getTenantUuid(), existingTenant.getVdsUuid());
-            if (!apiTenantKeys.contains(key) && !SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATUS_DISABLE.equals(existingTenant.getStatus())) {
-                existingTenant.setStatus(SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATUS_DISABLE);
+            if (!apiTenantKeys.contains(key) && !SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATE_DISABLE.equals(existingTenant.getState())) {
+                existingTenant.setState(SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATE_DISABLE);
                 tenantsToSave.add(existingTenant);
             }
         }

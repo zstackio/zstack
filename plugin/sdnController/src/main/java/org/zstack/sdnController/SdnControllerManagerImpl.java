@@ -55,6 +55,8 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     private TagManager tagMgr;
     @Autowired
     private SecurityGroupManager sgMgr;
+    @Autowired
+    private SdnControllerPingTracker pingTracker;
 
     private Map<String, SdnControllerFactory> sdnControllerFactories = Collections.synchronizedMap(new HashMap<String, SdnControllerFactory>());
 
@@ -181,6 +183,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
                     @Override
                     public void handle(Map data) {
                         logger.debug(String.format("successfully create sdn controller"));
+                        pingTracker.track(vo.getUuid());
                         completion.success();
                     }
                 });
