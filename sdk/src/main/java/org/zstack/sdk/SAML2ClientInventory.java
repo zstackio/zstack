@@ -20,6 +20,14 @@ public class SAML2ClientInventory extends org.zstack.sdk.SSOClientInventory {
         return this.spX509Certificate;
     }
 
+    public java.lang.String spMetadataUrl;
+    public void setSpMetadataUrl(java.lang.String spMetadataUrl) {
+        this.spMetadataUrl = spMetadataUrl;
+    }
+    public java.lang.String getSpMetadataUrl() {
+        return this.spMetadataUrl;
+    }
+
     public SAML2State state;
     public void setState(SAML2State state) {
         this.state = state;
