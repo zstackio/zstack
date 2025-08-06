@@ -28,6 +28,10 @@
     </message>
 
     <message>
+        <name>org.zstack.sdnController.header.APIChangeSdnControllerMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.sdnController.header.APIReconnectSdnControllerMsg</name>
     </message>
 

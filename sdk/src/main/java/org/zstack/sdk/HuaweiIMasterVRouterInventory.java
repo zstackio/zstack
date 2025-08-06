@@ -52,6 +52,14 @@ public class HuaweiIMasterVRouterInventory  {
         return this.fabricUuid;
     }
 
+    public java.lang.String sdnControllerUuid;
+    public void setSdnControllerUuid(java.lang.String sdnControllerUuid) {
+        this.sdnControllerUuid = sdnControllerUuid;
+    }
+    public java.lang.String getSdnControllerUuid() {
+        return this.sdnControllerUuid;
+    }
+
     public java.lang.String state;
     public void setState(java.lang.String state) {
         this.state = state;
