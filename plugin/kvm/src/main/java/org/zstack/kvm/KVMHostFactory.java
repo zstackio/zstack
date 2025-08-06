@@ -47,8 +47,11 @@ import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.tag.FormTagExtensionPoint;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
+import org.zstack.header.tag.SystemTagOperationJudger;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressVO;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressVO_;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands.*;
@@ -88,6 +91,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.kvm.KVMConstant.CPU_MODE_NONE;
+import static org.zstack.utils.CollectionDSL.list;
 
 public class KVMHostFactory extends AbstractService implements HypervisorFactory, Component,
         ManagementNodeReadyExtensionPoint, MaxDataVolumeNumberExtensionPoint, HypervisorMessageFactory, ProxyHardwareFactory {
@@ -787,6 +791,48 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                         throw new OperationFailureException(argerr("vm do not support having both SCSI and Virtio-SCSI bus type volumes simultaneously."));
                     }
                 }
+            }
+        });
+
+        KVMSystemTags.VOLUME_SCSI.installJudger(new SystemTagOperationJudger() {
+            @Override
+            public void tagPreCreated(SystemTagInventory tag) {
+                cleanUpVmAddress(tag.getResourceUuid());
+            }
+
+            @Override
+            public void tagPreDeleted(SystemTagInventory tag) {
+                cleanUpVmAddress(tag.getResourceUuid());
+            }
+
+            private void cleanUpVmAddress(String relatedVolumeUuid) {
+                Tuple vmTuple = Q.New(VolumeVO.class, VmInstanceVO.class)
+                        .table0()
+                            .eq(VolumeVO_.uuid, relatedVolumeUuid)
+                            .eq(VolumeVO_.vmInstanceUuid).table1(VmInstanceVO_.uuid)
+                        .table1()
+                            .select(VmInstanceVO_.uuid, VmInstanceVO_.rootVolumeUuid)
+                        .findTuple();
+                if (vmTuple == null) {
+                    return;
+                }
+
+                String vmUuid = vmTuple.get(0, String.class);
+                String rootVolumeUuid = vmTuple.get(1, String.class);
+
+                logger.info(String.format(
+                        "All VmInstanceDeviceAddressVO related VM[uuid:%s] except for the root volume will be cleaned up",
+                        vmUuid));
+
+                SQL.New(VmInstanceDeviceAddressVO.class)
+                        .eq(VmInstanceDeviceAddressVO_.vmInstanceUuid, vmUuid)
+                        .notIn(VmInstanceDeviceAddressVO_.resourceUuid, list(rootVolumeUuid))
+                        .delete();
+            }
+
+            @Override
+            public void tagPreUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+                // do-nothing
             }
         });
 
