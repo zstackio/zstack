@@ -36,6 +36,14 @@ public class MetaServerService  {
         return this.usedMemoryInBytes;
     }
 
+    public long systemMemoryInBytes;
+    public void setSystemMemoryInBytes(long systemMemoryInBytes) {
+        this.systemMemoryInBytes = systemMemoryInBytes;
+    }
+    public long getSystemMemoryInBytes() {
+        return this.systemMemoryInBytes;
+    }
+
     public long maxMemoryInBytes;
     public void setMaxMemoryInBytes(long maxMemoryInBytes) {
         this.maxMemoryInBytes = maxMemoryInBytes;
