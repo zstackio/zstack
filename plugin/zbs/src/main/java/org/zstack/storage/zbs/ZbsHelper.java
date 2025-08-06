@@ -17,6 +17,10 @@ public class ZbsHelper {
         }
     }
 
+    public static String buildHeartbeatVolumePath(String logicalPool) {
+        return String.format("cbd:%s_physical/%s/%s", logicalPool, logicalPool, ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME);
+    }
+
     public static String buildVolumePath(String physicalPool, String logicalPool, String volId) {
         String base = volId.replace("-", "");
         return String.format(ZbsConstants.ZBS_CBD_LUN_PATH_FORMAT, physicalPool, logicalPool, base);
