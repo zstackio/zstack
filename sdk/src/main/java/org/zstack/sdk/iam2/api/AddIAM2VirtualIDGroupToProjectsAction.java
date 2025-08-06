@@ -95,6 +95,7 @@ public class AddIAM2VirtualIDGroupToProjectsAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
+        info.morphTransform = "IAM2";
         return info;
     }
 

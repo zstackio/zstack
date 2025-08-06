@@ -98,6 +98,7 @@ public class SetIAM2ProjectLoginExpiredAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "setIAM2ProjectLoginExpired";
+        info.morphTransform = "IAM2";
         return info;
     }
 
