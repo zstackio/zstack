@@ -10,6 +10,8 @@ import org.zstack.cbd.kvm.CbdVolumeTo;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.asyncbatch.While;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -24,9 +26,11 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostAO_;
+import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.image.ImageConstant;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.addon.*;
 import org.zstack.header.storage.addon.primary.*;
@@ -35,6 +39,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeStats;
+import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostVO;
 import org.zstack.kvm.KVMHostVO_;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -69,6 +74,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     protected RESTFacade restf;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private CloudBus bus;
 
     private ExternalPrimaryStorageVO self;
     private AddonInfo addonInfo;
@@ -88,6 +95,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String CREATE_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/create";
     public static final String DELETE_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/delete";
     public static final String ROLLBACK_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/rollback";
+    public static final String CHECK_HOST_STORAGE_CONNECTION_PATH = "/zbs/primarystorage/check/host/connection";
 
     private static final StorageCapabilities capabilities = new StorageCapabilities();
 
@@ -216,11 +224,11 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public HeartbeatVolumeTO getHeartbeatVolumeActiveInfo(HostInventory h) {
         reloadDbInfo();
 
-        // FIXME: hard code for install path
         CbdHeartbeatVolumeTO to = new CbdHeartbeatVolumeTO();
-        to.setInstallPath(String.format("cbd:%s_physical/%s/%s", config.getLogicalPoolName(), config.getLogicalPoolName(), ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME));
+        to.setInstallPath(buildHeartbeatVolumePath(config.getLogicalPoolName()));
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
         to.setCoveringPaths(Collections.singletonList(config.getLogicalPoolName()));
+
         return to;
     }
 
@@ -456,14 +464,24 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void reportNodeHealthy(HostInventory host, ReturnValueCompletion<NodeHealthy> comp) {
-        NodeHealthy healthy = new NodeHealthy();
+        CheckHostStorageConnectionCmd cmd = new CheckHostStorageConnectionCmd();
+        cmd.setHostUuid(host.getUuid());
+        cmd.setPath(buildHeartbeatVolumePath(config.getLogicalPoolName()));
 
-        Arrays.asList(VolumeProtocol.CBD).forEach(it -> {
-            // TODO: CHECK_HOST_STORAGE_CONNECTION_PATH
-            healthy.setHealthy(it, StorageHealthy.Ok);
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setCommand(cmd);
+        msg.setHostUuid(host.getUuid());
+        msg.setPath(CHECK_HOST_STORAGE_CONNECTION_PATH);
+        msg.setNoStatusCheck(true);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.send(msg, new CloudBusCallBack(comp) {
+            @Override
+            public void run(MessageReply reply) {
+                NodeHealthy healthy = new NodeHealthy();
+                healthy.setHealthy(VolumeProtocol.CBD, reply.isSuccess() ? StorageHealthy.Ok : StorageHealthy.Failed);
+                comp.success(healthy);
+            }
         });
-
-        comp.success(healthy);
     }
 
     @Override
@@ -1610,6 +1628,28 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             this.port = port;
         }
     }
+
+    public static class CheckHostStorageConnectionCmd {
+        public String hostUuid;
+        private String path;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+    }
+
 
     public static class AgentResponse extends ZbsMdsBase.AgentResponse {
     }
