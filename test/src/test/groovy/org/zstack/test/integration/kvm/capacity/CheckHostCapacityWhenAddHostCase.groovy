@@ -5,10 +5,10 @@ import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.AddKVMHostAction
+import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.GetCpuMemoryCapacityResult
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.test.integration.kvm.host.HostEnv
-import org.zstack.sdk.ClusterInventory
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
@@ -64,7 +64,7 @@ class CheckHostCapacityWhenAddHostCase extends SubCase {
             clusterUuids = [cluster.uuid]
         }
 
-        KVMGlobalConfig.RESERVED_CPU_CAPACITY.updateValue(result.availableCpu)
+        KVMGlobalConfig.RESERVED_CPU_CAPACITY.updateValue(76)
 
         createVmInstance {
             name = "vm"
@@ -72,6 +72,16 @@ class CheckHostCapacityWhenAddHostCase extends SubCase {
             l3NetworkUuids = [l3.uuid]
             instanceOfferingUuid = instanceOffering.uuid
             clusterUuid = cluster.uuid
+        }
+
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = "4c-vm"
+                imageUuid = image.uuid
+                l3NetworkUuids = [l3.uuid]
+                instanceOfferingUuid = instanceOffering.uuid
+                clusterUuid = cluster.uuid
+            }
         }
     }
 
