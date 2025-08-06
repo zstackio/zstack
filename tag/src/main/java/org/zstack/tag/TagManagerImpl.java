@@ -32,6 +32,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import javax.persistence.metamodel.EntityType;
 import java.lang.reflect.Field;
@@ -709,6 +710,37 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             }
 
             preTagDeleted(SystemTagInventory.valueOf(stag));
+        }
+
+        Tuple tuple = Q.New(SystemTagVO.class)
+                .eq(SystemTagVO_.uuid, msg.getUuid())
+                .select(SystemTagVO_.tag, SystemTagVO_.resourceUuid, SystemTagVO_.resourceType)
+                .findTuple();
+        if (tuple != null) {
+            logger.debug(String.format("deleted system tag[%s] for resource[%s, %s]",
+                    tuple.get(0, String.class), tuple.get(1, String.class), tuple.get(2, String.class)));
+        }
+
+        if (tuple == null) {
+            tuple = Q.New(UserTagVO.class)
+                    .eq(UserTagVO_.uuid, msg.getUuid())
+                    .select(UserTagVO_.tag, UserTagVO_.resourceUuid, UserTagVO_.resourceType)
+                    .findTuple();
+            if (tuple != null) {
+                logger.debug(String.format("deleted user tag[%s] for resource[%s, %s]",
+                        tuple.get(0, String.class), tuple.get(1, String.class), tuple.get(2, String.class)));
+            }
+        }
+
+        if (tuple == null) {
+            tuple = Q.New(TagPatternVO.class)
+                    .eq(TagPatternVO_.uuid, msg.getUuid())
+                    .select(TagPatternVO_.name, TagPatternVO_.value)
+                    .findTuple();
+            if (tuple != null) {
+                logger.debug(String.format("deleted tag pattern[%s] with value[%s]",
+                        tuple.get(0, String.class), tuple.get(1, String.class)));
+            }
         }
 
         dbf.removeByPrimaryKey(msg.getUuid(), SystemTagVO.class);
