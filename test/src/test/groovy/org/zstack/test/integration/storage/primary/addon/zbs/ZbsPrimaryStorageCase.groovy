@@ -4,10 +4,14 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageStatus
 import org.zstack.cbd.MdsUri
+import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.*
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig
+import org.zstack.header.storage.primary.PrimaryStorageHostStatus
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.storage.zbs.ZbsConstants
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
@@ -30,6 +34,7 @@ class ZbsPrimaryStorageCase extends SubCase {
     PrimaryStorageInventory ps
     DiskOfferingInventory diskOffering
     VolumeInventory vol, vol2
+    KVMHostInventory kvm
 
     @Override
     void clean() {
@@ -146,15 +151,55 @@ class ZbsPrimaryStorageCase extends SubCase {
             cluster = env.inventoryByName("cluster") as ClusterInventory
             ps = env.inventoryByName("zbs-1") as PrimaryStorageInventory
             diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
+            kvm = env.inventoryByName("kvm-1") as KVMHostInventory
 
             testDefaultConfig()
             testUpdateExternalPrimaryStorage()
             testLifecycle()
             testDataVolumeLifecycle()
             testMdsPing()
+            testCheckHostStorageConnection()
             testNegativeScenario()
             testDataVolumeNegativeScenario()
             testDecodeMdsUriWithSpecialPassword()
+        }
+    }
+
+    void testCheckHostStorageConnection() {
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        env.afterSimulator(ZbsStorageController.CHECK_HOST_STORAGE_CONNECTION_PATH) { rsp, HttpEntity<String> e ->
+            ZbsStorageController.CheckHostStorageConnectionCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckHostStorageConnectionCmd)
+
+            if (cmd.hostUuid == kvm.getUuid()) {
+                throw new HttpError(404, "on purpose")
+            }
+
+            return new KVMAgentCommands.AgentResponse()
+        }
+
+        expect(AssertionError.class) {
+            reconnectHost {
+                uuid = kvm.getUuid()
+            }
+        }
+
+        retryInSecs {
+            assert Q.New(PrimaryStorageHostRefVO.class)
+                    .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, ps.uuid)
+                    .eq(PrimaryStorageHostRefVO_.hostUuid, kvm.getUuid())
+                    .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
+                    .count() == 1
+        }
+
+        env.cleanSimulatorAndMessageHandlers()
+
+        detachPrimaryStorageFromCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
         }
     }
 
