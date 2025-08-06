@@ -43,9 +43,7 @@ import org.zstack.header.volume.VolumeType;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.ResourceHelper;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
@@ -55,6 +53,9 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.CollectionUtils.transform;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -267,7 +268,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             return;
         }
 
-        List<StopVmInstanceMsg> msgs = CollectionUtils.transformToList(vmUuids, (Function<StopVmInstanceMsg, String>) arg -> {
+        List<StopVmInstanceMsg> msgs = transformAndRemoveNull(vmUuids, arg -> {
             StopVmInstanceMsg msg = new StopVmInstanceMsg();
             msg.setVmInstanceUuid(arg);
             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg);
@@ -357,13 +358,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                     @Transactional
                     public void run() {
                         List<InstanceOfferingInventory> offerings = action.getParentIssuerContext();
-                        List<String> offeringUuids = CollectionUtils.transformToList(offerings,
-                                new Function<String, InstanceOfferingInventory>() {
-                                    @Override
-                                    public String call(InstanceOfferingInventory arg) {
-                                        return arg.getUuid();
-                                    }
-                                });
+                        List<String> offeringUuids = transformAndRemoveNull(offerings, InstanceOfferingInventory::getUuid);
 
                         String sql = "update VmInstanceVO vm" +
                                 " set vm.instanceOfferingUuid = null" +
@@ -569,12 +564,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         List<VmDeletionStruct> ret = null;
         if (HostVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<HostInventory> hosts = action.getParentIssuerContext();
-            List<String> huuids = CollectionUtils.transformToList(hosts, new Function<String, HostInventory>() {
-                @Override
-                public String call(HostInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> huuids = transformAndRemoveNull(hosts, HostInventory::getUuid);
 
             Map<String, VmInstanceVO> vmvos = new HashMap<>();
             SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
@@ -587,12 +577,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
             if (ClusterVO.class.getSimpleName().equals(action.getRootIssuer())) {
                 List<ClusterInventory> clusters = action.getRootIssuerContext();
-                List<String> clusterUuids = CollectionUtils.transformToList(clusters, new Function<String, ClusterInventory>() {
-                    @Override
-                    public String call(ClusterInventory arg) {
-                        return arg.getUuid();
-                    }
-                });
+                List<String> clusterUuids = transformAndRemoveNull(clusters, ClusterInventory::getUuid);
                 q = dbf.createQuery(VmInstanceVO.class);
                 q.add(VmInstanceVO_.clusterUuid, Op.IN, clusterUuids);
                 q.add(VmInstanceVO_.type, Op.EQ, VmInstanceConstant.USER_VM_TYPE);
@@ -602,12 +587,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
             } else if (ZoneVO.class.getSimpleName().equals(action.getRootIssuer())) {
                 List<ZoneInventory> zones = action.getRootIssuerContext();
-                List<String> zoneUuids = CollectionUtils.transformToList(zones, new Function<String, ZoneInventory>() {
-                    @Override
-                    public String call(ZoneInventory arg) {
-                        return arg.getUuid();
-                    }
-                });
+                List<String> zoneUuids = transformAndRemoveNull(zones, ZoneInventory::getUuid);
                 q = dbf.createQuery(VmInstanceVO.class);
                 q.add(VmInstanceVO_.zoneUuid, Op.IN, zoneUuids);
                 q.add(VmInstanceVO_.type, Op.EQ, VmInstanceConstant.USER_VM_TYPE);
@@ -623,15 +603,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         } else if (NAME.equals(action.getParentIssuer())) {
             return action.getParentIssuerContext();
         } else if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> pruuids = CollectionUtils.transformToList(
-                    (List<PrimaryStorageInventory>) action.getParentIssuerContext(),
-                    new Function<String, PrimaryStorageInventory>() {
-                        @Override
-                        public String call(PrimaryStorageInventory arg) {
-                            return arg.getUuid();
-                        }
-                    });
-
+            final List<String> pruuids = transformAndRemoveNull(action.getParentIssuerContext(), PrimaryStorageInventory::getUuid);
 
             List<VmInstanceVO> vmvos = new Callable<List<VmInstanceVO>>() {
                 @Override
@@ -656,14 +628,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 ret = toVmDeletionStruct(vmvos);
             }
         } else if (L3NetworkVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> l3uuids = CollectionUtils.transformToList(
-                    (List<L3NetworkInventory>) action.getParentIssuerContext(),
-                    new Function<String, L3NetworkInventory>() {
-                        @Override
-                        public String call(L3NetworkInventory arg) {
-                            return arg.getUuid();
-                        }
-                    });
+            final List<String> l3uuids = transformAndRemoveNull(action.getParentIssuerContext(), L3NetworkInventory::getUuid);
 
             List<VmInstanceVO> vmvos = new Callable<List<VmInstanceVO>>() {
                 @Override
@@ -690,14 +655,15 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 ret = toVmDeletionStruct(vmvos);
             }
         } else if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> ipruuids = CollectionUtils.transformToList(
-                    (List<IpRangeInventory>) action.getParentIssuerContext(),
-                    new Function<String, IpRangeInventory>() {
-                        @Override
-                        public String call(IpRangeInventory arg) {
-                            return Q.New(NormalIpRangeVO.class).select(NormalIpRangeVO_.uuid).eq(NormalIpRangeVO_.uuid, arg.getUuid()).findValue();
-                        }
-                    });
+            List<IpRangeInventory> ipRanges = action.getParentIssuerContext();
+            if (ipRanges.isEmpty()) {
+                return new ArrayList<>();
+            }
+
+            List<String> ipruuids = Q.New(NormalIpRangeVO.class)
+                    .select(NormalIpRangeVO_.uuid)
+                    .in(NormalIpRangeVO_.uuid, transform(ipRanges, IpRangeInventory::getUuid))
+                    .listValues();
 
             if (ipruuids.isEmpty()) {
                 return new ArrayList<>();
@@ -729,14 +695,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 ret = toVmDeletionStruct(vmvos);
             }
         } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> auuids = CollectionUtils.transformToList(
-                    (List<AccountInventory>) action.getParentIssuerContext(),
-                    new Function<String, AccountInventory>() {
-                        @Override
-                        public String call(AccountInventory arg) {
-                            return arg.getUuid();
-                        }
-                    });
+            final List<String> auuids = transformAndRemoveNull(action.getParentIssuerContext(), AccountInventory::getUuid);
             
             List<VmInstanceVO> vmvos = ResourceHelper.findOwnResources(VmInstanceVO.class, auuids);
             if (!vmvos.isEmpty()) {

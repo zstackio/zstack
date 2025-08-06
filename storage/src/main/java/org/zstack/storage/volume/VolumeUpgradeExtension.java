@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by xing5 on 2016/5/25.
@@ -90,14 +91,11 @@ public class VolumeUpgradeExtension implements Component {
                     return;
                 }
 
-                List<GetVolumeRootImageUuidFromPrimaryStorageMsg> msgs = CollectionUtils.transformToList(vos, new Function<GetVolumeRootImageUuidFromPrimaryStorageMsg, VolumeVO>() {
-                    @Override
-                    public GetVolumeRootImageUuidFromPrimaryStorageMsg call(VolumeVO arg) {
-                        GetVolumeRootImageUuidFromPrimaryStorageMsg msg = new GetVolumeRootImageUuidFromPrimaryStorageMsg();
-                        msg.setVolume(VolumeInventory.valueOf(arg));
-                        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, arg.getPrimaryStorageUuid());
-                        return msg;
-                    }
+                List<GetVolumeRootImageUuidFromPrimaryStorageMsg> msgs = transformAndRemoveNull(vos, arg -> {
+                    GetVolumeRootImageUuidFromPrimaryStorageMsg msg = new GetVolumeRootImageUuidFromPrimaryStorageMsg();
+                    msg.setVolume(VolumeInventory.valueOf(arg));
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, arg.getPrimaryStorageUuid());
+                    return msg;
                 });
 
                 for (final GetVolumeRootImageUuidFromPrimaryStorageMsg msg : msgs) {
@@ -150,14 +148,11 @@ public class VolumeUpgradeExtension implements Component {
                     return;
                 }
 
-                List<SyncVolumeSizeMsg> msgs = CollectionUtils.transformToList(vols, new Function<SyncVolumeSizeMsg, VolumeVO>() {
-                    @Override
-                    public SyncVolumeSizeMsg call(VolumeVO arg) {
-                        SyncVolumeSizeMsg msg = new SyncVolumeSizeMsg();
-                        msg.setVolumeUuid(arg.getUuid());
-                        bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, arg.getUuid());
-                        return msg;
-                    }
+                List<SyncVolumeSizeMsg> msgs = transformAndRemoveNull(vols, arg -> {
+                    SyncVolumeSizeMsg msg = new SyncVolumeSizeMsg();
+                    msg.setVolumeUuid(arg.getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, arg.getUuid());
+                    return msg;
                 });
 
                 bus.send(msgs);

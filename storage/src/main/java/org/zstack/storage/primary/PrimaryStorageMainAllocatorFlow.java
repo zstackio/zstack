@@ -15,10 +15,8 @@ import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageConstant.AllocatorParams;
-import org.zstack.storage.addon.primary.ExternalPrimaryStorage;
-import org.zstack.utils.CollectionUtils;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -29,6 +27,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionUtils.distinctByKey;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -183,12 +182,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
             return res;
         }
 
-        List<String> psUuids = CollectionUtils.transformToList(vos, new Function<String, PrimaryStorageVO>() {
-            @Override
-            public String call(PrimaryStorageVO arg) {
-                return arg.getUuid();
-            }
-        });
+        List<String> psUuids = transformAndRemoveNull(vos, ResourceVO::getUuid);
 
         String sql = "select i.primaryStorageUuid from ImageCacheVO i where i.primaryStorageUuid in (:psUuids) and i.imageUuid = :iuuid";
         TypedQuery<String> iq = dbf.getEntityManager().createQuery(sql, String.class);

@@ -21,13 +21,13 @@ import org.zstack.header.vm.VmDeletionStruct;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.ResourceHelper;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -169,19 +169,14 @@ public class SecurityGroupCascadeExtension extends AbstractAsyncCascadeExtension
 
     private List<VmNicSecurityGroupRefInventory> refFromAction(CascadeAction action) {
         List<VmDeletionStruct> vms = action.getParentIssuerContext();
-        List<String> nicUuids = new ArrayList<String>();
+        List<String> nicUuids = new ArrayList<>();
         for (VmDeletionStruct vm : vms) {
-            nicUuids.addAll(CollectionUtils.transformToList(vm.getInventory().getVmNics(), new Function<String, VmNicInventory>() {
-                @Override
-                public String call(VmNicInventory arg) {
-                    return arg.getUuid();
-                }
-            }));
+            nicUuids.addAll(transformAndRemoveNull(vm.getInventory().getVmNics(), VmNicInventory::getUuid));
         }
 
 
         if (nicUuids.isEmpty()) {
-            return new ArrayList<VmNicSecurityGroupRefInventory>();
+            return new ArrayList<>();
         }
 
         SimpleQuery<VmNicSecurityGroupRefVO> q = dbf.createQuery(VmNicSecurityGroupRefVO.class);

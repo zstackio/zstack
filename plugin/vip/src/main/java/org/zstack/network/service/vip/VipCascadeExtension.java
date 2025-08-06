@@ -17,13 +17,12 @@ import org.zstack.header.network.l3.*;
 import org.zstack.identity.ResourceHelper;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -60,14 +59,11 @@ public class VipCascadeExtension extends AbstractAsyncCascadeExtension {
             return;
         }
 
-        List<VipDeletionMsg> msgs = CollectionUtils.transformToList(vipinvs, new Function<VipDeletionMsg, VipInventory>() {
-            @Override
-            public VipDeletionMsg call(VipInventory arg) {
-                VipDeletionMsg msg = new VipDeletionMsg();
-                msg.setVipUuid(arg.getUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, VipConstant.SERVICE_ID, msg.getVipUuid());
-                return msg;
-            }
+        List<VipDeletionMsg> msgs = transformAndRemoveNull(vipinvs, arg -> {
+            VipDeletionMsg msg = new VipDeletionMsg();
+            msg.setVipUuid(arg.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, VipConstant.SERVICE_ID, msg.getVipUuid());
+            return msg;
         });
 
         bus.send(msgs, 10, new CloudBusListCallBack(completion) {

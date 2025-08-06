@@ -70,6 +70,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 public class NfsPrimaryStorage extends PrimaryStorageBase {
     private static final CLogger logger = Utils.getLogger(NfsPrimaryStorage.class);
@@ -358,12 +359,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     public void deleteHook() {
-        List<String> cuuids = CollectionUtils.transformToList(self.getAttachedClusterRefs(), new Function<String, PrimaryStorageClusterRefVO>() {
-            @Override
-            public String call(PrimaryStorageClusterRefVO arg) {
-                return arg.getClusterUuid();
-            }
-        });
+        List<String> cuuids = transformAndRemoveNull(self.getAttachedClusterRefs(), PrimaryStorageClusterRefVO::getClusterUuid);
 
         for (String cuuid : cuuids) {
             NfsPrimaryStorageBackend backend = getBackendByClusterUuid(cuuid);
@@ -692,12 +688,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
     @Transactional(readOnly = true)
     protected NfsPrimaryStorageBackend getUsableBackend() {
-        List<String> cuuids = CollectionUtils.transformToList(self.getAttachedClusterRefs(), new Function<String, PrimaryStorageClusterRefVO>() {
-            @Override
-            public String call(PrimaryStorageClusterRefVO arg) {
-                return arg.getClusterUuid();
-            }
-        });
+        List<String> cuuids = transformAndRemoveNull(self.getAttachedClusterRefs(), PrimaryStorageClusterRefVO::getClusterUuid);
 
         if (cuuids.isEmpty()) {
             return null;

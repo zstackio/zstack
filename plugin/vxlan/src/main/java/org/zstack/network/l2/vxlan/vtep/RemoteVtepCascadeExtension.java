@@ -1,25 +1,21 @@
 package org.zstack.network.l2.vxlan.vtep;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 public class RemoteVtepCascadeExtension extends AbstractAsyncCascadeExtension {
     private static final CLogger logger = Utils.getLogger(RemoteVtepCascadeExtension.class);
@@ -97,12 +93,7 @@ public class RemoteVtepCascadeExtension extends AbstractAsyncCascadeExtension {
     private List<RemoteVtepInventory> vtepFromAction(CascadeAction action) {
         List<RemoteVtepInventory> ret = null;
         if (L2NetworkVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> l2uuids = CollectionUtils.transformToList((List<L2NetworkInventory>)action.getParentIssuerContext(), new Function<String, L2NetworkInventory>() {
-                @Override
-                public String call(L2NetworkInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> l2uuids = transformAndRemoveNull(action.getParentIssuerContext(), L2NetworkInventory::getUuid);
 
             List<RemoteVtepVO> vos = Q.New(RemoteVtepVO.class).in(RemoteVtepVO_.poolUuid, l2uuids).list();
             if (!vos.isEmpty()) {

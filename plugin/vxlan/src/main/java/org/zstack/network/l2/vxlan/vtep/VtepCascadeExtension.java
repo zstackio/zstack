@@ -15,12 +15,12 @@ import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by weiwang on 12/05/2017.
@@ -132,12 +132,7 @@ public class VtepCascadeExtension extends AbstractAsyncCascadeExtension {
     private List<VtepInventory> vtepFromAction(CascadeAction action) {
         List<VtepInventory> ret = null;
         if (L2NetworkVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> l2uuids = CollectionUtils.transformToList((List<L2NetworkInventory>)action.getParentIssuerContext(), new Function<String, L2NetworkInventory>() {
-                @Override
-                public String call(L2NetworkInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> l2uuids = transformAndRemoveNull(action.getParentIssuerContext(), L2NetworkInventory::getUuid);
 
             List<VtepVO> vos = Q.New(VtepVO.class).in(VtepVO_.poolUuid, l2uuids).list();
             if (!vos.isEmpty()) {

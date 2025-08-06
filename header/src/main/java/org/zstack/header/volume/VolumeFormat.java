@@ -2,12 +2,12 @@ package org.zstack.header.volume;
 
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -132,12 +132,7 @@ public class VolumeFormat {
     }
 
     public List<String> getHypervisorTypesSupportingThisVolumeFormatInString() {
-        return CollectionUtils.transformToList(getHypervisorTypesSupportingThisVolumeFormat(), new Function<String, HypervisorType>() {
-            @Override
-            public String call(HypervisorType arg) {
-                return arg.toString();
-            }
-        });
+        return transformAndRemoveNull(getHypervisorTypesSupportingThisVolumeFormat(), HypervisorType::toString);
     }
 
     public List<HypervisorType> getHypervisorTypesSupportingThisVolumeFormat() {
@@ -164,12 +159,7 @@ public class VolumeFormat {
     }
 
     public static List<String> getVolumeFormatSupportedByHypervisorTypeInString(HypervisorType hvType) {
-        return CollectionUtils.transformToList(getVolumeFormatSupportedByHypervisorType(hvType), new Function<String, VolumeFormat>() {
-            @Override
-            public String call(VolumeFormat arg) {
-                return arg.toString();
-            }
-        });
+        return transformAndRemoveNull(getVolumeFormatSupportedByHypervisorType(hvType), VolumeFormat::toString);
     }
 
     public static List<String> getVolumeFormatSupportedByHypervisorTypeInString(String hvType) {

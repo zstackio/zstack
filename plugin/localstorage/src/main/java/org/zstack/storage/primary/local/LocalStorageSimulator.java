@@ -17,7 +17,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -28,11 +27,11 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.rest.RESTConstant;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by frank on 7/1/2015.
@@ -100,15 +99,12 @@ public class LocalStorageSimulator {
         GetMd5Cmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetMd5Cmd.class);
         GetMd5Rsp rsp = new GetMd5Rsp();
         config.getMd5Cmds.add(cmd);
-        rsp.md5s = CollectionUtils.transformToList(cmd.md5s, new Function<Md5TO, GetMd5TO>() {
-            @Override
-            public Md5TO call(GetMd5TO arg) {
-                Md5TO to = new Md5TO();
-                to.md5 = arg.resourceUuid;
-                to.path = arg.path;
-                to.resourceUuid = arg.resourceUuid;
-                return to;
-            }
+        rsp.md5s = transformAndRemoveNull(cmd.md5s, arg -> {
+            Md5TO to = new Md5TO();
+            to.md5 = arg.resourceUuid;
+            to.path = arg.path;
+            to.resourceUuid = arg.resourceUuid;
+            return to;
         });
 
         reply(entity, rsp);

@@ -13,9 +13,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
@@ -23,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -55,17 +54,13 @@ public class PrimaryStorageCascadeExtension extends AbstractAsyncCascadeExtensio
 
     private void handlePrimaryStorageDetach(CascadeAction action, final Completion completion) {
         List<PrimaryStorageDetachStruct> structs = action.getParentIssuerContext();
-        List<DetachPrimaryStorageFromClusterMsg> msgs = CollectionUtils.transformToList(structs,
-                new Function<DetachPrimaryStorageFromClusterMsg, PrimaryStorageDetachStruct>() {
-                    @Override
-                    public DetachPrimaryStorageFromClusterMsg call(PrimaryStorageDetachStruct arg) {
-                        DetachPrimaryStorageFromClusterMsg msg = new DetachPrimaryStorageFromClusterMsg();
-                        msg.setPrimaryStorageUuid(arg.getPrimaryStorageUuid());
-                        msg.setClusterUuid(arg.getClusterUuid());
-                        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, arg.getPrimaryStorageUuid());
-                        return msg;
-                    }
-                });
+        List<DetachPrimaryStorageFromClusterMsg> msgs = transformAndRemoveNull(structs, arg -> {
+            DetachPrimaryStorageFromClusterMsg msg = new DetachPrimaryStorageFromClusterMsg();
+            msg.setPrimaryStorageUuid(arg.getPrimaryStorageUuid());
+            msg.setClusterUuid(arg.getClusterUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, arg.getPrimaryStorageUuid());
+            return msg;
+        });
 
         bus.send(msgs, 1, new CloudBusListCallBack(completion) {
             @Override
@@ -159,7 +154,7 @@ public class PrimaryStorageCascadeExtension extends AbstractAsyncCascadeExtensio
     private List<PrimaryStorageInventory> primaryStorageInventories(CascadeAction action) {
         List<PrimaryStorageInventory> ret = null;
         if (ZoneVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> zuuids = CollectionUtils.transformToList(
+            List<String> zuuids = transformAndRemoveNull(
                     action.getParentIssuerContext(), ZoneInventory::getUuid);
 
             SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);

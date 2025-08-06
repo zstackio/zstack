@@ -5,21 +5,20 @@ import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.core.Completion;
 import org.zstack.header.vm.VmDeletionStruct;
 import org.zstack.header.vm.VmInstanceNumaNodeVO;
 import org.zstack.header.vm.VmInstanceNumaNodeVO_;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 public class VmInstanceNumaCascadeExtension extends AbstractAsyncCascadeExtension {
     private static final CLogger logger = Utils.getLogger(VmInstanceNumaCascadeExtension.class);
@@ -63,12 +62,7 @@ public class VmInstanceNumaCascadeExtension extends AbstractAsyncCascadeExtensio
         List<String> vmUuid = new ArrayList<>();
         if (VmInstanceVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<VmDeletionStruct> vms = action.getParentIssuerContext();
-            vmUuid = CollectionUtils.transformToList(vms, new Function<String, VmDeletionStruct>() {
-                @Override
-                public String call(VmDeletionStruct arg) {
-                    return arg.getInventory().getUuid();
-                }
-            });
+            vmUuid = transformAndRemoveNull(vms, arg -> arg.getInventory().getUuid());
         }
         return vmUuid;
     }

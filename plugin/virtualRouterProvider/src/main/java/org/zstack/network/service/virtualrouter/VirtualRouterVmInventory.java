@@ -3,25 +3,22 @@ package org.zstack.network.service.virtualrouter;
 import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.network.l3.UsedIpInventory;
-import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.Parent;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefInventory;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import javax.persistence.JoinColumn;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 @Inventory(mappingVOClass = VirtualRouterVmVO.class, collectionValueOfMethod="valueOf2",
         parent = {@Parent(inventoryClass = ApplianceVmInventory.class, type = VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE)})
@@ -161,12 +158,7 @@ public class VirtualRouterVmInventory extends ApplianceVmInventory {
     }
 
     public List<String> getGuestL3Networks() {
-        return CollectionUtils.transformToList(getVmNics(), new Function<String, VmNicInventory>() {
-            @Override
-            public String call(VmNicInventory arg) {
-                return VirtualRouterNicMetaData.isGuestNic(arg) ? arg.getL3NetworkUuid() : null;
-            }
-        });
+        return transformAndRemoveNull(getVmNics(), arg -> VirtualRouterNicMetaData.isGuestNic(arg) ? arg.getL3NetworkUuid() : null);
     }
 
     public List<String> getVirtualRouterVips() {

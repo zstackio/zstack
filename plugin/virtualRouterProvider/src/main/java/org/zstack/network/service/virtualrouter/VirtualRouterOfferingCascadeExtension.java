@@ -12,18 +12,20 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.configuration.ConfigurationConstant;
 import org.zstack.header.configuration.InstanceOfferingDeletionMsg;
+import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.core.Completion;
 import org.zstack.header.image.ImageDeletionStruct;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import javax.persistence.Query;
 import java.util.Arrays;
 import java.util.List;
+
+import static org.zstack.utils.CollectionUtils.transform;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -70,12 +72,7 @@ public class VirtualRouterOfferingCascadeExtension extends AbstractAsyncCascadeE
         List<VirtualRouterOfferingInventory> ret = null;
         if (L3NetworkVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<L3NetworkInventory> l3s = action.getParentIssuerContext();
-            List<String> l3uuids = CollectionUtils.transformToList(l3s, new Function<String, L3NetworkInventory>() {
-                @Override
-                public String call(L3NetworkInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> l3uuids = transformAndRemoveNull(l3s, L3NetworkInventory::getUuid);
 
             SimpleQuery<VirtualRouterOfferingVO> q = dbf.createQuery(VirtualRouterOfferingVO.class);
             q.add(VirtualRouterOfferingVO_.publicNetworkUuid, Op.IN, l3uuids);
@@ -87,13 +84,8 @@ public class VirtualRouterOfferingCascadeExtension extends AbstractAsyncCascadeE
             offeringVOs.addAll(lst);
             ret = VirtualRouterOfferingInventory.valueOf1(offeringVOs);
         } else if (ImageVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> imgUuids = CollectionUtils.transformToList(
-                    (List<ImageDeletionStruct>) action.getParentIssuerContext(), new Function<String, ImageDeletionStruct>() {
-                        @Override
-                        public String call(ImageDeletionStruct arg) {
-                            return arg.getDeleteAll() ? arg.getImage().getUuid() : null;
-                        }
-                    });
+            List<String> imgUuids = transformAndRemoveNull(action.getParentIssuerContext(),
+                    (ImageDeletionStruct arg) -> arg.getDeleteAll() ? arg.getImage().getUuid() : null);
             if (imgUuids != null && !imgUuids.isEmpty()) {
                 SimpleQuery<VirtualRouterOfferingVO> q = dbf.createQuery(VirtualRouterOfferingVO.class);
                 q.add(VirtualRouterOfferingVO_.imageUuid, Op.IN, imgUuids);
@@ -116,23 +108,15 @@ public class VirtualRouterOfferingCascadeExtension extends AbstractAsyncCascadeE
             return;
         }
 
-        List<String> offeringUuids = CollectionUtils.transformToList(offering, new Function<String, VirtualRouterOfferingInventory>() {
-            @Override
-            public String call(VirtualRouterOfferingInventory arg) {
-                return arg.getUuid();
-            }
-        });
+        List<String> offeringUuids = transformAndRemoveNull(offering, InstanceOfferingInventory::getUuid);
 
-        List<InstanceOfferingDeletionMsg> msgs = CollectionUtils.transformToList(
-                offeringUuids, new Function<InstanceOfferingDeletionMsg, String>() {
-                    @Override
-                    public InstanceOfferingDeletionMsg call(String arg) {
-                        InstanceOfferingDeletionMsg msg = new InstanceOfferingDeletionMsg();
-                        msg.setInstanceOfferingUuid(arg);
-                        msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
-                        bus.makeTargetServiceIdByResourceUuid(msg, ConfigurationConstant.SERVICE_ID, arg);
-                        return msg;
-                    }
+        List<InstanceOfferingDeletionMsg> msgs = transform(
+                offeringUuids, arg -> {
+                    InstanceOfferingDeletionMsg msg = new InstanceOfferingDeletionMsg();
+                    msg.setInstanceOfferingUuid(arg);
+                    msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
+                    bus.makeTargetServiceIdByResourceUuid(msg, ConfigurationConstant.SERVICE_ID, arg);
+                    return msg;
                 });
 
         bus.send(msgs, new CloudBusListCallBack(completion) {

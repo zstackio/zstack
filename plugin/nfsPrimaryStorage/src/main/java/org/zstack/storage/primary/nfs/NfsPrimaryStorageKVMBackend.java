@@ -50,7 +50,6 @@ import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -68,6 +67,7 @@ import java.util.stream.Collectors;
 import static java.lang.Integer.min;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.Platform.touterr;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint,
@@ -1051,12 +1051,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     private void checkQemuImgVersionInOtherClusters(KVMHostConnectedContext context, List<PrimaryStorageInventory> invs) {
         String mine = KVMSystemTags.QEMU_IMG_VERSION.getTokenByResourceUuid(context.getInventory().getUuid(), KVMSystemTags.QEMU_IMG_VERSION_TOKEN);
 
-        final List<String> psUuids = CollectionUtils.transformToList(invs, new Function<String, PrimaryStorageInventory>() {
-            @Override
-            public String call(PrimaryStorageInventory arg) {
-                return arg.getUuid();
-            }
-        });
+        final List<String> psUuids = transformAndRemoveNull(invs, PrimaryStorageInventory::getUuid);
 
         List<String> otherHostUuids = new Callable<List<String>>() {
             @Override

@@ -18,11 +18,11 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateHostForMigrateVmFlow implements Flow {
@@ -68,13 +68,8 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
         msg.setRequiredPrimaryStorageUuids(spec.getVmInventory().getAllVolumes().stream()
                 .map(VolumeInventory::getPrimaryStorageUuid)
                 .collect(Collectors.toSet()));
-        msg.setL3NetworkUuids(CollectionUtils.transformToList(
-                VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()), new Function<String, L3NetworkInventory>() {
-            @Override
-            public String call(L3NetworkInventory arg) {
-                return arg.getUuid();
-            }
-        }));
+        msg.setL3NetworkUuids(transformAndRemoveNull(
+                VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()), L3NetworkInventory::getUuid));
         msg.setVmNicParams(VmNicSpec.getVmNicParamsOfSpec(spec.getL3Networks()));
         msg.setAllowNoL3Networks(true);
         bus.send(msg, new CloudBusCallBack(chain) {

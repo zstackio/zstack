@@ -20,8 +20,6 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.image.ImageConstant;
-import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -33,7 +31,6 @@ import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
-import org.zstack.utils.function.Function;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateVolumeFlow implements Flow {
@@ -183,17 +181,14 @@ public class VmAllocateVolumeFlow implements Flow {
         }
         destVolumes.addAll(spec.getDestDataVolumes());
 
-        final List<DeleteVolumeMsg> msgs = CollectionUtils.transformToList(destVolumes, new Function<DeleteVolumeMsg, VolumeInventory>() {
-            @Override
-            public DeleteVolumeMsg call(VolumeInventory arg) {
-                DeleteVolumeMsg msg = new DeleteVolumeMsg();
-                msg.setDeletionPolicy(VolumeDeletionPolicy.Direct.toString());
-                msg.setUuid(arg.getUuid());
-                // don't do detach; because the VM is in state of Starting, it cannot do a detach operation.
-                msg.setDetachBeforeDeleting(false);
-                bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, arg.getUuid());
-                return msg;
-            }
+        final List<DeleteVolumeMsg> msgs = transformAndRemoveNull(destVolumes, arg -> {
+            DeleteVolumeMsg msg = new DeleteVolumeMsg();
+            msg.setDeletionPolicy(VolumeDeletionPolicy.Direct.toString());
+            msg.setUuid(arg.getUuid());
+            // don't do detach; because the VM is in state of Starting, it cannot do a detach operation.
+            msg.setDetachBeforeDeleting(false);
+            bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, arg.getUuid());
+            return msg;
         });
 
         if (msgs.isEmpty()) {

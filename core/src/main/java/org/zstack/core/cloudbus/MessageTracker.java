@@ -4,11 +4,11 @@ import com.rabbitmq.client.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.header.Component;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import java.io.IOException;
 import java.util.List;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -22,12 +22,7 @@ public class MessageTracker extends AbstractConsumer implements Component {
     void init() {
         try {
             ConnectionFactory connFactory = new ConnectionFactory();
-            List<Address> addresses = CollectionUtils.transformToList(bus.getServerIps(), new Function<Address, String>() {
-                @Override
-                public Address call(String arg) {
-                    return Address.parseAddress(arg);
-                }
-            });
+            List<Address> addresses = transformAndRemoveNull(bus.getServerIps(), Address::parseAddress);
 
             conn = connFactory.newConnection(addresses.toArray(new Address[]{}));
             chan = conn.createChannel();

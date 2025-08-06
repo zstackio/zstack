@@ -10,11 +10,10 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.storage.primary.PrimaryStorageAllocationSpec;
 import org.zstack.header.storage.primary.PrimaryStorageConstant.AllocatorParams;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
-import org.zstack.utils.function.Function;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 import java.util.List;
 import java.util.Map;
@@ -39,12 +38,8 @@ public class PrimaryStorageAvoidAllocatorFlow extends NoRollbackFlow {
             return;
         }
 
-        candidates = CollectionUtils.transformToList(candidates, new Function<PrimaryStorageVO, PrimaryStorageVO>() {
-            @Override
-            public PrimaryStorageVO call(PrimaryStorageVO arg) {
-                return spec.getAvoidPrimaryStorageUuids().contains(arg.getUuid()) ? null : arg;
-            }
-        });
+        candidates = transformAndRemoveNull(candidates,
+                arg -> spec.getAvoidPrimaryStorageUuids().contains(arg.getUuid()) ? null : arg);
 
         if (candidates.isEmpty()) {
             throw new OperationFailureException(operr("after removing primary storage%s to avoid," +

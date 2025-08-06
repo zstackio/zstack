@@ -37,7 +37,6 @@ import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.backup.BackupStorageState;
 import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
@@ -68,6 +67,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.header.host.HostStatus.Connected;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 public class VolumeManagerImpl extends AbstractService implements VolumeManager, ManagementNodeReadyExtensionPoint,
         ResourceOwnerAfterChangeExtensionPoint, VmStateChangedExtensionPoint, VmDetachVolumeExtensionPoint,
@@ -291,12 +291,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         List<String> bsUuids = new SQLBatchWithReturn<List<String>>() {
                             @Override
                             protected List<String> scripts() {
-                                List<String> bsUuids = CollectionUtils.transformToList(template.getBackupStorageRefs(), new Function<String, ImageBackupStorageRefVO>() {
-                                    @Override
-                                    public String call(ImageBackupStorageRefVO arg) {
-                                        return ImageStatus.Deleted.equals(arg.getStatus()) ? null : arg.getBackupStorageUuid();
-                                    }
-                                });
+                                List<String> bsUuids = transformAndRemoveNull(template.getBackupStorageRefs(),
+                                        arg -> ImageStatus.Deleted.equals(arg.getStatus()) ? null : arg.getBackupStorageUuid());
 
                                 if (bsUuids.isEmpty()) {
                                     throw new OperationFailureException(operr("the image[uuid:%s, name:%s] has been deleted on all backup storage", template.getUuid(), template.getName()));
