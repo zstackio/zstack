@@ -798,37 +798,29 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         KVMSystemTags.VOLUME_SCSI.installJudger(new SystemTagOperationJudger() {
             @Override
             public void tagPreCreated(SystemTagInventory tag) {
-                cleanUpVmAddress(tag.getResourceUuid());
+                cleanUpVolumeAddressOnVolumeCapabilityTypeUpdate(tag.getResourceUuid());
             }
 
             @Override
             public void tagPreDeleted(SystemTagInventory tag) {
-                cleanUpVmAddress(tag.getResourceUuid());
+                cleanUpVolumeAddressOnVolumeCapabilityTypeUpdate(tag.getResourceUuid());
             }
 
-            private void cleanUpVmAddress(String relatedVolumeUuid) {
-                Tuple vmTuple = Q.New(VolumeVO.class, VmInstanceVO.class)
-                        .table0()
-                            .eq(VolumeVO_.uuid, relatedVolumeUuid)
-                            .eq(VolumeVO_.vmInstanceUuid).table1(VmInstanceVO_.uuid)
-                        .table1()
-                            .select(VmInstanceVO_.uuid, VmInstanceVO_.rootVolumeUuid)
-                        .findTuple();
-                if (vmTuple == null) {
-                    return;
-                }
+            @Override
+            public void tagPreUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+                // do-nothing
+            }
+        });
 
-                String vmUuid = vmTuple.get(0, String.class);
-                String rootVolumeUuid = vmTuple.get(1, String.class);
+        KVMSystemTags.VOLUME_VIRTIO_SCSI.installJudger(new SystemTagOperationJudger() {
+            @Override
+            public void tagPreCreated(SystemTagInventory tag) {
+                cleanUpVolumeAddressOnVolumeCapabilityTypeUpdate(tag.getResourceUuid());
+            }
 
-                logger.info(String.format(
-                        "All VmInstanceDeviceAddressVO related VM[uuid:%s] except for the root volume will be cleaned up",
-                        vmUuid));
-
-                SQL.New(VmInstanceDeviceAddressVO.class)
-                        .eq(VmInstanceDeviceAddressVO_.vmInstanceUuid, vmUuid)
-                        .notIn(VmInstanceDeviceAddressVO_.resourceUuid, list(rootVolumeUuid))
-                        .delete();
+            @Override
+            public void tagPreDeleted(SystemTagInventory tag) {
+                cleanUpVolumeAddressOnVolumeCapabilityTypeUpdate(tag.getResourceUuid());
             }
 
             @Override
@@ -838,6 +830,31 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         });
 
         return true;
+    }
+
+    private void cleanUpVolumeAddressOnVolumeCapabilityTypeUpdate(String relatedVolumeUuid) {
+        Tuple vmTuple = Q.New(VolumeVO.class, VmInstanceVO.class)
+                .table0()
+                    .eq(VolumeVO_.uuid, relatedVolumeUuid)
+                    .eq(VolumeVO_.vmInstanceUuid).table1(VmInstanceVO_.uuid)
+                .table1()
+                    .select(VmInstanceVO_.uuid, VmInstanceVO_.rootVolumeUuid)
+                .findTuple();
+        if (vmTuple == null) {
+            return;
+        }
+
+        String vmUuid = vmTuple.get(0, String.class);
+        String rootVolumeUuid = vmTuple.get(1, String.class);
+
+        logger.info(String.format(
+                "All VmInstanceDeviceAddressVO related VM[uuid:%s] except for the root volume will be cleaned up",
+                vmUuid));
+
+        SQL.New(VmInstanceDeviceAddressVO.class)
+                .eq(VmInstanceDeviceAddressVO_.vmInstanceUuid, vmUuid)
+                .notIn(VmInstanceDeviceAddressVO_.resourceUuid, list(rootVolumeUuid))
+                .delete();
     }
 
     private void cleanDeviceAddress(SystemTagInventory tag) {
