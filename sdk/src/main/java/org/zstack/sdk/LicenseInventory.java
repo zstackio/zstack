@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.license.entity.LicenseUsageView;
 
 public class LicenseInventory  {
 
@@ -28,6 +28,7 @@ public class LicenseInventory  {
         return this.prodInfo;
     }
 
+    @Deprecated
     public java.lang.Integer cpuNum;
     public void setCpuNum(java.lang.Integer cpuNum) {
         this.cpuNum = cpuNum;
@@ -36,6 +37,7 @@ public class LicenseInventory  {
         return this.cpuNum;
     }
 
+    @Deprecated
     public java.lang.Integer hostNum;
     public void setHostNum(java.lang.Integer hostNum) {
         this.hostNum = hostNum;
@@ -44,6 +46,7 @@ public class LicenseInventory  {
         return this.hostNum;
     }
 
+    @Deprecated
     public java.lang.Integer vmNum;
     public void setVmNum(java.lang.Integer vmNum) {
         this.vmNum = vmNum;
@@ -52,6 +55,7 @@ public class LicenseInventory  {
         return this.vmNum;
     }
 
+    @Deprecated
     public java.lang.Integer capacity;
     public void setCapacity(java.lang.Integer capacity) {
         this.capacity = capacity;
@@ -140,6 +144,7 @@ public class LicenseInventory  {
         return this.licenseRequest;
     }
 
+    @Deprecated
     public java.lang.Integer availableHostNum;
     public void setAvailableHostNum(java.lang.Integer availableHostNum) {
         this.availableHostNum = availableHostNum;
@@ -148,6 +153,7 @@ public class LicenseInventory  {
         return this.availableHostNum;
     }
 
+    @Deprecated
     public java.lang.Integer availableCpuNum;
     public void setAvailableCpuNum(java.lang.Integer availableCpuNum) {
         this.availableCpuNum = availableCpuNum;
@@ -156,12 +162,21 @@ public class LicenseInventory  {
         return this.availableCpuNum;
     }
 
+    @Deprecated
     public java.lang.Integer availableVmNum;
     public void setAvailableVmNum(java.lang.Integer availableVmNum) {
         this.availableVmNum = availableVmNum;
     }
     public java.lang.Integer getAvailableVmNum() {
         return this.availableVmNum;
+    }
+
+    public LicenseUsageView usage;
+    public void setUsage(LicenseUsageView usage) {
+        this.usage = usage;
+    }
+    public LicenseUsageView getUsage() {
+        return this.usage;
     }
 
 }
