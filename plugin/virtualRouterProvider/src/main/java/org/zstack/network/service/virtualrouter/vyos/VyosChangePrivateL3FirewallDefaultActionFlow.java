@@ -8,19 +8,14 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
-
-import static org.zstack.core.Platform.operr;
 
 /**
  * Created by shixin.ruan on 18-03-10.
@@ -39,19 +34,15 @@ public class VyosChangePrivateL3FirewallDefaultActionFlow extends NoRollbackFlow
         String action = VyosGlobalConfig.PRIVATE_L3_FIREWALL_DEFAULT_ACTION.value(String.class);
 
         final VirtualRouterVmInventory servedVm = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
-        List<VirtualRouterCommands.NicInfo> infos = CollectionUtils.transformToList(servedVm.getGuestNics(), new Function<VirtualRouterCommands.NicInfo, VmNicInventory>() {
-            @Override
-            public VirtualRouterCommands.NicInfo call(VmNicInventory arg) {
-                VirtualRouterCommands.NicInfo info = new VirtualRouterCommands.NicInfo();
-                info.setIp(arg.getIp());
-                info.setDefaultRoute(false);
-                info.setGateway(arg.getGateway());
-                info.setMac(arg.getMac());
-                info.setNetmask(arg.getNetmask());
-                info.setFirewallDefaultAction(action);
-
-                return info;
-            }
+        List<VirtualRouterCommands.NicInfo> infos = CollectionUtils.transformAndRemoveNull(servedVm.getGuestNics(), arg -> {
+            VirtualRouterCommands.NicInfo info = new VirtualRouterCommands.NicInfo();
+            info.setIp(arg.getIp());
+            info.setDefaultRoute(false);
+            info.setGateway(arg.getGateway());
+            info.setMac(arg.getMac());
+            info.setNetmask(arg.getNetmask());
+            info.setFirewallDefaultAction(action);
+            return info;
         });
 
         if (infos == null || infos.isEmpty()) {

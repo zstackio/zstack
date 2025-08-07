@@ -72,6 +72,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
         ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, VmInstanceStartExtensionPoint,
@@ -1236,14 +1237,11 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             return;
         }
 
-        List<ConnectPrimaryStorageMsg> msgs = CollectionUtils.transformToList(uuids, new Function<ConnectPrimaryStorageMsg, String>() {
-            @Override
-            public ConnectPrimaryStorageMsg call(String arg) {
-                ConnectPrimaryStorageMsg msg = new ConnectPrimaryStorageMsg();
-                msg.setPrimaryStorageUuid(arg);
-                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, arg);
-                return msg;
-            }
+        List<ConnectPrimaryStorageMsg> msgs = transformAndRemoveNull(uuids, arg -> {
+            ConnectPrimaryStorageMsg msg = new ConnectPrimaryStorageMsg();
+            msg.setPrimaryStorageUuid(arg);
+            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, arg);
+            return msg;
         });
 
         bus.send(msgs);

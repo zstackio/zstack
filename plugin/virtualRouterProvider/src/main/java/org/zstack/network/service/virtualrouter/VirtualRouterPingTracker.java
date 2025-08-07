@@ -18,12 +18,12 @@ import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by frank on 6/29/2015.
@@ -101,12 +101,7 @@ public class VirtualRouterPingTracker extends PingTracker implements ManagementN
         SimpleQuery<VirtualRouterVmVO> q = dbf.createQuery(VirtualRouterVmVO.class);
         q.select(VirtualRouterVmVO_.uuid);
         List<String> vrUuids = q.listValue();
-        List<String> toTrack = CollectionUtils.transformToList(vrUuids, new Function<String, String>() {
-            @Override
-            public String call(String arg) {
-                return destinationMaker.isManagedByUs(arg) ? arg : null;
-            }
-        });
+        List<String> toTrack = transformAndRemoveNull(vrUuids, arg -> destinationMaker.isManagedByUs(arg) ? arg : null);
 
         untrackAll();
         track(toTrack);

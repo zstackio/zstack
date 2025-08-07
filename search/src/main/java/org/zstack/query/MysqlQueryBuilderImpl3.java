@@ -14,7 +14,6 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.configuration.PythonApiBindingWriter;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.query.*;
@@ -23,7 +22,6 @@ import org.zstack.header.search.Inventory;
 import org.zstack.header.search.Parent;
 import org.zstack.header.search.TypeField;
 import org.zstack.utils.*;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -39,6 +37,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 import static org.zstack.utils.StringDSL.s;
 
 /**
@@ -580,17 +579,13 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             }
 
             String toJpql() {
-                List<String> resultQuery = new ArrayList<String>();
+                List<String> resultQuery = new ArrayList<>();
                 List<String> rtypes = getAllResourceTypesForTag();
                 String primaryKey = info.primaryKey;
                 String invname = info.inventoryClass.getSimpleName().toLowerCase();
 
-                List<QueryCondition> conds = CollectionUtils.transformToList(conditions, new Function<QueryCondition, MetaCondition>() {
-                    @Override
-                    public QueryCondition call(MetaCondition arg) {
-                        return USER_TAG.equals(arg.attr) || SYSTEM_TAG.equals(arg.attr) ? arg.toQueryCondtion() : null;
-                    }
-                });
+                List<QueryCondition> conds = transformAndRemoveNull(conditions,
+                        arg -> USER_TAG.equals(arg.attr) || SYSTEM_TAG.equals(arg.attr) ? arg.toQueryCondtion() : null);
 
                 String typeString = StringUtils.join(rtypes, ",");
                 for (QueryCondition cond : conds) {

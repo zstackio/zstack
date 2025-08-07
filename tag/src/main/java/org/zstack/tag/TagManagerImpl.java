@@ -28,7 +28,6 @@ import org.zstack.header.tag.*;
 import org.zstack.identity.Account;
 import org.zstack.query.QueryFacade;
 import org.zstack.utils.*;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
@@ -43,6 +42,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.removeDuplicateFromList;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 public class TagManagerImpl extends AbstractService implements TagManager,
         SoftDeleteEntityExtensionPoint, GlobalApiMessageInterceptor, SystemTagLifeCycleExtension,
@@ -171,12 +171,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         }
 
         autoDeleteTagClasses = new ArrayList<>(BeanUtils.reflections.getTypesAnnotatedWith(AutoDeleteTag.class));
-        List<String> clzNames = CollectionUtils.transformToList(autoDeleteTagClasses, new Function<String, Class>() {
-            @Override
-            public String call(Class arg) {
-                return arg.getSimpleName();
-            }
-        });
+        List<String> clzNames = transformAndRemoveNull(autoDeleteTagClasses, Class::getSimpleName);
 
         logger.debug(String.format("tags of following resources are auto-deleting enabled: %s", clzNames));
     }

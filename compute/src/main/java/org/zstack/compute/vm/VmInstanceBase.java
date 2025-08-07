@@ -97,6 +97,7 @@ import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.header.vm.VmErrors.ATTACH_VOLUME_ERROR;
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 public class VmInstanceBase extends AbstractVmInstance {
     protected static final CLogger logger = Utils.getLogger(VmInstanceBase.class);
@@ -827,7 +828,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     public void success(AllocateHostDryRunReply returnValue) {
                         List<HostInventory> hosts = returnValue.getHosts();
                         if (!hosts.isEmpty()) {
-                            List<String> cuuids = CollectionUtils.transformToList(hosts, HostInventory::getClusterUuid);
+                            List<String> cuuids = transformAndRemoveNull(hosts, HostInventory::getClusterUuid);
 
                             SimpleQuery<ClusterVO> cq = dbf.createQuery(ClusterVO.class);
                             cq.add(ClusterVO_.uuid, Op.IN, cuuids);
@@ -8093,13 +8094,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setUserdataList(buildUserdata());
 
         // for L3Network that has been deleted
-        List<String> nicUuidToDel = CollectionUtils.transformToList(inv.getVmNics(), new Function<String, VmNicInventory>() {
-            @Override
-            public String call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid() == null ? arg.getUuid() : null;
-            }
-        });
-
+        List<String> nicUuidToDel = transformAndRemoveNull(inv.getVmNics(),
+                arg -> arg.getL3NetworkUuid() == null ? arg.getUuid() : null);
 
         if (!nicUuidToDel.isEmpty()) {
             dbf.removeByPrimaryKeys(nicUuidToDel, VmNicVO.class);

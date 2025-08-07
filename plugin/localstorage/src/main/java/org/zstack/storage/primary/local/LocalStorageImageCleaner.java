@@ -28,7 +28,6 @@ import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.ImageCacheCleaner;
 import org.zstack.storage.primary.local.LocalStorageUtils.InstallPath;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -37,6 +36,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by xing5 on 2016/7/20.
@@ -90,19 +91,18 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
             p.disassemble();
             String hostUuid = p.hostUuid;
 
-            List<ImageCacheVO> refs = refMap.computeIfAbsent(hostUuid, k -> new ArrayList<ImageCacheVO>());
+            List<ImageCacheVO> refs = refMap.computeIfAbsent(hostUuid, k -> new ArrayList<>());
             refs.add(c);
         }
 
-        List<ImageCacheVO> stale = new ArrayList<ImageCacheVO>();
+        List<ImageCacheVO> stale = new ArrayList<>();
         for (Map.Entry<String, List<ImageCacheVO>> e : refMap.entrySet()) {
             String hostUuid = e.getKey();
             List<ImageCacheVO> refs = e.getValue();
-            List<Long> cacheIds = CollectionUtils.transformToList(refs, ImageCacheVO::getId);
+            List<Long> cacheIds = transformAndRemoveNull(refs, ImageCacheVO::getId);
 
             sql = "select vol.rootImageUuid from VolumeVO vol where vol.rootImageUuid is not null and vol.status = :status";
             TypedQuery<String> query = dbf.getEntityManager().createQuery(sql, String.class);
-            query = dbf.getEntityManager().createQuery(sql, String.class);
             query.setParameter("status", VolumeStatus.NotInstantiated);
             List<String> filterIds = query.getResultList();
 

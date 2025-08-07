@@ -18,11 +18,11 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicSpec;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateHostForAbnormallyStartedVmFlow implements Flow {
@@ -50,12 +50,8 @@ public class VmAllocateHostForAbnormallyStartedVmFlow implements Flow {
                 .collect(Collectors.toSet()));
         msg.setVmOperation(spec.getCurrentVmOperation().toString());
         msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
-        msg.setL3NetworkUuids(CollectionUtils.transformToList(VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()), new Function<String, L3NetworkInventory>() {
-            @Override
-            public String call(L3NetworkInventory arg) {
-                return arg.getUuid();
-            }
-        }));
+        msg.setL3NetworkUuids(transformAndRemoveNull(VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()),
+                L3NetworkInventory::getUuid));
         msg.setVmNicParams(VmNicSpec.getVmNicParamsOfSpec(spec.getL3Networks()));
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         bus.send(msg, new CloudBusCallBack(chain) {

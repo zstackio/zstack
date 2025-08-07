@@ -22,6 +22,7 @@ import org.zstack.utils.network.IPv6Constants;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -90,14 +91,11 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
             }
 
             if (!actualTypes.containsAll(types)) {
-                List<String> notSupported = CollectionUtils.transformToList(types, new Function<String, String>() {
-                    @Override
-                    public String call(String type) {
-                        if (!actualTypes.contains(type)) {
-                            return type;
-                        }
-                        return null;
+                List<String> notSupported = transformAndRemoveNull(types, type -> {
+                    if (!actualTypes.contains(type)) {
+                        return type;
                     }
+                    return null;
                 });
 
                 throw new ApiMessageInterceptionException(argerr("network service provider[uuid:%s] doesn't provide services%s", puuid, notSupported));

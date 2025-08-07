@@ -47,7 +47,6 @@ import org.zstack.kvm.KVMHostVO;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
@@ -57,6 +56,8 @@ import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.findOneOrNull;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by frank on 10/24/2015.
@@ -581,25 +582,22 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     flow(new Flow() {
                         String __name__ = "create-volumes-on-dst-host";
 
-                        List<VolumeInventory> successVolumes = new ArrayList<VolumeInventory>();
+                        List<VolumeInventory> successVolumes = new ArrayList<>();
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            List<LocalStorageCreateEmptyVolumeMsg> msgs = CollectionUtils.transformToList(volumesOnLocalStorage, new Function<LocalStorageCreateEmptyVolumeMsg, VolumeInventory>() {
-                                @Override
-                                public LocalStorageCreateEmptyVolumeMsg call(VolumeInventory arg) {
-                                    LocalStorageCreateEmptyVolumeMsg msg = new LocalStorageCreateEmptyVolumeMsg();
-                                    msg.setHostUuid(dstHostUuid);
-                                    msg.setVolume(arg);
+                            List<LocalStorageCreateEmptyVolumeMsg> msgs = transformAndRemoveNull(volumesOnLocalStorage, arg -> {
+                                LocalStorageCreateEmptyVolumeMsg msg = new LocalStorageCreateEmptyVolumeMsg();
+                                msg.setHostUuid(dstHostUuid);
+                                msg.setVolume(arg);
 
-                                    if (VolumeType.Root.toString().equals(arg.getType())) {
-                                        msg.setBackingFile(backingImage.path);
-                                    }
-
-                                    msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
-                                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
-                                    return msg;
+                                if (VolumeType.Root.toString().equals(arg.getType())) {
+                                    msg.setBackingFile(backingImage.path);
                                 }
+
+                                msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
+                                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
+                                return msg;
                             });
 
                             bus.send(msgs, 1, new CloudBusListCallBack(trigger) {
@@ -622,16 +620,13 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         @Override
                         public void rollback(FlowRollback trigger, Map data) {
                             if (!successVolumes.isEmpty()) {
-                                List<LocalStorageDirectlyDeleteBitsMsg> msgs = CollectionUtils.transformToList(successVolumes, new Function<LocalStorageDirectlyDeleteBitsMsg, VolumeInventory>() {
-                                    @Override
-                                    public LocalStorageDirectlyDeleteBitsMsg call(VolumeInventory arg) {
-                                        LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
-                                        msg.setHostUuid(dstHostUuid);
-                                        msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
-                                        msg.setPath(arg.getInstallPath());
-                                        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
-                                        return msg;
-                                    }
+                                List<LocalStorageDirectlyDeleteBitsMsg> msgs = transformAndRemoveNull(successVolumes, arg -> {
+                                    LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
+                                    msg.setHostUuid(dstHostUuid);
+                                    msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
+                                    msg.setPath(arg.getInstallPath());
+                                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
+                                    return msg;
                                 });
 
                                 bus.send(msgs);
@@ -700,9 +695,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        List<String> volUuids = CollectionUtils.transformToList(volumesOnLocalStorage,
-                                VolumeInventory::getUuid
-                        );
+                        List<String> volUuids = transformAndRemoveNull(volumesOnLocalStorage, VolumeInventory::getUuid);
 
                         updateVolumesInfo(volUuids);
 
@@ -745,9 +738,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            List<String> spUuids = CollectionUtils.transformToList(allSnapshots,
-                                    VolumeSnapshotInventory::getUuid
-                            );
+                            List<String> spUuids = transformAndRemoveNull(allSnapshots, VolumeSnapshotInventory::getUuid);
 
                             updateSnapshotsInfo(spUuids);
 
@@ -760,16 +751,13 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            List<LocalStorageDirectlyDeleteBitsMsg> msgs = CollectionUtils.transformToList(allSnapshots, new Function<LocalStorageDirectlyDeleteBitsMsg, VolumeSnapshotInventory>() {
-                                @Override
-                                public LocalStorageDirectlyDeleteBitsMsg call(VolumeSnapshotInventory sp) {
-                                    LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
-                                    msg.setHostUuid(srcHostUuid);
-                                    msg.setPath(sp.getPrimaryStorageInstallPath());
-                                    msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
-                                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
-                                    return msg;
-                                }
+                            List<LocalStorageDirectlyDeleteBitsMsg> msgs = transformAndRemoveNull(allSnapshots, sp -> {
+                                LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
+                                msg.setHostUuid(srcHostUuid);
+                                msg.setPath(sp.getPrimaryStorageInstallPath());
+                                msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
+                                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
+                                return msg;
                             });
 
                             bus.send(msgs, new CloudBusListCallBack(null) {
@@ -796,16 +784,13 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        List<LocalStorageDirectlyDeleteBitsMsg> msgs = CollectionUtils.transformToList(volumesOnLocalStorage, new Function<LocalStorageDirectlyDeleteBitsMsg, VolumeInventory>() {
-                            @Override
-                            public LocalStorageDirectlyDeleteBitsMsg call(VolumeInventory arg) {
-                                LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
-                                msg.setHostUuid(srcHostUuid);
-                                msg.setPath(arg.getInstallPath());
-                                msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
-                                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
-                                return msg;
-                            }
+                        List<LocalStorageDirectlyDeleteBitsMsg> msgs = transformAndRemoveNull(volumesOnLocalStorage, arg -> {
+                            LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
+                            msg.setHostUuid(srcHostUuid);
+                            msg.setPath(arg.getInstallPath());
+                            msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
+                            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
+                            return msg;
                         });
 
                         bus.send(msgs, new CloudBusListCallBack(null) {
@@ -962,12 +947,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         final int port = dstHost.getPort();
 
         for (final VolumeInventory vol : volumesOnLocalStorage) {
-            final List<VolumeSnapshotTree> trees = CollectionUtils.transformToList(snapshotTrees, new Function<VolumeSnapshotTree, VolumeSnapshotTree>() {
-                @Override
-                public VolumeSnapshotTree call(VolumeSnapshotTree arg) {
-                    return arg.getVolumeUuid().equals(vol.getUuid()) ? arg : null;
-                }
-            });
+            final List<VolumeSnapshotTree> trees = transformAndRemoveNull(snapshotTrees, arg -> arg.getVolumeUuid().equals(vol.getUuid()) ? arg : null);
 
             if (!trees.isEmpty()) {
                 VSPair p = new VSPair();
@@ -1000,27 +980,20 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         }
 
         for (final VSPair p : volumeHasSnapshots) {
-            final List<VolumeSnapshotInventory> children = new ArrayList<VolumeSnapshotInventory>();
+            final List<VolumeSnapshotInventory> children = new ArrayList<>();
             for (VolumeSnapshotTree t : p.snapshotTrees) {
                 children.addAll(t.getRoot().getDescendants());
             }
 
-            final List<SnapshotTO> snapshotTOs = CollectionUtils.transformToList(children, new Function<SnapshotTO, VolumeSnapshotInventory>() {
-                @Override
-                public SnapshotTO call(final VolumeSnapshotInventory s) {
-                    SnapshotTO to = new SnapshotTO();
-                    to.path = s.getPrimaryStorageInstallPath();
-                    to.snapshotUuid = s.getUuid();
-                    if (s.getParentUuid() != null) {
-                        to.parentPath = CollectionUtils.find(children, new Function<String, VolumeSnapshotInventory>() {
-                            @Override
-                            public String call(VolumeSnapshotInventory arg) {
-                                return arg.getUuid().equals(s.getParentUuid()) ? arg.getPrimaryStorageInstallPath() : null;
-                            }
-                        });
-                    }
-                    return to;
+            final List<SnapshotTO> snapshotTOs = transformAndRemoveNull(children, s -> {
+                SnapshotTO to = new SnapshotTO();
+                to.path = s.getPrimaryStorageInstallPath();
+                to.snapshotUuid = s.getUuid();
+                if (s.getParentUuid() != null) {
+                    VolumeSnapshotInventory selected = findOneOrNull(children, arg -> arg.getUuid().equals(s.getParentUuid()));
+                    to.parentPath = selected == null ? null : selected.getPrimaryStorageInstallPath();
                 }
+                return to;
             });
 
 
@@ -1057,14 +1030,11 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
                     GetMd5Cmd cmd = new GetMd5Cmd();
-                    cmd.md5s = CollectionUtils.transformToList(children, new Function<GetMd5TO, VolumeSnapshotInventory>() {
-                        @Override
-                        public GetMd5TO call(VolumeSnapshotInventory arg) {
-                            GetMd5TO to = new GetMd5TO();
-                            to.path = arg.getPrimaryStorageInstallPath();
-                            to.resourceUuid = arg.getUuid();
-                            return to;
-                        }
+                    cmd.md5s = transformAndRemoveNull(children, arg -> {
+                        GetMd5TO to = new GetMd5TO();
+                        to.path = arg.getPrimaryStorageInstallPath();
+                        to.resourceUuid = arg.getUuid();
+                        return to;
                     });
 
                     callKvmHost(srcHostUuid, p.volume.getPrimaryStorageUuid(), LocalStorageKvmBackend.GET_MD5_PATH, cmd,
@@ -1090,7 +1060,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
                     CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
-                    cmd.paths = CollectionUtils.transformToList(children, VolumeSnapshotInventory::getPrimaryStorageInstallPath);
+                    cmd.paths = transformAndRemoveNull(children, VolumeSnapshotInventory::getPrimaryStorageInstallPath);
                     cmd.dstIp = destIp;
                     cmd.dstPassword = password;
                     cmd.dstUsername = username;
@@ -1112,16 +1082,13 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 @Override
                 public void rollback(FlowRollback trigger, Map data) {
                     if (!success.isEmpty()) {
-                        final List<LocalStorageDirectlyDeleteBitsMsg> msgs = CollectionUtils.transformToList(success, new Function<LocalStorageDirectlyDeleteBitsMsg, VolumeSnapshotInventory>() {
-                            @Override
-                            public LocalStorageDirectlyDeleteBitsMsg call(VolumeSnapshotInventory arg) {
-                                LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
-                                msg.setHostUuid(dstHostUuid);
-                                msg.setPrimaryStorageUuid(arg.getPrimaryStorageUuid());
-                                msg.setPath(arg.getPrimaryStorageInstallPath());
-                                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, arg.getPrimaryStorageUuid());
-                                return msg;
-                            }
+                        final List<LocalStorageDirectlyDeleteBitsMsg> msgs = transformAndRemoveNull(success, arg -> {
+                            LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
+                            msg.setHostUuid(dstHostUuid);
+                            msg.setPrimaryStorageUuid(arg.getPrimaryStorageUuid());
+                            msg.setPath(arg.getPrimaryStorageInstallPath());
+                            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, arg.getPrimaryStorageUuid());
+                            return msg;
                         });
 
                         bus.send(msgs, new CloudBusListCallBack(null) {

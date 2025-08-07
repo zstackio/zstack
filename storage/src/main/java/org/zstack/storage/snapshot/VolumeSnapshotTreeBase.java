@@ -75,6 +75,7 @@ import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -645,19 +646,16 @@ public class VolumeSnapshotTreeBase {
 
             @Override
             public void run(final FlowTrigger trigger, Map data) {
-                final List<VolumeSnapshotPrimaryStorageDeletionMsg> pmsgs = CollectionUtils.transformToList(currentLeaf.getDescendants(), new Function<VolumeSnapshotPrimaryStorageDeletionMsg, VolumeSnapshotInventory>() {
-                    @Override
-                    public VolumeSnapshotPrimaryStorageDeletionMsg call(VolumeSnapshotInventory arg) {
-                        if (arg.getPrimaryStorageUuid() == null) {
-                            return null;
-                        }
-
-                        VolumeSnapshotPrimaryStorageDeletionMsg pmsg = new VolumeSnapshotPrimaryStorageDeletionMsg();
-                        pmsg.setUuid(arg.getUuid());
-                        pmsg.setVolumeDelete(msg.isVolumeDeletion());
-                        bus.makeTargetServiceIdByResourceUuid(pmsg, VolumeSnapshotConstant.SERVICE_ID, arg.getPrimaryStorageUuid());
-                        return pmsg;
+                final List<VolumeSnapshotPrimaryStorageDeletionMsg> pmsgs = transformAndRemoveNull(currentLeaf.getDescendants(), arg -> {
+                    if (arg.getPrimaryStorageUuid() == null) {
+                        return null;
                     }
+
+                    VolumeSnapshotPrimaryStorageDeletionMsg pmsg = new VolumeSnapshotPrimaryStorageDeletionMsg();
+                    pmsg.setUuid(arg.getUuid());
+                    pmsg.setVolumeDelete(msg.isVolumeDeletion());
+                    bus.makeTargetServiceIdByResourceUuid(pmsg, VolumeSnapshotConstant.SERVICE_ID, arg.getPrimaryStorageUuid());
+                    return pmsg;
                 });
 
                 if (pmsgs.isEmpty()) {
@@ -1613,15 +1611,12 @@ public class VolumeSnapshotTreeBase {
     }
 
     private void changeStatusOfSnapshots(final StatusEvent evt, final List<VolumeSnapshotInventory> snapshots, final Completion completion) {
-        List<ChangeVolumeSnapshotStatusMsg> msgs = CollectionUtils.transformToList(snapshots, new Function<ChangeVolumeSnapshotStatusMsg, VolumeSnapshotInventory>() {
-            @Override
-            public ChangeVolumeSnapshotStatusMsg call(VolumeSnapshotInventory arg) {
-                ChangeVolumeSnapshotStatusMsg msg = new ChangeVolumeSnapshotStatusMsg();
-                msg.setEvent(evt.toString());
-                msg.setSnapshotUuid(arg.getUuid());
-                bus.makeLocalServiceId(msg, VolumeSnapshotConstant.SERVICE_ID);
-                return msg;
-            }
+        List<ChangeVolumeSnapshotStatusMsg> msgs = transformAndRemoveNull(snapshots, arg -> {
+            ChangeVolumeSnapshotStatusMsg msg = new ChangeVolumeSnapshotStatusMsg();
+            msg.setEvent(evt.toString());
+            msg.setSnapshotUuid(arg.getUuid());
+            bus.makeLocalServiceId(msg, VolumeSnapshotConstant.SERVICE_ID);
+            return msg;
         });
 
         bus.send(msgs, new CloudBusListCallBack(completion) {
@@ -2111,14 +2106,9 @@ public class VolumeSnapshotTreeBase {
     }
 
     private List<VolumeSnapshotBackupStorageDeletionMsg> makeVolumeSnapshotBackupStorageDeletionMsg(List<String> bsUuids) {
-        List<VolumeSnapshotBackupStorageDeletionMsg> msgs = new ArrayList<VolumeSnapshotBackupStorageDeletionMsg>();
+        List<VolumeSnapshotBackupStorageDeletionMsg> msgs = new ArrayList<>();
 
-        List<String> allMyBsUuids = CollectionUtils.transformToList(currentRoot.getBackupStorageRefs(), new Function<String, VolumeSnapshotBackupStorageRefVO>() {
-            @Override
-            public String call(VolumeSnapshotBackupStorageRefVO arg) {
-                return arg.getBackupStorageUuid();
-            }
-        });
+        List<String> allMyBsUuids = transformAndRemoveNull(currentRoot.getBackupStorageRefs(), VolumeSnapshotBackupStorageRefVO::getBackupStorageUuid);
 
         if (allMyBsUuids.isEmpty()) {
             return msgs;
@@ -2127,12 +2117,7 @@ public class VolumeSnapshotTreeBase {
         if (bsUuids == null || bsUuids.containsAll(allMyBsUuids)) {
             // delete me and all my descendants
             for (VolumeSnapshotInventory inv : currentLeaf.getDescendants()) {
-                List<String> buuids = CollectionUtils.transformToList(inv.getBackupStorageRefs(), new Function<String, VolumeSnapshotBackupStorageRefInventory>() {
-                    @Override
-                    public String call(VolumeSnapshotBackupStorageRefInventory arg) {
-                        return arg.getBackupStorageUuid();
-                    }
-                });
+                List<String> buuids = transformAndRemoveNull(inv.getBackupStorageRefs(), VolumeSnapshotBackupStorageRefInventory::getBackupStorageUuid);
                 VolumeSnapshotBackupStorageDeletionMsg msg = new VolumeSnapshotBackupStorageDeletionMsg();
                 msg.setBackupStorageUuids(buuids);
                 msg.setSnapshotUuid(inv.getUuid());

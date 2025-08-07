@@ -30,12 +30,13 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -275,12 +276,7 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
         List<VolumeSnapshotInventory> ret = null;
         if (VolumeVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<VolumeDeletionStruct> vols = action.getParentIssuerContext();
-            List<String> volUuids = CollectionUtils.transformToList(vols, new Function<String, VolumeDeletionStruct>() {
-                @Override
-                public String call(VolumeDeletionStruct arg) {
-                    return arg.getInventory().getUuid();
-                }
-            });
+            List<String> volUuids = transformAndRemoveNull(vols, arg -> arg.getInventory().getUuid());
 
             if (volUuids.isEmpty()) {
                 return null;

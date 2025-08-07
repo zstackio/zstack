@@ -72,6 +72,7 @@ import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by frank on 6/30/2015.
@@ -1028,7 +1029,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     void syncPhysicalCapacityInCluster(List<ClusterInventory> clusters, final ReturnValueCompletion<PhysicalCapacityUsage> completion) {
-        List<String> clusterUuids = CollectionUtils.transformToList(clusters, ClusterInventory::getUuid);
+        List<String> clusterUuids = transformAndRemoveNull(clusters, ClusterInventory::getUuid);
 
         final PhysicalCapacityUsage ret = new PhysicalCapacityUsage();
 
@@ -1053,21 +1054,18 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             return;
         }
 
-        List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(hostUuids, new Function<KVMHostAsyncHttpCallMsg, String>() {
-            @Override
-            public KVMHostAsyncHttpCallMsg call(String arg) {
-                GetPhysicalCapacityCmd cmd = new GetPhysicalCapacityCmd();
-                cmd.uuid = self.getUuid();
-                cmd.setHostUuid(arg);
-                cmd.storagePath = self.getUrl();
+        List<KVMHostAsyncHttpCallMsg> msgs = transformAndRemoveNull(hostUuids, arg -> {
+            GetPhysicalCapacityCmd cmd = new GetPhysicalCapacityCmd();
+            cmd.uuid = self.getUuid();
+            cmd.setHostUuid(arg);
+            cmd.storagePath = self.getUrl();
 
-                KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                msg.setHostUuid(arg);
-                msg.setCommand(cmd);
-                msg.setPath(GET_PHYSICAL_CAPACITY_PATH);
-                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, arg);
-                return msg;
-            }
+            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+            msg.setHostUuid(arg);
+            msg.setCommand(cmd);
+            msg.setPath(GET_PHYSICAL_CAPACITY_PATH);
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, arg);
+            return msg;
         });
 
         bus.send(msgs, new CloudBusListCallBack(completion) {
@@ -2978,14 +2976,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 } else {
                     cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_GET_MD5_STAGE;
                 }
-                cmd.md5s = CollectionUtils.transformToList(struct.getInfos(), new Function<GetMd5TO, ResourceInfo>() {
-                    @Override
-                    public GetMd5TO call(ResourceInfo arg) {
-                        GetMd5TO to = new GetMd5TO();
-                        to.path = arg.getPath();
-                        to.resourceUuid = arg.getResourceRef().getResourceUuid();
-                        return to;
-                    }
+                cmd.md5s = transformAndRemoveNull(struct.getInfos(), arg -> {
+                    GetMd5TO to = new GetMd5TO();
+                    to.path = arg.getPath();
+                    to.resourceUuid = arg.getResourceRef().getResourceUuid();
+                    return to;
                 });
 
                 httpCall(GET_MD5_PATH, struct.getSrcHostUuid(), cmd, false, GetMd5Rsp.class, new ReturnValueCompletion<GetMd5Rsp>(trigger) {
@@ -3021,7 +3016,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 } else {
                     cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_COPY_STAGE;
                 }
-                cmd.paths = CollectionUtils.transformToList(struct.getInfos(), ResourceInfo::getPath);
+                cmd.paths = transformAndRemoveNull(struct.getInfos(), ResourceInfo::getPath);
                 cmd.volumeUuid = struct.getInfos().get(0).getResourceRef().getResourceUuid();
 
                 httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, false,
@@ -3185,25 +3180,21 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             return;
         }
 
-        List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(hostUuids,
-                new Function<KVMHostAsyncHttpCallMsg, String>() {
-                    @Override
-                    public KVMHostAsyncHttpCallMsg call(String arg) {
-                        InitCmd cmd = new InitCmd();
-                        cmd.uuid = self.getUuid();
-                        cmd.path = self.getUrl();
-                        cmd.hostUuid = arg;
-                        cmd.initFilePath = makeInitializedFilePath();
+        List<KVMHostAsyncHttpCallMsg> msgs = transformAndRemoveNull(hostUuids, arg -> {
+            InitCmd cmd = new InitCmd();
+            cmd.uuid = self.getUuid();
+            cmd.path = self.getUrl();
+            cmd.hostUuid = arg;
+            cmd.initFilePath = makeInitializedFilePath();
 
-                        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                        msg.setCommand(cmd);
-                        msg.setPath(INIT_PATH);
-                        msg.setHostUuid(arg);
-                        msg.setNoStatusCheck(noCheckStatus);
-                        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, arg);
-                        return msg;
-                    }
-                });
+            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+            msg.setCommand(cmd);
+            msg.setPath(INIT_PATH);
+            msg.setHostUuid(arg);
+            msg.setNoStatusCheck(noCheckStatus);
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, arg);
+            return msg;
+        });
 
         bus.send(msgs, new CloudBusListCallBack(completion) {
             @Override

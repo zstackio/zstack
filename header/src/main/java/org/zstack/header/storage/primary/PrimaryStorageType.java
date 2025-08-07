@@ -1,11 +1,10 @@
 package org.zstack.header.storage.primary;
 
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
-
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 
 public class PrimaryStorageType {
@@ -119,12 +118,7 @@ public class PrimaryStorageType {
     public static List<String> getAllTypeNames() {
         List<PrimaryStorageType> exposedTypes = getExposedTypes();
 
-        return CollectionUtils.transformToList(exposedTypes, new Function<String, PrimaryStorageType>() {
-            @Override
-            public String call(PrimaryStorageType arg) {
-                return arg.toString();
-            }
-        });
+        return transformAndRemoveNull(exposedTypes, PrimaryStorageType::toString);
     }
 
     public static List<PrimaryStorageType> getAllTypes() {

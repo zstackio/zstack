@@ -14,6 +14,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.TagInventory;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -140,12 +142,7 @@ public class PrimaryStorageTagAllocatorExtension implements InstanceOfferingTagA
 
     @Transactional(readOnly = true)
     private List<PrimaryStorageVO> allocatePrimaryStorageByUserTag(String tag, List<PrimaryStorageVO> candidates, boolean required) {
-        List<String> uuids = CollectionUtils.transformToList(candidates, new Function<String, PrimaryStorageVO>() {
-            @Override
-            public String call(PrimaryStorageVO arg) {
-                return arg.getUuid();
-            }
-        });
+        List<String> uuids = transformAndRemoveNull(candidates, ResourceVO::getUuid);
 
         String sql = "select ps from PrimaryStorageVO ps where ps.uuid in (:uuids) and ps.uuid in (select t.resourceUuid from UserTagVO t where t.tag = :tag and t.resourceType = :resourceType)";
         TypedQuery<PrimaryStorageVO> q = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);

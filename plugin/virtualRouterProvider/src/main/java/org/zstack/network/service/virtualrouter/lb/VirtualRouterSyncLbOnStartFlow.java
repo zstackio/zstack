@@ -5,17 +5,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.vm.VmInstanceManager;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.VipInventory;
@@ -25,13 +21,13 @@ import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by frank on 8/17/2015.
@@ -167,14 +163,9 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
                             return;
                         }
 
-                        SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
-                        q.add(VipVO_.uuid, Op.IN, CollectionUtils.transformToList(finalLbs, new Function<String, LoadBalancerVO>() {
-                            @Override
-                            public String call(LoadBalancerVO arg) {
-                                return arg.getVipUuid();
-                            }
-                        }));
-                        List<VipVO> vipvos = q.list();
+                        List<VipVO> vipvos = Q.New(VipVO.class)
+                                .in(VipVO_.uuid, transformAndRemoveNull(finalLbs, LoadBalancerVO::getVipUuid))
+                                .list();
 
                         createVip(VipInventory.valueOf(vipvos).iterator(), trigger);
                     }
@@ -185,7 +176,7 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
 
                     @Override
                     public void run(final FlowTrigger trigger, final Map data) {
-                        List<LoadBalancerStruct> structs = new ArrayList<LoadBalancerStruct>();
+                        List<LoadBalancerStruct> structs = new ArrayList<>();
                         for (LoadBalancerVO vo : finalLbs) {
                             structs.add(lbMgr.makeStruct(vo));
                         }

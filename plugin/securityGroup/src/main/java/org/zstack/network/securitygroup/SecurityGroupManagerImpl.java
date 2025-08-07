@@ -88,6 +88,7 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.network.securitygroup.SecurityGroupMembersTO.ACTION_CODE_DELETE_GROUP;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 public class SecurityGroupManagerImpl extends AbstractService implements SecurityGroupManager, ManagementNodeReadyExtensionPoint,
         VmInstanceMigrateExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, ValidateL3SecurityGroupExtensionPoint {
@@ -2449,12 +2450,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     @Override
     public void afterMigrateVm(final VmInstanceInventory inv, final String srcHostUuid) {
         RuleCalculator cal = new RuleCalculator();
-        cal.vmNicUuids = CollectionUtils.transformToList(inv.getVmNics(), new Function<String, VmNicInventory>() {
-            @Override
-            public String call(VmNicInventory arg) {
-                return arg.getUuid();
-            }
-        });
+        cal.vmNicUuids = transformAndRemoveNull(inv.getVmNics(), VmNicInventory::getUuid);
         // if migrate vm with Storage,the vm stat is migrating
         cal.vmStates = asList(VmInstanceState.Running, VmInstanceState.Migrating);
         List<HostRuleTO> htos = cal.calculate();
@@ -2544,12 +2540,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 return lst;
             }
 
-            List<Long> ids = CollectionUtils.transformToList(lst, new Function<Long, SecurityGroupFailureHostVO>() {
-                @Override
-                public Long call(SecurityGroupFailureHostVO arg) {
-                    return arg.getId();
-                }
-            });
+            List<Long> ids = transformAndRemoveNull(lst, SecurityGroupFailureHostVO::getId);
 
             sql = "update SecurityGroupFailureHostVO f set f.managementNodeId = :mgmtId where f.id in (:ids)";
             Query uq = dbf.getEntityManager().createQuery(sql);

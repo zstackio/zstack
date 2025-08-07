@@ -30,11 +30,12 @@ import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy
 import org.zstack.identity.ResourceHelper;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -118,12 +119,7 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
                 return null;
             }
 
-            volumeUuids = CollectionUtils.transformToList(list, new Function<String, VolumeDeletionStruct>() {
-                @Override
-                public String call(VolumeDeletionStruct arg) {
-                    return arg.getInventory().getUuid();
-                }
-            });
+            volumeUuids = transformAndRemoveNull(list, arg -> arg.getInventory().getUuid());
             return volumeUuids;
         } else if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<PrimaryStorageInventory> pinvs = action.getParentIssuerContext();

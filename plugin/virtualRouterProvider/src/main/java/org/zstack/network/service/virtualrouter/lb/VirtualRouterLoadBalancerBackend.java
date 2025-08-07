@@ -51,11 +51,9 @@ import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.vip.VipConfigProxy;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
 import org.zstack.resourceconfig.ResourceConfigFacade;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.VipUseForList;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -66,6 +64,7 @@ import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by frank on 8/9/2015.
@@ -552,316 +551,326 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
     private List<LbTO> makeLbTOs(final LoadBalancerStruct struct, VirtualRouterVmInventory vr) {
         VipInventory vip = struct.getVip();
-        Optional<VmNicInventory> publicNic = vr.getVmNics().stream()
+        VmNicInventory publicNic = vr.getVmNics().stream()
                 .filter(n -> n.getL3NetworkUuid().equals(vip.getL3NetworkUuid()))
-                .findFirst();
-        if (!publicNic.isPresent()) {
+                .findFirst()
+                .orElse(null);
+        if (publicNic == null) {
             return new ArrayList<>();
         }
 
-        return CollectionUtils.transformToList(struct.getListeners(), new Function<LbTO, LoadBalancerListenerInventory>() {
-            private List<String> makeAcl(LoadBalancerListenerInventory listenerInv) {
-                String  aclEntry = "";
-                List<String> aclRules = new ArrayList<>();
-                List<LoadBalancerListenerACLRefInventory> refs = listenerInv.getAclRefs();
-                if (refs.isEmpty()) {
-                    aclRules.add(String.format("aclEntry::%s", aclEntry));
-                    return aclRules;
-                }
+        return transformAndRemoveNull(struct.getListeners(), it -> new MakeLbTOContext()
+                .withStruct(struct)
+                .withPublicNic(publicNic)
+                .withVip(vip)
+                .create(it));
+    }
 
-                List<LoadBalancerListenerACLRefInventory> aclRefInventories = refs.stream().filter(ref -> !ref.getType().equals(LoadBalancerAclType.redirect.toString())).collect(Collectors.toList());
-                if (aclRefInventories.isEmpty()) {
-                    return aclRules;
-                }
+    private static class MakeLbTOContext {
+        LoadBalancerStruct struct;
+        VmNicInventory publicNic;
+        VipInventory vip;
 
-                aclRules.add(String.format("aclType::%s", aclRefInventories.get(0).getType()));
+        MakeLbTOContext withStruct(LoadBalancerStruct struct) {
+            this.struct = struct;
+            return this;
+        }
 
-                List<String> aclUuids = aclRefInventories.stream().map(LoadBalancerListenerACLRefInventory::getAclUuid).collect(Collectors.toList());
-                List<String> entry = Q.New(AccessControlListEntryVO.class).select(AccessControlListEntryVO_.ipEntries)
-                                      .in(AccessControlListEntryVO_.aclUuid, aclUuids).listValues();
-                if (!entry.isEmpty()) {
-                    aclEntry = StringUtils.join(entry.toArray(), ',');
-                }
+        MakeLbTOContext withPublicNic(VmNicInventory publicNic) {
+            this.publicNic = publicNic;
+            return this;
+        }
+
+        MakeLbTOContext withVip(VipInventory vip) {
+            this.vip = vip;
+            return this;
+        }
+
+        private List<String> makeAcl(LoadBalancerListenerInventory listenerInv) {
+            String  aclEntry = "";
+            List<String> aclRules = new ArrayList<>();
+            List<LoadBalancerListenerACLRefInventory> refs = listenerInv.getAclRefs();
+            if (refs.isEmpty()) {
                 aclRules.add(String.format("aclEntry::%s", aclEntry));
                 return aclRules;
             }
 
-            private List<AccessControlListEntryVO> sortAclEntry(List<AccessControlListEntryVO> entries) {
-                if (entries == null || entries.size() <= 1) {
-                    return entries;
-                }
-                Collections.sort(entries, new Comparator<AccessControlListEntryVO>() {
-                    @Override
-                    public int compare(AccessControlListEntryVO entry1, AccessControlListEntryVO entry2) {
-                        int i = entry2.getDomain().length() - entry1.getDomain().length();
-                        if (i != 0) {
-                            return i;
-                        }
-                        int urlLength1 = entry1.getUrl() == null ? 0 : entry1.getUrl().length();
-                        int urlLength2 = entry2.getUrl() == null ? 0 : entry2.getUrl().length();
-                        return urlLength2 - urlLength1;
-                    }
-                });
+            List<LoadBalancerListenerACLRefInventory> aclRefInventories = refs.stream().filter(ref -> !ref.getType().equals(LoadBalancerAclType.redirect.toString())).collect(Collectors.toList());
+            if (aclRefInventories.isEmpty()) {
+                return aclRules;
+            }
+
+            aclRules.add(String.format("aclType::%s", aclRefInventories.get(0).getType()));
+
+            List<String> aclUuids = aclRefInventories.stream().map(LoadBalancerListenerACLRefInventory::getAclUuid).collect(Collectors.toList());
+            List<String> entry = Q.New(AccessControlListEntryVO.class).select(AccessControlListEntryVO_.ipEntries)
+                                  .in(AccessControlListEntryVO_.aclUuid, aclUuids).listValues();
+            if (!entry.isEmpty()) {
+                aclEntry = StringUtils.join(entry.toArray(), ',');
+            }
+            aclRules.add(String.format("aclEntry::%s", aclEntry));
+            return aclRules;
+        }
+
+        private List<AccessControlListEntryVO> sortAclEntry(List<AccessControlListEntryVO> entries) {
+            if (entries == null || entries.size() <= 1) {
                 return entries;
             }
+            entries.sort((entry1, entry2) -> {
+                int i = entry2.getDomain().length() - entry1.getDomain().length();
+                if (i != 0) {
+                    return i;
+                }
+                int urlLength1 = entry1.getUrl() == null ? 0 : entry1.getUrl().length();
+                int urlLength2 = entry2.getUrl() == null ? 0 : entry2.getUrl().length();
+                return urlLength2 - urlLength1;
+            });
+            return entries;
+        }
 
-            private List<LbTO.RedirectRule> makeRedirectAcl(LoadBalancerListenerInventory listenerInv, LbTO lbTO) {
-                ArrayList<LbTO.RedirectRule> redirectRules = new ArrayList<>();
+        private List<LbTO.RedirectRule> makeRedirectAcl(LoadBalancerListenerInventory listenerInv, LbTO lbTO) {
+            ArrayList<LbTO.RedirectRule> redirectRules = new ArrayList<>();
 
-                if (lbTO.getServerGroups() == null || lbTO.getServerGroups().isEmpty()) {
-                    return redirectRules;
+            if (lbTO.getServerGroups() == null || lbTO.getServerGroups().isEmpty()) {
+                return redirectRules;
+            }
+
+            List<LoadBalancerListenerACLRefInventory> refs = listenerInv.getAclRefs();
+            if (refs.isEmpty()) {
+                return redirectRules;
+            }
+
+            List<String> aclUuids = refs.stream().filter(ref -> ref.getType().equals(LoadBalancerAclType.redirect.toString())).map(LoadBalancerListenerACLRefInventory::getAclUuid).collect(Collectors.toList());
+            if (aclUuids.isEmpty()) {
+                return redirectRules;
+            }
+            List<AccessControlListEntryVO> entries = Q.New(AccessControlListEntryVO.class).in(AccessControlListEntryVO_.aclUuid, aclUuids).list();
+            List<String> usedSgUuids = new ArrayList<>();
+            List<String> usedAggSgUuids = new ArrayList<>();
+            //sort acl entry:  The more accurate, the more forward
+            //accurate forward, longer forward
+            List<AccessControlListEntryVO> domainWildWordMatchEntries = new ArrayList<>();
+            List<AccessControlListEntryVO> domainAccurateMatchEntries = new ArrayList<>();
+            List<AccessControlListEntryVO> onlyUrlEntries = new ArrayList<>();
+            List<AccessControlListEntryVO> afterSortEntries = new ArrayList<>();
+            for (AccessControlListEntryVO entryVO : entries) {
+                if (entryVO.getMatchMethod().equals("Url")) {
+                    onlyUrlEntries.add(entryVO);
+                } else if ("AccurateMatch".equals(entryVO.getCriterion())) {
+                    domainAccurateMatchEntries.add(entryVO);
+                } else {
+                    domainWildWordMatchEntries.add(entryVO);
+                }
+            }
+            sortAclEntry(domainAccurateMatchEntries);
+            sortAclEntry(domainWildWordMatchEntries);
+            afterSortEntries.addAll(domainAccurateMatchEntries);
+            afterSortEntries.addAll(domainWildWordMatchEntries);
+            afterSortEntries.addAll(onlyUrlEntries);
+
+            List<String> sgOwnBackenServerUuids = lbTO.getServerGroups().stream().map(LbTO.ServerGroup::getServerGroupUuid).collect(Collectors.toList());
+            for (AccessControlListEntryVO entry : afterSortEntries) {
+                List<String> serverGroupUuids = refs.stream()
+                        .filter(ref -> ref.getListenerUuid().equals(listenerInv.getUuid()) && ref.getAclUuid().equals(entry.getAclUuid()) && ref.getServerGroupUuid() != null && sgOwnBackenServerUuids.contains(ref.getServerGroupUuid()))
+                        .map(LoadBalancerListenerACLRefInventory::getServerGroupUuid).sorted().collect(Collectors.toList());
+                if (serverGroupUuids.isEmpty()) {
+                    continue;
                 }
 
-                List<LoadBalancerListenerACLRefInventory> refs = listenerInv.getAclRefs();
-                if (refs.isEmpty()) {
-                    return redirectRules;
-                }
+                LbTO.RedirectRule redirectRule = new LbTO.RedirectRule();
+                if (serverGroupUuids.size() == 1) {
+                    usedSgUuids.addAll(serverGroupUuids);
+                    redirectRule.setAclUuid(entry.getAclUuid());
+                    redirectRule.setRedirectRuleUuid(entry.getUuid());
+                    redirectRule.setServerGroupUuid(serverGroupUuids.get(0));
+                    redirectRule.setRedirectRule(entry.getRedirectRule());
+                } else {
+                    usedAggSgUuids.addAll(serverGroupUuids);
+                    redirectRule.setAclUuid(entry.getAclUuid());
+                    redirectRule.setRedirectRuleUuid(entry.getUuid());
+                    redirectRule.setRedirectRule(entry.getRedirectRule());
 
-                List<String> aclUuids = refs.stream().filter(ref -> ref.getType().equals(LoadBalancerAclType.redirect.toString())).map(LoadBalancerListenerACLRefInventory::getAclUuid).collect(Collectors.toList());
-                if (aclUuids.isEmpty()) {
-                    return redirectRules;
-                }
-                List<AccessControlListEntryVO> entries = Q.New(AccessControlListEntryVO.class).in(AccessControlListEntryVO_.aclUuid, aclUuids).list();
-                List<String> usedSgUuids = new ArrayList<>();
-                List<String> usedAggSgUuids = new ArrayList<>();
-                //sort acl entry:  The more accurate, the more forward
-                //accurate forward, longer forward
-                List<AccessControlListEntryVO> domainWildWordMatchEntries = new ArrayList<>();
-                List<AccessControlListEntryVO> domainAccurateMatchEntries = new ArrayList<>();
-                List<AccessControlListEntryVO> onlyUrlEntries = new ArrayList<>();
-                List<AccessControlListEntryVO> afterSortEntries = new ArrayList<>();
-                for (AccessControlListEntryVO entryVO : entries) {
-                    if (entryVO.getMatchMethod().equals("Url")) {
-                        onlyUrlEntries.add(entryVO);
-                    } else if ("AccurateMatch".equals(entryVO.getCriterion())) {
-                        domainAccurateMatchEntries.add(entryVO);
-                    } else {
-                        domainWildWordMatchEntries.add(entryVO);
+                    StringBuilder stringBuilder = new StringBuilder();
+                    for (String sgUuid : serverGroupUuids) {
+                        stringBuilder.append(sgUuid);
                     }
-                }
-                sortAclEntry(domainAccurateMatchEntries);
-                sortAclEntry(domainWildWordMatchEntries);
-                afterSortEntries.addAll(domainAccurateMatchEntries);
-                afterSortEntries.addAll(domainWildWordMatchEntries);
-                afterSortEntries.addAll(onlyUrlEntries);
+                    String polymerizedUuid = DigestUtils.md5Hex(stringBuilder.toString());
 
-                List<String> sgOwnBackenServerUuids = lbTO.getServerGroups().stream().map(LbTO.ServerGroup::getServerGroupUuid).collect(Collectors.toList());
-                for (AccessControlListEntryVO entry : afterSortEntries) {
-                    List<String> serverGroupUuids = refs.stream()
-                            .filter(ref -> ref.getListenerUuid().equals(listenerInv.getUuid()) && ref.getAclUuid().equals(entry.getAclUuid()) && ref.getServerGroupUuid() != null && sgOwnBackenServerUuids.contains(ref.getServerGroupUuid()))
-                            .map(LoadBalancerListenerACLRefInventory::getServerGroupUuid).sorted().collect(Collectors.toList());
-                    if (serverGroupUuids.isEmpty()) {
-                        continue;
+                    boolean needAddServerGroup = true;
+                    if (!lbTO.getServerGroups().isEmpty()) {
+                        needAddServerGroup = lbTO.getServerGroups().stream().noneMatch(sg -> sg.getServerGroupUuid().equals(polymerizedUuid));
                     }
 
-                    LbTO.RedirectRule redirectRule = new LbTO.RedirectRule();
-                    if (serverGroupUuids.size() == 1) {
-                        usedSgUuids.addAll(serverGroupUuids);
-                        redirectRule.setAclUuid(entry.getAclUuid());
-                        redirectRule.setRedirectRuleUuid(entry.getUuid());
-                        redirectRule.setServerGroupUuid(serverGroupUuids.get(0));
-                        redirectRule.setRedirectRule(entry.getRedirectRule());
-                    } else {
-                        usedAggSgUuids.addAll(serverGroupUuids);
-                        redirectRule.setAclUuid(entry.getAclUuid());
-                        redirectRule.setRedirectRuleUuid(entry.getUuid());
-                        redirectRule.setRedirectRule(entry.getRedirectRule());
-
-                        StringBuilder stringBuilder = new StringBuilder();
+                    if (needAddServerGroup) {
+                        LbTO.ServerGroup serverGroup = new LbTO.ServerGroup();
+                        serverGroup.setBackendServers(new ArrayList<>());
                         for (String sgUuid : serverGroupUuids) {
-                            stringBuilder.append(sgUuid);
-                        }
-                        String polymerizedUuid = DigestUtils.md5Hex(stringBuilder.toString());
-
-                        boolean needAddServerGroup = true;
-                        if (!lbTO.getServerGroups().isEmpty()) {
-                            needAddServerGroup = lbTO.getServerGroups().stream().noneMatch(sg -> sg.getServerGroupUuid().equals(polymerizedUuid));
-                        }
-
-                        if (needAddServerGroup) {
-                            LbTO.ServerGroup serverGroup = new LbTO.ServerGroup();
-                            serverGroup.setBackendServers(new ArrayList<>());
-                            for (String sgUuid : serverGroupUuids) {
-                                for (LbTO.ServerGroup serverGroup1 : lbTO.serverGroups) {
-                                    if (sgUuid.equals(serverGroup1.serverGroupUuid)) {
-                                        serverGroup.getBackendServers().addAll(serverGroup1.getBackendServers());
-                                    }
+                            for (LbTO.ServerGroup serverGroup1 : lbTO.serverGroups) {
+                                if (sgUuid.equals(serverGroup1.serverGroupUuid)) {
+                                    serverGroup.getBackendServers().addAll(serverGroup1.getBackendServers());
                                 }
                             }
-                            serverGroup.setName(polymerizedUuid);
-                            serverGroup.setServerGroupUuid(polymerizedUuid);
-                            lbTO.getServerGroups().add(serverGroup);
                         }
-                        redirectRule.setServerGroupUuid(polymerizedUuid);
-                        usedSgUuids.add(polymerizedUuid);
-                    }
-                    redirectRules.add(redirectRule);
-                }
-
-                ArrayList<LbTO.BackendServer> backendServers = new ArrayList<>();
-                Iterator<LbTO.ServerGroup> iterator = lbTO.getServerGroups().iterator();
-                if (!usedAggSgUuids.isEmpty()) {
-                    if (!usedSgUuids.isEmpty()) {
-                        usedAggSgUuids = usedAggSgUuids.stream().filter(sgUuid -> !usedSgUuids.contains(sgUuid)).collect(Collectors.toList());
-                    }
-                }
-                while (iterator.hasNext()) {
-                    LbTO.ServerGroup sg = iterator.next();
-                    if (!usedSgUuids.contains(sg.getServerGroupUuid()) && !usedAggSgUuids.contains(sg.getServerGroupUuid())) {
-                        backendServers.addAll(sg.getBackendServers());
-                        iterator.remove();
-                    }
-                    if (usedAggSgUuids.contains(sg.getServerGroupUuid())) {
-                        iterator.remove();
-                    }
-                }
-                if (!backendServers.isEmpty()) {
-                    if (!redirectRules.isEmpty()) {
-                        LbTO.ServerGroup serverGroup = new LbTO.ServerGroup();
-                        serverGroup.setBackendServers(backendServers);
-                        serverGroup.setName("default-server-group");
-                        StringBuilder stringBuilder = new StringBuilder();
-                        serverGroup.setDefault(true);
-                        serverGroup.setServerGroupUuid("defaultServerGroup");
+                        serverGroup.setName(polymerizedUuid);
+                        serverGroup.setServerGroupUuid(polymerizedUuid);
                         lbTO.getServerGroups().add(serverGroup);
                     }
+                    redirectRule.setServerGroupUuid(polymerizedUuid);
+                    usedSgUuids.add(polymerizedUuid);
                 }
-
-                boolean isDefaultPort = false;  // http 80;https 443
-                ArrayList<LbTO.RedirectRule> formatRedirectRules = new ArrayList<>();
-                if ( (lbTO.getMode().equals(LoadBalancerConstants.LB_PROTOCOL_HTTP) && lbTO.getLoadBalancerPort() == LoadBalancerConstants.PROTOCOL_HTTP_DEFAULT_PORT ) || (lbTO.getMode().equals(LoadBalancerConstants.LB_PROTOCOL_HTTPS) && lbTO.getLoadBalancerPort() == LoadBalancerConstants.PROTOCOL_HTTPS_DEFAULT_PORT) ){
-                    formatRedirectRules.addAll(redirectRules);
-                    isDefaultPort = true;
-                }
-
-                for(LbTO.RedirectRule rule:redirectRules){
-                    LbTO.RedirectRule formatRule = new LbTO.RedirectRule();
-                    formatRule.setRedirectRule(rule.getRedirectRule());
-                    formatRule.setRedirectRuleUuid(rule.getRedirectRuleUuid());
-                    formatRule.setAclUuid(rule.getAclUuid());
-                    formatRule.setServerGroupUuid(rule.getServerGroupUuid());
-
-                    String matchMethod = Q.New(AccessControlListEntryVO.class).select(AccessControlListEntryVO_.matchMethod).eq(AccessControlListEntryVO_.uuid, rule.getRedirectRuleUuid()).findValue();
-                    boolean isSkipInsertPort = ( LoadBalancerConstants.MatchMethod.Domain.toString().equals(matchMethod) || LoadBalancerConstants.MatchMethod.Url.toString().equals(matchMethod) );
-                    if ( isSkipInsertPort && isDefaultPort ){
-                        continue;
-                    } else if( isSkipInsertPort){
-                        formatRedirectRules.add(formatRule);
-                    } else{
-                        insertPortToRedirectRule(formatRule, lbTO);
-                        formatRedirectRules.add(formatRule);
-                    }
-                }
-                return formatRedirectRules;
+                redirectRules.add(redirectRule);
             }
 
-            private void insertPortToRedirectRule(LbTO.RedirectRule redirectRule,LbTO lbTO){
-                //add lbport after domain name
-                StringBuffer rule = new StringBuffer(redirectRule.getRedirectRule());
-                String insertRule = ":" + lbTO.getLoadBalancerPort();
-                int index = rule.indexOf("/");
-                if (index != -1) {
-                    rule.insert(index,insertRule);
+            ArrayList<LbTO.BackendServer> backendServers = new ArrayList<>();
+            Iterator<LbTO.ServerGroup> iterator = lbTO.getServerGroups().iterator();
+            if (!usedAggSgUuids.isEmpty()) {
+                if (!usedSgUuids.isEmpty()) {
+                    usedAggSgUuids = usedAggSgUuids.stream().filter(sgUuid -> !usedSgUuids.contains(sgUuid)).collect(Collectors.toList());
                 }
-                redirectRule.setRedirectRule(rule.toString());
+            }
+            while (iterator.hasNext()) {
+                LbTO.ServerGroup sg = iterator.next();
+                if (!usedSgUuids.contains(sg.getServerGroupUuid()) && !usedAggSgUuids.contains(sg.getServerGroupUuid())) {
+                    backendServers.addAll(sg.getBackendServers());
+                    iterator.remove();
+                }
+                if (usedAggSgUuids.contains(sg.getServerGroupUuid())) {
+                    iterator.remove();
+                }
+            }
+            if (!backendServers.isEmpty()) {
+                if (!redirectRules.isEmpty()) {
+                    LbTO.ServerGroup serverGroup = new LbTO.ServerGroup();
+                    serverGroup.setBackendServers(backendServers);
+                    serverGroup.setName("default-server-group");
+                    serverGroup.setDefault(true);
+                    serverGroup.setServerGroupUuid("defaultServerGroup");
+                    lbTO.getServerGroups().add(serverGroup);
+                }
             }
 
-            @Override
-            public LbTO call(LoadBalancerListenerInventory l) {
-                LbTO to = new LbTO();
-                to.setInstancePort(l.getInstancePort());
-                to.setLoadBalancerPort(l.getLoadBalancerPort());
-                to.setLbUuid(l.getLoadBalancerUuid());
-                to.setListenerUuid(l.getUuid());
-                to.setMode(l.getProtocol());
-                to.setVip(vip.getIp());
-                to.setSecurityPolicyType(l.getSecurityPolicyType());
-                if (l.getCertificateRefs() != null && !l.getCertificateRefs().isEmpty()) {
-                    to.setCertificateUuid(l.getCertificateRefs().get(0).getCertificateUuid());
-                }
-
-                List<LoadBalancerServerGroupInventory> groupInvs = struct.getListenerServerGroupMap().get(l.getUuid());
-                List<String> params = new ArrayList<>();
-                List<String> ips = new ArrayList<>();
-                List<LbTO.ServerGroup> serverGroups = new ArrayList<>();
-                if (groupInvs != null) {
-                    for (LoadBalancerServerGroupInventory groupInv : groupInvs) {
-                        LbTO.ServerGroup serverGroup = new LbTO.ServerGroup();
-                        serverGroup.setName(groupInv.getName());
-                        serverGroup.setServerGroupUuid(groupInv.getUuid());
-                        List<LbTO.BackendServer> backendServers = new ArrayList<>();
-                        serverGroup.setBackendServers(backendServers);
-                        List<LoadBalancerServerGroupVmNicRefInventory> nicRefInventories = Optional.ofNullable(groupInv.getVmNicRefs()).orElse(new ArrayList<>()).stream()
-                                .sorted(new Comparator<LoadBalancerServerGroupVmNicRefInventory>() {
-                                    @Override
-                                    public int compare(LoadBalancerServerGroupVmNicRefInventory r1, LoadBalancerServerGroupVmNicRefInventory r2) {
-                                        return (int) (r1.getId() - r2.getId());
-                                    }
-                                }).collect(Collectors.toList());
-                        List<LoadBalancerServerGroupServerIpInventory> ipRefInventories = Optional.ofNullable(groupInv.getServerIps()).orElse(new ArrayList<>()).stream()
-                                .sorted(new Comparator<LoadBalancerServerGroupServerIpInventory>() {
-                                    @Override
-                                    public int compare(LoadBalancerServerGroupServerIpInventory r1, LoadBalancerServerGroupServerIpInventory r2) {
-                                        return (int) (r1.getId() - r2.getId());
-                                    }
-                                }).collect(Collectors.toList());
-                        for (LoadBalancerServerGroupVmNicRefInventory nicRef : nicRefInventories) {
-                            if (nicRef.getStatus().equals(LoadBalancerVmNicStatus.Inactive.toString())) {
-                                continue;
-                            }
-
-                            VmNicInventory nic = struct.getVmNics().get(nicRef.getVmNicUuid());
-                            if (nic == null) {
-                                throw new CloudRuntimeException(String.format("cannot find nic[uuid:%s]", nicRef.getVmNicUuid()));
-                            }
-                            if(nic.getIp() == null || nic.getIp().isEmpty()){
-                                continue;
-                            }
-                            ips.add(nic.getIp());
-                            params.add(String.format("balancerWeight::%s::%s", nic.getIp(), nicRef.getWeight()));
-                            backendServers.add(new LbTO.BackendServer(nic.getIp(), nicRef.getWeight()));
-                        }
-
-                        for (LoadBalancerServerGroupServerIpInventory ipRef : ipRefInventories) {
-                            if (ipRef.getStatus().equals(LoadBalancerBackendServerStatus.Inactive.toString())) {
-                                continue;
-                            }
-
-                            if(ipRef.getIpAddress() == null || ipRef.getIpAddress().isEmpty()){
-                                continue;
-                            }
-                            ips.add(ipRef.getIpAddress());
-                            params.add(String.format("balancerWeight::%s::%s",ipRef.getIpAddress(), ipRef.getWeight()));
-                            backendServers.add(new LbTO.BackendServer(ipRef.getIpAddress(), ipRef.getWeight()));
-                        }
-
-                        if (!backendServers.isEmpty()) {
-                            serverGroups.add(serverGroup);
-                        }
-                    }
-                }
-                to.setNicIps(ips.stream().sorted().collect(Collectors.toList()));
-                to.setPublicNic(publicNic.get().getMac());
-                to.setServerGroups(serverGroups);
-                params.addAll(CollectionUtils.transformToList(struct.getTags().get(l.getUuid()), new Function<String, String>() {
-                    // vnicUuid::weight
-                    @Override
-                    public String call(String arg) {
-                        if(LoadBalancerSystemTags.BALANCER_WEIGHT.isMatch(arg)) {
-                            /*
-                                4.0 lb server ip weight configuration from nicRefVO and serverIpVO,not systemTag
-                             */
-                            return null;
-                        }
-                        return arg;
-                    }
-                }));
-                to.setRedirectRules(makeRedirectAcl(l, to));
-                params.addAll(makeAcl(l));
-                to.setParameters(params);
-                return to;
+            boolean isDefaultPort = false;  // http 80;https 443
+            ArrayList<LbTO.RedirectRule> formatRedirectRules = new ArrayList<>();
+            if ( (lbTO.getMode().equals(LoadBalancerConstants.LB_PROTOCOL_HTTP) && lbTO.getLoadBalancerPort() == LoadBalancerConstants.PROTOCOL_HTTP_DEFAULT_PORT ) || (lbTO.getMode().equals(LoadBalancerConstants.LB_PROTOCOL_HTTPS) && lbTO.getLoadBalancerPort() == LoadBalancerConstants.PROTOCOL_HTTPS_DEFAULT_PORT) ){
+                formatRedirectRules.addAll(redirectRules);
+                isDefaultPort = true;
             }
-        });
+
+            for(LbTO.RedirectRule rule:redirectRules){
+                LbTO.RedirectRule formatRule = new LbTO.RedirectRule();
+                formatRule.setRedirectRule(rule.getRedirectRule());
+                formatRule.setRedirectRuleUuid(rule.getRedirectRuleUuid());
+                formatRule.setAclUuid(rule.getAclUuid());
+                formatRule.setServerGroupUuid(rule.getServerGroupUuid());
+
+                String matchMethod = Q.New(AccessControlListEntryVO.class).select(AccessControlListEntryVO_.matchMethod).eq(AccessControlListEntryVO_.uuid, rule.getRedirectRuleUuid()).findValue();
+                boolean isSkipInsertPort = ( LoadBalancerConstants.MatchMethod.Domain.toString().equals(matchMethod) || LoadBalancerConstants.MatchMethod.Url.toString().equals(matchMethod) );
+                if ( isSkipInsertPort && isDefaultPort ){
+                    continue;
+                } else if( isSkipInsertPort){
+                    formatRedirectRules.add(formatRule);
+                } else{
+                    insertPortToRedirectRule(formatRule, lbTO);
+                    formatRedirectRules.add(formatRule);
+                }
+            }
+            return formatRedirectRules;
+        }
+
+        private void insertPortToRedirectRule(LbTO.RedirectRule redirectRule,LbTO lbTO){
+            //add lbport after domain name
+            StringBuffer rule = new StringBuffer(redirectRule.getRedirectRule());
+            String insertRule = ":" + lbTO.getLoadBalancerPort();
+            int index = rule.indexOf("/");
+            if (index != -1) {
+                rule.insert(index,insertRule);
+            }
+            redirectRule.setRedirectRule(rule.toString());
+        }
+
+        public LbTO create(LoadBalancerListenerInventory l) {
+            LbTO to = new LbTO();
+            to.setInstancePort(l.getInstancePort());
+            to.setLoadBalancerPort(l.getLoadBalancerPort());
+            to.setLbUuid(l.getLoadBalancerUuid());
+            to.setListenerUuid(l.getUuid());
+            to.setMode(l.getProtocol());
+            to.setVip(vip.getIp());
+            to.setSecurityPolicyType(l.getSecurityPolicyType());
+            if (l.getCertificateRefs() != null && !l.getCertificateRefs().isEmpty()) {
+                to.setCertificateUuid(l.getCertificateRefs().get(0).getCertificateUuid());
+            }
+
+            List<LoadBalancerServerGroupInventory> groupInvs = struct.getListenerServerGroupMap().get(l.getUuid());
+            List<String> params = new ArrayList<>();
+            List<String> ips = new ArrayList<>();
+            List<LbTO.ServerGroup> serverGroups = new ArrayList<>();
+            if (groupInvs != null) {
+                for (LoadBalancerServerGroupInventory groupInv : groupInvs) {
+                    LbTO.ServerGroup serverGroup = new LbTO.ServerGroup();
+                    serverGroup.setName(groupInv.getName());
+                    serverGroup.setServerGroupUuid(groupInv.getUuid());
+                    List<LbTO.BackendServer> backendServers = new ArrayList<>();
+                    serverGroup.setBackendServers(backendServers);
+                    List<LoadBalancerServerGroupVmNicRefInventory> nicRefInventories = Optional.ofNullable(groupInv.getVmNicRefs()).orElse(new ArrayList<>()).stream()
+                            .sorted((r1, r2) -> (int) (r1.getId() - r2.getId()))
+                            .collect(Collectors.toList());
+                    List<LoadBalancerServerGroupServerIpInventory> ipRefInventories = Optional.ofNullable(groupInv.getServerIps()).orElse(new ArrayList<>()).stream()
+                            .sorted((r1, r2) -> (int) (r1.getId() - r2.getId()))
+                            .collect(Collectors.toList());
+                    for (LoadBalancerServerGroupVmNicRefInventory nicRef : nicRefInventories) {
+                        if (nicRef.getStatus().equals(LoadBalancerVmNicStatus.Inactive.toString())) {
+                            continue;
+                        }
+
+                        VmNicInventory nic = struct.getVmNics().get(nicRef.getVmNicUuid());
+                        if (nic == null) {
+                            throw new CloudRuntimeException(String.format("cannot find nic[uuid:%s]", nicRef.getVmNicUuid()));
+                        }
+                        if(nic.getIp() == null || nic.getIp().isEmpty()){
+                            continue;
+                        }
+                        ips.add(nic.getIp());
+                        params.add(String.format("balancerWeight::%s::%s", nic.getIp(), nicRef.getWeight()));
+                        backendServers.add(new LbTO.BackendServer(nic.getIp(), nicRef.getWeight()));
+                    }
+
+                    for (LoadBalancerServerGroupServerIpInventory ipRef : ipRefInventories) {
+                        if (ipRef.getStatus().equals(LoadBalancerBackendServerStatus.Inactive.toString())) {
+                            continue;
+                        }
+
+                        if(ipRef.getIpAddress() == null || ipRef.getIpAddress().isEmpty()){
+                            continue;
+                        }
+                        ips.add(ipRef.getIpAddress());
+                        params.add(String.format("balancerWeight::%s::%s",ipRef.getIpAddress(), ipRef.getWeight()));
+                        backendServers.add(new LbTO.BackendServer(ipRef.getIpAddress(), ipRef.getWeight()));
+                    }
+
+                    if (!backendServers.isEmpty()) {
+                        serverGroups.add(serverGroup);
+                    }
+                }
+            }
+            to.setNicIps(ips.stream().sorted().collect(Collectors.toList()));
+            to.setPublicNic(publicNic.getMac());
+            to.setServerGroups(serverGroups);
+            // vnicUuid::weight
+            params.addAll(transformAndRemoveNull(struct.getTags().get(l.getUuid()), arg -> {
+                if (LoadBalancerSystemTags.BALANCER_WEIGHT.isMatch(arg)) {
+                    /*
+                        4.0 lb server ip weight configuration from nicRefVO and serverIpVO,not systemTag
+                     */
+                    return null;
+                }
+                return arg;
+            }));
+            to.setRedirectRules(makeRedirectAcl(l, to));
+            params.addAll(makeAcl(l));
+            to.setParameters(params);
+            return to;
+        }
     }
 
     private List<String> getCertificates(List<LoadBalancerStruct> structs) {

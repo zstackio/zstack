@@ -18,15 +18,16 @@ import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.Params;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.volume.*;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.utils.CollectionUtils.isEmpty;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmDeleteVolumeFlow extends NoRollbackFlow {
@@ -60,22 +61,19 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
         }
 
         List<String> volumeTypes = Arrays.asList(VolumeType.Root.toString(), VolumeType.Memory.toString(), VolumeType.Cache.toString());
-        List<VolumeDeletionStruct> ctx = CollectionUtils.transformToList(spec.getVmInventory().getAllVolumes(), new Function<VolumeDeletionStruct, VolumeInventory>() {
-            @Override
-            public VolumeDeletionStruct call(VolumeInventory arg) {
-                if (VolumeType.Data.toString().equals(arg.getType()) && !deleteDataDisk && !templated) {
-                    return null;
-                }
-
-                VolumeDeletionStruct s = new VolumeDeletionStruct();
-                s.setInventory(arg);
-                if (volumeTypes.contains(arg.getType()) || templated) {
-                    s.setDeletionPolicy(deletionPolicy.toString());
-                }
-                // for data volume, use volume's own deletion policy
-
-                return s;
+        List<VolumeDeletionStruct> ctx = transformAndRemoveNull(spec.getVmInventory().getAllVolumes(), arg -> {
+            if (VolumeType.Data.toString().equals(arg.getType()) && !deleteDataDisk && !templated) {
+                return null;
             }
+
+            VolumeDeletionStruct s = new VolumeDeletionStruct();
+            s.setInventory(arg);
+            if (volumeTypes.contains(arg.getType()) || templated) {
+                s.setDeletionPolicy(deletionPolicy.toString());
+            }
+            // for data volume, use volume's own deletion policy
+
+            return s;
         });
 
         final String issuer = VolumeVO.class.getSimpleName();
@@ -111,14 +109,10 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
 
     @Transactional
     private void detachDataVolumes(VmInstanceSpec spec) {
-        List<String> dataVolumeUuids = CollectionUtils.transformToList(spec.getVmInventory().getAllVolumes(), new Function<String, VolumeInventory>() {
-            @Override
-            public String call(VolumeInventory arg) {
-                return VolumeType.Data.toString().equals(arg.getType()) ? arg.getUuid() : null;
-            }
-        });
+        List<String> dataVolumeUuids = transformAndRemoveNull(spec.getVmInventory().getAllVolumes(),
+                arg -> VolumeType.Data.toString().equals(arg.getType()) ? arg.getUuid() : null);
 
-        if (dataVolumeUuids == null || dataVolumeUuids.isEmpty()) {
+        if (isEmpty(dataVolumeUuids)) {
             return;
         }
 

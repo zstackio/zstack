@@ -12,16 +12,14 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 public class PortForwardingCascadeExtension extends AbstractAsyncCascadeExtension {
     private static final CLogger logger = Utils.getLogger(PortForwardingCascadeExtension.class);
@@ -55,14 +53,11 @@ public class PortForwardingCascadeExtension extends AbstractAsyncCascadeExtensio
             return;
         }
 
-        List<PortForwardingRuleDeletionMsg> msgs = CollectionUtils.transformToList(pfinvs, new Function<PortForwardingRuleDeletionMsg, PortForwardingRuleInventory>() {
-            @Override
-            public PortForwardingRuleDeletionMsg call(PortForwardingRuleInventory arg) {
-                PortForwardingRuleDeletionMsg msg = new PortForwardingRuleDeletionMsg();
-                msg.setRuleUuids(asList(arg.getUuid()));
-                bus.makeTargetServiceIdByResourceUuid(msg, PortForwardingConstant.SERVICE_ID, arg.getUuid());
-                return msg;
-            }
+        List<PortForwardingRuleDeletionMsg> msgs = transformAndRemoveNull(pfinvs, arg -> {
+            PortForwardingRuleDeletionMsg msg = new PortForwardingRuleDeletionMsg();
+            msg.setRuleUuids(asList(arg.getUuid()));
+            bus.makeTargetServiceIdByResourceUuid(msg, PortForwardingConstant.SERVICE_ID, arg.getUuid());
+            return msg;
         });
 
         bus.send(msgs, 10, new CloudBusListCallBack(completion) {
@@ -108,12 +103,7 @@ public class PortForwardingCascadeExtension extends AbstractAsyncCascadeExtensio
 
     private List<PortForwardingRuleInventory> pfFromAction(CascadeAction action) {
         if (VipVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> vipUuids = CollectionUtils.transformToList((List<VipInventory>) action.getParentIssuerContext(), new Function<String, VipInventory>() {
-                @Override
-                public String call(VipInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> vipUuids = transformAndRemoveNull(action.getParentIssuerContext(), VipInventory::getUuid);
             if (vipUuids.isEmpty()) {
                 return null;
             }

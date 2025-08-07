@@ -1,7 +1,6 @@
 package org.zstack.simulator.kvm;
 
 import org.apache.commons.lang.StringUtils;
-import org.junit.Assert;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
@@ -16,7 +15,6 @@ import org.zstack.kvm.KVMAgentCommands.TakeSnapshotCmd;
 import org.zstack.kvm.KVMAgentCommands.TakeSnapshotResponse;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.RevertVolumeFromSnapshotCmd;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.RevertVolumeFromSnapshotResponse;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -29,6 +27,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -380,12 +380,7 @@ public class VolumeSnapshotKvmSimulator {
 
         List<List<String>> qcowChains = findOutAllQcow2Chains(root);
 
-        List<String> expected = CollectionUtils.transformToList(chain, new Function<String, VolumeSnapshotInventory>() {
-            @Override
-            public String call(VolumeSnapshotInventory arg) {
-                return arg.getPrimaryStorageInstallPath();
-            }
-        });
+        List<String> expected = transformAndRemoveNull(chain, VolumeSnapshotInventory::getPrimaryStorageInstallPath);
 
         boolean success = false;
         for (List<String> paths : qcowChains) {

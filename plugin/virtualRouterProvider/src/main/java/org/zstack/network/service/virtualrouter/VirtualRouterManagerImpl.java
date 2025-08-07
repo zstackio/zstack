@@ -104,6 +104,7 @@ import static org.zstack.network.service.virtualrouter.vyos.VyosConstants.VYOS_R
 import static org.zstack.network.service.virtualrouter.vyos.VyosConstants.VYOS_VM_TYPE;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 import static org.zstack.utils.VipUseForList.SNAT_NETWORK_SERVICE_TYPE;
 
 public class VirtualRouterManagerImpl extends AbstractService implements VirtualRouterManager,
@@ -250,7 +251,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             private void openAdditionalPorts(ApplianceVmSpec aspec, String mgmtNwUuid) {
                 final List<String> tcpPorts = VirtualRouterGlobalProperty.TCP_PORTS_ON_MGMT_NIC;
                 if (!tcpPorts.isEmpty()) {
-                    List<Integer> ports = CollectionUtils.transformToList(tcpPorts, (Function<Integer, String>) Integer::valueOf);
+                    List<Integer> ports = transformAndRemoveNull(tcpPorts, Integer::valueOf);
                     for (int p : ports) {
                         openFirewall(aspec, mgmtNwUuid, p, ApplianceVmFirewallProtocol.tcp);
                     }
@@ -258,7 +259,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
                 final List<String> udpPorts = VirtualRouterGlobalProperty.UDP_PORTS_ON_MGMT_NIC;
                 if (!udpPorts.isEmpty()) {
-                    List<Integer> ports = CollectionUtils.transformToList(udpPorts, (Function<Integer, String>) Integer::valueOf);
+                    List<Integer> ports = transformAndRemoveNull(udpPorts, Integer::valueOf);
                     for (int p : ports) {
                         openFirewall(aspec, mgmtNwUuid, p, ApplianceVmFirewallProtocol.udp);
                     }

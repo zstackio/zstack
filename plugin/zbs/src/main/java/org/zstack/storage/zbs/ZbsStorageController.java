@@ -235,7 +235,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         Config current = JSONObjectUtil.toObject(cfg, Config.class);
         List<MdsInfo> mdsInfos = parseMdsInfos(current.getMdsUrls());
         newAddonInfo.setMdsInfos(mdsInfos);
-        final List<ZbsPrimaryStorageMdsBase> mdsList = CollectionUtils.transformToList(newAddonInfo.getMdsInfos(),
+        final List<ZbsPrimaryStorageMdsBase> mdsList = CollectionUtils.transformAndRemoveNull(newAddonInfo.getMdsInfos(),
                 ZbsPrimaryStorageMdsBase::new);
 
         class Connector {
@@ -380,7 +380,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     @Override
     public void ping(Completion completion) {
         reloadDbInfo();
-        final List<ZbsPrimaryStorageMdsBase> mds = CollectionUtils.transformToList(addonInfo.getMdsInfos(), ZbsPrimaryStorageMdsBase::new);
+        final List<ZbsPrimaryStorageMdsBase> mds = CollectionUtils.transformAndRemoveNull(addonInfo.getMdsInfos(), ZbsPrimaryStorageMdsBase::new);
         new While<>(mds).each((m, comp) -> {
             m.ping(new Completion(comp) {
                 @Override
@@ -904,7 +904,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         List<MdsInfo> oldMdsInfos = parseMdsInfos(old.getMdsUrls());
         List<MdsInfo> changedMdsInfos = newMdsInfos.stream().filter(n -> oldMdsInfos.stream().noneMatch(o -> o.equals(n))).collect(Collectors.toList());
         if (!changedMdsInfos.isEmpty() && !CoreGlobalProperty.UNIT_TEST_ON) {
-            List<ZbsPrimaryStorageMdsBase> mdsList = CollectionUtils.transformToList(changedMdsInfos, ZbsPrimaryStorageMdsBase::new);
+            List<ZbsPrimaryStorageMdsBase> mdsList = CollectionUtils.transformAndRemoveNull(changedMdsInfos, ZbsPrimaryStorageMdsBase::new);
             for (ZbsPrimaryStorageMdsBase base : mdsList) {
                 base.checkSshAndTools();
                 base.checkStorageHealth();

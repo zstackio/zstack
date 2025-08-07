@@ -36,7 +36,6 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.utils.*;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
@@ -48,6 +47,7 @@ import java.util.Map;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created with IntelliJ IDEA.
@@ -417,14 +417,11 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
             return;
         }
 
-        final List<ReconnectConsoleProxyMsg> rmsgs = CollectionUtils.transformToList(mgmtNodeUuids, new Function<ReconnectConsoleProxyMsg, String>() {
-            @Override
-            public ReconnectConsoleProxyMsg call(String arg) {
-                ReconnectConsoleProxyMsg rmsg = new ReconnectConsoleProxyMsg();
-                rmsg.setAgentUuid(arg);
-                bus.makeServiceIdByManagementNodeId(rmsg, ConsoleConstants.SERVICE_ID, arg);
-                return rmsg;
-            }
+        final List<ReconnectConsoleProxyMsg> rmsgs = transformAndRemoveNull(mgmtNodeUuids, arg -> {
+            ReconnectConsoleProxyMsg rmsg = new ReconnectConsoleProxyMsg();
+            rmsg.setAgentUuid(arg);
+            bus.makeServiceIdByManagementNodeId(rmsg, ConsoleConstants.SERVICE_ID, arg);
+            return rmsg;
         });
 
         bus.send(rmsgs, new CloudBusListCallBack(msg) {
