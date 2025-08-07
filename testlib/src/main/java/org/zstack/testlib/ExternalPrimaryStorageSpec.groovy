@@ -3,6 +3,7 @@ package org.zstack.testlib
 import org.springframework.http.HttpEntity
 import org.zstack.cbd.LogicalPoolInfo
 import org.zstack.cbd.kvm.KvmCbdCommands
+import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
@@ -68,6 +69,13 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 rsp.success = true
 
                 return rsp
+            }
+
+            simulator(ZbsStorageController.CHECK_HOST_STORAGE_CONNECTION_PATH) { HttpEntity<String> e ->
+                ZbsStorageController.CheckHostStorageConnectionCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckHostStorageConnectionCmd)
+                assert cmd.hostUuid != null
+
+                return new KVMAgentCommands.AgentResponse()
             }
 
             simulator(ZbsStorageController.GET_CAPACITY_PATH) { HttpEntity<String> e, EnvSpec spec ->
