@@ -16,4 +16,7 @@ public interface ZbsConstants {
     String ZBS_CBD_PREFIX_SCHEME = "cbd://";
     Integer PRIMARY_STORAGE_MDS_MAXIMUM_PING_FAILURE = 3;
     String VOLUME_PHYSICAL_BLOCK_SIZE = "4096";
+    String MEGABYTE_SUPPORTED_VERSION = "1.6.1";
+    String MEGABYTE_UNIT = "M";
+    String GIGABYTE_UNIT = "G";
 }

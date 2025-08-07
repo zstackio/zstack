@@ -84,6 +84,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     public static final String DEPLOY_CLIENT_PATH = "/zbs/primarystorage/client/deploy";
     public static final String GET_CAPACITY_PATH = "/zbs/primarystorage/capacity";
+    public static final String GET_FACTS_PATH = "/zbs/primarystorage/facts";
     public static final String COPY_PATH = "/zbs/primarystorage/copy";
     public static final String CREATE_VOLUME_PATH = "/zbs/primarystorage/volume/create";
     public static final String DELETE_VOLUME_PATH = "/zbs/primarystorage/volume/delete";
@@ -303,6 +304,28 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                     public void run(FlowTrigger trigger, Map data) {
                         new Connector().connect(trigger);
                         addonInfo = newAddonInfo;
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "get-facts";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        httpCall(GET_FACTS_PATH, new GetFactsCmd(), GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(trigger) {
+                            @Override
+                            public void success(GetFactsRsp returnValue) {
+                                ClusterInfo info = new ClusterInfo();
+                                info.setVersion(returnValue.getVersion());
+                                newAddonInfo.setClusterInfo(info);
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
                     }
                 });
 
@@ -532,7 +555,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         CreateVolumeCmd cmd = new CreateVolumeCmd();
         cmd.setLogicalPool(config.getLogicalPoolName());
         cmd.setVolume(v.getName());
-        cmd.setSize((long)Math.ceil(SizeUnit.BYTE.toGigaByte((double)v.getSize())));
+        cmd.setUnit(getSizeUnit(addonInfo.getClusterInfo().getVersion()));
+        cmd.setSize(alignSizeTo(v.getSize(), cmd.getUnit()));
         cmd.setSkipIfExisting(true);
 
         httpCall(CREATE_VOLUME_PATH, cmd, CreateVolumeRsp.class, new ReturnValueCompletion<CreateVolumeRsp>(comp) {
@@ -617,7 +641,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                     public void run(FlowTrigger trigger, Map data) {
                         ExpandVolumeCmd cmd = new ExpandVolumeCmd();
                         cmd.setPath(stats.getInstallPath());
-                        cmd.setSize(SizeUnit.BYTE.toGigaByte(dst.getSize()));
+                        cmd.setUnit(getSizeUnit(addonInfo.getClusterInfo().getVersion()));
+                        cmd.setSize(alignSizeTo(dst.getSize(), cmd.getUnit()));
 
                         httpCall(EXPAND_VOLUME_PATH, cmd, ExpandVolumeRsp.class, new ReturnValueCompletion<ExpandVolumeRsp>(trigger) {
                             @Override
@@ -753,7 +778,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public void expandVolume(String installPath, long size, ReturnValueCompletion<VolumeStats> comp) {
         ExpandVolumeCmd cmd = new ExpandVolumeCmd();
         cmd.setPath(installPath);
-        cmd.setSize(SizeUnit.BYTE.toGigaByte(size));
+        cmd.setUnit(getSizeUnit(addonInfo.getClusterInfo().getVersion()));
+        cmd.setSize(alignSizeTo(size, cmd.getUnit()));
 
         httpCall(EXPAND_VOLUME_PATH, cmd, ExpandVolumeRsp.class, new ReturnValueCompletion<ExpandVolumeRsp>(comp) {
             @Override
@@ -1377,9 +1403,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     }
 
-    public static class ExpandVolumeCmd extends AgentCommand {
+    public static class ExpandVolumeCmd extends SizeCmd {
         private String path;
-        private long size;
 
         public String getPath() {
             return path;
@@ -1387,14 +1412,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         public void setPath(String path) {
             this.path = path;
-        }
-
-        public long getSize() {
-            return size;
-        }
-
-        public void setSize(long size) {
-            this.size = size;
         }
     }
 
@@ -1602,10 +1619,30 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
     }
 
-    public static class CreateVolumeCmd extends AgentCommand {
+    public static class SizeCmd extends AgentCommand {
+        private long size;
+        private String unit;
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+
+        public String getUnit() {
+            return unit;
+        }
+
+        public void setUnit(String unit) {
+            this.unit = unit;
+        }
+    }
+
+    public static class CreateVolumeCmd extends SizeCmd {
         private String logicalPool;
         private String volume;
-        private long size = 1L;
         private boolean skipIfExisting;
 
         public String getLogicalPool() {
@@ -1622,14 +1659,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         public void setVolume(String volume) {
             this.volume = volume;
-        }
-
-        public long getSize() {
-            return size;
-        }
-
-        public void setSize(long size) {
-            this.size = size;
         }
 
         public boolean isSkipIfExisting() {
@@ -1681,6 +1710,21 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         public void setPort(Integer port) {
             this.port = port;
         }
+    }
+
+    public static class GetFactsRsp extends AgentResponse {
+        private String version;
+
+        public String getVersion() {
+            return version;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
+        }
+    }
+
+    public static class GetFactsCmd extends AgentCommand {
     }
 
     public static class CheckHostStorageConnectionCmd extends AgentCommand {
