@@ -15,6 +15,7 @@ public class VmAttachNicMsg extends NeedReplyMessage implements VmInstanceMessag
     private boolean allowDuplicatedAddress = false;
     private boolean applyToBackend = true;
     private String driverType;
+    private boolean allowDuplicatedMac = false;
 
     public boolean isAllowDuplicatedAddress() {
         return allowDuplicatedAddress;
@@ -65,4 +66,11 @@ public class VmAttachNicMsg extends NeedReplyMessage implements VmInstanceMessag
         this.driverType = driverType;
     }
 
+    public boolean isAllowDuplicatedMac() {
+        return allowDuplicatedMac;
+    }
+
+    public void setAllowDuplicatedMac(boolean allowDuplicatedMac) {
+        this.allowDuplicatedMac = allowDuplicatedMac;
+    }
 }

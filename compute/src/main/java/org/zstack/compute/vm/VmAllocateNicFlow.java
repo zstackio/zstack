@@ -61,6 +61,7 @@ public class VmAllocateNicFlow implements Flow {
     public void run(final FlowTrigger trigger, final Map data) {
         taskProgress("create nics");
 
+        Boolean allowDuplicatedMac = (Boolean) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedMac.toString());
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         List<VmNicSpec> l3Networks = spec.getL3Networks();
         for (VmNicSpec l3Network : l3Networks) {
@@ -128,9 +129,12 @@ public class VmAllocateNicFlow implements Flow {
             nic.setMac(mac);
             nic.setHypervisorType(spec.getDestHost() == null ?
                     spec.getVmInventory().getHypervisorType() : spec.getDestHost().getHypervisorType());
-            if (mo.checkDuplicateMac(nic.getHypervisorType(), nic.getMac())) {
-                trigger.fail(operr("Duplicate mac address [%s]", nic.getMac()));
-                return;
+
+            if (allowDuplicatedMac == null || !allowDuplicatedMac) {
+                if (mo.checkDuplicateMac(nic.getHypervisorType(), nic.getMac())) {
+                    trigger.fail(operr("Duplicate mac address [%s]", nic.getMac()));
+                    return;
+                }
             }
 
             if (!StringUtils.isEmpty(nicSpec.getNicDriverType())) {
