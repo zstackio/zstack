@@ -1,4 +1,4 @@
-package org.zstack.sdk.zwatch.datatype;
+package org.zstack.sdk;
 
 
 
