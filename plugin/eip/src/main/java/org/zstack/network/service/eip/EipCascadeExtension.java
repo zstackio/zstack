@@ -12,13 +12,14 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static org.zstack.utils.CollectionUtils.transform;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 public class EipCascadeExtension extends AbstractAsyncCascadeExtension {
     private static final CLogger logger = Utils.getLogger(EipCascadeExtension.class);
@@ -53,14 +54,11 @@ public class EipCascadeExtension extends AbstractAsyncCascadeExtension {
             return;
         }
 
-        List<EipDeletionMsg> msgs = CollectionUtils.transformToList(eipinvs, new Function<EipDeletionMsg, EipInventory>() {
-            @Override
-            public EipDeletionMsg call(EipInventory arg) {
-                EipDeletionMsg msg = new EipDeletionMsg();
-                msg.setEipUuid(arg.getUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, EipConstant.SERVICE_ID, msg.getEipUuid());
-                return msg;
-            }
+        List<EipDeletionMsg> msgs = transform(eipinvs, arg -> {
+            EipDeletionMsg msg = new EipDeletionMsg();
+            msg.setEipUuid(arg.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, EipConstant.SERVICE_ID, msg.getEipUuid());
+            return msg;
         });
 
         bus.send(msgs, 10, new CloudBusListCallBack(completion) {
@@ -106,12 +104,7 @@ public class EipCascadeExtension extends AbstractAsyncCascadeExtension {
 
     private List<EipInventory> eipFromAction(CascadeAction action) {
         if (VipVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> vipUuids = CollectionUtils.transformToList((List<VipInventory>) action.getParentIssuerContext(), new Function<String, VipInventory>() {
-                @Override
-                public String call(VipInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> vipUuids = transformAndRemoveNull(action.getParentIssuerContext(), VipInventory::getUuid);
             if (vipUuids.isEmpty()) {
                 return null;
             }

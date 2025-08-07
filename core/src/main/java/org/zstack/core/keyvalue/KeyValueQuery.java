@@ -8,16 +8,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.Bucket;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.serializable.SerializableHelper;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.zstack.utils.CollectionUtils.transform;
 
 /**
  */
@@ -138,14 +138,11 @@ public class KeyValueQuery<T> {
             return new ArrayList<T>();
         }
 
-        return CollectionUtils.transformToList(vos, new Function<T, KeyValueBinaryVO>() {
-            @Override
-            public T call(KeyValueBinaryVO arg) {
-                try {
-                    return SerializableHelper.readObject(arg.getContents());
-                } catch (Exception e) {
-                    throw new CloudRuntimeException(e);
-                }
+        return transform(vos, arg -> {
+            try {
+                return SerializableHelper.readObject(arg.getContents());
+            } catch (Exception e) {
+                throw new CloudRuntimeException(e);
             }
         });
     }

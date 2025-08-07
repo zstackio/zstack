@@ -12,15 +12,11 @@ import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.APIAttachPrimaryStorageToClusterMsg;
-import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
-import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.storage.ceph.backup.*;
 import org.zstack.storage.ceph.primary.*;
 import org.zstack.utils.CharacterUtils;
 import org.zstack.utils.CollectionDSL;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -29,6 +25,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by frank on 7/29/2015.
@@ -108,13 +105,7 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
     }
 
     private void checkExistingPrimaryStorage(List<String> monUrls) {
-        List<String> hostnames = CollectionUtils.transformToList(monUrls, new Function<String, String>() {
-            @Override
-            public String call(String url) {
-                MonUri uri = new MonUri(url);
-                return uri.getHostname();
-            }
-        });
+        List<String> hostnames = transformAndRemoveNull(monUrls, url -> new MonUri(url).getHostname());
 
         SimpleQuery<CephPrimaryStorageMonVO> q = dbf.createQuery(CephPrimaryStorageMonVO.class);
         q.select(CephPrimaryStorageMonVO_.hostname);
@@ -224,13 +215,7 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
     }
 
     private void checkExistingBackupStorage(List<String> monUrls) {
-        List<String> hostnames = CollectionUtils.transformToList(monUrls, new Function<String, String>() {
-            @Override
-            public String call(String url) {
-                MonUri uri = new MonUri(url);
-                return uri.getHostname();
-            }
-        });
+        List<String> hostnames = transformAndRemoveNull(monUrls, url -> new MonUri(url).getHostname());
 
         SimpleQuery<CephBackupStorageMonVO> q = dbf.createQuery(CephBackupStorageMonVO.class);
         q.select(CephBackupStorageMonVO_.hostname);

@@ -17,10 +17,8 @@ import org.zstack.header.storage.backup.BackupStorageCanonicalEvents;
 import org.zstack.header.storage.backup.BackupStorageCanonicalEvents.BackupStorageStatusChangedData;
 import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.primary.*;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
@@ -30,6 +28,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.CollectionUtils.transform;
 
 /**
  * Created by xing5 on 2016/5/6.
@@ -120,15 +120,12 @@ public class ImageUpgradeExtension implements Component {
                     return;
                 }
 
-                List<SyncImageSizeMsg> msgs = CollectionUtils.transformToList(imgs, new Function<SyncImageSizeMsg, ImageInventory>() {
-                    @Override
-                    public SyncImageSizeMsg call(ImageInventory arg) {
-                        SyncImageSizeMsg msg = new SyncImageSizeMsg();
-                        msg.setBackupStorageUuid(d.getBackupStorageUuid());
-                        msg.setImageUuid(arg.getUuid());
-                        bus.makeTargetServiceIdByResourceUuid(msg, ImageConstant.SERVICE_ID, arg.getUuid());
-                        return msg;
-                    }
+                List<SyncImageSizeMsg> msgs = transform(imgs, arg -> {
+                    SyncImageSizeMsg msg = new SyncImageSizeMsg();
+                    msg.setBackupStorageUuid(d.getBackupStorageUuid());
+                    msg.setImageUuid(arg.getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(msg, ImageConstant.SERVICE_ID, arg.getUuid());
+                    return msg;
                 });
 
                 bus.send(msgs, new CloudBusListCallBack(null) {

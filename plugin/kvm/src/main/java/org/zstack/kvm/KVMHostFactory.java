@@ -92,6 +92,7 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.kvm.KVMConstant.CPU_MODE_NONE;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.transform;
 
 public class KVMHostFactory extends AbstractService implements HypervisorFactory, Component,
         ManagementNodeReadyExtensionPoint, MaxDataVolumeNumberExtensionPoint, HypervisorMessageFactory, ProxyHardwareFactory {
@@ -1159,15 +1160,12 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private void handle(final APIKvmRunShellMsg msg) {
         final APIKvmRunShellEvent evt = new APIKvmRunShellEvent(msg.getId());
 
-        final List<KvmRunShellMsg> kmsgs = CollectionUtils.transformToList(msg.getHostUuids(), new Function<KvmRunShellMsg, String>() {
-            @Override
-            public KvmRunShellMsg call(String arg) {
-                KvmRunShellMsg kmsg = new KvmRunShellMsg();
-                kmsg.setHostUuid(arg);
-                kmsg.setScript(msg.getScript());
-                bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, arg);
-                return kmsg;
-            }
+        final List<KvmRunShellMsg> kmsgs = transform(msg.getHostUuids(), arg -> {
+            KvmRunShellMsg kmsg = new KvmRunShellMsg();
+            kmsg.setHostUuid(arg);
+            kmsg.setScript(msg.getScript());
+            bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, arg);
+            return kmsg;
         });
 
         bus.send(kmsgs, new CloudBusListCallBack(msg) {

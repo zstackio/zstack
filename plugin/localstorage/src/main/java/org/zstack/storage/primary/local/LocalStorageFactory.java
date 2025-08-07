@@ -49,15 +49,12 @@ import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
-import org.zstack.storage.snapshot.VolumeSnapshotSystemTags;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -68,6 +65,7 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by frank on 6/30/2015.
@@ -537,14 +535,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
         // destroy vms
         if (!vmUuids.isEmpty()) {
-            List<DestroyVmInstanceMsg> msgs = CollectionUtils.transformToList(vmUuids, new Function<DestroyVmInstanceMsg, String>() {
-                @Override
-                public DestroyVmInstanceMsg call(String uuid) {
-                    DestroyVmInstanceMsg msg = new DestroyVmInstanceMsg();
-                    msg.setVmInstanceUuid(uuid);
-                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
-                    return msg;
-                }
+            List<DestroyVmInstanceMsg> msgs = transformAndRemoveNull(vmUuids, uuid -> {
+                DestroyVmInstanceMsg msg = new DestroyVmInstanceMsg();
+                msg.setVmInstanceUuid(uuid);
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
+                return msg;
             });
 
             final FutureCompletion completion = new FutureCompletion(null);
@@ -587,16 +582,13 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
         // delete data volumes
         if (!volUuids.isEmpty()) {
-            List<DeleteVolumeMsg> msgs = CollectionUtils.transformToList(volUuids, new Function<DeleteVolumeMsg, String>() {
-                @Override
-                public DeleteVolumeMsg call(String uuid) {
-                    DeleteVolumeMsg msg = new DeleteVolumeMsg();
-                    msg.setUuid(uuid);
-                    msg.setDetachBeforeDeleting(true);
-                    msg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.DBOnly.toString());
-                    bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, uuid);
-                    return msg;
-                }
+            List<DeleteVolumeMsg> msgs = transformAndRemoveNull(volUuids, uuid -> {
+                DeleteVolumeMsg msg = new DeleteVolumeMsg();
+                msg.setUuid(uuid);
+                msg.setDetachBeforeDeleting(true);
+                msg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.DBOnly.toString());
+                bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, uuid);
+                return msg;
             });
 
             final FutureCompletion completion = new FutureCompletion(null);
@@ -718,18 +710,14 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Transactional(readOnly = true)
     public List<VolumeVO> returnAttachableVolumes(VmInstanceInventory vm, List<VolumeVO> candidates) {
         // find instantiated volumes
-        List<String> volUuids = CollectionUtils.transformToList(candidates, new Function<String, VolumeVO>() {
-            @Override
-            public String call(VolumeVO arg) {
-                return VolumeStatus.Ready == arg.getStatus() ? arg.getUuid() : null;
-            }
-        });
+        List<String> volUuids = transformAndRemoveNull(candidates,
+                arg -> VolumeStatus.Ready == arg.getStatus() ? arg.getUuid() : null);
 
         if (volUuids.isEmpty()) {
             return candidates;
         }
 
-        List<String> vmAllVolumeUuids = CollectionUtils.transformToList(vm.getAllVolumes(), VolumeInventory::getUuid);
+        List<String> vmAllVolumeUuids = transformAndRemoveNull(vm.getAllVolumes(), VolumeInventory::getUuid);
 
         // root volume could be located at a shared storage
         String sql = "select ref.hostUuid" +
@@ -757,12 +745,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         q.setParameter("rtype", VolumeVO.class.getSimpleName());
         final List<String> toExclude = q.getResultList();
 
-        candidates = CollectionUtils.transformToList(candidates, new Function<VolumeVO, VolumeVO>() {
-            @Override
-            public VolumeVO call(VolumeVO arg) {
-                return toExclude.contains(arg.getUuid()) ? null : arg;
-            }
-        });
+        candidates = transformAndRemoveNull(candidates, arg -> toExclude.contains(arg.getUuid()) ? null : arg);
 
         return candidates;
     }
@@ -851,7 +834,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
         String hostUuid = ret.get(0);
 
-        List<String> vmRootVolumeUuids = CollectionUtils.transformToList(candidatesCopy, VmInstanceVO::getRootVolumeUuid);
+        List<String> vmRootVolumeUuids = transformAndRemoveNull(candidatesCopy, VmInstanceVO::getRootVolumeUuid);
 
         // exclude: vm root volume is local and root volume is not on target host
         sql = "select ref.resourceUuid" +
@@ -865,20 +848,12 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         q.setParameter("rtype", VolumeVO.class.getSimpleName());
         final List<String> toExclude = q.getResultList();
 
-        candidatesCopy = CollectionUtils.transformToList(candidatesCopy, new Function<VmInstanceVO, VmInstanceVO>() {
-            @Override
-            public VmInstanceVO call(VmInstanceVO arg) {
-                return toExclude.contains(arg.getRootVolumeUuid()) ? null : arg;
-            }
-        });
+        candidatesCopy = transformAndRemoveNull(candidatesCopy,
+                arg -> toExclude.contains(arg.getRootVolumeUuid()) ? null : arg);
 
         // exclude: vm hostUuid not equals target volume hostUuid
-        candidatesCopy = CollectionUtils.transformToList(candidatesCopy, new Function<VmInstanceVO, VmInstanceVO>() {
-            @Override
-            public VmInstanceVO call(VmInstanceVO arg) {
-                return arg.getHostUuid() != null && !hostUuid.equals(arg.getHostUuid()) ? null : arg;
-            }
-        });
+        candidatesCopy = transformAndRemoveNull(candidatesCopy,
+                arg -> arg.getHostUuid() != null && !hostUuid.equals(arg.getHostUuid()) ? null : arg);
 
         return candidatesCopy;
     }

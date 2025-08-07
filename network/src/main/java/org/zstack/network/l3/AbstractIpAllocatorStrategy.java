@@ -4,13 +4,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.network.l3.*;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -18,9 +15,9 @@ import org.zstack.utils.network.NetworkUtils;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.CollectionUtils.*;
 
 /**
  */
@@ -55,7 +52,7 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
         }
         if (ipVersion == IPv6Constants.IPv4) {
             if (needStrip) {
-                iprs = iprs.stream().filter(ipr -> IpRangeHelper.stripNetworkAndBroadcastAddress(ipr)).collect(Collectors.toList());
+                iprs = filter(iprs, IpRangeHelper::stripNetworkAndBroadcastAddress);
             }
             iprs.sort(AbstractIpAllocatorStrategy::compareIpv4Range);
         } else {
@@ -73,7 +70,7 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
             iprs = getIpRanges(getReqIpRangeType(msg), msg.getL3NetworkUuid(), ipVersion, false);
         }
         if (ipVersion == IPv6Constants.IPv4) {
-            iprs = iprs.stream().filter(ipr -> IpRangeHelper.stripNetworkAndBroadcastAddress(ipr)).collect(Collectors.toList());
+            iprs = filter(iprs, IpRangeHelper::stripNetworkAndBroadcastAddress);
         }
         return iprs;
     }
@@ -82,13 +79,10 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
         List<IpRangeVO> iprs = getReqIpRanges(msg, IPv6Constants.IPv4);
         final long rip = NetworkUtils.ipv4StringToLong(msg.getRequiredIp());
 
-        IpRangeVO ipr = CollectionUtils.find(iprs, new Function<IpRangeVO, IpRangeVO>() {
-            @Override
-            public IpRangeVO call(IpRangeVO arg) {
-                long s = NetworkUtils.ipv4StringToLong(arg.getStartIp());
-                long e = NetworkUtils.ipv4StringToLong(arg.getEndIp());
-                return s <= rip && rip <= e ? arg : null;
-            }
+        IpRangeVO ipr = findOneOrNull(iprs, arg -> {
+            long s = NetworkUtils.ipv4StringToLong(arg.getStartIp());
+            long e = NetworkUtils.ipv4StringToLong(arg.getEndIp());
+            return s <= rip && rip <= e;
         });
 
         if (ipr == null) {
@@ -111,16 +105,8 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
 
     protected UsedIpInventory allocateRequiredIpv6(IpAllocateMessage msg) {
         List<IpRangeVO> iprs = getReqIpRanges(msg, IPv6Constants.IPv6);
-        IpRangeVO ipr = CollectionUtils.find(iprs, new Function<IpRangeVO, IpRangeVO>() {
-            @Override
-            public IpRangeVO call(IpRangeVO arg) {
-                if (IPv6NetworkUtils.isIpv6InRange(msg.getRequiredIp(), arg.getStartIp(), arg.getEndIp())) {
-                    return arg;
-                } else {
-                    return null;
-                }
-            }
-        });
+        IpRangeVO ipr = findOneOrNull(iprs,
+                arg -> IPv6NetworkUtils.isIpv6InRange(msg.getRequiredIp(), arg.getStartIp(), arg.getEndIp()));
 
         if (ipr == null) {
             L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();

@@ -19,12 +19,13 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.identity.ResourceHelper;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -68,20 +69,17 @@ public class ImageCascadeExtension extends AbstractAsyncCascadeExtension {
             return;
         }
 
-        List<ImageDeletionMsg> msgs = CollectionUtils.transformToList(structs, new Function<ImageDeletionMsg, ImageDeletionStruct>() {
-            @Override
-            public ImageDeletionMsg call(ImageDeletionStruct arg) {
-                ImageDeletionMsg msg = new ImageDeletionMsg();
-                msg.setImageUuid(arg.getImage().getUuid());
-                if (!arg.getDeleteAll()) {
-                    msg.setBackupStorageUuids(arg.getBackupStorageUuids());
-                }
-                ImageDeletionPolicy deletionPolicy = deletionPolicyFromAction(action);
-                msg.setDeletionPolicy(deletionPolicy == null ? null : deletionPolicy.toString());
-                bus.makeTargetServiceIdByResourceUuid(msg, ImageConstant.SERVICE_ID, arg.getImage().getUuid());
-                msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
-                return msg;
+        List<ImageDeletionMsg> msgs = transformAndRemoveNull(structs, arg -> {
+            ImageDeletionMsg msg = new ImageDeletionMsg();
+            msg.setImageUuid(arg.getImage().getUuid());
+            if (!arg.getDeleteAll()) {
+                msg.setBackupStorageUuids(arg.getBackupStorageUuids());
             }
+            ImageDeletionPolicy deletionPolicy = deletionPolicyFromAction(action);
+            msg.setDeletionPolicy(deletionPolicy == null ? null : deletionPolicy.toString());
+            bus.makeTargetServiceIdByResourceUuid(msg, ImageConstant.SERVICE_ID, arg.getImage().getUuid());
+            msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
+            return msg;
         });
 
         bus.send(msgs, new CloudBusListCallBack(completion) {
@@ -152,12 +150,7 @@ public class ImageCascadeExtension extends AbstractAsyncCascadeExtension {
     private List<ImageDeletionStruct> imageFromAction(CascadeAction action) {
         List<ImageDeletionStruct> ret = null;
         if (BackupStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> bsuuids = CollectionUtils.transformToList((List<BackupStorageInventory>)action.getParentIssuerContext(), new Function<String, BackupStorageInventory>() {
-                @Override
-                public String call(BackupStorageInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> bsuuids = transformAndRemoveNull(action.getParentIssuerContext(), BackupStorageInventory::getUuid);
 
             ret =  getImageOnBackupStorage(bsuuids);
             ret = ret.isEmpty() ? null : ret;

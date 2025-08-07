@@ -22,7 +22,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
@@ -32,10 +31,8 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.header.volume.VolumeType;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
@@ -43,6 +40,7 @@ import java.util.*;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by frank on 7/2/2015.
@@ -291,21 +289,18 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
             return;
         }
 
-        List<ReleasePrimaryStorageSpaceMsg> msgs = CollectionUtils.transformToList(spec.getVolumeSpecs(), new Function<ReleasePrimaryStorageSpaceMsg, VolumeSpec>() {
-            @Override
-            public ReleasePrimaryStorageSpaceMsg call(VolumeSpec arg) {
-                if (arg.isVolumeCreated()) {
-                    // don't return capacity as it has been returned when the volume is deleted
-                    return null;
-                }
-
-                ReleasePrimaryStorageSpaceMsg msg = new ReleasePrimaryStorageSpaceMsg();
-                msg.setAllocatedInstallUrl(arg.getAllocatedInstallUrl());
-                msg.setDiskSize(arg.getSize());
-                msg.setPrimaryStorageUuid(arg.getPrimaryStorageInventory().getUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, arg.getPrimaryStorageInventory().getUrl());
-                return msg;
+        List<ReleasePrimaryStorageSpaceMsg> msgs = transformAndRemoveNull(spec.getVolumeSpecs(), arg -> {
+            if (arg.isVolumeCreated()) {
+                // don't return capacity as it has been returned when the volume is deleted
+                return null;
             }
+
+            ReleasePrimaryStorageSpaceMsg msg = new ReleasePrimaryStorageSpaceMsg();
+            msg.setAllocatedInstallUrl(arg.getAllocatedInstallUrl());
+            msg.setDiskSize(arg.getSize());
+            msg.setPrimaryStorageUuid(arg.getPrimaryStorageInventory().getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, arg.getPrimaryStorageInventory().getUrl());
+            return msg;
         });
 
         bus.send(msgs);

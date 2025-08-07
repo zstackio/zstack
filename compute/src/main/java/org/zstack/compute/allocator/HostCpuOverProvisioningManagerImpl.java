@@ -12,13 +12,13 @@ import org.zstack.header.allocator.HostCpuOverProvisioningManager;
 import org.zstack.header.host.RecalculateHostCapacityMsg;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import javax.persistence.Query;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.zstack.utils.CollectionUtils.transform;
 
 /**
  * Created by xing5 on 2016/5/12.
@@ -50,14 +50,11 @@ public class HostCpuOverProvisioningManagerImpl implements HostCpuOverProvisioni
             return;
         }
 
-        List<RecalculateHostCapacityMsg> rmsgs = CollectionUtils.transformToList(zuuids, new Function<RecalculateHostCapacityMsg, String>() {
-            @Override
-            public RecalculateHostCapacityMsg call(String arg) {
-                RecalculateHostCapacityMsg msg = new RecalculateHostCapacityMsg();
-                msg.setZoneUuid(arg);
-                bus.makeLocalServiceId(msg, HostAllocatorConstant.SERVICE_ID);
-                return msg;
-            }
+        List<RecalculateHostCapacityMsg> rmsgs = transform(zuuids, arg -> {
+            RecalculateHostCapacityMsg msg = new RecalculateHostCapacityMsg();
+            msg.setZoneUuid(arg);
+            bus.makeLocalServiceId(msg, HostAllocatorConstant.SERVICE_ID);
+            return msg;
         });
 
         bus.send(rmsgs);

@@ -10,10 +10,10 @@ import org.zstack.header.network.l2.L2Errors;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import java.util.List;
+
+import static org.zstack.utils.CollectionUtils.findOneOrNull;
 
 /**
  * Created by weiwang on 10/03/2017.
@@ -31,13 +31,10 @@ public abstract class AbstractVniAllocatorStrategy implements VniAllocatorStrate
 
         final int rvni = msg.getRequiredVni();
 
-        VniRangeVO vnir = CollectionUtils.find(vnirs, new Function<VniRangeVO, VniRangeVO>() {
-            @Override
-            public VniRangeVO call(VniRangeVO arg) {
-                int s = arg.getStartVni();
-                int e = arg.getEndVni();
-                return s <= rvni && rvni <= e ? arg : null;
-            }
+        VniRangeVO vnir = findOneOrNull(vnirs, arg -> {
+            int s = arg.getStartVni();
+            int e = arg.getEndVni();
+            return s <= rvni && rvni <= e;
         });
 
         String duplicate = Q.New(VxlanNetworkVO.class).select(VxlanNetworkVO_.uuid).eq(VxlanNetworkVO_.vni, msg.getRequiredVni()).eq(VxlanNetworkVO_.poolUuid, msg.getL2NetworkUuid()).findValue();

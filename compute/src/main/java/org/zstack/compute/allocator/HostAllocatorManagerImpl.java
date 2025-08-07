@@ -42,9 +42,7 @@ import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.query.QueryFacade;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
@@ -56,6 +54,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 public class HostAllocatorManagerImpl extends AbstractService implements HostAllocatorManager, VmAbnormalLifeCycleExtensionPoint {
     private static final CLogger logger = Utils.getLogger(HostAllocatorManagerImpl.class);
@@ -254,12 +253,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             }
         }.call();
 
-        List<String> hostHasVms = CollectionUtils.transformToList(hostUsedCpuMemList, new Function<String, HostUsedCpuMem>() {
-            @Override
-            public String call(HostUsedCpuMem arg) {
-                return arg.hostUuid;
-            }
-        });
+        List<String> hostHasVms = transformAndRemoveNull(hostUsedCpuMemList, arg -> arg.hostUuid);
 
         hostUuids.stream().filter(huuid -> !hostHasVms.contains(huuid)).forEach(huuid -> {
             HostUsedCpuMem s = new HostUsedCpuMem();
@@ -268,31 +262,28 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         });
 
         for (final HostUsedCpuMem s : hostUsedCpuMemList) {
-            new HostCapacityUpdater(s.hostUuid).run(new HostCapacityUpdaterRunnable() {
-                @Override
-                public HostCapacityVO call(HostCapacityVO cap) {
-                    long before = cap.getAvailableMemory();
-                    long avail = s.usedMemory == null ? cap.getTotalMemory() : cap.getTotalMemory() - s.usedMemory;
-                    cap.setAvailableMemory(avail);
+            new HostCapacityUpdater(s.hostUuid).run(cap -> {
+                long before = cap.getAvailableMemory();
+                long avail = s.usedMemory == null ? cap.getTotalMemory() : cap.getTotalMemory() - s.usedMemory;
+                cap.setAvailableMemory(avail);
 
-                    long totalCpu = cpuRatioMgr.calculateHostCpuByRatio(s.hostUuid, cap.getCpuNum());
-                    long totalCpuBefore = cap.getTotalCpu();
-                    cap.setTotalCpu(totalCpu);
+                long totalCpu = cpuRatioMgr.calculateHostCpuByRatio(s.hostUuid, cap.getCpuNum());
+                long totalCpuBefore = cap.getTotalCpu();
+                cap.setTotalCpu(totalCpu);
 
-                    long beforeCpu = cap.getAvailableCpu();
-                    long availCpu = s.usedCpu == null ? cap.getTotalCpu() : cap.getTotalCpu() - s.usedCpu;
-                    cap.setAvailableCpu(availCpu);
+                long beforeCpu = cap.getAvailableCpu();
+                long availCpu = s.usedCpu == null ? cap.getTotalCpu() : cap.getTotalCpu() - s.usedCpu;
+                cap.setAvailableCpu(availCpu);
 
-                    logger.debug(String.format("re-calculated available capacity on the host[uuid:%s]:" +
-                                    "\n[available memory] before: %s, now: %s" +
-                                    "\n[total cpu] before: %s, now: %s" +
-                                    "\n[available cpu] before: %s, now :%s",
-                            s.hostUuid,
-                            before, avail,
-                            totalCpuBefore, totalCpu,
-                            beforeCpu, availCpu));
-                    return cap;
-                }
+                logger.debug(String.format("re-calculated available capacity on the host[uuid:%s]:" +
+                                "\n[available memory] before: %s, now: %s" +
+                                "\n[total cpu] before: %s, now: %s" +
+                                "\n[available cpu] before: %s, now :%s",
+                        s.hostUuid,
+                        before, avail,
+                        totalCpuBefore, totalCpu,
+                        beforeCpu, availCpu));
+                return cap;
             });
         }
     }

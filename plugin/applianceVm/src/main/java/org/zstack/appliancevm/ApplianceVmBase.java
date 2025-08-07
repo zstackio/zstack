@@ -20,6 +20,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.image.ImageInventory;
@@ -37,12 +38,13 @@ import org.zstack.header.volume.VolumeFormat;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.RangeSet;
 import org.zstack.utils.RangeSet.Range;
-import org.zstack.utils.function.Function;
 
 import java.util.*;
 
+import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.findOneOrNull;
 
 public abstract class ApplianceVmBase extends VmInstanceBase implements ApplianceVm {
     @Autowired
@@ -231,17 +233,11 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
     }
 
     private String buildUrl(String path) {
-        String mgmtNicIp = CollectionUtils.find(self.getVmNics(), new Function<String, VmNicVO>() {
-            @Override
-            public String call(VmNicVO arg) {
-                if (arg.getL3NetworkUuid().equals(getSelf().getManagementNetworkUuid())) {
-                    return arg.getIp();
-                }
-                return null;
-            }
-        });
-
-        return buildAgentUrl(mgmtNicIp, path, getSelf().getAgentPort());
+        VmNicVO nic = findOneOrNull(self.getVmNics(), arg -> arg.getL3NetworkUuid().equals(getSelf().getManagementNetworkUuid()));
+        if (nic == null) {
+            throw new OperationFailureException(inerr("cannot find the management nic for appliance vm[uuid:%s]", self.getUuid()));
+        }
+        return buildAgentUrl(nic.getIp(), path, getSelf().getAgentPort());
     }
 
     private void refreshFirewall(final ApplianceVmRefreshFirewallMsg msg, final NoErrorCompletion completion) {
@@ -928,15 +924,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                 // allow create multiple data volume from the same disk offering
                 List<DiskOfferingInventory> disks = new ArrayList<>();
                 for (final String duuid : msg.getDataDiskOfferingUuids()) {
-                    DiskOfferingVO dvo = CollectionUtils.find(vos, new Function<DiskOfferingVO, DiskOfferingVO>() {
-                        @Override
-                        public DiskOfferingVO call(DiskOfferingVO arg) {
-                            if (duuid.equals(arg.getUuid())) {
-                                return arg;
-                            }
-                            return null;
-                        }
-                    });
+                    DiskOfferingVO dvo = CollectionUtils.findOneOrNull(vos, arg -> duuid.equals(arg.getUuid()));
                     disks.add(DiskOfferingInventory.valueOf(dvo));
                 }
                 spec.setDataDiskOfferings(disks);

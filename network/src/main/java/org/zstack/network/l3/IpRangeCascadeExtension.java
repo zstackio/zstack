@@ -16,14 +16,14 @@ import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -146,12 +146,7 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
     private List<IpRangeInventory> ipRangeFromAction(CascadeAction action) {
         List<IpRangeInventory> ret = null;
         if (L3NetworkVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> l3uuids = CollectionUtils.transformToList((List<L3NetworkInventory>)action.getParentIssuerContext(), new Function<String, L3NetworkInventory>() {
-                @Override
-                public String call(L3NetworkInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> l3uuids = transformAndRemoveNull(action.getParentIssuerContext(), L3NetworkInventory::getUuid);
 
             SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
             q.add(IpRangeVO_.l3NetworkUuid, SimpleQuery.Op.IN, l3uuids);

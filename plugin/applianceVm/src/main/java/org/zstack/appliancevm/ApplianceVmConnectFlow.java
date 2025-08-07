@@ -16,9 +16,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.ssh.Ssh;
@@ -30,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.touterr;
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.CollectionUtils.findOneOrNull;
 
 /**
  */
@@ -59,12 +58,7 @@ public class ApplianceVmConnectFlow extends NoRollbackFlow {
         VmNicInventory mgmtNic;
         if (spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.NewCreate) {
             final ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
-            mgmtNic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {
-                @Override
-                public VmNicInventory call(VmNicInventory arg) {
-                    return arg.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid()) ? arg : null;
-                }
-            });
+            mgmtNic = findOneOrNull(spec.getDestNics(), arg -> arg.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid()));
         } else {
             ApplianceVmVO avo = dbf.findByUuid(spec.getVmInventory().getUuid(), ApplianceVmVO.class);
             ApplianceVmInventory ainv = ApplianceVmInventory.valueOf(avo);

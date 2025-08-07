@@ -12,9 +12,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
@@ -22,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -135,12 +134,7 @@ public class ClusterCascadeExtension extends AbstractAsyncCascadeExtension {
         List<ClusterInventory> ret = null;
         if (ZoneVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<ZoneInventory> zones = action.getParentIssuerContext();
-            List<String> zuuids = CollectionUtils.transformToList(zones, new Function<String, ZoneInventory>() {
-                @Override
-                public String call(ZoneInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> zuuids = transformAndRemoveNull(zones, ZoneInventory::getUuid);
 
             SimpleQuery<ClusterVO> q = dbf.createQuery(ClusterVO.class);
             q.add(ClusterVO_.zoneUuid, SimpleQuery.Op.IN, zuuids);

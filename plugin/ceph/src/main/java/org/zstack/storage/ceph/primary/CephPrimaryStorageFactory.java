@@ -63,11 +63,9 @@ import org.zstack.storage.snapshot.MarkRootVolumeAsSnapshotExtension;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
@@ -84,6 +82,8 @@ import static org.zstack.header.image.ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA;
 import static org.zstack.storage.ceph.primary.CephRequiredUrlParser.getInstallPathFromUri;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionUtils.transform;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by frank on 7/28/2015.
@@ -320,18 +320,15 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         }.call();
 
         KvmCephIsoTO cto = new KvmCephIsoTO(to);
-        cto.setMonInfo(CollectionUtils.transformToList(pri.getMons(), new Function<KvmCephIsoTO.MonInfo, CephPrimaryStorageMonVO>() {
-            @Override
-            public KvmCephIsoTO.MonInfo call(CephPrimaryStorageMonVO arg) {
-                if (MonStatus.Connected != arg.getStatus()) {
-                    return null;
-                }
-
-                KvmCephIsoTO.MonInfo info = new KvmCephIsoTO.MonInfo();
-                info.setHostname(arg.getMonAddr());
-                info.setPort(arg.getMonPort());
-                return info;
+        cto.setMonInfo(transformAndRemoveNull(pri.getMons(), arg -> {
+            if (MonStatus.Connected != arg.getStatus()) {
+                return null;
             }
+
+            KvmCephIsoTO.MonInfo info = new KvmCephIsoTO.MonInfo();
+            info.setHostname(arg.getMonAddr());
+            info.setPort(arg.getMonPort());
+            return info;
         }));
 
         if (cto.getMonInfo().isEmpty()) {
@@ -367,18 +364,15 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         }.call();
 
         KvmCephCdRomTO cto = new KvmCephCdRomTO(to);
-        cto.setMonInfo(CollectionUtils.transformToList(pri.getMons(), new Function<KvmCephCdRomTO.MonInfo, CephPrimaryStorageMonVO>() {
-            @Override
-            public KvmCephCdRomTO.MonInfo call(CephPrimaryStorageMonVO arg) {
-                if (MonStatus.Connected != arg.getStatus()) {
-                    return null;
-                }
-
-                KvmCephCdRomTO.MonInfo info = new KvmCephCdRomTO.MonInfo();
-                info.setHostname(arg.getMonAddr());
-                info.setPort(arg.getMonPort());
-                return info;
+        cto.setMonInfo(transformAndRemoveNull(pri.getMons(), arg -> {
+            if (MonStatus.Connected != arg.getStatus()) {
+                return null;
             }
+
+            KvmCephCdRomTO.MonInfo info = new KvmCephCdRomTO.MonInfo();
+            info.setHostname(arg.getMonAddr());
+            info.setPort(arg.getMonPort());
+            return info;
         }));
 
         if (cto.getMonInfo().isEmpty()) {
@@ -407,19 +401,16 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             );
         }
 
-        List<MonInfo> monInfos = CollectionUtils.transformToList(ts, new Function<MonInfo, Tuple>() {
-            @Override
-            public MonInfo call(Tuple t) {
-                String hostname = t.get(0, String.class);
-                DebugUtils.Assert(hostname != null, "hostname cannot be null");
+        List<MonInfo> monInfos = transform(ts, t -> {
+            String hostname = t.get(0, String.class);
+            DebugUtils.Assert(hostname != null, "hostname cannot be null");
 
-                int port = t.get(1, Integer.class);
+            int port = t.get(1, Integer.class);
 
-                MonInfo info = new MonInfo();
-                info.hostname = hostname;
-                info.port = port;
-                return info;
-            }
+            MonInfo info = new MonInfo();
+            info.hostname = hostname;
+            info.port = port;
+            return info;
         });
 
         KVMCephVolumeTO cto = new KVMCephVolumeTO(to);
@@ -496,12 +487,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
         cmd.setDataVolumes(dtos);
 
-        List<CdRomTO> cdRomTOS = CollectionUtils.transformToList(cmd.getCdRoms(), new Function<CdRomTO, CdRomTO>() {
-            @Override
-            public CdRomTO call(CdRomTO arg) {
-                return convertCdRomToCephIfNeeded(arg);
-            }
-        });
+        List<CdRomTO> cdRomTOS = transformAndRemoveNull(cmd.getCdRoms(), this::convertCdRomToCephIfNeeded);
         cmd.setCdRoms(cdRomTOS);
 
         CephPrimaryStorageVO cephPrimaryStorageVO = dbf.findByUuid(spec.getDestRootVolume().getPrimaryStorageUuid(), CephPrimaryStorageVO.class);

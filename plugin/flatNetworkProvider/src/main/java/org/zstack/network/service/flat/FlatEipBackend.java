@@ -32,6 +32,7 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMHostConnectExtensionPoint;
@@ -44,10 +45,8 @@ import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentRsp;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.vip.VipVO_;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -64,6 +63,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by xing5 on 2016/4/4.
@@ -348,7 +348,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         DebugUtils.Assert(!vipL3.isEmpty(), "how can we get an empty public L3Network list?");
 
         Map<String, String> brNames = new BridgeNameFinder().findByL3UuidsOnHost(vipL3.values(), hostUuid);
-        Map<String, String> vipBr = new HashMap<String, String>();
+        Map<String, String> vipBr = new HashMap<>();
         for (Map.Entry<String, String> e : vipL3.entrySet()) {
             vipBr.put(e.getKey(), brNames.get(e.getValue()));
         }
@@ -357,12 +357,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
     @Transactional(readOnly = true)
     private List<EipTO> getEipsByNics(List<VmNicVO> vmNics, String hostUuid) {
-        List<String> nicUuids = CollectionUtils.transformToList(vmNics, new Function<String, VmNicVO>() {
-            @Override
-            public String call(VmNicVO arg) {
-                return arg.getUuid();
-            }
-        });
+        List<String> nicUuids = transformAndRemoveNull(vmNics, ResourceVO::getUuid);
 
         nicUuids = new NetworkServiceFilter().filterNicByServiceTypeAndProviderType(nicUuids, EipConstant.EIP_NETWORK_SERVICE_TYPE, FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
         if (nicUuids.isEmpty()) {
@@ -377,17 +372,12 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             return null;
         }
 
-        Map<String, List<String>> nicGuestipMap = new HashMap<String, List<String>>();
+        Map<String, List<String>> nicGuestipMap = new HashMap<>();
         for (EipVO eip : eips) {
             nicGuestipMap.computeIfAbsent(eip.getVmNicUuid(), k -> new ArrayList<String>()).add(eip.getGuestIp());
         }
 
-        List<String> vipUuids = CollectionUtils.transformToList(eips, new Function<String, EipVO>() {
-            @Override
-            public String call(EipVO arg) {
-                return arg.getVipUuid();
-            }
-        });
+        List<String> vipUuids = transformAndRemoveNull(eips, EipVO::getVipUuid);
         sql = "select vip from VipVO vip where vip.uuid in (:uuids)";
         TypedQuery<VipVO> vq = dbf.getEntityManager().createQuery(sql, VipVO.class);
         vq.setParameter("uuids", vipUuids);
@@ -408,53 +398,50 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         }
         l3Uuids = l3Uuids.stream().distinct().collect(Collectors.toList());
 
-        final Map<String, VmNicVO> nicMap = new HashMap<String, VmNicVO>();
+        final Map<String, VmNicVO> nicMap = new HashMap<>();
         for (VmNicVO nic : vmNics) {
             nicMap.put(nic.getUuid(), nic);
         }
         final Map<String, String> bridgeNames = new BridgeNameFinder().findByL3UuidsOnHost(l3Uuids, hostUuid);
         final Map<String, String> pubBridgeNames = getPublicL3BridgeNamesByVipUuids(vipUuids, hostUuid);
 
-        return CollectionUtils.transformToList(eips, new Function<EipTO, EipVO>() {
-            @Override
-            public EipTO call(EipVO eip) {
-                EipTO to = new EipTO();
-                VmNicVO nic = nicMap.get(eip.getVmNicUuid());
-                VipVO vip = vipMap.get(eip.getVipUuid());
-                if (nic.getIp() == null) {
-                    return null;
-                }
-                to.eipUuid = eip.getUuid();
-                to.vmUuid = nic.getVmInstanceUuid();
-                to.nicName = nic.getInternalName();
-                for (UsedIpVO ip : nic.getUsedIps()) {
-                    if (ip.getIp().equals(eip.getGuestIp())) {
-                        to.ipVersion = ip.getIpVersion();
-                        to.nicIp = ip.getIp();
-                        to.nicGateway = ip.getGateway();
-                        to.nicNetmask = ip.getNetmask();
-                        NormalIpRangeVO ipr = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, ip.getIpRangeUuid()).find();
-                        to.nicPrefixLen = ipr.getPrefixLen();
-                        to.vmBridgeName = bridgeNames.get(ip.getL3NetworkUuid());
-                    }
-                }
-                to.nicMac = nic.getMac();
-                to.nicUuid = nic.getUuid();
-                to.vip = eip.getVipIp();
-                to.vipUuid = eip.getVipUuid();
-                to.vipGateway = vip.getGateway();
-                to.vipNetmask = vip.getNetmask();
-                to.vipUuid = vip.getUuid();
-                List<NormalIpRangeVO> vipIprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, vip.getL3NetworkUuid())
-                        .eq(NormalIpRangeVO_.ipVersion, to.ipVersion).list();
-                to.vipPrefixLen = vipIprs.get(0).getPrefixLen();
-                to.publicBridgeName = pubBridgeNames.get(eip.getVipUuid());
-
-                VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf(nic.getType()));
-                to.addfdb = vnicFactory.addFdbForEipNameSpace(VmNicInventory.valueOf(nic));
-                to.physicalNic = vnicFactory.getPhysicalNicName(VmNicInventory.valueOf(nic));
-                return to;
+        return transformAndRemoveNull(eips, eip -> {
+            EipTO to = new EipTO();
+            VmNicVO nic = nicMap.get(eip.getVmNicUuid());
+            VipVO vip = vipMap.get(eip.getVipUuid());
+            if (nic.getIp() == null) {
+                return null;
             }
+            to.eipUuid = eip.getUuid();
+            to.vmUuid = nic.getVmInstanceUuid();
+            to.nicName = nic.getInternalName();
+            for (UsedIpVO ip : nic.getUsedIps()) {
+                if (ip.getIp().equals(eip.getGuestIp())) {
+                    to.ipVersion = ip.getIpVersion();
+                    to.nicIp = ip.getIp();
+                    to.nicGateway = ip.getGateway();
+                    to.nicNetmask = ip.getNetmask();
+                    NormalIpRangeVO ipr = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, ip.getIpRangeUuid()).find();
+                    to.nicPrefixLen = ipr.getPrefixLen();
+                    to.vmBridgeName = bridgeNames.get(ip.getL3NetworkUuid());
+                }
+            }
+            to.nicMac = nic.getMac();
+            to.nicUuid = nic.getUuid();
+            to.vip = eip.getVipIp();
+            to.vipUuid = eip.getVipUuid();
+            to.vipGateway = vip.getGateway();
+            to.vipNetmask = vip.getNetmask();
+            to.vipUuid = vip.getUuid();
+            List<NormalIpRangeVO> vipIprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, vip.getL3NetworkUuid())
+                    .eq(NormalIpRangeVO_.ipVersion, to.ipVersion).list();
+            to.vipPrefixLen = vipIprs.get(0).getPrefixLen();
+            to.publicBridgeName = pubBridgeNames.get(eip.getVipUuid());
+
+            VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf(nic.getType()));
+            to.addfdb = vnicFactory.addFdbForEipNameSpace(VmNicInventory.valueOf(nic));
+            to.physicalNic = vnicFactory.getPhysicalNicName(VmNicInventory.valueOf(nic));
+            return to;
         });
     }
 
@@ -535,12 +522,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                     return;
                 }
 
-                List<String> vipUuids = CollectionUtils.transformToList(eips, new Function<String, EipTO>() {
-                    @Override
-                    public String call(EipTO arg) {
-                        return arg.vipUuid;
-                    }
-                });
+                List<String> vipUuids = transformAndRemoveNull(eips, arg -> arg.vipUuid);
                 for (AfterApplyFlatEipExtensionPoint ext : pluginRgty.getExtensionList(AfterApplyFlatEipExtensionPoint.class)) {
                     ext.AfterApplyFlatEip(vipUuids, hostUuid);
                 }

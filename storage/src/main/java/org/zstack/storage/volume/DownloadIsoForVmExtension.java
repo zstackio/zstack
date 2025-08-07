@@ -31,7 +31,6 @@ import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
@@ -44,6 +43,7 @@ import static org.zstack.core.Platform.multiErr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.transform;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by frank on 5/23/2015.
@@ -188,32 +188,27 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
             return;
         }
 
-        List<DeleteIsoFromPrimaryStorageMsg> msgs = CollectionUtils.transformToList(cdRomSpecs,
-                new Function<DeleteIsoFromPrimaryStorageMsg, CdRomSpec>() {
-                    @Override
-                    public DeleteIsoFromPrimaryStorageMsg call(CdRomSpec arg) {
-                        if (arg.getImageUuid() == null) {
-                            return null;
-                        }
+        List<DeleteIsoFromPrimaryStorageMsg> msgs = transformAndRemoveNull(cdRomSpecs, arg -> {
+            if (arg.getImageUuid() == null) {
+                return null;
+            }
 
-                        String psUuid;
-                        if (VmOperation.NewCreate == spec.getCurrentVmOperation()) {
-                            VolumeSpec vspec = spec.getVolumeSpecs().get(0);
-                            PrimaryStorageInventory pinv = vspec.getPrimaryStorageInventory();
-                            psUuid = pinv.getUuid();
-                        } else {
-                            psUuid = spec.getVmInventory().getRootVolume().getPrimaryStorageUuid();
-                        }
+            String psUuid;
+            if (VmOperation.NewCreate == spec.getCurrentVmOperation()) {
+                VolumeSpec vspec = spec.getVolumeSpecs().get(0);
+                PrimaryStorageInventory pinv = vspec.getPrimaryStorageInventory();
+                psUuid = pinv.getUuid();
+            } else {
+                psUuid = spec.getVmInventory().getRootVolume().getPrimaryStorageUuid();
+            }
 
-                        DeleteIsoFromPrimaryStorageMsg msg = new DeleteIsoFromPrimaryStorageMsg();
-                        msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
-                        msg.setIsoSpec(spec.getImageSpec());
-                        msg.setPrimaryStorageUuid(psUuid);
-                        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, psUuid);
-                        return msg;
-                    }
-                }
-        );
+            DeleteIsoFromPrimaryStorageMsg msg = new DeleteIsoFromPrimaryStorageMsg();
+            msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
+            msg.setIsoSpec(spec.getImageSpec());
+            msg.setPrimaryStorageUuid(psUuid);
+            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, psUuid);
+            return msg;
+        });
 
         new While<>(msgs).all((msg, whileCompletion) -> {
             bus.send(msg, new CloudBusCallBack(completion) {

@@ -5,21 +5,20 @@ import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.allocator.HostAllocatedCpuVO;
 import org.zstack.header.allocator.HostAllocatedCpuVO_;
 import org.zstack.header.core.Completion;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 public class HostAllocatedCpuCascadeExtension extends AbstractAsyncCascadeExtension {
     private static final CLogger logger = Utils.getLogger(HostAllocatedCpuCascadeExtension.class);
@@ -66,12 +65,7 @@ public class HostAllocatedCpuCascadeExtension extends AbstractAsyncCascadeExtens
         List<String> hostUuids = new ArrayList<>();
         if (HostVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<HostInventory> hosts = action.getParentIssuerContext();
-            hostUuids = CollectionUtils.transformToList(hosts, new Function<String, HostInventory>() {
-                @Override
-                public String call(HostInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            hostUuids = transformAndRemoveNull(hosts, HostInventory::getUuid);
         }
         return hostUuids;
     }

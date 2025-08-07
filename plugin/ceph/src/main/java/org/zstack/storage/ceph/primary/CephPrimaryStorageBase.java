@@ -78,7 +78,6 @@ import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
@@ -95,6 +94,8 @@ import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.longjob.LongJobUtils.buildErrIfCanceled;
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionUtils.transform;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by frank on 7/28/2015.
@@ -3506,8 +3507,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void connect(final boolean newAdded, final Completion completion) {
-        final List<CephPrimaryStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(),
-                CephPrimaryStorageMonBase::new);
+        final List<CephPrimaryStorageMonBase> mons = transform(getSelf().getMons(), CephPrimaryStorageMonBase::new);
 
         class Connector {
             private final ErrorCodeList errorCodes = new ErrorCodeList();
@@ -3584,14 +3584,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        final Map<String, String> fsids = new HashMap<String, String>();
+                        final Map<String, String> fsids = new HashMap<>();
 
-                        final List<CephPrimaryStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<CephPrimaryStorageMonBase, CephPrimaryStorageMonVO>() {
-                            @Override
-                            public CephPrimaryStorageMonBase call(CephPrimaryStorageMonVO arg) {
-                                return arg.getStatus() == MonStatus.Connected ? new CephPrimaryStorageMonBase(arg) : null;
-                            }
-                        });
+                        final List<CephPrimaryStorageMonBase> mons = transformAndRemoveNull(getSelf().getMons(),
+                                arg -> arg.getStatus() == MonStatus.Connected ? new CephPrimaryStorageMonBase(arg) : null);
 
                         DebugUtils.Assert(!mons.isEmpty(), "how can be no connected MON !!!???");
 
@@ -4207,9 +4203,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        List<CephPrimaryStorageMonBase> bases = CollectionUtils.transformToList(monVOs, CephPrimaryStorageMonBase::new);
+                        List<CephPrimaryStorageMonBase> bases = transform(monVOs, CephPrimaryStorageMonBase::new);
 
-                        final List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
+                        final List<ErrorCode> errorCodes = new ArrayList<>();
                         final AsyncLatch latch = new AsyncLatch(bases.size(), new NoErrorCompletion(trigger) {
                             @Override
                             public void done() {
@@ -4244,9 +4240,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        List<CephPrimaryStorageMonBase> bases = CollectionUtils.transformToList(monVOs, CephPrimaryStorageMonBase::new);
+                        List<CephPrimaryStorageMonBase> bases = transform(monVOs, CephPrimaryStorageMonBase::new);
 
-                        final List<ErrorCode> errors = new ArrayList<ErrorCode>();
+                        final List<ErrorCode> errors = new ArrayList<>();
 
                         final AsyncLatch latch = new AsyncLatch(bases.size(), new NoErrorCompletion(trigger) {
                             @Override
@@ -4694,12 +4690,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 .eq(CephPrimaryStoragePoolVO_.type, CephPrimaryStoragePoolType.Root.toString())
                 .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
                 .listValues();
-        cmd.monUrls = CollectionUtils.transformToList(getSelf().getMons(), new Function<String, CephPrimaryStorageMonVO>() {
-            @Override
-            public String call(CephPrimaryStorageMonVO arg) {
-                return String.format("%s:%s", arg.getMonAddr(), arg.getMonPort());
-            }
-        });
+        cmd.monUrls = transform(getSelf().getMons(), arg -> String.format("%s:%s", arg.getMonAddr(), arg.getMonPort()));
         cmd.strategy = param.getStrategy();
         cmd.fencers = param.getFencers();
 
@@ -4861,10 +4852,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         .eq(CephPrimaryStoragePoolVO_.type, CephPrimaryStoragePoolType.Root.toString())
                         .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
                         .listValues())
-                .monUrls(CollectionUtils.transformToList(getSelf().getMons(), (Function<String, CephPrimaryStorageMonVO>) arg
-                        -> String.format("%s:%s", arg.getMonAddr(), arg.getMonPort())));
+                .monUrls(transform(getSelf().getMons(), arg -> String.format("%s:%s", arg.getMonAddr(), arg.getMonPort())));
 
-        List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(hostUuids, (Function<KVMHostAsyncHttpCallMsg, String>) huuid -> {
+        List<KVMHostAsyncHttpCallMsg> msgs = transform(hostUuids, huuid -> {
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
             builder.hostUuid(huuid);
             msg.setCommand(builder.build());
@@ -5442,17 +5432,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         DebugUtils.Assert(suuid != null, String.format("cannot find system tag[%s] for ceph primary storage[uuid:%s]", CephSystemTags.KVM_SECRET_UUID.getTagFormat(), self.getUuid()));
         cmd.setUuid(suuid);
 
-        List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(hostUuids, new Function<KVMHostAsyncHttpCallMsg, String>() {
-            @Override
-            public KVMHostAsyncHttpCallMsg call(String huuid) {
-                KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                msg.setCommand(cmd);
-                msg.setPath(KVM_CREATE_SECRET_PATH);
-                msg.setHostUuid(huuid);
-                msg.setNoStatusCheck(true);
-                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, huuid);
-                return msg;
-            }
+        List<KVMHostAsyncHttpCallMsg> msgs = transform(hostUuids, huuid -> {
+            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+            msg.setCommand(cmd);
+            msg.setPath(KVM_CREATE_SECRET_PATH);
+            msg.setHostUuid(huuid);
+            msg.setNoStatusCheck(true);
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, huuid);
+            return msg;
         });
 
         bus.send(msgs, new CloudBusListCallBack(completion) {

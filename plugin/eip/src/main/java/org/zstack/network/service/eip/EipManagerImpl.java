@@ -38,7 +38,6 @@ import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
@@ -53,6 +52,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -1593,8 +1593,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
     @Override
     public void vmPreAttachL3Network(final VmInstanceInventory vm, final L3NetworkInventory l3) {
-        final List<String> nicUuids = CollectionUtils.transformToList(vm.getVmNics(),
-                VmNicInventory::getUuid);
+        final List<String> nicUuids = transformAndRemoveNull(vm.getVmNics(), VmNicInventory::getUuid);
 
         if (nicUuids.isEmpty()) {
             return;
@@ -1625,8 +1624,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     @Override
     @Transactional(readOnly = true)
     public List<L3NetworkInventory> filterAttachableL3Network(VmInstanceInventory vm, List<L3NetworkInventory> l3s) {
-        final List<String> nicUuids = CollectionUtils.transformToList(vm.getVmNics(),
-            VmNicInventory::getUuid);
+        final List<String> nicUuids = transformAndRemoveNull(vm.getVmNics(), VmNicInventory::getUuid);
     
         List<L3NetworkInventory> rets = new ArrayList<>(l3s);
         if (nicUuids.isEmpty()) {

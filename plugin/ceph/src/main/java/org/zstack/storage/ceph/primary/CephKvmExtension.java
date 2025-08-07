@@ -25,15 +25,13 @@ import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
 import org.zstack.kvm.KVMHostFactory;
 import org.zstack.storage.ceph.CephConstants;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.transform;
 
 /**
  * Created by frank on 8/17/2015.
@@ -93,15 +91,12 @@ public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConne
         }
 
 
-        List<CreateKvmSecretMsg> msgs = CollectionUtils.transformToList(psUuids, new Function<CreateKvmSecretMsg, String>() {
-            @Override
-            public CreateKvmSecretMsg call(String puuid) {
-                CreateKvmSecretMsg msg = new CreateKvmSecretMsg();
-                msg.setPrimaryStorageUuid(puuid);
-                msg.setHostUuids(list(hostUuid));
-                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, puuid);
-                return msg;
-            }
+        List<CreateKvmSecretMsg> msgs = transform(psUuids, puuid -> {
+            CreateKvmSecretMsg msg = new CreateKvmSecretMsg();
+            msg.setPrimaryStorageUuid(puuid);
+            msg.setHostUuids(list(hostUuid));
+            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, puuid);
+            return msg;
         });
 
         new While<>(msgs).all((msg, whileCompletion) -> {
@@ -156,15 +151,12 @@ public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConne
             return;
         }
 
-        List<CheckHostStorageConnectionMsg> msgs = CollectionUtils.transformToList(psUuids, new Function<CheckHostStorageConnectionMsg, String>() {
-            @Override
-            public CheckHostStorageConnectionMsg call(String puuid) {
-                CheckHostStorageConnectionMsg msg = new CheckHostStorageConnectionMsg();
-                msg.setPrimaryStorageUuid(puuid);
-                msg.setHostUuids(list(hostUuid));
-                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, puuid);
-                return msg;
-            }
+        List<CheckHostStorageConnectionMsg> msgs = transform(psUuids, puuid -> {
+            CheckHostStorageConnectionMsg msg = new CheckHostStorageConnectionMsg();
+            msg.setPrimaryStorageUuid(puuid);
+            msg.setHostUuids(list(hostUuid));
+            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, puuid);
+            return msg;
         });
 
         new While<>(msgs).step((msg, whileCompletion) -> {

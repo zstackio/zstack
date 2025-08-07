@@ -48,10 +48,8 @@ import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionDSL;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -61,12 +59,14 @@ import javax.persistence.TypedQuery;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
 import static org.zstack.storage.primary.local.LocalStorageUtils.getHostUuidFromInstallUrl;
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionUtils.*;
 
 /**
  * Created by frank on 6/30/2015.
@@ -598,29 +598,27 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 struct.setVolume(VolumeInventory.valueOf(volume));
 
                 if (!snapshots.isEmpty()) {
-                    List<String> spUuids = CollectionUtils.transformToList(snapshots, ResourceVO::getUuid);
+                    List<String> spUuids = transformAndRemoveNull(snapshots, ResourceVO::getUuid);
 
-                    SimpleQuery<LocalStorageResourceRefVO> rq = dbf.createQuery(LocalStorageResourceRefVO.class);
-                    rq.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeSnapshotVO.class.getSimpleName());
-                    rq.add(LocalStorageResourceRefVO_.resourceUuid, Op.IN, spUuids);
-                    snapshotRefVOS = rq.list();
+                    snapshotRefVOS = Q.New(LocalStorageResourceRefVO.class)
+                            .eq(LocalStorageResourceRefVO_.resourceType, VolumeSnapshotVO.class.getSimpleName())
+                            .in(LocalStorageResourceRefVO_.resourceUuid, spUuids)
+                            .list();
 
-                    for (final VolumeSnapshotVO vo : snapshots) {
-                        info = new ResourceInfo();
-                        info.setPath(vo.getPrimaryStorageInstallPath());
-                        info.setResourceRef(CollectionUtils.find(snapshotRefVOS, new Function<LocalStorageResourceRefInventory, LocalStorageResourceRefVO>() {
-                            @Override
-                            public LocalStorageResourceRefInventory call(LocalStorageResourceRefVO arg) {
-                                return arg.getResourceUuid().equals(vo.getUuid()) ? LocalStorageResourceRefInventory.valueOf(arg) : null;
-                            }
-                        }));
+                    final Map<String, LocalStorageResourceRefVO> refMap =
+                            toMap(snapshotRefVOS, LocalStorageResourceRefVO::getResourceUuid, Function.identity());
 
-                        if (info.getResourceRef() == null) {
+                    for (VolumeSnapshotVO vo : snapshots) {
+                        LocalStorageResourceRefVO ref = refMap.get(vo.getUuid());
+                        if (ref == null) {
                             throw new CloudRuntimeException(
                                     String.format("cannot find reference of snapshot[uuid:%s, name:%s] on the local storage[uuid:%s, name:%s]",
                                             vo.getUuid(), vo.getName(), self.getUuid(), self.getName()));
                         }
 
+                        info = new ResourceInfo();
+                        info.setPath(vo.getPrimaryStorageInstallPath());
+                        info.setResourceRef(LocalStorageResourceRefInventory.valueOf(ref));
                         struct.getInfos().add(info);
 
                         requiredSize += vo.getSize();
@@ -1174,17 +1172,14 @@ public class LocalStorageBase extends PrimaryStorageBase {
             q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
             List<LocalStorageHostRefVO> refs = q.list();
 
-            List<HostDiskCapacity> cs = CollectionUtils.transformToList(refs, new Function<HostDiskCapacity, LocalStorageHostRefVO>() {
-                @Override
-                public HostDiskCapacity call(LocalStorageHostRefVO ref) {
-                    HostDiskCapacity c = new HostDiskCapacity();
-                    c.setHostUuid(ref.getHostUuid());
-                    c.setTotalCapacity(ref.getTotalCapacity());
-                    c.setAvailableCapacity(ref.getAvailableCapacity());
-                    c.setAvailablePhysicalCapacity(ref.getAvailablePhysicalCapacity());
-                    c.setTotalPhysicalCapacity(ref.getTotalPhysicalCapacity());
-                    return c;
-                }
+            List<HostDiskCapacity> cs = transformAndRemoveNull(refs, ref -> {
+                HostDiskCapacity c = new HostDiskCapacity();
+                c.setHostUuid(ref.getHostUuid());
+                c.setTotalCapacity(ref.getTotalCapacity());
+                c.setAvailableCapacity(ref.getAvailableCapacity());
+                c.setAvailablePhysicalCapacity(ref.getAvailablePhysicalCapacity());
+                c.setTotalPhysicalCapacity(ref.getTotalPhysicalCapacity());
+                return c;
             });
 
             reply.setInventories(cs);

@@ -24,9 +24,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.identity.ResourceHelper;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
@@ -36,6 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.CollectionUtils.transform;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -115,14 +116,11 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
                     return;
                 }
 
-                List<DeleteLoadBalancerMsg> msgs = CollectionUtils.transformToList(lbs, new Function<DeleteLoadBalancerMsg, LoadBalancerInventory>() {
-                    @Override
-                    public DeleteLoadBalancerMsg call(LoadBalancerInventory arg) {
-                        DeleteLoadBalancerMsg msg = new DeleteLoadBalancerMsg();
-                        msg.setUuid(arg.getUuid());
-                        bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, msg.getUuid());
-                        return msg;
-                    }
+                List<DeleteLoadBalancerMsg> msgs = transform(lbs, arg -> {
+                    DeleteLoadBalancerMsg msg = new DeleteLoadBalancerMsg();
+                    msg.setUuid(arg.getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, msg.getUuid());
+                    return msg;
                 });
 
                 List<ErrorCode> erros = new ArrayList<>();
@@ -159,14 +157,11 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
                     return;
                 }
 
-                List<CertificateDeletionMsg> msgs = CollectionUtils.transformToList(certs, new Function<CertificateDeletionMsg, CertificateInventory>() {
-                    @Override
-                    public CertificateDeletionMsg call(CertificateInventory arg) {
-                        CertificateDeletionMsg msg = new CertificateDeletionMsg();
-                        msg.setUuid(arg.getUuid());
-                        bus.makeLocalServiceId(msg, LoadBalancerConstants.SERVICE_ID);
-                        return msg;
-                    }
+                List<CertificateDeletionMsg> msgs = transform(certs, arg -> {
+                    CertificateDeletionMsg msg = new CertificateDeletionMsg();
+                    msg.setUuid(arg.getUuid());
+                    bus.makeLocalServiceId(msg, LoadBalancerConstants.SERVICE_ID);
+                    return msg;
                 });
 
                 new While<>(msgs).all((msg, whileCompletion) -> {
@@ -235,7 +230,7 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
             return null;
         }
 
-        final List<String> auuids = CollectionUtils.transform(action.getParentIssuerContext(), AccountInventory::getUuid);
+        final List<String> auuids = transform(action.getParentIssuerContext(), AccountInventory::getUuid);
 
         List<CertificateVO> vos = ResourceHelper.findOwnResources(CertificateVO.class, auuids);
         if (!vos.isEmpty()) {
@@ -249,19 +244,14 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
         if (LoadBalancerVO.class.getSimpleName().equals(action.getParentIssuer())) {
             return action.getParentIssuerContext();
         } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> auuids = CollectionUtils.transform(action.getParentIssuerContext(), AccountInventory::getUuid);
+            final List<String> auuids = transform(action.getParentIssuerContext(), AccountInventory::getUuid);
 
             List<LoadBalancerVO> vos = ResourceHelper.findOwnResources(LoadBalancerVO.class, auuids);
             if (!vos.isEmpty()) {
                 return LoadBalancerInventory.valueOf(vos);
             }
         } else if (VipVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> vipUuids = CollectionUtils.transformToList((List<VipInventory>) action.getParentIssuerContext(), new Function<String, VipInventory>() {
-                @Override
-                public String call(VipInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            final List<String> vipUuids = transformAndRemoveNull(action.getParentIssuerContext(), VipInventory::getUuid);
 
             if (vipUuids.isEmpty()) {
                 return null;

@@ -42,7 +42,6 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -51,6 +50,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionUtils.findOneOrNull;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created with IntelliJ IDEA.
@@ -231,12 +232,8 @@ public class ImageBase implements Image {
 
     private void syncImageSize(String backupStorageUuid, final ReturnValueCompletion<ImageSize> completion) {
         if (backupStorageUuid == null) {
-            List<String> bsUuids = CollectionUtils.transformToList(self.getBackupStorageRefs(), new Function<String, ImageBackupStorageRefVO>() {
-                @Override
-                public String call(ImageBackupStorageRefVO arg) {
-                    return arg.getBackupStorageUuid();
-                }
-            });
+            List<String> bsUuids = transformAndRemoveNull(self.getBackupStorageRefs(),
+                    ImageBackupStorageRefVO::getBackupStorageUuid);
 
             if (bsUuids.isEmpty()) {
                 throw new OperationFailureException(operr("the image[uuid:%s, name:%s] is not on any backup storage", self.getUuid(), self.getName()));
@@ -282,10 +279,8 @@ public class ImageBase implements Image {
 
     private void handle(final ExpungeImageMsg msg) {
         final ExpungeImageReply reply = new ExpungeImageReply();
-        final ImageBackupStorageRefVO ref = CollectionUtils.find(
-                self.getBackupStorageRefs(),
-                arg -> arg.getBackupStorageUuid().equals(msg.getBackupStorageUuid()) ? arg : null
-        );
+        final ImageBackupStorageRefVO ref = findOneOrNull(self.getBackupStorageRefs(),
+                arg -> arg.getBackupStorageUuid().equals(msg.getBackupStorageUuid()));
 
         if (ref == null) {
             logger.debug(String.format("cannot find reference for the image[uuid:%s] on the backup storage[uuid:%s], assume it's been deleted",
@@ -397,14 +392,8 @@ public class ImageBase implements Image {
         chain.setName(String.format("delete-image-%s", self.getUuid()));
         Collection<ImageBackupStorageRefVO> toDelete = msg.getBackupStorageUuids() == null
                 ? self.getBackupStorageRefs()
-                : CollectionUtils.transformToList(
-                self.getBackupStorageRefs(),
-                new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
-                    @Override
-                    public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
-                        return msg.getBackupStorageUuids().contains(arg.getBackupStorageUuid()) ? arg : null;
-                    }
-                }
+                : transformAndRemoveNull(self.getBackupStorageRefs(),
+                        arg -> msg.getBackupStorageUuids().contains(arg.getBackupStorageUuid()) ? arg : null
         );
 
         chain.then(new NoRollbackFlow() {
@@ -743,26 +732,17 @@ public class ImageBase implements Image {
     private void handle(APIRecoverImageMsg msg) {
         List<String> toRecoverBsUuids;
         if (msg.getBackupStorageUuids() == null || msg.getBackupStorageUuids().isEmpty()) {
-            toRecoverBsUuids = CollectionUtils.transformToList(self.getBackupStorageRefs(), new Function<String, ImageBackupStorageRefVO>() {
-                @Override
-                public String call(ImageBackupStorageRefVO arg) {
-                    return arg.getStatus() == ImageStatus.Deleted ? arg.getBackupStorageUuid() : null;
-                }
-            });
+            toRecoverBsUuids = transformAndRemoveNull(self.getBackupStorageRefs(),
+                    arg -> arg.getStatus() == ImageStatus.Deleted ? arg.getBackupStorageUuid() : null);
 
             if (toRecoverBsUuids.isEmpty()) {
                 throw new OperationFailureException(operr("the image[uuid:%s, name:%s] is not deleted on any backup storage",
                                 self.getUuid(), self.getName()));
             }
         } else {
-            toRecoverBsUuids = new ArrayList<String>();
+            toRecoverBsUuids = new ArrayList<>();
             for (final String bsUuid : msg.getBackupStorageUuids()) {
-                ImageBackupStorageRefVO ref = CollectionUtils.find(self.getBackupStorageRefs(), new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
-                    @Override
-                    public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
-                        return bsUuid.equals(arg.getBackupStorageUuid()) ? arg : null;
-                    }
-                });
+                ImageBackupStorageRefVO ref = findOneOrNull(self.getBackupStorageRefs(), arg -> bsUuid.equals(arg.getBackupStorageUuid()));
 
                 if (ref == null) {
                     throw new OperationFailureException(argerr("the image[uuid:%s, name:%s] is not on the backup storage[uuid:%s]",
@@ -801,14 +781,9 @@ public class ImageBase implements Image {
     private void handle(final APIExpungeImageMsg msg) {
         List<String> bsUuids = new ArrayList<>();
         if (msg.getBackupStorageUuids() == null || msg.getBackupStorageUuids().isEmpty()) {
-            bsUuids = CollectionUtils.transformToList(
+            bsUuids = transformAndRemoveNull(
                     self.getBackupStorageRefs(),
-                    new Function<String, ImageBackupStorageRefVO>() {
-                        @Override
-                        public String call(ImageBackupStorageRefVO arg) {
-                            return ImageStatus.Deleted == arg.getStatus() ? arg.getBackupStorageUuid() : null;
-                        }
-                    }
+                    arg -> ImageStatus.Deleted == arg.getStatus() ? arg.getBackupStorageUuid() : null
             );
 
             if (bsUuids.isEmpty()) {
@@ -817,15 +792,8 @@ public class ImageBase implements Image {
             }
         } else {
             for (final String bsUuid : msg.getBackupStorageUuids()) {
-                ImageBackupStorageRefVO ref = CollectionUtils.find(
-                        self.getBackupStorageRefs(),
-                        new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
-                            @Override
-                            public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
-                                return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
-                            }
-                        }
-                );
+                ImageBackupStorageRefVO ref = findOneOrNull(
+                        self.getBackupStorageRefs(), arg -> arg.getBackupStorageUuid().equals(bsUuid));
 
                 if (ref == null) {
                     throw new OperationFailureException(argerr("the image[uuid:%s, name:%s] is not on the backup storage[uuid:%s]",

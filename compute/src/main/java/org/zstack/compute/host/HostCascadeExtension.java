@@ -21,9 +21,7 @@ import org.zstack.header.volume.VolumeHostRefVO;
 import org.zstack.header.volume.VolumeHostRefVO_;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
@@ -33,6 +31,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -155,12 +154,7 @@ public class HostCascadeExtension extends AbstractAsyncCascadeExtension {
         List<HostInventory> ret = null;
         if (ClusterVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<ClusterInventory> clusters = action.getParentIssuerContext();
-            List<String> cuuids = CollectionUtils.transformToList(clusters, new Function<String, ClusterInventory>() {
-                @Override
-                public String call(ClusterInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> cuuids = transformAndRemoveNull(clusters, ClusterInventory::getUuid);
 
             SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
             q.add(HostVO_.clusterUuid, SimpleQuery.Op.IN, cuuids);

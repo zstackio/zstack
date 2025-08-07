@@ -11,7 +11,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -24,9 +24,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
@@ -34,6 +32,8 @@ import java.util.*;
 import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.utils.CollectionUtils.transform;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -72,17 +72,14 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
 
     private void handleDetach(CascadeAction action, final Completion completion) {
         List<L2NetworkDetachStruct> structs = action.getParentIssuerContext();
-        List<DetachL2NetworkFromClusterMsg> msgs = CollectionUtils.transformToList(structs, new Function<DetachL2NetworkFromClusterMsg, L2NetworkDetachStruct>() {
-            @Override
-            public DetachL2NetworkFromClusterMsg call(L2NetworkDetachStruct arg) {
-                DetachL2NetworkFromClusterMsg msg = new DetachL2NetworkFromClusterMsg();
-                msg.setClusterUuid(arg.getClusterUuid());
-                msg.setL2NetworkUuid(arg.getL2NetworkUuid());
-                // vlan bridges and novlan bridge use the same bridge in ovs, so before delete l2 network we should check if the PhysicalInterface is used by another l2 network.
-                // and different l2 will send to different management node, so use cluster uuid for hash key instead of l2uuid
-                bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, arg.getClusterUuid());
-                return msg;
-            }
+        List<DetachL2NetworkFromClusterMsg> msgs = transform(structs, arg -> {
+            DetachL2NetworkFromClusterMsg msg = new DetachL2NetworkFromClusterMsg();
+            msg.setClusterUuid(arg.getClusterUuid());
+            msg.setL2NetworkUuid(arg.getL2NetworkUuid());
+            // vlan bridges and novlan bridge use the same bridge in ovs, so before delete l2 network we should check if the PhysicalInterface is used by another l2 network.
+            // and different l2 will send to different management node, so use cluster uuid for hash key instead of l2uuid
+            bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, arg.getClusterUuid());
+            return msg;
         });
 
         bus.send(msgs, new CloudBusListCallBack(completion) {
@@ -102,15 +99,12 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
 
     private void handleDetachFromHost(CascadeAction action, final Completion completion) {
         List<L2NetworkDetachStruct> structs = action.getParentIssuerContext();
-        List<DetachL2NetworkFromHostMsg> msgs = CollectionUtils.transformToList(structs, new Function<DetachL2NetworkFromHostMsg, L2NetworkDetachStruct>() {
-            @Override
-            public DetachL2NetworkFromHostMsg call(L2NetworkDetachStruct arg) {
-                DetachL2NetworkFromHostMsg msg = new DetachL2NetworkFromHostMsg();
-                msg.setHostUuid(arg.getHostUuid());
-                msg.setL2NetworkUuid(arg.getL2NetworkUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, arg.getL2NetworkUuid());
-                return msg;
-            }
+        List<DetachL2NetworkFromHostMsg> msgs = transform(structs, arg -> {
+            DetachL2NetworkFromHostMsg msg = new DetachL2NetworkFromHostMsg();
+            msg.setHostUuid(arg.getHostUuid());
+            msg.setL2NetworkUuid(arg.getL2NetworkUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, arg.getL2NetworkUuid());
+            return msg;
         });
 
         List<ErrorCode> errors = Collections.synchronizedList(new LinkedList<ErrorCode>());
@@ -231,28 +225,19 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
     private List<L2NetworkInventory> l2NetworkFromAction(CascadeAction action) {
         List<L2NetworkInventory> ret = null;
         if (ZoneVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> zuuids = CollectionUtils.transformToList((List<ZoneInventory>)action.getParentIssuerContext(), new Function<String, ZoneInventory>() {
-                @Override
-                public String call(ZoneInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> zuuids = transformAndRemoveNull(action.getParentIssuerContext(), ZoneInventory::getUuid);
 
-            SimpleQuery<L2NetworkVO> q = dbf.createQuery(L2NetworkVO.class);
-            q.add(L2NetworkVO_.zoneUuid, SimpleQuery.Op.IN, zuuids);
-            List<L2NetworkVO> l2vos = q.list();
+            List<L2NetworkVO> l2vos = Q.New(L2NetworkVO.class)
+                    .in(L2NetworkVO_.zoneUuid, zuuids)
+                    .list();
+
             if (!l2vos.isEmpty()) {
                 ret = L2NetworkInventory.valueOf(l2vos);
             }
         } else if (NAME.equals(action.getParentIssuer())) {
             ret = action.getParentIssuerContext();
         } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
-                @Override
-                public String call(AccountInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            final List<String> auuids = transformAndRemoveNull(action.getParentIssuerContext(), AccountInventory::getUuid);
 
             List<L2NetworkVO> vos = new Callable<List<L2NetworkVO>>() {
                 @Override
