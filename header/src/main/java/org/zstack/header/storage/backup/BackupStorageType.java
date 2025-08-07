@@ -1,13 +1,12 @@
 package org.zstack.header.storage.backup;
 
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
-
 import java.util.*;
+
+import static org.zstack.utils.CollectionUtils.transform;
 
 
 public class BackupStorageType {
-    private static Map<String, BackupStorageType> types = Collections.synchronizedMap(new HashMap<String, BackupStorageType>());
+    private static Map<String, BackupStorageType> types = Collections.synchronizedMap(new HashMap<>());
     private final String typeName;
     private final Set<String> supportedSchemes;
     private boolean exposed = true;
@@ -53,7 +52,7 @@ public class BackupStorageType {
 
     @Override
     public boolean equals(Object t) {
-        if (t == null || !(t instanceof BackupStorageType)) {
+        if (!(t instanceof BackupStorageType)) {
             return false;
         }
 
@@ -74,19 +73,9 @@ public class BackupStorageType {
             }
         }
 
-        Collections.sort(exposedTypes, new Comparator<BackupStorageType>() {
-            @Override
-            public int compare(BackupStorageType o1, BackupStorageType o2) {
-                return o1.getOrder() - o2.getOrder();
-            }
-        });
+        exposedTypes.sort(Comparator.comparingInt(BackupStorageType::getOrder));
 
-        return CollectionUtils.transformToList(exposedTypes, new Function<String, BackupStorageType>() {
-            @Override
-            public String call(BackupStorageType arg) {
-                return arg.toString();
-            }
-        });
+        return transform(exposedTypes, BackupStorageType::toString);
     }
 
     public List<String> findRelatedPrimaryStorage(String bsUuid) {

@@ -7,8 +7,6 @@ import org.apache.commons.net.util.SubnetUtils;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.network.l3.*;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
@@ -19,6 +17,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.*;
+
+import static org.zstack.utils.CollectionUtils.transform;
 
 
 public class IpRangeHelper {
@@ -151,7 +151,7 @@ public class IpRangeHelper {
             spareIps.addAll(NetworkUtils.getFreeIpInRange(cloneIpr.getStartIp(), cloneIpr.getEndIp(), usedIps, limit, start));
         }
 
-        return CollectionUtils.transformToList(spareIps, (Function<FreeIpInventory, String>) arg -> {
+        return transform(spareIps, arg -> {
             FreeIpInventory f = new FreeIpInventory();
             f.setGateway(ipr.getGateway());
             f.setIp(arg);

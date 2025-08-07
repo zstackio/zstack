@@ -63,7 +63,6 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.zql.ZQL;
@@ -89,6 +88,7 @@ import static org.zstack.header.image.ImageConstant.IMAGE_FROM_SNAPSHOT_SCHEMA;
 import static org.zstack.longjob.LongJobUtils.buildErrIfCanceled;
 import static org.zstack.longjob.LongJobUtils.noncancelableErr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.transform;
 
 public class ImageManagerImpl extends AbstractService implements ImageManager, ManagementNodeReadyExtensionPoint,
         ReportQuotaExtensionPoint, ResourceOwnerPreChangeExtensionPoint, HostAllocatorFilterExtensionPoint {
@@ -1215,16 +1215,13 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
         extEmitter.preAddImage(inv);
 
-        final List<DownloadImageMsg> dmsgs = CollectionUtils.transformToList(msgData.getBackupStorageUuids(), new Function<DownloadImageMsg, String>() {
-            @Override
-            public DownloadImageMsg call(String arg) {
-                DownloadImageMsg dmsg = new DownloadImageMsg(inv);
-                dmsg.setBackupStorageUuid(arg);
-                dmsg.setFormat(msgData.getFormat());
-                dmsg.setSystemTags(msgData.getSystemTags());
-                bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, arg);
-                return dmsg;
-            }
+        final List<DownloadImageMsg> dmsgs = transform(msgData.getBackupStorageUuids(), arg -> {
+            DownloadImageMsg dmsg = new DownloadImageMsg(inv);
+            dmsg.setBackupStorageUuid(arg);
+            dmsg.setFormat(msgData.getFormat());
+            dmsg.setSystemTags(msgData.getSystemTags());
+            bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, arg);
+            return dmsg;
         });
 
         extEmitter.beforeAddImage(inv);
@@ -1474,15 +1471,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 }
                             });
                         } else {
-                            List<AllocateBackupStorageMsg> amsgs = CollectionUtils.transformToList(msgData.getBackupStorageUuids(), new Function<AllocateBackupStorageMsg, String>() {
-                                @Override
-                                public AllocateBackupStorageMsg call(String arg) {
-                                    AllocateBackupStorageMsg abmsg = new AllocateBackupStorageMsg();
-                                    abmsg.setSize(imageEstimateSize);
-                                    abmsg.setBackupStorageUuid(arg);
-                                    bus.makeLocalServiceId(abmsg, BackupStorageConstant.SERVICE_ID);
-                                    return abmsg;
-                                }
+                            List<AllocateBackupStorageMsg> amsgs = transform(msgData.getBackupStorageUuids(), arg -> {
+                                AllocateBackupStorageMsg abmsg = new AllocateBackupStorageMsg();
+                                abmsg.setSize(imageEstimateSize);
+                                abmsg.setBackupStorageUuid(arg);
+                                bus.makeLocalServiceId(abmsg, BackupStorageConstant.SERVICE_ID);
+                                return abmsg;
                             });
 
                             bus.send(amsgs, new CloudBusListCallBack(trigger) {
@@ -1516,15 +1510,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             return;
                         }
 
-                        List<ReturnBackupStorageMsg> rmsgs = CollectionUtils.transformToList(targetBackupStorages, new Function<ReturnBackupStorageMsg, BackupStorageInventory>() {
-                            @Override
-                            public ReturnBackupStorageMsg call(BackupStorageInventory arg) {
-                                ReturnBackupStorageMsg rmsg = new ReturnBackupStorageMsg();
-                                rmsg.setBackupStorageUuid(arg.getUuid());
-                                rmsg.setSize(imageEstimateSize);
-                                bus.makeLocalServiceId(rmsg, BackupStorageConstant.SERVICE_ID);
-                                return rmsg;
-                            }
+                        List<ReturnBackupStorageMsg> rmsgs = transform(targetBackupStorages, arg -> {
+                            ReturnBackupStorageMsg rmsg = new ReturnBackupStorageMsg();
+                            rmsg.setBackupStorageUuid(arg.getUuid());
+                            rmsg.setSize(imageEstimateSize);
+                            bus.makeLocalServiceId(rmsg, BackupStorageConstant.SERVICE_ID);
+                            return rmsg;
                         });
 
                         bus.send(rmsgs, new CloudBusListCallBack(trigger) {
@@ -1564,16 +1555,13 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        List<CreateTemplateFromRootVolumeVmMsg> cmsgs = CollectionUtils.transformToList(targetBackupStorages, new Function<CreateTemplateFromRootVolumeVmMsg, BackupStorageInventory>() {
-                            @Override
-                            public CreateTemplateFromRootVolumeVmMsg call(BackupStorageInventory arg) {
-                                CreateTemplateFromRootVolumeVmMsg cmsg = new CreateTemplateFromRootVolumeVmMsg();
-                                cmsg.setRootVolumeInventory(rootVolume);
-                                cmsg.setBackupStorageUuid(arg.getUuid());
-                                cmsg.setImageInventory(ImageInventory.valueOf(imageVO));
-                                bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, rootVolume.getVmInstanceUuid());
-                                return cmsg;
-                            }
+                        List<CreateTemplateFromRootVolumeVmMsg> cmsgs = transform(targetBackupStorages, arg -> {
+                            CreateTemplateFromRootVolumeVmMsg cmsg = new CreateTemplateFromRootVolumeVmMsg();
+                            cmsg.setRootVolumeInventory(rootVolume);
+                            cmsg.setBackupStorageUuid(arg.getUuid());
+                            cmsg.setImageInventory(ImageInventory.valueOf(imageVO));
+                            bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, rootVolume.getVmInstanceUuid());
+                            return cmsg;
                         });
 
                         bus.send(cmsgs, new CloudBusListCallBack(trigger) {
@@ -1827,16 +1815,13 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 }
                             });
                         } else {
-                            List<AllocateBackupStorageMsg> amsgs = CollectionUtils.transformToList(msgData.getBackupStorageUuids(), new Function<AllocateBackupStorageMsg, String>() {
-                                @Override
-                                public AllocateBackupStorageMsg call(String arg) {
-                                    AllocateBackupStorageMsg amsg = new AllocateBackupStorageMsg();
-                                    amsg.setRequiredZoneUuid(zoneUuid);
-                                    amsg.setSize(imageEstimateSize);
-                                    amsg.setBackupStorageUuid(arg);
-                                    bus.makeLocalServiceId(amsg, BackupStorageConstant.SERVICE_ID);
-                                    return amsg;
-                                }
+                            List<AllocateBackupStorageMsg> amsgs = transform(msgData.getBackupStorageUuids(), arg -> {
+                                AllocateBackupStorageMsg amsg = new AllocateBackupStorageMsg();
+                                amsg.setRequiredZoneUuid(zoneUuid);
+                                amsg.setSize(imageEstimateSize);
+                                amsg.setBackupStorageUuid(arg);
+                                bus.makeLocalServiceId(amsg, BackupStorageConstant.SERVICE_ID);
+                                return amsg;
                             });
 
                             bus.send(amsgs, new CloudBusListCallBack(trigger) {
@@ -1866,15 +1851,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (!backupStorages.isEmpty()) {
-                            List<ReturnBackupStorageMsg> rmsgs = CollectionUtils.transformToList(backupStorages, new Function<ReturnBackupStorageMsg, BackupStorageInventory>() {
-                                @Override
-                                public ReturnBackupStorageMsg call(BackupStorageInventory arg) {
-                                    ReturnBackupStorageMsg rmsg = new ReturnBackupStorageMsg();
-                                    rmsg.setBackupStorageUuid(arg.getUuid());
-                                    rmsg.setSize(imageEstimateSize);
-                                    bus.makeLocalServiceId(rmsg, BackupStorageConstant.SERVICE_ID);
-                                    return rmsg;
-                                }
+                            List<ReturnBackupStorageMsg> rmsgs = transform(backupStorages, arg -> {
+                                ReturnBackupStorageMsg rmsg = new ReturnBackupStorageMsg();
+                                rmsg.setBackupStorageUuid(arg.getUuid());
+                                rmsg.setSize(imageEstimateSize);
+                                bus.makeLocalServiceId(rmsg, BackupStorageConstant.SERVICE_ID);
+                                return rmsg;
                             });
 
                             bus.send(rmsgs, new CloudBusListCallBack(null) {
@@ -1911,16 +1893,13 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         // FIXME: should create once and then upload different bs.
-                        List<CreateDataVolumeTemplateFromDataVolumeMsg> cmsgs = CollectionUtils.transformToList(backupStorages, new Function<CreateDataVolumeTemplateFromDataVolumeMsg, BackupStorageInventory>() {
-                            @Override
-                            public CreateDataVolumeTemplateFromDataVolumeMsg call(BackupStorageInventory bs) {
-                                CreateDataVolumeTemplateFromDataVolumeMsg cmsg = new CreateDataVolumeTemplateFromDataVolumeMsg();
-                                cmsg.setVolumeUuid(volumeUuid);
-                                cmsg.setBackupStorageUuid(bs.getUuid());
-                                cmsg.setImageUuid(image.getUuid());
-                                bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, volumeUuid);
-                                return cmsg;
-                            }
+                        List<CreateDataVolumeTemplateFromDataVolumeMsg> cmsgs = transform(backupStorages, bs -> {
+                            CreateDataVolumeTemplateFromDataVolumeMsg cmsg = new CreateDataVolumeTemplateFromDataVolumeMsg();
+                            cmsg.setVolumeUuid(volumeUuid);
+                            cmsg.setBackupStorageUuid(bs.getUuid());
+                            cmsg.setImageUuid(image.getUuid());
+                            bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, volumeUuid);
+                            return cmsg;
                         });
 
                         bus.send(cmsgs, new CloudBusListCallBack(trigger) {

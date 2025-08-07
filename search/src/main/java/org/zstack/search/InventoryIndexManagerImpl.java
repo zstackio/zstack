@@ -31,10 +31,8 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.search.*;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.Pair;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.*;
@@ -47,6 +45,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.Map.Entry;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 public class InventoryIndexManagerImpl extends AbstractService implements InventoryIndexManager, TransactionalCallback {
     private static final CLogger logger = Utils.getLogger(InventoryIndexManagerImpl.class);
@@ -390,12 +390,7 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
         query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<InsertVO> ret = query.getResultList();
         if (!ret.isEmpty()) {
-            List<Long> ids = CollectionUtils.transformToList(ret, new Function<Long, InsertVO>() {
-                @Override
-                public Long call(InsertVO arg) {
-                    return arg.getId();
-                }
-            });
+            List<Long> ids = transformAndRemoveNull(ret, InsertVO::getId);
             String usql = "delete from InsertVO i where i.id in :id";
             Query uquery = dbf.getEntityManager().createQuery(usql);
             uquery.setParameter("id", ids);
@@ -412,12 +407,7 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
         query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<UpdateVO> ret = query.getResultList();
         if (!ret.isEmpty()) {
-            List<Long> ids = CollectionUtils.transformToList(ret, new Function<Long, UpdateVO>() {
-                @Override
-                public Long call(UpdateVO arg) {
-                    return arg.getId();
-                }
-            });
+            List<Long> ids = transformAndRemoveNull(ret, UpdateVO::getId);
             String usql = "delete from UpdateVO i where i.id in :id";
             Query uquery = dbf.getEntityManager().createQuery(usql);
             uquery.setParameter("id", ids);
@@ -442,12 +432,7 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
         query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<DeleteVO> ret = query.getResultList();
         if (!ret.isEmpty()) {
-            List<Long> ids = CollectionUtils.transformToList(ret, new Function<Long, DeleteVO>() {
-                @Override
-                public Long call(DeleteVO arg) {
-                    return arg.getId();
-                }
-            });
+            List<Long> ids = transformAndRemoveNull(ret, DeleteVO::getId);
             String usql = "delete from DeleteVO i where i.id in :id";
             Query uquery = dbf.getEntityManager().createQuery(usql);
             uquery.setParameter("id", ids);

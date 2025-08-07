@@ -46,7 +46,6 @@ import org.zstack.storage.ceph.primary.CephPrimaryStorageVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -65,6 +64,7 @@ import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.storage.backup.BackupStorageConstant.IMPORT_IMAGES_FAKE_RESOURCE_UUID;
 import static org.zstack.header.storage.backup.BackupStorageConstant.RESTORE_IMAGES_BACKUP_STORAGE_METADATA_TO_DATABASE;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.*;
 
 /**
  * Created by frank on 7/27/2015.
@@ -1188,12 +1188,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         GetImageSizeCmd cmd = new GetImageSizeCmd();
         cmd.imageUuid = msg.getImage().getUuid();
 
-        ImageBackupStorageRefInventory ref = CollectionUtils.find(msg.getImage().getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
-            @Override
-            public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
-                return self.getUuid().equals(arg.getBackupStorageUuid()) ? arg : null;
-            }
-        });
+        ImageBackupStorageRefInventory ref = findOneOrNull(msg.getImage().getBackupStorageRefs(), arg -> self.getUuid().equals(arg.getBackupStorageUuid()));
 
         if (ref == null) {
             throw new CloudRuntimeException(String.format("cannot find ImageBackupStorageRefInventory of image[uuid:%s] for" +
@@ -1258,12 +1253,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     @Override
     protected void connectHook(final boolean newAdded, final Completion completion) {
-        final List<CephBackupStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<CephBackupStorageMonBase, CephBackupStorageMonVO>() {
-            @Override
-            public CephBackupStorageMonBase call(CephBackupStorageMonVO arg) {
-                return new CephBackupStorageMonBase(arg);
-            }
-        });
+        final List<CephBackupStorageMonBase> mons = transform(getSelf().getMons(), CephBackupStorageMonBase::new);
 
         class Connector {
             private ErrorCodeList errorCodes = new ErrorCodeList();
@@ -1323,14 +1313,10 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        final Map<String, String> fsids = new HashMap<String, String>();
+                        final Map<String, String> fsids = new HashMap<>();
 
-                        final List<CephBackupStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<CephBackupStorageMonBase, CephBackupStorageMonVO>() {
-                            @Override
-                            public CephBackupStorageMonBase call(CephBackupStorageMonVO arg) {
-                                return arg.getStatus() == MonStatus.Connected ? new CephBackupStorageMonBase(arg) : null;
-                            }
-                        });
+                        final List<CephBackupStorageMonBase> mons = transformAndRemoveNull(getSelf().getMons(),
+                                arg -> arg.getStatus() == MonStatus.Connected ? new CephBackupStorageMonBase(arg) : null);
 
                         DebugUtils.Assert(!mons.isEmpty(), "how can be no connected MON!!! ???");
 
@@ -1503,14 +1489,9 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     @Override
     protected void pingHook(final Completion completion) {
-        final List<CephBackupStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<CephBackupStorageMonBase, CephBackupStorageMonVO>() {
-            @Override
-            public CephBackupStorageMonBase call(CephBackupStorageMonVO arg) {
-                return new CephBackupStorageMonBase(arg);
-            }
-        });
+        final List<CephBackupStorageMonBase> mons = transform(getSelf().getMons(), CephBackupStorageMonBase::new);
 
-        final List<ErrorCode> errors = new ArrayList<ErrorCode>();
+        final List<ErrorCode> errors = new ArrayList<>();
 
         class Ping {
             private AtomicBoolean replied = new AtomicBoolean(false);
@@ -1886,14 +1867,9 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        List<CephBackupStorageMonBase> bases = CollectionUtils.transformToList(monVOs, new Function<CephBackupStorageMonBase, CephBackupStorageMonVO>() {
-                            @Override
-                            public CephBackupStorageMonBase call(CephBackupStorageMonVO arg) {
-                                return new CephBackupStorageMonBase(arg);
-                            }
-                        });
+                        List<CephBackupStorageMonBase> bases = transform(monVOs, CephBackupStorageMonBase::new);
 
-                        final List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
+                        final List<ErrorCode> errorCodes = new ArrayList<>();
                         final AsyncLatch latch = new AsyncLatch(bases.size(), new NoErrorCompletion(trigger) {
                             @Override
                             public void done() {
@@ -1927,14 +1903,9 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        List<CephBackupStorageMonBase> bases = CollectionUtils.transformToList(monVOs, new Function<CephBackupStorageMonBase, CephBackupStorageMonVO>() {
-                            @Override
-                            public CephBackupStorageMonBase call(CephBackupStorageMonVO arg) {
-                                return new CephBackupStorageMonBase(arg);
-                            }
-                        });
+                        List<CephBackupStorageMonBase> bases = transform(monVOs, CephBackupStorageMonBase::new);
 
-                        final List<ErrorCode> errors = new ArrayList<ErrorCode>();
+                        final List<ErrorCode> errors = new ArrayList<>();
 
                         final AsyncLatch latch = new AsyncLatch(bases.size(), new NoErrorCompletion(trigger) {
                             @Override

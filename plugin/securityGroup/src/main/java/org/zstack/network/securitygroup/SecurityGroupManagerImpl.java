@@ -66,9 +66,7 @@ import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroup
 import org.zstack.network.securitygroup.APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO;
 import org.zstack.query.QueryFacade;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
@@ -2485,12 +2483,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }
 
         RuleCalculator cal = new RuleCalculator();
-        cal.vmNicUuids = CollectionUtils.transformToList(inv.getVmNics(), new Function<String, VmNicInventory>() {
-            @Override
-            public String call(VmNicInventory arg) {
-                return arg.getUuid();
-            }
-        });
+        cal.vmNicUuids = transformAndRemoveNull(inv.getVmNics(), VmNicInventory::getUuid);
         cal.vmStates = asList(VmInstanceState.Unknown);
         List<HostRuleTO> htos = cal.calculate();
 
@@ -2501,7 +2494,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     @Override
     public List<ExpandedQueryStruct> getExpandedQueryStructs() {
-        List<ExpandedQueryStruct> structs = new ArrayList<ExpandedQueryStruct>();
+        List<ExpandedQueryStruct> structs = new ArrayList<>();
 
         ExpandedQueryStruct struct = new ExpandedQueryStruct();
         struct.setExpandedField("securityGroupRef");
@@ -2517,7 +2510,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     @Override
     public List<ExpandedQueryAliasStruct> getExpandedQueryAliasesStructs() {
-        List<ExpandedQueryAliasStruct> aliases = new ArrayList<ExpandedQueryAliasStruct>();
+        List<ExpandedQueryAliasStruct> aliases = new ArrayList<>();
 
         ExpandedQueryAliasStruct as = new ExpandedQueryAliasStruct();
         as.setInventoryClass(VmNicInventory.class);

@@ -1,9 +1,8 @@
 package org.zstack.header.image;
 
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
-
 import java.util.List;
+
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  */
@@ -18,12 +17,8 @@ public class ImageDeletionStruct {
         }
 
         if (deleteAll == null) {
-            List<String> bsUuids = CollectionUtils.transformToList(image.getBackupStorageRefs(), new Function<String, ImageBackupStorageRefInventory>() {
-                @Override
-                public String call(ImageBackupStorageRefInventory arg) {
-                    return arg.getBackupStorageUuid();
-                }
-            });
+            List<String> bsUuids = transformAndRemoveNull(image.getBackupStorageRefs(),
+                    ImageBackupStorageRefInventory::getBackupStorageUuid);
 
             deleteAll = backupStorageUuids.containsAll(bsUuids);
         }

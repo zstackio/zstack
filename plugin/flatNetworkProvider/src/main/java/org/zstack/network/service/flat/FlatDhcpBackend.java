@@ -56,11 +56,9 @@ import org.zstack.network.service.NetworkServiceProviderLookup;
 import org.zstack.network.service.flat.IpStatisticConstants.VmType;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.tag.SystemTagCreator;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -84,6 +82,7 @@ import static org.zstack.network.service.NetworkServiceHelper.getL3NetworkHostRo
 import static org.zstack.network.service.flat.IpStatisticConstants.ResourceType;
 import static org.zstack.network.service.flat.IpStatisticConstants.SortBy;
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by frank on 9/15/2015.
@@ -1843,81 +1842,78 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         final Map<String, String> l3BridgeNameMap = new BridgeNameFinder().findByL3UuidsOnHost(l3Uuids, hostUuid);
         final Map<String, String> virtualNetworkIdMap = new BridgeVirtualNetworkIdFinder().findByL2Uuids(l2Uuids, hostUuid);
 
-        return CollectionUtils.transformToList(structs, new Function<DhcpInfo, DhcpStruct>() {
-            @Override
-            public DhcpInfo call(DhcpStruct arg) {
-                if (arg.getIp() == null && arg.getIp6() == null) {
-                    return null;
-                }
-
-                if (l3BridgeNameMap.get(arg.getL3Network().getUuid()) == null) {
-                    return null;
-                }
-
-                if ((arg.getIpVersion() == IPv6Constants.IPv6) && (IPv6Constants.SLAAC.equals(arg.getRaMode()))) {
-                    return null;
-                }
-
-                String vmMultiGateway = VmSystemTags.MULTIPLE_GATEWAY.getTokenByResourceUuid(arg.getVmUuid(),
-                        VmSystemTags.MULTIPLE_GATEWAY_TOKEN);
-                boolean multiGateway = Boolean.parseBoolean(vmMultiGateway);
-
-                DhcpInfo info = new DhcpInfo();
-                info.ipVersion = arg.getIpVersion();
-                info.raMode = arg.getRaMode();
-                info.enableRa = arg.isEnableRa();
-                info.dnsDomain = arg.getDnsDomain();
-                info.gateway = arg.getGateway();
-                info.hostname = arg.getHostname();
-                info.isDefaultL3Network = arg.isDefaultL3Network();
-
-                if (info.isDefaultL3Network) {
-                    if (info.hostname == null) {
-                        /* ipVersion can be ipv4, ipv6, ip46. used ip address as hostName iif ipVersion is ipv6 */
-                        if (info.ipVersion == IPv6Constants.IPv6 && arg.getIp6() != null) {
-                            info.hostname = IPv6NetworkUtils.ipv6AddessToHostname(arg.getIp6());
-                        } else if (arg.getIp() != null) {
-                            info.hostname = arg.getIp().replaceAll("\\.", "-");
-                        }
-                    }
-
-                    if (info.dnsDomain != null) {
-                        info.hostname = String.format("%s.%s", info.hostname, info.dnsDomain);
-                    }
-                }
-
-                List<String> dns = new ArrayList<>();
-                List<String> dns6 = new ArrayList<>();
-                for (String dnsIp : nwServiceMgr.getL3NetworkDns(arg.getL3Network().getUuid())) {
-                    if (NetworkUtils.isIpv4Address(dnsIp)) {
-                        dns.add(dnsIp);
-                    } else {
-                        dns6.add(dnsIp);
-                    }
-                }
-                info.ip = arg.getIp();
-                info.netmask = arg.getNetmask();
-                info.mac = arg.getMac();
-                info.dns = dns;
-                info.l3NetworkUuid = arg.getL3Network().getUuid();
-                info.bridgeName = l3BridgeNameMap.get(arg.getL3Network().getUuid());
-                info.virtualNetworkId = virtualNetworkIdMap.get(info.bridgeName);
-                info.namespaceName = makeNamespaceName(info.bridgeName, arg.getL3Network().getUuid());
-                info.mtu = arg.getMtu();
-                info.hostRoutes = getL3NetworkHostRoute(arg.getL3Network().getUuid());
-                info.vmMultiGateway = multiGateway;
-                if ((arg.getIpVersion() == IPv6Constants.DUAL_STACK  || arg.getIpVersion() == IPv6Constants.IPv6)
-                        && !IPv6Constants.SLAAC.equals(arg.getRaMode())) {
-                    info.ip6 = arg.getIp6();
-                    info.gateway6 = arg.getGateway6();
-                    info.dns6 = dns6;
-                    info.firstIp = arg.getFirstIp();
-                    info.endIp = arg.getEndIP();
-                    info.prefixLength = arg.getPrefixLength();
-                }
-                info.nicType = arg.getNicType();
-                return info;
+        return transformAndRemoveNull(structs, arg -> {
+            if (arg.getIp() == null && arg.getIp6() == null) {
+                return null;
             }
+
+            if (l3BridgeNameMap.get(arg.getL3Network().getUuid()) == null) {
+                return null;
+            }
+
+            if ((arg.getIpVersion() == IPv6Constants.IPv6) && (IPv6Constants.SLAAC.equals(arg.getRaMode()))) {
+                return null;
+            }
+
+            String vmMultiGateway = VmSystemTags.MULTIPLE_GATEWAY.getTokenByResourceUuid(arg.getVmUuid(),
+                    VmSystemTags.MULTIPLE_GATEWAY_TOKEN);
+            boolean multiGateway = Boolean.parseBoolean(vmMultiGateway);
+
+            DhcpInfo info = new DhcpInfo();
+            info.ipVersion = arg.getIpVersion();
+            info.raMode = arg.getRaMode();
+            info.enableRa = arg.isEnableRa();
+            info.dnsDomain = arg.getDnsDomain();
+            info.gateway = arg.getGateway();
+            info.hostname = arg.getHostname();
+            info.isDefaultL3Network = arg.isDefaultL3Network();
+
+            if (info.isDefaultL3Network) {
+                if (info.hostname == null) {
+                    /* ipVersion can be ipv4, ipv6, ip46. used ip address as hostName iif ipVersion is ipv6 */
+                    if (info.ipVersion == IPv6Constants.IPv6 && arg.getIp6() != null) {
+                        info.hostname = IPv6NetworkUtils.ipv6AddessToHostname(arg.getIp6());
+                    } else if (arg.getIp() != null) {
+                        info.hostname = arg.getIp().replaceAll("\\.", "-");
+                    }
+                }
+
+                if (info.dnsDomain != null) {
+                    info.hostname = String.format("%s.%s", info.hostname, info.dnsDomain);
+                }
+            }
+
+            List<String> dns = new ArrayList<>();
+            List<String> dns6 = new ArrayList<>();
+            for (String dnsIp : nwServiceMgr.getL3NetworkDns(arg.getL3Network().getUuid())) {
+                if (NetworkUtils.isIpv4Address(dnsIp)) {
+                    dns.add(dnsIp);
+                } else {
+                    dns6.add(dnsIp);
+                }
+            }
+            info.ip = arg.getIp();
+            info.netmask = arg.getNetmask();
+            info.mac = arg.getMac();
+            info.dns = dns;
+            info.l3NetworkUuid = arg.getL3Network().getUuid();
+            info.bridgeName = l3BridgeNameMap.get(arg.getL3Network().getUuid());
+            info.virtualNetworkId = virtualNetworkIdMap.get(info.bridgeName);
+            info.namespaceName = makeNamespaceName(info.bridgeName, arg.getL3Network().getUuid());
+            info.mtu = arg.getMtu();
+            info.hostRoutes = getL3NetworkHostRoute(arg.getL3Network().getUuid());
+            info.vmMultiGateway = multiGateway;
+            if ((arg.getIpVersion() == IPv6Constants.DUAL_STACK  || arg.getIpVersion() == IPv6Constants.IPv6)
+                    && !IPv6Constants.SLAAC.equals(arg.getRaMode())) {
+                info.ip6 = arg.getIp6();
+                info.gateway6 = arg.getGateway6();
+                info.dns6 = dns6;
+                info.firstIp = arg.getFirstIp();
+                info.endIp = arg.getEndIP();
+                info.prefixLength = arg.getPrefixLength();
+            }
+            info.nicType = arg.getNicType();
+            return info;
         });
     }
 

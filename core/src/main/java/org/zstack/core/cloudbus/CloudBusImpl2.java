@@ -35,7 +35,6 @@ import org.zstack.header.message.*;
 import org.zstack.header.search.APISearchMessage;
 import org.zstack.header.search.APISearchReply;
 import org.zstack.utils.*;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.GsonTypeCoder;
 import org.zstack.utils.gson.GsonUtil;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -56,6 +55,8 @@ import static org.zstack.utils.BeanUtils.getProperty;
 import static org.zstack.utils.BeanUtils.setProperty;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionUtils.findOneOrNull;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 import static org.zstack.utils.ExceptionDSL.throwableSafe;
 
 /**
@@ -1188,12 +1189,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         tracker = new MessageTracker();
 
         ConnectionFactory connFactory = new ConnectionFactory();
-        List<Address> addresses = CollectionUtils.transformToList(serverIps, new Function<Address, String>() {
-            @Override
-            public Address call(String arg) {
-                return Address.parseAddress(arg);
-            }
-        });
+        List<Address> addresses = transformAndRemoveNull(serverIps, Address::parseAddress);
         connFactory.setAutomaticRecoveryEnabled(true);
         connFactory.setRequestedHeartbeat(CloudBusGlobalProperty.RABBITMQ_HEART_BEAT_TIMEOUT);
         connFactory.setNetworkRecoveryInterval((int) TimeUnit.SECONDS.toMillis(CloudBusGlobalProperty.RABBITMQ_NETWORK_RECOVER_INTERVAL));
@@ -1575,13 +1571,13 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         sub.clear();
 
         final Iterator<NeedReplyMessage> it = copy.iterator();
-        final List<MessageReply> replies = new ArrayList<MessageReply>();
+        final List<MessageReply> replies = new ArrayList<>();
         final int retNum = msgs.size();
         for (NeedReplyMessage nmsg : init) {
             send(nmsg, new CloudBusCallBack(null) {
 
                 private MessageReply findReply(final Message msg) {
-                    return CollectionUtils.find(replies, arg -> arg.getHeaderEntry(CloudBus.HEADER_CORRELATION_ID).equals(msg.getId()) ? arg : null);
+                    return findOneOrNull(replies, arg -> arg.getHeaderEntry(CloudBus.HEADER_CORRELATION_ID).equals(msg.getId()));
                 }
 
                 private List<MessageReply> sortReplies() {
@@ -2488,7 +2484,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
     private void prepareStatistics() {
         List<Class> needReplyMsgs = new ArrayList<>(BeanUtils.reflections.getSubTypesOf(NeedReplyMessage.class));
-        needReplyMsgs = CollectionUtils.transformToList(needReplyMsgs, (Function<Class, Class>) arg -> !APIMessage.class.isAssignableFrom(arg) || APISyncCallMessage.class.isAssignableFrom(arg) ? arg : null);
+        needReplyMsgs = transformAndRemoveNull(needReplyMsgs,
+                arg -> !APIMessage.class.isAssignableFrom(arg) || APISyncCallMessage.class.isAssignableFrom(arg) ? arg : null);
 
         for (Class clz : needReplyMsgs) {
             MessageStatistic stat = new MessageStatistic();

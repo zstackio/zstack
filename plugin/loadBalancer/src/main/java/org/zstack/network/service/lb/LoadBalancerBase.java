@@ -42,11 +42,8 @@ import org.zstack.network.service.vip.VipVO;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -59,6 +56,7 @@ import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created by frank on 8/8/2015.
@@ -396,14 +394,9 @@ public class LoadBalancerBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
-                        q.add(VmNicVO_.uuid, Op.IN, CollectionUtils.transformToList(refs, new Function<String, LoadBalancerServerGroupVmNicRefVO>() {
-                            @Override
-                            public String call(LoadBalancerServerGroupVmNicRefVO arg) {
-                                return arg.getVmNicUuid();
-                            }
-                        }));
-                        List<VmNicVO> nicvos = q.list();
+                        List<VmNicVO> nicvos = Q.New(VmNicVO.class)
+                                .in(VmNicVO_.uuid, transformAndRemoveNull(refs, LoadBalancerServerGroupVmNicRefVO::getVmNicUuid))
+                                .list();
 
                         LoadBalancerBackend bkd = getBackend();
                         bkd.removeVmNics(lbMgr.makeStruct(self), VmNicInventory.valueOf(nicvos), new Completion(trigger) {
@@ -485,14 +478,9 @@ public class LoadBalancerBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
-                        q.add(VmNicVO_.uuid, Op.IN, CollectionUtils.transformToList(refs, new Function<String, LoadBalancerServerGroupVmNicRefVO>() {
-                            @Override
-                            public String call(LoadBalancerServerGroupVmNicRefVO arg) {
-                                return arg.getVmNicUuid();
-                            }
-                        }));
-                        List<VmNicVO> nicvos = q.list();
+                        List<VmNicVO> nicvos = Q.New(VmNicVO.class)
+                                .in(VmNicVO_.uuid, transformAndRemoveNull(refs, LoadBalancerServerGroupVmNicRefVO::getVmNicUuid))
+                                .list();
 
                         LoadBalancerBackend bkd = getBackend();
                         bkd.addVmNics(lbMgr.makeStruct(self), VmNicInventory.valueOf(nicvos), new Completion(trigger) {

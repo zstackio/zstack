@@ -40,19 +40,17 @@ import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.header.vm.hooks.VmInstanceAfterCreateHook;
 import org.zstack.header.vm.hooks.VmInstanceAfterDestroyHook;
-import org.zstack.header.vm.hooks.VmInstanceBeforeCreateHook;
 import org.zstack.header.vm.hooks.VmInstanceBeforeDestroyHook;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.zsha2.ZSha2Helper;
-import org.zstack.utils.zsha2.ZSha2Info;
 
 import javax.persistence.Query;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.CollectionUtils.findOneOrNull;
+import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
  * Created with IntelliJ IDEA.
@@ -468,26 +466,13 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
     private void openFirewall(final String apvmUuid, final String l3uuid, final List<ApplianceVmFirewallRuleInventory> rules, boolean needVmSync, final Completion completion) {
         final ApplianceVmVO apvm = dbf.findByUuid(apvmUuid, ApplianceVmVO.class);
+        VmNicVO nic = findOneOrNull(apvm.getVmNics(), arg -> arg.getL3NetworkUuid().equals(l3uuid));
+        DebugUtils.Assert(nic != null, String.format("appliance vm[uuid:%s, name:%s] is not on l3network[uuid:%s]", apvm.getUuid(), apvm.getName(), l3uuid));
 
-        VmNicInventory targetNic = CollectionUtils.find(apvm.getVmNics(), new Function<VmNicInventory, VmNicVO>() {
-            @Override
-            public VmNicInventory call(VmNicVO arg) {
-                if (arg.getL3NetworkUuid().equals(l3uuid)) {
-                    return VmNicInventory.valueOf(arg);
-                }
-                return null;
-            }
-
-        });
-        DebugUtils.Assert(targetNic!=null, String.format("appliance vm[uuid:%s, name:%s] is not on l3network[uuid:%s]", apvm.getUuid(), apvm.getName(), l3uuid));
-
-        List<String> ids = CollectionUtils.transformToList(rules, new Function<String, ApplianceVmFirewallRuleInventory>() {
-            @Override
-            public String call(ApplianceVmFirewallRuleInventory arg) {
-                arg.setL3NetworkUuid(l3uuid);
-                arg.setApplianceVmUuid(apvmUuid);
-                return arg.makeIdentity();
-            }
+        List<String> ids = transformAndRemoveNull(rules, arg -> {
+            arg.setL3NetworkUuid(l3uuid);
+            arg.setApplianceVmUuid(apvmUuid);
+            return arg.makeIdentity();
         });
 
         SimpleQuery<ApplianceVmFirewallRuleVO> q = dbf.createQuery(ApplianceVmFirewallRuleVO.class);
@@ -495,24 +480,21 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         q.add(ApplianceVmFirewallRuleVO_.identity, Op.IN, ids);
         final List<String> existingIds = q.listValue();
 
-        List<ApplianceVmFirewallRuleVO> vos = CollectionUtils.transformToList(rules, new Function<ApplianceVmFirewallRuleVO, ApplianceVmFirewallRuleInventory>() {
-            @Override
-            public ApplianceVmFirewallRuleVO call(ApplianceVmFirewallRuleInventory r) {
-                if (!existingIds.contains(r.makeIdentity())) {
-                    ApplianceVmFirewallRuleVO vo = new ApplianceVmFirewallRuleVO();
-                    vo.setSourceIp(r.getSourceIp());
-                    vo.setDestIp(r.getDestIp());
-                    vo.setAllowCidr(r.getAllowCidr());
-                    vo.setProtocol(ApplianceVmFirewallProtocol.valueOf(r.getProtocol()));
-                    vo.setEndPort(r.getEndPort());
-                    vo.setStartPort(r.getStartPort());
-                    vo.setL3NetworkUuid(l3uuid);
-                    vo.setApplianceVmUuid(apvm.getUuid());
-                    vo.makeIdentity();
-                    return vo;
-                }
-                return null;
+        List<ApplianceVmFirewallRuleVO> vos = transformAndRemoveNull(rules, r -> {
+            if (!existingIds.contains(r.makeIdentity())) {
+                ApplianceVmFirewallRuleVO vo = new ApplianceVmFirewallRuleVO();
+                vo.setSourceIp(r.getSourceIp());
+                vo.setDestIp(r.getDestIp());
+                vo.setAllowCidr(r.getAllowCidr());
+                vo.setProtocol(ApplianceVmFirewallProtocol.valueOf(r.getProtocol()));
+                vo.setEndPort(r.getEndPort());
+                vo.setStartPort(r.getStartPort());
+                vo.setL3NetworkUuid(l3uuid);
+                vo.setApplianceVmUuid(apvm.getUuid());
+                vo.makeIdentity();
+                return vo;
             }
+            return null;
         });
 
         dbf.persistCollection(vos);
@@ -539,13 +521,10 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     }
 
     private void removeFirewall(final String applianceVmUuid, final String l3uuid, List<ApplianceVmFirewallRuleInventory> rules, boolean needVmSync, final Completion completion) {
-        final List<String> ids = CollectionUtils.transformToList(rules, new Function<String, ApplianceVmFirewallRuleInventory>() {
-            @Override
-            public String call(ApplianceVmFirewallRuleInventory r) {
-                r.setL3NetworkUuid(l3uuid);
-                r.setApplianceVmUuid(applianceVmUuid);
-                return r.makeIdentity();
-            }
+        final List<String> ids = transformAndRemoveNull(rules, r -> {
+            r.setL3NetworkUuid(l3uuid);
+            r.setApplianceVmUuid(applianceVmUuid);
+            return r.makeIdentity();
         });
 
         new Runnable() {
