@@ -11,4 +11,6 @@ import javax.persistence.metamodel.StaticMetamodel;
 @StaticMetamodel(HardwareL2VxlanNetworkPoolVO.class)
 public class HardwareL2VxlanNetworkPoolVO_ extends L2NetworkVO_ {
     public static volatile SingularAttribute<HardwareL2VxlanNetworkPoolVO, String> sdnControllerUuid;
+    public static volatile SingularAttribute<HardwareL2VxlanNetworkPoolVO, Integer> startVlan;
+    public static volatile SingularAttribute<HardwareL2VxlanNetworkPoolVO, Integer> endVlan;
 }

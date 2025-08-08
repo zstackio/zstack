@@ -45,9 +45,16 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
     @Override
     @Transactional
     public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion<L2NetworkInventory> completion) {
+        APICreateL2HardwareVxlanNetworkPoolMsg vxlanMsg = (APICreateL2HardwareVxlanNetworkPoolMsg) msg;
         HardwareL2VxlanNetworkPoolVO vo = new HardwareL2VxlanNetworkPoolVO(ovo);
         vo.setAccountUuid(msg.getSession().getAccountUuid());
-        vo.setSdnControllerUuid(((APICreateL2HardwareVxlanNetworkPoolMsg) msg).getSdnControllerUuid());
+        vo.setSdnControllerUuid(vxlanMsg.getSdnControllerUuid());
+        if (vxlanMsg.getStartVlan() != null) {
+            vo.setStartVlan(vxlanMsg.getStartVlan());
+        }
+        if (vxlanMsg.getEndVlan() != null) {
+            vo.setEndVlan(vxlanMsg.getEndVlan());
+        }
         vo = dbf.persistAndRefresh(vo);
 
         HardwareL2VxlanNetworkPoolInventory inv = HardwareL2VxlanNetworkPoolInventory.valueOf(vo);

@@ -27,6 +27,8 @@ import java.util.*;
 })
 public class HardwareL2VxlanNetworkPoolInventory extends L2VxlanNetworkPoolInventory {
     private String sdnControllerUuid;
+    private Integer startVlan;
+    private Integer endVlan;
 
     public HardwareL2VxlanNetworkPoolInventory() {
     }
@@ -34,6 +36,8 @@ public class HardwareL2VxlanNetworkPoolInventory extends L2VxlanNetworkPoolInven
     protected HardwareL2VxlanNetworkPoolInventory(HardwareL2VxlanNetworkPoolVO vo) {
         super(vo);
         setSdnControllerUuid(vo.getSdnControllerUuid());
+        setStartVlan(vo.getStartVlan());
+        setEndVlan(vo.getEndVlan());
         setAttachedVniRanges(VniRangeInventory.valueOf(vo.getAttachedVniRanges()));
         List<VxlanNetworkVO> networkVOS = Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.poolUuid, vo.getUuid()).list();
         setAttachedVxlanNetworkRefs(L2VxlanNetworkInventory.valueOf1(networkVOS));
@@ -57,5 +61,21 @@ public class HardwareL2VxlanNetworkPoolInventory extends L2VxlanNetworkPoolInven
 
     public void setSdnControllerUuid(String sdnControllerUuid) {
         this.sdnControllerUuid = sdnControllerUuid;
+    }
+
+    public Integer getStartVlan() {
+        return startVlan;
+    }
+
+    public void setStartVlan(Integer startVlan) {
+        this.startVlan = startVlan;
+    }
+
+    public Integer getEndVlan() {
+        return endVlan;
+    }
+
+    public void setEndVlan(Integer endVlan) {
+        this.endVlan = endVlan;
     }
 }

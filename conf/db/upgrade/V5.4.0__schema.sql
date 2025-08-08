@@ -98,3 +98,6 @@ CREATE TABLE  `zstack`.`HuaweiIMasterSdnControllerVO` (
     PRIMARY KEY  (`uuid`),
     CONSTRAINT fkHuaweiIMasterSdnControllerVOSdnControllerVO FOREIGN KEY (uuid) REFERENCES SdnControllerVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL ADD_COLUMN('HardwareL2VxlanNetworkPoolVO', 'startVlan', 'int unsigned', 1, NULL);
+CALL ADD_COLUMN('HardwareL2VxlanNetworkPoolVO', 'endVlan', 'int unsigned', 1, NULL);

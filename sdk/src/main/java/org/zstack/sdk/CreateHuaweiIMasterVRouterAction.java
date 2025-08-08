@@ -25,7 +25,7 @@ public class CreateHuaweiIMasterVRouterAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false)
     public java.lang.String sdnControllerUuid;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -35,7 +35,7 @@ public class CreateHuaweiIMasterVRouterAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String logicalNetworkUuid;
+    public java.lang.String huaweiVpcUuid;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

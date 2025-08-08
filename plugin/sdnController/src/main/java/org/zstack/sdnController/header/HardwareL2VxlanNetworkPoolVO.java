@@ -22,6 +22,12 @@ public class HardwareL2VxlanNetworkPoolVO extends VxlanNetworkPoolVO {
     @ForeignKey(parentEntityClass = SdnControllerVO.class, onDeleteAction = ForeignKey.ReferenceOption.RESTRICT)
     private String sdnControllerUuid;
 
+    @Column
+    private Integer startVlan;
+
+    @Column
+    private Integer endVlan;
+
     public HardwareL2VxlanNetworkPoolVO() {
     }
 
@@ -35,5 +41,21 @@ public class HardwareL2VxlanNetworkPoolVO extends VxlanNetworkPoolVO {
 
     public void setSdnControllerUuid(String sdnControllerUuid) {
         this.sdnControllerUuid = sdnControllerUuid;
+    }
+
+    public Integer getStartVlan() {
+        return startVlan;
+    }
+
+    public void setStartVlan(Integer startVlan) {
+        this.startVlan = startVlan;
+    }
+
+    public Integer getEndVlan() {
+        return endVlan;
+    }
+
+    public void setEndVlan(Integer endVlan) {
+        this.endVlan = endVlan;
     }
 }
