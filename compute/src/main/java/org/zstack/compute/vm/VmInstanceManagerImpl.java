@@ -1437,7 +1437,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
-                        completion.success(instantiateVm);
+                        String vmUuid = instantiateVm.getUuid();
+                        completion.success(VmInstanceInventory.valueOf(dbf.findByUuid(vmUuid, VmInstanceVO.class)));
                     }
                 });
 

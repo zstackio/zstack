@@ -3234,7 +3234,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 .count();
         if (vmDataVolumeUsage + 1 > maxDataVolumeNum) {
             throw new OperationFailureException(operr("hypervisor[%s] only allows max %s data volumes to be attached to a single vm; there have been %s data volumes attached to vm[uuid:%s]",
-                    hypervisorType, maxDataVolumeNum, vmDataVolumeUsage, vmUuid));
+                    hypervisorType, maxDataVolumeNum, vmDataVolumeUsage, vmUuid)
+                    .withOpaque("max.volume.count", maxDataVolumeNum));
         }
     }
 
