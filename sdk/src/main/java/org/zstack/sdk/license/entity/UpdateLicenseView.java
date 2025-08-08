@@ -1,4 +1,4 @@
-package org.zstack.sdk;
+package org.zstack.sdk.license.entity;
 
 import org.zstack.sdk.ErrorCode;
 
