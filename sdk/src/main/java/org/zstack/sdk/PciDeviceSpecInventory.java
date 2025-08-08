@@ -117,6 +117,14 @@ public class PciDeviceSpecInventory  {
         return this.isVirtual;
     }
 
+    public boolean allowResourceConfigWithMultipleDevices;
+    public void setAllowResourceConfigWithMultipleDevices(boolean allowResourceConfigWithMultipleDevices) {
+        this.allowResourceConfigWithMultipleDevices = allowResourceConfigWithMultipleDevices;
+    }
+    public boolean getAllowResourceConfigWithMultipleDevices() {
+        return this.allowResourceConfigWithMultipleDevices;
+    }
+
     public java.lang.String romVersion;
     public void setRomVersion(java.lang.String romVersion) {
         this.romVersion = romVersion;

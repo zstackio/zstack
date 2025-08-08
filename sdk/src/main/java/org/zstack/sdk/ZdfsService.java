@@ -28,6 +28,14 @@ public class ZdfsService  {
         return this.sentinelCount;
     }
 
+    public java.lang.String metaServerStatus;
+    public void setMetaServerStatus(java.lang.String metaServerStatus) {
+        this.metaServerStatus = metaServerStatus;
+    }
+    public java.lang.String getMetaServerStatus() {
+        return this.metaServerStatus;
+    }
+
     public java.util.List metaServers;
     public void setMetaServers(java.util.List metaServers) {
         this.metaServers = metaServers;
