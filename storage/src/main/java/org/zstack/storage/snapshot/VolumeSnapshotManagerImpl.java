@@ -17,6 +17,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -36,9 +37,7 @@ import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceMessa
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO;
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO_;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.VmInstanceResourceMetadataArchiveVO;
-import org.zstack.header.vm.devices.VmInstanceResourceMetadataArchiveVO_;
-import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
+import org.zstack.header.vm.devices.*;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -1224,10 +1223,15 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     private void handle(APICheckMemorySnapshotGroupConflictMsg msg) {
         APICheckMemorySnapshotGroupConflictReply reply = new APICheckMemorySnapshotGroupConflictReply();
 
+        VmInstanceResourceMetadataGroupVO metadataGroupVO = Q.New(VmInstanceResourceMetadataGroupVO.class)
+                .eq(VmInstanceResourceMetadataGroupVO_.resourceUuid, msg.getUuid()).find();
+        if (metadataGroupVO == null) {
+            throw new ApiMessageInterceptionException(
+                    operr("cannot find VmInstanceResourceMetadataGroupVO of the memory snapshot group[uuid:%s]", msg.getUuid()));
+        }
         // Retrieve ArchiveVmNicBundle archives related to memory snapshot groups
-        List<VmInstanceResourceMetadataArchiveVO> vos = Q.New(VmInstanceResourceMetadataArchiveVO.class)
-                .eq(VmInstanceResourceMetadataArchiveVO_.metadataClass, ArchiveVmNicBundle.class.getCanonicalName()).list();
-        List<VmNicInventory> vmNics = vos.stream()
+        List<VmNicInventory> vmNics = metadataGroupVO.getAddressList().stream()
+                .filter(vo -> Objects.equals(vo.getMetadataClass(), ArchiveVmNicBundle.class.getCanonicalName()))
                 .map(vo -> JSONObjectUtil.toObject(vo.getMetadata(), ArchiveVmNicBundle.class).getVmNicInventory())
                 .filter(Objects::nonNull).collect(Collectors.toList());
 
@@ -1249,11 +1253,11 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
             boolean isConflict = false;
             VmNicConflictEntry vmNicConflictEntry = new VmNicConflictEntry();
-            if (groupIps.contains(ip)) {
+            if (ip != null && groupIps.contains(ip)) {
                 vmNicConflictEntry.setIp(ip);
                 isConflict = true;
             }
-            if (groupMacs.contains(mac)) {
+            if (mac != null && groupMacs.contains(mac)) {
                 vmNicConflictEntry.setMac(mac);
                 isConflict = true;
             }
