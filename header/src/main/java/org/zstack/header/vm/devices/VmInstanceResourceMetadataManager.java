@@ -10,6 +10,8 @@ public interface VmInstanceResourceMetadataManager {
 
     String RESOURCE_CONFIG_UUID = "65700f22e34780bf6d2fa6c27e8ff05c";
 
+    String GUEST_TOOLS_RESOURCE_CONFIG_UUID = "1a4ca3d92f9f43ba8291e2f60502fe62";
+
     int MEMORY_VOLUME_DEVICE_ID = Integer.MAX_VALUE;
     
     /**
