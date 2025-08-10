@@ -98,6 +98,11 @@ class AttachL3NetWorkToVmCase extends SubCase{
                             types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
                         }
                     }
+
+                    l3Network {
+                        name = "pubL3-no-dhcp"
+                        category = "Public"
+                    }
                 }
 
                 virtualRouterOffering {
@@ -129,9 +134,10 @@ class AttachL3NetWorkToVmCase extends SubCase{
     }
 
     void createVmWithL3NoIpRange() {
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
-        ImageInventory image = env.inventoryByName("image1")
-        L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
+        def instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        def image = env.inventoryByName("image1") as ImageInventory
+        def pubL3 = env.inventoryByName("pubL3") as L3NetworkInventory
+        def noDhcpL3 = env.inventoryByName("pubL3-no-dhcp") as L3NetworkInventory
 
         expect(AssertionError.class) {
             createVmInstance {
@@ -139,6 +145,15 @@ class AttachL3NetWorkToVmCase extends SubCase{
                 instanceOfferingUuid = instanceOffering.uuid
                 imageUuid = image.uuid
                 l3NetworkUuids = [pubL3.uuid]
+            }
+        }
+
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = "vm"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = image.uuid
+                l3NetworkUuids = [noDhcpL3.uuid]
             }
         }
     }

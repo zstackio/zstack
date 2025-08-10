@@ -26,9 +26,7 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
-import org.zstack.header.network.l3.L3NetworkState;
-import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.NewVmInstanceMessage;
 import org.zstack.header.vm.NewVmInstanceMessage2;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -212,33 +210,45 @@ public class VmInstanceHelper {
             msg.setDefaultL3NetworkUuid(defaultL3Uuid);
         }
 
-        if (!StringUtils.isEmpty(msg.getVmNicParams())) {
-            if (CollectionUtils.isEmpty(msg.getL3NetworkUuids())) {
-                throw new ApiMessageInterceptionException(argerr("l3NetworkUuids and vmNicInventories mustn't both be empty or both be set"));
-            }
-
-            List<VmNicParam> vmNicParams;
-            try {
-                vmNicParams = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParam.class);
-            } catch (JsonSyntaxException e) {
-                throw new ApiMessageInterceptionException(argerr("invalid json format, causes: %s", e.getMessage()));
-            }
-
-            new VmNicParamValidator().withVmNicParams(vmNicParams)
-                    .withL3Uuids(msg.getL3NetworkUuids())
-                    .withDefaultL3Uuid(msg.getDefaultL3NetworkUuid())
-                    .withSupportNicDriverTypes(nicManager.getSupportNicDriverTypes())
-                    .withVmType(msg.getType())
-                    .isWindowsVm(ImagePlatform.Windows.toString().equals(msg.getPlatform()))
-                    .validate();
-        }
-
         if (msg instanceof APIMessage && !(msg instanceof APICreateMessage)) {
             new StaticIpOperator().validateStaticIpTagsInApiMessage((APIMessage) msg);
         }
 
         validateCdRomsTag(msg);
         validateZoneOrClusterOrHostOrL3Exist(msg);
+        validate((NewVmInstanceMessage) msg);
+    }
+
+    public void validate(NewVmInstanceMessage msg) {
+        validateVmNicParams(msg);
+        validateL3Networks(msg.getL3NetworkUuids());
+    }
+
+    public void validateL3Networks(List<String> l3NetworkUuids) {
+        if (CollectionUtils.isEmpty(l3NetworkUuids)) {
+            return;
+        }
+
+        List<String> IPAMEnabledL3Uuids = Q.New(L3NetworkVO.class)
+                .select(L3NetworkVO_.uuid)
+                .eq(L3NetworkVO_.enableIPAM, Boolean.TRUE)
+                .in(L3NetworkVO_.uuid, l3NetworkUuids)
+                .listValues();
+
+        if (CollectionUtils.isEmpty(IPAMEnabledL3Uuids)) {
+            return;
+        }
+
+        Set<String> hasIpRangeL3Set = new HashSet<>(Q.New(IpRangeVO.class)
+                .select(IpRangeVO_.l3NetworkUuid)
+                .in(IpRangeVO_.l3NetworkUuid, IPAMEnabledL3Uuids)
+                .listValues());
+
+        for (String l3Uuid : IPAMEnabledL3Uuids) {
+            if (!hasIpRangeL3Set.contains(l3Uuid)) {
+                throw new ApiMessageInterceptionException(operr("there is no available ipRange on L3 network [%s]", l3Uuid));
+            }
+        }
     }
 
     private void validateInstanceSettings(NewVmInstanceMessage2 msg) {
@@ -318,6 +328,30 @@ public class VmInstanceHelper {
         if (CollectionUtils.isEmpty(msg.getL3NetworkUuids()) && StringUtils.isEmpty(msg.getZoneUuid())
                 && StringUtils.isEmpty(msg.getClusterUuid()) && StringUtils.isEmpty(msg.getHostUuid())) {
             throw new ApiMessageInterceptionException(operr("could not create vm, because at least one of field (l3NetworkUuids,zoneUuid,clusterUuid,hostUuid) should be set"));
+        }
+    }
+
+    @SuppressWarnings({"unchecked"})
+    private void validateVmNicParams(NewVmInstanceMessage msg) {
+        if (!StringUtils.isEmpty(msg.getVmNicParams())) {
+            if (CollectionUtils.isEmpty(msg.getL3NetworkUuids())) {
+                throw new ApiMessageInterceptionException(argerr("l3NetworkUuids and vmNicInventories mustn't both be empty or both be set"));
+            }
+
+            List<VmNicParam> vmNicParams;
+            try {
+                vmNicParams = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParam.class);
+            } catch (JsonSyntaxException e) {
+                throw new ApiMessageInterceptionException(argerr("invalid json format, causes: %s", e.getMessage()));
+            }
+
+            new VmNicParamValidator().withVmNicParams(vmNicParams)
+                    .withL3Uuids(msg.getL3NetworkUuids())
+                    .withDefaultL3Uuid(msg.getDefaultL3NetworkUuid())
+                    .withSupportNicDriverTypes(nicManager.getSupportNicDriverTypes())
+                    .withVmType(msg.getType())
+                    .isWindowsVm(ImagePlatform.Windows.toString().equals(msg.getPlatform()))
+                    .validate();
         }
     }
 }

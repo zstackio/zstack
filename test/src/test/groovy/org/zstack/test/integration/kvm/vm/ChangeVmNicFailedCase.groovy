@@ -91,7 +91,7 @@ class ChangeVmNicFailedCase extends SubCase {
                         name = "l3"
 
                         service {
-                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
                             types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
                         }
 
@@ -108,7 +108,7 @@ class ChangeVmNicFailedCase extends SubCase {
                         category = "Public"
 
                         service {
-                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
                             types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
                         }
 
@@ -117,6 +117,15 @@ class ChangeVmNicFailedCase extends SubCase {
                             endIp = "12.16.10.100"
                             netmask = "255.255.255.0"
                             gateway = "12.16.10.1"
+                        }
+                    }
+
+                    l3Network {
+                        name = "l3-without-ip-range"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
                         }
                     }
                 }
@@ -180,6 +189,20 @@ class ChangeVmNicFailedCase extends SubCase {
         assert nic1.usedIps.size() == 1
         assert nic1.ip == nic.ip
         assert nic1.getUsedIps().get(0).uuid == nic.getUsedIps().get(0).uuid
+
+        env.simulator(KVMConstant.KVM_UPDATE_NIC_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            KVMAgentCommands.UpdateNicRsp rsp = new KVMAgentCommands.UpdateNicRsp()
+            return rsp
+        }
+
+        def l3WithoutIpRange = env.inventoryByName("l3-without-ip-range") as L3NetworkInventory
+        def vmNic = vm.getVmNics().get(0) as VmNicInventory
+        expectError {
+            changeVmNicNetwork {
+                vmNicUuid = vmNic.uuid
+                destL3NetworkUuid = l3WithoutIpRange.uuid
+            }
+        }
 
         deleteL3Network {
             uuid = pubL3.uuid
