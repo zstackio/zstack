@@ -168,7 +168,7 @@ class IPv6EipCase extends SubCase {
         setVmStaticIp {
             vmInstanceUuid = vm.uuid
             l3NetworkUuid = l3_statefull.uuid
-            ip = ipv6s.get(0).ip
+            ip6 = ipv6s.get(0).ip
         }
         eip6 = queryEip { conditions=["name=eip6"] }[0]
         assert eip6.guestIp == ipv6s.get(0).ip
