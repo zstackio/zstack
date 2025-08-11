@@ -56,6 +56,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.identity.APIDeleteResourceResponsibleMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.identity.APIDeleteUserGroupMsg</name>
     </message>
 
@@ -77,6 +81,10 @@
 
     <message>
         <name>org.zstack.header.identity.APIShareResourceMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APISetResourceResponsibleMsg</name>
     </message>
 
     <message>
@@ -113,6 +121,11 @@
 
     <message>
         <name>org.zstack.header.identity.APIQueryQuotaMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIQueryResourceResponsibleMsg</name>
         <serviceId>query</serviceId>
     </message>
 

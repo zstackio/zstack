@@ -30,6 +30,8 @@ import org.zstack.header.identity.role.RoleVO;
 import org.zstack.header.identity.role.RoleVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.vo.ResourceVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ExceptionDSL;
@@ -287,6 +289,8 @@ public class AccountBase extends AbstractAccount {
             handle((APIDeleteUserMsg) msg);
         } else if (msg instanceof APIDeletePolicyMsg) {
             handle((APIDeletePolicyMsg) msg);
+        } else if (msg instanceof APIDeleteResourceResponsibleMsg) {
+            handle((APIDeleteResourceResponsibleMsg) msg);
         } else if (msg instanceof APIDetachPolicyFromUserMsg) {
             handle((APIDetachPolicyFromUserMsg) msg);
         } else if (msg instanceof APIDetachPolicyFromUserGroupMsg) {
@@ -297,6 +301,8 @@ public class AccountBase extends AbstractAccount {
             handle((APIUpdateUserMsg) msg);
         } else if (msg instanceof APIShareResourceMsg) {
             handle((APIShareResourceMsg) msg);
+        } else if (msg instanceof APISetResourceResponsibleMsg) {
+            handle((APISetResourceResponsibleMsg) msg);
         } else if (msg instanceof APIRevokeResourceSharingMsg) {
             handle((APIRevokeResourceSharingMsg) msg);
         } else if (msg instanceof APIUpdateQuotaMsg) {
@@ -501,6 +507,43 @@ public class AccountBase extends AbstractAccount {
         return uuidType;
     }
 
+    private void handle(APISetResourceResponsibleMsg msg) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                for (String responsibleUuid : msg.getResponsibleUuids()) {
+                    String resourceType = q(ResourceVO.class)
+                            .select(ResourceVO_.resourceType)
+                            .eq(ResourceVO_.uuid, responsibleUuid)
+                            .findValue();
+
+                    if (resourceType == null) {
+                        return;
+                    }
+
+                    ResourceResponsibleVO responsible = q(ResourceResponsibleVO.class)
+                            .eq(ResourceResponsibleVO_.resourceUuid, msg.getUuid())
+                            .eq(ResourceResponsibleVO_.responsibleType, resourceType)
+                            .find();
+
+                    if (responsible == null) {
+                        responsible = new ResourceResponsibleVO();
+                        responsible.setUuid(Platform.getUuid());
+                        responsible.setResourceUuid(msg.getUuid());
+                        responsible.setResponsibleType(resourceType);
+                        responsible.setResponsibleUuid(responsibleUuid);
+                        persist(responsible);
+                    } else {
+                        responsible.setResponsibleUuid(responsibleUuid);
+                        merge(responsible);
+                    }
+                }
+            }
+        }.execute();
+        APISetResourceResponsibleEvent evt = new APISetResourceResponsibleEvent(msg.getId());
+        bus.publish(evt);
+    }
+
     private void handle(APIShareResourceMsg msg) {
         Map<String, String> addUuidType = getUuidTypeMapByResourceUuids(msg.getResourceUuids());
         List<String> additionUuids = new ArrayList<>();
@@ -643,6 +686,12 @@ public class AccountBase extends AbstractAccount {
         }
 
         bus.publish(new APIDetachPolicyFromUserEvent(msg.getId()));
+    }
+
+    private void handle(APIDeleteResourceResponsibleMsg msg) {
+        dbf.removeByPrimaryKey(msg.getUuid(), ResourceResponsibleVO.class);
+        APIDeleteResourceResponsibleEvent evt = new APIDeleteResourceResponsibleEvent(msg.getId());
+        bus.publish(evt);
     }
 
     private void handle(APIDeletePolicyMsg msg) {

@@ -221,6 +221,7 @@ public class SourceClassMap {
 			put("org.zstack.header.identity.PolicyStatement", "org.zstack.sdk.PolicyStatement");
 			put("org.zstack.header.identity.Quota$QuotaUsage", "org.zstack.sdk.QuotaUsage");
 			put("org.zstack.header.identity.QuotaInventory", "org.zstack.sdk.QuotaInventory");
+			put("org.zstack.header.identity.ResourceResponsibleInventory", "org.zstack.sdk.ResourceResponsibleInventory");
 			put("org.zstack.header.identity.SessionInventory", "org.zstack.sdk.SessionInventory");
 			put("org.zstack.header.identity.SharedResourceInventory", "org.zstack.sdk.SharedResourceInventory");
 			put("org.zstack.header.identity.StatementEffect", "org.zstack.sdk.PolicyStatementEffect");
@@ -1012,6 +1013,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ResourceConfigInventory", "org.zstack.resourceconfig.ResourceConfigInventory");
 			put("org.zstack.sdk.ResourceExternalBackupInfo", "org.zstack.externalbackup.ResourceExternalBackupInfo");
 			put("org.zstack.sdk.ResourceInventory", "org.zstack.header.vo.ResourceInventory");
+			put("org.zstack.sdk.ResourceResponsibleInventory", "org.zstack.header.identity.ResourceResponsibleInventory");
 			put("org.zstack.sdk.ResourceSpending", "org.zstack.billing.ResourceSpending");
 			put("org.zstack.sdk.ResourceStackInventory", "org.zstack.header.cloudformation.ResourceStackInventory");
 			put("org.zstack.sdk.ResourceStruct", "org.zstack.cloudformation.template.struct.ResourceStruct");
