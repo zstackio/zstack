@@ -1870,36 +1870,6 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    // TODO: hardcode for expon
-                    final String __name__ = "delete-origin-root-volume-which-has-no-snapshot";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        boolean hasSnapshot = Q.New(VolumeSnapshotVO.class)
-                                .like(VolumeSnapshotVO_.primaryStorageInstallPath, String.format("%s%%", msg.getVolume().getInstallPath()))
-                                .isExists();
-                        if (!hasSnapshot) {
-                            trashVolume(msg.getVolume().getInstallPath(), msg.getVolume().getProtocol(), false, new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    logger.warn(String.format("failed to delete volume[uuid:%s, path:%s] on primary storage[uuid:%s], %s",
-                                            msg.getVolume().getUuid(), msg.getVolume().getInstallPath(), self.getUuid(), errorCode));
-                                    trigger.next();
-                                }
-                            });
-                        } else {
-                            trash.createTrash(TrashType.ReimageVolume, false, msg.getVolume());
-                        }
-                        trigger.next();
-                    }
-                });
-
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
