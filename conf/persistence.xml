@@ -181,5 +181,6 @@
         <class>org.zstack.authentication.checkfile.FileVerificationVO</class>
         <class>org.zstack.crypto.securitymachine.thirdparty.westone.WestoneSecretResourcePoolVO</class>
         <class>org.zstack.crypto.securitymachine.thirdparty.zhongfu.ZhongfuSecretResourcePoolVO</class>
+        <class>org.zstack.header.identity.ResourceResponsibleVO</class>
     </persistence-unit>
 </persistence>
