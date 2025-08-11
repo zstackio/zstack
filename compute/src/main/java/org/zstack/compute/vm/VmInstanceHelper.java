@@ -113,7 +113,7 @@ public class VmInstanceHelper {
             String expectZoneUuid = tuple.get(1, String.class);
             if (msg.getClusterUuid() != null && !Objects.equals(msg.getClusterUuid(), expectClusterUuid)) {
                 throw new ApiMessageInterceptionException(
-                        argerr("host[uuid:%s] is specified but it's not in cluster[uuid:%s], can not create vm from it",
+                        argerr("host[uuid:%s] is specified but it is not in cluster[uuid:%s], can not create vm from it",
                         msg.getHostUuid(), expectClusterUuid)
                         .withOpaque("host.uuid", msg.getHostUuid())
                         .withOpaque("expect.cluster.uuid", expectClusterUuid)
@@ -122,7 +122,7 @@ public class VmInstanceHelper {
 
             if (msg.getZoneUuid() != null && !Objects.equals(msg.getZoneUuid(), expectZoneUuid)) {
                 throw new ApiMessageInterceptionException(
-                        argerr("host[uuid:%s] is specified but it's not in cluster[uuid:%s], can not create vm from it",
+                        argerr("host[uuid:%s] is specified but it is not in cluster[uuid:%s], can not create vm from it",
                         msg.getHostUuid(), expectClusterUuid)
                         .withOpaque("host.uuid", msg.getHostUuid())
                         .withOpaque("expect.zone.uuid", expectZoneUuid)
@@ -139,7 +139,7 @@ public class VmInstanceHelper {
             HostStatus connectionState = tuple.get(3, HostStatus.class);
             if (connectionState != HostStatus.Connected) {
                 throw new ApiMessageInterceptionException(
-                        argerr("host[uuid:%s] is specified but it's connection status is %s, can not create vm from it",
+                        argerr("host[uuid:%s] is specified but its connection status is %s, can not create vm from it",
                         msg.getHostUuid(), connectionState)
                         .withOpaque("host.uuid", msg.getHostUuid()));
             }
@@ -335,7 +335,7 @@ public class VmInstanceHelper {
     private void validateVmNicParams(NewVmInstanceMessage msg) {
         if (!StringUtils.isEmpty(msg.getVmNicParams())) {
             if (CollectionUtils.isEmpty(msg.getL3NetworkUuids())) {
-                throw new ApiMessageInterceptionException(argerr("l3NetworkUuids and vmNicInventories mustn't both be empty or both be set"));
+                throw new ApiMessageInterceptionException(argerr("l3NetworkUuids cannot be empty when vmNicParams is provided"));
             }
 
             List<VmNicParam> vmNicParams;

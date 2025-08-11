@@ -97,19 +97,19 @@ public class RBACApiInterceptor implements ApiMessageInterceptor {
             if (policy instanceof String) {
                 RolePolicyStatement result = RolePolicyStatement.valueOf((String) policy);
                 if (result == null || result.actions == null) {
-                    throw new ApiMessageInterceptionException(argerr("invalid role policy: " + policy));
+                    throw new ApiMessageInterceptionException(argerr("invalid role policy: %s", policy));
                 }
 
                 results.add(result);
             } else if (policy instanceof Map) {
                 List<RolePolicyStatement> result = RolePolicyStatement.valueOf((Map<String, Object>) policy);
                 if (isEmpty(result) || findOneOrNull(result, s -> s.actions == null) != null) {
-                    throw new ApiMessageInterceptionException(argerr("invalid role policy: " + policy));
+                    throw new ApiMessageInterceptionException(argerr("invalid role policy: %s", policy));
                 }
 
                 results.addAll(result);
             } else {
-                throw new ApiMessageInterceptionException(argerr("invalid role policy: " + policy));
+                throw new ApiMessageInterceptionException(argerr("invalid role policy: %s", policy));
             }
         }
 

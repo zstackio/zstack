@@ -208,7 +208,7 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
                             "  /mnt/data\n" +
                             "  /volumes/drive01\n" +
                             "  /backup-2023.disk\n\n" +
-                            "invalid value detected: '" + mountPoint + "'"
+                            "invalid value detected: '%s'", mountPoint
             ));
         }
 
