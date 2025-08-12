@@ -410,6 +410,10 @@ public class VmInstanceResourceMetadataManagerImpl implements VmInstanceResource
             return null;
         }
 
+        if (GUEST_TOOLS_RESOURCE_CONFIG_UUID.equals(resourceUuid)) {
+            return null;
+        }
+
         if (!vmExists(vmInstanceUuid)) {
             return operr("cannot find vm with uuid: %s", vmInstanceUuid);
         }
