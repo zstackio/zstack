@@ -3794,7 +3794,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(final SyncTaskChain chain) {
                 L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
                 if (!l3NetworkVO.enableIpAllocation()) {
-                    setNoIpamStaticIp(msg, new Completion(reply) {
+                    setNoIpAllocationStaticIp(msg, new Completion(reply) {
                         @Override
                         public void success() {
                             bus.reply(msg, reply);
@@ -3809,7 +3809,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }
                     });
                 } else {
-                    setIpamStaticIp(msg, new Completion(reply) {
+                    setIpAllocationStaticIp(msg, new Completion(reply) {
                     @Override
                     public void success() {
                         bus.reply(msg, reply);
@@ -3833,20 +3833,19 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void setNoIpamStaticIp(final SetVmStaticIpMsg msg, final Completion completion) {
+    private void setNoIpAllocationStaticIp(final SetVmStaticIpMsg msg, final Completion completion) {
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("change-vm-ip-l3-%s-vm-%s", msg.getL3NetworkUuid(), self.getUuid()));
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.ChangeNicIp);
-        final VmNicVO vmNicVO = self.getVmNics().stream().filter(
+        final VmNicVO nicVO = self.getVmNics().stream().filter(
                 nic -> nic.getL3NetworkUuid().equals(msg.getL3NetworkUuid())).findFirst().orElse(new VmNicVO());
         spec.setL3Networks(list(new VmNicSpec(
                 L3NetworkInventory.valueOf(dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class)))));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
-        chain.getData().put(VmInstanceConstant.Params.VmNicInventory.toString(), vmNicVO);
+        chain.getData().put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
-
                 if (self.getState() == VmInstanceState.Running) {
                     flow(new VmReleaseNetworkServiceOnChangeIPFlow());
                 }
@@ -3856,82 +3855,93 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid())
-                                .eq(VmNicVO_.l3NetworkUuid, msg.getL3NetworkUuid())
-                                .limit(1).find();
-                        List<UsedIpVO> voNewList = new ArrayList<>();
-                        // in dual stack l3 , keep the old ip which not set in msg
-                        List<UsedIpVO> voRemoveList = new ArrayList<>();
-                        List<UsedIpVO> voOldList = Q.New(UsedIpVO.class).eq(UsedIpVO_.vmNicUuid, nicVO.getUuid()).list();
-                        if (msg.getIp() == null && msg.getIp6() == null) {
-                            voRemoveList.addAll(voOldList);
-                            nicVO.setUsedIpUuid(null);
-                            nicVO.setIp(null);
-                            nicVO.setGateway(null);
-                            nicVO.setNetmask(null);
+                        Set<UsedIpVO> voNewSet = new HashSet<>();
+                        Set<UsedIpVO> voUpdateSet = new HashSet<>();
+                        Set<UsedIpVO> voRemoveSet = new HashSet<>();
+                        Set<UsedIpVO> oldIpv4Set = nicVO.getUsedIps().stream().filter(voOld ->
+                                voOld.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toSet());
+                        Set<UsedIpVO> oldIpv6Set = nicVO.getUsedIps().stream().filter(voOld ->
+                                voOld.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toSet());
+                        if (msg.getIp6() != null && msg.getIp6().isEmpty()) {
+                            voRemoveSet.addAll(oldIpv6Set);
+
+                            if (oldIpv4Set.isEmpty()) {
+                                nicVO.removeIp();
+                            }
                         }
-                        if (msg.getIp6() != null) {
-                            UsedIpVO vo = new UsedIpVO();
-                            vo.setUuid(Platform.getUuid());
-                            vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIp6()));
-                            vo.setIpInLong(IPv6NetworkUtils.ipv6AddressToBigInteger(vo.getIp()).longValue());
-                            vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(msg.getIp6()+"/"+msg.getIpv6Prefix()));
-                            vo.setGateway(msg.getIpv6Gateway().isEmpty() ? "" : IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIpv6Gateway()));
-                            vo.setIpVersion(IPv6Constants.IPv6);
-                            vo.setVmNicUuid(nicVO.getUuid());
-                            vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
+                        if (msg.getIp() != null && msg.getIp().isEmpty()) {
+                            voRemoveSet.addAll(oldIpv4Set);
+
+                            if (oldIpv6Set.isEmpty()) {
+                                nicVO.removeIp();
+                            } else if (msg.getIp6() == null) {
+                                UsedIpVO vo = oldIpv6Set.stream().findFirst().orElse(new UsedIpVO());
+                                nicVO.setUsedIpUuid(vo.getUuid());
+                                nicVO.setIp(vo.getIp());
+                                nicVO.setIpVersion(vo.getIpVersion());
+                                nicVO.setNetmask(vo.getNetmask());
+                                nicVO.setGateway(vo.getGateway());
+                            }
+                        }
+
+                        if (!StringUtils.isEmpty(msg.getIp())) {
+                            UsedIpVO vo = oldIpv4Set.stream().findFirst().orElse(new UsedIpVO());
+                            if (vo.getUuid() == null) {
+                                vo.setUuid(Platform.getUuid());
+                                vo.setIpVersion(IPv6Constants.IPv4);
+                                vo.setVmNicUuid(nicVO.getUuid());
+                                vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
+                                voNewSet.add(vo);
+                            } else {
+                                voUpdateSet.add(vo);
+                            }
+                            vo.setIp(msg.getIp());
+                            vo.setIpInLong(NetworkUtils.ipv4StringToLong(vo.getIp()));
+                            vo.setNetmask(msg.getNetmask());
+                            vo.setGateway(msg.getGateway());
                             vo.setIpRangeUuid(IpRangeHelper.getIpRangeUuid(vo.getL3NetworkUuid(), vo.getIp()));
                             nicVO.setUsedIpUuid(vo.getUuid());
                             nicVO.setIp(vo.getIp());
                             nicVO.setIpVersion(vo.getIpVersion());
                             nicVO.setNetmask(vo.getNetmask());
                             nicVO.setGateway(vo.getGateway());
-                            voNewList.add(vo);
-                            voRemoveList.addAll(voOldList.stream().filter(voOld -> voOld.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList()));
-                            ipOperator.setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp6());
+                            ipOperator.setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp());
                         }
-                        // Ip and ip6 set at same time means dual stack network, nic will set UsedIpUuid with ipv4
-                        if (msg.getIp() != null) {
-                            UsedIpVO vo = new UsedIpVO();
-                            vo.setUuid(Platform.getUuid());
-                            if (NetworkUtils.isIpv4Address(msg.getIp())) {
-                                vo.setIp(msg.getIp());
-                                vo.setIpInLong(NetworkUtils.ipv4StringToLong(vo.getIp()));
-                                vo.setNetmask(msg.getNetmask());
-                                vo.setGateway(msg.getGateway().isEmpty() ? "" : msg.getGateway());
-                                vo.setIpVersion(IPv6Constants.IPv4);
-                                vo.setVmNicUuid(nicVO.getUuid());
-                                vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
-                                vo.setIpRangeUuid(IpRangeHelper.getIpRangeUuid(vo.getL3NetworkUuid(), vo.getIp()));
-                                nicVO.setUsedIpUuid(vo.getUuid());
-                                nicVO.setIp(vo.getIp());
-                                nicVO.setIpVersion(vo.getIpVersion());
-                                nicVO.setNetmask(vo.getNetmask());
-                                nicVO.setGateway(vo.getGateway());
-                                voNewList.add(vo);
-                                voRemoveList.addAll(voOldList.stream().filter(voOld -> voOld.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList()));
-                            } else {
-                                vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIp()));
-                                vo.setIpInLong(IPv6NetworkUtils.ipv6AddressToBigInteger(vo.getIp()).longValue());
-                                vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(msg.getIp()+"/"+msg.getIpv6Prefix()));
-                                vo.setGateway(msg.getIpv6Gateway().isEmpty() ? "" : IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIpv6Gateway()));
+                        if (!StringUtils.isEmpty(msg.getIp6())) {
+                            UsedIpVO vo = oldIpv6Set.stream().findFirst().orElse(new UsedIpVO());
+                            if (vo.getUuid() == null) {
+                                vo.setUuid(Platform.getUuid());
                                 vo.setIpVersion(IPv6Constants.IPv6);
                                 vo.setVmNicUuid(nicVO.getUuid());
                                 vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
-                                vo.setIpRangeUuid(IpRangeHelper.getIpRangeUuid(vo.getL3NetworkUuid(), vo.getIp()));
+                                voNewSet.add(vo);
+                            } else {
+                                voUpdateSet.add(vo);
+                            }
+                            vo.setIp(msg.getIp6());
+                            vo.setIpInLong(IPv6NetworkUtils.ipv6AddressToBigInteger(vo.getIp()).longValue());
+                            vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(String.format("%s/%s", msg.getIp6(), msg.getIpv6Prefix())));
+                            vo.setGateway(msg.getIpv6Gateway());
+                            vo.setIpRangeUuid(IpRangeHelper.getIpRangeUuid(vo.getL3NetworkUuid(), vo.getIp()));
+                            // ipv6 only, or dual stack, but ipv4 deleted
+                            if (msg.getIp() == null ? oldIpv4Set.isEmpty() : msg.getIp().isEmpty()) {
                                 nicVO.setUsedIpUuid(vo.getUuid());
                                 nicVO.setIp(vo.getIp());
                                 nicVO.setIpVersion(vo.getIpVersion());
                                 nicVO.setNetmask(vo.getNetmask());
                                 nicVO.setGateway(vo.getGateway());
-                                voNewList.add(vo);
-                                voRemoveList.addAll(voOldList.stream().filter(voOld -> voOld.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList()));
                             }
-                            ipOperator.setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp());
+                            ipOperator.setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp6());
                         }
-                        dbf.persistCollection(voNewList);
+                        dbf.persistCollection(voNewSet);
+                        dbf.updateCollection(voUpdateSet);
                         dbf.update(nicVO);
-                        dbf.removeCollection(voRemoveList, UsedIpVO.class);
+
+                        for (UsedIpVO ipVO : voRemoveSet) {
+                            ipOperator.deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), msg.getL3NetworkUuid(),
+                                    IPv6NetworkUtils.ipv6AddessToTagValue(ipVO.getIp()));
+                        }
+                        dbf.removeCollection(voRemoveSet, UsedIpVO.class);
                         if (self.getState() != VmInstanceState.Running) {
                             vmConfigSyncHelper.setVmSyncPorts(msg.getVmInstanceUuid());
                         }
@@ -3960,7 +3970,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).start();
     }
 
-    private void setIpamStaticIp(final SetVmStaticIpMsg msg, final Completion completion) {
+    private void setIpAllocationStaticIp(final SetVmStaticIpMsg msg, final Completion completion) {
         Map<Integer, String> staticIpMap = new HashMap<>();
         if (msg.getIp() != null) {
             if (NetworkUtils.isIpv4Address(msg.getIp())) {
@@ -6709,20 +6719,16 @@ public class VmInstanceBase extends AbstractVmInstance {
                         List<UsedIpVO> voOldList = Q.New(UsedIpVO.class).eq(UsedIpVO_.vmNicUuid, nicVO.getUuid()).list();
                         NicIpAddressInfo nicIpAddressInfo = nicNetworkInfo.get(msg.getDestL3NetworkUuid());
                         if (nicIpAddressInfo == null) {
-                            nicVO.setUsedIpUuid(null);
-                            nicVO.setIp(null);
-                            nicVO.setGateway(null);
-                            nicVO.setNetmask(null);
+                            nicVO.removeIp();
                             nicVO.setL3NetworkUuid(msg.getDestL3NetworkUuid());
                         } else {
                             if (!StringUtils.isEmpty(nicIpAddressInfo.ipv6Address)) {
                                 UsedIpVO vo = new UsedIpVO();
                                 vo.setUuid(Platform.getUuid());
-                                vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(nicIpAddressInfo.ipv6Address));
+                                vo.setIp(nicIpAddressInfo.ipv6Address);
                                 vo.setIpInLong(IPv6NetworkUtils.ipv6AddressToBigInteger(vo.getIp()).longValue());
                                 vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(nicIpAddressInfo.ipv6Address + "/" + nicIpAddressInfo.ipv6Prefix));
-                                vo.setGateway(StringUtils.isEmpty(nicIpAddressInfo.ipv6Gateway) ?
-                                        null : IPv6NetworkUtils.getIpv6AddressCanonicalString(nicIpAddressInfo.ipv6Gateway));
+                                vo.setGateway(nicIpAddressInfo.ipv6Gateway);
                                 vo.setIpVersion(IPv6Constants.IPv6);
                                 vo.setVmNicUuid(msg.getVmNicUuid());
                                 vo.setL3NetworkUuid(msg.getDestL3NetworkUuid());

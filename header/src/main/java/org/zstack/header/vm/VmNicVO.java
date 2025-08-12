@@ -268,4 +268,12 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
     public void setState(VmNicState enable) {
         this.state = enable;
     }
+
+    public void removeIp() {
+        this.setUsedIpUuid(null);
+        this.setIp(null);
+        this.setNetmask(null);
+        this.setGateway(null);
+        this.setIpVersion(null);
+    }
 }

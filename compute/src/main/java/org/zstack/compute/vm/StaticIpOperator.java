@@ -101,7 +101,7 @@ public class StaticIpOperator {
                 if (NetworkUtils.isIpv4Address(ip)) {
                     ret.get(l3Uuid).ipv4Address = ip;
                 } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
-                    ret.get(l3Uuid).ipv6Address = ip;
+                    ret.get(l3Uuid).ipv6Address = IPv6NetworkUtils.getIpv6AddressCanonicalString(ip);
                 } else {
                     throw new ApiMessageInterceptionException(argerr("the static IP[%s] format error", ip));
                 }
@@ -135,7 +135,8 @@ public class StaticIpOperator {
                 if (ret.get(l3Uuid) == null) {
                     continue;
                 }
-                ret.get(l3Uuid).ipv6Gateway = IPv6NetworkUtils.ipv6TagValueToAddress(token.get(VmSystemTags.IPV6_GATEWAY_TOKEN));
+                ret.get(l3Uuid).ipv6Gateway = IPv6NetworkUtils.getIpv6AddressCanonicalString(
+                        IPv6NetworkUtils.ipv6TagValueToAddress(token.get(VmSystemTags.IPV6_GATEWAY_TOKEN)));
             }
             if(VmSystemTags.IPV6_PREFIX.isMatch(sysTag)) {
                 Map<String, String> token = TagUtils.parse(VmSystemTags.IPV6_PREFIX.getTagFormat(), sysTag);
@@ -186,12 +187,15 @@ public class StaticIpOperator {
                     isSet = true;
                 }
                 if (StringUtils.isEmpty(info.ipv6Address) && !StringUtils.isEmpty(vmNicParam.getIp6())) {
-                    info.ipv6Address = vmNicParam.getIp6();
+                    info.ipv6Address = IPv6NetworkUtils.getIpv6AddressCanonicalString(vmNicParam.getIp6());
                     // set system tag for IPAM enabled l3
                     setStaticIp(vmUuid, l3Uuid, info.ipv6Address);
 
                     info.ipv6Prefix = vmNicParam.getIpv6Prefix();
-                    info.ipv6Gateway = vmNicParam.getIpv6Gateway();
+                    if (vmNicParam.getIpv6Gateway() != null) {
+                        info.ipv6Gateway = IPv6NetworkUtils.getIpv6AddressCanonicalString(vmNicParam.getIpv6Gateway());
+                    }
+
                     NormalIpRangeVO ipRangeVO = Q.New(NormalIpRangeVO.class)
                             .eq(NormalIpRangeVO_.l3NetworkUuid, l3Uuid)
                             .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6)
@@ -203,7 +207,7 @@ public class StaticIpOperator {
                         }
 
                         if (StringUtils.isEmpty(info.ipv6Gateway)) {
-                            info.ipv6Gateway = ipRangeVO.getGateway();
+                            info.ipv6Gateway = IPv6NetworkUtils.getIpv6AddressCanonicalString(ipRangeVO.getGateway());
                         }
                     }
                     isSet = true;
@@ -375,128 +379,138 @@ public class StaticIpOperator {
                 .list();
         List<String> newSysTags = new ArrayList<>();
         for (Map.Entry<String, NicIpAddressInfo> e : staticIps.entrySet()) {
-            String l3Uuid = e.getKey();
-            L3NetworkVO l3 = l3s.stream().filter(vo -> vo.getUuid().equals(l3Uuid)).findFirst().orElse(null);
+            L3NetworkVO l3 = l3s.stream().filter(vo -> vo.getUuid().equals(e.getKey())).findFirst().orElse(null);
             if (l3 == null) {
                 continue;
             }
 
             NicIpAddressInfo info = e.getValue();
+            validateStaticIp(info, l3, newSysTags);
+        }
 
-            if (!StringUtils.isEmpty(info.ipv4Address)) {
-                if (!NetworkUtils.isIpv4Address(info.ipv4Address)) {
-                    throw new ApiMessageInterceptionException(argerr("ipv4 address[%s] is not valid", info.ipv4Address));
-                }
-                checkIpAvailability(l3, info.ipv4Address);
+        if (msg.getSystemTags() == null) {
+            msg.setSystemTags(newSysTags);
+        } else {
+            msg.getSystemTags().addAll(newSysTags);
+        }
+
+
+        return staticIps;
+    }
+
+    public void validateStaticIp(NicIpAddressInfo info, L3NetworkVO l3, List<String> newSysTags) {
+        String l3Uuid = l3.getUuid();
+
+        if (!StringUtils.isEmpty(info.ipv4Address)) {
+            if (!NetworkUtils.isIpv4Address(info.ipv4Address)) {
+                throw new ApiMessageInterceptionException(argerr("ipv4 address[%s] is not valid", info.ipv4Address));
             }
+            checkIpAvailability(l3, info.ipv4Address);
+        }
 
-            if (!StringUtils.isEmpty(info.ipv6Address)) {
-                if (!IPv6NetworkUtils.isIpv6Address(info.ipv6Address)) {
-                    throw new ApiMessageInterceptionException(argerr("ipv6 address[%s] is not valid", info.ipv6Address));
-                }
-                checkIpAvailability(l3, info.ipv6Address);
+        if (!StringUtils.isEmpty(info.ipv6Address)) {
+            if (!IPv6NetworkUtils.isIpv6Address(info.ipv6Address)) {
+                throw new ApiMessageInterceptionException(argerr("ipv6 address[%s] is not valid", info.ipv6Address));
             }
+            info.ipv6Address = IPv6NetworkUtils.getIpv6AddressCanonicalString(info.ipv6Address);
+            checkIpAvailability(l3, info.ipv6Address);
+        }
 
-            if (!StringUtils.isEmpty(info.ipv4Netmask)) {
-                if (!NetworkUtils.isNetmask(info.ipv4Netmask)) {
-                    throw new ApiMessageInterceptionException(argerr("ipv4 netmask[%s] is not valid", info.ipv4Netmask));
-                }
-            }
-
-            if (!StringUtils.isEmpty(info.ipv4Gateway)) {
-                if (!NetworkUtils.isIpv4Address(info.ipv4Gateway)) {
-                    throw new ApiMessageInterceptionException(argerr("ipv4 gateway[%s] should be ipv4 address", info.ipv4Gateway));
-                }
-            }
-
-            if (info.ipv6Prefix != null) {
-                int prefixLen = info.ipv6Prefix;
-                if (prefixLen > IPv6Constants.IPV6_PREFIX_LEN_MAX || prefixLen < IPv6Constants.IPV6_PREFIX_LEN_MIN) {
-                    throw new ApiMessageInterceptionException(argerr("ip range prefix length[%d] is out of range [%d - %d]",
-                            prefixLen, IPv6Constants.IPV6_PREFIX_LEN_MIN, IPv6Constants.IPV6_PREFIX_LEN_MAX));
-                }
-            }
-
-            if (!StringUtils.isEmpty(info.ipv6Gateway)) {
-                if (!IPv6NetworkUtils.isIpv6Address(info.ipv6Gateway)) {
-                    throw new ApiMessageInterceptionException(argerr("ipv6 gateway[%s] should be ipv6 address", info.ipv6Gateway));
-                }
-            }
-
-            if (!StringUtils.isEmpty(info.ipv4Address)) {
-                NormalIpRangeVO ipRangeVO = Q.New(NormalIpRangeVO.class)
-                        .eq(NormalIpRangeVO_.l3NetworkUuid, l3Uuid)
-                        .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4)
-                        .limit(1).find();
-                if (ipRangeVO == null) {
-                    if (StringUtils.isEmpty(info.ipv4Netmask)) {
-                        throw new ApiMessageInterceptionException(argerr("netmask must be set"));
-                    }
-                } else {
-                    if (StringUtils.isEmpty(info.ipv4Netmask)) {
-                        info.ipv4Netmask = ipRangeVO.getNetmask();
-                        newSysTags.add(VmSystemTags.IPV4_NETMASK.instantiateTag(
-                                map(e(VmSystemTags.IPV4_NETMASK_L3_UUID_TOKEN, l3Uuid),
-                                        e(VmSystemTags.IPV4_NETMASK_TOKEN, ipRangeVO.getNetmask()))
-                        ));
-                    } else if (!info.ipv4Netmask.equals(ipRangeVO.getNetmask())) {
-                        throw new ApiMessageInterceptionException(argerr("netmask error, expect: %s, got: %s",
-                                ipRangeVO.getNetmask(), info.ipv4Netmask));
-                    }
-
-                    if (StringUtils.isEmpty(info.ipv4Gateway)) {
-                        info.ipv4Gateway = ipRangeVO.getGateway();
-                        newSysTags.add(VmSystemTags.IPV4_GATEWAY.instantiateTag(
-                                map(e(VmSystemTags.IPV4_GATEWAY_L3_UUID_TOKEN, l3Uuid),
-                                        e(VmSystemTags.IPV4_GATEWAY_TOKEN, ipRangeVO.getGateway()))
-                        ));
-                    } else if (!info.ipv4Gateway.equals(ipRangeVO.getGateway())) {
-                        throw new ApiMessageInterceptionException(argerr("gateway error, expect: %s, got: %s",
-                                ipRangeVO.getGateway(), info.ipv4Gateway));
-                    }
-                }
-            }
-
-            if (!StringUtils.isEmpty(info.ipv6Address)) {
-                NormalIpRangeVO ipRangeVO = Q.New(NormalIpRangeVO.class)
-                        .eq(NormalIpRangeVO_.l3NetworkUuid, l3Uuid)
-                        .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6)
-                        .limit(1).find();
-                if (ipRangeVO == null) {
-                    if (info.ipv6Prefix == null) {
-                        throw new ApiMessageInterceptionException(argerr("ipv6 prefix length must be set"));
-                    }
-                } else {
-                    if (info.ipv6Prefix == null) {
-                        info.ipv6Prefix = ipRangeVO.getPrefixLen();
-                        newSysTags.add(VmSystemTags.IPV6_PREFIX.instantiateTag(
-                                map(e(VmSystemTags.IPV6_PREFIX_L3_UUID_TOKEN, l3Uuid),
-                                        e(VmSystemTags.IPV6_PREFIX_TOKEN, ipRangeVO.getPrefixLen()))
-                        ));
-                    } else if (!info.ipv6Prefix.equals(ipRangeVO.getPrefixLen())) {
-                        throw new ApiMessageInterceptionException(argerr("ipv6 prefix length error, expect: %s, got: %s",
-                                ipRangeVO.getPrefixLen(), info.ipv6Prefix));
-                    }
-
-                    if (StringUtils.isEmpty(info.ipv6Gateway)) {
-                        info.ipv6Gateway = ipRangeVO.getGateway();
-                        newSysTags.add(VmSystemTags.IPV6_GATEWAY.instantiateTag(
-                                map(e(VmSystemTags.IPV6_GATEWAY_L3_UUID_TOKEN, l3Uuid),
-                                        e(VmSystemTags.IPV6_GATEWAY_TOKEN,
-                                                IPv6NetworkUtils.ipv6AddressToTagValue(ipRangeVO.getGateway())))
-                        ));
-                    } else if (!info.ipv6Gateway.equals(ipRangeVO.getGateway())) {
-                        throw new ApiMessageInterceptionException(argerr("gateway error, expect: %s, got: %s",
-                                ipRangeVO.getGateway(), info.ipv6Gateway));
-                    }
-                }
-            }
-
-            if (!newSysTags.isEmpty()) {
-                msg.getSystemTags().addAll(newSysTags);
+        if (!StringUtils.isEmpty(info.ipv4Netmask)) {
+            if (!NetworkUtils.isNetmask(info.ipv4Netmask)) {
+                throw new ApiMessageInterceptionException(argerr("ipv4 netmask[%s] is not valid", info.ipv4Netmask));
             }
         }
 
-        return staticIps;
+        if (!StringUtils.isEmpty(info.ipv4Gateway)) {
+            if (!NetworkUtils.isIpv4Address(info.ipv4Gateway)) {
+                throw new ApiMessageInterceptionException(argerr("ipv4 gateway[%s] should be ipv4 address", info.ipv4Gateway));
+            }
+        }
+
+        if (info.ipv6Prefix != null) {
+            int prefixLen = info.ipv6Prefix;
+            if (prefixLen > IPv6Constants.IPV6_PREFIX_LEN_MAX || prefixLen < IPv6Constants.IPV6_PREFIX_LEN_MIN) {
+                throw new ApiMessageInterceptionException(argerr("ip range prefix length[%d] is out of range [%d - %d]",
+                        prefixLen, IPv6Constants.IPV6_PREFIX_LEN_MIN, IPv6Constants.IPV6_PREFIX_LEN_MAX));
+            }
+        }
+
+        if (!StringUtils.isEmpty(info.ipv6Gateway)) {
+            if (!IPv6NetworkUtils.isIpv6Address(info.ipv6Gateway)) {
+                throw new ApiMessageInterceptionException(argerr("ipv6 gateway[%s] should be ipv6 address", info.ipv6Gateway));
+            }
+            info.ipv6Gateway = IPv6NetworkUtils.getIpv6AddressCanonicalString(info.ipv6Gateway);
+        }
+
+        if (!StringUtils.isEmpty(info.ipv4Address)) {
+            NormalIpRangeVO ipRangeVO = Q.New(NormalIpRangeVO.class)
+                    .eq(NormalIpRangeVO_.l3NetworkUuid, l3Uuid)
+                    .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4)
+                    .limit(1).find();
+            if (ipRangeVO == null) {
+                if (StringUtils.isEmpty(info.ipv4Netmask)) {
+                    throw new ApiMessageInterceptionException(argerr("netmask must be set"));
+                }
+            } else {
+                if (StringUtils.isEmpty(info.ipv4Netmask)) {
+                    info.ipv4Netmask = ipRangeVO.getNetmask();
+                    newSysTags.add(VmSystemTags.IPV4_NETMASK.instantiateTag(
+                            map(e(VmSystemTags.IPV4_NETMASK_L3_UUID_TOKEN, l3Uuid),
+                                    e(VmSystemTags.IPV4_NETMASK_TOKEN, ipRangeVO.getNetmask()))
+                    ));
+                } else if (!info.ipv4Netmask.equals(ipRangeVO.getNetmask())) {
+                    throw new ApiMessageInterceptionException(argerr("netmask error, expect: %s, got: %s",
+                            ipRangeVO.getNetmask(), info.ipv4Netmask));
+                }
+
+                if (StringUtils.isEmpty(info.ipv4Gateway)) {
+                    info.ipv4Gateway = ipRangeVO.getGateway();
+                    newSysTags.add(VmSystemTags.IPV4_GATEWAY.instantiateTag(
+                            map(e(VmSystemTags.IPV4_GATEWAY_L3_UUID_TOKEN, l3Uuid),
+                                    e(VmSystemTags.IPV4_GATEWAY_TOKEN, ipRangeVO.getGateway()))
+                    ));
+                } else if (!info.ipv4Gateway.equals(ipRangeVO.getGateway())) {
+                    throw new ApiMessageInterceptionException(argerr("gateway error, expect: %s, got: %s",
+                            ipRangeVO.getGateway(), info.ipv4Gateway));
+                }
+            }
+        }
+
+        if (!StringUtils.isEmpty(info.ipv6Address)) {
+            NormalIpRangeVO ipRangeVO = Q.New(NormalIpRangeVO.class)
+                    .eq(NormalIpRangeVO_.l3NetworkUuid, l3Uuid)
+                    .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6)
+                    .limit(1).find();
+            if (ipRangeVO == null) {
+                if (info.ipv6Prefix == null) {
+                    throw new ApiMessageInterceptionException(argerr("ipv6 prefix length must be set"));
+                }
+            } else {
+                if (info.ipv6Prefix == null) {
+                    info.ipv6Prefix = ipRangeVO.getPrefixLen();
+                    newSysTags.add(VmSystemTags.IPV6_PREFIX.instantiateTag(
+                            map(e(VmSystemTags.IPV6_PREFIX_L3_UUID_TOKEN, l3Uuid),
+                                    e(VmSystemTags.IPV6_PREFIX_TOKEN, ipRangeVO.getPrefixLen()))
+                    ));
+                } else if (!info.ipv6Prefix.equals(ipRangeVO.getPrefixLen())) {
+                    throw new ApiMessageInterceptionException(argerr("ipv6 prefix length error, expect: %s, got: %s",
+                            ipRangeVO.getPrefixLen(), info.ipv6Prefix));
+                }
+
+                if (StringUtils.isEmpty(info.ipv6Gateway)) {
+                    info.ipv6Gateway = IPv6NetworkUtils.getIpv6AddressCanonicalString(ipRangeVO.getGateway());
+                    newSysTags.add(VmSystemTags.IPV6_GATEWAY.instantiateTag(
+                            map(e(VmSystemTags.IPV6_GATEWAY_L3_UUID_TOKEN, l3Uuid),
+                                    e(VmSystemTags.IPV6_GATEWAY_TOKEN,
+                                            IPv6NetworkUtils.ipv6AddressToTagValue(ipRangeVO.getGateway())))
+                    ));
+                } else if (!info.ipv6Gateway.equals(IPv6NetworkUtils.getIpv6AddressCanonicalString(ipRangeVO.getGateway()))) {
+                    throw new ApiMessageInterceptionException(argerr("gateway error, expect: %s, got: %s",
+                            ipRangeVO.getGateway(), info.ipv6Gateway));
+                }
+            }
+        }
+
     }
 }

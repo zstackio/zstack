@@ -572,11 +572,11 @@ public class L3BasicNetwork implements L3Network {
         if (IPv6NetworkUtils.isIpv6Address(struct.getIp())) {
             ipversion = IPv6Constants.IPv6;
         }
-        SimpleQuery<IpRangeVO> rq = dbf.createQuery(IpRangeVO.class);
-        rq.select(IpRangeVO_.startIp, IpRangeVO_.endIp, IpRangeVO_.gateway);
-        rq.add(IpRangeVO_.l3NetworkUuid, Op.EQ, self.getUuid());
-        rq.add(IpRangeVO_.ipVersion, Op.EQ, ipversion);
-        List<Tuple> ts = rq.listTuple();
+        List<Tuple> ts = Q.New(IpRangeVO.class)
+                .select(IpRangeVO_.startIp, IpRangeVO_.endIp, IpRangeVO_.gateway)
+                .eq(IpRangeVO_.l3NetworkUuid, self.getUuid())
+                .eq(IpRangeVO_.ipVersion, ipversion)
+                .listTuple();
 
         List<String> addressPoolGateways = Q.New(AddressPoolVO.class)
                 .select(AddressPoolVO_.gateway)
@@ -589,12 +589,14 @@ public class L3BasicNetwork implements L3Network {
             inRange = true;
         }
 
-        if (!self.enableIpAllocation()) {
-            inRange = true;
+        if (!self.getEnableIPAM()) {
+            return result;
         }
 
         if (ts.isEmpty()) {
-            inRange = true;
+            result.setAvailable(false);
+            result.setReason(IpNotAvailabilityReason.L3_NO_IP_RANGE.toString());
+            return result;
         } else {
             for (Tuple t : ts) {
                 String sip = t.get(0, String.class);
@@ -620,14 +622,12 @@ public class L3BasicNetwork implements L3Network {
             } else {
                 result.setReason(IpNotAvailabilityReason.NO_IN_RANGE.toString());
             }
-        } else {
-            SimpleQuery<UsedIpVO> q = dbf.createQuery(UsedIpVO.class);
-            q.add(UsedIpVO_.l3NetworkUuid, Op.EQ, self.getUuid());
-            q.add(UsedIpVO_.ip, Op.EQ, struct.getIp());
-            if (q.isExists()) {
-                result.setAvailable(false);
-                result.setReason(IpNotAvailabilityReason.USED.toString());
-            }
+        } else if (Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, self.getUuid())
+                .eq(UsedIpVO_.ip, struct.getIp())
+                .isExists()) {
+            result.setAvailable(false);
+            result.setReason(IpNotAvailabilityReason.USED.toString());
         }
         return result;
     }

@@ -473,8 +473,20 @@ class IpRangeCase extends SubCase {
         for (UsedIpInventory ip : nic2.usedIps) {
             if (ip.ipVersion == IPv6Constants.IPv4) {
                 assert ip.ip == ipv41.ip
+                assert ip.netmask == ipv41.netmask
+                assert ip.gateway == ipv41.gateway
             } else {
                 assert ip.ip == ipv61.ip
+                assert ip.netmask == ipv61.netmask
+                assert ip.gateway == ipv61.gateway
+            }
+        }
+
+        // ip and ip6 can not be null at the same time
+        expectError {
+            setVmStaticIp {
+                vmInstanceUuid = vm_l3_3.uuid
+                l3NetworkUuid = l3_2.uuid
             }
         }
 

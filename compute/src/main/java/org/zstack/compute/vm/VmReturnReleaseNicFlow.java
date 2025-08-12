@@ -73,10 +73,7 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
                         if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
                             dbf.remove(vo);
                         } else {
-                            vo.setUsedIpUuid(null);
-                            vo.setIp(null);
-                            vo.setGateway(null);
-                            vo.setNetmask(null);
+                            vo.removeIp();
                             dbf.update(vo);
                         }
                     } else {
