@@ -371,12 +371,6 @@ class ZbsPrimaryStorageCase extends SubCase {
 
         sleep(2000)
 
-        retryInSecs {
-            reconnectPrimaryStorage {
-                uuid = ps.uuid
-            }
-        }
-
         Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Connected
 
         PrimaryStorageGlobalConfig.PING_INTERVAL.resetValue()

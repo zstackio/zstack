@@ -39,4 +39,8 @@ public class ZbsHelper {
     public static long alignSizeTo(long size, String unit) {
         return ZbsConstants.MEGABYTE_UNIT.equals(unit) ? (long) Math.ceil(SizeUnit.BYTE.toMegaByte((double) size)) : (long) Math.ceil(SizeUnit.BYTE.toGigaByte((double) size));
     }
+
+    public static long convertSizeToByte(long size, String unit) {
+        return ZbsConstants.MEGABYTE_UNIT.equals(unit) ? SizeUnit.MEGABYTE.toByte(size) : SizeUnit.GIGABYTE.toByte(size);
+    }
 }

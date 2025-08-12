@@ -52,4 +52,6 @@ public interface PrimaryStorageControllerSvc {
 
     void setTrashExpireTime(int timeInSeconds, Completion completion);
     void onFirstAdditionConfigure(Completion completion);
+
+    long alignSize(long size);
 }

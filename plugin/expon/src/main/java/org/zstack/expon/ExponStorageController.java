@@ -1323,6 +1323,11 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         completion.success();
     }
 
+    @Override
+    public long alignSize(long size) {
+        return size;
+    }
+
     private void retry(Runnable r) {
         retry(r, 3);
     }

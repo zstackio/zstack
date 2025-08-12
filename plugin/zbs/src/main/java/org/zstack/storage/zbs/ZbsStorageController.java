@@ -974,6 +974,12 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         completion.success();
     }
 
+    @Override
+    public long alignSize(long size) {
+        String unit = getSizeUnit(addonInfo.getClusterInfo().getVersion());
+        return convertSizeToByte(alignSizeTo(size, unit), unit);
+    }
+
     public void doDeleteVolume(String installPath, Boolean force, Completion comp) {
         DeleteVolumeCmd cmd = new DeleteVolumeCmd();
         cmd.setPath(installPath);
