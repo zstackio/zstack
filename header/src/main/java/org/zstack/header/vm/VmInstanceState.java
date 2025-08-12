@@ -3,10 +3,7 @@ package org.zstack.header.vm;
 import org.zstack.header.configuration.PythonClass;
 import org.zstack.header.exception.CloudRuntimeException;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @PythonClass
 public enum VmInstanceState {
@@ -32,6 +29,8 @@ public enum VmInstanceState {
 
     public static List<VmInstanceState> intermediateStates = new ArrayList<VmInstanceState>();
 
+    public static Set<VmInstanceState> offlineStates = new HashSet<>();
+
     static {
         intermediateStates.add(Starting);
         intermediateStates.add(Stopping);
@@ -42,6 +41,12 @@ public enum VmInstanceState {
         intermediateStates.add(Resuming);
         intermediateStates.add(VolumeMigrating);
         intermediateStates.add(VolumeRecovering);
+
+        offlineStates.add(Created);
+        offlineStates.add(Stopped);
+        offlineStates.add(Destroyed);
+        offlineStates.add(VolumeMigrating);
+        offlineStates.add(Crashed);
 
         Created.transactions(
                 new Transaction(VmInstanceStateEvent.starting, VmInstanceState.Starting),

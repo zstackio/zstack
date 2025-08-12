@@ -50,6 +50,7 @@ public class VmStopOnHypervisorFlow extends NoRollbackFlow {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
+                    data.put(VmStopOnHypervisorFlow.class.getName(), true);
                     chain.next();
                 } else {
                     if (spec.isGcOnStopFailure() && reply.getError().isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
