@@ -691,7 +691,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             if (!Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid())
                     .eq(UsedIpVO_.ip, msg.getStaticIp()).isExists()) {
                 throw new ApiMessageInterceptionException(argerr("could not delete static ip [%s] for vm [uuid:%s] " +
-                                "because it doesn't existed", msg.getStaticIp(), msg.getVmInstanceUuid()));
+                                "because it does not exist", msg.getStaticIp(), msg.getVmInstanceUuid()));
             }
         }
     }
