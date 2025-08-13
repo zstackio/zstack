@@ -174,11 +174,11 @@ class ZbsPrimaryStorageCase extends SubCase {
         env.afterSimulator(ZbsStorageController.CHECK_HOST_STORAGE_CONNECTION_PATH) { rsp, HttpEntity<String> e ->
             ZbsStorageController.CheckHostStorageConnectionCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckHostStorageConnectionCmd)
 
-            if (cmd.hostUuid == kvm.getUuid()) {
-                throw new HttpError(404, "on purpose")
-            }
+            ZbsStorageController.CheckHostStorageConnectionRsp checkHostStorageConnectionRsp = new ZbsStorageController.CheckHostStorageConnectionRsp()
+            checkHostStorageConnectionRsp.error = "fake error"
+            checkHostStorageConnectionRsp.success = false
 
-            return new KVMAgentCommands.AgentResponse()
+            return checkHostStorageConnectionRsp
         }
 
         expect(AssertionError.class) {

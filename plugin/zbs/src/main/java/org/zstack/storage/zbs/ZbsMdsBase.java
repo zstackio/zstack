@@ -111,7 +111,6 @@ public abstract class ZbsMdsBase {
 
     public static class AgentResponse {
         private String error;
-        @Deprecated
         private boolean success = true;
 
         public String getError() {
@@ -123,7 +122,6 @@ public abstract class ZbsMdsBase {
             this.error = error;
         }
 
-        @Deprecated
         public boolean isSuccess() {
             return success;
         }
