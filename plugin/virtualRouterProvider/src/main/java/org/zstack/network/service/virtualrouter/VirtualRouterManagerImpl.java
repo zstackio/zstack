@@ -2772,7 +2772,15 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     public void preVmMigration(VmInstanceInventory vm, VmMigrationType type, String dstHostUuid, Completion completion) {
         if (ApplianceVmConstant.APPLIANCE_VM_TYPE.equals(vm.getType())) {
             VirtualRouterVmVO vrVo = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vm.getUuid()).find();
-            if (vrVo != null && vrVo.isHaEnabled()) {
+            if (vrVo == null) {
+                completion.success();
+                return;
+            }
+            VirtualRouterVmInventory inv = VirtualRouterVmInventory.valueOf(vrVo);
+            List<VmNicInventory> vfNics = inv.getVmNics().stream()
+                    .filter(nic -> !Objects.equals(nic.getType(), VmInstanceConstant.VIRTUAL_NIC_TYPE))
+                    .collect(Collectors.toList());
+            if (vrVo.isHaEnabled() && !vfNics.isEmpty()) {
                 List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
                 if (exps.isEmpty()) {
                     completion.success();
