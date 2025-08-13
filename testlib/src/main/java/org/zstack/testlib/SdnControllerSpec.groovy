@@ -14,6 +14,8 @@ import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.VniRangeStruct
 import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.GetH3cTenantsRsp
 import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.H3cTenantStruct
 import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.GetH3cTeamLederIpReply
+import org.zstack.sdnController.h3cVcfc.H3cVcfcV2Commands
+import org.springframework.http.HttpEntity
 import org.zstack.sugonSdnController.controller.SugonSdnControllerConstant
 import org.zstack.sugonSdnController.controller.api.ApiSerializer
 import org.zstack.sugonSdnController.controller.api.TfCommands
@@ -113,20 +115,35 @@ class SdnControllerSpec extends Spec implements HasSession {
             }
 
             simulator(H3cVcfcCommands.H3C_VCFC_TENANTS) {
-                GetH3cTenantsRsp rsp = new GetH3cTenantsRsp()
+                H3cVcfcV2Commands.GetH3cTenantsRsp rsp = new H3cVcfcV2Commands.GetH3cTenantsRsp()
                 rsp.tenants = new ArrayList<>()
 
-                H3cTenantStruct t1 = new H3cTenantStruct()
-                t1.type = "default"
-                t1.name = "default"
-                t1.id = "id1"
+                H3cVcfcV2Commands.H3cTenantStruct t1 = new H3cVcfcV2Commands.H3cTenantStruct()
+                t1.id = "03e01b37-8440-471a-aa8f-8d1fb8cc1381"
+                t1.name = "Test"
+                t1.type = "local-create"
+                t1.vds_list = ["eb32cf5e-04e9-42ad-b64c-2c3f9bacd3cc"]
+                t1.cloud_region_name = null
+                t1.cloud_domain_name = null
                 rsp.tenants.add(t1)
 
-                H3cTenantStruct t2 = new H3cTenantStruct()
-                t2.type = "zstack"
-                t2.name = "zstack"
-                t2.id = "id2"
+                H3cVcfcV2Commands.H3cTenantStruct t2 = new H3cVcfcV2Commands.H3cTenantStruct()
+                t2.id = "ffffffff-0000-0000-0000-000000000001"
+                t2.name = "default"
+                t2.type = "default"
+                t2.vds_list = ["ffffffff-0000-0000-0000-000000000001"]
+                t2.cloud_region_name = null
+                t2.cloud_domain_name = null
                 rsp.tenants.add(t2)
+
+                H3cVcfcV2Commands.H3cTenantStruct t3 = new H3cVcfcV2Commands.H3cTenantStruct()
+                t3.id = "c9d49b6f-d2cd-4636-b9d4-be0f9c9c7783"
+                t3.name = "sr"
+                t3.type = "local-create"
+                t3.vds_list = ["ffffffff-0000-0000-0000-000000000001"]
+                t3.cloud_region_name = null
+                t3.cloud_domain_name = null
+                rsp.tenants.add(t3)
 
                 return rsp
             }
