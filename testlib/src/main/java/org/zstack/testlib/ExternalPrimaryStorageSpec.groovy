@@ -75,7 +75,10 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 ZbsStorageController.CheckHostStorageConnectionCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckHostStorageConnectionCmd)
                 assert cmd.hostUuid != null
 
-                return new KVMAgentCommands.AgentResponse()
+                def rsp = new ZbsStorageController.CheckHostStorageConnectionRsp()
+                rsp.success = true
+
+                return rsp
             }
 
             simulator(ZbsStorageController.GET_CAPACITY_PATH) { HttpEntity<String> e, EnvSpec spec ->
