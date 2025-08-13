@@ -46,6 +46,7 @@ import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy
 import org.zstack.identity.AccountManager;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
+import org.zstack.storage.primary.PrimaryStorageDeleteBitGC;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupOperationValidator;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
@@ -61,6 +62,7 @@ import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
@@ -3473,6 +3475,38 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 });
 
                 flow(new NoRollbackFlow() {
+                    String __name__ = "update-db-install-path";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return originVolumePath.equals(newVolumeInstallPath);
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        MarkSnapshotAsVolumeMsg mmsg = new MarkSnapshotAsVolumeMsg();
+                        mmsg.setVolumeUuid(self.getUuid());
+                        mmsg.setSnapshotUuid(snapShot.getUuid());
+                        mmsg.setSize(size);
+                        mmsg.setVolumePath(newVolumeInstallPath);
+                        mmsg.setTreeUuid(snapShot.getTreeUuid());
+                        bus.makeTargetServiceIdByResourceUuid(mmsg, VolumeSnapshotConstant.SERVICE_ID, snapShot.getUuid());
+                        bus.send(mmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    logger.warn(String.format("mark snapshot:%s as volume failed", snapShot.getUuid()));
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
                     String __name__ = "delete-origin-volume-bits";
 
                     @Override
@@ -3500,40 +3534,13 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                         logger.warn(String.format("unable to delete path:%s right now", originVolumePath));
                                     }
 
-                                    trigger.fail(reply.getError());
-                                    return;
-                                }
-
-                                trigger.next();
-                            }
-                        });
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "update-db-install-path";
-
-                    @Override
-                    public boolean skip(Map data) {
-                        return originVolumePath.equals(newVolumeInstallPath);
-                    }
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        MarkSnapshotAsVolumeMsg mmsg = new MarkSnapshotAsVolumeMsg();
-                        mmsg.setVolumeUuid(self.getUuid());
-                        mmsg.setSnapshotUuid(snapShot.getUuid());
-                        mmsg.setSize(size);
-                        mmsg.setVolumePath(newVolumeInstallPath);
-                        mmsg.setTreeUuid(snapShot.getTreeUuid());
-                        bus.makeTargetServiceIdByResourceUuid(mmsg, VolumeSnapshotConstant.SERVICE_ID, snapShot.getUuid());
-                        bus.send(mmsg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    logger.warn(String.format("mark snapshot:%s as volume failed", snapShot.getUuid()));
-                                    trigger.fail(reply.getError());
-                                    return;
+                                    PrimaryStorageDeleteBitGC gc = new PrimaryStorageDeleteBitGC();
+                                    gc.NAME = String.format("gc-delete-bits-volume-%s-on-primary-storage-%s", self.getUuid(), self.getPrimaryStorageUuid());
+                                    gc.primaryStorageInstallPath = originVolumePath;
+                                    gc.primaryStorageUuid = self.getPrimaryStorageUuid();
+                                    gc.volume = self;
+                                    gc.submit(PrimaryStorageGlobalConfig.PRIMARY_STORAGE_DELETEBITS_GARBAGE_COLLECTOR_INTERVAL.value(Long.class),
+                                            TimeUnit.SECONDS);
                                 }
 
                                 trigger.next();
