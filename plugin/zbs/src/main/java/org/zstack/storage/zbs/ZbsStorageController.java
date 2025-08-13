@@ -40,6 +40,7 @@ import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeStats;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
+import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMHostVO;
 import org.zstack.kvm.KVMHostVO_;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -476,8 +477,15 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         bus.send(msg, new CloudBusCallBack(comp) {
             @Override
             public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    comp.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                CheckHostStorageConnectionRsp rsp = hreply.toResponse(CheckHostStorageConnectionRsp.class);
                 NodeHealthy healthy = new NodeHealthy();
-                healthy.setHealthy(VolumeProtocol.CBD, reply.isSuccess() ? StorageHealthy.Ok : StorageHealthy.Failed);
+                healthy.setHealthy(VolumeProtocol.CBD, rsp.isSuccess() ? StorageHealthy.Ok : StorageHealthy.Failed);
                 comp.success(healthy);
             }
         });
@@ -1628,7 +1636,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
     }
 
-    public static class CheckHostStorageConnectionCmd {
+    public static class CheckHostStorageConnectionCmd extends AgentCommand {
         public String hostUuid;
         private String path;
 
@@ -1649,6 +1657,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
     }
 
+    public static class CheckHostStorageConnectionRsp extends AgentResponse {
+    }
 
     public static class AgentResponse extends ZbsMdsBase.AgentResponse {
     }
