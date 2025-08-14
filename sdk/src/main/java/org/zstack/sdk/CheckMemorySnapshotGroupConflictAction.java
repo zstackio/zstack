@@ -85,7 +85,7 @@ public class CheckMemorySnapshotGroupConflictAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/memory-snapshots/group/conflict-detection";
+        info.path = "/memory-snapshots/groups/{uuid}/conflict-detection";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
