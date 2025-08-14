@@ -2,6 +2,8 @@ package org.zstack.storage.addon.primary;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -66,6 +68,7 @@ import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
 public class ExternalPrimaryStorage extends PrimaryStorageBase {
     private static final CLogger logger = Utils.getLogger(ExternalPrimaryStorage.class);
+    private static final Logger log = LoggerFactory.getLogger(ExternalPrimaryStorage.class);
 
     protected final PrimaryStorageNodeSvc node;
     protected final PrimaryStorageControllerSvc controller;
@@ -937,6 +940,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
             long templateSize;
 
+            VolumeSnapshotInventory snapshot;
+
             @Override
             public void setup() {
                 flow(new Flow() {
@@ -971,7 +976,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                                 if (!reply.isSuccess()) {
                                     trigger.fail(reply.getError());
                                 } else {
-                                    snapshotPath = ((CreateVolumeSnapshotReply) reply).getInventory().getPrimaryStorageInstallPath();
+                                    snapshot = ((CreateVolumeSnapshotReply) reply).getInventory();
+                                    snapshotPath = snapshot.getPrimaryStorageInstallPath();
                                     trigger.next();
                                 }
                             }
@@ -980,19 +986,21 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (snapshotPath == null) {
+                        if (snapshot == null || !PrimaryStorageGlobalConfig.UNDO_TEMP_SNAPSHOT.value(Boolean.class)) {
                             trigger.rollback();
                             return;
                         }
 
-                        controller.deleteSnapshot(snapshotPath, new Completion(trigger) {
+                        VolumeSnapshotDeletionMsg dmsg = new VolumeSnapshotDeletionMsg();
+                        dmsg.setTreeUuid(snapshot.getTreeUuid());
+                        dmsg.setVolumeUuid(snapshot.getVolumeUuid());
+                        dmsg.setSnapshotUuid(snapshot.getUuid());
+                        dmsg.setScope(DeleteVolumeSnapshotScope.Single.toString());
+                        dmsg.setDirection(DeleteVolumeSnapshotDirection.Commit.toString());
+                        bus.makeTargetServiceIdByResourceUuid(dmsg, VolumeSnapshotConstant.SERVICE_ID, snapshot.getUuid());
+                        bus.send(dmsg, new CloudBusCallBack(msg) {
                             @Override
-                            public void success() {
-                                trigger.rollback();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
+                            public void run(MessageReply reply) {
                                 trigger.rollback();
                             }
                         });
@@ -1084,6 +1092,37 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                             @Override
                             public void fail(ErrorCode errorCode) {
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-snapshot";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return snapshot == null || !PrimaryStorageGlobalConfig.UNDO_TEMP_SNAPSHOT.value(Boolean.class);
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        VolumeSnapshotDeletionMsg dmsg = new VolumeSnapshotDeletionMsg();
+                        dmsg.setTreeUuid(snapshot.getTreeUuid());
+                        dmsg.setVolumeUuid(snapshot.getVolumeUuid());
+                        dmsg.setSnapshotUuid(snapshot.getUuid());
+                        dmsg.setScope(DeleteVolumeSnapshotScope.Single.toString());
+                        dmsg.setDirection(DeleteVolumeSnapshotDirection.Commit.toString());
+                        bus.makeTargetServiceIdByResourceUuid(dmsg, VolumeSnapshotConstant.SERVICE_ID, snapshot.getUuid());
+                        bus.send(dmsg, new CloudBusCallBack(msg) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    logger.warn(String.format("failed to delete snapshot [uuid:%s] after successfully " +
+                                                    "creating image for volume [uuid:%s], because %s",
+                                            snapshot.getUuid(), snapshot.getVolumeUuid(), reply.getError().getDetails()));
+                                }
                                 trigger.next();
                             }
                         });
