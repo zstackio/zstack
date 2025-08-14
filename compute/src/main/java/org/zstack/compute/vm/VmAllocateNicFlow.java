@@ -165,7 +165,7 @@ public class VmAllocateNicFlow implements Flow {
                             UsedIpVO vo = new UsedIpVO();
                             vo.setUuid(Platform.getUuid());
                             vo.setIp(nicIpAddressInfo.ipv6Address);
-                            vo.setIpInLong(IPv6NetworkUtils.ipv6AddressToBigInteger(nicIpAddressInfo.ipv6Address).longValue());
+                            vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                             vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(nicIpAddressInfo.ipv6Address+"/"+ nicIpAddressInfo.ipv6Prefix));
                             vo.setGateway(nicIpAddressInfo.ipv6Gateway);
                             vo.setIpVersion(IPv6Constants.IPv6);
@@ -185,6 +185,7 @@ public class VmAllocateNicFlow implements Flow {
                             vo.setUuid(Platform.getUuid());
                             vo.setIp(nicIpAddressInfo.ipv4Address);
                             vo.setIpInLong(NetworkUtils.ipv4StringToLong(vo.getIp()));
+                            vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                             vo.setIpRangeUuid(IpRangeHelper.getIpRangeUuid(nic.getL3NetworkUuid(), vo.getIp()));
                             vo.setGateway(nicIpAddressInfo.ipv4Gateway);
                             vo.setNetmask(nicIpAddressInfo.ipv4Netmask);

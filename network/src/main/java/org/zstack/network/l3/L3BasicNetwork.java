@@ -472,12 +472,12 @@ public class L3BasicNetwork implements L3Network {
                     vo.setUuid(Platform.getUuid());
                     vo.setIpRangeUuid(ipr.getUuid());
                     vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
-                    //vo.setVmNicUuid(nic.getUuid());
                     vo.setIpVersion(ipr.getIpVersion());
                     vo.setIp(newIp);
+                    vo.setIpInLong(i);
+                    vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                     vo.setNetmask(ipr.getNetmask());
                     vo.setGateway(ipr.getGateway());
-                    vo.setIpInLong(i);
                     vo.setUsedFor(IpAllocatedReason.Reserved.toString());
                     vo.setMetaData(reservedIpRangeVO.getUuid());
 
@@ -515,6 +515,7 @@ public class L3BasicNetwork implements L3Network {
                     //vo.setVmNicUuid(nic.getUuid());
                     vo.setIpVersion(ipr.getIpVersion());
                     vo.setIp(newIp);
+                    vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                     vo.setNetmask(ipr.getNetmask());
                     vo.setGateway(ipr.getGateway());
                     vo.setUsedFor(IpAllocatedReason.Reserved.toString());
