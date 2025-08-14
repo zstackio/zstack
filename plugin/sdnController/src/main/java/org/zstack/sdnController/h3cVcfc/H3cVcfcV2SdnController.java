@@ -536,6 +536,22 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
         }
     }
 
+    public List<H3cVcfcV2Commands.H3cVdsStruct> getAllH3cVds() {
+        H3cVcfcV2Commands.GetH3cVdsCmd cmd = new H3cVcfcV2Commands.GetH3cVdsCmd();
+        try {
+            H3cVcfcV2Commands.GetH3cVdsRsp rsp = new H3cVcfcHttpClient<>(H3cVcfcV2Commands.GetH3cVdsRsp.class)
+                    .syncCall(HttpMethod.GET.name(), self.getIp(), H3cVcfcV2Commands.H3C_VCFC_VDS, cmd, getH3cHeaders(token));
+            if (rsp == null || rsp.vds == null) {
+                return new ArrayList<>();
+            }
+            
+            return rsp.vds;
+        } catch (Exception e) {
+            logger.error("Failed to get all VDS from SDN controller: " + e.getMessage(), e);
+            throw new RuntimeException(String.format("failed to get all VDS from SDN controller [ip:%s], error: %s", self.getIp(), e.getMessage()), e);
+        }
+    }
+
     private List<H3cVcfcV2Commands.SubnetCmd> getSubnetsByNetworkUuid(String networkUuid) {
         H3cVcfcV2Commands.GetH3cSubnetsCmd cmd = new H3cVcfcV2Commands.GetH3cSubnetsCmd();
         cmd.network_id = networkUuid;

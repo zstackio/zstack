@@ -95,6 +95,7 @@ class SdnControllerCase extends SubCase {
         assert testTenantRecords[0].tenantName == "Test"
         assert testTenantRecords[0].state == SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATE_ENABLE
         assert testTenantRecords[0].vdsUuid == "eb32cf5e-04e9-42ad-b64c-2c3f9bacd3cc"
+        assert testTenantRecords[0].vdsName == "Test_VDS"
 
         // Verify default tenant data
         def defaultTenantRecords = tenantVOs.findAll { it.tenantUuid == "ffffffff-0000-0000-0000-000000000001" }
@@ -102,6 +103,7 @@ class SdnControllerCase extends SubCase {
         assert defaultTenantRecords[0].tenantName == "default"
         assert defaultTenantRecords[0].state == SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATE_ENABLE
         assert defaultTenantRecords[0].vdsUuid == "ffffffff-0000-0000-0000-000000000001"
+        assert defaultTenantRecords[0].vdsName == "Default_VDS"
 
         // Verify sr tenant data
         def srTenantRecords = tenantVOs.findAll { it.tenantUuid == "c9d49b6f-d2cd-4636-b9d4-be0f9c9c7783" }
@@ -109,6 +111,8 @@ class SdnControllerCase extends SubCase {
         assert srTenantRecords[0].tenantName == "sr"
         assert srTenantRecords[0].state == SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATE_ENABLE
         assert srTenantRecords[0].vdsUuid == "ffffffff-0000-0000-0000-000000000001"
+        // Verify vdsName is correctly retrieved from VDS simulator
+        assert srTenantRecords[0].vdsName == "Default_VDS"
 
         // 3. Pull again to verify idempotency
         def result2 = pullSdnControllerTenant {
