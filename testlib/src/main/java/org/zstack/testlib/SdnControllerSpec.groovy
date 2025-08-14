@@ -154,6 +154,37 @@ class SdnControllerSpec extends Spec implements HasSession {
                 return rsp
             }
 
+            simulator(H3cVcfcV2Commands.H3C_VCFC_VDS) {
+                H3cVcfcV2Commands.GetH3cVdsRsp rsp = new H3cVcfcV2Commands.GetH3cVdsRsp()
+                rsp.vds = new ArrayList<>()
+
+                H3cVcfcV2Commands.H3cVdsStruct vds1 = new H3cVcfcV2Commands.H3cVdsStruct()
+                vds1.uuid = "eb32cf5e-04e9-42ad-b64c-2c3f9bacd3cc"
+                vds1.name = "Test_VDS"
+                vds1.bridge = "Test_VDS-br"
+                vds1.status = "UP"
+                vds1.openflow_hard_age = "300"
+                vds1.vxlan_tunnel_name = "vxlan_Test_VDS-br"
+                vds1.vxlan_range = "1-16777215"
+                vds1.virtual_mac = "00:00:00:00:00:01"
+                vds1.forwarding_mode = "mac-forwarding"
+                rsp.vds.add(vds1)
+
+                H3cVcfcV2Commands.H3cVdsStruct vds2 = new H3cVcfcV2Commands.H3cVdsStruct()
+                vds2.uuid = "ffffffff-0000-0000-0000-000000000001"
+                vds2.name = "Default_VDS"
+                vds2.bridge = "Default_VDS-br"
+                vds2.status = "UP"
+                vds2.openflow_hard_age = "300"
+                vds2.vxlan_tunnel_name = "vxlan_Default_VDS-br"
+                vds2.vxlan_range = "1-16777215"
+                vds2.virtual_mac = "00:00:00:00:00:02"
+                vds2.forwarding_mode = "mac-forwarding"
+                rsp.vds.add(vds2)
+
+                return rsp
+            }
+
             simulator(TfCommands.TF_GET_DAEMON) {
                 TfCommands.GetDomainRsp rsp = new TfCommands.GetDomainRsp()
                 rsp.uuid = TfCommands.TEST_DOMAIN_UUID

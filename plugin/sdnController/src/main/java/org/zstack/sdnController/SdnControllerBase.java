@@ -941,7 +941,8 @@ public class SdnControllerBase {
                         @Override
                         public void success() {
                             List<H3cVcfcV2Commands.H3cTenantStruct> apiTenants = h3cController.getAllH3cTenants();
-                            syncTenantData(msg.getSdnControllerUuid(), apiTenants, trigger);
+                            List<H3cVcfcV2Commands.H3cVdsStruct> apiVds = h3cController.getAllH3cVds();
+                            syncTenantData(msg.getSdnControllerUuid(), apiTenants, apiVds, trigger);
                         }
 
                         @Override
@@ -983,7 +984,7 @@ public class SdnControllerBase {
         }).start();
     }
 
-    private void syncTenantData(String sdnControllerUuid, List<H3cVcfcV2Commands.H3cTenantStruct> apiTenants, FlowTrigger trigger) {
+    private void syncTenantData(String sdnControllerUuid, List<H3cVcfcV2Commands.H3cTenantStruct> apiTenants, List<H3cVcfcV2Commands.H3cVdsStruct> apiVds, FlowTrigger trigger) {
         // Check if API response is valid (non-empty list indicates valid response with default tenant)
         if (apiTenants == null || apiTenants.isEmpty()) {
             logger.warn(String.format("Failed to pull tenant data for sdn controller [%s], no tenant data returned by API", sdnControllerUuid));
@@ -1022,7 +1023,15 @@ public class SdnControllerBase {
                     newTenant.setTenantUuid(apiTenant.id);
                     newTenant.setVdsUuid(vdsUuid);
                     newTenant.setTenantName(apiTenant.name);
-                    newTenant.setVdsName(getVdsName(vdsUuid)); // Get VDS name
+                    // Find vdsName from apiVds, use vdsUuid as fallback
+                    String vdsName = vdsUuid;
+                    for (H3cVcfcV2Commands.H3cVdsStruct vds : apiVds) {
+                        if (Objects.equals(vds.uuid, vdsUuid) && vds.name != null) {
+                            vdsName = vds.name;
+                            break;
+                        }
+                    }
+                    newTenant.setVdsName(vdsName);
                     newTenant.setCloudDomainName(apiTenant.cloud_domain_name);
                     newTenant.setState(SdnControllerConstant.H3C_SDN_CONTROLLER_TENANT_STATE_ENABLE);
                     tenantsToSave.add(newTenant);
@@ -1068,11 +1077,5 @@ public class SdnControllerBase {
 
     private String generateTenantKey(String tenantUuid, String vdsUuid) {
         return String.format("%s-%s", tenantUuid != null ? tenantUuid : "", vdsUuid != null ? vdsUuid : "");
-    }
-
-    private String getVdsName(String vdsUuid) {
-        // TODO: Implement logic to get VDS name
-        // May need to query related VDS table or get VDS name from other sources
-        return vdsUuid; // Temporarily return UUID as name
     }
 }
