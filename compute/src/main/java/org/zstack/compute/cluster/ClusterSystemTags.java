@@ -4,8 +4,6 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.tag.PatternedSystemTag;
 
-/**
- */
 @TagDefinition
 public class ClusterSystemTags {
     public static PatternedSystemTag HOST_RESERVED_CPU_CAPACITY = new PatternedSystemTag("host::reservedCpu::{capacity}", ClusterVO.class);
