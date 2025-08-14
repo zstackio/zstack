@@ -27,24 +27,24 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 
 public class ClusterManagerImpl extends AbstractService implements ClusterManager {
-	private static final CLogger logger = Utils.getLogger(ClusterManager.class);
-	private static final FieldPrinter printer = Utils.getFieldPrinter();
+    private static final CLogger logger = Utils.getLogger(ClusterManager.class);
+    private static final FieldPrinter printer = Utils.getFieldPrinter();
 
-	@Autowired
-	private CloudBus bus;
-	@Autowired
-	private DatabaseFacade dbf;
-	@Autowired
-	private PluginRegistry pluginRgty;
-	@Autowired
-	private DbEntityLister dl;
-	@Autowired
-	private TagManager tagMgr;
-	@Autowired
-	private ClusterResourceConfigInitializer crci;
+    @Autowired
+    private CloudBus bus;
+    @Autowired
+    private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
+    @Autowired
+    private DbEntityLister dl;
+    @Autowired
+    private TagManager tagMgr;
+    @Autowired
+    private ClusterResourceConfigInitializer crci;
 
-	private Map<String, ClusterFactory> clusterFactories = Collections.synchronizedMap(new HashMap<String, ClusterFactory>());
-    private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
+    private Map<String, ClusterFactory> clusterFactories = Collections.synchronizedMap(new HashMap<>());
+    private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
 
     static {
         allowedMessageAfterSoftDeletion.add(ClusterDeletionMsg.class);
@@ -65,111 +65,111 @@ public class ClusterManagerImpl extends AbstractService implements ClusterManage
             vo = ObjectUtils.newAndCopy(eo, ClusterVO.class);
         }
 
-		if (vo == null) {
-			String err = String.format("Cannot find cluster: %s, it may have been deleted", msg.getClusterUuid());
-			bus.replyErrorByMessageType((Message) msg, err);
-			return;
-		}
-		
-		ClusterFactory factory = this.getClusterFactory(ClusterType.valueOf(vo.getType()));
-		Cluster cluster = factory.getCluster(vo);
-		cluster.handleMessage((Message) msg);
-	}
+        if (vo == null) {
+            String err = String.format("Cannot find cluster: %s, it may have been deleted", msg.getClusterUuid());
+            bus.replyErrorByMessageType((Message) msg, err);
+            return;
+        }
+        
+        ClusterFactory factory = this.getClusterFactory(ClusterType.valueOf(vo.getType()));
+        Cluster cluster = factory.getCluster(vo);
+        cluster.handleMessage((Message) msg);
+    }
 
 
-	private void doCreateCluster(CreateClusterMessage msg, ReturnValueCompletion<ClusterInventory> completion) {
-		String clusterType = msg.getType();
-		if (clusterType == null) {
-			clusterType = BaseClusterFactory.type.toString();
-		}
+    private void doCreateCluster(CreateClusterMessage msg, ReturnValueCompletion<ClusterInventory> completion) {
+        String clusterType = msg.getType();
+        if (clusterType == null) {
+            clusterType = BaseClusterFactory.type.toString();
+        }
 
-		ClusterFactory factory = this.getClusterFactory(ClusterType.valueOf(clusterType));
-		ClusterVO vo = new ClusterVO();
+        ClusterFactory factory = this.getClusterFactory(ClusterType.valueOf(clusterType));
+        ClusterVO vo = new ClusterVO();
 
-		if (msg.getResourceUuid() != null) {
-			vo.setUuid(msg.getResourceUuid());
-		} else {
-			vo.setUuid(Platform.getUuid());
-		}
+        if (msg.getResourceUuid() != null) {
+            vo.setUuid(msg.getResourceUuid());
+        } else {
+            vo.setUuid(Platform.getUuid());
+        }
 
-		vo.setArchitecture(msg.getArchitecture());
-		vo.setDescription(msg.getDescription());
-		vo.setHypervisorType(msg.getHypervisorType());
-		vo.setManagementNodeId(Platform.getManagementServerId());
-		vo.setZoneUuid(msg.getZoneUuid());
-		vo.setState(ClusterState.Enabled);
-		vo.setName(msg.getClusterName());
-		vo = factory.createCluster(vo, msg);
+        vo.setArchitecture(msg.getArchitecture());
+        vo.setDescription(msg.getDescription());
+        vo.setHypervisorType(msg.getHypervisorType());
+        vo.setManagementNodeId(Platform.getManagementServerId());
+        vo.setZoneUuid(msg.getZoneUuid());
+        vo.setState(ClusterState.Enabled);
+        vo.setName(msg.getClusterName());
+        vo = factory.createCluster(vo, msg);
 
-		if (msg instanceof APICreateMessage) {
-			tagMgr.createTagsFromAPICreateMessage((APICreateMessage)msg, vo.getUuid(), ClusterVO.class.getSimpleName());
-		} else if (msg instanceof NeedReplyMessage) {
-			NeedReplyMessage m = (NeedReplyMessage) msg;
-			tagMgr.createTags(m.getSystemTags(), m.getUserTags(), vo.getUuid(), ClusterVO.class.getSimpleName());
-		}
+        if (msg instanceof APICreateMessage) {
+            tagMgr.createTagsFromAPICreateMessage((APICreateMessage)msg, vo.getUuid(), ClusterVO.class.getSimpleName());
+        } else if (msg instanceof NeedReplyMessage) {
+            NeedReplyMessage m = (NeedReplyMessage) msg;
+            tagMgr.createTags(m.getSystemTags(), m.getUserTags(), vo.getUuid(), ClusterVO.class.getSimpleName());
+        }
 
-		ClusterInventory inv = ClusterInventory.valueOf(vo);
+        ClusterInventory inv = ClusterInventory.valueOf(vo);
 
-		crci.initClusterResourceConfigValue(inv);
-		logger.debug(String.format("Created new cluster: %s", printer.print(inv)));
-		completion.success(inv);
-	}
+        crci.initClusterResourceConfigValue(inv);
+        logger.debug(String.format("Created new cluster: %s", printer.print(inv)));
+        completion.success(inv);
+    }
 
-	private void handle(CreateClusterMsg msg) {
-		CreateClusterReply reply = new CreateClusterReply();
+    private void handle(CreateClusterMsg msg) {
+        CreateClusterReply reply = new CreateClusterReply();
 
-		doCreateCluster(msg, new ReturnValueCompletion<ClusterInventory>(msg) {
-			@Override
-			public void success(ClusterInventory inv) {
-				reply.setInventory(inv);
-				bus.reply(msg, reply);
-			}
+        doCreateCluster(msg, new ReturnValueCompletion<ClusterInventory>(msg) {
+            @Override
+            public void success(ClusterInventory inv) {
+                reply.setInventory(inv);
+                bus.reply(msg, reply);
+            }
 
-			@Override
-			public void fail(ErrorCode errorCode) {
-				reply.setError(errorCode);
-				bus.reply(msg, reply);
-			}
-		});
-	}
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
 
-	@Deferred
-	private void handle(APICreateClusterMsg msg) {
-		APICreateClusterEvent evt = new APICreateClusterEvent(msg.getId());
+    @Deferred
+    private void handle(APICreateClusterMsg msg) {
+        APICreateClusterEvent evt = new APICreateClusterEvent(msg.getId());
 
-    	doCreateCluster(msg, new ReturnValueCompletion<ClusterInventory>(msg) {
-			@Override
-			public void success(ClusterInventory inv) {
-				evt.setInventory(inv);
-				bus.publish(evt);
-			}
+        doCreateCluster(msg, new ReturnValueCompletion<ClusterInventory>(msg) {
+            @Override
+            public void success(ClusterInventory inv) {
+                evt.setInventory(inv);
+                bus.publish(evt);
+            }
 
-			@Override
-			public void fail(ErrorCode errorCode) {
-			    evt.setError(errorCode);
-			    bus.publish(evt);
-			}
-		});
-	}
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
 
-	@Override
+    @Override
     @MessageSafe
-	public void handleMessage(Message msg) {
-		if (msg instanceof APIMessage) {
-			handleApiMessage((APIMessage) msg);
-		} else if (msg instanceof CreateClusterMsg) {
-			handle((CreateClusterMsg) msg);
-		} else if (msg instanceof ClusterMessage) {
-			passThrough((ClusterMessage) msg);
-		} else {
-			bus.dealWithUnknownMessage(msg);
-		}
-	}
+    public void handleMessage(Message msg) {
+        if (msg instanceof APIMessage) {
+            handleApiMessage((APIMessage) msg);
+        } else if (msg instanceof CreateClusterMsg) {
+            handle((CreateClusterMsg) msg);
+        } else if (msg instanceof ClusterMessage) {
+            passThrough((ClusterMessage) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
 
-	@Override
-	public String getId() {
-		return bus.makeLocalServiceId(ClusterConstant.SERVICE_ID);
-	}
+    @Override
+    public String getId() {
+        return bus.makeLocalServiceId(ClusterConstant.SERVICE_ID);
+    }
 
     private void populateClusterFactories() {
         for (ClusterFactory ext : pluginRgty.getExtensionList(ClusterFactory.class)) {
@@ -181,17 +181,17 @@ public class ClusterManagerImpl extends AbstractService implements ClusterManage
             clusterFactories.put(ext.getType().toString(), ext);
         }
     }
-	   
-	@Override
-	public boolean start() {
-	    populateClusterFactories();
-		return true;
-	}
+       
+    @Override
+    public boolean start() {
+        populateClusterFactories();
+        return true;
+    }
 
-	@Override
-	public boolean stop() {
-		return true;
-	}
+    @Override
+    public boolean stop() {
+        return true;
+    }
 
     private ClusterFactory getClusterFactory(ClusterType type) {
         ClusterFactory factory = clusterFactories.get(type.toString());
