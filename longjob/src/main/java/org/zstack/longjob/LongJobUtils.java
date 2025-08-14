@@ -112,7 +112,8 @@ public class LongJobUtils {
     }
 
     static LongJobVO updateByUuid(String uuid, Consumer<LongJobVO> consumer) {
-        return new SQLBatchWithReturn<LongJobVO>(){
+        final boolean[] jobCompleted = {false};
+        LongJobVO job = new SQLBatchWithReturn<LongJobVO>(){
 
             @Override
             protected LongJobVO scripts() {
@@ -123,7 +124,7 @@ public class LongJobUtils {
 
                 if (jobCompleted(job)) {
                     setExecuteTimeIfNeed(job);
-                    cleanProgress(job);
+                    jobCompleted[0] = true;
                 }
 
                 if (originState != newState) {
@@ -134,6 +135,10 @@ public class LongJobUtils {
                 return job;
             }
         }.execute();
+        if (jobCompleted[0]) {
+            cleanProgress(job);
+        }
+        return job;
     }
 
     static LongJobVO changeState(String uuid, LongJobStateEvent stateEvent) {
