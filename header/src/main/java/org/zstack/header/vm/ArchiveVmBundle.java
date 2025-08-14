@@ -35,6 +35,9 @@ public class ArchiveVmBundle extends ArchiveBundle {
     }
 
     public UpdateVmInstanceMsg getUpdateVmMessage() {
+        if (getVmInventory() == null) {
+            throw new IllegalStateException("vmInventory is null; cannot build UpdateVmInstanceMsg");
+        }
         UpdateVmInstanceMsg umsg = new UpdateVmInstanceMsg();
         umsg.setUuid(getVmInventory().getUuid());
         umsg.setName(getVmInventory().getName());

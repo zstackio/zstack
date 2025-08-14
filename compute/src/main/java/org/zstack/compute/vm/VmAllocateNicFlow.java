@@ -136,7 +136,8 @@ public class VmAllocateNicFlow implements Flow {
 
             if (allowDuplicatedMac == null || !allowDuplicatedMac) {
                 if (mo.checkDuplicateMac(nic.getHypervisorType(), nic.getMac())) {
-                    trigger.fail(operr("Duplicate mac address [%s]", nic.getMac()));
+                    wcomp.addError(Platform.operr("Duplicate mac address [%s]", nic.getMac()));
+                    wcomp.allDone();
                     return;
                 }
             }

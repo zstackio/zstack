@@ -11,7 +11,7 @@ doc {
 
 	rest {
 		request {
-			url "GET /v1/memory-snapshots/group/conflict-detection"
+			url "GET /v1/memory-snapshots/groups/{uuid}/conflict-detection"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
@@ -25,7 +25,7 @@ doc {
 					name "uuid"
 					enclosedIn ""
 					desc "内存快照组UUID"
-					location "query"
+					location "url"
 					type "String"
 					optional false
 					since "4.10.16"

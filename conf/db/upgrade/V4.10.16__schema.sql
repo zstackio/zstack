@@ -54,7 +54,6 @@ SELECT
 FROM PrimaryStorageHostRefVO p LEFT JOIN ExternalPrimaryStorageVO e ON p.primaryStorageUuid = e.uuid
 ORDER BY p.id;
 
-<<<<<<< HEAD
 -- Feature: Customer Resource Attributes | ZSV-???
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ResourceAttributeKeyVO` (
@@ -230,6 +229,13 @@ DROP PROCEDURE IF EXISTS `UPGRADE_VM_METADATA_TABLES_IDEMPOTENT`;
 DELIMITER $$
 CREATE PROCEDURE `UPGRADE_VM_METADATA_TABLES_IDEMPOTENT`()
 BEGIN
+    DECLARE old_fk_checks INT DEFAULT 1;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        SET FOREIGN_KEY_CHECKS = old_fk_checks;
+        RESIGNAL;
+    END;
+
     SET FOREIGN_KEY_CHECKS = 0;
 
     CALL RENAME_TABLE('VmInstanceDeviceAddressVO', 'VmInstanceResourceMetadataVO');

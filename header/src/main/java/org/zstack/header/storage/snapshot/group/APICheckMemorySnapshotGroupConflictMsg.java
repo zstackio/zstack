@@ -6,7 +6,7 @@ import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
-        path = "/memory-snapshots/group/conflict-detection",
+        path = "/memory-snapshots/groups/{uuid}/conflict-detection",
         method = HttpMethod.GET,
         responseClass = APICheckMemorySnapshotGroupConflictReply.class
 )

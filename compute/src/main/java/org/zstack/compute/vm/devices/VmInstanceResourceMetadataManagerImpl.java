@@ -81,8 +81,8 @@ public class VmInstanceResourceMetadataManagerImpl implements VmInstanceResource
             try {
                 clazz = Class.forName(metadataClass);
             } catch (ClassNotFoundException e) {
-                logger.warn(String.format("Unable to generate groovy class for %s", metadataClass), e);
-                throw new CloudRuntimeException(e);
+                logger.error(String.format("Failed to load metadata class: %s", metadataClass), e);
+                throw new CloudRuntimeException(String.format("Metadata class [%s] not found in classpath", metadataClass), e);
             }
 
             vo.setMetadataClass(clazz.getCanonicalName());
@@ -255,6 +255,11 @@ public class VmInstanceResourceMetadataManagerImpl implements VmInstanceResource
             return Collections.emptyList();
         }
 
+        return revertResourceMetadataWithFilter(vmInstanceUuid, archiveForResourceUuid);
+    }
+
+    private List<VmInstanceResourceMetadataVO> revertResourceMetadataWithFilter(String vmInstanceUuid, String archiveForResourceUuid) {
+
         VmInstanceResourceMetadataGroupVO group = Q.New(VmInstanceResourceMetadataGroupVO.class)
                 .eq(VmInstanceResourceMetadataGroupVO_.resourceUuid, archiveForResourceUuid)
                 .find();
@@ -274,25 +279,7 @@ public class VmInstanceResourceMetadataManagerImpl implements VmInstanceResource
 
     @Override
     public List<VmInstanceResourceMetadataVO> revertExistingDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid) {
-        VmInstanceResourceMetadataGroupVO group = Q.New(VmInstanceResourceMetadataGroupVO.class)
-                .eq(VmInstanceResourceMetadataGroupVO_.resourceUuid, archiveForResourceUuid)
-                .find();
-
-        List<VmInstanceResourceMetadataVO> createdAddressList = new ArrayList<>();
-        if (group == null) {
-            return createdAddressList;
-        }
-
-        for (VmInstanceResourceMetadataArchiveVO archive : group.getAddressList()) {
-            if (!vmDeviceExists(archive.getResourceUuid())) {
-                continue;
-            }
-
-            VmInstanceResourceMetadataVO vo = createOrUpdateVmResourceMetadata(archive.getResourceUuid(), DeviceAddress.fromString(archive.getDeviceAddress()), vmInstanceUuid, archive.getMetadata(), archive.getMetadataClass());
-            createdAddressList.add(vo);
-        }
-
-        return createdAddressList;
+        return revertResourceMetadataWithFilter(vmInstanceUuid, archiveForResourceUuid);
     }
 
     @Override
@@ -367,17 +354,17 @@ public class VmInstanceResourceMetadataManagerImpl implements VmInstanceResource
             return Collections.emptyList();
         }
 
-        String VmInstanceResourceMetadataGroupUuid = Q.New(VmInstanceResourceMetadataGroupVO.class)
+        String vmInstanceResourceMetadataGroupUuid = Q.New(VmInstanceResourceMetadataGroupVO.class)
                 .select(VmInstanceResourceMetadataGroupVO_.uuid)
                 .eq(VmInstanceResourceMetadataGroupVO_.resourceUuid, archiveForResourceUuid)
                 .findValue();
 
-        if (VmInstanceResourceMetadataGroupUuid == null) {
+        if (vmInstanceResourceMetadataGroupUuid == null) {
             return new ArrayList<>();
         }
 
         return Q.New(VmInstanceResourceMetadataArchiveVO.class)
-                .eq(VmInstanceResourceMetadataArchiveVO_.addressGroupUuid, VmInstanceResourceMetadataGroupUuid)
+                .eq(VmInstanceResourceMetadataArchiveVO_.addressGroupUuid, vmInstanceResourceMetadataGroupUuid)
                 .eq(VmInstanceResourceMetadataArchiveVO_.vmInstanceUuid, vmInstanceUuid)
                 .eq(VmInstanceResourceMetadataArchiveVO_.metadataClass, metadataClass)
                 .list();
