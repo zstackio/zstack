@@ -4,6 +4,8 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
+import org.zstack.utils.VersionComparator;
+import org.zstack.utils.data.SizeUnit;
 
 /**
  * @author Xingwei Yu
@@ -28,5 +30,17 @@ public class ZbsHelper {
 
     public static String getVolumeFromSnapshotPath(String path) {
         return path.split("@")[0];
+    }
+
+    public static String getSizeUnit(String version) {
+        return new VersionComparator(version.split("-")[0]).compare(ZbsConstants.MEGABYTE_SUPPORTED_VERSION) >= 0 ? ZbsConstants.MEGABYTE_UNIT : ZbsConstants.GIGABYTE_UNIT;
+    }
+
+    public static long alignSizeTo(long size, String unit) {
+        return ZbsConstants.MEGABYTE_UNIT.equals(unit) ? (long) Math.ceil(SizeUnit.BYTE.toMegaByte((double) size)) : (long) Math.ceil(SizeUnit.BYTE.toGigaByte((double) size));
+    }
+
+    public static long convertSizeToByte(long size, String unit) {
+        return ZbsConstants.MEGABYTE_UNIT.equals(unit) ? SizeUnit.MEGABYTE.toByte(size) : SizeUnit.GIGABYTE.toByte(size);
     }
 }
