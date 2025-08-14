@@ -479,6 +479,7 @@ public class SourceClassMap {
 			put("org.zstack.license.LicenseInventory", "org.zstack.sdk.LicenseInventory");
 			put("org.zstack.license.UKeyInventory", "org.zstack.sdk.UKeyInventory");
 			put("org.zstack.license.UKeyStatus", "org.zstack.sdk.UKeyStatus");
+			put("org.zstack.license.header.server.LicenseAuthorizedNodeInventory", "org.zstack.sdk.license.header.server.LicenseAuthorizedNodeInventory");
 			put("org.zstack.log.server.LogCategory", "org.zstack.sdk.LogCategory");
 			put("org.zstack.log.server.LogLevel", "org.zstack.sdk.LogLevel");
 			put("org.zstack.log.server.LogServerInventory", "org.zstack.sdk.LogServerInventory");
@@ -1545,6 +1546,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.identity.role.RoleState", "org.zstack.header.identity.role.RoleState");
 			put("org.zstack.sdk.identity.role.RoleStateEvent", "org.zstack.header.identity.role.RoleStateEvent");
 			put("org.zstack.sdk.identity.role.RoleType", "org.zstack.header.identity.role.RoleType");
+			put("org.zstack.sdk.license.header.server.LicenseAuthorizedNodeInventory", "org.zstack.license.header.server.LicenseAuthorizedNodeInventory");
 			put("org.zstack.sdk.sns.SNSAliyunSmsEndpointInventory", "org.zstack.sns.SNSAliyunSmsEndpointInventory");
 			put("org.zstack.sdk.sns.SNSApplicationEndpointInventory", "org.zstack.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sdk.sns.SNSApplicationPlatformInventory", "org.zstack.sns.SNSApplicationPlatformInventory");

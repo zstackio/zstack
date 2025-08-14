@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.license.api.server;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RegisterLicenseRequestedApplicationAction extends AbstractAction {
+public class VerifyLicenseServerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RegisterLicenseRequestedApplicationAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.RegisterLicenseRequestedApplicationResult value;
+        public org.zstack.sdk.license.api.server.VerifyLicenseServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,13 +26,13 @@ public class RegisterLicenseRequestedApplicationAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String licenseRequestCode;
+    public java.lang.String appId;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String clientPubKey;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String clientAccessKeyId;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long currentTimeMillis;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String clientAccessKeySecret;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +66,8 @@ public class RegisterLicenseRequestedApplicationAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.RegisterLicenseRequestedApplicationResult value = res.getResult(org.zstack.sdk.RegisterLicenseRequestedApplicationResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RegisterLicenseRequestedApplicationResult() : value; 
+        org.zstack.sdk.license.api.server.VerifyLicenseServerResult value = res.getResult(org.zstack.sdk.license.api.server.VerifyLicenseServerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.license.api.server.VerifyLicenseServerResult() : value; 
 
         return ret;
     }
@@ -97,7 +97,7 @@ public class RegisterLicenseRequestedApplicationAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/licenses/applications";
+        info.path = "/license-server/register-verify";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
