@@ -20,6 +20,22 @@ public class ZceXPlatformLicenseView  {
         return this.expiredTime;
     }
 
+    public java.lang.String fsId;
+    public void setFsId(java.lang.String fsId) {
+        this.fsId = fsId;
+    }
+    public java.lang.String getFsId() {
+        return this.fsId;
+    }
+
+    public java.lang.String relatedClusterId;
+    public void setRelatedClusterId(java.lang.String relatedClusterId) {
+        this.relatedClusterId = relatedClusterId;
+    }
+    public java.lang.String getRelatedClusterId() {
+        return this.relatedClusterId;
+    }
+
     public boolean expired;
     public void setExpired(boolean expired) {
         this.expired = expired;
