@@ -48,7 +48,7 @@ public class APIDeleteResourceConfigMsg extends APIDeleteMessage implements Reso
         APIDeleteResourceConfigMsg msg = new APIDeleteResourceConfigMsg();
         msg.category = "host";
         msg.name = "cpu.overProvisioning.ratio";
-        msg.resourceUuid = Platform.getUuid();
+        msg.resourceUuid = uuid(ResourceVO.class);
         return msg;
     }
 }

@@ -1,6 +1,5 @@
 package org.zstack.resourceconfig;
 
-import org.zstack.core.Platform;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.APIReply;
@@ -41,8 +40,8 @@ public class APIGetResourceConfigReply extends APIReply {
         hostConfig.setCategory("host");
         hostConfig.setName("cpu.overProvisioning.ratio");
         hostConfig.setResourceType(HostVO.class.getSimpleName());
-        hostConfig.setResourceUuid(Platform.getUuid());
-        hostConfig.setUuid(Platform.getUuid());
+        hostConfig.setResourceUuid(uuid(HostVO.class));
+        hostConfig.setUuid(uuid(ResourceConfigVO.class));
         hostConfig.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         hostConfig.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         hostConfig.setValue("5");
@@ -51,8 +50,8 @@ public class APIGetResourceConfigReply extends APIReply {
         clusterConfig.setCategory("host");
         clusterConfig.setName("cpu.overProvisioning.ratio");
         clusterConfig.setResourceType(ClusterVO.class.getSimpleName());
-        clusterConfig.setResourceUuid(Platform.getUuid());
-        clusterConfig.setUuid(Platform.getUuid());
+        clusterConfig.setResourceUuid(uuid(ClusterVO.class));
+        clusterConfig.setUuid(uuid(ResourceConfigInventory.class)); // hostConfig.uuid and this uuid must be different
         clusterConfig.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         clusterConfig.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         clusterConfig.setValue("10");

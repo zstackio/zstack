@@ -1,6 +1,7 @@
 package org.zstack.network.securitygroup;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.DocUtils;
 import org.zstack.header.rest.RestResponse;
 
 import java.sql.Timestamp;
@@ -38,8 +39,8 @@ public class APIChangeSecurityGroupRuleStateEvent extends APIEvent {
         sec.setName("web");
         sec.setDescription("for test");
         sec.setState("Enabled");
-        sec.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        sec.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        sec.setCreateDate(new Timestamp(DocUtils.date));
+        sec.setLastOpDate(new Timestamp(DocUtils.date));
         event.setInventory(sec);
         event.setSuccess(true);
         return event;

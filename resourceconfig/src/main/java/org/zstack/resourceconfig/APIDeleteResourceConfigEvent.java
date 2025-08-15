@@ -1,8 +1,8 @@
 package org.zstack.resourceconfig;
 
-import org.zstack.core.Platform;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
+import org.zstack.header.vo.ResourceVO;
 
 @RestResponse
 public class APIDeleteResourceConfigEvent extends APIEvent {
@@ -14,6 +14,6 @@ public class APIDeleteResourceConfigEvent extends APIEvent {
     }
 
     public static APIDeleteResourceConfigEvent __example__() {
-        return new APIDeleteResourceConfigEvent(Platform.getUuid());
+        return new APIDeleteResourceConfigEvent(uuid(ResourceVO.class));
     }
 }
