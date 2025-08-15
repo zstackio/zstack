@@ -5292,7 +5292,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public String getName() {
-                return String.format("attach-iso-%s-to-vm-%s", msg.getIsoUuid(), self.getUuid());
+                return String.format("attach-an-iso-to-vm-%s", self.getUuid());
             }
         });
     }
