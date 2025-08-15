@@ -10,10 +10,7 @@ import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.APIAttachL2NetworkToClusterMsg;
 import org.zstack.header.network.l2.APIDetachL2NetworkFromClusterMsg;
-import org.zstack.header.network.l3.APIAddIpRangeByNetworkCidrMsg;
-import org.zstack.header.network.l3.APIAddIpRangeMsg;
-import org.zstack.header.network.l3.APICreateL3NetworkMsg;
-import org.zstack.header.network.l3.L3NetworkCategory;
+import org.zstack.header.network.l3.*;
 import org.zstack.network.l2.L2NetworkSystemTags;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APIDeleteVxlanL2Network;
@@ -64,6 +61,8 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
         ret.add(APICreateL3NetworkMsg.class);
         ret.add(APIAddIpRangeMsg.class);
         ret.add(APIAddIpRangeByNetworkCidrMsg.class);
+        ret.add(APIAddIpv6RangeMsg.class);
+        ret.add(APIAddIpv6RangeByNetworkCidrMsg.class);
         return ret;
     }
 
@@ -96,8 +95,11 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
             validate((APIAddIpRangeMsg) msg);
         } else if (msg instanceof APIAddIpRangeByNetworkCidrMsg) {
             validate((APIAddIpRangeByNetworkCidrMsg) msg);
+        } else if (msg instanceof APIAddIpv6RangeMsg) {
+            validate((APIAddIpv6RangeMsg) msg);
+        } else if (msg instanceof APIAddIpv6RangeByNetworkCidrMsg) {
+            validate((APIAddIpv6RangeByNetworkCidrMsg) msg);
         }
-
         setServiceId(msg);
 
         return msg;
@@ -144,6 +146,42 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
             }
         }
         throw new ApiMessageInterceptionException(argerr("Could not create VNI range [%s-%s] because it is not covered by any of the SDN controller's configured VNI ranges", userVniRange.startVni, userVniRange.endVni));
+    }
+
+    private void validate(APIAddIpv6RangeMsg msg) {
+        String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(msg.getL3NetworkUuid());
+        if (sdnControllerUuid == null) {
+            return;
+        }
+        SdnControllerVO vo = dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
+        if (vo == null) {
+            return;
+        }
+        if (!vo.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
+            return;
+        }
+        if (vo.getStatus() != SdnControllerStatus.Connected) {
+            throw new ApiMessageInterceptionException(argerr("Could not add IPv6 range because the SDN controller [uuid:%s] is not connected. Current status: %s", 
+                    sdnControllerUuid, vo.getStatus()));
+        }
+    }
+
+    private void validate(APIAddIpv6RangeByNetworkCidrMsg msg) {
+        String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(msg.getL3NetworkUuid());
+        if (sdnControllerUuid == null) {
+            return;
+        }
+        SdnControllerVO vo = dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
+        if (vo == null) {
+            return;
+        }
+        if (!vo.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
+            return;
+        }
+        if (vo.getStatus() != SdnControllerStatus.Connected) {
+            throw new ApiMessageInterceptionException(argerr("Could not add IPv6 range by network CIDR because the SDN controller [uuid:%s] is not connected. Current status: %s", 
+                    sdnControllerUuid, vo.getStatus()));
+        }
     }
 
     private void validate(APIAddIpRangeMsg msg) {
