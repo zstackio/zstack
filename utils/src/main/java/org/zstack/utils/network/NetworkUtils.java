@@ -19,8 +19,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.zstack.utils.network.IPv6NetworkUtils.isIpv6Address;
-import static org.zstack.utils.network.IPv6NetworkUtils.isIpv6UnicastAddress;
+import static org.zstack.utils.network.IPv6NetworkUtils.*;
+
 
 public class NetworkUtils {
     private static final CLogger logger = Utils.getLogger(NetworkUtils.class);
@@ -46,13 +46,13 @@ public class NetworkUtils {
         validNetmasks.put("255.255.224.0", 19);
         validNetmasks.put("255.255.192.0", 18);
         validNetmasks.put("255.255.128.0", 17);
-        validNetmasks.put("255.255.0.0",16);
-        validNetmasks.put("255.254.0.0",15);
-        validNetmasks.put("255.252.0.0",14);
-        validNetmasks.put("255.248.0.0",13);
-        validNetmasks.put("255.240.0.0",12);
-        validNetmasks.put("255.224.0.0",11);
-        validNetmasks.put("255.192.0.0",10);
+        validNetmasks.put("255.255.0.0", 16);
+        validNetmasks.put("255.254.0.0", 15);
+        validNetmasks.put("255.252.0.0", 14);
+        validNetmasks.put("255.248.0.0", 13);
+        validNetmasks.put("255.240.0.0", 12);
+        validNetmasks.put("255.224.0.0", 11);
+        validNetmasks.put("255.192.0.0", 10);
         validNetmasks.put("255.128.0.0", 9);
         validNetmasks.put("255.0.0.0", 8);
         validNetmasks.put("254.0.0.0", 7);
@@ -95,7 +95,7 @@ public class NetworkUtils {
         if (NetworkUtils.isIpv4Address(ip)) {
             isIpAddress = true;
         } else {
-            if (IPv6NetworkUtils.isIpv6Address(ip)) {
+            if (isIpv6Address(ip)) {
                 isIpAddress = true;
             }
         }
@@ -130,7 +130,7 @@ public class NetworkUtils {
             Pattern pattern = Pattern.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(\\d|[1-2]\\d|3[0-2]))$");
             Matcher matcher = pattern.matcher(cidr);
             return matcher.find();
-        } else if(ipVersion == IPv6Constants.IPv6) {
+        } else if (ipVersion == IPv6Constants.IPv6) {
             try {
                 IPv6Network.fromString(cidr);
                 return true;
@@ -194,7 +194,7 @@ public class NetworkUtils {
     public static int ipRangeLength(String startIp, String endIp) {
         validateIpv4(startIp);
         validateIpv4(endIp);
-        return (int)(ipv4StringToLong(endIp) - ipv4StringToLong(startIp) + 1);
+        return (int) (ipv4StringToLong(endIp) - ipv4StringToLong(startIp) + 1);
     }
 
     private static void validateIpv4(String ip) {
@@ -243,7 +243,7 @@ public class NetworkUtils {
 
     private static String[] longToIpv4String(Long[] ips) {
         String[] ret = new String[ips.length];
-        for (int i=0; i<ips.length; i++) {
+        for (int i = 0; i < ips.length; i++) {
             ret[i] = longToIpv4String(ips[i]);
         }
         return ret;
@@ -271,22 +271,22 @@ public class NetworkUtils {
                 return part1[0] + 1;
             } else {
                 /* For special case there are only three items like [1, 5, 9] that are all inconsecutive */
-                Long[] tmp = new Long[] { part1[0], part2[0] };
+                Long[] tmp = new Long[]{part1[0], part2[0]};
                 if (!isConsecutiveRange(tmp)) {
                     return part1[0] + 1;
                 }
             }
         }
-        
+
         /*For special case that hole is in the middle of array. for example, [1, 2, 4, 5]*/
         if (isConsecutiveRange(part1) && isConsecutiveRange(part2)) {
-            return part1[part1.length-1] + 1;
+            return part1[part1.length - 1] + 1;
         }
 
         if (!isConsecutiveRange(part1)) {
             return findFirstHoleByDichotomy(part1);
-        } else if (part2[0] - part1[part1.length-1] > 1) {
-            return part1[part1.length-1] + 1;
+        } else if (part2[0] - part1[part1.length - 1] > 1) {
+            return part1[part1.length - 1] + 1;
         } else {
             return findFirstHoleByDichotomy(part2);
         }
@@ -298,14 +298,14 @@ public class NetworkUtils {
         if (startIp > endIp) {
             throw new IllegalArgumentException(String.format("[%s, %s] is an invalid ip range, end ip must be greater than start ip", longToIpv4String(startIp), longToIpv4String(endIp)));
         }
-        if (startIp.equals(endIp) && allocatedIps.length == 0 ) {
+        if (startIp.equals(endIp) && allocatedIps.length == 0) {
             return startIp;
         }
         if (allocatedIps.length == 0) {
             return startIp;
         }
 
-        long lastAllocatedIp = allocatedIps[allocatedIps.length-1];
+        long lastAllocatedIp = allocatedIps[allocatedIps.length - 1];
         long firstAllocatedIp = allocatedIps[0];
         if (firstAllocatedIp < startIp || lastAllocatedIp > endIp) {
             throw new IllegalArgumentException(String.format("[%s, %s] is an invalid allocated ip range, it's not a sub range of ip range[%s, %s]", longToIpv4String(firstAllocatedIp), longToIpv4String(lastAllocatedIp), longToIpv4String(startIp), longToIpv4String(endIp)));
@@ -328,7 +328,7 @@ public class NetworkUtils {
             assert ret <= endIp;
             return ret;
         }
-        
+
         /* Now the allocated ip range is inconsecutive, we are going to find out the first *hole* in it */
         return findFirstHoleByDichotomy(allocatedIps);
     }
@@ -339,8 +339,8 @@ public class NetworkUtils {
     }
 
     public static String randomAllocateIpv4Address(Long startIp, Long endIp, List<Long> allocatedIps) {
-        int total = (int)(endIp - startIp + 1);
-        if (startIp.equals(endIp) && allocatedIps.size() == 0){
+        int total = (int) (endIp - startIp + 1);
+        if (startIp.equals(endIp) && allocatedIps.size() == 0) {
             return longToIpv4String(startIp);
         }
         if (total == allocatedIps.size()) {
@@ -349,7 +349,7 @@ public class NetworkUtils {
 
         BitSet full = new BitSet(total);
         for (long alloc : allocatedIps) {
-            full.set((int) (alloc-startIp));
+            full.set((int) (alloc - startIp));
         }
 
         int next = random.nextInt(total);
@@ -373,7 +373,7 @@ public class NetworkUtils {
             long e = ipv4StringToLong(endIp);
             return (int) (e - s + 1);
         } else if (isIpv6Address(startIp)) {
-            return (int)IPv6NetworkUtils.getIpv6RangeSize(startIp, endIp);
+            return (int) getIpv6RangeSize(startIp, endIp);
         } else {
             throw new IllegalArgumentException(String.format("%s is not a valid ipv4 address or valid ipv6 address", startIp));
         }
@@ -457,7 +457,6 @@ public class NetworkUtils {
     }
 
     /**
-     *
      * @param ip
      * @param port
      * @param timeout in milliseconds
@@ -492,7 +491,7 @@ public class NetworkUtils {
         long e = ipv4StringToLong(endIp);
         long f = ipv4StringToLong(start);
         List<String> res = new ArrayList<String>();
-        for (long i = Math.max(s, f); i<=e; i++) {
+        for (long i = Math.max(s, f); i <= e; i++) {
             String ip = longToIpv4String(i);
             if (!usedIps.contains(ip)) {
                 res.add(ip);
@@ -589,7 +588,7 @@ public class NetworkUtils {
         return isIpv4InRange(ipv4, info.getLowAddress(), info.getHighAddress());
     }
 
-    public static List<String> filterIpv4sInCidr(List<String> ipv4s, String cidr){
+    public static List<String> filterIpv4sInCidr(List<String> ipv4s, String cidr) {
         DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
         SubnetUtils.SubnetInfo info = getSubnetInfo(new SubnetUtils(cidr));
         List<String> results = new ArrayList<>();
@@ -597,7 +596,7 @@ public class NetworkUtils {
         for (String ipv4 : ipv4s) {
             validateIpv4(ipv4);
             if (isIpv4InRange(ipv4, info.getLowAddress(), info.getHighAddress())) {
-                results.add(ipv4) ;
+                results.add(ipv4);
             }
         }
         return results;
@@ -616,7 +615,7 @@ public class NetworkUtils {
         SubnetUtils.SubnetInfo sub = getSubnetInfo(new SubnetUtils(subCidr));
         return range.isInRange(sub.getLowAddress()) && range.isInRange(sub.getHighAddress());
     }
-    
+
     public static String getNetworkAddressFromCidr(String cidr) {
         DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
         SubnetUtils n = new SubnetUtils(cidr);
@@ -624,7 +623,7 @@ public class NetworkUtils {
     }
 
 
-    public static List<String> getIpRangeFromIps(List<String> ips){
+    public static List<String> getIpRangeFromIps(List<String> ips) {
         List<Pair<String, String>> ipRanges = findConsecutiveIpRange(ips);
         List<String> internalIpRanges = new ArrayList<String>(ipRanges.size());
         for (Pair<String, String> p : ipRanges) {
@@ -685,14 +684,14 @@ public class NetworkUtils {
         return pairs;
     }
 
-    public static final int[] CIDR2MASK = new int[] { 0x00000000, 0x80000000,
+    public static final int[] CIDR2MASK = new int[]{0x00000000, 0x80000000,
             0xC0000000, 0xE0000000, 0xF0000000, 0xF8000000, 0xFC000000,
             0xFE000000, 0xFF000000, 0xFF800000, 0xFFC00000, 0xFFE00000,
             0xFFF00000, 0xFFF80000, 0xFFFC0000, 0xFFFE0000, 0xFFFF0000,
             0xFFFF8000, 0xFFFFC000, 0xFFFFE000, 0xFFFFF000, 0xFFFFF800,
             0xFFFFFC00, 0xFFFFFE00, 0xFFFFFF00, 0xFFFFFF80, 0xFFFFFFC0,
             0xFFFFFFE0, 0xFFFFFFF0, 0xFFFFFFF8, 0xFFFFFFFC, 0xFFFFFFFE,
-            0xFFFFFFFF };
+            0xFFFFFFFF};
 
     public static String getCidrFromIpMask(String ip, String mask) {
         try {
@@ -703,7 +702,7 @@ public class NetworkUtils {
         }
     }
 
-    public static int convertNetmaskToCIDR(InetAddress netmask){
+    public static int convertNetmaskToCIDR(InetAddress netmask) {
 
         byte[] netmaskBytes = netmask.getAddress();
         int cidr = 0;
@@ -757,7 +756,7 @@ public class NetworkUtils {
         if (isIpv4Address(ip)) {
             return isIpv4InRange(ip, startIp, endIp);
         } else if (isIpv6Address(ip)) {
-            return IPv6NetworkUtils.isIpv6InRange(ip, startIp, endIp);
+            return isIpv6InRange(ip, startIp, endIp);
         } else {
             throw new IllegalArgumentException(String.format("%s is not a valid ipv4 address or valid ipv6 address", ip));
         }
@@ -777,10 +776,10 @@ public class NetworkUtils {
         int length = ips.size();
         if (isIpv4Address(ips.get(0))) {
             List<Long> addresses = ips.stream().map(NetworkUtils::ipToLong).sorted(Long::compareTo).collect(Collectors.toList());
-            return longToIP(addresses.get(length -1));
+            return longToIP(addresses.get(length - 1));
         } else {
             List<IPv6Address> addresses = ips.stream().map(IPv6Address::fromString).sorted(IPv6Address::compareTo).collect(Collectors.toList());
-            return addresses.get(length -1).toString();
+            return addresses.get(length - 1).toString();
         }
     }
 
@@ -796,10 +795,12 @@ public class NetworkUtils {
     public static Integer getPrefixLengthFromNetmask(String mask) {
         if (isIpv4Address(mask)) {
             return validNetmasks.get(mask);
-        } else {
-            IPv6Address addr = IPv6Address.fromString(mask);
-            return addr.numberOfLeadingOnes();
+        } else if (isIpv6Address(mask)) {
+            IPv6Address netmask = IPv6Address.fromString(mask);
+            return netmask.numberOfLeadingOnes();
         }
+
+        return 0;
     }
 
     public static String convertNetmask(Integer prefix) {
@@ -921,6 +922,7 @@ public class NetworkUtils {
 
     /**
      * Generate vlan device name like eth0.100
+     *
      * @param ifName interface name
      * @param vlanId vlan id
      * @return vlan device name
@@ -950,6 +952,7 @@ public class NetworkUtils {
     public static String ipv4PrefixToNetmask(String prefix) {
         return ipv4PrefixToNetmask(Integer.parseInt(prefix));
     }
+
     public static String ipv4PrefixToNetmask(Integer prefixLength) {
         if (prefixLength < 1 || prefixLength > 32) {
             return String.format("255.255.255.255");
@@ -986,8 +989,8 @@ public class NetworkUtils {
     public static Boolean isInternalAddress(String ip) {
         if (isIpv4Address(ip)) {
             return isAutomaticPrivateIpAddr(ip);
-        } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
-            return IPv6NetworkUtils.isLinkLocalAddress(ip);
+        } else if (isIpv6Address(ip)) {
+            return isLinkLocalAddress(ip);
         } else {
             return Boolean.FALSE;
         }
@@ -997,13 +1000,40 @@ public class NetworkUtils {
         return vlanId != null && vlanId >= 0 && vlanId <= 4094;
     }
 
-    public static Boolean isValidVni(Integer vni){
+    public static Boolean isValidVni(Integer vni) {
         return vni != null && vni >= 1 && vni <= 16777214;
     }
 
     public static int compareIpv4Address(String ip1, String ip2) {
         long diff = NetworkUtils.ipv4StringToLong(ip1) - NetworkUtils.ipv4StringToLong(ip2);
         return diff > 0 ? 1 : diff == 0 ? 0 : -1;
+    }
+
+    public static String getIp(String ipAddress) {
+        return ipAddress == null ? null : ipAddress.split(NetworkUtils.DEFAULT_IPV4_PREFIX_SPLIT)[0];
+    }
+
+    public static String getPrefix(String ipAddress) {
+        if (ipAddress == null) {
+            return null;
+        }
+
+        int splitIndex = ipAddress.indexOf(NetworkUtils.DEFAULT_IPV4_PREFIX_SPLIT);
+        if (splitIndex == -1) {
+            return isIpv4Address(ipAddress) ? NetworkUtils.DEFAULT_IPV4_PREFIX
+                    : isIpv6Address(ipAddress) ? NetworkUtils.DEFAULT_IPV6_PREFIX
+                    : null;
+        }
+        return ipAddress.substring(splitIndex + 1);
+    }
+
+    public static String getNetmask(String ipAddress) {
+        String prefix = getPrefix(ipAddress);
+
+        return prefix == null ? null
+                : isValidIpv4(ipAddress) ? ipv4PrefixToNetmask(prefix)
+                : isValidIpv6(ipAddress) ? getFormalNetmaskOfNetworkCidr(ipAddress)
+                : null;
     }
 }
 

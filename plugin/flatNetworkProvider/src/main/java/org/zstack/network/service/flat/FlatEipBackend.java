@@ -606,11 +606,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             to.nicGateway = struct.getGuestIp().getGateway();
             to.ipVersion = struct.getGuestIp().getIpVersion();
             to.vmBridgeName = new BridgeNameFinder().findByL3UuidOnHost(struct.getGuestIp().getL3NetworkUuid(), struct.getHostUuid());
-            if (struct.getGuestIp().getIpVersion() == IPv6Constants.IPv4) {
-                to.nicPrefixLen = NetworkUtils.getPrefixLengthFromNetmask(struct.getGuestIp().getNetmask());
-            } else {
-                to.nicPrefixLen = IPv6NetworkUtils.getPrefixLengthFromNetmask(struct.getGuestIp().getNetmask());
-            }
+            to.nicPrefixLen = NetworkUtils.getPrefixLengthFromNetmask(struct.getGuestIp().getNetmask());
         } else {
             /* for detachEip */
             to.nicIp = struct.getEip().getGuestIp();

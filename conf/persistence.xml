@@ -86,6 +86,7 @@
         <class>org.zstack.appliancevm.ApplianceVmVO</class>
         <class>org.zstack.appliancevm.ApplianceVmFirewallRuleVO</class>
         <class>org.zstack.header.vm.VmDnsVO</class>
+        <class>org.zstack.header.vm.VmGuestNetworkInfoVO</class>
         <class>org.zstack.header.vm.VmNicVO</class>
         <class>org.zstack.header.vm.VmSchedHistoryVO</class>
         <class>org.zstack.header.identity.SessionVO</class>
