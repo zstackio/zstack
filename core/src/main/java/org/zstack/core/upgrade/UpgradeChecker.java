@@ -2,6 +2,7 @@ package org.zstack.core.upgrade;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.EventFacade;
@@ -237,7 +238,13 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
             Set<Map.Entry<String, String>> entries = fields.entrySet()
                     .stream()
                     .filter(entry -> {//logger.debug(String.format("entry key: %s, value:%s", entry.getKey(), entry.getValue()));
-                        return currentVersion.lessThan(entry.getValue());})
+                        String ver = entry.getValue();
+                        if (StringUtils.isEmpty(ver)) {
+                            logger.warn("null version for field: " + entry.getKey());
+                            return false;
+                        }
+                        return currentVersion.lessThan(ver);
+                    })
                     .collect(Collectors.toSet());
 
             // do not have new version changes
