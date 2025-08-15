@@ -29,8 +29,8 @@ import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.cdrom.*;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO_;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataGroupVO;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataGroupVO_;
 import org.zstack.header.volume.*;
 import org.zstack.network.l2.L2NetworkHostUtils;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -684,9 +684,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private boolean isVmHasMemorySnapshotGroup(String vmUuid) {
-        List<String> snapShotGroupUuids = Q.New(VmInstanceDeviceAddressGroupVO.class)
-                .select(VmInstanceDeviceAddressGroupVO_.resourceUuid)
-                .eq(VmInstanceDeviceAddressGroupVO_.vmInstanceUuid, vmUuid)
+        List<String> snapShotGroupUuids = Q.New(VmInstanceResourceMetadataGroupVO.class)
+                .select(VmInstanceResourceMetadataGroupVO_.resourceUuid)
+                .eq(VmInstanceResourceMetadataGroupVO_.vmInstanceUuid, vmUuid)
                 .listValues();
         if (snapShotGroupUuids.isEmpty()) {
             return false;

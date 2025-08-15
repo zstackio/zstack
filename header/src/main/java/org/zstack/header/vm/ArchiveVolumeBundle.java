@@ -5,7 +5,7 @@ import org.zstack.header.volume.VolumeInventory;
 /**
  * Created by LiangHanYu on 2022/9/26 17:49
  */
-public class ArchiveVolumeBundle {
+public class ArchiveVolumeBundle extends ArchiveBundle {
     VolumeInventory volumeInventory;
 
     public ArchiveVolumeBundle() {

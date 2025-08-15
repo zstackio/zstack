@@ -46,6 +46,8 @@ public interface TagManager {
 
     boolean hasSystemTag(String resourceUuid, Enum tag);
 
+    SystemTag findMatchingSystemTag(String tag);
+
     void deleteSystemTag(String uuid);
 
     /**

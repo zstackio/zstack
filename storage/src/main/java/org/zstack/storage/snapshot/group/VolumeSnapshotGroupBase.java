@@ -16,7 +16,6 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.SimpleFlowChain;
-import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
@@ -32,22 +31,20 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.RestoreVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.snapshot.VolumeSnapshotGlobalConfig;
 import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.storage.snapshot.VolumeSnapshotMessageRouter.getResourceIdToRouteMsg;
+import static org.zstack.storage.snapshot.group.VolumeSnapshotGroupConstant.SKIP_RESOURCE_ROLLBACK;
 
 /**
  * Created by MaJin on 2019/7/9.
@@ -66,7 +63,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
     @Autowired
     private PluginRegistry pluginRgty;
     @Autowired
-    private VmInstanceDeviceManager vidm;
+    private VmInstanceResourceMetadataManager vidm;
 
     public VolumeSnapshotGroupBase(VolumeSnapshotGroupVO self) {
         this.self = self;
@@ -325,6 +322,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                     @Override
                     public void run(MessageReply reply) {
                         if (!reply.isSuccess()) {
+                            chain.getData().put(SKIP_RESOURCE_ROLLBACK, SKIP_RESOURCE_ROLLBACK);
                             trigger.fail(reply.getError());
                             return;
                         }

@@ -1,5 +1,7 @@
 package org.zstack.testlib
 
+import org.zstack.sdk.QueryVmInstanceResourceMetadataArchiveAction
+import org.zstack.sdk.QueryVmInstanceResourceMetadataGroupAction
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.core.Platform
 
@@ -6139,6 +6141,32 @@ abstract class ApiHelper {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
         
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+    def checkMemorySnapshotGroupConflict(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CheckMemorySnapshotGroupConflictAction.class) Closure c) {
+        def a = new org.zstack.sdk.CheckMemorySnapshotGroupConflictAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
             return out
         } else {
             return errorOut(a.call())
@@ -30909,8 +30937,8 @@ abstract class ApiHelper {
     }
 
 
-    def queryVmInstanceDeviceAddressArchive(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryVmInstanceDeviceAddressArchiveAction.class) Closure c) {
-        def a = new org.zstack.sdk.QueryVmInstanceDeviceAddressArchiveAction()
+    def queryVmInstanceResourceMetadataArchive(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = QueryVmInstanceResourceMetadataArchiveAction.class) Closure c) {
+        def a = new QueryVmInstanceResourceMetadataArchiveAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -30938,8 +30966,8 @@ abstract class ApiHelper {
     }
 
 
-    def queryVmInstanceDeviceAddressGroup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryVmInstanceDeviceAddressGroupAction.class) Closure c) {
-        def a = new org.zstack.sdk.QueryVmInstanceDeviceAddressGroupAction()
+    def queryVmInstanceResourceMetadataGroup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = QueryVmInstanceResourceMetadataGroupAction.class) Closure c) {
+        def a = new QueryVmInstanceResourceMetadataGroupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

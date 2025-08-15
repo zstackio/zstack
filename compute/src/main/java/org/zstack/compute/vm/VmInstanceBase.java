@@ -58,7 +58,7 @@ import org.zstack.header.vm.VmInstanceSpec.CdRomSpec;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.vm.cdrom.*;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.Account;
@@ -137,7 +137,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     @Autowired
     private TagManager tagMgr;
     @Autowired
-    private VmInstanceDeviceManager vidm;
+    private VmInstanceResourceMetadataManager vidm;
     @Autowired
     private NetworkServiceManager nwServiceMgr;
 
@@ -2158,6 +2158,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         class SetCustomMacSystemTag {
             private boolean isSet = false;
+            private boolean allowDuplicatedMac = false;
 
             void set () {
                 if (msg instanceof VmAttachNicMsg || msg instanceof APIAttachL3NetworkToVmMsg) {
@@ -2166,6 +2167,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                     if (msg1.hasSystemTag(VmSystemTags.CUSTOM_MAC::isMatch)) {
                         tagMgr.createNonInherentSystemTags(msg1.getSystemTags(), self.getUuid(), VmInstanceVO.class.getSimpleName());
                         isSet = true;
+                    }
+                    if (msg instanceof VmAttachNicMsg) {
+                        VmAttachNicMsg nicMsg = (VmAttachNicMsg) msg;
+                        allowDuplicatedMac = nicMsg.isAllowDuplicatedMac();
                     }
                 }
             }
@@ -2230,6 +2235,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         flowChain.getData().put(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedAddress.toString(), setStaticIp.allowDupicatedAddress);
         flowChain.getData().put(VmInstanceConstant.Params.VmAllocateNicFlow_nicNetworkInfo.toString(), setStaticIp.nicNetworkInfo);
+        flowChain.getData().put(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedMac.toString(), setCustomMacSystemTag.allowDuplicatedMac);
         for (VmNicPrepareResourceExtensionPoint exp : pluginRgty.getExtensionList(VmNicPrepareResourceExtensionPoint.class)) {
             flowChain.then(exp.getPreparationFlow());
         }
@@ -4183,7 +4189,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 bus.publish(evt);
 
                 if (bootModeChanged[0]) {
-                    vidm.deleteAllDeviceAddressesByVm(self.getUuid());
+                    vidm.deleteAllResourceMetadataByVm(self.getUuid());
                 }
             }
         }).start();
@@ -9036,7 +9042,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                             .set(VmCdRomVO_.deviceId, deviceId)
                             .update();
                     logger.debug(String.format("delete the device address of the cdRom %s of the vm %s", beforeDefaultCdRomVO.getUuid(), beforeDefaultCdRomVO.getVmInstanceUuid()));
-                    vidm.deleteVmDeviceAddress(beforeDefaultCdRomVO.getUuid(), beforeDefaultCdRomVO.getVmInstanceUuid());
+                    vidm.deleteVmResourceMetadata(beforeDefaultCdRomVO.getUuid(), beforeDefaultCdRomVO.getVmInstanceUuid());
                 }
             }
         }.execute();

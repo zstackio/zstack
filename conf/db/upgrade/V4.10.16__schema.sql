@@ -224,3 +224,31 @@ DELIMITER ;
 
 CALL createThickProvisionVolumeTag();
 DROP PROCEDURE IF EXISTS createThickProvisionVolumeTag;
+
+DROP PROCEDURE IF EXISTS `UPGRADE_VM_METADATA_TABLES_IDEMPOTENT`;
+DELIMITER $$
+CREATE PROCEDURE `UPGRADE_VM_METADATA_TABLES_IDEMPOTENT`()
+BEGIN
+    DECLARE old_fk_checks INT DEFAULT 1;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        SET FOREIGN_KEY_CHECKS = old_fk_checks;
+        RESIGNAL;
+    END;
+
+    SET FOREIGN_KEY_CHECKS = 0;
+
+    CALL RENAME_TABLE('VmInstanceDeviceAddressVO', 'VmInstanceResourceMetadataVO');
+    CALL RENAME_TABLE('VmInstanceDeviceAddressGroupVO', 'VmInstanceResourceMetadataGroupVO');
+    CALL RENAME_TABLE('VmInstanceDeviceAddressArchiveVO', 'VmInstanceResourceMetadataArchiveVO');
+
+    CALL GENERIC_ADD_FOREIGN_KEY('VmInstanceResourceMetadataVO','fkVmInstanceResourceMetadataVOVmInstanceEO', 'vmInstanceUuid', 'VmInstanceEO', 'uuid', 'CASCADE');
+    CALL GENERIC_ADD_FOREIGN_KEY('VmInstanceResourceMetadataGroupVO','fkVmInstanceResourceMetadataGroupVOVmInstanceEO', 'vmInstanceUuid', 'VmInstanceEO', 'uuid', 'CASCADE');
+    CALL GENERIC_ADD_FOREIGN_KEY('VmInstanceResourceMetadataArchiveVO','fkVmInstanceResourceMetadataArchiveVOVmInstanceEO', 'vmInstanceUuid', 'VmInstanceEO', 'uuid', 'CASCADE');
+    CALL GENERIC_ADD_FOREIGN_KEY('VmInstanceResourceMetadataArchiveVO','fkVmMetadataArchiveVOVmMetadataGroupVO', 'addressGroupUuid', 'VmInstanceResourceMetadataGroupVO', 'uuid', 'CASCADE');
+
+    SET FOREIGN_KEY_CHECKS = 1;
+END $$
+DELIMITER ;
+
+CALL UPGRADE_VM_METADATA_TABLES_IDEMPOTENT();

@@ -501,6 +501,11 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     @Override
+    public SystemTag findMatchingSystemTag(String tag) {
+        return systemTags.parallelStream().filter(t -> t.isMatch(tag)).findFirst().orElse(null);
+    }
+
+    @Override
     public void deleteSystemTag(String uuid) {
         SystemTagVO vo = Q.New(SystemTagVO.class).eq(SystemTagVO_.uuid, uuid).find();
 

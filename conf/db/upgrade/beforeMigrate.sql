@@ -316,3 +316,65 @@ BEGIN
     SELECT CURTIME();
 END $$
 DELIMITER ;
+
+--/*
+-- * Generic procedure to safely add foreign key constraints
+-- * Specifically designed for the 'zstack' database
+-- *
+-- * Parameters:
+-- *   table_name:       Table receiving foreign key constraint
+-- *   constraint_name:  Name for new foreign key constraint
+-- *   column_name:      Column acting as foreign key
+-- *   ref_table:        Referenced table (parent table)
+-- *   ref_column:       Referenced column (typically primary key)
+-- *   on_delete_action: ON DELETE action (CASCADE, RESTRICT, etc)
+-- */
+DROP PROCEDURE IF EXISTS `GENERIC_ADD_FOREIGN_KEY`;
+DELIMITER $$
+CREATE PROCEDURE `GENERIC_ADD_FOREIGN_KEY`(
+    IN table_name VARCHAR(64),
+    IN constraint_name VARCHAR(64),
+    IN column_name VARCHAR(64),
+    IN ref_table VARCHAR(64),
+    IN ref_column VARCHAR(64),
+    IN on_delete_action VARCHAR(20)
+)
+BEGIN
+    DECLARE constraint_exists INT DEFAULT 0;
+    DECLARE table_exists INT DEFAULT 0;
+
+    -- Verify target table exists in zstack database
+    SELECT COUNT(*) INTO table_exists
+    FROM information_schema.tables
+    WHERE table_schema = 'zstack'
+    AND table_name = table_name;
+
+    -- Only proceed if target table exists
+    IF table_exists > 0 THEN
+        -- Check if constraint already exists to prevent duplicates
+        SELECT COUNT(*) INTO constraint_exists
+        FROM information_schema.table_constraints
+        WHERE constraint_schema = 'zstack'
+        AND table_name = table_name
+        AND constraint_name = constraint_name
+        AND constraint_type = 'FOREIGN KEY';
+
+        -- Create constraint only if it doesn't exist
+        IF constraint_exists = 0 THEN
+            -- Build the ALTER TABLE statement dynamically
+            SET @fk_sql = CONCAT(
+                'ALTER TABLE `zstack`.`', table_name, '`',
+                ' ADD CONSTRAINT `', constraint_name, '`',
+                ' FOREIGN KEY (`', column_name, '`)',
+                ' REFERENCES `zstack`.`', ref_table, '`(`', ref_column, '`)',
+                ' ON DELETE ', on_delete_action
+            );
+
+            -- Prepare and execute the statement safely
+            PREPARE stmt FROM @fk_sql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+        END IF;
+    END IF;
+END $$
+DELIMITER ;
