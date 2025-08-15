@@ -1,6 +1,5 @@
 package org.zstack.resourceconfig;
 
-import org.zstack.core.Platform;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
@@ -27,8 +26,8 @@ public class APIQueryResourceConfigReply extends APIQueryReply {
         clusterConfig.setCategory("host");
         clusterConfig.setName("cpu.overProvisioning.ratio");
         clusterConfig.setResourceType(ClusterVO.class.getSimpleName());
-        clusterConfig.setResourceUuid(Platform.getUuid());
-        clusterConfig.setUuid(Platform.getUuid());
+        clusterConfig.setResourceUuid(uuid(ClusterVO.class));
+        clusterConfig.setUuid(uuid(ResourceConfigVO.class));
         clusterConfig.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         clusterConfig.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         clusterConfig.setValue("10");

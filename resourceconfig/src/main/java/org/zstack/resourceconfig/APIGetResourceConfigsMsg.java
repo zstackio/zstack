@@ -1,7 +1,6 @@
 package org.zstack.resourceconfig;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.core.Platform;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
@@ -55,7 +54,7 @@ public class APIGetResourceConfigsMsg  extends APISyncCallMessage implements Res
         APIGetResourceConfigsMsg msg = new APIGetResourceConfigsMsg();
         msg.category = "host";
         msg.names = Arrays.asList("cpu.overProvisioning.ratio", "reconnectAllOnBoot");
-        msg.resourceUuid = Platform.getUuid();
+        msg.resourceUuid = uuid(ResourceVO.class);
         return msg;
     }
 }

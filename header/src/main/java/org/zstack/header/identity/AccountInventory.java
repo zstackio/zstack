@@ -1,6 +1,7 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.message.DocUtils;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
@@ -104,13 +105,13 @@ public class AccountInventory {
 
     public static AccountInventory __example__() {
         AccountInventory account = new AccountInventory();
-        account.setUuid(UUID.randomUUID().toString().replace("-", ""));
+        account.setUuid(DocUtils.createFixedUuid(AccountVO.class));
         account.setName("account1");
         account.setDescription("account1-description");
         account.setType(AccountType.Normal.toString());
         account.setState(AccountState.Enabled.toString());
-        account.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
-        account.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        account.setCreateDate(new Timestamp(DocUtils.date));
+        account.setLastOpDate(new Timestamp(DocUtils.date));
         return account;
     }
 }
