@@ -10,6 +10,7 @@ public class H3cVcfcV2Commands extends H3cVcfcCommands {
 
     public static final String H3C_VCFC_SUBNETS = "/vds/1.0/subnets";
     public static final String H3C_VCFC_ROUTERS = "/vds/1.0/routers";
+    public static final String H3C_VCFC_VDS = "/vds/1.0/h3c_vdsconf";
 
     public static class NetworkCmd extends H3cVcfcCommands.NetworkCmd {
         String tenant_name;
@@ -112,5 +113,24 @@ public class H3cVcfcV2Commands extends H3cVcfcCommands {
     }
 
     public static class RemoveRouterInterfaceRsp extends H3cRsp {
+    }
+
+    public static class H3cVdsStruct {
+        public String uuid;
+        public String name;
+        public String bridge;
+        public String status;
+        public String openflow_hard_age;
+        public String vxlan_tunnel_name;
+        public String vxlan_range;
+        public String virtual_mac;
+        public String forwarding_mode;
+    }
+
+    public static class GetH3cVdsCmd extends H3cCmd {
+    }
+
+    public static class GetH3cVdsRsp extends H3cRsp {
+        public List<H3cVdsStruct> vds;
     }
 }
