@@ -35,7 +35,7 @@ public interface FlowChain {
 
     FlowChain preCheck(Function<Map, ErrorCode> checker);
 
-    void setProcessors(List<FlowChainProcessor> processors);
+    void addProcessor(FlowChainProcessor processor);
 
     Map getData();
 
@@ -48,4 +48,6 @@ public interface FlowChain {
     void allowWatch();
 
     void disableDebugLog();
+
+    FlowChain enableProgressReport();
 }
