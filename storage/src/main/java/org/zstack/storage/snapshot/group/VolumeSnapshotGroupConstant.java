@@ -5,6 +5,4 @@ public interface VolumeSnapshotGroupConstant {
         SnapshotGroupUuid,
         SnapshotGroup
     }
-
-    String SKIP_RESOURCE_ROLLBACK = "skipResourceRollback";
 }
