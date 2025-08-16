@@ -19,7 +19,6 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.volume.VolumeAO;
 import org.zstack.header.volume.VolumeEO;
 import org.zstack.header.volume.VolumeVO;
-import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -43,9 +42,9 @@ public class DiskCapacityTracer implements Component {
             return;
         }
 
-        chain.setProcessors(CollectionDSL.<FlowChainProcessor>list(new FlowChainProcessor() {
+        chain.addProcessor(new FlowChainProcessor() {
             @Override
-            public void processFlowChain(FlowChainMutable chain) {
+            public void beforeChainStart(FlowChainMutable chain) {
                 List<Flow> flows = new ArrayList<Flow>();
                 for (Flow f : chain.getFlows()) {
                     flows.add(f);
@@ -80,7 +79,7 @@ public class DiskCapacityTracer implements Component {
 
                 chain.setFlows(flows);
             }
-        }));
+        });
     }
 
     private void printCallTrace() {

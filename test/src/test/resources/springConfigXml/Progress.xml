@@ -28,4 +28,10 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="ProgressFlowChainProcessorFactory" class="org.zstack.core.progress.ProgressFlowChainProcessorFactoryImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.core.progress.ProgressFlowChainProcessorFactory"/>
+        </zstack:plugin>
+    </bean>
+
 </beans>
