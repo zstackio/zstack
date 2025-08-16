@@ -20,6 +20,14 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="ActionProgressService" class="org.zstack.core.progress.ActionProgressService">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.Service" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="ProgressApiInterceptor" class="org.zstack.core.progress.ProgressApiInterceptor">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>

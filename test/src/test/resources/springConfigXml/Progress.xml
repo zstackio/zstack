@@ -7,12 +7,20 @@
          http://www.springframework.org/schema/aop
          http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
          http://www.springframework.org/schema/tx
-     	 http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
-     	 http://zstack.org/schema/zstack
+         http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+         http://zstack.org/schema/zstack
          http://zstack.org/schema/zstack/plugin.xsd"
        default-init-method="init" default-destroy-method="destroy">
 
     <bean id="ProgressReportService" class="org.zstack.core.progress.ProgressReportService">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.Service" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="ActionProgressService" class="org.zstack.core.progress.ActionProgressService">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />

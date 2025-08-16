@@ -166,6 +166,7 @@
         <class>org.zstack.rest.AsyncRestVO</class>
         <class>org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO</class>
         <class>org.zstack.header.core.progress.TaskProgressVO</class>
+        <class>org.zstack.header.core.progress.ActionProgressVO</class>
         <class>org.zstack.header.vo.ResourceVO</class>
         <class>org.zstack.header.core.webhooks.WebhookVO</class>
         <class>org.zstack.header.longjob.LongJobVO</class>
