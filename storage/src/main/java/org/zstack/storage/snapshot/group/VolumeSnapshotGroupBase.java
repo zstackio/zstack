@@ -44,7 +44,6 @@ import java.util.*;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.storage.snapshot.VolumeSnapshotMessageRouter.getResourceIdToRouteMsg;
-import static org.zstack.storage.snapshot.group.VolumeSnapshotGroupConstant.SKIP_RESOURCE_ROLLBACK;
 
 /**
  * Created by MaJin on 2019/7/9.
@@ -322,7 +321,6 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                     @Override
                     public void run(MessageReply reply) {
                         if (!reply.isSuccess()) {
-                            chain.getData().put(SKIP_RESOURCE_ROLLBACK, SKIP_RESOURCE_ROLLBACK);
                             trigger.fail(reply.getError());
                             return;
                         }
