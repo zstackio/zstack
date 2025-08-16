@@ -12,7 +12,6 @@ import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.*;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.progress.ProgressCommands.ProgressReportCmd;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.PeriodicTask;
@@ -54,8 +53,6 @@ public class ProgressReportService extends AbstractService implements Management
     private static final CLogger logger = Utils.getLogger(ProgressReportService.class);
     @Autowired
     private RESTFacade restf;
-    @Autowired
-    protected ErrorFacade errf;
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
