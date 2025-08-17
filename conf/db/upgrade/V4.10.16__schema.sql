@@ -161,7 +161,7 @@ DROP PROCEDURE IF EXISTS upgradeIpInBinaryColumn;
 DELIMITER $$
 CREATE PROCEDURE upgradeIpInBinaryColumn()
 BEGIN
-    CALL INSERT_COLUMN('UsedIpVO', 'ipInBinary', 'VARBINARY(16)', 0, 0, 'ipInLong');
+    CALL INSERT_COLUMN('UsedIpVO', 'ipInBinary', 'VARBINARY(16)', 0, 0x00000000000000000000000000000000, 'ipInLong');
 
     UPDATE `zstack`.`UsedIpVO`
     SET `ipInBinary` = INET6_ATON(`ip`)
