@@ -1,11 +1,13 @@
 package org.zstack.network.service;
 
+import org.apache.commons.lang.StringUtils;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.vm.VmDnsVO;
 import org.zstack.header.vm.VmDnsVO_;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.gson.JSONObjectUtil;
 
 import javax.persistence.Tuple;
 import java.util.ArrayList;
@@ -75,5 +77,18 @@ public class DnsUtils {
                 .list());
 
         return vos;
+    }
+
+    @SuppressWarnings({"unchecked"})
+    public static List<String> getDnsListFromString(String dnsListStr) {
+        if (StringUtils.isEmpty(dnsListStr)) {
+            return new ArrayList<>();
+        }
+
+        try {
+            return JSONObjectUtil.toCollection(dnsListStr, ArrayList.class, String.class);
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
     }
 }

@@ -3,7 +3,7 @@ package org.zstack.test.integration.networkservice.provider.flat.hostRoute
 import org.springframework.http.HttpEntity
 import org.zstack.header.network.service.NetworkServiceConstants
 import org.zstack.network.service.flat.FlatDhcpBackend
-import org.zstack.network.service.NetworkServiceHelper.HostRouteInfo;
+import org.zstack.network.service.HostRouteUtils.HostRouteInfo;
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory

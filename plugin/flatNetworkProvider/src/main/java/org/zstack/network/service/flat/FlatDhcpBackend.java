@@ -50,7 +50,7 @@ import org.zstack.network.l3.CheckIpAddressAvailabilityExtensionPoint;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.DhcpExtension;
 import org.zstack.network.service.NetworkProviderFinder;
-import org.zstack.network.service.NetworkServiceHelper.HostRouteInfo;
+import org.zstack.network.service.HostRouteUtils.HostRouteInfo;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.NetworkServiceProviderLookup;
 import org.zstack.network.service.flat.IpStatisticConstants.VmType;
@@ -78,7 +78,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
-import static org.zstack.network.service.NetworkServiceHelper.getL3NetworkHostRoute;
+import static org.zstack.network.service.HostRouteUtils.getL3NetworkHostRoute;
 import static org.zstack.network.service.flat.IpStatisticConstants.ResourceType;
 import static org.zstack.network.service.flat.IpStatisticConstants.SortBy;
 import static org.zstack.utils.CollectionDSL.*;

@@ -176,6 +176,27 @@ DELIMITER ;
 CALL upgradeIpInBinaryColumn();
 DROP PROCEDURE IF EXISTS upgradeIpInBinaryColumn;
 
+CREATE TABLE IF NOT EXISTS `zstack`.`VmGuestNetworkInfoVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `vmInstanceUuid` char(32) NOT NULL,
+    `vmNicUuid` char(32) DEFAULT NULL,
+    `ipAddress` varchar(128) DEFAULT NULL,
+    `gateway` varchar(128) DEFAULT NULL,
+    `dnsList` varchar(255) DEFAULT NULL,
+    `routeList` varchar(1024) DEFAULT NULL,
+    `ipv6Address` varchar(128) DEFAULT NULL,
+    `ipv6Gateway` varchar(128) DEFAULT NULL,
+    `dns6List` varchar(255) DEFAULT NULL,
+    `route6List` varchar(1024) DEFAULT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`id`),
+    INDEX `idxVmGuestNetworkInfoVOipAddress` (`ipAddress`),
+    INDEX `idxVmGuestNetworkInfoVOipv6Address` (`ipv6Address`),
+    CONSTRAINT `fkVmGuestNetworkInfoVOVmInstanceEO` FOREIGN KEY (`vmInstanceUuid`) REFERENCES `VmInstanceEO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkVmGuestNetworkInfoVOVmNicVO` FOREIGN KEY (`vmNicUuid`) REFERENCES `VmNicVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 DROP PROCEDURE IF EXISTS createThickProvisionVolumeTag;
 DELIMITER $$
 CREATE PROCEDURE createThickProvisionVolumeTag()
