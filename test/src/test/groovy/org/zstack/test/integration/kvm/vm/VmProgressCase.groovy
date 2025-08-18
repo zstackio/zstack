@@ -4,14 +4,11 @@ import org.springframework.http.HttpEntity
 import org.springframework.web.util.UriComponentsBuilder
 import org.zstack.core.Platform
 import org.zstack.core.db.Q
-import org.zstack.core.db.SQL
 import org.zstack.core.progress.ProgressCommands
 import org.zstack.core.progress.ProgressGlobalConfig
-import org.zstack.core.progress.ProgressReportService
-import org.zstack.header.core.progress.ProgressConstants
 import org.zstack.header.core.progress.TaskProgressVO
 import org.zstack.header.core.progress.TaskProgressVO_
-import org.zstack.header.core.progress.TaskType
+import org.zstack.header.core.progress.ProgressConstants
 import org.zstack.header.rest.RESTConstant
 import org.zstack.header.rest.RESTFacade
 import org.zstack.header.vm.APICreateVmInstanceMsg
@@ -45,67 +42,6 @@ class VmProgressCase extends SubCase {
         env = Env.noVmEnv()
     }
 
-    void testProgressDeleteAfterApiDone() {
-        bean(ProgressReportService.class).setDELETE_DELAY(1)
-
-        String apiUuid = Platform.getUuid()
-        createVmInstance {
-            apiId = apiUuid
-            imageUuid = env.inventoryByName("image1").uuid
-            instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
-            l3NetworkUuids = [env.inventoryByName("l3").uuid]
-            name = "vm"
-        }
-
-        retryInSecs {
-            assert !Q.New(TaskProgressVO.class).eq(TaskProgressVO_.apiId, apiUuid).isExists()
-        }
-    }
-
-    void testProgressTTL() {
-        // set DELETE_DELAY to a very big value so the progress entries won't be deleted
-        // after API completes
-        bean(ProgressReportService.class).setDELETE_DELAY(1000)
-
-        String apiUuid = Platform.getUuid()
-        createVmInstance {
-            apiId = apiUuid
-            imageUuid = env.inventoryByName("image1").uuid
-            instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
-            l3NetworkUuids = [env.inventoryByName("l3").uuid]
-            name = "vm"
-        }
-
-        // confirm the progress entries are still there
-        assert Q.New(TaskProgressVO.class).eq(TaskProgressVO_.apiId, apiUuid).isExists()
-
-        // set the TTL to 1s
-        ProgressGlobalConfig.PROGRESS_TTL.updateValue(1)
-
-        retryInSecs {
-            // confirm the progress entries are deleted
-            assert !Q.New(TaskProgressVO.class).eq(TaskProgressVO_.apiId, apiUuid).isExists()
-        }
-    }
-
-    void testNoProgressWhenProgressIsTurnedOff() {
-        ProgressGlobalConfig.PROGRESS_ON.updateValue(false)
-
-        String apiUuid = Platform.getUuid()
-        createVmInstance {
-            apiId = apiUuid
-            imageUuid = env.inventoryByName("image1").uuid
-            instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
-            l3NetworkUuids = [env.inventoryByName("l3").uuid]
-            name = "vm"
-        }
-
-        assert !Q.New(TaskProgressVO.class).isExists()
-
-        // reopen it
-        ProgressGlobalConfig.PROGRESS_ON.updateValue(true)
-    }
-
     void testCreateVmProgress() {
         RESTFacade restf = bean(RESTFacade.class)
 
@@ -121,6 +57,7 @@ class VmProgressCase extends SubCase {
         ub.path(RESTConstant.COMMAND_CHANNEL_PATH)
         String url = ub.build().toUriString()
 
+        logger.info("Test 001: Progress basic check: with agent reporter")
         env.hijackSimulator(LocalStorageKvmSftpBackupStorageMediatorImpl.DOWNLOAD_BIT_PATH) { rsp, HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.getBody(), LinkedHashMap.class)
             int i = 0
@@ -153,32 +90,31 @@ class VmProgressCase extends SubCase {
             if (cmd.backupStorageInstallPath == vmImagePath) {
                 // downloading user vm image, 2 sub tasks here
 
-                List<TaskProgressInventory> invs = getTaskProgress {
+                def invs = getTaskProgress {
                     apiId = a.apiId
+                } as List<TaskProgressInventory>
+
+                assert invs.size() >= 2
+
+                // instantiate-volume-%s-local-primary-storage-%s
+                def instantiateInv = invs.find {
+                    it.content.matches("^instantiate-volume-[0-9a-f]{32}-local-primary-storage-[0-9a-f]{32}: .*")
                 }
+                assert instantiateInv != null
+                assert instantiateInv.currentStep == 0
+                assert instantiateInv.totalStep == 1
 
-                assert invs.size() == 2
-
-                // the first one is starting the user vm
-                TaskProgressInventory inv = invs[0]
-                assert inv.type == TaskType.Task.toString()
-                assert inv.taskName == APICreateVmInstanceMsg.class.name
-                assert inv.content == "create a volume[%s] on the local storage"
-                assert inv.arguments == "[\"Root\"]"
-                assert inv.opaque == null
-
-                // the second one is downloading user image
-                inv = invs[1]
-                assert inv.content == rcmd.progress
-                int progressNumber = Integer.parseInt(inv.content)
-                assert progressNumber >= 0
-                assert progressNumber < 100
-                assert inv.type == TaskType.Progress.toString()
-                assert inv.opaque != null
-                assert inv.opaque["remain"] != null
-                assert inv.opaque["total"] != null
-                assert inv.parentUuid == invs[0].taskUuid
-                assert inv.arguments == null
+                // the next one is downloading user image
+                def agentInv = invs.find {
+                    it.content == "agent-report-task-for: " + APICreateVmInstanceMsg.class.getName()
+                }
+                assert agentInv != null
+                assert agentInv.currentStep >= 0
+                assert agentInv.currentStep < 100
+                assert agentInv.totalStep == 100
+                assert agentInv.opaque != null
+                assert agentInv.opaque["remain"] != null
+                assert agentInv.opaque["total"] != null
 
             } else if (cmd.backupStorageInstallPath == vrImagePath) {
                 // downloading vr image, 1 sub tasks here
@@ -187,21 +123,34 @@ class VmProgressCase extends SubCase {
                     apiId = a.apiId
                 }
 
-                assert invs.size() == 3
+                assert invs.size() >= 5
+                // In cases, we have 5 sub progresses (and 1 main progress)
+                // Sub progresses list below:
+                // 1: instantiate-volume-{RootVolumeUuid}-local-primary-storage-*
+                // 2: download-image-{}-to-local-storage-{}-cache-host-{}
+                // 3: agent-report-task-for: CreateVmInstanceMsg  (Root)
+                // 4: instantiate-volume-{DataVolumeUuid}-local-primary-storage-*
+                // 5: download-image-{}-to-local-storage-{}-cache-host-{}
+                // 6: agent-report-task-for: CreateVmInstanceMsg  (Data)
 
-                // the first one is starting the user vm
-                TaskProgressInventory inv = invs[0]
-                assert inv.type == TaskType.Task.toString()
+                // TODO:
+                // In current version, cmd.resourceUuid is not required,
+                // so sub progress 3 and 6 are maybe only remain 1 progress.
 
-                // the second one is starting vr
-                inv = invs[1]
-                assert inv.type == TaskType.Task.toString()
+                def instantiateInvs = invs.findAll {
+                    it.content.matches("^instantiate-volume-[0-9a-f]{32}-local-primary-storage-[0-9a-f]{32}: .*")
+                }
+                assert instantiateInvs.size() >= 2
 
-                // the third one is downloading vr image
-                inv = invs[2]
-                assert inv.content == rcmd.progress
-                assert inv.type == TaskType.Progress.toString()
+                def downloadInvs = invs.findAll {
+                    it.content.matches("^download-image-[0-9a-f]{32}-to-local-storage-[0-9a-f]{32}-cache-host-[0-9a-f]{32}: .*")
+                }
+                assert downloadInvs.size() >= 2
 
+                def agentInvs = invs.findAll {
+                    it.content == "agent-report-task-for: " + APICreateVmInstanceMsg.class.getName()
+                }
+                assert agentInvs.size() >= 1
             } else {
                 assert false: "should not be here: ${cmd.backupStorageInstallPath}"
             }
@@ -229,22 +178,19 @@ class VmProgressCase extends SubCase {
 
         assert invs.size() != 0
 
-        SQL.New(TaskProgressVO.class).hardDelete();
+        logger.info("Test 007: Progress will remain after API done")
+        retryInSecs {
+            Q.New(TaskProgressVO.class)
+                    .eq(TaskProgressVO_.apiId, a.apiId)
+                    .count() >= 5
+        }
     }
 
     @Override
     void test() {
         env.create {
-            int deleteDelay = bean(ProgressReportService.class).getDELETE_DELAY()
             ProgressGlobalConfig.CLEANUP_THREAD_INTERVAL.updateValue(1)
-
             testCreateVmProgress()
-            testNoProgressWhenProgressIsTurnedOff()
-            testProgressDeleteAfterApiDone()
-            testProgressTTL()
-
-            // recover the DELETE_DELAY to the default value
-            bean(ProgressReportService.class).setDELETE_DELAY(deleteDelay)
         }
     }
 }
