@@ -1,10 +1,10 @@
 package org.zstack.sdnController.header;
 
 public enum SdnControllerTableState {
-    ENABLED("Enabled"),
-    DISABLED("Disabled");
+    Enabled("Enabled"),
+    Disabled("Disabled");
 
-    private String value;
+    public final String value;
     private SdnControllerTableState(String value) {
         this.value = value;
     }
