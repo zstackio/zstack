@@ -8,6 +8,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.acl.APIUpdateAccessControlListMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.acl.APIDeleteAccessControlListMsg</name>
     </message>
 

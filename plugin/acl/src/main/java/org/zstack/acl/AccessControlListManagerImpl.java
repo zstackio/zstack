@@ -73,6 +73,8 @@ public class AccessControlListManagerImpl extends AbstractService implements Acc
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APICreateAccessControlListMsg) {
             handle((APICreateAccessControlListMsg) msg);
+        } else if (msg instanceof APIUpdateAccessControlListMsg) {
+            handle((APIUpdateAccessControlListMsg) msg);
         } else if (msg instanceof APIDeleteAccessControlListMsg) {
             handle((APIDeleteAccessControlListMsg) msg);
         } else if (msg instanceof APIAddAccessControlListEntryMsg) {
@@ -117,6 +119,26 @@ public class AccessControlListManagerImpl extends AbstractService implements Acc
         }.execute();
         evt.setInventory(vo.toInventory());
         bus.publish(evt);
+    }
+
+    private void handle(APIUpdateAccessControlListMsg msg) {
+        AccessControlListVO vo = dbf.findByUuid(msg.getUuid(), AccessControlListVO.class);
+        boolean update = false;
+        if (msg.getName() != null) {
+            vo.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            vo.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (update) {
+            vo = dbf.updateAndRefresh(vo);
+        }
+
+        APIUpdateAccessControlListEvent event = new APIUpdateAccessControlListEvent(msg.getId());
+        event.setInventory(vo.toInventory());
+        bus.publish(event);
     }
 
     private void handle(APIDeleteAccessControlListMsg msg) {
