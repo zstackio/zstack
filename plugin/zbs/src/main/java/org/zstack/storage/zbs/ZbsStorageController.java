@@ -198,6 +198,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         CreateVolumeCmd cmd = new CreateVolumeCmd();
         cmd.setLogicalPool(config.getLogicalPoolName());
         cmd.setVolume(ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME);
+        cmd.setSize(ZbsConstants.ZBS_HEARTBEAT_VOLUME_SIZE_IN_GIGABYTE);
+        cmd.setUnit(ZbsConstants.GIGABYTE_UNIT);
         cmd.setSkipIfExisting(true);
 
         httpCall(CREATE_VOLUME_PATH, cmd, CreateVolumeRsp.class, new ReturnValueCompletion<CreateVolumeRsp>(comp) {
