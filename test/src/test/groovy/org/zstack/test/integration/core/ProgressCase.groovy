@@ -4,18 +4,21 @@ import org.apache.logging.log4j.ThreadContext
 import org.zstack.core.Platform
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
-import org.zstack.core.db.SimpleQuery
-import org.zstack.core.progress.ProgressReportService
-import org.zstack.header.core.progress.TaskProgressRange
-import org.zstack.header.core.progress.TaskProgressVO
+import org.zstack.core.progress.ActionProgressService
+import org.zstack.core.workflow.FlowChainBuilder
+import org.zstack.header.core.progress.TaskProgressInventory
 import org.zstack.header.core.progress.TaskProgressVO_
+import org.zstack.header.core.progress.TaskProgressVO
+import org.zstack.header.core.workflow.FlowDoneHandler
+import org.zstack.header.core.workflow.FlowErrorHandler
+import org.zstack.header.core.workflow.FlowTrigger
+import org.zstack.header.core.workflow.NoRollbackFlow
+import org.zstack.header.errorcode.ErrorCode
 import org.zstack.testlib.SubCase
 
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
-import static org.zstack.core.progress.ProgressReportService.*
 import static org.zstack.header.Constants.THREAD_CONTEXT_API
-import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME
 
 class ProgressCase extends SubCase {
     @Override
@@ -39,90 +42,127 @@ class ProgressCase extends SubCase {
     @Override
     void test() {
         testReportUntil()
-        testParallelTaskStage()
+        testFlowChainProgress()
     }
 
     void testReportUntil() {
-        ProgressReportService progRpt = bean(ProgressReportService.class)
+        logger.info("Test-001: test action progress service reporter")
+
         def apiId = Platform.getUuid()
         ThreadContext.put(THREAD_CONTEXT_API, apiId)
-        ThreadContext.put(THREAD_CONTEXT_TASK_NAME, "testTaskName")
 
-        reportProgress("5")
-        progRpt.reportProgressUntil("10", 10, TimeUnit.MILLISECONDS)
-        retryInSecs {
-            assert Q.New(TaskProgressVO.class).count() == 10 - 5 + 2
+        def reporter = ActionProgressService.taskProgress()
+                .withContent("testTaskName")
+                .withTotalStep(30L)
+                .withCurrentStep(0L)
+                .report()
+        def progressList1A = ActionProgressService.findProgressesByApiId(apiId)
+        assert progressList1A.size() == 1
+        assert progressList1A[0].content == "testTaskName"
+        assert progressList1A[0].totalStep == 30L
+        assert progressList1A[0].currentStep == 0L
+
+        retryInSecs { // first save in cache, and 1 ~ 2 seconds later save to db
+            assert Q.New(TaskProgressVO.class)
+                    .eq(TaskProgressVO_.apiId, apiId)
+                    .isExists()
         }
 
-        progRpt.reportProgressUntil("10", 10, TimeUnit.MILLISECONDS)
-        sleep(500)
-        assert Q.New(TaskProgressVO.class).count() == 10 - 5 + 3
-        SQL.New(TaskProgressVO.class).delete()
+        def progressList1 = Q.New(TaskProgressVO.class)
+                .eq(TaskProgressVO_.apiId, apiId)
+                .list() as List<TaskProgressVO>
+        assert progressList1.size() == 1
+        assert progressList1[0].content == "testTaskName"
+        assert progressList1[0].totalStep == 30L
+        assert progressList1[0].currentStep == 0L
+        long id = progressList1[0].id
 
+        reporter.withCurrentStep(22L).report()
 
-        progRpt.reportProgressUntil("10", 10, TimeUnit.MILLISECONDS)
-        sleep(1000)
-        assert Q.New(TaskProgressVO.class).count() == 10 + 1
+        def progressList2A = ActionProgressService.findProgressesByApiId(apiId)
+        assert progressList2A.size() == 1
+        assert progressList2A[0].content == "testTaskName"
+        assert progressList2A[0].totalStep == 30L
+        assert progressList2A[0].currentStep == 22L
+
+        retryInSecs { // first save in cache, and 1 ~ 2 seconds later save to db
+            assert Q.New(TaskProgressVO.class)
+                    .eq(TaskProgressVO_.id, id)
+                    .eq(TaskProgressVO_.currentStep, 22L)
+                    .isExists()
+        }
+
+        def progressList2 = Q.New(TaskProgressVO.class)
+                .eq(TaskProgressVO_.apiId, apiId)
+                .list() as List<TaskProgressVO>
+        assert progressList2.size() == 1
+        assert progressList2[0].id == id
+        assert progressList2[0].content == "testTaskName"
+        assert progressList2[0].totalStep == 30L
     }
 
-    void testParallelTaskStage() {
-        SQL.New(TaskProgressVO.class).delete()
+    void testFlowChainProgress() {
+        logger.info("Test-011: test action progress service reporter")
+
         def apiId = Platform.getUuid()
         ThreadContext.put(THREAD_CONTEXT_API, apiId)
-        ThreadContext.put(THREAD_CONTEXT_TASK_NAME, "testTaskName")
 
-        def stage = markParallelTaskStage(getTaskStage(), new TaskProgressRange(0, 90), [2, 3, 4])
+        List<TaskProgressInventory> flow1ProgressList = []
+        List<TaskProgressInventory> flow2ProgressList = []
+        List<TaskProgressInventory> chainDoneProgressList = []
+        def completed = new AtomicBoolean(false)
+        def success = new AtomicBoolean(false)
 
-        List<Thread> threads = []
-        threads.add(Thread.start {
-            ThreadContext.put(THREAD_CONTEXT_API, apiId)
-            ThreadContext.put(THREAD_CONTEXT_TASK_NAME, "testTaskName")
-            stage.markSubStage()
-            sleep(1000)
+        def chain = FlowChainBuilder.newSimpleFlowChain()
+        chain.setName("Test-011")
+        chain.enableProgressReport()
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "flow-1"
+            @Override
+            void run(FlowTrigger trigger, Map data) {
+                flow1ProgressList.addAll(ActionProgressService.findProgressesByApiId(apiId))
+                trigger.next()
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "flow-2"
+            @Override
+            void run(FlowTrigger trigger, Map data) {
+                flow2ProgressList.addAll(ActionProgressService.findProgressesByApiId(apiId))
+                trigger.next()
+            }
+        }).done(new FlowDoneHandler(null) {
+            @Override
+            void handle(Map data) {
+                chainDoneProgressList.addAll(ActionProgressService.findProgressesByApiId(apiId))
+                success.set(true)
+                completed.set(true)
+            }
+        }).error(new FlowErrorHandler(null) {
+            @Override
+            void handle(ErrorCode errCode, Map data) {
+                completed.set(true)
+            }
+        }).start()
 
-            reportProgress("0")
-            reportProgress("10")
-            sleep(3)
-            reportProgress("20")
-        })
-        threads.add(Thread.start {
-            ThreadContext.put(THREAD_CONTEXT_API, apiId)
-            ThreadContext.put(THREAD_CONTEXT_TASK_NAME, "testTaskName")
-            stage.markSubStage()
-            sleep(1000)
+        retryInSecs {
+            assert completed.get()
+        }
+        assert success.get()
 
-            reportProgress("20")
-            sleep(1)
-            reportProgress("30")
-            sleep(2)
-            reportProgress("40")
-            sleep(1)
-            reportProgress("50")
-        })
-        threads.add(Thread.start {
-            ThreadContext.put(THREAD_CONTEXT_API, apiId)
-            ThreadContext.put(THREAD_CONTEXT_TASK_NAME, "testTaskName")
-            stage.markSubStage()
-            sleep(1000)
+        assert flow1ProgressList.size() == 1
+        assert flow1ProgressList[0].content == "Test-011: flow-1"
+        assert flow1ProgressList[0].currentStep == 0
+        assert flow1ProgressList[0].totalStep == 2
 
-            reportProgress("50")
-            sleep(1)
-            reportProgress("60")
-            sleep(1)
-            reportProgress("70")
-            sleep(1)
-            reportProgress("80")
-            sleep(1)
-            reportProgress("90")
-        })
+        assert flow2ProgressList.size() == 1
+        assert flow2ProgressList[0].content == "Test-011: flow-2"
+        assert flow2ProgressList[0].currentStep == 1
+        assert flow2ProgressList[0].totalStep == 2
 
-        threads.forEach({t -> t.join()})
-        reportProgress("100")
-        List<TaskProgressVO> progresses = Q.New(TaskProgressVO.class)
-                .orderBy(TaskProgressVO_.id, SimpleQuery.Od.ASC) // DO NOT SORT BY TIME! time value may repeat
-                .list()
-        // TODO: solve the boundary condition
-        assert progresses.content.unique() == ["0", "10", "20", "30", "40", "50", "60", "70", "100"]
+        assert chainDoneProgressList.size() == 1
+        assert chainDoneProgressList[0].content == "Test-011: done"
+        assert chainDoneProgressList[0].currentStep == 2
+        assert chainDoneProgressList[0].totalStep == 2
     }
 }
 

@@ -18,8 +18,8 @@ import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.Completion
 import org.zstack.sdk.ErrorCode
 import org.zstack.sdk.LongJobInventory
-import org.zstack.sdk.SubmitLongJobAction
 import org.zstack.sdk.TaskProgressInventory
+import org.zstack.sdk.SubmitLongJobAction
 import org.zstack.storage.ceph.backup.CephBackupStorageBase
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
@@ -138,13 +138,15 @@ class AddImageLongJobProgressCase extends SubCase {
                 }
 
                 return {
-                    assert invs.size() == 1
+                    // include 1 main progress and at less 1 sub progress
+                    assert invs.size() >= 2
 
-                    TaskProgressInventory inv = invs[0]
-
-                    assert inv.content == "${i*20}".toString()
-                    assert inv.parentUuid == null
-                    assert inv.type == TaskType.Progress.toString()
+                    def sub = invs.find {
+                        it.content.startsWith("agent-report-task-for")
+                    }
+                    assert sub != null
+                    assert sub.currentStep == i * 20
+                    assert sub.totalStep == 100
                 }
             }
         }
@@ -165,7 +167,7 @@ class AddImageLongJobProgressCase extends SubCase {
             all = true
         }
 
-        assert invs.size() == num + 1
+        assert invs.size() == 2
 
         deleteLongJob {
             uuid = jobInv.uuid
