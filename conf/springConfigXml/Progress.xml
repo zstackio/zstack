@@ -39,4 +39,6 @@
             <zstack:extension interface="org.zstack.header.core.progress.ProgressFlowChainProcessorFactory"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="ProgressWhileProcessorFactory" class="org.zstack.core.progress.ProgressWhileProcessorFactory"/>
 </beans>

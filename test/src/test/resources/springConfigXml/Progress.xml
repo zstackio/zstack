@@ -34,4 +34,5 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="ProgressWhileProcessorFactory" class="org.zstack.core.progress.ProgressWhileProcessorFactory"/>
 </beans>
