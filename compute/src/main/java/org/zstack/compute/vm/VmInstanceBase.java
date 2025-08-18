@@ -33,7 +33,6 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.*;
 import org.zstack.header.core.*;
-import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -95,7 +94,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
-import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.header.vm.VmErrors.ATTACH_VOLUME_ERROR;
 import static org.zstack.utils.CollectionDSL.*;
 import static org.zstack.utils.CollectionUtils.isEmpty;
@@ -7357,6 +7355,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         String lastHostUuid = self.getHostUuid();
         chain.setName(String.format("do-migrate-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        chain.enableProgressReport();
         chain.then(new NoRollbackFlow() {
             final String __name__ = String.format("sync-vm-%s-stat-after-migrate", self.getUuid());
 
@@ -7450,13 +7449,11 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                reportProgress("0");
                 migrateVm(msg, new Completion(chain) {
                     @Override
                     public void success() {
                         APIMigrateVmEvent evt = new APIMigrateVmEvent(msg.getId());
                         evt.setInventory(VmInstanceInventory.valueOf(self));
-                        reportProgress("100");
                         bus.publish(evt);
                         chain.next();
                     }
@@ -9234,16 +9231,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        TaskProgressRange parentStage = getTaskStage();
-
         List<VolumeInventory> vols = new ArrayList<>();
         List<Long> weights = self.getAllDiskVolumes().stream().map(it -> 1L).collect(Collectors.toList());
-        List<TaskProgressRange> stages = splitTaskStage(parentStage, weights);
-        new While<>(self.getAllDiskVolumes()).each((vol, compl) -> {
-            TaskProgressRange stage = markTaskStage(stages.remove(0));
+        new While<>(self.getAllDiskVolumes())
+                .enableProgressReport("flatten-volumes")
+                .each((vol, compl) -> {
             if (vol.isShareable()) {
                 vols.add(vol.toInventory());
-                reportProgress(stage.getEnd().toString());
                 compl.done();
                 return;
             }
@@ -9262,7 +9256,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
 
                     vols.add(((FlattenVolumeReply) reply).getInventory());
-                    reportProgress(stage.getEnd().toString());
                     compl.done();
                 }
             });

@@ -63,7 +63,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
-import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
 import static org.zstack.storage.primary.local.LocalStorageUtils.getHostUuidFromInstallUrl;
 import static org.zstack.utils.CollectionDSL.*;
 import static org.zstack.utils.CollectionUtils.*;
@@ -2152,8 +2151,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(final InstantiateVolumeOnPrimaryStorageMsg msg) {
-        createSubTaskProgress("create a volume[%s] on the local storage", msg.getVolume().getType());
-
         String hostUuid = msg.getDestHost().getUuid();
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
         final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
@@ -2161,6 +2158,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("instantiate-volume-%s-local-primary-storage-%s", msg.getVolume().getUuid(), self.getUuid()));
+        chain.enableProgressReport();
+
         final String finalHostUuid = hostUuid;
         chain.then(new ShareFlow() {
             InstantiateVolumeOnPrimaryStorageReply reply;

@@ -31,8 +31,6 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.progress.ProgressReportService.taskProgress;
-
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateHostFlow implements Flow {
     private static final CLogger logger = Utils.getLogger(VmAllocateHostFlow.class);
@@ -150,9 +148,12 @@ public class VmAllocateHostFlow implements Flow {
     }
 
     @Override
-    public void run(final FlowTrigger chain, Map data) {
-        taskProgress("allocate candidate hosts");
+    public String name() {
+        return "allocate-candidate-hosts";
+    }
 
+    @Override
+    public void run(final FlowTrigger chain, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         if (VmOperation.NewCreate != spec.getCurrentVmOperation()

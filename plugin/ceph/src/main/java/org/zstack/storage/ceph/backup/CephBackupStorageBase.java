@@ -24,7 +24,6 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.*;
-import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -59,8 +58,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.core.Platform.multiErr;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.getTaskStage;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.storage.backup.BackupStorageConstant.IMPORT_IMAGES_FAKE_RESOURCE_UUID;
 import static org.zstack.header.storage.backup.BackupStorageConstant.RESTORE_IMAGES_BACKUP_STORAGE_METADATA_TO_DATABASE;
 import static org.zstack.utils.CollectionDSL.list;
@@ -1729,8 +1726,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
     }
 
     protected void exportImage(ExportImageFromBackupStorageMsg msg) {
-        TaskProgressRange parentStage = getTaskStage();
-
         ExportImageFromBackupStorageReply reply = new ExportImageFromBackupStorageReply();
         Tuple t = Q.New(ImageBackupStorageRefVO.class).select(ImageBackupStorageRefVO_.installPath, ImageBackupStorageRefVO_.exportUrl)
                 .eq(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
@@ -1767,7 +1762,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
                 reply.setImageUrl(exportUrl);
                 reply.setMd5sum(rsp.md5sum);
-                reportProgress(parentStage.getEnd().toString());
                 bus.reply(msg, reply);
             }
 

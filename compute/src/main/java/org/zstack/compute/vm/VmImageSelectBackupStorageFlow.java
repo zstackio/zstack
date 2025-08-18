@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.taskProgress;
 import static org.zstack.utils.CollectionUtils.findOneOrNull;
 
 /**
@@ -42,9 +41,12 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private String findBackupStorage(VmInstanceSpec spec, String imageUuid) {
-        taskProgress("Choose backup storage for downloading the image");
+    @Override
+    public String name() {
+        return "choose-backup-storage-for-downloading-the-image";
+    }
 
+    private String findBackupStorage(VmInstanceSpec spec, String imageUuid) {
         spec.getImageSpec().setNeedDownload(imageNeedDownload(spec, imageUuid));
         if (!spec.getImageSpec().isNeedDownload() && spec.getImageSpec().getInventory().getBackupStorageRefs().isEmpty()) {
             return null;
