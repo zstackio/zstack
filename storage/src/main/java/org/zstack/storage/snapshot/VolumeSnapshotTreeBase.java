@@ -73,7 +73,6 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
@@ -2513,6 +2512,7 @@ public class VolumeSnapshotTreeBase {
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("revert-volume-%s-from-snapshot-%s", currentRoot.getVolumeUuid(), currentRoot.getUuid()));
+        chain.enableProgressReport();
         chain.then(new ShareFlow() {
             String newVolumeInstallPath;
             Long trashId;
@@ -2554,7 +2554,6 @@ public class VolumeSnapshotTreeBase {
                     String __name__ = "create-snapshot-for-current-volume-first";
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        reportProgress("10");
                         if (!VolumeSnapshotGlobalConfig.SNAPSHOT_BEFORE_REVERTVOLUME.value(Boolean.class)) {
                             logger.debug("skip create snapshot because of global config");
                             trigger.next();
@@ -2641,7 +2640,6 @@ public class VolumeSnapshotTreeBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        reportProgress("40");
                         RevertVolumeFromSnapshotOnPrimaryStorageMsg rmsg = new RevertVolumeFromSnapshotOnPrimaryStorageMsg();
                         rmsg.setSnapshot(getSelfInventory());
                         rmsg.setVolume(volumeInventory);
@@ -2651,7 +2649,6 @@ public class VolumeSnapshotTreeBase {
                             @Override
                             public void run(MessageReply reply) {
                                 if (reply.isSuccess()) {
-                                    reportProgress("80");
                                     RevertVolumeFromSnapshotOnPrimaryStorageReply re = (RevertVolumeFromSnapshotOnPrimaryStorageReply) reply;
                                     newVolumeInstallPath = re.getNewVolumeInstallPath();
                                     newSize = re.getSize();
@@ -2820,8 +2817,8 @@ public class VolumeSnapshotTreeBase {
                 Collections.singletonList(getSelfInventory()), msg.getDirection(), msg.getScope());
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-snapshot-%s", msg.getSnapshotUuid()));
+        chain.enableProgressReport();
 
-        reportProgress("20");
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
             chain.then(new NoRollbackFlow() {
                 @Override
@@ -2876,7 +2873,6 @@ public class VolumeSnapshotTreeBase {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                reportProgress("90");
                 casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
                 new FireSnapShotCanonicalEvent()
                         .fireSnapShotStatusChangedEvent(currentRoot.getStatus(), VolumeSnapshotInventory.valueOf(currentRoot));

@@ -19,7 +19,6 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.cluster.ClusterConnectionStatus;
 import org.zstack.header.core.*;
-import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -62,7 +61,6 @@ import java.util.*;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.*;
 
 /**
  * Created by xing5 on 2016/3/26.
@@ -1866,13 +1864,9 @@ public class KvmBackend extends HypervisorBackend {
         final VolumeInventory volume = msg.getVolumeInventory();
         final ImageInventory image = msg.getImageInventory();
 
-        final TaskProgressRange parentStage = getTaskStage();
-        final TaskProgressRange CREATE_TEMPORARY_TEMPLATE_STAGE = new TaskProgressRange(0, 30);
-        final TaskProgressRange UPLOAD_STAGE = new TaskProgressRange(30, 90);
-        final TaskProgressRange DELETE_TEMPORARY_TEMPLATE_STAGE = new TaskProgressRange(90, 100);
-
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-template-%s-from-volume-%s", image.getUuid(), volume.getUuid()));
+        chain.enableProgressReport();
         chain.then(new ShareFlow() {
             String temporaryTemplatePath = makeTemplateFromVolumeInWorkspacePath(msg.getImageInventory().getUuid());
             String backupStorageInstallPath;
@@ -1886,8 +1880,6 @@ public class KvmBackend extends HypervisorBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        TaskProgressRange stage = markTaskStage(parentStage, CREATE_TEMPORARY_TEMPLATE_STAGE);
-
                         CreateTemplateFromVolumeCmd cmd = new CreateTemplateFromVolumeCmd();
                         cmd.volumePath = volume.getInstallPath();
                         cmd.installPath = temporaryTemplatePath;
@@ -1896,7 +1888,6 @@ public class KvmBackend extends HypervisorBackend {
                             public void success(AgentRsp rsp) {
                                 CreateTemplateFromVolumeRsp crsp = (CreateTemplateFromVolumeRsp) rsp;
                                 reply.setActualSize(crsp.actualSize);
-                                reportProgress(stage.getEnd().toString());
                                 success = true;
                                 trigger.next();
                             }
@@ -1934,8 +1925,6 @@ public class KvmBackend extends HypervisorBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        TaskProgressRange stage = markTaskStage(parentStage, UPLOAD_STAGE);
-
                         BackupStorageAskInstallPathMsg bmsg = new BackupStorageAskInstallPathMsg();
                         bmsg.setBackupStorageUuid(msg.getBackupStorageUuid());
                         bmsg.setImageMediaType(image.getMediaType());
@@ -1952,7 +1941,6 @@ public class KvmBackend extends HypervisorBackend {
                         uploader.uploadBits(msg.getImageInventory().getUuid(), backupStorageInstallPath, temporaryTemplatePath, new ReturnValueCompletion<String>(trigger) {
                             @Override
                             public void success(String bsPath) {
-                                reportProgress(stage.getEnd().toString());
                                 backupStorageInstallPath = bsPath;
                                 trigger.next();
                             }
@@ -1970,11 +1958,11 @@ public class KvmBackend extends HypervisorBackend {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        TaskProgressRange stage = markTaskStage(parentStage, DELETE_TEMPORARY_TEMPLATE_STAGE);
                         deleteBits(temporaryTemplatePath, new Completion(trigger) {
                             @Override
                             public void success() {
-                                reportProgress(stage.getEnd().toString());
+                                // do-nothing
+                                // no trigger.next, because the flow is GC
                             }
 
                             @Override

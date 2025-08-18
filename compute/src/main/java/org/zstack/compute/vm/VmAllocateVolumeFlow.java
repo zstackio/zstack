@@ -37,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.zstack.core.progress.ProgressReportService.taskProgress;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -53,9 +52,12 @@ public class VmAllocateVolumeFlow implements Flow {
     @Autowired
     private EventFacade evtf;
 
-    protected List<CreateVolumeMsg> prepareMsg(Map<String, Object> ctx) {
-        taskProgress("create volumes");
+    @Override
+    public String name() {
+        return "create-volumes";
+    }
 
+    protected List<CreateVolumeMsg> prepareMsg(Map<String, Object> ctx) {
         VmInstanceSpec spec = (VmInstanceSpec) ctx.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         String accountUuid = acntMgr.getOwnerAccountUuidOfResource(spec.getVmInventory().getUuid());

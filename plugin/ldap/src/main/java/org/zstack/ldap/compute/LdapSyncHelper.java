@@ -11,7 +11,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.core.progress.ProgressReportService;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -104,12 +103,12 @@ public class LdapSyncHelper {
     public void run(ReturnValueCompletion<SyncTaskResult> completion) {
         FlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("sync-ldap-server-%s", importSpec.getSourceUuid()));
+        chain.enableProgressReport();
         chain.then(new NoRollbackFlow() {
             String __name__ = "sync-uid";
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                reportProgress(progress.withStage(__name__));
                 String userFilter = buildFilter();
                 logger.debug("user filter is " + userFilter);
 
@@ -128,7 +127,7 @@ public class LdapSyncHelper {
                         logger.warn("failed to sync ldap entry[], ignore this account", e);
                     }
                 }
-                reportProgress(progress.withSearchRecordCount(importSpec.accountList.size()));
+                progress.withSearchRecordCount(importSpec.accountList.size());
                 trigger.next();
             }
         }).then(new NoRollbackFlow() {
@@ -142,15 +141,16 @@ public class LdapSyncHelper {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                reportProgress(progress.withStage(__name__));
                 AtomicBoolean anySuccess = new AtomicBoolean(false);
 
-                new While<>(splitMessageFromImportSpec()).each((msg, whileCompletion) -> {
+                new While<>(splitMessageFromImportSpec())
+                        .enableProgressReport("import-accounts-from-ldap-server")
+                        .each((msg, whileCompletion) -> {
                     bus.makeTargetServiceIdByResourceUuid(msg, AccountImportsConstant.SERVICE_ID, msg.getSourceUuid());
                     bus.send(msg, new CloudBusCallBack(whileCompletion) {
                         @Override
                         public void run(MessageReply reply) {
-                            recordImportReplyAndReportProgress(msg, reply);
+                            recordImportReply(msg, reply);
                             if (reply.isSuccess()) {
                                 anySuccess.set(true);
                             } else {
@@ -239,7 +239,7 @@ public class LdapSyncHelper {
                 final Set<String> credentials =
                         transformToSet(importSpec.accountList, ImportAccountItem::getCredentials);
                 credentials.forEach(credentialsAccountMap::remove);
-                reportProgress(progress.withStage(__name__).appendSkipCountInCleanStage(credentials.size()));
+                progress.appendSkipCountInCleanStage(credentials.size());
 
                 if (credentialsAccountMap.isEmpty()) {
                     trigger.next();
@@ -248,12 +248,14 @@ public class LdapSyncHelper {
                 printUnbindingList(credentialsAccountMap);
 
                 AtomicBoolean anySuccess = new AtomicBoolean(false);
-                new While<>(splitMessages(credentialsAccountMap)).each((msg, whileCompletion) -> {
+                new While<>(splitMessages(credentialsAccountMap))
+                        .enableProgressReport("unbind-third-party-accounts")
+                        .each((msg, whileCompletion) -> {
                     bus.makeTargetServiceIdByResourceUuid(msg, AccountImportsConstant.SERVICE_ID, msg.getSourceUuid());
                     bus.send(msg, new CloudBusCallBack(whileCompletion) {
                         @Override
                         public void run(MessageReply reply) {
-                            recordUnbindReplyAndReportProgress(msg, reply);
+                            recordUnbindReply(msg, reply);
                             if (reply.isSuccess()) {
                                 anySuccess.set(true);
                             } else {
@@ -388,23 +390,16 @@ public class LdapSyncHelper {
         }
     }
 
-    private void reportProgress(LdapSyncTaskResult progress) {
-        ProgressReportService.reportProgress()
-                .withProgress((int) progress.progress())
-                .withOpaque(progress)
-                .report();
-    }
-
-    private void recordImportReplyAndReportProgress(ImportThirdPartyAccountMsg message, MessageReply rawReply) {
+    private void recordImportReply(ImportThirdPartyAccountMsg message, MessageReply rawReply) {
         int totalRecordExpect = message.getSpec().accountList.size();
         if (!rawReply.isSuccess() && !(rawReply instanceof ImportThirdPartyAccountReply)) {
-            reportProgress(progress.appendFailCountInImportStage(totalRecordExpect));
+            progress.appendFailCountInImportStage(totalRecordExpect);
             return;
         }
 
         ImportThirdPartyAccountReply reply = rawReply.castReply();
         if (CollectionUtils.isEmpty(reply.getResults())) {
-            reportProgress(progress.appendFailCountInImportStage(totalRecordExpect));
+            progress.appendFailCountInImportStage(totalRecordExpect);
             return;
         }
 
@@ -416,19 +411,18 @@ public class LdapSyncHelper {
             progress.appendSuccessCountInImportStage(successResults.size());
             progress.appendFailCountInImportStage(totalRecordExpect - successResults.size());
         }
-        reportProgress(progress);
     }
 
-    private void recordUnbindReplyAndReportProgress(UnbindThirdPartyAccountMsg message, MessageReply rawReply) {
+    private void recordUnbindReply(UnbindThirdPartyAccountMsg message, MessageReply rawReply) {
         int totalRecordExpect = message.getSpec().getAccountUuidList().size();
         if (!rawReply.isSuccess() && !(rawReply instanceof UnbindThirdPartyAccountReply)) {
-            reportProgress(progress.appendFailCountInCleanStage(totalRecordExpect));
+            progress.appendFailCountInCleanStage(totalRecordExpect);
             return;
         }
 
         UnbindThirdPartyAccountReply reply = rawReply.castReply();
         if (CollectionUtils.isEmpty(reply.getResults())) {
-            reportProgress(progress.appendFailCountInCleanStage(totalRecordExpect));
+            progress.appendFailCountInCleanStage(totalRecordExpect);
             return;
         }
 
@@ -440,6 +434,5 @@ public class LdapSyncHelper {
             progress.appendSuccessCountInCleanStage(successResults.size());
             progress.appendFailCountInCleanStage(totalRecordExpect - successResults.size());
         }
-        reportProgress(progress);
     }
 }

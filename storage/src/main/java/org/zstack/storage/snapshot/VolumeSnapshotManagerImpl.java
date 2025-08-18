@@ -65,7 +65,6 @@ import java.util.stream.Stream;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -285,9 +284,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         VolumeSnapshotDeletionStructs ctx = new VolumeSnapshotDeletionStructs(
                 VolumeSnapshotInventory.valueOf(vos), DeleteVolumeSnapshotDirection.Pull.toString(), DeleteVolumeSnapshotScope.Chain.toString());
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("batch-delete-snapshots-%s", msg.getUuids()));
+        chain.setName("batch-delete-snapshots");
+        chain.enableProgressReport();
 
-        reportProgress("20");
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
             chain.then(new NoRollbackFlow() {
                 @Override
@@ -349,7 +348,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         chain.done(new FlowDoneHandler(msg) {
             @Override
             public void handle(Map data) {
-                reportProgress("95");
                 casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
                 ctx.getSnapshotInventories().stream().filter(inventory -> results.containsKey(inventory.getUuid()) && results.get(inventory.getUuid()).isSuccess())
                         .forEach(inventory -> {
@@ -375,7 +373,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                reportProgress("95");
                 if (!errCode.isError(VolumeSnapshotErrors.BATCH_DELETE_ERROR)) {
                     event.setError(errCode);
                     bus.publish(event);

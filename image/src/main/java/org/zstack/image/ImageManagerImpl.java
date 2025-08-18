@@ -31,7 +31,6 @@ import org.zstack.header.allocator.HostCandidate;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.core.*;
-import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -82,8 +81,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
-import static org.zstack.core.progress.ProgressReportService.getTaskStage;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.image.ImageConstant.IMAGE_FROM_SNAPSHOT_SCHEMA;
 import static org.zstack.longjob.LongJobUtils.buildErrIfCanceled;
 import static org.zstack.longjob.LongJobUtils.noncancelableErr;
@@ -1364,11 +1361,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     private void createRootVolumeTemplateFromRootVolume(CreateRootVolumeTemplateMessage msgData, String rootVolumeUuid, ReturnValueCompletion<ImageInventory> completion){
         ImageMessageFiller.fillFromVolume(msgData, rootVolumeUuid);
 
-        final TaskProgressRange parentStage = getTaskStage();
-        reportProgress(parentStage.getStart().toString());
-
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-template-from-root-volume-%s", rootVolumeUuid));
+        chain.enableProgressReport();
         chain.preCheck(data -> buildErrIfCanceled());
         chain.then(new ShareFlow() {
             ImageVO imageVO;
@@ -1680,7 +1675,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         extEmitter.afterCreateImage(iinv);
 
                         logger.debug(String.format("successfully create template[uuid:%s] from root volume[uuid:%s]", iinv.getUuid(), rootVolumeUuid));
-                        reportProgress(parentStage.getEnd().toString());
                         completion.success(iinv);
                     }
                 });
@@ -1700,11 +1694,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     private void createDataVolumeTemplateFromVolume(CreateDataVolumeTemplateMessage msgData, String volumeUuid, ReturnValueCompletion<ImageInventory> completion){
         ImageMessageFiller.fillFromVolume(msgData, volumeUuid);
 
-        final TaskProgressRange parentStage = getTaskStage();
-        reportProgress(parentStage.getStart().toString());
-
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-data-volume-template-from-volume-%s", volumeUuid));
+        chain.enableProgressReport();
         chain.preCheck(data -> buildErrIfCanceled());
         chain.then(new ShareFlow() {
             List<BackupStorageInventory> backupStorages = new ArrayList<>();
@@ -1968,8 +1960,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
-                        reportProgress(parentStage.getEnd().toString());
-
                         ImageInventory inv = ImageInventory.valueOf(image);
                         extEmitter.afterCreateImage(inv);
                         completion.success(inv);

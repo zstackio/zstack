@@ -11,6 +11,8 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.core.progress.ActionProgressService;
+import org.zstack.core.progress.TaskProgressReporter;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.errorcode.ErrorCode;
@@ -36,9 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.Constants.THREAD_CONTEXT_API;
-import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -58,6 +58,7 @@ public class UploadImageTracker {
 
     private final String apiId = ThreadContext.get(THREAD_CONTEXT_API);
     private final boolean continuable = apiId != null && Q.New(LongJobVO.class).eq(LongJobVO_.apiId, apiId).isExists();
+    TaskProgressReporter progressReporter;
 
     public static class TrackContext {
         String name;
@@ -261,9 +262,15 @@ public class UploadImageTracker {
     }
 
     private void doReportProgress(String taskName, long progress) {
-        ThreadContext.put(THREAD_CONTEXT_API, apiId);
-        ThreadContext.put(THREAD_CONTEXT_TASK_NAME, taskName);
-        reportProgress(String.valueOf(progress));
+        if (progressReporter == null) {
+            progressReporter = ActionProgressService.taskProgress()
+                    .withTotalStep(100L);
+        }
+
+        progressReporter.withContent("upload-image-" + taskName)
+                .withCurrentStep(progress)
+                .withApiId(apiId)
+                .report();
     }
 
     public GetImageDownloadProgressReply getImageDownloadProgress(String imageUuid, String bsUuid, String hostname) {
