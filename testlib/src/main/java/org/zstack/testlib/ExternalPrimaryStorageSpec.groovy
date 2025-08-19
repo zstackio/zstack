@@ -85,7 +85,7 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(ZbsStorageController.CHECK_HOST_STORAGE_CONNECTION_PATH) { HttpEntity<String> e ->
-                ZbsStorageController.CheckHostStorageConnectionCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckHostStorageConnectionCmd)
+                ZbsStorageController.CheckHostStorageConnectionCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckHostStorageConnectionCmd.class)
                 assert cmd.hostUuid != null
 
                 def rsp = new ZbsStorageController.CheckHostStorageConnectionRsp()

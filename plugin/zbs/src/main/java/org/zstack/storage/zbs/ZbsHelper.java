@@ -33,7 +33,7 @@ public class ZbsHelper {
     }
 
     public static String getSizeUnit(String version) {
-        return new VersionComparator(version.split("-")[0]).compare(ZbsConstants.MEGABYTE_SUPPORTED_VERSION) >= 0 ? ZbsConstants.MEGABYTE_UNIT : ZbsConstants.GIGABYTE_UNIT;
+        return new VersionComparator(version.split("-")[0]).compare(ZbsConstants.MEGABYTE_SUPPORTED_VERSION) >= 0 ? ZbsConstants.MEGABYTE_UNIT : ZbsConstants.DEFAULT_GIGABYTE_UNIT;
     }
 
     public static long alignSizeTo(long size, String unit) {
