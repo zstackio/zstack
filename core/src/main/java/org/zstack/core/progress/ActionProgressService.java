@@ -16,9 +16,9 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.core.progress.APIGetTaskProgressMsg;
 import org.zstack.header.core.progress.APIGetTaskProgressReply;
 import org.zstack.header.core.progress.ProgressConstants;
-import org.zstack.header.core.progress.ActionProgressInventory;
-import org.zstack.header.core.progress.ActionProgressVO;
-import org.zstack.header.core.progress.ActionProgressVO_;
+import org.zstack.header.core.progress.TaskProgressInventory;
+import org.zstack.header.core.progress.TaskProgressVO;
+import org.zstack.header.core.progress.TaskProgressVO_;
 import org.zstack.header.longjob.APISubmitLongJobEvent;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.managementnode.ManagementNodeVO;
@@ -134,14 +134,14 @@ public class ActionProgressService extends AbstractService implements
     private void handle(final APIGetTaskProgressMsg msg) {
         APIGetTaskProgressReply reply = new APIGetTaskProgressReply();
 
-        final List<ActionProgressInventory> subProgress = findProgressesByApiId(msg.getApiId());
+        final List<TaskProgressInventory> subProgress = findProgressesByApiId(msg.getApiId());
         if (isEmpty(subProgress)) {
             reply.setInventories(Collections.emptyList());
         } else {
-            List<ActionProgressInventory> all = new ArrayList<>(subProgress.size() + 1);
+            List<TaskProgressInventory> all = new ArrayList<>(subProgress.size() + 1);
             all.add(generateMainProgress(subProgress));
             all.addAll(subProgress);
-            reply.setInventories(transform(all, ActionProgressInventory::toTaskProgress));
+            reply.setInventories(all);
         }
 
         bus.reply(msg, reply);
@@ -151,11 +151,11 @@ public class ActionProgressService extends AbstractService implements
      * The main progress bar is inaccurate, mainly due to the placebo effect;
      * Actually, the UI says that there must be one main progress.
      */
-    private ActionProgressInventory generateMainProgress(List<ActionProgressInventory> subProgresses) {
+    private TaskProgressInventory generateMainProgress(List<TaskProgressInventory> subProgresses) {
         long maxUpdateTime = 0L;
         double weight = 0d;
 
-        for (ActionProgressInventory subProgress : subProgresses) {
+        for (TaskProgressInventory subProgress : subProgresses) {
             double totalStep = subProgress.getTotalStep();
             double currentStep = subProgress.getCurrentStep();
 
@@ -184,7 +184,7 @@ public class ActionProgressService extends AbstractService implements
         }
 
         long now = nowInMillis;
-        ActionProgressInventory inventory = new ActionProgressInventory();
+        TaskProgressInventory inventory = new TaskProgressInventory();
         inventory.setApiId(subProgresses.get(0).getApiId());
         inventory.setContent("main-progress");
         inventory.setCreateTime(now);
@@ -223,13 +223,13 @@ public class ActionProgressService extends AbstractService implements
     }
 
     /**
-     * In principle, only one MN is allowed to hold a {@link ActionProgressVO}.
-     * There will be no situation where multiple MNs share the same {@link ActionProgressVO#getId()}
+     * In principle, only one MN is allowed to hold a {@link TaskProgressVO}.
+     * There will be no situation where multiple MNs share the same {@link TaskProgressVO#getId()}
      */
     public static class ProgressItem implements Comparable<ProgressItem> {
         public final ProgressList parent;
         /**
-         * @see ActionProgressVO#getId()
+         * @see TaskProgressVO#getId()
          */
         public long id;
         public String content;
@@ -246,7 +246,7 @@ public class ActionProgressService extends AbstractService implements
             this.parent = Objects.requireNonNull(parent);
         }
 
-        public ProgressItem from(ActionProgressVO vo) {
+        public ProgressItem from(TaskProgressVO vo) {
             this.id = vo.getId();
             this.content = vo.getContent();
             this.opaqueText = vo.getOpaque() == null ? "{}" : vo.getOpaque();
@@ -264,8 +264,8 @@ public class ActionProgressService extends AbstractService implements
         }
 
         @SuppressWarnings("unchecked")
-        public ActionProgressInventory toInventory() {
-            ActionProgressInventory inv = new ActionProgressInventory();
+        public TaskProgressInventory toInventory() {
+            TaskProgressInventory inv = new TaskProgressInventory();
             inv.setApiId(this.parent.apiId);
             inv.setContent(this.content);
             inv.setOpaque(JSONObjectUtil.toObject(this.opaqueText, Map.class));
@@ -353,7 +353,7 @@ public class ActionProgressService extends AbstractService implements
     }
 
     private static void applyActionProgressId(TaskProgressReporter builder) {
-        ActionProgressVO vo = new ActionProgressVO();
+        TaskProgressVO vo = new TaskProgressVO();
         vo.setApiId(builder.apiId);
         vo.setContent(builder.content);
         if (builder.opaque != null) {
@@ -392,16 +392,16 @@ public class ActionProgressService extends AbstractService implements
                     }
 
                     item.updated = false;
-                    UpdateQuery eq = SQL.New(ActionProgressVO.class)
-                            .eq(ActionProgressVO_.id, item.id)
-                            .set(ActionProgressVO_.content, item.content)
-                            .set(ActionProgressVO_.createTime, item.createTime)
-                            .set(ActionProgressVO_.lastOpTime, item.lastOpTime)
-                            .set(ActionProgressVO_.currentStep, item.currentStep)
-                            .set(ActionProgressVO_.totalStep, item.totalStep);
+                    UpdateQuery eq = SQL.New(TaskProgressVO.class)
+                            .eq(TaskProgressVO_.id, item.id)
+                            .set(TaskProgressVO_.content, item.content)
+                            .set(TaskProgressVO_.createTime, item.createTime)
+                            .set(TaskProgressVO_.lastOpTime, item.lastOpTime)
+                            .set(TaskProgressVO_.currentStep, item.currentStep)
+                            .set(TaskProgressVO_.totalStep, item.totalStep);
                     if (item.opaqueUpdated) {
                         item.opaqueUpdated = false;
-                        eq.set(ActionProgressVO_.opaque, item.opaqueText);
+                        eq.set(TaskProgressVO_.opaque, item.opaqueText);
                     }
                     eq.update();
                 }
@@ -409,7 +409,7 @@ public class ActionProgressService extends AbstractService implements
         }
     }
 
-    public static List<ActionProgressInventory> findProgressesByApiId(String apiId) {
+    public static List<TaskProgressInventory> findProgressesByApiId(String apiId) {
         if (!multiMN) {
             final ProgressList list = progressCache.get(apiId);
             if (list == null) {
@@ -423,8 +423,8 @@ public class ActionProgressService extends AbstractService implements
 
         ProgressList list = progressCache.get(apiId);
         if (list == null) {
-            boolean exists = Q.New(ActionProgressVO.class)
-                    .eq(ActionProgressVO_.apiId, apiId)
+            boolean exists = Q.New(TaskProgressVO.class)
+                    .eq(TaskProgressVO_.apiId, apiId)
                     .isExists();
             if (!exists) {
                 return Collections.emptyList();
@@ -445,8 +445,8 @@ public class ActionProgressService extends AbstractService implements
             List<Long> existsIds = transform(list.items, item -> item.id);
 
             if (existsIds.isEmpty()) {
-                List<ActionProgressVO> vos = Q.New(ActionProgressVO.class)
-                        .eq(ActionProgressVO_.apiId, apiId)
+                List<TaskProgressVO> vos = Q.New(TaskProgressVO.class)
+                        .eq(TaskProgressVO_.apiId, apiId)
                         .list();
                 final ProgressList finalList = list;
                 list.lastTimeReadFromDB = now;
@@ -455,9 +455,9 @@ public class ActionProgressService extends AbstractService implements
                 return transform(list.items, ProgressItem::toInventory);
             }
 
-            List<ActionProgressVO> vos = Q.New(ActionProgressVO.class)
-                    .eq(ActionProgressVO_.apiId, apiId)
-                    .notIn(ActionProgressVO_.id, existsIds)
+            List<TaskProgressVO> vos = Q.New(TaskProgressVO.class)
+                    .eq(TaskProgressVO_.apiId, apiId)
+                    .notIn(TaskProgressVO_.id, existsIds)
                     .list();
             if (!vos.isEmpty()) {
                 final ProgressList finalList = list;
@@ -491,8 +491,8 @@ public class ActionProgressService extends AbstractService implements
 
         synchronized (globalLock) {
             logger.trace("clean expired progress: maxCleanTime = " + maxCleanTime);
-            SQL.New(ActionProgressVO.class)
-                    .lt(ActionProgressVO_.lastOpTime, maxCleanTime)
+            SQL.New(TaskProgressVO.class)
+                    .lt(TaskProgressVO_.lastOpTime, maxCleanTime)
                     .delete();
         }
     }

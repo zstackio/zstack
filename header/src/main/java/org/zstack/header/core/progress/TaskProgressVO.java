@@ -1,79 +1,36 @@
 package org.zstack.header.core.progress;
 
-import org.zstack.header.managementnode.ManagementNodeVO;
-import org.zstack.header.vo.*;
-import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.BaseResource;
 
-import javax.persistence.*;
-import java.sql.Timestamp;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
-/**
- * Created by xing5 on 2017/3/20.
- */
 @Table
 @Entity
 @BaseResource
 public class TaskProgressVO {
     @Id
     @Column
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    @Column
-    private String taskUuid;
     @Column
     private String apiId;
     @Column
-    private String taskName;
-    @Column
-    private String parentUuid;
-    @Column
-    @Enumerated(EnumType.STRING)
-    private TaskType type;
-    @Column
     private String content;
-    @Column
-    private String arguments;
     @Column
     private String opaque;
     @Column
-    @org.zstack.header.vo.ForeignKey(parentEntityClass = ManagementNodeVO.class, parentKey = "uuid", onDeleteAction = ForeignKey.ReferenceOption.SET_NULL)
-    private String managementUuid;
+    private long createTime;
     @Column
-    private Long time;
+    private long lastOpTime;
     @Column
-    private Long timeToDelete;
-
-    public long getTimeToDelete() {
-        return timeToDelete;
-    }
-
-    public void setTimeToDelete(long timeToDelete) {
-        this.timeToDelete = timeToDelete;
-    }
-
-    public String getTaskName() {
-        return taskName;
-    }
-
-    public void setTaskName(String taskName) {
-        this.taskName = taskName;
-    }
-
-    public String getManagementUuid() {
-        return managementUuid;
-    }
-
-    public void setManagementUuid(String managementUuid) {
-        this.managementUuid = managementUuid;
-    }
-
-    public String getArguments() {
-        return arguments;
-    }
-
-    public void setArguments(String arguments) {
-        this.arguments = arguments;
-    }
+    private long currentStep;
+    @Column
+    private long totalStep;
 
     public long getId() {
         return id;
@@ -83,36 +40,12 @@ public class TaskProgressVO {
         this.id = id;
     }
 
-    public String getTaskUuid() {
-        return taskUuid;
-    }
-
-    public void setTaskUuid(String taskUuid) {
-        this.taskUuid = taskUuid;
-    }
-
-    public String getParentUuid() {
-        return parentUuid;
-    }
-
-    public void setParentUuid(String parentUuid) {
-        this.parentUuid = parentUuid;
-    }
-
     public String getApiId() {
         return apiId;
     }
 
     public void setApiId(String apiId) {
         this.apiId = apiId;
-    }
-
-    public TaskType getType() {
-        return type;
-    }
-
-    public void setType(TaskType type) {
-        this.type = type;
     }
 
     public String getContent() {
@@ -131,11 +64,35 @@ public class TaskProgressVO {
         this.opaque = opaque;
     }
 
-    public long getTime() {
-        return time;
+    public long getCreateTime() {
+        return createTime;
     }
 
-    public void setTime(long time) {
-        this.time = time;
+    public void setCreateTime(long createTime) {
+        this.createTime = createTime;
+    }
+
+    public long getLastOpTime() {
+        return lastOpTime;
+    }
+
+    public void setLastOpTime(long lastOpTime) {
+        this.lastOpTime = lastOpTime;
+    }
+
+    public long getCurrentStep() {
+        return currentStep;
+    }
+
+    public void setCurrentStep(long currentStep) {
+        this.currentStep = currentStep;
+    }
+
+    public long getTotalStep() {
+        return totalStep;
+    }
+
+    public void setTotalStep(long totalStep) {
+        this.totalStep = totalStep;
     }
 }
