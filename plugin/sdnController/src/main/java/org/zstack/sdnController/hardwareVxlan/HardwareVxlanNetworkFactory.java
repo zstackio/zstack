@@ -163,7 +163,7 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
                     public void run(FlowTrigger trigger, Map data) {
                         VxlanNetworkVO ovo = (VxlanNetworkVO)data.get(SdnControllerConstant.Params.VXLAN_NETWORK.toString());
                         L2VxlanNetworkInventory vxlan = L2VxlanNetworkInventory.valueOf(ovo);
-                        hardwareVxlan.createVxlanNetworkOnSdnController(vxlan, msg.getSystemTags(), new Completion(trigger) {
+                        hardwareVxlan.createVxlanNetworkOnSdnController(vxlan, msg, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();

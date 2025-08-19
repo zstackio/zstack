@@ -3,8 +3,7 @@ package org.zstack.sdnController.h3cVcfc;
 import org.zstack.network.securitygroup.SecurityGroupSdnBackend;
 import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerFactory;
-import org.zstack.sdnController.SdnControllerL2;
-import org.zstack.sdnController.SdnControllerType;
+import org.zstack.sdnController.*;
 import org.zstack.sdnController.header.*;
 
 public class H3cVcfcSdnControllerFactory implements SdnControllerFactory {
@@ -17,12 +16,20 @@ public class H3cVcfcSdnControllerFactory implements SdnControllerFactory {
 
     @Override
     public SdnController getSdnController(SdnControllerVO vo) {
-        return new H3cVcfcSdnController(vo);
+        if (SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V2.equals(vo.getVendorVersion())) {
+            return new H3cVcfcV2SdnController(vo);
+        } else {
+            return new H3cVcfcSdnController(vo);
+        }
     }
 
     @Override
     public SdnControllerL2 getSdnControllerL2(SdnControllerVO vo) {
-        return new H3cVcfcSdnController(vo);
+         if (SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V2.equals(vo.getVendorVersion())) {
+            return new H3cVcfcV2SdnController(vo);
+        } else {
+            return new H3cVcfcSdnController(vo);
+        }
     }
 
     @Override

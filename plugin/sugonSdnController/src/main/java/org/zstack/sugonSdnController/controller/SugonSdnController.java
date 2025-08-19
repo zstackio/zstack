@@ -116,7 +116,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
     }
 
     @Override
-    public void createL2Network(L2NetworkInventory inv, List<String> systemTags, Completion completion) {
+    public void createL2Network(L2NetworkInventory inv, APICreateL2NetworkMsg msg, Completion completion) {
         completion.success();
     }
 
