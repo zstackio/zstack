@@ -77,6 +77,7 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
 
                 def rsp = new ZbsStorageController.GetFactsRsp()
+                rsp.uuid = "123456789"
                 rsp.version = "1.6.1-for-test"
                 rsp.success = true
 

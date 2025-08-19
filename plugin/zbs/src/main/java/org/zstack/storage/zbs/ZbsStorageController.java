@@ -175,8 +175,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         DeployClientCmd cmd = new DeployClientCmd();
         cmd.setIp(h.getManagementIp());
-        cmd.setPassword(host.getPassword());
         cmd.setPort(host.getPort());
+        cmd.setUsername(host.getUsername());
+        cmd.setPassword(host.getPassword());
         httpCall(DEPLOY_CLIENT_PATH, cmd, DeployClientRsp.class, new ReturnValueCompletion<DeployClientRsp>(comp) {
             @Override
             public void success(DeployClientRsp returnValue) {
@@ -316,6 +317,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                             @Override
                             public void success(GetFactsRsp returnValue) {
                                 ClusterInfo info = new ClusterInfo();
+                                info.setUuid(returnValue.getUuid());
                                 info.setVersion(returnValue.getVersion());
                                 newAddonInfo.setClusterInfo(info);
                                 trigger.next();
@@ -361,8 +363,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
                             DeployClientCmd cmd = new DeployClientCmd();
                             cmd.setIp(h.getManagementIp());
-                            cmd.setPassword(host.getPassword());
                             cmd.setPort(host.getPort());
+                            cmd.setUsername(host.getUsername());
+                            cmd.setPassword(host.getPassword());
                             httpCall(DEPLOY_CLIENT_PATH, cmd, DeployClientRsp.class, new ReturnValueCompletion<DeployClientRsp>(comp) {
                                 @Override
                                 public void success(DeployClientRsp returnValue) {
@@ -413,7 +416,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         reloadDbInfo();
         final List<ZbsPrimaryStorageMdsBase> mds = CollectionUtils.transformToList(addonInfo.getMdsInfos(), ZbsPrimaryStorageMdsBase::new);
         new While<>(mds).each((m, comp) -> {
-            m.ping(new Completion(comp) {
+            m.ping(addonInfo.getClusterInfo(), new Completion(comp) {
                 @Override
                 public void success() {
                     m.getSelf().setStatus(MdsStatus.Connected);
@@ -1645,8 +1648,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     public static class DeployClientCmd extends AgentCommand {
         private String ip;
-        private String password;
         private Integer port;
+        private String username;
+        private String password;
 
         public String getIp() {
             return ip;
@@ -1656,14 +1660,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             this.ip = ip;
         }
 
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
-
         public Integer getPort() {
             return port;
         }
@@ -1671,10 +1667,35 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         public void setPort(Integer port) {
             this.port = port;
         }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
     }
 
     public static class GetFactsRsp extends AgentResponse {
+        private String uuid;
         private String version;
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
 
         public String getVersion() {
             return version;
