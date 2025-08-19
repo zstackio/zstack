@@ -12,14 +12,6 @@
          http://zstack.org/schema/zstack/plugin.xsd"
        default-init-method="init" default-destroy-method="destroy">
 
-    <bean id="ProgressReportService" class="org.zstack.core.progress.ProgressReportService">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component" />
-            <zstack:extension interface="org.zstack.header.Service" />
-            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
-        </zstack:plugin>
-    </bean>
-
     <bean id="ActionProgressService" class="org.zstack.core.progress.ActionProgressService">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />

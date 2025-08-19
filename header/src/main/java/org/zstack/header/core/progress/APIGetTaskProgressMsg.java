@@ -14,6 +14,8 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIGetTaskProgressMsg extends APISyncCallMessage {
     private String apiId;
+
+    @Deprecated
     private boolean all;
 
     public boolean isAll() {
