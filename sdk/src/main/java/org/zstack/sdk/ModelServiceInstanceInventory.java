@@ -84,6 +84,14 @@ public class ModelServiceInstanceInventory  {
         return this.vmInstanceUuid;
     }
 
+    public java.lang.Integer nodeRank;
+    public void setNodeRank(java.lang.Integer nodeRank) {
+        this.nodeRank = nodeRank;
+    }
+    public java.lang.Integer getNodeRank() {
+        return this.nodeRank;
+    }
+
     public VmInstanceInventory vm;
     public void setVm(VmInstanceInventory vm) {
         this.vm = vm;
