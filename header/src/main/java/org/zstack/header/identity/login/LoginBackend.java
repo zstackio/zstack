@@ -28,8 +28,4 @@ public interface LoginBackend {
     default Set<String> possibleUserUuidSetForGettingProcedures(LoginContext loginContext) {
         return Collections.emptySet();
     }
-
-    default Map<String, Object> generateJwtTokenClaims(LoginContext loginContext, LoginSessionInfo info) {
-        return new HashMap<>();
-    }
 }
