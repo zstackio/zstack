@@ -30,15 +30,6 @@ public class AccountLoginBackend implements LoginBackend {
     }
 
     @Override
-    public Map<String, Object> generateJwtTokenClaims(LoginContext loginContext, LoginSessionInfo info) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put(AccountConstant.LOGIN_TYPE_NAME, loginContext.getLoginBackendType());
-        claims.put(AccountConstant.FULL_NAME, loginContext.getUsername());
-        claims.put(AccountConstant.PREFERRED_USERNAME, loginContext.getUsername());
-        return claims;
-    }
-
-    @Override
     public void login(LoginContext loginContext, ReturnValueCompletion<LoginSessionInfo> completion) {
         AccountVO vo = Q.New(AccountVO.class)
                 .eq(AccountVO_.name, loginContext.getUsername())
