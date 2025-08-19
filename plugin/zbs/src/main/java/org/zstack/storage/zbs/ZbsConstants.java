@@ -19,5 +19,5 @@ public interface ZbsConstants {
     String VOLUME_PHYSICAL_BLOCK_SIZE = "4096";
     String MEGABYTE_SUPPORTED_VERSION = "1.6.1";
     String MEGABYTE_UNIT = "M";
-    String GIGABYTE_UNIT = "G";
+    String DEFAULT_GIGABYTE_UNIT = null;
 }
