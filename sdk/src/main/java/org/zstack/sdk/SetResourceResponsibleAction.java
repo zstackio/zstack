@@ -64,7 +64,7 @@ public class SetResourceResponsibleAction extends AbstractAction {
         }
         
         org.zstack.sdk.SetResourceResponsibleResult value = res.getResult(org.zstack.sdk.SetResourceResponsibleResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetResourceResponsibleResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.SetResourceResponsibleResult() : value; 
 
         return ret;
     }
