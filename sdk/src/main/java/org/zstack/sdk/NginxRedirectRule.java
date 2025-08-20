@@ -44,4 +44,12 @@ public class NginxRedirectRule  {
         return this.currentJupyterUrl;
     }
 
+    public java.lang.String overriddenUuid;
+    public void setOverriddenUuid(java.lang.String overriddenUuid) {
+        this.overriddenUuid = overriddenUuid;
+    }
+    public java.lang.String getOverriddenUuid() {
+        return this.overriddenUuid;
+    }
+
 }
