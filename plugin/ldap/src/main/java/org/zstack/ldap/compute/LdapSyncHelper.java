@@ -392,7 +392,7 @@ public class LdapSyncHelper {
 
     private void recordImportReply(ImportThirdPartyAccountMsg message, MessageReply rawReply) {
         int totalRecordExpect = message.getSpec().accountList.size();
-        if (!rawReply.isSuccess() && !(rawReply instanceof ImportThirdPartyAccountReply)) {
+        if (!rawReply.isSuccess() || !(rawReply instanceof ImportThirdPartyAccountReply)) {
             progress.appendFailCountInImportStage(totalRecordExpect);
             return;
         }
@@ -415,7 +415,7 @@ public class LdapSyncHelper {
 
     private void recordUnbindReply(UnbindThirdPartyAccountMsg message, MessageReply rawReply) {
         int totalRecordExpect = message.getSpec().getAccountUuidList().size();
-        if (!rawReply.isSuccess() && !(rawReply instanceof UnbindThirdPartyAccountReply)) {
+        if (!rawReply.isSuccess() || !(rawReply instanceof UnbindThirdPartyAccountReply)) {
             progress.appendFailCountInCleanStage(totalRecordExpect);
             return;
         }
