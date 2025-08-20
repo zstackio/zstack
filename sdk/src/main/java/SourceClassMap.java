@@ -421,6 +421,9 @@ public class SourceClassMap {
 			put("org.zstack.header.zdfs.ZdfsInventory", "org.zstack.sdk.ZdfsInventory");
 			put("org.zstack.header.zdfs.ZdfsStorageInventory", "org.zstack.sdk.ZdfsStorageInventory");
 			put("org.zstack.header.zone.ZoneInventory", "org.zstack.sdk.ZoneInventory");
+			put("org.zstack.header.zwatch.AuditData", "org.zstack.sdk.AuditData");
+			put("org.zstack.header.zwatch.AuditDataV1", "org.zstack.sdk.AuditDataV1");
+			put("org.zstack.header.zwatch.AuditDataV2", "org.zstack.sdk.AuditDataV2");
 			put("org.zstack.hybrid.account.HybridAccountInventory", "org.zstack.sdk.HybridAccountInventory");
 			put("org.zstack.hybrid.core.HybridType", "org.zstack.sdk.HybridType");
 			put("org.zstack.iam2.api.APIGetIAM2VirtualIDAPIPermissionMsg$APIPermissionStruct", "org.zstack.sdk.iam2.api.APIPermissionStruct");
@@ -786,9 +789,6 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.datatype.AlarmData", "org.zstack.sdk.zwatch.datatype.AlarmData");
 			put("org.zstack.zwatch.datatype.AlarmDataV1", "org.zstack.sdk.zwatch.datatype.AlarmDataV1");
 			put("org.zstack.zwatch.datatype.AlarmDataV2", "org.zstack.sdk.zwatch.datatype.AlarmDataV2");
-			put("org.zstack.zwatch.datatype.AuditData", "org.zstack.sdk.zwatch.datatype.AuditData");
-			put("org.zstack.zwatch.datatype.AuditDataV1", "org.zstack.sdk.zwatch.datatype.AuditDataV1");
-			put("org.zstack.zwatch.datatype.AuditDataV2", "org.zstack.sdk.zwatch.datatype.AuditDataV2");
 			put("org.zstack.zwatch.datatype.AuditType", "org.zstack.sdk.zwatch.datatype.AuditType");
 			put("org.zstack.zwatch.datatype.Datapoint", "org.zstack.sdk.zwatch.datatype.Datapoint");
 			put("org.zstack.zwatch.datatype.EmergencyLevel", "org.zstack.sdk.zwatch.datatype.EmergencyLevel");
@@ -868,6 +868,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");
 			put("org.zstack.sdk.ApplicationDevelopmentServiceInventory", "org.zstack.ai.entity.ApplicationDevelopmentServiceInventory");
 			put("org.zstack.sdk.AttachTagResult", "org.zstack.tag2.AttachTagResult");
+			put("org.zstack.sdk.AuditData", "org.zstack.header.zwatch.AuditData");
+			put("org.zstack.sdk.AuditDataV1", "org.zstack.header.zwatch.AuditDataV1");
+			put("org.zstack.sdk.AuditDataV2", "org.zstack.header.zwatch.AuditDataV2");
 			put("org.zstack.sdk.AutoScalingGroupActivityInventory", "org.zstack.autoscaling.group.activity.AutoScalingGroupActivityInventory");
 			put("org.zstack.sdk.AutoScalingGroupInstanceInventory", "org.zstack.autoscaling.group.instance.AutoScalingGroupInstanceInventory");
 			put("org.zstack.sdk.AutoScalingGroupInventory", "org.zstack.autoscaling.group.AutoScalingGroupInventory");
@@ -1606,9 +1609,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.datatype.AlarmData", "org.zstack.zwatch.datatype.AlarmData");
 			put("org.zstack.sdk.zwatch.datatype.AlarmDataV1", "org.zstack.zwatch.datatype.AlarmDataV1");
 			put("org.zstack.sdk.zwatch.datatype.AlarmDataV2", "org.zstack.zwatch.datatype.AlarmDataV2");
-			put("org.zstack.sdk.zwatch.datatype.AuditData", "org.zstack.zwatch.datatype.AuditData");
-			put("org.zstack.sdk.zwatch.datatype.AuditDataV1", "org.zstack.zwatch.datatype.AuditDataV1");
-			put("org.zstack.sdk.zwatch.datatype.AuditDataV2", "org.zstack.zwatch.datatype.AuditDataV2");
 			put("org.zstack.sdk.zwatch.datatype.AuditType", "org.zstack.zwatch.datatype.AuditType");
 			put("org.zstack.sdk.zwatch.datatype.Datapoint", "org.zstack.zwatch.datatype.Datapoint");
 			put("org.zstack.sdk.zwatch.datatype.EmergencyLevel", "org.zstack.zwatch.datatype.EmergencyLevel");
