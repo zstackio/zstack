@@ -35,7 +35,6 @@ import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigValidator;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -76,8 +75,6 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.getTaskStage;
-import static org.zstack.core.progress.ProgressReportService.markTaskStage;
 import static org.zstack.header.image.ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA;
 import static org.zstack.storage.ceph.primary.CephRequiredUrlParser.getInstallPathFromUri;
 import static org.zstack.utils.CollectionDSL.e;
@@ -570,14 +567,11 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     @Override
     public WorkflowTemplate createTemplateFromVolumeSnapshot(final ParamIn paramIn) {
         WorkflowTemplate template = new WorkflowTemplate();
-        final TaskProgressRange CREATE_TEMPORARY_TEMPLATE_STAGE = new TaskProgressRange(0, 10);
-        final TaskProgressRange UPLOAD_STAGE = new TaskProgressRange(10, 95);
-
-        final TaskProgressRange parentStage = getTaskStage();
         template.setCreateTemporaryTemplate(new NoRollbackFlow() {
+            String __name__ = "create-temporary-template";
+
             @Override
             public void run(final FlowTrigger trigger, final Map data) {
-                markTaskStage(parentStage, CREATE_TEMPORARY_TEMPLATE_STAGE);
                 SyncVolumeSizeMsg msg = new SyncVolumeSizeMsg();
                 msg.setVolumeUuid(paramIn.getSnapshot().getVolumeUuid());
                 bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, paramIn.getSnapshot().getVolumeUuid());
@@ -603,8 +597,6 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
             @Override
             public void run(final FlowTrigger trigger, Map data) {
-                markTaskStage(parentStage, UPLOAD_STAGE);
-
                 final ParamOut out = (ParamOut) data.get(ParamOut.class);
                 BackupStorageAskInstallPathMsg ask = new BackupStorageAskInstallPathMsg();
                 ask.setImageUuid(paramIn.getImage().getUuid());

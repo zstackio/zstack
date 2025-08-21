@@ -12,7 +12,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.progress.ProgressReportService;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -49,8 +48,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.zstack.core.Platform.err;
-import static org.zstack.header.Constants.THREAD_CONTEXT_API;
-import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ClusterBase extends AbstractCluster {
@@ -315,8 +312,6 @@ public class ClusterBase extends AbstractCluster {
 
             @Override
             public void run(SyncTaskChain chain) {
-                String apiId = ThreadContext.get(THREAD_CONTEXT_API);
-                String taskName = ThreadContext.get(THREAD_CONTEXT_TASK_NAME);
                 extpEmitter.beforeUpdateOS(self);
 
                 // update each hosts os in the cluster
@@ -326,7 +321,9 @@ public class ClusterBase extends AbstractCluster {
                         .listValues();
                 Boolean enableExpRepo = rcf.getResourceConfigValue(
                         ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_REPO, msg.getUuid(), Boolean.class);
-                new While<>(hostUuids).all((hostUuid, completion) -> {
+                new While<>(hostUuids)
+                        .enableProgressReport("update-cluster-os-on-each-hosts")
+                        .all((hostUuid, completion) -> {
                     UpdateHostOSMsg umsg = new UpdateHostOSMsg();
                     umsg.setUuid(hostUuid);
                     umsg.setClusterUuid(msg.getUuid());
@@ -343,10 +340,6 @@ public class ClusterBase extends AbstractCluster {
                             } else {
                                 reply.getResults().put(hostUuid, rly.getError().getDetails());
                             }
-                            // progress info
-                            ThreadContext.put(THREAD_CONTEXT_API, apiId);
-                            ThreadContext.put(THREAD_CONTEXT_TASK_NAME, taskName);
-                            ProgressReportService.reportProgress(String.valueOf(100 * reply.getResults().size() / hostUuids.size()));
                             completion.done();
                         }
                     });

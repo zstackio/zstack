@@ -5,14 +5,13 @@ import org.springframework.web.util.UriComponentsBuilder
 import org.zstack.core.Platform
 import org.zstack.core.progress.ProgressCommands
 import org.zstack.header.core.progress.ProgressConstants
-import org.zstack.header.core.progress.TaskType
 import org.zstack.header.rest.RESTConstant
 import org.zstack.header.rest.RESTFacade
+import org.zstack.sdk.TaskProgressInventory
 import org.zstack.sdk.AddImageAction
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.Completion
 import org.zstack.sdk.ErrorCode
-import org.zstack.sdk.TaskProgressInventory
 import org.zstack.storage.ceph.backup.CephBackupStorageBase
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.FuncTrigger
@@ -94,19 +93,21 @@ class ImageProgressCase extends SubCase {
         for (i in 1..num) {
             trigger.trigger()
 
-            retryInMillis(5000) {
+            retryInSecs(5) {
                 List<TaskProgressInventory> invs = getTaskProgress {
                     apiId = id
                 }
 
                 return {
-                    assert invs.size() == 1
+                    // include 1 main progress and at less 1 sub progress
+                    assert invs.size() >= 2
 
-                    TaskProgressInventory inv = invs[0]
-
-                    assert inv.content == "${i*20}".toString()
-                    assert inv.parentUuid == null
-                    assert inv.type == TaskType.Progress.toString()
+                    def sub = invs.find {
+                        it.content.startsWith("agent-report-task-for")
+                    }
+                    assert sub != null
+                    assert sub.currentStep == i * 20
+                    assert sub.totalStep == 100
                 }
             }
         }
@@ -119,10 +120,9 @@ class ImageProgressCase extends SubCase {
 
         List<TaskProgressInventory> invs = getTaskProgress {
             apiId = id
-            all = true
         }
 
-        assert invs.size() == num
+        assert invs.size() == 2
     }
 
     @Override

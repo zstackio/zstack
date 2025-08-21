@@ -16,7 +16,6 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
-import org.zstack.core.progress.ProgressReportService;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -54,7 +53,6 @@ import java.util.concurrent.TimeUnit;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.db.DBSourceUtils.isDBConnected;
 import static org.zstack.core.db.DBSourceUtils.waitDBConnected;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.longjob.LongJobConstants.LongJobOperation;
 import static org.zstack.longjob.LongJobUtils.*;
 
@@ -73,8 +71,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     private ThreadFacade thdf;
     @Autowired
     private TagManager tagMgr;
-    @Autowired
-    private ProgressReportService progRpt;
     @Autowired
     protected ApiTimeoutManager timeoutMgr;
     @Autowired
@@ -613,7 +609,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         return new ReturnValueCompletion<APIEvent>(async) {
             @Override
             public void success(APIEvent evt) {
-                reportProgress("100");
                 changeState(longJobUuid, LongJobStateEvent.succeed, it -> {
                     if (Strings.isEmpty(it.getJobResult())) {
                         it.setJobResult(LongJobUtils.succeeded);

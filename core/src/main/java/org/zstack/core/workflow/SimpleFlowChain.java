@@ -8,6 +8,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.core.progress.ProgressFlowChainProcessorFactory;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -39,7 +40,6 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private String id;
     private List<Flow> flows = new ArrayList<>();
     private final Stack<Flow> rollBackFlows = new Stack<>();
-    private final List<Flow> skippedFlows = new ArrayList<>();
     private Map<Object, Object> data = new HashMap<>();
     private int currentLoop = 0;
     private Iterator<Flow> it;
@@ -62,6 +62,9 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private List<List<Runnable>> afterDone = new ArrayList<>();
     private List<List<Runnable>> afterError = new ArrayList<>();
     private List<List<Runnable>> afterFinal = new ArrayList<>();
+
+    @Autowired(required = false)
+    ProgressFlowChainProcessorFactory progressFactory;
 
     private boolean isFailCalled;
 
@@ -211,6 +214,15 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         return this;
     }
 
+    @Override
+    public SimpleFlowChain enableProgressReport() {
+        if (progressFactory != null) {
+            FlowChainProcessor progressProcessor = progressFactory.create();
+            addProcessor(progressProcessor);
+        }
+        return this;
+    }
+
     public SimpleFlowChain then(Flow flow) {
         flows.add(flow);
         return this;
@@ -261,8 +273,11 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     }
 
     @Override
-    public void setProcessors(List<FlowChainProcessor> processors) {
-        this.processors = processors;
+    public void addProcessor(FlowChainProcessor processor) {
+        if (processors == null) {
+            processors = new ArrayList<>();
+        }
+        processors.add(processor);
     }
 
     @Override
@@ -360,7 +375,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
             if (isSkipFlow(toRun)) {
                 printDebugLog(String.format("[FlowChain(%s): %s] skip flow[%s] because it's skip() returns true", id, name, flowName));
-                skippedFlows.add(toRun);
+                rollBackFlows.remove(toRun);
                 this.next();
             } else {
                 if (contextHandler != null) {
@@ -403,12 +418,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             }
 
 
-            if (skippedFlows.contains(flow)) {
-                printDebugLog(String.format("[FlowChain(%s): %s] skip rollback flow[%s] because it's skip() returns true", id, name, getFlowName(flow)));
-                rollback();
-            } else {
-                flow.rollback(this, data);
-            }
+            flow.rollback(this, data);
         } catch (Throwable t) {
             logger.warn(String.format("unhandled exception when rollback, call backtrace %s", DebugUtils.getStackTrace(t)));
             logger.warn(String.format("[FlowChain(%s): %s] unhandled exception when rollback flow[%s]," +
@@ -457,15 +467,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     private String getFlowName(Flow flow) {
         StringBuilder name = new StringBuilder();
-        String innerName = FieldUtils.getFieldValue("__name__", flow);
-        if (innerName == null) {
-            name.append(flow.getClass().getSimpleName());
-            if (name.length() == 0) {
-                name.append(flow.getClass().getName());
-            }
-        } else {
-            name.append(innerName);
-        }
+        name.append(flow.name());
 
         if (logger.isTraceEnabled()) {
             String className = flow.getClass().getName();
@@ -590,6 +592,13 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         isFailCalled = true;
         setErrorCode(errorCode);
         rollBackFlows.push(currentFlow);
+
+        if (processors != null) {
+            for (FlowChainProcessor p : processors) {
+                p.beforeChainRollback(this, currentLoop);
+            }
+        }
+
         rollback();
     }
 
@@ -629,6 +638,12 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
         rollBackFlows.push(currentFlow);
 
+        if (processors != null) {
+            for (FlowChainProcessor p : processors) {
+                p.afterOneFlowDone(this, currentLoop);
+            }
+        }
+
         printDebugLog(String.format("[FlowChain(%s): %s] successfully executed flow[%s]",
                 id, name, getFlowName(currentFlow)));
 
@@ -639,7 +654,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     public void start() {
         if (processors != null) {
             for (FlowChainProcessor p : processors) {
-                p.processFlowChain(this);
+                p.beforeChainStart(this);
             }
         }
 

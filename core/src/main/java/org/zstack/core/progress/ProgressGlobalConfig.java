@@ -11,6 +11,7 @@ import org.zstack.core.config.GlobalConfigValidation;
 public class ProgressGlobalConfig {
     public static final String CATEGORY = "progress";
 
+    @Deprecated
     @GlobalConfigValidation
     public static GlobalConfig PROGRESS_ON = new GlobalConfig(CATEGORY, "progress.on");
     @GlobalConfigValidation(numberGreaterThan = 0)

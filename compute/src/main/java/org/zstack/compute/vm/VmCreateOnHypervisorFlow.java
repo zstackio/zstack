@@ -20,8 +20,6 @@ import org.zstack.utils.logging.CLogger;
 import java.util.List;
 import java.util.Map;
 
-import static org.zstack.core.progress.ProgressReportService.taskProgress;
-
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmCreateOnHypervisorFlow implements Flow {
     private static final CLogger logger = Utils.getLogger(VmCreateOnHypervisorFlow.class);
@@ -35,6 +33,11 @@ public class VmCreateOnHypervisorFlow implements Flow {
 
     private List<VmBeforeCreateOnHypervisorExtensionPoint> exts;
 
+    @Override
+    public String name() {
+        return "start-vm-on-the-hypervisor";
+    }
+
     public VmCreateOnHypervisorFlow() {
         exts = pluginRgty.getExtensionList(VmBeforeCreateOnHypervisorExtensionPoint.class);
     }
@@ -47,8 +50,6 @@ public class VmCreateOnHypervisorFlow implements Flow {
 
     @Override
     public void run(final FlowTrigger chain, final Map data) {
-        taskProgress("start on the hypervisor");
-
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         fireExtensions(spec);

@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
 /**
  * Create by lining at 2018/12/26
@@ -40,9 +39,12 @@ public class VmAllocateCdRomFlow implements Flow {
     protected ErrorFacade errf;
 
     @Override
-    public void run(final FlowTrigger trigger, final Map data) {
-        taskProgress("create cdRoms");
+    public String name() {
+        return "create-cd-roms";
+    }
 
+    @Override
+    public void run(final FlowTrigger trigger, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         List<CdRomSpec> cdRomSpecs = spec.getCdRomSpecs();
 

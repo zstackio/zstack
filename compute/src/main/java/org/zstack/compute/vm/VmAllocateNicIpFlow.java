@@ -29,8 +29,6 @@ import org.zstack.utils.network.IPv6Constants;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.progress.ProgressReportService.taskProgress;
-
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateNicIpFlow implements Flow {
     private static final CLogger logger = Utils.getLogger(VmAllocateNicIpFlow.class);
@@ -48,9 +46,12 @@ public class VmAllocateNicIpFlow implements Flow {
     protected VmInstanceManager vmMgr;
 
     @Override
-    public void run(final FlowTrigger trigger, final Map data) {
-        taskProgress("allocate nics ip");
+    public String name() {
+        return "allocate-nics-ip";
+    }
 
+    @Override
+    public void run(final FlowTrigger trigger, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         final List<VmNicInventory> nics = (List<VmNicInventory>) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_nics.toString());
         Boolean allowDuplicatedAddress = (Boolean) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedAddress.toString());
