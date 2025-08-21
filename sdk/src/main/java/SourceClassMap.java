@@ -591,6 +591,7 @@ public class SourceClassMap {
 			put("org.zstack.pciDevice.PciDeviceStatus", "org.zstack.sdk.PciDeviceStatus");
 			put("org.zstack.pciDevice.PciDeviceType", "org.zstack.sdk.PciDeviceType");
 			put("org.zstack.pciDevice.gpu.GpuDeviceInventory", "org.zstack.sdk.GpuDeviceInventory");
+			put("org.zstack.pciDevice.gpu.GpuDeviceSpecInventory", "org.zstack.sdk.GpuDeviceSpecInventory");
 			put("org.zstack.pciDevice.gpu.GpuVendor", "org.zstack.sdk.GpuVendor");
 			put("org.zstack.pciDevice.specification.mdev.MdevDeviceSpecInventory", "org.zstack.sdk.MdevDeviceSpecInventory");
 			put("org.zstack.pciDevice.specification.mdev.MdevDeviceSpecState", "org.zstack.sdk.MdevDeviceSpecState");
@@ -1030,6 +1031,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GlobalConfigOptions", "org.zstack.core.config.GlobalConfigOptions");
 			put("org.zstack.sdk.GlobalConfigTemplateInventory", "org.zstack.templateConfig.GlobalConfigTemplateInventory");
 			put("org.zstack.sdk.GpuDeviceInventory", "org.zstack.pciDevice.gpu.GpuDeviceInventory");
+			put("org.zstack.sdk.GpuDeviceSpecInventory", "org.zstack.pciDevice.gpu.GpuDeviceSpecInventory");
 			put("org.zstack.sdk.GpuVendor", "org.zstack.pciDevice.gpu.GpuVendor");
 			put("org.zstack.sdk.GuestOsCharacterInventory", "org.zstack.core.config.GuestOsCharacterInventory");
 			put("org.zstack.sdk.GuestToolsInventory", "org.zstack.guesttools.GuestToolsInventory");
