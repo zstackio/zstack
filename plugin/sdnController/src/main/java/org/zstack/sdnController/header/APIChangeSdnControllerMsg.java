@@ -26,7 +26,10 @@ public class APIChangeSdnControllerMsg extends APIMessage implements SdnControll
     @APIParam(resourceType = SdnControllerVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
 
-    @APIParam(maxLength = 255)
+    @APIParam(required = false, maxLength = 255)
+    private String userName;
+
+    @APIParam(required = false, maxLength = 255)
     @NoLogging
     private String password;
 
@@ -51,9 +54,18 @@ public class APIChangeSdnControllerMsg extends APIMessage implements SdnControll
         this.password = password;
     }
 
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
     public static APIChangeSdnControllerMsg __example__() {
         APIChangeSdnControllerMsg msg = new APIChangeSdnControllerMsg();
         msg.setUuid(uuid());
+        msg.setUserName("sdnuser");
         msg.setPassword("newpassword");
         return msg;
     }

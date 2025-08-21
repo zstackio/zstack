@@ -2,6 +2,7 @@ package org.zstack.test.integration.network.sdnController
 
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.sdk.*
+import org.zstack.sdnController.SdnControllerSystemTags
 import org.zstack.sdnController.header.SdnControllerConstant
 import org.zstack.sdnController.header.SdnControllerVO
 import org.zstack.header.network.l3.L3NetworkConstant
@@ -75,7 +76,7 @@ class SdnControllerCase extends SubCase {
                 H3cVcfcSdnControllerSystemTags.H3C_TENANT_UUID_TOKEN)
         assert tenantUuid != null
         assert tenantUuid == inputTenantUuid
-        List<Map<String, String>> vniRanges = H3cVcfcSdnControllerSystemTags.H3C_VNI_RANGE.getTokensOfTagsByResourceUuid(sdn2.uuid)
+        List<Map<String, String>> vniRanges = SdnControllerSystemTags.VNI_RANGE.getTokensOfTagsByResourceUuid(sdn2.uuid)
         assert vniRanges.size() > 0
         /* this result depends on the simulator */
         assert sdn2.vniRanges.size() == 3

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
 import org.zstack.header.identity.AccountInventory;
@@ -40,6 +41,8 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
 
     @Autowired
     CloudBus bus;
+    @Autowired
+    DatabaseFacade dbf;
 
     private SdnControllerVO sdnControllerVO;
     private TfHttpClient client;
@@ -98,6 +101,17 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
             logger.error(message, e);
             completion.fail(operr(message));
         }
+    }
+
+    @Override
+    public void createSdnControllerDb(APIAddSdnControllerMsg msg, SdnControllerVO vo, Completion completion) {
+        dbf.persist(vo);
+        completion.success();
+    }
+
+    @Override
+    public void deleteSdnControllerDb(SdnControllerVO vo) {
+        dbf.removeByPrimaryKey(vo.getUuid(), SdnControllerVO.class);
     }
 
     @Override
