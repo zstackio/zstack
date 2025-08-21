@@ -180,7 +180,7 @@ class VmProgressCase extends SubCase {
 
         logger.info("Test 007: Progress will remain after API done")
         retryInSecs {
-            Q.New(TaskProgressVO.class)
+            assert Q.New(TaskProgressVO.class)
                     .eq(TaskProgressVO_.apiId, a.apiId)
                     .count() >= 5
         }
