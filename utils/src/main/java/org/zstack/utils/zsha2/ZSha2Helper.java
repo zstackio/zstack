@@ -48,7 +48,7 @@ public class ZSha2Helper {
 
         result = ShellUtils.runAndReturn("/usr/local/bin/zsha2 status -json");
         if (!result.isReturnCode(0)) {
-            throw new RuntimeException(String.format("cannot get zsha2 status json, because %s.", result.getStderr()));
+            throw new RuntimeException("cannot get zsha2 status json: " + result.getStderr());
         }
 
         return JSONObjectUtil.toObject(result.getStdout(), ZSha2StatusJsonInfo.class);
