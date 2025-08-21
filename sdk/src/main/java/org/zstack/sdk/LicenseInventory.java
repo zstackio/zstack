@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.license.header.server.LicenseUsageView;
 
 public class LicenseInventory  {
 
@@ -154,6 +154,14 @@ public class LicenseInventory  {
     }
     public java.lang.Integer getAvailableVmNum() {
         return this.availableVmNum;
+    }
+
+    public LicenseUsageView usage;
+    public void setUsage(LicenseUsageView usage) {
+        this.usage = usage;
+    }
+    public LicenseUsageView getUsage() {
+        return this.usage;
     }
 
 }
