@@ -356,6 +356,8 @@ public class SourceClassMap {
 			put("org.zstack.license.entity.UpdateLicenseView", "org.zstack.sdk.license.entity.UpdateLicenseView");
 			put("org.zstack.loginControl.entity.AccessControlRuleInventory", "org.zstack.sdk.AccessControlRuleInventory");
 			put("org.zstack.loginControl.entity.ControlStrategy", "org.zstack.sdk.ControlStrategy");
+			put("org.zstack.managements.entity.ha2.ZSha2NodeStatusView", "org.zstack.sdk.managements.ha2.ZSha2NodeStatusView");
+			put("org.zstack.managements.entity.ha2.ZSha2StatusView", "org.zstack.sdk.managements.ha2.ZSha2StatusView");
 			put("org.zstack.mevoco.ShareableVolumeVmInstanceRefInventory", "org.zstack.sdk.ShareableVolumeVmInstanceRefInventory");
 			put("org.zstack.monitoring.AlertInventory", "org.zstack.sdk.AlertInventory");
 			put("org.zstack.monitoring.MonitorTriggerInventory", "org.zstack.sdk.MonitorTriggerInventory");
@@ -1241,6 +1243,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.identity.role.RoleInventory", "org.zstack.header.identity.role.RoleInventory");
 			put("org.zstack.sdk.license.entity.LicenseUsageView", "org.zstack.license.entity.LicenseUsageView");
 			put("org.zstack.sdk.license.entity.UpdateLicenseView", "org.zstack.license.entity.UpdateLicenseView");
+			put("org.zstack.sdk.managements.ha2.ZSha2NodeStatusView", "org.zstack.managements.entity.ha2.ZSha2NodeStatusView");
+			put("org.zstack.sdk.managements.ha2.ZSha2StatusView", "org.zstack.managements.entity.ha2.ZSha2StatusView");
 			put("org.zstack.sdk.sns.SNSApplicationEndpointInventory", "org.zstack.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sdk.sns.SNSApplicationPlatformInventory", "org.zstack.sns.SNSApplicationPlatformInventory");
 			put("org.zstack.sdk.sns.SNSSmsEndpointInventory", "org.zstack.sns.SNSSmsEndpointInventory");
