@@ -10,10 +10,6 @@ public interface Constants {
     String THREAD_CONTEXT_TASK_NAME = "task-name";
     String THREAD_CONTEXT_TASK = "task";
 
-    @Deprecated
-    String THREAD_CONTEXT_PROGRESS_ENABLED = "progress-enabled";
-    String THREAD_CONTEXT_TASK_STAGE = "task-stage";
-
     String CATEGORY_RESOURCE = "resource";
     String CATEGORY_METADATA = "metadata";
 
