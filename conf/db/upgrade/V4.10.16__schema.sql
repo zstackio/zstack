@@ -166,7 +166,7 @@ BEGIN
     UPDATE `zstack`.`UsedIpVO`
     SET `ipInBinary` = INET6_ATON(`ip`)
     WHERE INET6_ATON(`ip`) IS NOT NULL
-    AND `ipInBinary` = 0;
+    AND `ipInBinary` = 0x00000000000000000000000000000000;
 
     CALL CREATE_INDEX('UsedIpVO', 'idxUsedIpVOipInBinary', 'ipInBinary');
 
