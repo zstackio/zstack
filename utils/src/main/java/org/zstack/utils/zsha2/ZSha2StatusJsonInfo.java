@@ -1,5 +1,7 @@
 package org.zstack.utils.zsha2;
 
+import com.google.gson.annotations.SerializedName;
+
 /**
  * @author hanyu.liang
  * @date 2023/11/6 17:02
@@ -13,7 +15,8 @@ public class ZSha2StatusJsonInfo {
     private String mnStatus;
     private String timeToSyncDB;
     private boolean slaveIoRunning;
-    private boolean slaveSqlRuning;
+    @SerializedName("slaveSqlRuning") // zsha2 typo
+    private boolean slaveSqlRunning;
 
     public boolean isOwnsVip() {
         return ownsVip;
@@ -79,11 +82,11 @@ public class ZSha2StatusJsonInfo {
         this.slaveIoRunning = slaveIoRunning;
     }
 
-    public boolean isSlaveSqlRuning() {
-        return slaveSqlRuning;
+    public boolean isSlaveSqlRunning() {
+        return slaveSqlRunning;
     }
 
-    public void setSlaveSqlRuning(boolean slaveSqlRuning) {
-        this.slaveSqlRuning = slaveSqlRuning;
+    public void setSlaveSqlRunning(boolean slaveSqlRunning) {
+        this.slaveSqlRunning = slaveSqlRunning;
     }
 }
