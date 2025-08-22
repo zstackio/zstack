@@ -11,12 +11,9 @@ public class HostCanonicalEvents {
     public static final String HOST_DELETED_PATH = "/host/delete";
     public static final String HOST_DISCONNECTED_PATH = "/host/disconnected";
     public static final String HOST_CHECK_MOUNT_FAULT = "/host/mount/path/fault";
-<<<<<<< HEAD
     public static final String HOST_CHECK_INITIALIZED_FAILED = "/host/check/initialized/failed";
     public static final String HOST_PHYSICAL_NIC_STATUS_UP = "/host/physicalNic/status/up";
     public static final String HOST_PHYSICAL_NIC_STATUS_DOWN = "/host/physicalNic/status/down";
-=======
-    public static final String HOST_CHECK_INITIALIZED_FAILED = "/host/check/initialized/falied";
     public static final String HOST_USB_STORAGE_DEVICE_DETECTED = "/host/usb_storage/detected";
 
     @NeedJsonSchema
@@ -49,7 +46,6 @@ public class HostCanonicalEvents {
             this.product = product;
         }
     }
->>>>>>> 5aba923fb3 (host usb storage device detection event)
 
     public static class HostDisconnectedData {
         public String hostUuid;
