@@ -1010,6 +1010,11 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         completion.success();
     }
 
+    @Override
+    public long alignSize(long size) {
+        return SizeUnit.MEGABYTE.toByte(convertBytesToMegaBytes(size));
+    }
+
     public void cleanActiveRecord(VolumeInventory vol) {
 
     }

@@ -89,7 +89,7 @@ public class ZbsStorageFactory implements ExternalPrimaryStorageSvcBuilder, Back
             return;
         }
 
-        Set<String> volumeInstallPaths = snapshots.stream().map(s -> getVolumeInstallPathFromSnapshot(s.getPrimaryStorageInstallPath()))
+        Set<String> volumeInstallPaths = snapshots.stream().map(s -> getVolumeFromSnapshotPath(s.getPrimaryStorageInstallPath()))
                 .collect(Collectors.toSet());
         if (volumeInstallPaths.isEmpty()) {
             return;

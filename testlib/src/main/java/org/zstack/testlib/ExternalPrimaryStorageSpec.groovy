@@ -3,6 +3,7 @@ package org.zstack.testlib
 import org.springframework.http.HttpEntity
 import org.zstack.cbd.LogicalPoolInfo
 import org.zstack.cbd.kvm.KvmCbdCommands
+import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
@@ -52,12 +53,42 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
+            simulator(ZbsPrimaryStorageMdsBase.SYNC_METADATA_PATH) {
+                ZbsPrimaryStorageMdsBase.SyncMetadataRsp rsp = new ZbsPrimaryStorageMdsBase.SyncMetadataRsp()
+                rsp.success = true
+                rsp.externalAddr = "127.0.0.1"
+                return rsp
+            }
+
             simulator(ZbsStorageController.DEPLOY_CLIENT_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 ZbsStorageController.DeployClientCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.DeployClientCmd.class)
                 ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
                 assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
 
                 def rsp = new ZbsStorageController.DeployClientRsp()
+                rsp.success = true
+
+                return rsp
+            }
+
+            simulator(ZbsStorageController.GET_FACTS_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                ZbsStorageController.GetFactsCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.GetFactsCmd.class)
+                ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
+                assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
+
+                def rsp = new ZbsStorageController.GetFactsRsp()
+                rsp.uuid = "123456789"
+                rsp.version = "1.6.1-for-test"
+                rsp.success = true
+
+                return rsp
+            }
+
+            simulator(ZbsStorageController.CHECK_HOST_STORAGE_CONNECTION_PATH) { HttpEntity<String> e ->
+                ZbsStorageController.CheckHostStorageConnectionCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckHostStorageConnectionCmd)
+                assert cmd.hostUuid != null
+
+                def rsp = new ZbsStorageController.CheckHostStorageConnectionRsp()
                 rsp.success = true
 
                 return rsp
@@ -86,7 +117,7 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 logicalPoolInfo.setRawUsedSize(968884224);
                 logicalPoolInfo.setPhysicalPoolName("pool1");
                 logicalPoolInfo.setCapacity(579933831168);
-                logicalPoolInfo.setLogicalPoolName(cmd.logicalPoolName);
+                logicalPoolInfo.setLogicalPoolName(cmd.logicalPool);
                 logicalPoolInfo.setUserPolicy("eyJwb2xpY3kiIDogMX0=");
                 logicalPoolInfo.setAllocatedSize(3221225472);
 

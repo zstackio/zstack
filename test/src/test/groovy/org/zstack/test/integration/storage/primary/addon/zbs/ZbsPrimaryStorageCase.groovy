@@ -4,10 +4,14 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageStatus
 import org.zstack.cbd.MdsUri
+import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.*
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig
+import org.zstack.header.storage.primary.PrimaryStorageHostStatus
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.storage.zbs.ZbsConstants
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
@@ -30,6 +34,7 @@ class ZbsPrimaryStorageCase extends SubCase {
     PrimaryStorageInventory ps
     DiskOfferingInventory diskOffering
     VolumeInventory vol, vol2
+    KVMHostInventory kvm
 
     @Override
     void clean() {
@@ -146,15 +151,105 @@ class ZbsPrimaryStorageCase extends SubCase {
             cluster = env.inventoryByName("cluster") as ClusterInventory
             ps = env.inventoryByName("zbs-1") as PrimaryStorageInventory
             diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
+            kvm = env.inventoryByName("kvm-1") as KVMHostInventory
 
             testDefaultConfig()
+            testUpdateExternalPrimaryStorage()
             testLifecycle()
             testDataVolumeLifecycle()
             testMdsPing()
+            testCheckHostStorageConnection()
             testNegativeScenario()
             testDataVolumeNegativeScenario()
             testDecodeMdsUriWithSpecialPassword()
         }
+    }
+
+    void testCheckHostStorageConnection() {
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        env.afterSimulator(ZbsStorageController.CHECK_HOST_STORAGE_CONNECTION_PATH) { rsp, HttpEntity<String> e ->
+            ZbsStorageController.CheckHostStorageConnectionCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckHostStorageConnectionCmd)
+
+            ZbsStorageController.CheckHostStorageConnectionRsp checkHostStorageConnectionRsp = new ZbsStorageController.CheckHostStorageConnectionRsp()
+            checkHostStorageConnectionRsp.error = "fake error"
+            checkHostStorageConnectionRsp.success = false
+
+            return checkHostStorageConnectionRsp
+        }
+
+        expect(AssertionError.class) {
+            reconnectHost {
+                uuid = kvm.getUuid()
+            }
+        }
+
+        retryInSecs {
+            assert Q.New(PrimaryStorageHostRefVO.class)
+                    .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, ps.uuid)
+                    .eq(PrimaryStorageHostRefVO_.hostUuid, kvm.getUuid())
+                    .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
+                    .count() == 1
+        }
+
+        env.cleanSimulatorAndMessageHandlers()
+
+        detachPrimaryStorageFromCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
+        }
+    }
+
+    void testUpdateExternalPrimaryStorage() {
+        expect(AssertionError.class) {
+            updateExternalPrimaryStorage {
+                uuid = ps.uuid
+                config = "{\"mdsUrls\":[],\"logicalPoolName\":\"lpool1\"}"
+            }
+        }
+
+        expect(AssertionError.class) {
+            updateExternalPrimaryStorage {
+                uuid = ps.uuid
+                config = "{\"mdsUrls\":[\"root:password@127.0.1.1\",\"root:password@127.0.1.1\"],\"logicalPoolName\":\"lpool1\"}"
+            }
+        }
+
+        updateExternalPrimaryStorage {
+            uuid = ps.uuid
+            config = "{\"mdsUrls\":[\"root:password@127.0.1.1\",\"root:password@127.0.1.2\"],\"logicalPoolName\":\"lpool1\"}"
+        }
+
+        String addonInfo = Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.addonInfo)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                .findValue()
+        assert !addonInfo.contains("127.0.1.3")
+
+        updateExternalPrimaryStorage {
+            uuid = ps.uuid
+            config = "{\"mdsUrls\":[\"root:password@127.0.1.1:33\",\"root:password@127.0.1.2\"],\"logicalPoolName\":\"lpool1\"}"
+        }
+
+        addonInfo = Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.addonInfo)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                .findValue()
+        assert addonInfo.contains("\"port\":33,\"addr\":\"127.0.1.1\"")
+
+        updateExternalPrimaryStorage {
+            uuid = ps.uuid
+            config = "{\"mdsUrls\":[\"root:password@127.0.1.1\",\"root:password@127.0.1.2\",\"root:password@127.0.1.3\"],\"logicalPoolName\":\"lpool1\"}"
+        }
+
+        addonInfo = Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.addonInfo)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                .findValue()
+        assert addonInfo.contains("127.0.1.3")
     }
 
     void testDefaultConfig() {
@@ -193,7 +288,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.DeployClientCmd)
 
             ZbsStorageController.DeployClientRsp deployClientRsp = new ZbsStorageController.DeployClientRsp()
-            if (cmd.clientIp.equals("127.0.0.1")) {
+            if (cmd.ip.equals("127.0.0.1")) {
                 deployClientRsp.success = false
                 deployClientRsp.error = "on purpose"
             }
@@ -226,12 +321,12 @@ class ZbsPrimaryStorageCase extends SubCase {
 
         def addonInfo = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
 
-        assert addonInfo == "{\"mdsInfos\":[{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.1\",\"mdsStatus\":\"Connected\"},{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.2\",\"mdsStatus\":\"Connected\"},{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.3\",\"mdsStatus\":\"Connected\"}],\"logicalPoolInfos\":[{\"physicalPoolID\":1,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":1,\"usedSize\":322961408,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":968884224,\"physicalPoolName\":\"pool1\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool1\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":3221225472}]}"
+        assert addonInfo == "{\"clusterInfo\":{\"uuid\":\"123456789\",\"version\":\"1.6.1-for-test\"},\"mdsInfos\":[{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.1\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"},{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.2\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"},{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.3\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}],\"logicalPoolInfos\":[{\"physicalPoolID\":1,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":1,\"usedSize\":322961408,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":968884224,\"physicalPoolName\":\"pool1\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool1\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":3221225472}]}"
 
         env.afterSimulator(ZbsPrimaryStorageMdsBase.PING_PATH) { rsp, HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.PingCmd.class)
             ZbsPrimaryStorageMdsBase.PingRsp pingRsp = new ZbsPrimaryStorageMdsBase.PingRsp()
-            if (cmd.mdsAddr.equals("127.0.1.1")) {
+            if (cmd.addr.equals("127.0.1.1")) {
                 pingRsp.success = false
                 pingRsp.error = "on purpose"
             }
@@ -243,20 +338,20 @@ class ZbsPrimaryStorageCase extends SubCase {
 
         addonInfo = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
 
-        assert addonInfo == "{\"mdsInfos\":[{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.1\",\"mdsStatus\":\"Disconnected\"},{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.2\",\"mdsStatus\":\"Connected\"},{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.3\",\"mdsStatus\":\"Connected\"}],\"logicalPoolInfos\":[{\"physicalPoolID\":1,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":1,\"usedSize\":322961408,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":968884224,\"physicalPoolName\":\"pool1\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool1\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":3221225472}]}"
+        assert addonInfo == "{\"clusterInfo\":{\"uuid\":\"123456789\",\"version\":\"1.6.1-for-test\"},\"mdsInfos\":[{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.1\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"},{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.2\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"},{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.3\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}],\"logicalPoolInfos\":[{\"physicalPoolID\":1,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":1,\"usedSize\":322961408,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":968884224,\"physicalPoolName\":\"pool1\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool1\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":3221225472}]}"
 
         assert Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Connected
 
         env.afterSimulator(ZbsPrimaryStorageMdsBase.PING_PATH) { rsp, HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.PingCmd.class)
             ZbsPrimaryStorageMdsBase.PingRsp pingRsp = new ZbsPrimaryStorageMdsBase.PingRsp()
-            if (cmd.mdsAddr.equals("127.0.1.1")) {
+            if (cmd.addr.equals("127.0.1.1")) {
                 pingRsp.success = false
                 pingRsp.error = "on purpose"
-            } else if (cmd.mdsAddr.equals("127.0.1.2")) {
+            } else if (cmd.addr.equals("127.0.1.2")) {
                 pingRsp.success = false
                 pingRsp.error = "on purpose"
-            } else if (cmd.mdsAddr.equals("127.0.1.3")) {
+            } else if (cmd.addr.equals("127.0.1.3")) {
                 pingRsp.success = false
                 pingRsp.error = "on purpose"
             }
@@ -268,15 +363,13 @@ class ZbsPrimaryStorageCase extends SubCase {
 
         addonInfo = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
 
-        assert addonInfo == "{\"mdsInfos\":[{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.1\",\"mdsStatus\":\"Disconnected\"},{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.2\",\"mdsStatus\":\"Disconnected\"},{\"sshUsername\":\"root\",\"sshPassword\":\"password\",\"sshPort\":22,\"mdsAddr\":\"127.0.1.3\",\"mdsStatus\":\"Disconnected\"}],\"logicalPoolInfos\":[{\"physicalPoolID\":1,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":1,\"usedSize\":322961408,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":968884224,\"physicalPoolName\":\"pool1\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool1\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":3221225472}]}"
+        assert addonInfo == "{\"clusterInfo\":{\"uuid\":\"123456789\",\"version\":\"1.6.1-for-test\"},\"mdsInfos\":[{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.1\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"},{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.2\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"},{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.3\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"}],\"logicalPoolInfos\":[{\"physicalPoolID\":1,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":1,\"usedSize\":322961408,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":968884224,\"physicalPoolName\":\"pool1\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool1\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":3221225472}]}"
 
         assert Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Disconnected
 
         env.cleanAfterSimulatorHandlers()
 
-        reconnectPrimaryStorage {
-            uuid = ps.uuid
-        }
+        sleep(2000)
 
         Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Connected
 
@@ -406,7 +499,7 @@ class ZbsPrimaryStorageCase extends SubCase {
         def specialPassword = "password123-`=[];,./~!@#\$%^&*()_+|{}:<>?"
         def mdsUri = "root:${specialPassword}@127.0.2.1"
         MdsUri uri = new MdsUri(mdsUri);
-        assert uri.sshPassword == specialPassword
+        assert uri.password == specialPassword
     }
 
 

@@ -1,6 +1,7 @@
 package org.zstack.storage.zbs;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.cbd.ClusterInfo;
 import org.zstack.cbd.MdsInfo;
 import org.zstack.cbd.MdsStatus;
 import org.zstack.compute.host.HostGlobalConfig;
@@ -49,14 +50,15 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
     public static final String ECHO_PATH = "/zbs/primarystorage/echo";
     public static final String PING_PATH = "/zbs/primarystorage/ping";
+    public static final String SYNC_METADATA_PATH = "/zbs/primarystorage/metadata/sync";
 
     public ZbsPrimaryStorageMdsBase(MdsInfo self) {
         super(self);
-        this.syncId = String.format("connect-mds-%s", self.getMdsAddr());
+        this.syncId = String.format("connect-mds-%s", self.getAddr());
     }
 
     private void doConnect(final Completion completion) {
-        getSelf().setMdsStatus(MdsStatus.Connecting);
+        getSelf().setStatus(MdsStatus.Connecting);
 
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName("connect-mds");
@@ -70,8 +72,8 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            checkTools();
-                            checkHealth();
+                            checkSshAndTools();
+                            checkStorageHealth();
                             trigger.next();
                         }
                     });
@@ -82,30 +84,30 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
                             SshFileMd5Checker checker = new SshFileMd5Checker();
-                            checker.setTargetIp(getSelf().getMdsAddr());
-                            checker.setUsername(getSelf().getSshUsername());
-                            checker.setPassword(getSelf().getSshPassword());
+                            checker.setTargetIp(getSelf().getAddr());
+                            checker.setUsername(getSelf().getUsername());
+                            checker.setPassword(getSelf().getPassword());
                             checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/zbsp/package/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
                             checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/zbsp/%s", ZbsGlobalProperty.PRIMARY_STORAGE_PACKAGE_NAME), true).getAbsolutePath(),
                                     String.format("/var/lib/zstack/zbsp/package/%s", ZbsGlobalProperty.PRIMARY_STORAGE_PACKAGE_NAME));
 
                             SshChronyConfigChecker chronyChecker = new SshChronyConfigChecker();
-                            chronyChecker.setTargetIp(getSelf().getMdsAddr());
-                            chronyChecker.setUsername(getSelf().getSshUsername());
-                            chronyChecker.setPassword(getSelf().getSshPassword());
-                            chronyChecker.setSshPort(getSelf().getSshPort());
+                            chronyChecker.setTargetIp(getSelf().getAddr());
+                            chronyChecker.setUsername(getSelf().getUsername());
+                            chronyChecker.setPassword(getSelf().getPassword());
+                            chronyChecker.setSshPort(getSelf().getPort());
 
                             SshYumRepoChecker repoChecker = new SshYumRepoChecker();
-                            repoChecker.setTargetIp(getSelf().getMdsAddr());
-                            repoChecker.setUsername(getSelf().getSshUsername());
-                            repoChecker.setPassword(getSelf().getSshPassword());
-                            repoChecker.setSshPort(getSelf().getSshPort());
+                            repoChecker.setTargetIp(getSelf().getAddr());
+                            repoChecker.setUsername(getSelf().getUsername());
+                            repoChecker.setPassword(getSelf().getPassword());
+                            repoChecker.setSshPort(getSelf().getPort());
 
                             CallBackNetworkChecker callBackChecker = new CallBackNetworkChecker();
-                            callBackChecker.setTargetIp(getSelf().getMdsAddr());
-                            callBackChecker.setUsername(getSelf().getSshUsername());
-                            callBackChecker.setPassword(getSelf().getSshPassword());
-                            callBackChecker.setPort(getSelf().getSshPort());
+                            callBackChecker.setTargetIp(getSelf().getAddr());
+                            callBackChecker.setUsername(getSelf().getUsername());
+                            callBackChecker.setPassword(getSelf().getPassword());
+                            callBackChecker.setPort(getSelf().getPort());
                             callBackChecker.setCallbackIp(Platform.getManagementServerIp());
                             callBackChecker.setCallBackPort(CloudBusGlobalProperty.HTTP_PORT);
 
@@ -114,10 +116,11 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                             runner.installChecker(chronyChecker);
                             runner.installChecker(repoChecker);
                             runner.installChecker(callBackChecker);
-                            runner.setUsername(getSelf().getSshUsername());
-                            runner.setPassword(getSelf().getSshPassword());
-                            runner.setTargetIp(getSelf().getMdsAddr());
-                            runner.setTargetUuid(getSelf().getMdsAddr());
+                            runner.setUsername(getSelf().getUsername());
+                            runner.setPassword(getSelf().getPassword());
+                            runner.setSshPort(getSelf().getPort());
+                            runner.setTargetIp(getSelf().getAddr());
+                            runner.setTargetUuid(getSelf().getAddr());
                             runner.setAgentPort(ZbsGlobalProperty.PRIMARY_STORAGE_AGENT_PORT);
                             runner.setPlayBookName(ZbsGlobalProperty.PRIMARY_STORAGE_PLAYBOOK_NAME);
 
@@ -160,10 +163,10 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
                             try {
                                 new Ssh().shell(builder.toString())
-                                        .setUsername(getSelf().getSshUsername())
-                                        .setPassword(getSelf().getSshPassword())
-                                        .setHostname(getSelf().getMdsAddr())
-                                        .setPort(getSelf().getSshPort()).runErrorByExceptionAndClose();
+                                        .setUsername(getSelf().getUsername())
+                                        .setPassword(getSelf().getPassword())
+                                        .setHostname(getSelf().getAddr())
+                                        .setPort(getSelf().getPort()).runErrorByExceptionAndClose();
                             } catch (SshException ex) {
                                 throw new OperationFailureException(operr(ex.toString()));
                             }
@@ -178,7 +181,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        restf.echo(ZbsAgentUrl.primaryStorageUrl(getSelf().getMdsAddr(), ECHO_PATH), new Completion(trigger) {
+                        restf.echo(ZbsAgentUrl.primaryStorageUrl(getSelf().getAddr(), ECHO_PATH), new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -192,10 +195,38 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "sync-metadata";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        SyncMetadataCmd cmd = new SyncMetadataCmd();
+                        cmd.setAddr(getSelf().getAddr());
+
+                        restf.asyncJsonPost(ZbsAgentUrl.primaryStorageUrl(getSelf().getAddr(), SYNC_METADATA_PATH), cmd, new JsonAsyncRESTCallback<SyncMetadataRsp>(trigger) {
+                            @Override
+                            public void success(SyncMetadataRsp ret) {
+                                getSelf().setExternalAddr(ret.getExternalAddr());
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode err) {
+                                trigger.fail(err);
+                            }
+
+                            @Override
+                            public Class<SyncMetadataRsp> getReturnClass() {
+                                return SyncMetadataRsp.class;
+                            }
+                        });
+                    }
+                });
+
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
-                        getSelf().setMdsStatus(MdsStatus.Connected);
+                        getSelf().setStatus(MdsStatus.Connected);
                         completion.success();
                     }
                 });
@@ -203,7 +234,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                 error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        getSelf().setMdsStatus(MdsStatus.Disconnected);
+                        getSelf().setStatus(MdsStatus.Disconnected);
                         completion.fail(errCode);
                     }
                 });
@@ -238,13 +269,13 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
             @Override
             public String getName() {
-                return String.format("mds-%s", getSelf().getMdsAddr());
+                return String.format("mds-%s", getSelf().getAddr());
             }
         });
     }
 
     @Override
-    public void ping(Completion completion) {
+    public void ping(ClusterInfo clusterInfo, Completion completion) {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
@@ -253,7 +284,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                pingMds(new Completion(completion) {
+                pingMds(clusterInfo, new Completion(completion) {
                     @Override
                     public void success() {
                         completion.success();
@@ -270,12 +301,12 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
             @Override
             public String getName() {
-                return String.format("ping-zbs-primary-storage-mds-%s", getSelf().getMdsAddr());
+                return String.format("ping-zbs-primary-storage-mds-%s", getSelf().getAddr());
             }
         });
     }
 
-    private void pingMds(final Completion completion) {
+    private void pingMds(ClusterInfo clusterInfo, final Completion completion) {
         final Integer MAX_PING_CNT = ZbsConstants.PRIMARY_STORAGE_MDS_MAXIMUM_PING_FAILURE;
         final List<Integer> stepCount = new ArrayList<>();
         for (int i = 1; i <= MAX_PING_CNT; i++) {
@@ -284,8 +315,9 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
         new While<>(stepCount).each((step, comp) -> {
             PingCmd cmd = new PingCmd();
-            cmd.setMdsAddr(getSelf().getMdsAddr());
-            restf.asyncJsonPost(ZbsAgentUrl.primaryStorageUrl(getSelf().getMdsAddr(), PING_PATH),
+            cmd.setClusterInfo(clusterInfo);
+            cmd.setAddr(getSelf().getAddr());
+            restf.asyncJsonPost(ZbsAgentUrl.primaryStorageUrl(getSelf().getAddr(), PING_PATH),
                     cmd, new JsonAsyncRESTCallback<PingRsp>(completion) {
                         @Override
                         public void success(PingRsp rsp) {
@@ -306,7 +338,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            logger.warn(String.format("ping zbs primary storage mds[%s] failed (%d/%d): %s", getSelf().getMdsAddr(), step, MAX_PING_CNT, errorCode.toString()));
+                            logger.warn(String.format("ping ZBS primary storage MDS[%s] failed (%d/%d): %s", getSelf().getAddr(), step, MAX_PING_CNT, errorCode.toString()));
                             comp.addError(errorCode);
 
                             if (step.equals(MAX_PING_CNT)) {
@@ -338,6 +370,30 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
     }
 
     public static class PingCmd extends ZbsMdsBase.AgentCommand {
+        private ClusterInfo clusterInfo;
+
+        public ClusterInfo getClusterInfo() {
+            return clusterInfo;
+        }
+
+        public void setClusterInfo(ClusterInfo clusterInfo) {
+            this.clusterInfo = clusterInfo;
+        }
+    }
+
+    public static class SyncMetadataRsp extends ZbsMdsBase.AgentResponse {
+        private String externalAddr;
+
+        public String getExternalAddr() {
+            return externalAddr;
+        }
+
+        public void setExternalAddr(String externalAddr) {
+            this.externalAddr = externalAddr;
+        }
+    }
+
+    public static class SyncMetadataCmd extends ZbsMdsBase.AgentCommand {
     }
 
     @Override

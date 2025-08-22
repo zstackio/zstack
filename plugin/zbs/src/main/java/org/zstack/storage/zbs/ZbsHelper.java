@@ -4,6 +4,8 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
+import org.zstack.utils.VersionComparator;
+import org.zstack.utils.data.SizeUnit;
 
 /**
  * @author Xingwei Yu
@@ -17,28 +19,28 @@ public class ZbsHelper {
         }
     }
 
-    public static String buildVolumePath(String physicalPoolName, String logicalPoolName, String volId) {
+    public static String buildHeartbeatVolumePath(String logicalPool) {
+        return String.format("cbd:%s_physical/%s/%s", logicalPool, logicalPool, ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME);
+    }
+
+    public static String buildVolumePath(String physicalPool, String logicalPool, String volId) {
         String base = volId.replace("-", "");
-        return String.format(ZbsConstants.ZBS_CBD_LUN_PATH_FORMAT, physicalPoolName, logicalPoolName, base);
+        return String.format(ZbsConstants.ZBS_CBD_LUN_PATH_FORMAT, physicalPool, logicalPool, base);
     }
 
-    public static String getLogicalPoolNameFromPath(String url) {
-        return url.split("/")[1];
+    public static String getVolumeFromSnapshotPath(String path) {
+        return path.split("@")[0];
     }
 
-    public static String getPhysicalPoolNameFromPath(String url) {
-        return url.split("/")[0].split(":")[1];
+    public static String getSizeUnit(String version) {
+        return new VersionComparator(version.split("-")[0]).compare(ZbsConstants.MEGABYTE_SUPPORTED_VERSION) >= 0 ? ZbsConstants.MEGABYTE_UNIT : ZbsConstants.DEFAULT_GIGABYTE_UNIT;
     }
 
-    public static String getLunNameFromPath(String url) {
-        return url.split("/")[2].split("@")[0];
+    public static long alignSizeTo(long size, String unit) {
+        return ZbsConstants.MEGABYTE_UNIT.equals(unit) ? (long) Math.ceil(SizeUnit.BYTE.toMegaByte((double) size)) : (long) Math.ceil(SizeUnit.BYTE.toGigaByte((double) size));
     }
 
-    public static String getSnapshotNameFromPath(String url) {
-        return url.split("/")[2].split("@")[1];
-    }
-
-    public static String getVolumeInstallPathFromSnapshot(String snapshotInstallPath) {
-        return snapshotInstallPath.split("@")[0];
+    public static long convertSizeToByte(long size, String unit) {
+        return ZbsConstants.MEGABYTE_UNIT.equals(unit) ? SizeUnit.MEGABYTE.toByte(size) : SizeUnit.GIGABYTE.toByte(size);
     }
 }
