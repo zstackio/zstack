@@ -3,10 +3,10 @@ package org.zstack.storage.volume;
 import org.zstack.header.core.NonCloneable;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagDefinition;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.tag.EphemeralSystemTag;
 import org.zstack.tag.PatternedSystemTag;
+import org.zstack.tag.SystemTag;
 
 /**
  * Created by miao on 12/23/16.
@@ -50,4 +50,6 @@ public class VolumeSystemTags {
 
     public static String VOLUME_QOS_TOKEN = "qos";
     public static PatternedSystemTag VOLUME_QOS = new PatternedSystemTag(String.format("%s::{%s}", VOLUME_QOS_TOKEN, VOLUME_QOS_TOKEN), VolumeVO.class);
+
+    public static SystemTag FAST_REVERT = new SystemTag("fast::revert", VolumeVO.class);
 }
