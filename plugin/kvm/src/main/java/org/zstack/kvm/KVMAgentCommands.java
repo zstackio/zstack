@@ -4780,6 +4780,8 @@ public class KVMAgentCommands {
         public Boolean reInstall;
         @GrayVersion(value = "5.4.0")
         public Map<String, String> nicMap = new HashMap<>();
+        @GrayVersion(value = "5.4.0")
+        public Map<String, String> nicVmInstanceUuidMap = new HashMap<>();
     }
 
     public static class OvsAddPortRsp extends AgentResponse {
