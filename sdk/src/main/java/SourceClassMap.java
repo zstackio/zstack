@@ -644,6 +644,8 @@ public class SourceClassMap {
 			put("org.zstack.sso.header.OAuth2ClientInventory", "org.zstack.sdk.OAuth2ClientInventory");
 			put("org.zstack.sso.header.OAuth2TokenInventory", "org.zstack.sdk.OAuth2TokenInventory");
 			put("org.zstack.sso.header.RedirectUrlTemplate", "org.zstack.sdk.RedirectUrlTemplate");
+			put("org.zstack.sso.header.SAML2ClientInventory", "org.zstack.sdk.SAML2ClientInventory");
+			put("org.zstack.sso.header.SAML2State", "org.zstack.sdk.SAML2State");
 			put("org.zstack.sso.header.SSOClientInventory", "org.zstack.sdk.SSOClientInventory");
 			put("org.zstack.sso.header.SSORedirectTemplateInventory", "org.zstack.sdk.SSORedirectTemplateInventory");
 			put("org.zstack.sso.header.SSOServerTokenInventory", "org.zstack.sdk.SSOServerTokenInventory");
@@ -1305,6 +1307,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.RouterAreaInventory", "org.zstack.header.protocol.RouterAreaInventory");
 			put("org.zstack.sdk.RunningState", "org.zstack.storage.device.localRaid.RunningState");
 			put("org.zstack.sdk.RunningTaskInfo", "org.zstack.header.core.progress.RunningTaskInfo");
+			put("org.zstack.sdk.SAML2ClientInventory", "org.zstack.sso.header.SAML2ClientInventory");
+			put("org.zstack.sdk.SAML2State", "org.zstack.sso.header.SAML2State");
 			put("org.zstack.sdk.SSOClientInventory", "org.zstack.sso.header.SSOClientInventory");
 			put("org.zstack.sdk.SSORedirectTemplateInventory", "org.zstack.sso.header.SSORedirectTemplateInventory");
 			put("org.zstack.sdk.SSOServerTokenInventory", "org.zstack.sso.header.SSOServerTokenInventory");
