@@ -50,6 +50,7 @@ import java.util.*;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionUtils.findOneOrNull;
 import static org.zstack.utils.CollectionUtils.isEmpty;
 
 /**
@@ -1051,10 +1052,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         boolean virtIOTagExists = (isEmpty(msg.getSystemTags())) ? false :
                 msg.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat());
         String platform = msg.getPlatform(), guestOsType = msg.getGuestOsType(), architecture = msg.getArchitecture();
+        long rootDiskSize = msg.getRootDiskSize() != null ? msg.getRootDiskSize() : 0L;
 
         if (CollectionUtils.isNotEmpty(msg.getDiskAOs())) {
-            DiskAO rootDiskAO = msg.getDiskAOs().stream()
-                    .filter(DiskAO::isBoot).findFirst().orElse(null);
+            DiskAO rootDiskAO = isEmpty(msg.getDiskAOs()) ? null : findOneOrNull(msg.getDiskAOs(), DiskAO::isBoot);
             if (rootDiskAO == null) {
                 throw new ApiMessageInterceptionException(argerr("missing root disk"));
             }
@@ -1062,6 +1063,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             platform = platform == null ? rootDiskAO.getPlatform() : platform;
             guestOsType = guestOsType == null ? rootDiskAO.getGuestOsType() : guestOsType;
             architecture = architecture == null ? rootDiskAO.getArchitecture() : architecture;
+            rootDiskSize = rootDiskSize == 0L ? rootDiskAO.getSize() : rootDiskSize;
+            msg.setRootDiskSize(rootDiskSize);
+
             if (!virtIOTagExists && CollectionUtils.isNotEmpty(rootDiskAO.getSystemTags())) {
                 virtIOTagExists = rootDiskAO.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat());
             }
@@ -1088,7 +1092,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 errorList.add(Platform.missingVariables("architecture"));
             }
 
-            if (msg.getRootDiskOfferingUuid() == null && msg.getRootDiskSize() == null) {
+            if (msg.getRootDiskOfferingUuid() == null && rootDiskSize <= 0) {
                 errorList.add("rootDiskOfferingUuid or rootDiskSize cannot be all null");
             }
 
