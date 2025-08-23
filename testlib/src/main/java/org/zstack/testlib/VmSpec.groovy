@@ -1,7 +1,9 @@
 package org.zstack.testlib
 
+import org.zstack.header.vm.DiskAO
 import org.zstack.sdk.AttachDataVolumeToVmAction
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 /**
  * Created by xing5 on 2017/2/16.
@@ -33,6 +35,7 @@ class VmSpec extends Spec implements HasSession {
     @SpecParam
     Map<String, List<String>> dataVolumeSystemTagsOnIndex = [:]
     private List<String> volumeToAttach = []
+    private List<DiskAO> disks = []
 
     VmInstanceInventory inventory
 
@@ -165,6 +168,16 @@ class VmSpec extends Spec implements HasSession {
         }
     }
 
+    VmDiskSpec disk(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = VmDiskSpec.class) Closure c) {
+        def diskSpec = new VmDiskSpec(envSpec)
+        c.delegate = diskSpec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        addChild(diskSpec)
+        disks << diskSpec.toDiskAO()
+        return diskSpec
+    }
+
     SpecID create(String uuid, String sessionId) {
         inventory = createVmInstance {
             delegate.resourceUuid = uuid
@@ -187,6 +200,13 @@ class VmSpec extends Spec implements HasSession {
             delegate.dataVolumeSystemTags = dataVolumeSystemTags
             delegate.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex
             delegate.virtio = virtio
+
+            if (!disks.isEmpty()) {
+                if (disks.every { (!it.boot) }) {
+                    disks.first().boot = true
+                }
+                delegate.diskAOs = disks
+            }
         }
 
         postCreate {
@@ -229,5 +249,9 @@ class VmSpec extends Spec implements HasSession {
 
             inventory = null
         }
+    }
+
+    void memoryGB(long memoryGB) {
+        this.memorySize = SizeUnit.GIGABYTE.toByte(memoryGB)
     }
 }
