@@ -37,6 +37,9 @@ public class LoginIAM2VirtualIDWithLdapAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String captchaUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.Map clientInfo;
+
     @Param(required = false)
     public java.util.List systemTags;
 
