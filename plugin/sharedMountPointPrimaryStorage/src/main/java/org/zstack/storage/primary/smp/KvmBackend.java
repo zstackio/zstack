@@ -336,6 +336,7 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class OfflineMergeSnapshotRsp extends AgentRsp {
+        @GrayVersion(value = "5.3.40")
         private long actualSize;
 
         public long getActualSize() {
@@ -348,19 +349,23 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class OfflineCommitSnapshotCmd extends AgentCmd implements HasThreadContext {
+        @GrayVersion(value = "5.3.40")
         public String top;
+        @GrayVersion(value = "5.3.40")
         public String base;
+        @GrayVersion(value = "5.3.40")
         public List<String> topChildrenInstallPathInDb = new ArrayList<>();
     }
 
     public static class OfflineCommitSnapshotRsp extends AgentRsp {
-        private Long actualSize;
+        @GrayVersion(value = "5.3.40")
+        private long actualSize;
 
-        public Long getActualSize() {
+        public long getActualSize() {
             return actualSize;
         }
 
-        public void setActualSize(Long actualSize) {
+        public void setActualSize(long actualSize) {
             this.actualSize = actualSize;
         }
     }

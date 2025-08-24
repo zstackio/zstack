@@ -726,6 +726,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class OfflineMergeSnapshotRsp extends AgentResponse {
+        @GrayVersion(value = "5.3.40")
         private long actualSize;
 
         public long getActualSize() {
@@ -738,12 +739,16 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class OfflineCommitSnapshotCmd extends AgentCommand implements HasThreadContext {
+        @GrayVersion(value = "5.3.40")
         public String top;
+        @GrayVersion(value = "5.3.40")
         public String base;
+        @GrayVersion(value = "5.3.40")
         public List<String> topChildrenInstallPathInDb = new ArrayList<>();
     }
 
     public static class OfflineCommitSnapshotRsp extends AgentResponse {
+        @GrayVersion(value = "5.3.40")
         private Long actualSize;
 
         public Long getActualSize() {

@@ -884,6 +884,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class OfflineMergeSnapshotRsp extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.3.40")
         private long actualSize;
 
         public long getActualSize() {
@@ -896,12 +897,16 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class OfflineCommitSnapshotCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext {
+        @GrayVersion(value = "5.3.40")
         public String top;
+        @GrayVersion(value = "5.3.40")
         public String base;
+        @GrayVersion(value = "5.3.40")
         public List<String> topChildrenInstallPathInDb = new ArrayList<>();
     }
 
     public static class OfflineCommitSnapshotRsp extends NfsPrimaryStorageAgentResponse {
+        @GrayVersion(value = "5.3.40")
         private Long actualSize;
 
         public Long getActualSize() {
