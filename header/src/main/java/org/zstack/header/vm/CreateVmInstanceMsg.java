@@ -38,12 +38,12 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private Boolean virtio;
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
-    private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private List<String> disableL3Networks;
     private List<String> sshKeyPairUuids;
     private final List<String> candidatePrimaryStorageUuidsForRootVolume = new ArrayList<>();
     private final List<String> candidatePrimaryStorageUuidsForDataVolume = new ArrayList<>();
     private List<DiskAO> diskAOs;
+    private List<DiskAO> deprecatedDataVolumeSpecs = new ArrayList<>();
 
     public List<String> getCandidatePrimaryStorageUuidsForRootVolume() {
         return candidatePrimaryStorageUuidsForRootVolume;
@@ -81,6 +81,14 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
 
     public void setDiskAOs(List<DiskAO> diskAOs) {
         this.diskAOs = diskAOs;
+    }
+
+    public List<DiskAO> getDeprecatedDataVolumeSpecs() {
+        return deprecatedDataVolumeSpecs;
+    }
+
+    public void setDeprecatedDataVolumeSpecs(List<DiskAO> deprecatedDataVolumeSpecs) {
+        this.deprecatedDataVolumeSpecs = deprecatedDataVolumeSpecs;
     }
 
     public List<String> getRootVolumeSystemTags() {
@@ -314,14 +322,6 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
 
     public void setDataVolumeFromTemplateSystemTags(Map<String, List<String>> dataVolumeFromTemplateSystemTags) {
         this.dataVolumeFromTemplateSystemTags = dataVolumeFromTemplateSystemTags;
-    }
-
-    public Map<String, List<String>> getDataVolumeSystemTagsOnIndex() {
-        return dataVolumeSystemTagsOnIndex;
-    }
-
-    public void setDataVolumeSystemTagsOnIndex(Map<String, List<String>> dataVolumeSystemTagsOnIndex) {
-        this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
     }
 
     public List<String> getDisableL3Networks() {

@@ -7628,7 +7628,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setDataVolumeSystemTags(struct.getDataVolumeSystemTags());
         spec.setRootVolumeSystemTags(struct.getRootVolumeSystemTags());
         spec.setRequiredHostUuid(struct.getRequiredHostUuid());
-        spec.setDataVolumeSystemTagsOnIndex(struct.getDataVolumeSystemTagsOnIndex());
         spec.setDisableL3Networks(struct.getDisableL3Networks());
         spec.setStrategy(struct.getStrategy());
 
@@ -7644,12 +7643,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             for (VmNicSpec nicSpec : struct.getL3NetworkUuids()) {
                 List<L3NetworkInventory> l3s = new ArrayList<>();
                 for (L3NetworkInventory inv : nicSpec.getL3Invs()) {
-                    L3NetworkInventory l3 = CollectionUtils.find(nws, new Function<L3NetworkInventory, L3NetworkInventory>() {
-                        @Override
-                        public L3NetworkInventory call(L3NetworkInventory arg) {
-                            return arg.getUuid().equals(inv.getUuid()) ? arg : null;
-                        }
-                    });
+                    L3NetworkInventory l3 = CollectionUtils.findOneOrNull(nws, arg -> arg.getUuid().equals(inv.getUuid()));
 
                     if (l3 == null) {
                         throw new OperationFailureException(operr(
@@ -7705,6 +7699,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         spec.setDiskAOs(struct.getDiskAOs());
+        spec.setDeprecatedDisksSpecs(struct.getDeprecatedDataVolumeSpecs());
 
         List<CdRomSpec> cdRomSpecs = buildVmCdRomSpecsForNewCreated(spec);
         spec.setCdRomSpecs(cdRomSpecs);

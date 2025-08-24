@@ -1,6 +1,5 @@
 package org.zstack.compute.vm;
 
-import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -21,6 +20,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.vm.DiskAO;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
+import static org.zstack.utils.CollectionUtils.filter;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -63,16 +64,16 @@ public class VmAllocateVolumeFlow implements Flow {
             throw new CloudRuntimeException(String.format("accountUuid for vm[uuid:%s] is null", spec.getVmInventory().getUuid()));
         }
 
-        if (!MapUtils.isEmpty(spec.getDataVolumeSystemTagsOnIndex()) && !CollectionUtils.isEmpty(spec.getDataDiskOfferings())) {
-            List<VolumeSpec> dataVolumeSpecs = spec.getVolumeSpecs().stream()
-                    .filter(s -> s.getType().equals(VolumeType.Data.toString())).collect(Collectors.toList());
+        if (!CollectionUtils.isEmpty(spec.getDeprecatedDisksSpecs())) {
+            List<VolumeSpec> dataVolumeSpecs = filter(spec.getVolumeSpecs(), s -> s.getType().equals(VolumeType.Data.toString()));
+            int minLen = Math.min(spec.getDeprecatedDisksSpecs().size(), dataVolumeSpecs.size());
 
-            IntStream.range(0, dataVolumeSpecs.size()).forEach(index -> {
-                List<String> systemTags = spec.getDataVolumeSystemTagsOnIndex().get(String.valueOf(index));
-                if (!CollectionUtils.isEmpty(systemTags)) {
-                    dataVolumeSpecs.get(index).setTags(systemTags);
+            for (int i = 0; i < minLen; i++) {
+                DiskAO disk = spec.getDeprecatedDisksSpecs().get(i);
+                if (!CollectionUtils.isEmpty(disk.getSystemTags())) {
+                    dataVolumeSpecs.get(i).setTags(disk.getSystemTags());
                 }
-            });
+            }
         }
 
         List<VolumeSpec> volumeSpecs = spec.getVolumeSpecs();

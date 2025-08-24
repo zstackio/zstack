@@ -28,12 +28,12 @@ public class InstantiateVmFromNewCreatedStruct {
     private String requiredHostUuid;
     private List<String> softAvoidHostUuids;
     private List<String> avoidHostUuids;
-    private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private List<String> disableL3Networks;
     private List<String> sshKeyPairUuids;
     private final List<String> candidatePrimaryStorageUuidsForRootVolume = new ArrayList<>();
     private final List<String> candidatePrimaryStorageUuidsForDataVolume = new ArrayList<>();
     private List<DiskAO> diskAOs;
+    private List<DiskAO> deprecatedDataVolumeSpecs = new ArrayList<>();
 
     public List<String> getCandidatePrimaryStorageUuidsForRootVolume() {
         return candidatePrimaryStorageUuidsForRootVolume;
@@ -64,6 +64,14 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public void setDiskAOs(List<DiskAO> diskAOs) {
         this.diskAOs = diskAOs;
+    }
+
+    public List<DiskAO> getDeprecatedDataVolumeSpecs() {
+        return deprecatedDataVolumeSpecs;
+    }
+
+    public void setDeprecatedDataVolumeSpecs(List<DiskAO> deprecatedDataVolumeSpecs) {
+        this.deprecatedDataVolumeSpecs = deprecatedDataVolumeSpecs;
     }
 
     public List<String> getRootVolumeSystemTags() {
@@ -150,9 +158,9 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setRequiredHostUuid(msg.getHostUuid());
         struct.setSoftAvoidHostUuids(msg.getSoftAvoidHostUuids());
         struct.setAvoidHostUuids(msg.getAvoidHostUuids());
-        struct.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
         struct.setDisableL3Networks(msg.getDisableL3Networks());
         struct.setDiskAOs(msg.getDiskAOs());
+        struct.setDeprecatedDataVolumeSpecs(msg.getDeprecatedDataVolumeSpecs());
         return struct;
     }
 
@@ -169,9 +177,9 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
         struct.setRequiredHostUuid(msg.getHostUuid());
-        struct.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
         struct.setDisableL3Networks(msg.getDisableL3Networks());
         struct.setDiskAOs(msg.getDiskAOs());
+        struct.setDeprecatedDataVolumeSpecs(msg.getDeprecatedDataVolumeSpecs());
         return struct;
     }
 
@@ -231,12 +239,29 @@ public class InstantiateVmFromNewCreatedStruct {
         this.dataVolumeFromTemplateSystemTags = dataVolumeFromTemplateSystemTags;
     }
 
-    public Map<String, List<String>> getDataVolumeSystemTagsOnIndex() {
-        return dataVolumeSystemTagsOnIndex;
-    }
-
+    @Deprecated
     public void setDataVolumeSystemTagsOnIndex(Map<String, List<String>> dataVolumeSystemTagsOnIndex) {
-        this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
+        if (dataVolumeSystemTagsOnIndex == null) {
+            return;
+        }
+
+        int maxIndex = dataVolumeSystemTagsOnIndex.keySet().stream().mapToInt(Integer::parseInt).max().orElse(-1);
+        for (int i = deprecatedDataVolumeSpecs.size(); i <= maxIndex; i++) {
+            deprecatedDataVolumeSpecs.add(DiskAO.nonRootDisk());
+        }
+
+        for (int i = 0; i <= maxIndex; i++) {
+            String key = i + "";
+            if (!dataVolumeSystemTagsOnIndex.containsKey(key)) {
+                continue;
+            }
+
+            final DiskAO diskAO = deprecatedDataVolumeSpecs.get(i);
+            if (diskAO.getSystemTags() == null) {
+                diskAO.setSystemTags(new ArrayList<>());
+            }
+            diskAO.getSystemTags().addAll(dataVolumeSystemTagsOnIndex.get(key));
+        }
     }
 
     public List<String> getDisableL3Networks() {

@@ -21,7 +21,6 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
     private List<String> dataVolumeSystemTags;
     private List<String> softAvoidHostUuids;
     private List<String> avoidHostUuids;
-    private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private List<String> disableL3Networks;
     private final List<String> candidatePrimaryStorageUuidsForRootVolume = new ArrayList<>();
     private final List<String> candidatePrimaryStorageUuidsForDataVolume = new ArrayList<>();
@@ -49,6 +48,7 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
     }
 
     private List<DiskAO> diskAOs;
+    private List<DiskAO> deprecatedDataVolumeSpecs;
 
     public List<DiskAO> getDiskAOs() {
         return diskAOs;
@@ -56,6 +56,14 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
 
     public void setDiskAOs(List<DiskAO> diskAOs) {
         this.diskAOs = diskAOs;
+    }
+
+    public List<DiskAO> getDeprecatedDataVolumeSpecs() {
+        return deprecatedDataVolumeSpecs;
+    }
+
+    public void setDeprecatedDataVolumeSpecs(List<DiskAO> deprecatedDataVolumeSpecs) {
+        this.deprecatedDataVolumeSpecs = deprecatedDataVolumeSpecs;
     }
 
     public List<String> getSoftAvoidHostUuids() {
@@ -189,14 +197,6 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
 
     public void setDataVolumeFromTemplateSystemTags(Map<String, List<String>> dataVolumeFromTemplateSystemTags) {
         this.dataVolumeFromTemplateSystemTags = dataVolumeFromTemplateSystemTags;
-    }
-
-    public Map<String, List<String>> getDataVolumeSystemTagsOnIndex() {
-        return dataVolumeSystemTagsOnIndex;
-    }
-
-    public void setDataVolumeSystemTagsOnIndex(Map<String, List<String>> dataVolumeSystemTagsOnIndex) {
-        this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
     }
 
     public List<String> getDisableL3Networks() {
