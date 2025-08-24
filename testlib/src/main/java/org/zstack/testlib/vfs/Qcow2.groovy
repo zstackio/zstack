@@ -180,6 +180,9 @@ class Qcow2 extends Volume {
     }
 
     static Qcow2 commit(VFS vfs, Qcow2 top, Qcow2 base) {
+        assert top != null && base != null: "commit requires non-null top and base"
+        assert top.pathString() != base.pathString(): "top and base must differ"
+
         top.backingFile = null
         top.update()
         List<Qcow2> childrenOfTop = top.getChildren()

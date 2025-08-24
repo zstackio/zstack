@@ -11,7 +11,7 @@ public class CommitVolumeSnapshotOnPrimaryStorageMsg extends NeedReplyMessage im
     private VolumeInventory volume;
     private VolumeSnapshotInventory srcSnapshot;
     private VolumeSnapshotInventory dstSnapshot;
-    List<String> srcChildrenInstallPathInDb = new ArrayList<>();
+    private List<String> srcChildrenInstallPathInDb = new ArrayList<>();
 
     public VolumeInventory getVolume() {
         return volume;

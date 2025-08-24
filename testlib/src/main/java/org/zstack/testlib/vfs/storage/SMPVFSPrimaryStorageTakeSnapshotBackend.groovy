@@ -53,9 +53,7 @@ class SMPVFSPrimaryStorageTakeSnapshotBackend implements AbstractFileSystemBased
 
     @Override
     Qcow2 blockCommit(HttpEntity<String> e, EnvSpec spec, KVMAgentCommands.BlockCommitCmd cmd, VolumeInventory volume) {
-        String primaryStorageUuid = Q.New(VolumeVO.class).select(VolumeVO_.primaryStorageUuid)
-                .eq(VolumeVO_.uuid, volume.uuid).findValue()
-        VFS vfs = SharedMountPointPrimaryStorageSpec.vfs(primaryStorageUuid, spec)
+        VFS vfs = SharedMountPointPrimaryStorageSpec.vfs(volume.getPrimaryStorageUuid(), spec)
         Qcow2 top = vfs.getFile(cmd.top, true)
         Qcow2 base = vfs.getFile(cmd.base, true)
         Qcow2.commit(vfs, top, base)
@@ -64,9 +62,7 @@ class SMPVFSPrimaryStorageTakeSnapshotBackend implements AbstractFileSystemBased
 
     @Override
     Qcow2 blockPull(HttpEntity<String> e, EnvSpec spec, KVMAgentCommands.BlockPullCmd cmd, VolumeInventory volume) {
-        String primaryStorageUuid = Q.New(VolumeVO.class).select(VolumeVO_.primaryStorageUuid)
-                .eq(VolumeVO_.uuid, volume.uuid).findValue()
-        VFS vfs = SharedMountPointPrimaryStorageSpec.vfs(primaryStorageUuid, spec)
+        VFS vfs = SharedMountPointPrimaryStorageSpec.vfs(volume.getPrimaryStorageUuid(), spec)
         Qcow2 volumePath = vfs.getFile(volume.getInstallPath(), true)
         Qcow2.pull(vfs, cmd.base, volumePath)
         return vfs.getFile(volume.getInstallPath(), true)

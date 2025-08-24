@@ -44,6 +44,9 @@ public class PullVolumeSnapshotOnPrimaryStorageMsg extends NeedReplyMessage impl
 
     @Override
     public String getPrimaryStorageUuid() {
+        if (volume == null) {
+            throw new IllegalArgumentException("volume cannot be null");
+        }
         return volume.getPrimaryStorageUuid();
     }
 }

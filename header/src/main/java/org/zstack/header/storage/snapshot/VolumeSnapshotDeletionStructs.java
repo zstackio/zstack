@@ -3,9 +3,9 @@ package org.zstack.header.storage.snapshot;
 import java.util.List;
 
 public class VolumeSnapshotDeletionStructs {
-    List<VolumeSnapshotInventory> snapshotInventories;
-    String direction;
-    String scope;
+    private List<VolumeSnapshotInventory> snapshotInventories;
+    private String direction;
+    private String scope;
 
     public VolumeSnapshotDeletionStructs(List<VolumeSnapshotInventory> snapshotInventories, String direction, String scope) {
         this.snapshotInventories = snapshotInventories;

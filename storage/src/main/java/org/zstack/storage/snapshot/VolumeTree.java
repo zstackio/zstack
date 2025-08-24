@@ -13,6 +13,7 @@ import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO_;
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -258,6 +259,10 @@ public class VolumeTree {
     // TODO(clone) : When both chain cloning and single-node snapshot deletion are enabled,
     //  it is necessary to consider the dependency relationships of all snapshot nodes in the current snapshot tree within the VolumeSnapshotReferenceVO.
     public static VolumeTree fromVOs(List<VolumeSnapshotVO> vos, boolean current, VolumeInventory volumeInv) {
+        if (CollectionUtils.isEmpty(vos)) {
+            throw new IllegalArgumentException("VolumeSnapshotVO list cannot be null or empty");
+        }
+
         List<VolumeSnapshotVO> noParentVO = vos.stream().filter(it -> it.getParentUuid() == null).collect(Collectors.toList());
         if (noParentVO.size() > 1) {
             throw new IllegalArgumentException(String.format("There are %d root snapshots on tree[uuid:%s]",
