@@ -370,7 +370,6 @@ public class VmInstanceSpec implements Serializable {
 
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
-    private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private boolean skipIpAllocation = false;
     private VmCreationStrategy strategy;
 
@@ -398,6 +397,7 @@ public class VmInstanceSpec implements Serializable {
 
     private List<String> disableL3Networks;
     private List<DiskAO> diskAOs;
+    private List<DiskAO> deprecatedDisksSpecs = new ArrayList<>();
 
     public List<DiskAO> getDiskAOs() {
         return diskAOs;
@@ -405,6 +405,14 @@ public class VmInstanceSpec implements Serializable {
 
     public void setDiskAOs(List<DiskAO> diskAOs) {
         this.diskAOs = diskAOs;
+    }
+
+    public List<DiskAO> getDeprecatedDisksSpecs() {
+        return deprecatedDisksSpecs;
+    }
+
+    public void setDeprecatedDisksSpecs(List<DiskAO> deprecatedDisksSpecs) {
+        this.deprecatedDisksSpecs = deprecatedDisksSpecs;
     }
 
     public boolean isSkipIpAllocation() {
@@ -811,14 +819,6 @@ public class VmInstanceSpec implements Serializable {
 
     public void setDataVolumeSystemTags(List<String> dataVolumeSystemTags) {
         this.dataVolumeSystemTags = dataVolumeSystemTags;
-    }
-
-    public Map<String, List<String>> getDataVolumeSystemTagsOnIndex() {
-        return dataVolumeSystemTagsOnIndex;
-    }
-
-    public void setDataVolumeSystemTagsOnIndex(Map<String, List<String>> dataVolumeSystemTagsOnIndex) {
-        this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
     }
 
     public boolean isInstantiateResourcesSuccess() {

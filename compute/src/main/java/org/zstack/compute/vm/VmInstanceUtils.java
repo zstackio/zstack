@@ -13,7 +13,9 @@ import org.zstack.header.vm.UpdateVmInstanceSpec;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.SystemTagUtils;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
@@ -36,7 +38,6 @@ public class VmInstanceUtils {
         cmsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         cmsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
         cmsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
-        cmsg.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
         cmsg.setSshKeyPairUuids(msg.getSshKeyPairUuids());
         cmsg.setPlatform(msg.getPlatform());
         cmsg.setGuestOsType(msg.getGuestOsType());
@@ -75,6 +76,30 @@ public class VmInstanceUtils {
             bootDisk.setGuestOsType(msg.getGuestOsType());
             bootDisk.setArchitecture(msg.getArchitecture());
         }
+
+        // dataVolumeSystemTagsOnIndex -> deprecatedDataVolumeSpecs
+        List<DiskAO> deprecatedDataVolumeSpecs = new ArrayList<>();
+        if (msg.getDataVolumeSystemTagsOnIndex() != null) {
+            final Map<String, List<String>> dataVolumeSystemTagsOnIndex = msg.getDataVolumeSystemTagsOnIndex();
+            int maxIndex = dataVolumeSystemTagsOnIndex.keySet().stream().mapToInt(Integer::parseInt).max().orElse(-1);
+            for (int i = 0; i <= maxIndex; i++) {
+                deprecatedDataVolumeSpecs.add(DiskAO.nonRootDisk());
+            }
+
+            for (int i = 0; i <= maxIndex; i++) {
+                String key = i + "";
+                if (!dataVolumeSystemTagsOnIndex.containsKey(key)) {
+                    continue;
+                }
+
+                final DiskAO diskAO = deprecatedDataVolumeSpecs.get(i);
+                if (diskAO.getSystemTags() == null) {
+                    diskAO.setSystemTags(new ArrayList<>());
+                }
+                diskAO.getSystemTags().addAll(dataVolumeSystemTagsOnIndex.get(key));
+            }
+        }
+        cmsg.setDeprecatedDataVolumeSpecs(deprecatedDataVolumeSpecs);
 
         return cmsg;
     }
