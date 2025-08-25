@@ -385,7 +385,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
     }
 
     private boolean needCreateDataVolume(VmInstanceSpec spec) {
-        return !CollectionUtils.isEmpty(spec.getDataDiskOfferings());
+        return !CollectionUtils.isEmpty(spec.getDeprecatedDisksSpecs());
     }
 
     private FlowChain buildAllocateHostAndPrimaryStorageFlowChain(final FlowTrigger trigger, VmInstanceSpec spec) {
@@ -451,8 +451,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 autoAllocateDataVolumePs = true;
                 dataPs.addAll(availPsForDataVolume);
             }
-            String dataVolumeStrategy = spec.getDataDiskOfferings().get(0).getAllocatorStrategy();
-            sortPrimaryStorages(dataPs, dataVolumeStrategy, null);
+            sortPrimaryStorages(dataPs, PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE, null);
         } else {
             dataPs.add(null);
         }

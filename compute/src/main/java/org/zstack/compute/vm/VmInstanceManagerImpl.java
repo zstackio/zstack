@@ -1311,8 +1311,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         InstantiateNewCreatedVmInstanceMsg smsg = new InstantiateNewCreatedVmInstanceMsg();
                         smsg.setDisableL3Networks(msg.getDisableL3Networks());
                         smsg.setHostUuid(msg.getHostUuid());
-                        List<String> temporaryDiskOfferingUuids = createDiskOfferingUuidsFromDataDiskSizes(msg, finalVo.getUuid());
-                        smsg.setDataDiskOfferingUuids(merge(msg.getDataDiskOfferingUuids(), temporaryDiskOfferingUuids));
                         smsg.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
                         smsg.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
                         smsg.setL3NetworkUuids(msg.getL3NetworkSpecs());
@@ -1365,10 +1363,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             public void run(MessageReply reply) {
                                 if (newCreateDiskOfferingUuid != null) {
                                     dbf.removeByPrimaryKey(newCreateDiskOfferingUuid, DiskOfferingVO.class);
-                                }
-
-                                if (!temporaryDiskOfferingUuids.isEmpty()) {
-                                    dbf.removeByPrimaryKeys(temporaryDiskOfferingUuids, DiskOfferingVO.class);
                                 }
 
                                 if (reply.isSuccess()) {
@@ -1459,31 +1453,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         });
             }
         }).start();
-    }
-
-    private List<String> createDiskOfferingUuidsFromDataDiskSizes(final CreateVmInstanceMsg msg, String vmUuid) {
-        if (CollectionUtils.isEmpty(msg.getDataDiskSizes())){
-            return new ArrayList<String>();
-        }
-        List<String> diskOfferingUuids = new ArrayList<>();
-        List<DiskOfferingVO> diskOfferingVos = new ArrayList<>();
-        List<Long> volumeSizes = msg.getDataDiskSizes().stream().distinct().collect(Collectors.toList());
-        Map<Long, String> sizeDiskOfferingMap = new HashMap<>();
-        for (Long size : volumeSizes) {
-            DiskOfferingVO dvo = new DiskOfferingVO();
-            dvo.setUuid(Platform.getUuid());
-            dvo.setAccountUuid(msg.getAccountUuid());
-            dvo.setDiskSize(size);
-            dvo.setName(String.format("create-data-volume-for-vm-%s", vmUuid));
-            dvo.setType("TemporaryDiskOfferingType");
-            dvo.setState(DiskOfferingState.Enabled);
-            dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
-            diskOfferingVos.add(dvo);
-            sizeDiskOfferingMap.put(size, dvo.getUuid());
-        }
-        msg.getDataDiskSizes().forEach(size -> diskOfferingUuids.add(sizeDiskOfferingMap.get(size)));
-        dbf.persistCollection(diskOfferingVos);
-        return diskOfferingUuids;
     }
 
     private void createVmButNotStart(CreateVmInstanceMsg msg, VmInstanceInventory inv) {

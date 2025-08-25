@@ -34,6 +34,8 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 
+import static org.zstack.utils.CollectionUtils.isEmpty;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
     protected static final CLogger logger = Utils.getLogger(ApplianceVmAllocatePrimaryStorageFlow.class);
@@ -64,7 +66,7 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
         List<String> primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
         DebugUtils.Assert(primaryStorageTypes != null, "why primaryStorageTypes is null");
 
-        DebugUtils.Assert(spec.getDataDiskOfferings().size() == 0, "create appliance vm can not with data volume");
+        DebugUtils.Assert(isEmpty(spec.getDeprecatedDisksSpecs()), "create appliance vm can not with data volume");
 
         for (PrimaryStorageAllocatorStrategyExtensionPoint ext : pluginRgty.getExtensionList(PrimaryStorageAllocatorStrategyExtensionPoint.class)) {
             String allocatorStrategyType = ext.getAllocatorStrategy(destHost);

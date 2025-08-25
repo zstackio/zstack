@@ -10,7 +10,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
-import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -20,6 +19,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.vm.DiskAO;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionUtils.isEmpty;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
@@ -125,7 +126,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
             return errorCode;
         }
 
-        if(spec.getDataDiskOfferings() != null && !spec.getDataDiskOfferings().isEmpty() && spec.getRequiredPrimaryStorageUuidForDataVolume() == null){
+        if(!isEmpty(spec.getDeprecatedDisksSpecs()) && spec.getRequiredPrimaryStorageUuidForDataVolume() == null){
             ErrorCode errorCode = operr("The cluster[uuid=%s] mounts multiple primary storage[LocalStorage, other non-LocalStorage primary storage], You must specify the primary storage where the data disk is located",
                     spec.getDestHost().getClusterUuid());
             return errorCode;
@@ -181,13 +182,13 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
     private  List<AllocatePrimaryStorageSpaceMsg> getDataVolumeAllocationMsgs(VmInstanceSpec spec){
         List<AllocatePrimaryStorageSpaceMsg> msgs = new ArrayList<>();
 
-        if (spec.getDataDiskOfferings() == null || spec.getDataDiskOfferings().isEmpty()) {
+        if (isEmpty(spec.getDeprecatedDisksSpecs())) {
             return msgs;
         }
 
-        for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
+        for (DiskAO dinv : spec.getDeprecatedDisksSpecs()) {
             AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
-            amsg.setSize(dinv.getDiskSize());
+            amsg.setSize(dinv.getSize());
             amsg.setRequiredHostUuid(spec.getDestHost().getUuid());
             amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
             amsg.setSystemTags(spec.getDataVolumeSystemTags());
@@ -201,7 +202,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
             }
 
             amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
-            amsg.setDiskOfferingUuid(dinv.getUuid());
+            amsg.setDiskOfferingUuid(dinv.getDiskOfferingUuid());
             if (spec.getImageSpec() != null && spec.getImageSpec().getInventory() != null) {
                 amsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
             }

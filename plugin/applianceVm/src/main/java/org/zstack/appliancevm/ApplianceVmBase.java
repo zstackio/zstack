@@ -7,13 +7,13 @@ import org.zstack.appliancevm.ApplianceVmCommands.RefreshFirewallRsp;
 import org.zstack.compute.vm.VmInstanceBase;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.core.Completion;
@@ -35,16 +35,18 @@ import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.volume.VolumeFormat;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.RangeSet;
 import org.zstack.utils.RangeSet.Range;
 
+import javax.persistence.Tuple;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.findOneOrNull;
+import static org.zstack.utils.CollectionUtils.isEmpty;
 
 public abstract class ApplianceVmBase extends VmInstanceBase implements ApplianceVm {
     @Autowired
@@ -916,20 +918,27 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                 spec.setL3Networks(new ArrayList<VmNicSpec>(0));
             }
 
-            if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
-                SimpleQuery<DiskOfferingVO> dquery = dbf.createQuery(DiskOfferingVO.class);
-                dquery.add(DiskOfferingVO_.uuid, SimpleQuery.Op.IN, msg.getDataDiskOfferingUuids());
-                List<DiskOfferingVO> vos = dquery.list();
+            if (!isEmpty(msg.getDeprecatedDataVolumeSpecs())) {
+                List<String> uuidList = msg.getDeprecatedDataVolumeSpecs().stream()
+                        .map(DiskAO::getDiskOfferingUuid)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+                if (!uuidList.isEmpty()) {
+                    List<Tuple> tuples = Q.New(DiskOfferingVO.class)
+                            .in(DiskOfferingVO_.uuid, uuidList)
+                            .select(DiskOfferingVO_.uuid, DiskOfferingVO_.diskSize)
+                            .listTuple();
 
-                // allow create multiple data volume from the same disk offering
-                List<DiskOfferingInventory> disks = new ArrayList<>();
-                for (final String duuid : msg.getDataDiskOfferingUuids()) {
-                    DiskOfferingVO dvo = CollectionUtils.findOneOrNull(vos, arg -> duuid.equals(arg.getUuid()));
-                    disks.add(DiskOfferingInventory.valueOf(dvo));
+                    for (Tuple tuple : tuples) {
+                        String uuid = tuple.get(0, String.class);
+                        Long diskSize = tuple.get(1, Long.class);
+                        for (DiskAO diskAO : msg.getDeprecatedDataVolumeSpecs()) {
+                            if (diskAO.getDiskOfferingUuid().equals(uuid)) {
+                                diskAO.setSize(diskSize);
+                            }
+                        }
+                    }
                 }
-                spec.setDataDiskOfferings(disks);
-            } else {
-                spec.setDataDiskOfferings(new ArrayList<>(0));
             }
 
             ImageVO imvo = dbf.findByUuid(spec.getVmInventory().getImageUuid(), ImageVO.class);

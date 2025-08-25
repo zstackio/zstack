@@ -4,21 +4,18 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.allocator.HostAllocatorManager;
-import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncLoop;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
@@ -27,6 +24,7 @@ import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceReply;
 import org.zstack.header.storage.primary.PrimaryStorageAllocationPurpose;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.ReleasePrimaryStorageSpaceMsg;
+import org.zstack.header.vm.DiskAO;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
@@ -90,14 +88,14 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
 
 
         // allocate ps for data volumes
-        for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
+        for (DiskAO dinv : spec.getDeprecatedDisksSpecs()) {
             AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
             amsg.setCandidatePrimaryStorageUuids(spec.getCandidatePrimaryStorageUuidsForDataVolume());
-            amsg.setSize(dinv.getDiskSize());
+            amsg.setSize(dinv.getSize());
             amsg.setRequiredHostUuid(destHost.getUuid());
-            amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
+            amsg.setAllocationStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
             amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
-            amsg.setDiskOfferingUuid(dinv.getUuid());
+            amsg.setDiskOfferingUuid(dinv.getDiskOfferingUuid());
             amsg.setSystemTags(spec.getDataVolumeSystemTags());
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
             msgs.add(amsg);

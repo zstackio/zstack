@@ -82,8 +82,7 @@ import static org.zstack.header.image.ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA;
 import static org.zstack.storage.ceph.primary.CephRequiredUrlParser.getInstallPathFromUri;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
-import static org.zstack.utils.CollectionUtils.transform;
-import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
+import static org.zstack.utils.CollectionUtils.*;
 
 /**
  * Created by frank on 7/28/2015.
@@ -891,11 +890,11 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     private void settingDataVolume(CreateVmInstanceMsg msg) {
-        if (msg.getDataDiskOfferingUuids() == null || msg.getDataDiskOfferingUuids().isEmpty()) {
+        if (isEmpty(msg.getDeprecatedDataVolumeSpecs())) {
             return;
         }
 
-        String diskOffering = msg.getDataDiskOfferingUuids().get(0);
+        String diskOffering = msg.getDeprecatedDataVolumeSpecs().get(0).getDiskOfferingUuid();
         if (diskOffering == null) {
             return;
         }

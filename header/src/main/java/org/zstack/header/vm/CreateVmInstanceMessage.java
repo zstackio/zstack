@@ -39,8 +39,6 @@ public interface CreateVmInstanceMessage {
         return bootDisk == null ? 0 : bootDisk.getSize();
     }
 
-    List<String> getDataDiskOfferingUuids();
-
     String getZoneUuid();
 
     String getClusterUuid();

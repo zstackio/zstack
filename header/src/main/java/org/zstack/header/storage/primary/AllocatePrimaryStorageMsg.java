@@ -3,6 +3,7 @@ package org.zstack.header.storage.primary;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.utils.CollectionDSL;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -30,6 +31,7 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private List<String> tags;
     private String allocationStrategy;
     private String vmInstanceUuid;
+    @Nullable
     private String diskOfferingUuid;
     private List<String> excludePrimaryStorageUuids;
     private List<String> excludeAllocatorStrategies;
