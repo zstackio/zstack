@@ -3,10 +3,10 @@ package org.zstack.testlib.vfs.extensions
 import org.springframework.http.HttpEntity
 import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmJobStruct
 import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
-import org.zstack.header.storage.snapshot.VolumeSnapshotInventory
 import org.zstack.header.volume.VolumeInventory
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.vfs.Qcow2
 
 interface VFSPrimaryStorageTakeSnapshotBackend {
     String getPrimaryStorageType()
@@ -24,4 +24,8 @@ interface VFSPrimaryStorageTakeSnapshotBackend {
     List<TakeSnapshotsOnKvmResultStruct> takeSnapshotsOnVolumes(String primaryStorageUuid, HttpEntity<String> e, EnvSpec spec, List<TakeSnapshotsOnKvmJobStruct> snapshotJobs)
 
     void blockStream(HttpEntity<String> e, EnvSpec spec, VolumeInventory volume)
+
+    Qcow2 blockCommit(HttpEntity<String> e, EnvSpec spec, KVMAgentCommands.BlockCommitCmd cmd, VolumeInventory volume)
+
+    Qcow2 blockPull(HttpEntity<String> e, EnvSpec spec, KVMAgentCommands.BlockPullCmd cmd, VolumeInventory volume)
 }

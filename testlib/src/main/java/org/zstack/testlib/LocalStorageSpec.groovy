@@ -120,9 +120,10 @@ class LocalStorageSpec extends PrimaryStorageSpec {
 
                 Qcow2 file = vfs(e, cmd, spec).findFile { it.pathString() == cmd.path }
                 assert file : "cannot find file[${cmd.path}]"
-                assert file.backingFile != null : "qcow2[${cmd.path}] has no backing file, ${file}"
 
-                rsp.backingFilePath = file.backingFile.toAbsolutePath().toString()
+                if (file.backingFile != null) {
+                    rsp.backingFilePath = file.backingFile.toAbsolutePath().toString()
+                }
                 rsp.size = 0
                 return rsp
             }
@@ -508,11 +509,43 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 Qcow2 snapshot = vfs.getFile(cmd.snapshotInstallPath)
                 assert snapshot : "cannot find snapshot[${cmd.snapshotInstallPath}]"
                 vfs.createQcow2(cmd.workspaceInstallPath, 0L, 0L, null)
+                rsp.actualSize = 1
                 return rsp
             }
 
             simulator(LocalStorageKvmBackend.OFFLINE_MERGE_PATH) { HttpEntity<String> e, EnvSpec spec ->
-                return new LocalStorageKvmBackend.OfflineMergeSnapshotRsp()
+                def rsp = new LocalStorageKvmBackend.OfflineMergeSnapshotRsp()
+                rsp.actualSize = 1
+                return rsp
+            }
+
+            VFS.vfsHook(LocalStorageKvmBackend.OFFLINE_MERGE_PATH, espec) { LocalStorageKvmBackend.OfflineMergeSnapshotRsp rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.OfflineMergeSnapshotCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                Qcow2 dst = vfs.getFile(cmd.destPath, true)
+                if (cmd.fullRebase) {
+                    dst.rebase((String) null)
+                } else {
+                    dst.rebase(cmd.srcPath)
+                }
+                rsp.actualSize = 1
+                return rsp
+            }
+
+            simulator(LocalStorageKvmBackend.OFFLINE_COMMIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def rsp = new LocalStorageKvmBackend.OfflineCommitSnapshotRsp()
+                rsp.actualSize = 1
+                return rsp
+            }
+
+            VFS.vfsHook(LocalStorageKvmBackend.OFFLINE_COMMIT_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.OfflineCommitSnapshotCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                Qcow2 src = vfs.getFile(cmd.top)
+                Qcow2 dst = vfs.getFile(cmd.base)
+                Qcow2 qcow2 = Qcow2.commit(vfs, src, dst)
+                rsp.actualSize = qcow2.actualSize == 0 ? 1 : qcow2.actualSize
+                return rsp
             }
 
             simulator(LocalStorageKvmBackend.CHECK_INITIALIZED_FILE) {
@@ -565,23 +598,6 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.GetQcow2HashValueCmd.class)
                 LocalStorageKvmBackend.GetQcow2HashValueRsp rsp = new LocalStorageKvmBackend.GetQcow2HashValueRsp()
                 rsp.hashValue = cmd.installPath
-                return rsp
-            }
-
-            VFS.vfsHook(LocalStorageKvmBackend.OFFLINE_MERGE_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
-                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.OfflineMergeSnapshotCmd.class)
-                VFS vfs = vfs(e, cmd, spec)
-
-
-                Qcow2 dst = vfs.getFile(cmd.destPath)
-                assert dst : "cannot find destination file[${cmd.destPath}]"
-                if (cmd.fullRebase) {
-                    dst.rebase((String) null)
-                } else {
-                    Qcow2 src = vfs.getFile(cmd.srcPath)
-                    assert src : "cannot find source file[${cmd.srcPath}]"
-                    dst.rebase(cmd.srcPath)
-                }
                 return rsp
             }
         }

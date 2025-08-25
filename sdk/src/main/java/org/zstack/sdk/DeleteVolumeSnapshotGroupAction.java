@@ -28,6 +28,12 @@ public class DeleteVolumeSnapshotGroupAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
+    @Param(required = false, validValues = {"pull","commit","auto"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String direction = "auto";
+
+    @Param(required = false, validValues = {"single","chain","auto"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String scope = "chain";
+
     @Param(required = false)
     public java.lang.String deleteMode = "Permissive";
 

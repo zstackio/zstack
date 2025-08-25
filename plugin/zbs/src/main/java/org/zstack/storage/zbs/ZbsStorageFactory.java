@@ -84,7 +84,7 @@ public class ZbsStorageFactory implements ExternalPrimaryStorageSvcBuilder, Back
     }
 
     private boolean isCbdProtocol(String volumeUuid) {
-        return VolumeProtocol.CBD.toString().equals(Q.New(VolumeVO.class).select(VolumeVO_.protocol).eq(VolumeVO_.uuid, volumeUuid).find());
+        return Q.New(VolumeVO.class).eq(VolumeVO_.protocol, VolumeProtocol.CBD.toString()).eq(VolumeVO_.uuid, volumeUuid).isExists();
     }
 
     @Override

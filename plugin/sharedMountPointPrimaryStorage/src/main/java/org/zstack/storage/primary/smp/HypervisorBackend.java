@@ -97,7 +97,9 @@ public abstract class HypervisorBackend extends SMPPrimaryStorageBase {
 
     abstract void handle(ResizeVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<ResizeVolumeOnPrimaryStorageReply> returnValueCompletion);
 
-    abstract void handle(UndoSnapshotCreationOnPrimaryStorageMsg msg, ReturnValueCompletion<UndoSnapshotCreationOnPrimaryStorageReply> completion);
+    abstract void handle(CommitVolumeSnapshotOnPrimaryStorageMsg msg, ReturnValueCompletion<CommitVolumeSnapshotOnPrimaryStorageReply> completion);
+
+    abstract void handle(PullVolumeSnapshotOnPrimaryStorageMsg msg, ReturnValueCompletion<PullVolumeSnapshotOnPrimaryStorageReply> completion);
 
     abstract void createEmptyVolumeWithBackingFile(final VolumeInventory volume, String hostUuid, String backingFile, final ReturnValueCompletion<KvmBackend.AgentRsp> completion);
 }

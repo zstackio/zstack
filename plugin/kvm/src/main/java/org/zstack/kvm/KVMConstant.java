@@ -118,6 +118,7 @@ public interface KVMConstant {
     String KVM_HOST_ATTACH_VOLUME_PATH = "/host/volume/attach";
     String KVM_HOST_DETACH_VOLUME_PATH = "/host/volume/detach";
     String KVM_BLOCK_COMMIT_VOLUME_PATH = "/vm/volume/blockcommit";
+    String KVM_BLOCK_PULL_VOLUME_PATH = "/vm/volume/blockpull";
     String TAKE_VM_CONSOLE_SCREENSHOT_PATH = "/vm/console/screenshot";
 
     String KVM_HOST_IPSET_ATTACH_NIC_PATH = "/network/ipset/attach";
