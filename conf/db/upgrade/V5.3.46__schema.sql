@@ -61,3 +61,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`H3cSdnSubnetIpRangeRefVO` (
     CONSTRAINT `fkH3cSdnSubnetIpRangeRefVOSdnControllerVO` FOREIGN KEY (`sdnControllerUuid`) REFERENCES `SdnControllerVO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkH3cSdnSubnetIpRangeRefVOIpRangeVO` FOREIGN KEY (`ipRangeUuid`) REFERENCES `IpRangeEO` (`uuid`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DELETE FROM UserTagVO WHERE uuid = 'a4de80903e57422699fb05bd367a3cb4';
