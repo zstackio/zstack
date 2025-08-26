@@ -284,40 +284,6 @@ public class SdnControllerBase {
                 controller.addHost(msg, new Completion(completion) {
                     @Override
                     public void success() {
-                        SdnControllerHostRefVO ref = new SdnControllerHostRefVO();
-                        ref.setSdnControllerUuid(msg.getSdnControllerUuid());
-                        ref.setHostUuid(msg.getHostUuid());
-                        ref.setvSwitchType(msg.getvSwitchType());
-
-                        Map<String, String> nicNameDriverMap = new HashMap<>();
-                        Map<String, String> nicNamePciAddressMap = new HashMap<>();
-                        List<Tuple> nicTuples = Q.New(HostNetworkInterfaceVO.class)
-                                .eq(HostNetworkInterfaceVO_.hostUuid, msg.getHostUuid())
-                                .in(HostNetworkInterfaceVO_.interfaceName, msg.getNicNames())
-                                .select(HostNetworkInterfaceVO_.interfaceName,
-                                        HostNetworkInterfaceVO_.driverType,
-                                        HostNetworkInterfaceVO_.pciDeviceAddress)
-                                .listTuple();
-                        for (Tuple t : nicTuples) {
-                            nicNameDriverMap.put(t.get(0, String.class), t.get(1, String.class));
-                            nicNamePciAddressMap.put(t.get(0, String.class), t.get(2, String.class));
-                        }
-                        ref.setNicDrivers(JSONObjectUtil.toJsonString(nicNameDriverMap));
-                        ref.setNicPciAddresses(JSONObjectUtil.toJsonString(nicNamePciAddressMap));
-                        if (msg.getVtepIp() != null) {
-                            ref.setVtepIp(msg.getVtepIp());
-                        }
-                        if (msg.getNetmask() != null) {
-                            ref.setNetmask(msg.getNetmask());
-                        }
-                        if (msg.getBondMode() != null) {
-                            ref.setBondMode(msg.getBondMode());
-                        }
-                        if (msg.getLacpMode() != null) {
-                            ref.setLacpMode(msg.getLacpMode());
-                        }
-                        dbf.persist(ref);
-
                         completion.success();
                         chain.next();
                     }
