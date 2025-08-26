@@ -76,3 +76,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`GpuDeviceSpecVO` (
     PRIMARY KEY  (`uuid`),
     CONSTRAINT `fkGpuDeviceSpecVOPciDeviceSpecVO` FOREIGN KEY (`uuid`) REFERENCES `PciDeviceSpecVO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL ADD_COLUMN('ModelServiceVO', 'supportDistributed', 'tinyint(1)', 0, 0);
