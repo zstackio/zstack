@@ -12,7 +12,7 @@ public class GetGpuDeviceSpecCandidatesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetPciDeviceSpecCandidatesResult value;
+        public org.zstack.sdk.GetGpuDeviceSpecCandidatesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -63,8 +63,8 @@ public class GetGpuDeviceSpecCandidatesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetPciDeviceSpecCandidatesResult value = res.getResult(org.zstack.sdk.GetPciDeviceSpecCandidatesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetPciDeviceSpecCandidatesResult() : value; 
+        org.zstack.sdk.GetGpuDeviceSpecCandidatesResult value = res.getResult(org.zstack.sdk.GetGpuDeviceSpecCandidatesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetGpuDeviceSpecCandidatesResult() : value; 
 
         return ret;
     }
