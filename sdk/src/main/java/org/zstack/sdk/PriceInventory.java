@@ -92,12 +92,4 @@ public class PriceInventory  {
         return this.pciDeviceOfferings;
     }
 
-    public java.util.List bareMetal2VmOfferings;
-    public void setBareMetal2VmOfferings(java.util.List bareMetal2VmOfferings) {
-        this.bareMetal2VmOfferings = bareMetal2VmOfferings;
-    }
-    public java.util.List getBareMetal2VmOfferings() {
-        return this.bareMetal2VmOfferings;
-    }
-
 }
