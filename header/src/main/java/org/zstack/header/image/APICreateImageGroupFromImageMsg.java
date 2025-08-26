@@ -25,7 +25,7 @@ public class APICreateImageGroupFromImageMsg extends APICreateMessage {
     @APIParam(required = false, maxLength = 2048)
     private String description;
     @APIParam(required = false)
-    private List<String> dateVolumeTemplateUuids;
+    private List<String> dataVolumeTemplateUuids;
 
     public String getName() {
         return name;
@@ -51,11 +51,22 @@ public class APICreateImageGroupFromImageMsg extends APICreateMessage {
         this.rootVolumeTemplateUuid = rootVolumeTemplateUuid;
     }
 
-    public List<String> getDateVolumeTemplateUuids() {
-        return dateVolumeTemplateUuids;
+    public List<String> getDataVolumeTemplateUuids() {
+        return dataVolumeTemplateUuids;
     }
 
-    public void setDateVolumeTemplateUuids(List<String> dateVolumeTemplateUuids) {
-        this.dateVolumeTemplateUuids = dateVolumeTemplateUuids;
+    public void setDataVolumeTemplateUuids(List<String> dataVolumeTemplateUuids) {
+        this.dataVolumeTemplateUuids = dataVolumeTemplateUuids;
+    }
+
+    public static APICreateImageGroupFromImageMsg __example__() {
+        APICreateImageGroupFromImageMsg msg = new APICreateImageGroupFromImageMsg();
+        msg.setRootVolumeTemplateUuid("b7b9dcad-3c6d-4a7b-9a0a-1b9a20f5c002");
+        msg.setName("example-image-group-from-image");
+        msg.setDescription("create image group from root image template");
+        msg.setDataVolumeTemplateUuids(java.util.Arrays.asList(
+                "c1b9dcad-3c6d-4a7b-9a0a-1b9a20f5c003",
+                "d2b9dcad-3c6d-4a7b-9a0a-1b9a20f5c004"));
+        return msg;
     }
 }

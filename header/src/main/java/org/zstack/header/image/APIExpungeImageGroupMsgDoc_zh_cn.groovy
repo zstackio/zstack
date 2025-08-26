@@ -27,8 +27,8 @@ doc {
 					desc "资源的UUID，唯一标示该资源"
 					location "url"
 					type "String"
-					optional true
-					since "5.3.36"
+					optional false
+					since "5.4.0"
 				}
 				column {
 					name "systemTags"
@@ -37,7 +37,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.3.36"
+					since "5.4.0"
 				}
 				column {
 					name "userTags"
@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.3.36"
+					since "5.4.0"
 				}
 			}
         }

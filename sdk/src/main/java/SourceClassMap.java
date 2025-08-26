@@ -160,13 +160,13 @@ public class SourceClassMap {
 			put("org.zstack.externalbackup.zbox.ZBoxVmBackupInfo", "org.zstack.sdk.ZBoxVmBackupInfo");
 			put("org.zstack.externalbackup.zbox.ZBoxVolumeBackupInfo", "org.zstack.sdk.ZBoxVolumeBackupInfo");
 			put("org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory", "org.zstack.sdk.FaultToleranceVmGroupInventory");
-			put("org.zstack.guesttools.AliyunInvocationRecordData", "org.zstack.sdk.AliyunInvocationRecordData");
-			put("org.zstack.guesttools.AliyunInvocationRecordDetailData", "org.zstack.sdk.AliyunInvocationRecordDetailData");
 			put("org.zstack.guesttools.GuestToolsInventory", "org.zstack.sdk.GuestToolsInventory");
 			put("org.zstack.guesttools.GuestToolsStateInventory", "org.zstack.sdk.GuestToolsStateInventory");
 			put("org.zstack.guesttools.GuestVmScriptExecutedRecordDetailInventory", "org.zstack.sdk.GuestVmScriptExecutedRecordDetailInventory");
 			put("org.zstack.guesttools.GuestVmScriptExecutedRecordInventory", "org.zstack.sdk.GuestVmScriptExecutedRecordInventory");
 			put("org.zstack.guesttools.GuestVmScriptInventory", "org.zstack.sdk.GuestVmScriptInventory");
+			put("org.zstack.guesttools.InvocationRecord", "org.zstack.sdk.InvocationRecord");
+			put("org.zstack.guesttools.InvocationRecordDetail", "org.zstack.sdk.InvocationRecordDetail");
 			put("org.zstack.ha.HaStrategyConditionInventory", "org.zstack.sdk.HaStrategyConditionInventory");
 			put("org.zstack.header.acl.AccessControlListEntryInventory", "org.zstack.sdk.AccessControlListEntryInventory");
 			put("org.zstack.header.acl.AccessControlListInventory", "org.zstack.sdk.AccessControlListInventory");
@@ -854,8 +854,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AliyunEbsBackupStorageInventory", "org.zstack.header.aliyun.ebs.AliyunEbsBackupStorageInventory");
 			put("org.zstack.sdk.AliyunEbsPrimaryStorageInventory", "org.zstack.header.aliyun.ebs.AliyunEbsPrimaryStorageInventory");
 			put("org.zstack.sdk.AliyunErrorCode", "org.zstack.header.aliyun.errorCode.AliyunErrorCode");
-			put("org.zstack.sdk.AliyunInvocationRecordData", "org.zstack.guesttools.AliyunInvocationRecordData");
-			put("org.zstack.sdk.AliyunInvocationRecordDetailData", "org.zstack.guesttools.AliyunInvocationRecordDetailData");
 			put("org.zstack.sdk.AliyunNasAccessGroupInventory", "org.zstack.aliyun.nas.filesystem.AliyunNasAccessGroupInventory");
 			put("org.zstack.sdk.AliyunNasAccessGroupProperty", "org.zstack.aliyun.nas.message.AliyunNasAccessGroupProperty");
 			put("org.zstack.sdk.AliyunNasAccessRuleInventory", "org.zstack.aliyun.nas.filesystem.AliyunNasAccessRuleInventory");
@@ -1085,6 +1083,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.InputType", "org.zstack.abstraction.OptionType$InputType");
 			put("org.zstack.sdk.InstallPathRecycleInventory", "org.zstack.header.core.trash.InstallPathRecycleInventory");
 			put("org.zstack.sdk.InstanceOfferingInventory", "org.zstack.header.configuration.InstanceOfferingInventory");
+			put("org.zstack.sdk.InvocationRecord", "org.zstack.guesttools.InvocationRecord");
+			put("org.zstack.sdk.InvocationRecordDetail", "org.zstack.guesttools.InvocationRecordDetail");
 			put("org.zstack.sdk.IpCapacityData", "org.zstack.header.network.l3.datatypes.IpCapacityData");
 			put("org.zstack.sdk.IpRangeInventory", "org.zstack.header.network.l3.IpRangeInventory");
 			put("org.zstack.sdk.IpRangeType", "org.zstack.header.network.l3.IpRangeType");

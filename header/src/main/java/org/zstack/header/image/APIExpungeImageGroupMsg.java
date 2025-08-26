@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
         isAction = true
 )
 public class APIExpungeImageGroupMsg extends APIMessage {
-    @APIParam(required = false, resourceType = ImageGroupVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(required = true, resourceType = ImageGroupVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
 
     public String getUuid() {
@@ -23,5 +23,11 @@ public class APIExpungeImageGroupMsg extends APIMessage {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public static APIExpungeImageGroupMsg __example__() {
+        APIExpungeImageGroupMsg msg = new APIExpungeImageGroupMsg();
+        msg.setUuid(uuid());
+        return msg;
     }
 }

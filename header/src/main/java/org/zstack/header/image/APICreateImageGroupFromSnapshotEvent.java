@@ -23,4 +23,12 @@ public class APICreateImageGroupFromSnapshotEvent extends APIEvent {
         return inventory;
     }
 
+    public static APICreateImageGroupFromSnapshotEvent __example__() {
+        APICreateImageGroupFromSnapshotEvent event = new APICreateImageGroupFromSnapshotEvent();
+        ImageGroupInventory inv = new ImageGroupInventory();
+        inv.setUuid("a4b149e0-53b3-4c7e-b7fe-694b182eb001");
+        inv.setName("example-image-group-from-snapshot");
+        event.setInventory(inv);
+        return event;
+    }
 }

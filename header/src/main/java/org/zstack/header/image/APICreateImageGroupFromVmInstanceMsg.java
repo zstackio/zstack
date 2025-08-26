@@ -47,4 +47,12 @@ public class APICreateImageGroupFromVmInstanceMsg extends APICreateMessage {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    public static APICreateImageGroupFromVmInstanceMsg __example__() {
+        APICreateImageGroupFromVmInstanceMsg msg = new APICreateImageGroupFromVmInstanceMsg();
+        msg.setVmInstanceUuid("e7b9dcad-3c6d-4a7b-9a0a-1b9a20f5c001");
+        msg.setName("example-image-group-from-vm");
+        msg.setDescription("create image group from vm instance");
+        return msg;
+    }
 }

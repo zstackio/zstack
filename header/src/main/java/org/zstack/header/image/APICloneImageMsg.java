@@ -42,4 +42,11 @@ public class APICloneImageMsg extends APICreateMessage implements APIAuditor {
     public void setStrategy(String strategy) {
         this.strategy = strategy;
     }
+
+    public static APICloneImageMsg __example__() {
+        APICloneImageMsg msg = new APICloneImageMsg();
+        msg.setImageUuid(uuid());
+        msg.setStrategy(ImageCloneStrategy.DatabaseOnly.toString());
+        return msg;
+    }
 }

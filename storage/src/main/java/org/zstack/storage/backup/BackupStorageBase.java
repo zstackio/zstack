@@ -14,6 +14,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.TransactionalCallback;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -33,9 +34,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.image.CancelDownloadImageMsg;
-import org.zstack.header.image.ImageConstant;
-import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.*;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -51,6 +50,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import java.net.URISyntaxException;
 import java.util.*;
 
@@ -324,9 +324,42 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     }
 
     private void handleBase(DeleteBitsOnBackupStorageMsg msg) {
-        checkState(msg);
-        checkStatus(msg);
-        handle(msg);
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("delete-%s-on-backup-storage-%s", msg.getInstallPath(), msg.getBackupStorageUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                checkState(msg);
+                checkStatus(msg);
+
+                if (!bitsCanDelete(msg.getInstallPath(), msg.getBackupStorageUuid())) {
+                    final DeleteBitsOnBackupStorageReply reply = new DeleteBitsOnBackupStorageReply();
+                    logger.debug(String.format("cannot delete %s on backup storage %s because it is still referenced by " +
+                            "other images", msg.getInstallPath(), msg.getBackupStorageUuid()));
+
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                handle(msg);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("delete-image-%s-on-backup-storage-%s", msg.getInstallPath(), msg.getBackupStorageUuid());
+            }
+        });
+    }
+
+    private boolean bitsCanDelete(String installPath, String bsUuid) {
+        return !Q.New(ImageBackupStorageRefVO.class)
+                .eq(ImageBackupStorageRefVO_.installPath, installPath)
+                .eq(ImageBackupStorageRefVO_.backupStorageUuid, bsUuid).isExists();
     }
 
     @Transactional

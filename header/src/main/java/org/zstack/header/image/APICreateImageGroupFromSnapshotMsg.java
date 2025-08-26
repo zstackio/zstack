@@ -25,7 +25,7 @@ public class APICreateImageGroupFromSnapshotMsg extends APICreateMessage {
     @APIParam(required = false, maxLength = 2048)
     private String description;
     @APIParam(required = false)
-    private List<String> dateVolumeSnapshotUuids;
+    private List<String> dataVolumeSnapshotUuids;
 
     public String getName() {
         return name;
@@ -51,11 +51,23 @@ public class APICreateImageGroupFromSnapshotMsg extends APICreateMessage {
         this.rootVolumeSnapshotUuid = rootVolumeSnapshotUuid;
     }
 
-    public List<String> getDateVolumeSnapshotUuids() {
-        return dateVolumeSnapshotUuids;
+    public List<String> getDataVolumeSnapshotUuids() {
+        return dataVolumeSnapshotUuids;
     }
 
-    public void setDateVolumeSnapshotUuids(List<String> dateVolumeSnapshotUuids) {
-        this.dateVolumeSnapshotUuids = dateVolumeSnapshotUuids;
+    public void setDataVolumeSnapshotUuids(List<String> dataVolumeSnapshotUuids) {
+        this.dataVolumeSnapshotUuids = dataVolumeSnapshotUuids;
+    }
+
+    public static APICreateImageGroupFromSnapshotMsg __example__() {
+        APICreateImageGroupFromSnapshotMsg msg = new APICreateImageGroupFromSnapshotMsg();
+        msg.setRootVolumeSnapshotUuid("aa12b3cd-3c6d-4a7b-9a0a-1b9a20f5c005");
+        msg.setName("example-image-group-from-snapshot");
+        msg.setDescription("create image group from root volume snapshot");
+        msg.setDataVolumeSnapshotUuids(java.util.Arrays.asList(
+                "bb12b3cd-3c6d-4a7b-9a0a-1b9a20f5c006",
+                "cc12b3cd-3c6d-4a7b-9a0a-1b9a20f5c007"
+        ));
+        return msg;
     }
 }

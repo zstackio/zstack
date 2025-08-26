@@ -17,10 +17,6 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.cluster.APIDeleteClusterEvent;
-import org.zstack.header.cluster.ClusterInventory;
-import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -38,17 +34,13 @@ import org.zstack.header.image.GetImageEncryptedReply;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.message.*;
-import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.header.volume.VolumeVO_;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -58,7 +50,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.*;
-import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * Created with IntelliJ IDEA.
@@ -301,6 +292,7 @@ public class ImageBase implements Image {
             bus.reply(msg, reply);
             return;
         }
+        dbf.remove(ref);
 
         DeleteBitsOnBackupStorageMsg dmsg = new DeleteBitsOnBackupStorageMsg();
         dmsg.setBackupStorageUuid(ref.getBackupStorageUuid());
@@ -320,7 +312,6 @@ public class ImageBase implements Image {
                 }
 
                 returnBackupStorageCapacity(ref.getBackupStorageUuid(), self.getActualSize());
-                dbf.remove(ref);
 
                 //TODO remove ref from metadata, this logic should after all refs deleted
                 runAfterExpungeImageExtension(ref.getBackupStorageUuid());
@@ -459,9 +450,7 @@ public class ImageBase implements Image {
             }
         });
 
-
         List<Object> refs = new ArrayList<>();
-
         for (final ImageBackupStorageRefVO ref : toDelete) {
             chain.then(new NoRollbackFlow() {
                 String __name__ = String.format("delete-image-%s-from-backup-storage-%s", self.getUuid(), ref.getBackupStorageUuid());
@@ -469,11 +458,7 @@ public class ImageBase implements Image {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
                     if (deletionPolicy == ImageDeletionPolicy.Direct) {
-                        long count = Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.installPath, ref.getInstallPath()).count();
-                        if (count > 1) {
-                            trigger.next();
-                            return;
-                        }
+                        dbf.remove(ref);
 
                         DeleteBitsOnBackupStorageMsg dmsg = new DeleteBitsOnBackupStorageMsg();
                         dmsg.setBackupStorageUuid(ref.getBackupStorageUuid());
@@ -483,16 +468,22 @@ public class ImageBase implements Image {
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
-                                    //TODO
                                     logger.warn(String.format("failed to delete image[uuid:%s, name:%s] from backup storage[uuid:%s] because %s," +
                                                     " need to garbage collect it",
                                             self.getUuid(), self.getName(), reply.getError(), ref.getBackupStorageUuid()));
-                                } else {
-                                    returnBackupStorageCapacity(ref.getBackupStorageUuid(), self.getActualSize());
-                                    dbf.remove(ref);
-                                    // now delete ref in metadata
-                                    runAfterExpungeImageExtension(ref.getBackupStorageUuid());
+
+                                    BackupStorageDeleteBitGC gc = new BackupStorageDeleteBitGC();
+                                    gc.NAME = String.format("gc-delete-bits-%s-on-backup-storage-%s", msg.getImageUuid(), ref.getBackupStorageUuid());
+                                    gc.backupStorageUuid = ref.getBackupStorageUuid();
+                                    gc.imageUuid = msg.getImageUuid();
+                                    gc.installPath = ref.getInstallPath();
+                                    gc.deduplicateSubmit(ImageGlobalConfig.DELETION_GARBAGE_COLLECTION_INTERVAL.value(Long.class),
+                                            TimeUnit.SECONDS);
                                 }
+
+                                returnBackupStorageCapacity(ref.getBackupStorageUuid(), self.getActualSize());
+                                // now delete ref in metadata
+                                runAfterExpungeImageExtension(ref.getBackupStorageUuid());
                                 trigger.next();
                             }
                         });
@@ -504,7 +495,6 @@ public class ImageBase implements Image {
                     } else {
                         ref.setStatus(ImageStatus.Deleted);
                         refs.add(ref);
-
                         trigger.next();
                     }
                 }
@@ -591,9 +581,7 @@ public class ImageBase implements Image {
                 bus.reply(msg, reply);
             }
         });
-
     }
-
 
     private void handle(OverlayMessage msg) {
         thdf.chainSubmit(new ChainTask(msg) {

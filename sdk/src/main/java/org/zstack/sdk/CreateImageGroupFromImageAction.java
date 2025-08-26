@@ -35,7 +35,7 @@ public class CreateImageGroupFromImageAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List dateVolumeTemplateUuids;
+    public java.util.List dataVolumeTemplateUuids;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

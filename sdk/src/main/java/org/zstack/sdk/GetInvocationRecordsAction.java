@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetAliyunInvocationsAction extends AbstractAction {
+public class GetInvocationRecordsAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetAliyunInvocationsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetAliyunInvocationsResult value;
+        public org.zstack.sdk.GetInvocationRecordsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -66,8 +66,8 @@ public class GetAliyunInvocationsAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetAliyunInvocationsResult value = res.getResult(org.zstack.sdk.GetAliyunInvocationsResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetAliyunInvocationsResult() : value; 
+        org.zstack.sdk.GetInvocationRecordsResult value = res.getResult(org.zstack.sdk.GetInvocationRecordsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetInvocationRecordsResult() : value; 
 
         return ret;
     }

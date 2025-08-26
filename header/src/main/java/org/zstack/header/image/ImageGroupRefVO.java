@@ -14,8 +14,8 @@ import java.sql.Timestamp;
 @Table
 @EntityGraph(
         friends = {
-                @EntityGraph.Neighbour(type = ImageGroupVO.class, myField = "ImageGroupUuid", targetField = "uuid"),
-                @EntityGraph.Neighbour(type = ImageVO.class, myField = "ImageUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = ImageGroupVO.class, myField = "imageGroupUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = ImageVO.class, myField = "imageUuid", targetField = "uuid"),
         }
 )
 public class ImageGroupRefVO implements Serializable {

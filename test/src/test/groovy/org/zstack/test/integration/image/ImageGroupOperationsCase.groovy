@@ -2,15 +2,15 @@ package org.zstack.test.integration.image
 
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.header.image.ImageBackupStorageRefVO
+import org.zstack.header.image.ImageDeletionPolicyManager
 import org.zstack.header.image.ImageGroupRefVO
-import org.zstack.header.image.ImageGroupRefVO_
 import org.zstack.header.image.ImageGroupVO
-import org.zstack.header.image.ImageGroupVO_
 import org.zstack.header.image.ImageVO
-import org.zstack.header.image.ImageVO_
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.image.ImageGlobalConfig
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ImageInventory
@@ -203,6 +203,7 @@ class ImageGroupOperationsCase extends SubCase {
         retryInSecs {
             assert Q.New(ImageGroupVO.class).count() == 1
             assert Q.New(ImageGroupRefVO.class).count() == 2
+            assert Q.New(ImageVO.class).count() == 7
         }
 
         expungeImageGroup {
@@ -217,7 +218,7 @@ class ImageGroupOperationsCase extends SubCase {
 
         ImageGroupInventory group2 = createImageGroupFromImage {
             rootVolumeTemplateUuid = rimage.uuid
-            dateVolumeTemplateUuids = [dimage.uuid]
+            dataVolumeTemplateUuids = [dimage.uuid]
             name = "imageGroup2"
         } as ImageGroupInventory
 
@@ -231,6 +232,7 @@ class ImageGroupOperationsCase extends SubCase {
         retryInSecs {
             assert Q.New(ImageGroupVO.class).count() == 1
             assert Q.New(ImageGroupRefVO.class).count() == 2
+            assert Q.New(ImageBackupStorageRefVO.class).count() == 5
             assert Q.New(ImageVO.class).count() == 5
         }
 
@@ -239,7 +241,19 @@ class ImageGroupOperationsCase extends SubCase {
         } as ImageInventory
 
         retryInSecs {
+            assert Q.New(ImageBackupStorageRefVO.class).count() == 6
             assert Q.New(ImageVO.class).count() == 6
+        }
+
+        // Simulate the policy for deleting an image from an image group.
+        ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicyManager.ImageDeletionPolicy.Direct.toString())
+        deleteImage {
+            uuid = cimage.uuid
+        }
+
+        retryInSecs {
+            assert Q.New(ImageBackupStorageRefVO.class).count() == 5
+            assert Q.New(ImageVO.class).count() == 5
         }
 
         expungeImageGroup {
@@ -249,16 +263,12 @@ class ImageGroupOperationsCase extends SubCase {
         retryInSecs {
             assert Q.New(ImageGroupVO.class).count() == 0
             assert Q.New(ImageGroupRefVO.class).count() == 0
-            assert Q.New(ImageVO.class).count() == 5
-        }
-
-        deleteImage {
-            uuid = cimage.uuid
+            assert Q.New(ImageVO.class).count() == 3
         }
 
         ImageGroupInventory group3 = createImageGroupFromSnapshot {
             rootVolumeSnapshotUuid = rsnap.uuid
-            dateVolumeSnapshotUuids = [dsnap.uuid]
+            dataVolumeSnapshotUuids = [dsnap.uuid]
             name = "imageGroup3"
         } as ImageGroupInventory
 
@@ -272,7 +282,7 @@ class ImageGroupOperationsCase extends SubCase {
         retryInSecs {
             assert Q.New(ImageGroupVO.class).count() == 1
             assert Q.New(ImageGroupRefVO.class).count() == 2
-            assert Q.New(ImageVO.class).count() == 7
+            assert Q.New(ImageVO.class).count() == 5
         }
 
         expungeImageGroup {
@@ -282,7 +292,7 @@ class ImageGroupOperationsCase extends SubCase {
         retryInSecs {
             assert Q.New(ImageGroupVO.class).count() == 0
             assert Q.New(ImageGroupRefVO.class).count() == 0
-            assert Q.New(ImageVO.class).count() == 5
+            assert Q.New(ImageVO.class).count() == 3
         }
     }
 

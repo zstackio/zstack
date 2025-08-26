@@ -404,6 +404,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
+                evt.setError(errCode);
                 bus.publish(evt);
             }
         }).start();
@@ -640,7 +641,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         ImageGroupVO gvo = new SQLBatchWithReturn<ImageGroupVO>() {
             @Override
             protected ImageGroupVO scripts() {
-                List<String> dateVolumeTemplateUuids = msg.getDateVolumeTemplateUuids();
+                List<String> dataVolumeTemplateUuids = msg.getDataVolumeTemplateUuids();
                 List<String> volumesUuids = new ArrayList<>();
                 volumesUuids.add(msg.getRootVolumeTemplateUuid());
                 String groupUuid = Platform.getUuid();
@@ -650,12 +651,11 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 vo.setStatus(ImageStatus.Ready);
                 vo.setDescription(msg.getDescription());
                 vo.setImageCount(1);
-                if (!CollectionUtils.isEmpty(dateVolumeTemplateUuids)) {
-                    vo.setImageCount(1 + dateVolumeTemplateUuids.size());
-                    volumesUuids.addAll(msg.getDateVolumeTemplateUuids());
+                if (!CollectionUtils.isEmpty(dataVolumeTemplateUuids)) {
+                    vo.setImageCount(1 + dataVolumeTemplateUuids.size());
+                    volumesUuids.addAll(msg.getDataVolumeTemplateUuids());
                 }
                 vo = persist(vo);
-
 
                 new HashSet<String>(volumesUuids).forEach(
                         uuid -> {
@@ -682,7 +682,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         chain.then(new ShareFlow() {
             ImageGroupVO imageGroupVO = new ImageGroupVO();
             String rootVolumeSnapshotUuid = msg.getRootVolumeSnapshotUuid();
-            List<String> dataVolumeSnapshotUuids = msg.getDateVolumeSnapshotUuids();
+            List<String> dataVolumeSnapshotUuids = msg.getDataVolumeSnapshotUuids();
             List<String> newImageUuids = new ArrayList<String>();
 
             @Override
@@ -750,10 +750,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             trigger.rollback();
                             return;
                         }
-                        for (String uuid : newImageUuids) {
+                        for (String uuid : new ArrayList<>(newImageUuids)) {
                             ImageDeletionMsg delMsg = new ImageDeletionMsg();
                             delMsg.setImageUuid(uuid);
-                            delMsg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString());
+                            delMsg.setDeletionPolicy(ImageDeletionPolicyManager.ImageDeletionPolicy.Direct.toString());
                             delMsg.setForceDelete(true);
                             bus.makeTargetServiceIdByResourceUuid(delMsg, ImageConstant.SERVICE_ID, uuid);
                             bus.send(delMsg);
@@ -812,10 +812,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             trigger.rollback();
                             return;
                         }
-                        for (String uuid : newImageUuids) {
+                        for (String uuid : new ArrayList<>(newImageUuids)) {
                             ImageDeletionMsg delMsg = new ImageDeletionMsg();
                             delMsg.setImageUuid(uuid);
-                            delMsg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString());
+                            delMsg.setDeletionPolicy(ImageDeletionPolicyManager.ImageDeletionPolicy.Direct.toString());
                             delMsg.setForceDelete(true);
                             bus.makeTargetServiceIdByResourceUuid(delMsg, ImageConstant.SERVICE_ID, uuid);
                             bus.send(delMsg);
@@ -944,7 +944,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         crtMsg.setName(String.format("create-from-root-volume-%s", rootVolumeUuid));
                         crtMsg.setArchitecture(vmVO.getArchitecture());
                         crtMsg.setPlatform(vmVO.getPlatform());
-                        crtMsg.setGuestOsType(vmVO.getPlatform());
+                        crtMsg.setGuestOsType(vmVO.getGuestOsType());
                         crtMsg.setDescription(msg.getDescription());
                         crtMsg.setSession(msg.getSession());
                         bus.makeLocalServiceId(crtMsg, ImageConstant.SERVICE_ID);
@@ -972,7 +972,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         for (String uuid : newVolumeUuids) {
                             ImageDeletionMsg delMsg = new ImageDeletionMsg();
                             delMsg.setImageUuid(uuid);
-                            delMsg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString());
+                            delMsg.setDeletionPolicy(ImageDeletionPolicyManager.ImageDeletionPolicy.Direct.toString());
                             delMsg.setForceDelete(true);
                             bus.makeTargetServiceIdByResourceUuid(delMsg, ImageConstant.SERVICE_ID, uuid);
                             bus.send(delMsg);
@@ -1035,7 +1035,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         for (String uuid : newVolumeUuids) {
                             ImageDeletionMsg delMsg = new ImageDeletionMsg();
                             delMsg.setImageUuid(uuid);
-                            delMsg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString());
+                            delMsg.setDeletionPolicy(ImageDeletionPolicyManager.ImageDeletionPolicy.Direct.toString());
                             delMsg.setForceDelete(true);
                             bus.makeTargetServiceIdByResourceUuid(delMsg, ImageConstant.SERVICE_ID, uuid);
                             bus.send(delMsg);
@@ -1462,7 +1462,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         }
 
         ImageBackupStorageRefVO copy = new ImageBackupStorageRefVO();
-        copy.setImageUuid(original.getImageUuid());
         copy.setBackupStorageUuid(original.getBackupStorageUuid());
         copy.setStatus(original.getStatus());
         copy.setInstallPath(original.getInstallPath());

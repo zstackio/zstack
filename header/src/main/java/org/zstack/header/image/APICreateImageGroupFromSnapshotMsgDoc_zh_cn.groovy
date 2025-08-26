@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "5.3.36"
+					since "5.4.0"
 				}
 				column {
 					name "rootVolumeSnapshotUuid"
@@ -37,7 +37,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "5.3.36"
+					since "5.4.0"
 				}
 				column {
 					name "description"
@@ -46,16 +46,16 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.3.36"
+					since "5.4.0"
 				}
 				column {
-					name "dateVolumeSnapshotUuids"
+					name "dataVolumeSnapshotUuids"
 					enclosedIn "params"
-					desc ""
+					desc "数据盘快照 UUID 列表"
 					location "body"
 					type "List"
 					optional true
-					since "5.3.36"
+					since "5.4.0"
 				}
 				column {
 					name "resourceUuid"
@@ -64,7 +64,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "5.3.36"
+					since "5.4.0"
 				}
 				column {
 					name "tagUuids"
@@ -73,7 +73,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.3.36"
+					since "5.4.0"
 				}
 				column {
 					name "systemTags"
@@ -82,7 +82,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.3.36"
+					since "5.4.0"
 				}
 				column {
 					name "userTags"
@@ -91,7 +91,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "5.3.36"
+					since "5.4.0"
 				}
 			}
         }
