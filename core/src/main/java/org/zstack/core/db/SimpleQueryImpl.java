@@ -405,4 +405,34 @@ public class SimpleQueryImpl<T> implements SimpleQuery<T> {
         this.start = start;
         return this;
     }
+
+    public QueryMore toQueryMore() {
+        QueryMore q = new QueryMore(_entityClass);
+
+        if (start != null) {
+            q.start(start);
+        }
+        if (limit != null) {
+            q.limit(limit);
+        }
+
+        if (!_selects.isEmpty()) {
+            q.select(_selects.stream().map(s -> s._attr).toArray(SingularAttribute<?, ?>[]::new));
+        }
+        if (!orderInfos.isEmpty()) {
+            for (OrderInfo orderInfo : orderInfos) {
+                if (orderInfo.od == Od.ASC) {
+                    q.orderByAsc(orderInfo.attr);
+                } else {
+                    q.orderByDesc(orderInfo.attr);
+                }
+            }
+        }
+        if (!_conditions.isEmpty()) {
+            for (Condition condition : _conditions) {
+                q.condition(condition._attr, condition._op, condition._val[0]);
+            }
+        }
+        return q;
+    }
 }

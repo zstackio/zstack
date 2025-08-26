@@ -112,4 +112,17 @@ public class APILogInMsg extends APISessionMessage implements APILoginAuditor {
         String resourceUuid = reply.isSuccess() ? ((APILogInReply) reply).getInventory().getUuid() : "";
         return new LoginResult(clientIp, clientBrowser, resourceUuid, SessionVO.class);
     }
+
+    @Override
+    public String getOperator() {
+        return username;
+    }
+
+    public static APILogInMsg __example__() {
+        APILogInMsg msg = new APILogInMsg();
+        msg.setUsername("admin");
+        msg.setPassword("password");
+        msg.setLoginType("account");
+        return msg;
+    }
 }
