@@ -19,6 +19,7 @@ public class VmCanonicalEvents {
     public static final String VM_NIC_INFO_CHANGED_PATH = "/vm/nicinfo/change";
     public static final String VM_NIC_INFO_DUPLICATE_PATH = "/vm/nicinfo/duplicate";
     public static final String VM_NIC_INFO_IPRANGE_CONFLICT_PATH = "/vm/nicinfo/iprangeConflict";
+    public static final String VM_GPU_STATUS_ABNORMAL = "/vm/gpu/status/abnormal";
 
     @NeedJsonSchema
     public static class VmCrashReportData {
@@ -315,6 +316,37 @@ public class VmCanonicalEvents {
 
         public void setInternalIp(String internalIp) {
             this.internalIp = internalIp;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class VmGpuStatusAbnormalData {
+        private String vmUuid;
+        private String pciDeviceAddress;
+        private String status;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getPciDeviceAddress() {
+            return pciDeviceAddress;
+        }
+
+        public void setPciDeviceAddress(String pciDeviceAddress) {
+            this.pciDeviceAddress = pciDeviceAddress;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
         }
     }
 }
