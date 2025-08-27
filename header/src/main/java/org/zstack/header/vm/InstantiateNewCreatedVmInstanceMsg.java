@@ -10,7 +10,6 @@ import java.util.Map;
 public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
     private VmInstanceInventory vmInstanceInventory;
     private List<VmNicSpec> l3NetworkUuids;
-    private List<String> dataDiskOfferingUuids;
     private List<String> dataVolumeTemplateUuids;
     private Map<String, List<String>> dataVolumeFromTemplateSystemTags;
     private String rootDiskOfferingUuid;
@@ -88,14 +87,6 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
 
     public void setL3NetworkUuids(List<VmNicSpec> l3NetworkUuids) {
         this.l3NetworkUuids = l3NetworkUuids;
-    }
-
-    public List<String> getDataDiskOfferingUuids() {
-        return dataDiskOfferingUuids;
-    }
-
-    public void setDataDiskOfferingUuids(List<String> dataDiskOfferingUuids) {
-        this.dataDiskOfferingUuids = dataDiskOfferingUuids;
     }
 
     public List<String> getDataVolumeTemplateUuids() {

@@ -33,8 +33,6 @@ public class VmInstanceUtils {
         if (msg.getAllocatorStrategy() != null) {
             cmsg.setAllocatorStrategy(msg.getAllocatorStrategy());
         }
-        cmsg.setDataDiskSizes(msg.getDataDiskSizes());
-        cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         cmsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         cmsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
         cmsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
@@ -77,16 +75,33 @@ public class VmInstanceUtils {
             bootDisk.setArchitecture(msg.getArchitecture());
         }
 
-        // dataVolumeSystemTagsOnIndex -> deprecatedDataVolumeSpecs
+        // dataDiskOfferingUuids + dataDiskSizes -> deprecatedDataVolumeSpecs
+        int expectDataVolumeCount =
+                (msg.getDataDiskOfferingUuids() == null ? 0 : msg.getDataDiskOfferingUuids().size()) +
+                (msg.getDataDiskSizes() == null ? 0 : msg.getDataDiskSizes().size());
         List<DiskAO> deprecatedDataVolumeSpecs = new ArrayList<>();
+        for (int i = 0; i < expectDataVolumeCount; i++) {
+            deprecatedDataVolumeSpecs.add(DiskAO.nonRootDisk());
+        }
+
+        int index = 0;
+        if (!isEmpty(msg.getDataDiskOfferingUuids())) {
+            for (String dataDiskOfferingUuid : msg.getDataDiskOfferingUuids()) {
+                deprecatedDataVolumeSpecs.get(index).setDiskOfferingUuid(dataDiskOfferingUuid);
+                index++;
+            }
+        }
+        if (!isEmpty(msg.getDataDiskSizes())) {
+            for (Long dataDiskSize : msg.getDataDiskSizes()) {
+                deprecatedDataVolumeSpecs.get(index).setSize(dataDiskSize);
+                index++;
+            }
+        }
+
+        // dataVolumeSystemTagsOnIndex -> deprecatedDataVolumeSpecs
         if (msg.getDataVolumeSystemTagsOnIndex() != null) {
             final Map<String, List<String>> dataVolumeSystemTagsOnIndex = msg.getDataVolumeSystemTagsOnIndex();
-            int maxIndex = dataVolumeSystemTagsOnIndex.keySet().stream().mapToInt(Integer::parseInt).max().orElse(-1);
-            for (int i = 0; i <= maxIndex; i++) {
-                deprecatedDataVolumeSpecs.add(DiskAO.nonRootDisk());
-            }
-
-            for (int i = 0; i <= maxIndex; i++) {
+            for (int i = 0; i <= expectDataVolumeCount; i++) {
                 String key = i + "";
                 if (!dataVolumeSystemTagsOnIndex.containsKey(key)) {
                     continue;

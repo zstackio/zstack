@@ -72,6 +72,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.utils.CollectionUtils.isEmpty;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
@@ -1369,11 +1370,11 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     private void settingDataVolume(CreateVmInstanceMsg msg) {
-        if (msg.getDataDiskOfferingUuids() == null || msg.getDataDiskOfferingUuids().isEmpty()) {
+        if (isEmpty(msg.getDeprecatedDataVolumeSpecs())) {
             return;
         }
 
-        String diskOffering = msg.getDataDiskOfferingUuids().get(0);
+        String diskOffering = msg.getDeprecatedDataVolumeSpecs().get(0).getDiskOfferingUuid();
         if (diskOffering == null || !DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
             return;
         }

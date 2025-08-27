@@ -13,7 +13,6 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -26,6 +25,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.vm.DiskAO;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -169,13 +169,13 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
         rmsg.setPossiblePrimaryStorageTypes(primaryStorageTypes);
         msgs.add(rmsg);
 
-        if (!spec.getDataDiskOfferings().isEmpty()) {
+        if (!spec.getDeprecatedDisksSpecs().isEmpty()) {
             boolean hasOtherNonLocalStoragePrimaryStorage = isThereOtherNonLocalStoragePrimaryStorageForTheHost(
                     spec.getDestHost().getUuid(), localStorageUuid);
 
-            for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
+            for (DiskAO dinv : spec.getDeprecatedDisksSpecs()) {
                 AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
-                amsg.setSize(dinv.getDiskSize());
+                amsg.setSize(dinv.getSize());
                 amsg.setRequiredHostUuid(spec.getDestHost().getUuid());
                 if(spec.getRequiredPrimaryStorageUuidForDataVolume() != null && hasOtherNonLocalStoragePrimaryStorage){
 
@@ -193,7 +193,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
                 } else if (spec.getRequiredPrimaryStorageUuidForDataVolume() != null && !hasOtherNonLocalStoragePrimaryStorage){
                     amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
                 } else if (hasOtherNonLocalStoragePrimaryStorage) {
-                    amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
+                    amsg.setAllocationStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
 
                     List<String> localStorageUuids = getLocalStorageInCluster(spec.getDestHost().getClusterUuid());
                     for (String lsuuid : localStorageUuids) {
@@ -208,7 +208,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
                 }
 
                 amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
-                amsg.setDiskOfferingUuid(dinv.getUuid());
+                amsg.setDiskOfferingUuid(dinv.getDiskOfferingUuid());
 
                 if (spec.getImageSpec().getInventory() != null) {
                     rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());

@@ -16,7 +16,6 @@ import java.util.Map;
  * Created by xing5 on 2016/9/13.
  */
 public class InstantiateVmFromNewCreatedStruct {
-    private List<String> dataDiskOfferingUuids;
     private List<String> dataVolumeTemplateUuids;
     private Map<String, List<String>> dataVolumeFromTemplateSystemTags;
     private List<VmNicSpec> l3NetworkUuids;
@@ -94,14 +93,6 @@ public class InstantiateVmFromNewCreatedStruct {
         return String.format("not-start-vm-%s", vmUuid);
     }
 
-    public List<String> getDataDiskOfferingUuids() {
-        return dataDiskOfferingUuids;
-    }
-
-    public void setDataDiskOfferingUuids(List<String> dataDiskOfferingUuids) {
-        this.dataDiskOfferingUuids = dataDiskOfferingUuids;
-    }
-
     public List<String> getDataVolumeTemplateUuids() {
         return dataVolumeTemplateUuids;
     }
@@ -144,7 +135,6 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public static InstantiateVmFromNewCreatedStruct fromMessage(InstantiateNewCreatedVmInstanceMsg msg) {
         InstantiateVmFromNewCreatedStruct struct = new InstantiateVmFromNewCreatedStruct();
-        struct.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         struct.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
         struct.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
         struct.setL3NetworkUuids(msg.getL3NetworkUuids());
@@ -166,7 +156,6 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public static InstantiateVmFromNewCreatedStruct fromMessage(CreateVmInstanceMsg msg) {
         InstantiateVmFromNewCreatedStruct struct = new InstantiateVmFromNewCreatedStruct();
-        struct.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         struct.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
         struct.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
         struct.setL3NetworkUuids(msg.getL3NetworkSpecs());

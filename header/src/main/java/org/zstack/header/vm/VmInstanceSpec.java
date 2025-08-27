@@ -124,6 +124,10 @@ public class VmInstanceSpec implements Serializable {
         public boolean isRoot() {
             return VolumeType.Root.toString().equals(type);
         }
+
+        public boolean isData() {
+            return VolumeType.Data.toString().equals(type);
+        }
     }
 
     public static class ImageSpec implements Serializable {
@@ -318,7 +322,6 @@ public class VmInstanceSpec implements Serializable {
 
     private VmInstanceInventory vmInventory;
     private List<VmNicSpec> l3Networks = new ArrayList<>();
-    private List<DiskOfferingInventory> dataDiskOfferings;
     private List<String> dataVolumeTemplateUuids;
     private Map<String, List<String>> dataVolumeFromTemplateSystemTags = new HashMap<>();
     private DiskOfferingInventory rootDiskOffering;
@@ -615,17 +618,6 @@ public class VmInstanceSpec implements Serializable {
 
     public void setL3Networks(List<VmNicSpec> l3Networks) {
         this.l3Networks = l3Networks;
-    }
-
-    public List<DiskOfferingInventory> getDataDiskOfferings() {
-        if (dataDiskOfferings == null) {
-            dataDiskOfferings = new ArrayList<>(0);
-        }
-        return dataDiskOfferings;
-    }
-
-    public void setDataDiskOfferings(List<DiskOfferingInventory> dataDiskOfferings) {
-        this.dataDiskOfferings = dataDiskOfferings;
     }
 
     public DiskOfferingInventory getRootDiskOffering() {

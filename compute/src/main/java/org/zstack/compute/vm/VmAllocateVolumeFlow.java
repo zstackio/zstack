@@ -34,8 +34,6 @@ import org.zstack.utils.DebugUtils;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 import static org.zstack.utils.CollectionUtils.filter;
@@ -91,7 +89,7 @@ public class VmAllocateVolumeFlow implements Flow {
 
             DebugUtils.Assert(vspec.getType() != null, "VolumeType can not be null!");
 
-            if (VolumeType.Root.toString().equals(vspec.getType())) {
+            if (vspec.isRoot()) {
                 msg.setResourceUuid((String) ctx.get("uuid"));
                 msg.setName("ROOT-for-" + spec.getVmInventory().getName());
                 msg.setDescription(String.format("Root volume for VM[uuid:%s]", spec.getVmInventory().getUuid()));
@@ -105,7 +103,7 @@ public class VmAllocateVolumeFlow implements Flow {
                 if (spec.getRootVolumeSystemTags() != null) {
                     tags.addAll(spec.getRootVolumeSystemTags());
                 }
-            } else if (VolumeType.Data.toString().equals(vspec.getType())) {
+            } else if (vspec.isData()) {
                 msg.setName(String.format("DATA-for-%s", spec.getVmInventory().getName()));
                 msg.setDescription(String.format("DataVolume-%s", spec.getVmInventory().getUuid()));
                 msg.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(spec.getDestHost().getHypervisorType()).toString());

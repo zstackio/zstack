@@ -21,6 +21,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.utils.CollectionUtils;
@@ -47,8 +48,8 @@ public class VmAllocateHostFlow implements Flow {
 
     private long getTotalDataDiskSize(VmInstanceSpec spec) {
         long size = 0;
-        for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
-            size += dinv.getDiskSize();
+        for (DiskAO dinv : spec.getDeprecatedDisksSpecs()) {
+            size += dinv.getSize();
         }
         return size;
     }
@@ -67,7 +68,16 @@ public class VmAllocateHostFlow implements Flow {
             diskSize = image.getSize();
         }
         diskSize += getTotalDataDiskSize(spec);
-        diskOfferings.addAll(spec.getDataDiskOfferings());
+
+        for (DiskAO diskAO : spec.getDeprecatedDisksSpecs()) {
+            DiskOfferingInventory dinv = new DiskOfferingInventory();
+            dinv.setUuid(diskAO.getDiskOfferingUuid());
+            dinv.setDiskSize(diskAO.getSize());
+            dinv.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
+            dinv.setName("from-DiskAO");
+            diskOfferings.add(dinv);
+        }
+
         msg.getLocationSpecs().addAll(spec.getLocationSpecs().stream()
                 .filter(s -> HostVO.class.getSimpleName().equals(s.getResourceType()))
                 .collect(Collectors.toList()));

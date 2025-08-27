@@ -86,6 +86,7 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.PersistenceException;
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -97,6 +98,7 @@ import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.header.vm.VmErrors.ATTACH_VOLUME_ERROR;
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionUtils.isEmpty;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 public class VmInstanceBase extends AbstractVmInstance {
@@ -7667,30 +7669,27 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         spec.setDataVolumeTemplateUuids(struct.getDataVolumeTemplateUuids());
         spec.setDataVolumeFromTemplateSystemTags(struct.getDataVolumeFromTemplateSystemTags());
-        if (struct.getDataDiskOfferingUuids() != null && !struct.getDataDiskOfferingUuids().isEmpty()) {
-            SimpleQuery<DiskOfferingVO> dquery = dbf.createQuery(DiskOfferingVO.class);
-            dquery.add(DiskOfferingVO_.uuid, SimpleQuery.Op.IN, struct.getDataDiskOfferingUuids());
-            List<DiskOfferingVO> vos = dquery.list();
+        if (!isEmpty(struct.getDeprecatedDataVolumeSpecs())) {
+            List<String> uuidList = struct.getDeprecatedDataVolumeSpecs().stream()
+                    .map(DiskAO::getDiskOfferingUuid)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            if (!uuidList.isEmpty()) {
+                List<Tuple> tuples = Q.New(DiskOfferingVO.class)
+                        .in(DiskOfferingVO_.uuid, uuidList)
+                        .select(DiskOfferingVO_.uuid, DiskOfferingVO_.diskSize)
+                        .listTuple();
 
-            // allow create multiple data volume from the same disk offering
-            List<DiskOfferingInventory> disks = new ArrayList<>();
-            for (final String duuid : struct.getDataDiskOfferingUuids()) {
-                DiskOfferingVO dvo = CollectionUtils.find(vos, new Function<DiskOfferingVO, DiskOfferingVO>() {
-                    @Override
-                    public DiskOfferingVO call(DiskOfferingVO arg) {
-                        if (duuid.equals(arg.getUuid())) {
-                            return arg;
+                for (Tuple tuple : tuples) {
+                    String uuid = tuple.get(0, String.class);
+                    Long diskSize = tuple.get(1, Long.class);
+                    for (DiskAO diskAO : struct.getDeprecatedDataVolumeSpecs()) {
+                        if (uuid.equals(diskAO.getDiskOfferingUuid())) {
+                            diskAO.setSize(diskSize);
                         }
-                        return null;
                     }
-                });
-                if (dvo != null) {
-                    disks.add(DiskOfferingInventory.valueOf(dvo));
                 }
             }
-            spec.setDataDiskOfferings(disks);
-        } else {
-            spec.setDataDiskOfferings(new ArrayList<>());
         }
 
         if (struct.getRootDiskOfferingUuid() != null) {

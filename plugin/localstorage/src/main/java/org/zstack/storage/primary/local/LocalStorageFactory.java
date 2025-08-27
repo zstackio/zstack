@@ -51,7 +51,6 @@ import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.tag.SystemTagCreator;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -65,6 +64,7 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionUtils.isEmpty;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
@@ -419,7 +419,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         if (VmAllocatePrimaryStorageFlow.class.getName().equals(nextFlowName)) {
             if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
                 List<String> localStorageUuids = getAvailableLocalStorageInCluster(spec.getDestHost().getClusterUuid());
-                if (CollectionUtils.isEmpty(localStorageUuids)) {
+                if (isEmpty(localStorageUuids)) {
                     return null;
                 }
 
@@ -427,7 +427,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                         .eq(PrimaryStorageVO_.uuid, spec.getRequiredPrimaryStorageUuidForRootVolume())
                         .notEq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)
                         .isExists();
-                requireNoneLocalStorage = requireNoneLocalStorage && (spec.getDataDiskOfferings().isEmpty() ||
+                requireNoneLocalStorage = requireNoneLocalStorage && (isEmpty(spec.getDeprecatedDisksSpecs()) ||
                         spec.getRequiredPrimaryStorageUuidForDataVolume() != null && Q.New(PrimaryStorageVO.class)
                         .eq(PrimaryStorageVO_.uuid, spec.getRequiredPrimaryStorageUuidForDataVolume())
                         .notEq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)
