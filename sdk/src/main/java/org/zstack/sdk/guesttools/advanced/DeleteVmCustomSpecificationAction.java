@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.guesttools.advanced;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetLatestGuestToolsForVmAction extends AbstractAction {
+public class DeleteVmCustomSpecificationAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetLatestGuestToolsForVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetLatestGuestToolsForVmResult value;
+        public org.zstack.sdk.guesttools.advanced.DeleteVmCustomSpecificationResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,8 +25,11 @@ public class GetLatestGuestToolsForVmAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
+
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -46,6 +49,12 @@ public class GetLatestGuestToolsForVmAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -54,8 +63,8 @@ public class GetLatestGuestToolsForVmAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetLatestGuestToolsForVmResult value = res.getResult(org.zstack.sdk.GetLatestGuestToolsForVmResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetLatestGuestToolsForVmResult() : value; 
+        org.zstack.sdk.guesttools.advanced.DeleteVmCustomSpecificationResult value = res.getResult(org.zstack.sdk.guesttools.advanced.DeleteVmCustomSpecificationResult.class);
+        ret.value = value == null ? new org.zstack.sdk.guesttools.advanced.DeleteVmCustomSpecificationResult() : value; 
 
         return ret;
     }
@@ -84,10 +93,10 @@ public class GetLatestGuestToolsForVmAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/vm-instances/{uuid}/latest-guest-tools";
+        info.httpMethod = "DELETE";
+        info.path = "/vm-custom-specifications/{uuid}";
         info.needSession = true;
-        info.needPoll = false;
+        info.needPoll = true;
         info.parameterName = "";
         return info;
     }

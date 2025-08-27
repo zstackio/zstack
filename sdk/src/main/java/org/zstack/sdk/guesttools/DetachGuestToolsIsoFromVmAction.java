@@ -1,4 +1,4 @@
-package org.zstack.sdk;
+package org.zstack.sdk.guesttools;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +12,7 @@ public class DetachGuestToolsIsoFromVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DetachGuestToolsIsoFromVmResult value;
+        public org.zstack.sdk.guesttools.DetachGuestToolsIsoFromVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -60,8 +60,8 @@ public class DetachGuestToolsIsoFromVmAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DetachGuestToolsIsoFromVmResult value = res.getResult(org.zstack.sdk.DetachGuestToolsIsoFromVmResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DetachGuestToolsIsoFromVmResult() : value; 
+        org.zstack.sdk.guesttools.DetachGuestToolsIsoFromVmResult value = res.getResult(org.zstack.sdk.guesttools.DetachGuestToolsIsoFromVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.guesttools.DetachGuestToolsIsoFromVmResult() : value; 
 
         return ret;
     }

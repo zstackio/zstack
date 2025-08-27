@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.guesttools.advanced;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateGuestToolsStateAction extends AbstractAction {
+public class QueryVmCustomSpecificationAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateGuestToolsStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateGuestToolsStateResult value;
+        public org.zstack.sdk.guesttools.advanced.QueryVmCustomSpecificationResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,6 @@ public class UpdateGuestToolsStateAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
 
 
     private Result makeResult(ApiResult res) {
@@ -54,8 +34,8 @@ public class UpdateGuestToolsStateAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateGuestToolsStateResult value = res.getResult(org.zstack.sdk.UpdateGuestToolsStateResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateGuestToolsStateResult() : value; 
+        org.zstack.sdk.guesttools.advanced.QueryVmCustomSpecificationResult value = res.getResult(org.zstack.sdk.guesttools.advanced.QueryVmCustomSpecificationResult.class);
+        ret.value = value == null ? new org.zstack.sdk.guesttools.advanced.QueryVmCustomSpecificationResult() : value; 
 
         return ret;
     }
@@ -84,11 +64,11 @@ public class UpdateGuestToolsStateAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/vm-instances/{vmInstanceUuid}/guesttools-state";
+        info.httpMethod = "GET";
+        info.path = "/vm-custom-specifications";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "updateGuestToolsState";
+        info.parameterName = "";
         return info;
     }
 

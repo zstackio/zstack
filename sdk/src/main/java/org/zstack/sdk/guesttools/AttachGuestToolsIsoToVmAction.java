@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.guesttools;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateVmNetworkConfigAction extends AbstractAction {
+public class AttachGuestToolsIsoToVmAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateVmNetworkConfigAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateVmNetworkConfigResult value;
+        public org.zstack.sdk.guesttools.AttachGuestToolsIsoToVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,7 @@ public class UpdateVmNetworkConfigAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List vmNicUuids;
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +60,8 @@ public class UpdateVmNetworkConfigAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateVmNetworkConfigResult value = res.getResult(org.zstack.sdk.UpdateVmNetworkConfigResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateVmNetworkConfigResult() : value; 
+        org.zstack.sdk.guesttools.AttachGuestToolsIsoToVmResult value = res.getResult(org.zstack.sdk.guesttools.AttachGuestToolsIsoToVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.guesttools.AttachGuestToolsIsoToVmResult() : value; 
 
         return ret;
     }
@@ -94,10 +91,10 @@ public class UpdateVmNetworkConfigAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/vm-instances/{vmInstanceUuid}/update-nic-config";
+        info.path = "/vm-instances/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateVmNetworkConfig";
+        info.parameterName = "attachGuestToolsIsoToVm";
         return info;
     }
 
