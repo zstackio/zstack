@@ -132,5 +132,10 @@
             <artifactId>directory</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>configuration</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>

@@ -1,5 +1,7 @@
 package org.zstack.test.integration.kvm.vm
 
+import org.zstack.configuration.DiskOfferingSystemTags
+import org.zstack.configuration.InstanceOfferingSystemTags
 import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
@@ -10,12 +12,16 @@ import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmAction
 import org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmResult
 import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+
+import static org.zstack.utils.CollectionDSL.e
+import static org.zstack.utils.CollectionDSL.map
 
 /**
  * Created by MaJin on 2017-08-19.
@@ -101,7 +107,9 @@ class GetCandidatePrimaryStorageCase extends SubCase{
                         totalMem = SizeUnit.GIGABYTE.toByte(320)
                     }
 
-                    attachPrimaryStorage("smp")
+                    attachPrimaryStorage("local")
+                    attachPrimaryStorage("local2")
+                    attachPrimaryStorage("local3")
                     attachL2Network("l2")
                 }
 
@@ -119,9 +127,19 @@ class GetCandidatePrimaryStorageCase extends SubCase{
                     attachL2Network("l2")
                 }
 
-                smpPrimaryStorage {
-                    name = "smp"
-                    url = "/opt/smp"
+                localPrimaryStorage {
+                    name = "local"
+                    url = "/opt/local"
+                }
+
+                localPrimaryStorage {
+                    name = "local2"
+                    url = "/opt/local2"
+                }
+
+                localPrimaryStorage {
+                    name = "local3"
+                    url = "/opt/local3"
                 }
 
                 cephPrimaryStorage {
@@ -201,11 +219,12 @@ class GetCandidatePrimaryStorageCase extends SubCase{
             imageOnSftp = env.inventoryByName("image-on-sftp") as ImageInventory
             imageOnCeph = env.inventoryByName("image-on-ceph") as ImageInventory
             l3 = env.inventoryByName("l3") as L3NetworkInventory
-            ps = env.inventoryByName("smp") as PrimaryStorageInventory
+            ps = env.inventoryByName("local") as PrimaryStorageInventory
             disk = env.inventoryByName("diskOffering") as DiskOfferingInventory
             iso = env.inventoryByName("iso") as ImageInventory
             testGetPsForCreatingVm()
             testGetCephPsCandidate()
+            testGetInstanceOfferingRelatedPs()
         }
     }
 
@@ -214,13 +233,88 @@ class GetCandidatePrimaryStorageCase extends SubCase{
         env.delete()
     }
 
-    void testGetPsForCreatingVm(){
+    void testGetInstanceOfferingRelatedPs() {
+        def local2 = env.inventoryByName("local2") as PrimaryStorageInventory
+        def local3 = env.inventoryByName("local3") as PrimaryStorageInventory
+        String instanceOfferingConfig = "{\n" +
+                "    \"allocate\": {\n" +
+                "        \"primaryStorage\": {\n" +
+                "            \"type\": \"LocalStorage\", \n" +
+                "            \"uuid\": ${local2.uuid} \n" +
+                "        }\n" +
+                "    }\n" +
+                "}"
+
+        InstanceOfferingInventory instanceOffering = createInstanceOffering {
+            name = "instanceOffering"
+            cpuNum = 1
+            memorySize = SizeUnit.GIGABYTE.toByte(1)
+            systemTags = [
+                    InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.instantiateTag(map(
+                            e(InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG_TOKEN, instanceOfferingConfig)
+                    ))
+            ]
+        }
+
+        String diskOfferingConfig = "{\n" +
+                "    \"allocate\": {\n" +
+                "        \"primaryStorage\": {\n" +
+                "            \"type\": \"LocalStorage\", \n" +
+                "            \"uuid\": ${local3.uuid} \n" +
+                "        }\n" +
+                "    }\n" +
+                "}"
+
+        DiskOfferingInventory diskOffering = createDiskOffering {
+            name = "diskOffering"
+            diskSize = SizeUnit.GIGABYTE.toByte(1)
+            systemTags = [
+                    DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.instantiateTag(map(
+                            e(DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG_TOKEN, diskOfferingConfig)
+                    ))
+            ]
+        }
+
+        5.times {
+            def result = getCandidatePrimaryStoragesForCreatingVm {
+                imageUuid = imageOnSftp.uuid
+                l3NetworkUuids = [l3.uuid]
+            } as GetCandidatePrimaryStoragesForCreatingVmResult
+
+            assert result.rootVolumePrimaryStorages.size() == 3
+
+            result = getCandidatePrimaryStoragesForCreatingVm {
+                imageUuid = imageOnSftp.uuid
+                l3NetworkUuids = [l3.uuid]
+                instanceOfferingUuid = instanceOffering.uuid
+            } as GetCandidatePrimaryStoragesForCreatingVmResult
+
+            assert result.rootVolumePrimaryStorages.size() == 1
+            assert result.rootVolumePrimaryStorages.get(0).uuid == local2.uuid
+
+            result = getCandidatePrimaryStoragesForCreatingVm {
+                imageUuid = imageOnSftp.uuid
+                l3NetworkUuids = [l3.uuid]
+                instanceOfferingUuid = instanceOffering.uuid
+                dataDiskOfferingUuids = [diskOffering.uuid]
+            } as GetCandidatePrimaryStoragesForCreatingVmResult
+
+            assert result.rootVolumePrimaryStorages.size() == 1
+            assert result.rootVolumePrimaryStorages.get(0).uuid == local2.uuid
+            assert result.dataVolumePrimaryStorages.size() == 1
+            def dataVolumePrimaryStorages =  result.dataVolumePrimaryStorages.get(diskOffering.uuid) as List<PrimaryStorageInventory>
+            assert dataVolumePrimaryStorages.size() == 1
+            assert dataVolumePrimaryStorages.get(0).uuid == local3.uuid
+        }
+    }
+
+    void testGetPsForCreatingVm() {
         GetCandidatePrimaryStoragesForCreatingVmResult result = getCandidatePrimaryStoragesForCreatingVm {
             imageUuid = imageOnSftp.uuid
             l3NetworkUuids = [l3.uuid]
         } as GetCandidatePrimaryStoragesForCreatingVmResult
 
-        assert result.rootVolumePrimaryStorages.size() == 1
+        assert result.rootVolumePrimaryStorages.size() == 3
         assert result.dataVolumePrimaryStorages.size() == 0
 
         result = getCandidatePrimaryStoragesForCreatingVm {
@@ -229,7 +323,7 @@ class GetCandidatePrimaryStorageCase extends SubCase{
             l3NetworkUuids = [l3.uuid]
         } as GetCandidatePrimaryStoragesForCreatingVmResult
 
-        assert result.rootVolumePrimaryStorages.size() == 1
+        assert result.rootVolumePrimaryStorages.size() == 3
         assert result.dataVolumePrimaryStorages.size() == 0
 
         result = getCandidatePrimaryStoragesForCreatingVm {
@@ -239,7 +333,7 @@ class GetCandidatePrimaryStorageCase extends SubCase{
             l3NetworkUuids = [l3.uuid]
         } as GetCandidatePrimaryStoragesForCreatingVmResult
 
-        assert result.rootVolumePrimaryStorages.size() == 1
+        assert result.rootVolumePrimaryStorages.size() == 3
         assert result.dataVolumePrimaryStorages.size() == 1
 
         GetCandidatePrimaryStoragesForCreatingVmAction a = new GetCandidatePrimaryStoragesForCreatingVmAction()

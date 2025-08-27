@@ -2,13 +2,13 @@ package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.configuration.DiskOfferingVO;
+import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.storage.backup.BackupStorageVO;
 
 import java.util.List;
 
@@ -40,6 +40,17 @@ public class APIGetCandidatePrimaryStoragesForCreatingVmMsg extends APISyncCallM
     private String zoneUuid;
     private String clusterUuid;
     private String defaultL3NetworkUuid;
+
+    @APIParam(required = false, resourceType = InstanceOfferingVO.class, checkAccount = true)
+    private String instanceOfferingUuid;
+
+    public String getInstanceOfferingUuid() {
+        return instanceOfferingUuid;
+    }
+
+    public void setInstanceOfferingUuid(String instanceOfferingUuid) {
+        this.instanceOfferingUuid = instanceOfferingUuid;
+    }
 
     public List<Long> getDataDiskSizes() {
         return dataDiskSizes;
