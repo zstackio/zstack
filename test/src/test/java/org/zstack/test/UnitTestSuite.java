@@ -332,7 +332,7 @@ public class UnitTestSuite {
             if (listCases.isEmpty()) {
                 System.out.println(StringUtils.join(caseNames, "\n"));
             } else {
-                FileUtils.writeStringToFile(new File(listCases), StringUtils.join(caseNames, "\n"));
+                FileUtils.writeStringToFile(new File(PathUtil.validateAndNormalizePath(listCases)), StringUtils.join(caseNames, "\n"));
             }
         }
     }

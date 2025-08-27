@@ -39,7 +39,7 @@ public class JsonSchemaBuilder {
                     continue;
                 }
 
-                f.setAccessible(true);
+                f.setAccessible(false);
                 Object value = f.get(o);
                 if (value == null) {
                     // null value

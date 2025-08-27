@@ -34,7 +34,7 @@ public aspect VoAspect {
                 throw new CloudRuntimeException(String.format("field annotated by @Uuid must be type of String, but %s.%s is %s", entity.getName(), uuidField.getName(), uuidField.getType().getName()));
             }
 
-            uuidField.setAccessible(true);
+            uuidField.setAccessible(false);
             objectUuidMap.put(entity, uuidField);
         }
     }

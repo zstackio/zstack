@@ -43,11 +43,11 @@ public class TestAsyncCascade2 {
 
     private void bootstrap(Map<String, CascadeExtensionPoint> exts) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Method method = CascadeFacadeImpl.class.getDeclaredMethod("populateCascadeNodes", Map.class);
-        method.setAccessible(true);
+        method.setAccessible(false);
         method.invoke(casf, exts);
 
         method = CascadeFacadeImpl.class.getDeclaredMethod("populateTree");
-        method.setAccessible(true);
+        method.setAccessible(false);
         method.invoke(casf);
     }
 

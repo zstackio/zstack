@@ -17,9 +17,9 @@ import java.util.List;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="instanceOffering" type="{http://zstack.org/schema/zstack}InstanceOfferingConfig" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="virtualRouterOffering" type="{http://zstack.org/schema/zstack}VirtualRouterOfferingConfig" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="convergedOffering" type="{http://zstack.org/schema/zstack}ConvergedOfferingConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="instanceOffering" type="{http://zstack.org/schema/zstack}InstanceOfferingConfig" maxOccurs="100" minOccurs="0"/>
+ *         &lt;element name="virtualRouterOffering" type="{http://zstack.org/schema/zstack}VirtualRouterOfferingConfig" maxOccurs="100" minOccurs="0"/>
+ *         &lt;element name="convergedOffering" type="{http://zstack.org/schema/zstack}ConvergedOfferingConfig" maxOccurs="100" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>

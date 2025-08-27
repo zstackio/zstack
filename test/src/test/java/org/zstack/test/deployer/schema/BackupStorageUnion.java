@@ -17,10 +17,10 @@ import java.util.List;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="simulatorBackupStorage" type="{http://zstack.org/schema/zstack}SimulatorBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="sftpBackupStorage" type="{http://zstack.org/schema/zstack}SftpBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="cephBackupStorage" type="{http://zstack.org/schema/zstack}CephBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="imageStoreBackupStorage" type="{http://zstack.org/schema/zstack}ImageStoreBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="simulatorBackupStorage" type="{http://zstack.org/schema/zstack}SimulatorBackupStorageConfig" maxOccurs="100" minOccurs="0"/>
+ *         &lt;element name="sftpBackupStorage" type="{http://zstack.org/schema/zstack}SftpBackupStorageConfig" maxOccurs="100" minOccurs="0"/>
+ *         &lt;element name="cephBackupStorage" type="{http://zstack.org/schema/zstack}CephBackupStorageConfig" maxOccurs="100" minOccurs="0"/>
+ *         &lt;element name="imageStoreBackupStorage" type="{http://zstack.org/schema/zstack}ImageStoreBackupStorageConfig" maxOccurs="100" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>

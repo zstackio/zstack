@@ -14,6 +14,8 @@ import org.zstack.utils.logging.CLogger;
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -361,27 +363,32 @@ public class NetworkUtils {
     }
 
     public static String generateMacWithDeviceId(short deviceId) {
-        int seed = new Random().nextInt();
-        String seedStr = Integer.toHexString(seed);
-        if (seedStr.length() < 8) {
-            String compensate = StringUtils.repeat("0", 8 - seedStr.length());
-            seedStr = compensate + seedStr;
+        try {
+            SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+            int seed = random.nextInt();
+            String seedStr = Integer.toHexString(seed);
+            if (seedStr.length() < 8) {
+                String compensate = StringUtils.repeat("0", 8 - seedStr.length());
+                seedStr = compensate + seedStr;
+            }
+            String octet2 = seedStr.substring(0, 2);
+            String octet3 = seedStr.substring(2, 4);
+            String octet4 = seedStr.substring(4, 6);
+            String octet5 = seedStr.substring(6, 8);
+            StringBuilder sb = new StringBuilder("fa").append(":");
+            sb.append(octet2).append(":");
+            sb.append(octet3).append(":");
+            sb.append(octet4).append(":");
+            sb.append(octet5).append(":");
+            String deviceIdStr = Integer.toHexString(deviceId);
+            if (deviceIdStr.length() < 2) {
+                deviceIdStr = "0" + deviceIdStr;
+            }
+            sb.append(deviceIdStr);
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
-        String octet2 = seedStr.substring(0, 2);
-        String octet3 = seedStr.substring(2, 4);
-        String octet4 = seedStr.substring(4, 6);
-        String octet5 = seedStr.substring(6, 8);
-        StringBuilder sb = new StringBuilder("fa").append(":");
-        sb.append(octet2).append(":");
-        sb.append(octet3).append(":");
-        sb.append(octet4).append(":");
-        sb.append(octet5).append(":");
-        String deviceIdStr = Integer.toHexString(deviceId);
-        if (deviceIdStr.length() < 2) {
-            deviceIdStr = "0" + deviceIdStr;
-        }
-        sb.append(deviceIdStr);
-        return sb.toString();
     }
 
     public static List<Pair<String, String>> findConsecutiveIpRange(Collection<String> ips) {
@@ -773,21 +780,95 @@ public class NetworkUtils {
         return macAddress != null && !macAddress.isEmpty() && (macAddress.matches(MAC_REGEX));
     }
 
-    public static boolean isBelongToSameSubnet(String addr1, String addr2, String mask) {
-        byte[] addr1Byte = new byte[0];
-        byte[] addr2Byte = new byte[0];
-        byte[] maskByte = new byte[0];
+    private static byte[] safeIpToBytes(String ip) throws UnknownHostException {
+        if (ip == null || ip.isEmpty()) {
+            throw new UnknownHostException("IP address cannot be null or empty");
+        }
+
         try {
-            addr1Byte = InetAddress.getByName(addr1).getAddress();
-            addr2Byte = InetAddress.getByName(addr2).getAddress();
-            maskByte = InetAddress.getByName(mask).getAddress();
-        } catch (UnknownHostException e) {
+            if (isIpv4Address(ip)) {
+                String[] parts = ip.split("\\.");
+                byte[] bytes = new byte[4];
+                for (int i = 0; i < 4; i++) {
+                    int val = Integer.parseInt(parts[i]);
+                    if (val < 0 || val > 255) {
+                        throw new UnknownHostException("Invalid IPv4 address: " + ip);
+                    }
+                    bytes[i] = (byte) val;
+                }
+                return bytes;
+            }
+            if (isIpv6Address(ip)) {
+                String cleanIp = ip;
+                if (ip.startsWith("[") && ip.endsWith("]")) {
+                    cleanIp = ip.substring(1, ip.length() - 1);
+                }
+
+                IPv6Address ipv6Address = IPv6Address.fromString(cleanIp);
+                return ipv6Address.toByteArray();
+            }
+
+            throw new UnknownHostException("Invalid IP address format: " + ip);
+        } catch (Exception e) {
+            throw new UnknownHostException("Failed to parse IP address: " + ip + ", error: " + e.getMessage());
+        }
+    }
+
+    private static boolean isValidIpFormat(String ip) {
+        if (ip == null || ip.isEmpty()) {
             return false;
         }
 
-        for (int i = 0; i < addr1Byte.length; i++)
-            if ((addr1Byte[i] & maskByte[i]) != (addr2Byte[i] & maskByte[i]))
+        return isIpv4Address(ip) || isIpv6Address(ip);
+    }
+
+
+    public static boolean isBelongToSameSubnet(String addr1, String addr2, String mask) {
+        if (addr1 == null || addr2 == null || mask == null) {
+            logger.warn("One or more IP addresses are null");
+            return false;
+        }
+
+        if (!isValidIpFormat(addr1)) {
+            logger.warn("Invalid IP address format for addr1: " + addr1);
+            return false;
+        }
+
+        if (!isValidIpFormat(addr2)) {
+            logger.warn("Invalid IP address format for addr2: " + addr2);
+            return false;
+        }
+
+        if (!isValidIpFormat(mask)) {
+            logger.warn("Invalid IP address format for mask: " + mask);
+            return false;
+        }
+
+        byte[] addr1Byte;
+        byte[] addr2Byte;
+        byte[] maskByte;
+
+        try {
+            addr1Byte = safeIpToBytes(addr1);
+            addr2Byte = safeIpToBytes(addr2);
+            maskByte = safeIpToBytes(mask);
+        } catch (UnknownHostException e) {
+            logger.warn("Failed to parse one or more IP addresses: " + e.getMessage());
+            return false;
+        }
+
+        if (addr1Byte.length != addr2Byte.length || addr1Byte.length != maskByte.length) {
+            logger.warn(String.format("IP address family mismatch: addr1[%d bytes], addr2[%d bytes], mask[%d bytes]",
+                    addr1Byte.length, addr2Byte.length, maskByte.length));
+            return false;
+        }
+
+        for (int i = 0; i < addr1Byte.length; i++) {
+            if ((addr1Byte[i] & maskByte[i]) != (addr2Byte[i] & maskByte[i])) {
                 return false;
+            }
+        }
+
         return true;
     }
 

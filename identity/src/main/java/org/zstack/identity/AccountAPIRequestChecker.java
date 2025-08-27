@@ -42,7 +42,7 @@ public class AccountAPIRequestChecker implements APIRequestChecker {
                     return;
                 }
 
-                fp.field.setAccessible(true);
+                fp.field.setAccessible(false);
                 CheckAccountAPIField f = new CheckAccountAPIField();
                 f.field = fp.field;
                 f.checkAccount = fp.param.checkAccount();

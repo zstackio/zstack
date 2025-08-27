@@ -25,7 +25,7 @@ public abstract class AbstractCompositeType implements CompositeData, Serializab
             return null;
         }
 
-        f.setAccessible(true);
+        f.setAccessible(false);
         try {
             return f.get(this);
         } catch (IllegalAccessException e) {

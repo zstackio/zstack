@@ -26,7 +26,7 @@ public class DefaultValidator implements Validator {
 
     private String validate(Object obj, Field f) {
         try {
-            f.setAccessible(true);
+            f.setAccessible(false);
             Object value = f.get(obj);
             Validation at = f.getAnnotation(Validation.class);
 

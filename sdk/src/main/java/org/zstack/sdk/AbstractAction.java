@@ -37,7 +37,7 @@ public abstract class AbstractAction {
 
                     Parameter p = new Parameter();
                     p.field = f;
-                    p.field.setAccessible(true);
+                    p.field.setAccessible(false);
 
                     NonAPIParam nonAPIParamAnnotation = f.getAnnotation(NonAPIParam.class);
 

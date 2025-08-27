@@ -10,7 +10,7 @@
                 <xsd:element name="prefix" type="xsd:string"
                     minOccurs="1" maxOccurs="1"></xsd:element>
 
-                <xsd:sequence maxOccurs="unbounded" minOccurs="0">
+                <xsd:sequence maxOccurs="100" minOccurs="0">
                     <xsd:element name="code">
                         <xsd:complexType>
                             <xsd:sequence>

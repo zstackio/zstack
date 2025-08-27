@@ -103,7 +103,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
             definitionClasses.each {
                 for (Field field : it.getDeclaredFields()) {
                     if (Modifier.isStatic(field.getModifiers()) && GlobalConfig.class.isAssignableFrom(field.getType())) {
-                        field.setAccessible(true)
+                        field.setAccessible(false)
                         try {
                             def bind = field.getAnnotation(BindResourceConfig.class)
                             def validator = field.getAnnotation(GlobalConfigValidation.class)
@@ -272,7 +272,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
 
         private void link() {
             for (Field field : globalConfigFields) {
-                field.setAccessible(true)
+                field.setAccessible(false)
                 try {
                     GlobalConfig config = (GlobalConfig) field.get(null)
                     if (config == null) {

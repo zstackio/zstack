@@ -68,6 +68,34 @@ public class ZSClient {
         }
     }
 
+    public static String validData(String data) {
+        if (data.length() > 2048) {
+            throw new IllegalArgumentException(String.format("data[%s] is too long", data));
+        }
+
+        long dangerousCharCount = data.chars()
+                .filter(ch -> ch == '<' || ch == '>' || ch == '"' || ch == '\'' || ch == '\\' || ch == '`')
+                .count();
+
+        if (dangerousCharCount > 10) {
+            throw new IllegalArgumentException(String.format("data[%s] contains dangerous characters", data));
+        }
+
+        String lowerUri = data.toLowerCase();
+        String[] xssPatterns = {
+                "<script", "javascript:", "vbscript:", "onload=", "onerror=",
+                "alert(", "eval(", "expression(", "data:"
+        };
+
+        for (String pattern : xssPatterns) {
+            if (lowerUri.contains(pattern)) {
+                throw new IllegalArgumentException(String.format("data[%s] contains dangerous characters", data));
+            }
+        }
+
+        return data;
+    }
+
     public static void webHookCallback(HttpServletRequest req, HttpServletResponse rsp) {
         try {
             StringBuilder jb = new StringBuilder();
@@ -78,7 +106,7 @@ public class ZSClient {
                 jb.append(line);
             }
 
-            String jobUuid = req.getHeader(Constants.HEADER_JOB_UUID);
+            String jobUuid = validData(req.getHeader(Constants.HEADER_JOB_UUID));
             if (jobUuid == null) {
                 // TODO: log error
                 rsp.sendError(400, String.format("missing header[%s]", Constants.HEADER_JOB_UUID));

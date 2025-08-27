@@ -87,7 +87,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                     continue;
                 }
 
-                f.setAccessible(true);
+                f.setAccessible(false);
                 SystemTag stag = (SystemTag) f.get(null);
                 if (stag == null) {
                     throw new CloudRuntimeException(String.format("%s.%s defines a null system tag",

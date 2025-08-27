@@ -121,9 +121,11 @@ public class GLock {
                 }
                 ResultSet rs = pstmt.executeQuery();
                 if (rs == null) {
+                    pstmt.close();
                     String err = "Unable to get DB lock: " + name + ", internal database error happened";
                     throw new CloudRuntimeException(err);
                 } else if (rs.first() && rs.getInt(1) == 0) {
+                    pstmt.close();
                     throw new CloudRuntimeException(String.format("lock[%s] failed, timeout after %s seconds", name, timeout));
                 }
 

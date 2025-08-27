@@ -24,7 +24,7 @@ import java.util.List;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="prefix" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *         &lt;sequence maxOccurs="unbounded" minOccurs="0">
+ *         &lt;sequence maxOccurs="100" minOccurs="0">
  *           &lt;element name="code">
  *             &lt;complexType>
  *               &lt;complexContent>

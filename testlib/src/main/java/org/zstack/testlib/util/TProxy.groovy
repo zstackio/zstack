@@ -56,7 +56,7 @@ class TProxy {
                         return
                     }
 
-                    f.setAccessible(true)
+                    f.setAccessible(false)
                     f.set(proxyedObject, f.get(adaptee))
                 }
             }

@@ -183,7 +183,7 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
                     info.mappingVOClass = invat.mappingVOClass();
                     info.valueOfMethod = getValueOfMethodOfInventoryClass(inventoryClass);
                     info.entityIdField = getEntityIdFieldFromClass(info.mappingVOClass);
-                    info.entityIdField.setAccessible(true);
+                    info.entityIdField.setAccessible(false);
                     voClassToIndexerMapping.put(mappingClassSimpleName, info);
                 }
             }

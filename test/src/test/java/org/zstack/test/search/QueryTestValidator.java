@@ -54,10 +54,10 @@ public class QueryTestValidator {
 
             try {
                 Field af = actual.getClass().getDeclaredField(f.getName());
-                af.setAccessible(true);
+                af.setAccessible(false);
                 Object av = af.get(actual);
 
-                f.setAccessible(true);
+                f.setAccessible(false);
                 Object ev = f.get(expected);
 
                 if (ev == null && av == null) {
@@ -96,7 +96,7 @@ public class QueryTestValidator {
         try {
             List<Field> toTest = getFieldToTest(inventory);
             for (Field f : toTest) {
-                f.setAccessible(true);
+                f.setAccessible(false);
                 Object value = f.get(inventory);
                 QueryCondition c = new QueryCondition();
                 c.setName(f.getName());
@@ -110,7 +110,7 @@ public class QueryTestValidator {
                 msg.getConditions().add(c);
                 T reply = api.query(msg, replyClass, session);
                 Field invField = replyClass.getDeclaredField("inventories");
-                invField.setAccessible(true);
+                invField.setAccessible(false);
                 List lst = (List) invField.get(reply);
                 Assert.assertFalse(lst.isEmpty());
                 validateHasInventory(lst, inventory, toTest);
@@ -144,7 +144,7 @@ public class QueryTestValidator {
 
         try {
             for (Field f : randomFields) {
-                f.setAccessible(true);
+                f.setAccessible(false);
                 Object value = f.get(inventory);
                 QueryCondition c = new QueryCondition();
                 c.setName(f.getName());
@@ -160,7 +160,7 @@ public class QueryTestValidator {
 
             T reply = api.query(msg, replyClass, session);
             Field invField = replyClass.getDeclaredField("inventories");
-            invField.setAccessible(true);
+            invField.setAccessible(false);
             List lst = (List) invField.get(reply);
             Assert.assertFalse(lst.isEmpty());
             validateHasInventory(lst, inventory, toTest);

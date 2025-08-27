@@ -63,6 +63,7 @@ public class GroovyUtils {
             InputStream in = parent.getResourceAsStream(scriptPath);
             String script = StringDSL.inputStreamToString(in);
             clz = loader.parseClass(script);
+            in.close();
         } catch (IOException ignore) {}
         groovyClasses.put(scriptPath, clz);
         return clz;

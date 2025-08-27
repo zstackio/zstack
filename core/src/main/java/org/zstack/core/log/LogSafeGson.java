@@ -44,7 +44,7 @@ public class LogSafeGson {
             if (!Strings.isEmpty(annotation.classNameField())) {
                 this.classNameField = FieldUtils.getField(annotation.classNameField(), senClz);
                 if (this.classNameField != null) {
-                    this.classNameField.setAccessible(true);
+                    this.classNameField.setAccessible(false);
                 }
             }
         }
@@ -107,14 +107,14 @@ public class LogSafeGson {
         for (Field f : FieldUtils.getAllFields(si)) {
             NoLogging an = f.getAnnotation(NoLogging.class);
             if (an != null) {
-                f.setAccessible(true);
+                f.setAccessible(false);
                 if (an.behavior().auto()) {
                     autoFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f, an, si));
                 } else {
                     maskFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f, an, si));
                 }
             } else if (mayHasSensitiveInfo(f.getType()) && !f.getType().isEnum() && !f.getType().isAssignableFrom(si)) {
-                f.setAccessible(true);
+                f.setAccessible(false);
                 autoFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f));
             }
         }

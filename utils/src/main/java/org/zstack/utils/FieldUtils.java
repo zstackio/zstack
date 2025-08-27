@@ -17,7 +17,7 @@ public class FieldUtils {
         }
 
         try {
-            f.setAccessible(true);
+            f.setAccessible(false);
             Object val = f.get(obj);
             return (T)val;
         } catch (Exception e) {

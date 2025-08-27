@@ -22,8 +22,8 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="default.analyzer.name" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *         &lt;element name="analyzerDef" type="{http://zstack.org/schema/zstack}analyzerDefType" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="index" type="{http://zstack.org/schema/zstack}indexType" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="analyzerDef" type="{http://zstack.org/schema/zstack}analyzerDefType" maxOccurs="100" minOccurs="0"/>
+ *         &lt;element name="index" type="{http://zstack.org/schema/zstack}indexType" maxOccurs="100" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>

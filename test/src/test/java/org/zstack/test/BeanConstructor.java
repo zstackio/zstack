@@ -80,6 +80,8 @@ public class BeanConstructor {
                 contents.add(line);
             }
 
+            input.close();
+
             String configPath = "target/test-classes/" + SPRING_XML_NAME;
             int insertPos = contents.size() - 1;
             if (loadAll) {

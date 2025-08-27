@@ -6,7 +6,7 @@
 
 	<xsd:element name="globalConfig">
 		<xsd:complexType>
-			<xsd:sequence maxOccurs="unbounded" minOccurs="0">
+			<xsd:sequence maxOccurs="100" minOccurs="0">
 				<xsd:element name="config">
 					<xsd:complexType>
 						<xsd:sequence>

@@ -6,38 +6,38 @@
 
     <xsd:complexType name="L2NetworkUnion">
         <xsd:sequence>
-            <xsd:element name="l2NoVlanNetwork" type="L2NoVlanNetworkConfig" maxOccurs="unbounded" minOccurs="0"/>
-            <xsd:element name="l2VlanNetwork" type="L2VlanNetworkConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="l2NoVlanNetwork" type="L2NoVlanNetworkConfig" maxOccurs="100" minOccurs="0"/>
+            <xsd:element name="l2VlanNetwork" type="L2VlanNetworkConfig" maxOccurs="100" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 
     <xsd:complexType name="L3NetworkUnion">
         <xsd:sequence>
-            <xsd:element name="l3BasicNetwork" type="L3BasicNetworkConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="l3BasicNetwork" type="L3BasicNetworkConfig" maxOccurs="100" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 
     <xsd:complexType name="SecurityGroupUnion">
         <xsd:sequence>
-            <xsd:element name="securityGroup" type="SecurityGroupConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="securityGroup" type="SecurityGroupConfig" maxOccurs="100" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 
     <xsd:complexType name="PortForwardingUnion">
         <xsd:sequence>
-            <xsd:element name="portForwarding" type="PortForwardingConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="portForwarding" type="PortForwardingConfig" maxOccurs="100" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 
     <xsd:complexType name="EipUnion">
         <xsd:sequence>
-            <xsd:element name="eip" type="EipConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="eip" type="EipConfig" maxOccurs="100" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 
     <xsd:complexType name="LbUnion">
         <xsd:sequence>
-            <xsd:element name="lb" type="LbConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="lb" type="LbConfig" maxOccurs="100" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 
@@ -81,9 +81,9 @@
 
     <xsd:complexType name="SecurityGroupConfig">
         <xsd:sequence>
-            <xsd:element name="l3NetworkRef" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="l3NetworkRef" type="xsd:string" maxOccurs="100" minOccurs="0"/>
             <xsd:element name="accountRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
-            <xsd:element name="rule" type="SecurityGroupRuleConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="rule" type="SecurityGroupRuleConfig" maxOccurs="100" minOccurs="0"/>
         </xsd:sequence>
         <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
         <xsd:attribute name="description" type="xsd:string"></xsd:attribute>
@@ -107,7 +107,7 @@
             <xsd:element name="protocol" type="xsd:string" maxOccurs="1" minOccurs="0"/>
             <xsd:element name="instancePort" type="xsd:unsignedInt" maxOccurs="1" minOccurs="0"/>
             <xsd:element name="loadBalancerPort" type="xsd:unsignedInt" maxOccurs="1" minOccurs="0"/>
-            <xsd:element name="vmNicRef" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="vmNicRef" type="xsd:string" maxOccurs="100" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 
@@ -117,8 +117,8 @@
             <xsd:element name="name" type="xsd:string" maxOccurs="1" minOccurs="0"/>
             <xsd:element name="description" type="xsd:string" maxOccurs="1" minOccurs="0"/>
             <xsd:element name="publicL3NetworkRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
-            <xsd:element name="listener" type="LbListenerConfig" maxOccurs="unbounded" minOccurs="0"/>
-            <xsd:element name="tag" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="listener" type="LbListenerConfig" maxOccurs="100" minOccurs="0"/>
+            <xsd:element name="tag" type="xsd:string" maxOccurs="100" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 
@@ -141,17 +141,17 @@
 
     <xsd:complexType name="NetworkServiceConfig" >
         <xsd:sequence>
-            <xsd:element name="serviceType" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="serviceType" type="xsd:string" maxOccurs="100" minOccurs="0"/>
         </xsd:sequence>
         <xsd:attribute name="provider" type="xsd:string" use="required"></xsd:attribute>
     </xsd:complexType>
 
     <xsd:complexType name="L3BasicNetworkConfig">
         <xsd:sequence>
-            <xsd:element name="ipRange" type="IpRangeConfig" maxOccurs="unbounded" minOccurs="0"/>
-            <xsd:element name="dns" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="ipRange" type="IpRangeConfig" maxOccurs="100" minOccurs="0"/>
+            <xsd:element name="dns" type="xsd:string" maxOccurs="100" minOccurs="0"/>
             <xsd:element name="dnsDomain" type="xsd:string" maxOccurs="1" minOccurs="0"/>
-            <xsd:element name="networkService" type="NetworkServiceConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="networkService" type="NetworkServiceConfig" maxOccurs="100" minOccurs="0"/>
             <xsd:element name="accountRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
         </xsd:sequence>
         <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>

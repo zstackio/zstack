@@ -17,12 +17,12 @@ import java.util.List;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="simulatorPrimaryStorage" type="{http://zstack.org/schema/zstack}SimulatorPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="nfsPrimaryStorage" type="{http://zstack.org/schema/zstack}NfsPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="iscsiBtrfsPrimaryStorage" type="{http://zstack.org/schema/zstack}IscsiFileSystemPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="localPrimaryStorage" type="{http://zstack.org/schema/zstack}LocalPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="cephPrimaryStorage" type="{http://zstack.org/schema/zstack}CephPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="sharedMountPointPrimaryStorage" type="{http://zstack.org/schema/zstack}SharedMountPointPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="simulatorPrimaryStorage" type="{http://zstack.org/schema/zstack}SimulatorPrimaryStorageConfig" maxOccurs="100" minOccurs="0"/>
+ *         &lt;element name="nfsPrimaryStorage" type="{http://zstack.org/schema/zstack}NfsPrimaryStorageConfig" maxOccurs="100" minOccurs="0"/>
+ *         &lt;element name="iscsiBtrfsPrimaryStorage" type="{http://zstack.org/schema/zstack}IscsiFileSystemPrimaryStorageConfig" maxOccurs="100" minOccurs="0"/>
+ *         &lt;element name="localPrimaryStorage" type="{http://zstack.org/schema/zstack}LocalPrimaryStorageConfig" maxOccurs="100" minOccurs="0"/>
+ *         &lt;element name="cephPrimaryStorage" type="{http://zstack.org/schema/zstack}CephPrimaryStorageConfig" maxOccurs="100" minOccurs="0"/>
+ *         &lt;element name="sharedMountPointPrimaryStorage" type="{http://zstack.org/schema/zstack}SharedMountPointPrimaryStorageConfig" maxOccurs="100" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>

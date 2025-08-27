@@ -24,10 +24,10 @@ import java.util.List;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="id" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;sequence maxOccurs="unbounded" minOccurs="0">
+ *         &lt;sequence maxOccurs="100" minOccurs="0">
  *           &lt;element name="interceptor" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;/sequence>
- *         &lt;sequence maxOccurs="unbounded" minOccurs="0">
+ *         &lt;sequence maxOccurs="100" minOccurs="0">
  *           &lt;element name="message">
  *             &lt;complexType>
  *               &lt;complexContent>
@@ -35,10 +35,10 @@ import java.util.List;
  *                   &lt;sequence>
  *                     &lt;element name="name" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *                     &lt;element name="serviceId" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *                     &lt;sequence maxOccurs="unbounded" minOccurs="0">
+ *                     &lt;sequence maxOccurs="100" minOccurs="0">
  *                       &lt;element name="interceptor" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *                     &lt;/sequence>
- *                     &lt;sequence maxOccurs="unbounded" minOccurs="0">
+ *                     &lt;sequence maxOccurs="100" minOccurs="0">
  *                       &lt;element name="role" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *                     &lt;/sequence>
  *                   &lt;/sequence>
@@ -163,10 +163,10 @@ public class Service {
      *       &lt;sequence>
      *         &lt;element name="name" type="{http://www.w3.org/2001/XMLSchema}string"/>
      *         &lt;element name="serviceId" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
-     *         &lt;sequence maxOccurs="unbounded" minOccurs="0">
+     *         &lt;sequence maxOccurs="100" minOccurs="0">
      *           &lt;element name="interceptor" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
      *         &lt;/sequence>
-     *         &lt;sequence maxOccurs="unbounded" minOccurs="0">
+     *         &lt;sequence maxOccurs="100" minOccurs="0">
      *           &lt;element name="role" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
      *         &lt;/sequence>
      *       &lt;/sequence>

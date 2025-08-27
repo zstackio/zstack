@@ -28,7 +28,7 @@ public abstract class SQLBatch {
     protected void remove(Object k) {
         Field f = EntityMetadata.getPrimaryKeyField(k.getClass());
         try {
-            f.setAccessible(true);
+            f.setAccessible(false);
             sql(String.format("DELETE FROM %s vo WHERE vo.%s = :value", k.getClass().getSimpleName(), f.getName()))
                     .param("value", f.get(k)).execute();
         } catch (IllegalAccessException e) {

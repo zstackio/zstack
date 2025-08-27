@@ -22,9 +22,9 @@ public class PathUtil {
     public static String join(String... paths) {
         assert paths != null && paths.length > 0;
 
-        File parent = new File(paths[0]);
+        File parent = new File(validateAndNormalizePath(paths[0]));
         for (int i = 1; i < paths.length; i++) {
-            parent = new File(parent, paths[i]);
+            parent = new File(parent, validateAndNormalizePath(paths[i]));
         }
         return parent.getPath();
     }
@@ -34,21 +34,72 @@ public class PathUtil {
             path = path.replaceAll("~", System.getProperty(HOME_DIR_PROPERTY_NAME));
         }
 
-        return new File(path).getAbsolutePath();
+        return new File(validateAndNormalizePath(path)).getAbsolutePath();
     }
 
     public static String getZStackHomeFolder() {
         String homeDir = System.getProperty(HOME_DIR_PROPERTY_NAME);
-        File f = new File(homeDir);
+        File f = new File(validateAndNormalizePath(homeDir));
         if (!f.exists()) {
             f.mkdirs();
         }
         return f.getAbsolutePath();
     }
 
+    public static String validData(String data) {
+        if (data.length() > 2048) {
+            throw new IllegalArgumentException(String.format("data[%s] is too long", data));
+        }
+
+        long dangerousCharCount = data.chars()
+                .filter(ch -> ch == '<' || ch == '>' || ch == '"' || ch == '\'' || ch == '\\' || ch == '`')
+                .count();
+
+        if (dangerousCharCount > 10) {
+            throw new IllegalArgumentException(String.format("data[%s] contains dangerous characters", data));
+        }
+
+        String lowerUri = data.toLowerCase();
+        String[] xssPatterns = {
+                "<script", "javascript:", "vbscript:", "onload=", "onerror=",
+                "alert(", "eval(", "expression(", "data:"
+        };
+
+        for (String pattern : xssPatterns) {
+            if (lowerUri.contains(pattern)) {
+                throw new IllegalArgumentException(String.format("data[%s] contains dangerous characters", data));
+            }
+        }
+
+        return data;
+    }
+
+    public static String validateSystemProperty(String propertyValue) {
+        if (propertyValue == null) {
+            return propertyValue;
+        }
+
+        String[] dangerousChars = {";", "|", "&", "`", "$(", "&&", "||", "<", ">"};
+        for (String dangerousChar : dangerousChars) {
+            if (propertyValue.contains(dangerousChar)) {
+                throw new SecurityException(
+                        String.format("Invalid character sequence '%s' found in property. This might be a command injection attempt.",
+                                dangerousChar)
+                );
+            }
+        }
+
+        if (propertyValue.contains("\n") || propertyValue.contains("\r")) {
+            throw new SecurityException(
+                    "Newline or carriage return found in property. This might be a command injection attempt.");
+        }
+
+        return propertyValue;
+    }
+
     public static String getFolderUnderZStackHomeFolder(String folder) {
         String path = join(getZStackHomeFolder(), folder);
-        File f = new File(path);
+        File f = new File(validateAndNormalizePath(path));
         if (!f.exists()) {
             f.mkdirs();
         }
@@ -57,7 +108,7 @@ public class PathUtil {
 
     public static String getFilePathUnderZStackHomeFolder(String path) {
         String folder = getFolderUnderZStackHomeFolder(parentFolder(path));
-        return join(folder, new File(path).getName());
+        return join(folder, new File(validateAndNormalizePath(path)).getName());
     }
 
     public static String parentFolder(String fullPath) {
@@ -69,7 +120,7 @@ public class PathUtil {
     }
 
     public static String fileName(String fullPath) {
-        return new File(fullPath).getName();
+        return new File(validateAndNormalizePath(fullPath)).getName();
     }
 
     public static File findFileOnClassPath(String fileName, boolean exceptionOnNotFound) {
@@ -82,7 +133,7 @@ public class PathUtil {
     }
 
     public static boolean exists(String path) {
-        File f = new File(path);
+        File f = new File(validateAndNormalizePath(path));
         return f.exists();
     }
 
@@ -119,7 +170,7 @@ public class PathUtil {
 
         if (fileUrl != null && fileUrl.getProtocol().equals("jar")) {
             InputStream is = PathUtil.class.getClassLoader().getResourceAsStream(fileName);
-            File file = new File(fileName);
+            File file = new File(validateAndNormalizePath(fileName));
 
             File parentFile = file.getParentFile();
             try {
@@ -198,6 +249,28 @@ public class PathUtil {
         }
     }
 
+    public static String validateAndNormalizePath(String path) {
+        if (path == null || path.isEmpty()) {
+            throw new IllegalArgumentException("Path cannot be null or empty");
+        }
+
+        String cleanPath = path.replace('\\', '/');
+        if (cleanPath.contains("../") || cleanPath.contains("./") ||
+                cleanPath.startsWith("..") || cleanPath.startsWith(".")) {
+            throw new SecurityException("Path traversal attempt detected: " + path);
+        }
+
+        try {
+            if (!cleanPath.startsWith("/zstack/home")) {
+                throw new SecurityException("Access to path outside ZStack home directory is not allowed: " + path);
+            }
+        } catch (InvalidPathException e) {
+            throw new SecurityException("Invalid path: " + path, e);
+        }
+
+        return path;
+    }
+
     public static List<String> scanFolderOnClassPath(String folderName) {
         URL folderUrl = PathUtil.class.getClassLoader().getResource(folderName);
         if (folderUrl == null || !folderUrl.getProtocol().equals("file")) {
@@ -218,7 +291,7 @@ public class PathUtil {
 
     public static void scanFolder(List<String> ret, String folderName) {
         try {
-            File folder = new File(folderName);
+            File folder = new File(validateAndNormalizePath(folderName));
             if (!folder.isDirectory()) {
                 return;
             }
@@ -242,7 +315,7 @@ public class PathUtil {
 
     public static void forceRemoveFile(String path) {
         try {
-            File f = new File(path);
+            File f = new File(validateAndNormalizePath(path));
             boolean success = f.delete();
             logger.warn(String.format("Delete %s status: %s", path, success));
         } catch (Exception e) {
@@ -252,7 +325,7 @@ public class PathUtil {
 
     public static void forceRemoveDirectory(String path) {
         try {
-            FileUtils.deleteDirectory(new File(path));
+            FileUtils.deleteDirectory(new File(validateAndNormalizePath(path)));
             logger.warn(String.format("Deleted directory: %s", path));
         } catch (IOException ex) {
             logger.warn(String.format("Failed in deleting directory: %s: %s", path, ex.getMessage()));
@@ -261,7 +334,7 @@ public class PathUtil {
 
     public static void forceCreateDirectory(String path) {
         try {
-            FileUtils.forceMkdir(new File(path));
+            FileUtils.forceMkdir(new File(validateAndNormalizePath(path)));
         } catch (IOException ex) {
             logger.warn(String.format("Failed in creating directory: %s: %s", path, ex.getMessage()));
         }
@@ -269,7 +342,7 @@ public class PathUtil {
 
     public static void copyFolderToFolder(String srcFolder, String dstFolder) {
         try {
-            FileUtils.copyDirectory(new File(srcFolder), new File(dstFolder));
+            FileUtils.copyDirectory(new File(validateAndNormalizePath(srcFolder)), new File(validateAndNormalizePath(dstFolder)));
         } catch (IOException ex) {
             logger.warn(String.format("Copy directory %s to %s: %s", srcFolder, dstFolder, ex.getMessage()));
         }
@@ -278,7 +351,7 @@ public class PathUtil {
     public static void setFilePosixPermissions(String path, String perms) {
         try {
             Set<PosixFilePermission> s = PosixFilePermissions.fromString(perms);
-            Files.setPosixFilePermissions(new File(path).toPath(), s);
+            Files.setPosixFilePermissions(new File(validateAndNormalizePath(path)).toPath(), s);
         } catch (IOException ex) {
             logger.warn(String.format("set %s permission to %s: %s", path, perms, ex.getMessage()));
         }
@@ -305,7 +378,7 @@ public class PathUtil {
     }
 
     public static void writeFile(String fpath, byte[] data) throws IOException {
-        try (FileOutputStream outputStream = new FileOutputStream(new File(fpath))) {
+        try (FileOutputStream outputStream = new FileOutputStream(new File(validateAndNormalizePath(fpath)))) {
             outputStream.write(data);
             outputStream.flush();
         }
@@ -325,14 +398,14 @@ public class PathUtil {
 
     public static void moveFile(String source, String target) {
         try {
-            FileUtils.moveFile(new File(source), new File(target));
+            FileUtils.moveFile(new File(validateAndNormalizePath(source)), new File(validateAndNormalizePath(target)));
         } catch (IOException e){
             throw new RuntimeException(e.getMessage());
         }
     }
 
     public static String readFileToString(String path, Charset charset) {
-        try (UnicodeReader reader = new UnicodeReader(new FileInputStream(new File(path)), charset.toString())) {
+        try (UnicodeReader reader = new UnicodeReader(new FileInputStream(new File(validateAndNormalizePath(path))), charset.toString())) {
             return IOUtils.toString(reader);
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
@@ -402,7 +475,7 @@ public class PathUtil {
     }
 
     public static boolean isDir(String path) {
-        File file = new File(path);
+        File file = new File(validateAndNormalizePath(path));
         if (file.exists()) {
             return file.isDirectory();
         } else {

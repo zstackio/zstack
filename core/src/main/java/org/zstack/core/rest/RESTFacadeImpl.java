@@ -37,6 +37,7 @@ import org.zstack.utils.IptablesUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.path.PathUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -188,7 +189,7 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     void notifyCallback(HttpServletRequest req, HttpServletResponse rsp) {
-        String taskUuid = req.getHeader(RESTConstant.TASK_UUID);
+        String taskUuid = PathUtil.validData(req.getHeader(RESTConstant.TASK_UUID));
         try {
             HttpEntity<String> entity = this.httpServletRequestToHttpEntity(req);
             if (taskUuid == null) {
@@ -219,7 +220,7 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     void sendCommand(HttpServletRequest req, HttpServletResponse rsp) {
-        String commandPath = req.getHeader(RESTConstant.COMMAND_PATH);
+        String commandPath = PathUtil.validData(req.getHeader(RESTConstant.COMMAND_PATH));
         try {
             HttpEntity<String> entity = this.httpServletRequestToHttpEntity(req);
             if (commandPath == null) {
@@ -471,21 +472,51 @@ public class RESTFacadeImpl implements RESTFacade {
             try (BufferedReader reader = req.getReader()) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    sb.append(line);
+                    sb.append(PathUtil.validData(line));
                 }
             }
 
             HttpHeaders header = new HttpHeaders();
-            for (Enumeration<?> e = req.getHeaderNames() ; e.hasMoreElements() ;) {
-                String name = e.nextElement().toString();
-                header.add(name, req.getHeader(name));
+            for (Enumeration<?> e = req.getHeaderNames(); e.hasMoreElements(); ) {
+                String name = PathUtil.validData(e.nextElement().toString());
+                String value = PathUtil.validData(req.getHeader(name));
+
+                if (name.equalsIgnoreCase("Host")) {
+                    if (!isValidHost(value)) {
+                        throw new CloudRuntimeException("Invalid Host header: " + value);
+                    }
+                }
+                header.add(name, value);
             }
 
-            return new HttpEntity<String>(sb.toString(), header);
+            String body = filterRequestBody(sb.toString());
+
+            return new HttpEntity<>(body, header);
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
             throw new CloudRuntimeException(e);
         }
+    }
+
+    private boolean isValidHost(String host) {
+        String[] allowedHosts = {"api.example.com", "cdn.example.org"};
+        for (String allowed : allowedHosts) {
+            if (host.equalsIgnoreCase(allowed)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String filterRequestBody(String body) {
+        if (body.contains("http://") || body.contains("https://")) {
+            String filteredBody = body.replaceAll(
+                    "(http[s]?://)?(192\\.168\\.\\d{1,3}\\.\\d{1,3}|10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|172\\.(1[6-9]|2[0-9]|3[0-1])\\.\\d{1,3}\\.\\d{1,3})",
+                    ""
+            );
+            return filteredBody;
+        }
+        return body;
     }
 
     @Override

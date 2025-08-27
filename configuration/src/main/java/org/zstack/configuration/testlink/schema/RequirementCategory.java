@@ -26,7 +26,7 @@ import java.util.List;
  *         &lt;element name="scope" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="title" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="documentId" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *         &lt;sequence maxOccurs="unbounded" minOccurs="0">
+ *         &lt;sequence maxOccurs="100" minOccurs="0">
  *           &lt;element name="req">
  *             &lt;complexType>
  *               &lt;complexContent>
@@ -36,13 +36,13 @@ import java.util.List;
  *                     &lt;element name="goal" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *                     &lt;element name="details" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *                     &lt;element name="title" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *                     &lt;sequence maxOccurs="unbounded" minOccurs="0">
+ *                     &lt;sequence maxOccurs="100" minOccurs="0">
  *                       &lt;element name="subResource" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *                     &lt;/sequence>
- *                     &lt;sequence maxOccurs="unbounded" minOccurs="0">
+ *                     &lt;sequence maxOccurs="100" minOccurs="0">
  *                       &lt;element name="relationalResource" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *                     &lt;/sequence>
- *                     &lt;sequence maxOccurs="unbounded" minOccurs="0">
+ *                     &lt;sequence maxOccurs="100" minOccurs="0">
  *                       &lt;element name="api">
  *                         &lt;complexType>
  *                           &lt;complexContent>
@@ -205,13 +205,13 @@ public class RequirementCategory {
      *         &lt;element name="goal" type="{http://www.w3.org/2001/XMLSchema}string"/>
      *         &lt;element name="details" type="{http://www.w3.org/2001/XMLSchema}string"/>
      *         &lt;element name="title" type="{http://www.w3.org/2001/XMLSchema}string"/>
-     *         &lt;sequence maxOccurs="unbounded" minOccurs="0">
+     *         &lt;sequence maxOccurs="100" minOccurs="0">
      *           &lt;element name="subResource" type="{http://www.w3.org/2001/XMLSchema}string"/>
      *         &lt;/sequence>
-     *         &lt;sequence maxOccurs="unbounded" minOccurs="0">
+     *         &lt;sequence maxOccurs="100" minOccurs="0">
      *           &lt;element name="relationalResource" type="{http://www.w3.org/2001/XMLSchema}string"/>
      *         &lt;/sequence>
-     *         &lt;sequence maxOccurs="unbounded" minOccurs="0">
+     *         &lt;sequence maxOccurs="100" minOccurs="0">
      *           &lt;element name="api">
      *             &lt;complexType>
      *               &lt;complexContent>

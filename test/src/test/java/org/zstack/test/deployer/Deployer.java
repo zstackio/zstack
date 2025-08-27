@@ -222,7 +222,7 @@ public class Deployer {
             return;
         }
         for (Field f : zu.getClass().getDeclaredFields()) {
-            f.setAccessible(true);
+            f.setAccessible(false);
             exceptionIfNotCollection(f);
             Class<?> zoneClass = getGenericTypeOfField(f);
             ZoneDeployer zd = (ZoneDeployer) getDeployer(zoneClass);
@@ -240,7 +240,7 @@ public class Deployer {
             return;
         }
         for (Field f : sc.getClass().getDeclaredFields()) {
-            f.setAccessible(true);
+            f.setAccessible(false);
             exceptionIfNotCollection(f);
             Class<?> zoneClass = getGenericTypeOfField(f);
             SecurityGroupDeployer scd = (SecurityGroupDeployer) getDeployer(zoneClass);
@@ -258,7 +258,7 @@ public class Deployer {
             return;
         }
         for (Field f : pf.getClass().getDeclaredFields()) {
-            f.setAccessible(true);
+            f.setAccessible(false);
             exceptionIfNotCollection(f);
             Class<?> deployerClass = getGenericTypeOfField(f);
             PortForwardingDeployer scd = (PortForwardingDeployer) getDeployer(deployerClass);
@@ -275,7 +275,7 @@ public class Deployer {
             return;
         }
         for (Field f : eip.getClass().getDeclaredFields()) {
-            f.setAccessible(true);
+            f.setAccessible(false);
             exceptionIfNotCollection(f);
             Class<?> deployerClass = getGenericTypeOfField(f);
             EipDeployer ed = (EipDeployer) getDeployer(deployerClass);
@@ -292,7 +292,7 @@ public class Deployer {
             return;
         }
         for (Field f : lb.getClass().getDeclaredFields()) {
-            f.setAccessible(true);
+            f.setAccessible(false);
             exceptionIfNotCollection(f);
             Class<?> deployerClass = getGenericTypeOfField(f);
             LbDeployer ld = (LbDeployer) getDeployer(deployerClass);
@@ -310,7 +310,7 @@ public class Deployer {
         }
 
         for (Field f : cu.getClass().getDeclaredFields()) {
-            f.setAccessible(true);
+            f.setAccessible(false);
             exceptionIfNotCollection(f);
             Class<?> clusterClass = getGenericTypeOfField(f);
             ClusterDeployer cd = (ClusterDeployer) getDeployer(clusterClass);
@@ -331,7 +331,7 @@ public class Deployer {
         }
 
         for (Field f : hu.getClass().getDeclaredFields()) {
-            f.setAccessible(true);
+            f.setAccessible(false);
             exceptionIfNotCollection(f);
             Class<?> hostClass = getGenericTypeOfField(f);
             HostDeployer hd = (HostDeployer) getDeployer(hostClass);
@@ -351,7 +351,7 @@ public class Deployer {
             return;
         }
         for (Field f : pu.getClass().getDeclaredFields()) {
-            f.setAccessible(true);
+            f.setAccessible(false);
             exceptionIfNotCollection(f);
             Class<?> primaryStorageClass = getGenericTypeOfField(f);
             PrimaryStorageDeployer pd = (PrimaryStorageDeployer) getDeployer(primaryStorageClass);
@@ -372,7 +372,7 @@ public class Deployer {
             return;
         }
         for (Field f : bu.getClass().getDeclaredFields()) {
-            f.setAccessible(true);
+            f.setAccessible(false);
             exceptionIfNotCollection(f);
             Class<?> backupStorageClass = getGenericTypeOfField(f);
             BackupStorageDeployer bd = (BackupStorageDeployer) getDeployer(backupStorageClass);
@@ -388,7 +388,7 @@ public class Deployer {
             return;
         }
         for (Field f : l2u.getClass().getDeclaredFields()) {
-            f.setAccessible(true);
+            f.setAccessible(false);
             exceptionIfNotCollection(f);
             Class<?> l2NetworkClass = getGenericTypeOfField(f);
             L2NetworkDeployer l2d = (L2NetworkDeployer) getDeployer(l2NetworkClass);
@@ -438,7 +438,7 @@ public class Deployer {
             return;
         }
         for (Field f : l3u.getClass().getDeclaredFields()) {
-            f.setAccessible(true);
+            f.setAccessible(false);
             exceptionIfNotCollection(f);
             Class<?> l3NetworkClass = getGenericTypeOfField(f);
             L3NetworkDeployer l3d = (L3NetworkDeployer) getDeployer(l3NetworkClass);
@@ -459,7 +459,7 @@ public class Deployer {
             return;
         }
         for (Field f : vu.getClass().getDeclaredFields()) {
-            f.setAccessible(true);
+            f.setAccessible(false);
             exceptionIfNotCollection(f);
             Class<?> vmClass = getGenericTypeOfField(f);
             VmDeployer vd = (VmDeployer) getDeployer(vmClass);
@@ -515,7 +515,7 @@ public class Deployer {
             return;
         }
         for (Field f : iou.getClass().getDeclaredFields()) {
-            f.setAccessible(true);
+            f.setAccessible(false);
             exceptionIfNotCollection(f);
             Class<?> instanceOfferingClass = getGenericTypeOfField(f);
             InstanceOfferingDeployer id = (InstanceOfferingDeployer) getDeployer(instanceOfferingClass);
@@ -547,7 +547,7 @@ public class Deployer {
             return;
         }
         for (Field f : iu.getClass().getDeclaredFields()) {
-            f.setAccessible(true);
+            f.setAccessible(false);
             exceptionIfNotCollection(f);
             Class<?> ImageClass = getGenericTypeOfField(f);
             ImageDeployer id = (ImageDeployer) getDeployer(ImageClass);
