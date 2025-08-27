@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Objects;
 
 /**
  * Created by xing5 on 2017/2/12.
@@ -22,6 +23,11 @@ public class TestLibController {
             }
     )
     public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        if (request.getMethod().equalsIgnoreCase(RequestMethod.HEAD.toString())) {
+            response.setStatus(200);
+            return;
+        }
+
         Test.handleHttp(request, response);
     }
 }
