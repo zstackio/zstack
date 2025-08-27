@@ -45,8 +45,7 @@ import java.util.*;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.sdnController.header.SdnControllerFlowDataParam.SDN_CONTROLLER_PASSWORD;
-import static org.zstack.sdnController.header.SdnControllerFlowDataParam.SDN_CONTROLLER_UUID;
+import static org.zstack.sdnController.header.SdnControllerFlowDataParam.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SdnControllerBase {
@@ -148,24 +147,44 @@ public class SdnControllerBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                if (msg.getPassword().equals(self.getPassword())) {
-                    trigger.next();
-                    return;
+                boolean changed = false;
+
+                // Handle name change
+                if (msg.getUserName() != null && !msg.getUserName().equals(self.getName())) {
+                    chain.getData().put(SDN_CONTROLLER_USERNAME, self.getName());
+                    self.setUsername(msg.getUserName());
+                    changed = true;
                 }
 
-                chain.getData().put(SDN_CONTROLLER_PASSWORD, self.getPassword());
-                self.setPassword(msg.getPassword());
-                self = dbf.updateAndRefresh(self);
+                // Handle password change
+                if (msg.getPassword() != null && !msg.getPassword().equals(self.getPassword())) {
+                    chain.getData().put(SDN_CONTROLLER_PASSWORD, self.getPassword());
+                    self.setPassword(msg.getPassword());
+                    changed = true;
+                }
+
+                if (changed) {
+                    self = dbf.updateAndRefresh(self);
+                    chain.getData().put(SDN_CONTROLLER_CHANGED, changed);
+                }
+
                 trigger.next();
             }
 
             @Override
             public void rollback(FlowRollback trigger, Map data) {
-                String password = chain.getData().get(SDN_CONTROLLER_PASSWORD).toString();
+                String username = (String)chain.getData().get(SDN_CONTROLLER_USERNAME);
+                String password = (String)chain.getData().get(SDN_CONTROLLER_PASSWORD);
                 if (password != null) {
                     self.setPassword(password);
+                }
+                if (username != null) {
+                    self.setUsername(username);
+                }
+                if (password != null || username != null) {
                     self = dbf.updateAndRefresh(self);
                 }
+
                 trigger.rollback();
             }
         }).then(new NoRollbackFlow() {
@@ -173,8 +192,8 @@ public class SdnControllerBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                String password = chain.getData().get(SDN_CONTROLLER_PASSWORD).toString();
-                if (password == null) {
+                boolean changed = data.get(SDN_CONTROLLER_CHANGED) == null ? false : (boolean) data.get(SDN_CONTROLLER_CHANGED);
+                if (!changed) {
                     // password not changed
                     trigger.next();
                     return;

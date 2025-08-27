@@ -1,5 +1,7 @@
 package org.zstack.sdnController;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
@@ -45,6 +47,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         ReleaseNetworkServiceOnDetachingNicExtensionPoint, SecurityGroupGetSdnBackendExtensionPoint,
         GetSdnControllerExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SdnControllerManagerImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(SdnControllerManagerImpl.class);
 
     @Autowired
     private CloudBus bus;
@@ -129,13 +132,23 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        dbf.persist(vo);
-                        trigger.next();
+                        controller.createSdnControllerDb(msg, vo, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.debug(String.format("create sdn controller db error: %s", errorCode.getDetails()));
+                                trigger.fail(errorCode);
+                            }
+                        });
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        dbf.removeByPrimaryKey(vo.getUuid(), SdnControllerVO.class);
+                        controller.deleteSdnControllerDb(vo);
                         trigger.rollback();
                     }
                 });
@@ -152,7 +165,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                dbf.removeByPrimaryKey(vo.getUuid(), SdnControllerVO.class);
+                                controller.deleteSdnControllerDb(vo);
                                 trigger.fail(errorCode);
                             }
                         });
