@@ -148,6 +148,14 @@ public class ModelServiceInventory  {
         return this.startCommand;
     }
 
+    public boolean supportDistributed;
+    public void setSupportDistributed(boolean supportDistributed) {
+        this.supportDistributed = supportDistributed;
+    }
+    public boolean getSupportDistributed() {
+        return this.supportDistributed;
+    }
+
     public java.util.List cpuArchitectures;
     public void setCpuArchitectures(java.util.List cpuArchitectures) {
         this.cpuArchitectures = cpuArchitectures;
