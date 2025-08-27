@@ -228,6 +228,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         vo.setUsername(msg.getUserName());
         vo.setPassword(msg.getPassword());
         vo.setAccountUuid(msg.getSession().getAccountUuid());
+        vo.setVendorVersion("V1");
         vo.setStatus(SdnControllerStatus.Connected);
 
         doCreateSdnController(vo, msg, new Completion(msg) {

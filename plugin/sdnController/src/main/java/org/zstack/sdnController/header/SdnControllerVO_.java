@@ -9,6 +9,7 @@ import java.sql.Timestamp;
 @StaticMetamodel(SdnControllerVO.class)
 public class SdnControllerVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<SdnControllerVO, String> vendorType;
+    public static volatile SingularAttribute<SdnControllerVO, String> vendorVersion;
     public static volatile SingularAttribute<SdnControllerVO, String> name;
     public static volatile SingularAttribute<SdnControllerVO, String> description;
     public static volatile SingularAttribute<SdnControllerVO, String> ip;

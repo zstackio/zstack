@@ -101,3 +101,4 @@ CREATE TABLE  `zstack`.`HuaweiIMasterSdnControllerVO` (
 
 CALL ADD_COLUMN('HardwareL2VxlanNetworkPoolVO', 'startVlan', 'int unsigned', 1, NULL);
 CALL ADD_COLUMN('HardwareL2VxlanNetworkPoolVO', 'endVlan', 'int unsigned', 1, NULL);
+CALL ADD_COLUMN('SdnControllerVO', 'vendorVersion', 'VARCHAR(1024)', 0, 'V1');
