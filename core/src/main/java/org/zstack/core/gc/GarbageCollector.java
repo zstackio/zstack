@@ -120,7 +120,7 @@ public abstract class GarbageCollector {
             }
 
             try {
-                f.setAccessible(true);
+                f.setAccessible(false);
                 context.put(f.getName(), f.get(this));
             } catch (IllegalAccessException e) {
                 throw new CloudRuntimeException(e);
@@ -170,7 +170,7 @@ public abstract class GarbageCollector {
             }
 
             try {
-                f.setAccessible(true);
+                f.setAccessible(false);
                 f.set(this, f.get(dataObj));
             } catch (Exception e) {
                 throw new CloudRuntimeException(e);

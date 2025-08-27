@@ -61,13 +61,13 @@ public interface ToInventory {
                 if (m.valueOf == null)  {
                     errors.add(String.format("class[%s] annotated by @Inventory but not having a static method valueOf", clz));
                 } else {
-                    m.valueOf.setAccessible(true);
+                    m.valueOf.setAccessible(false);
                 }
 
                 if (m.valueOfCollection == null) {
                     errors.add(String.format("class[%s] annotated by @Inventory but not having a static collection method %s", clz, collectionMethodName));
                 } else {
-                    m.valueOfCollection.setAccessible(true);
+                    m.valueOfCollection.setAccessible(false);
                 }
 
                 inventoryMetadata.put(at.mappingVOClass(), m);

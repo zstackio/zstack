@@ -21,8 +21,8 @@ import java.util.List;
  *         &lt;element name="name" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="description" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="publicL3NetworkRef" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="listener" type="{http://zstack.org/schema/zstack}LbListenerConfig" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="tag" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="listener" type="{http://zstack.org/schema/zstack}LbListenerConfig" maxOccurs="100" minOccurs="0"/>
+ *         &lt;element name="tag" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="100" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>

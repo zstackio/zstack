@@ -18,9 +18,9 @@ import java.util.List;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="user" type="{http://zstack.org/schema/zstack}UserConfig" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="policy" type="{http://zstack.org/schema/zstack}PolicyConfig" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="group" type="{http://zstack.org/schema/zstack}GroupConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="user" type="{http://zstack.org/schema/zstack}UserConfig" maxOccurs="100" minOccurs="0"/>
+ *         &lt;element name="policy" type="{http://zstack.org/schema/zstack}PolicyConfig" maxOccurs="100" minOccurs="0"/>
+ *         &lt;element name="group" type="{http://zstack.org/schema/zstack}GroupConfig" maxOccurs="100" minOccurs="0"/>
  *       &lt;/sequence>
  *       &lt;attribute name="name" use="required" type="{http://www.w3.org/2001/XMLSchema}string" />
  *       &lt;attribute name="password" use="required" type="{http://www.w3.org/2001/XMLSchema}string" />

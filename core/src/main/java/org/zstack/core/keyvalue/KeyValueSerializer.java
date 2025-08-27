@@ -26,12 +26,12 @@ public class KeyValueSerializer {
     }
 
     private Object getValue(Field f, Object obj) throws IllegalAccessException {
-        f.setAccessible(true);
+        f.setAccessible(false);
         return f.get(obj);
     }
 
     private void take(Field f, Object obj) throws IllegalAccessException {
-        f.setAccessible(true);
+        f.setAccessible(false);
         Object val = f.get(obj);
         ret.add(new KeyValueStruct(makePath(), val.toString(), val.getClass()));
     }

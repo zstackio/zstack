@@ -17,6 +17,7 @@ import org.zstack.utils.TagUtils;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.CollectionDSL.e;
@@ -135,7 +136,7 @@ public class LoadBalancerWeightOperator {
                     .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid,defaultServerGroupUuid)
                     .eq(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid,nicUuid)
                     .find();
-            if(weight != vmNicRefVOS.getWeight()){
+            if(!Objects.equals(weight, vmNicRefVOS.getWeight())){
                 vmNicRefVOS.setWeight(weight);
                 dbf.update(vmNicRefVOS);
             }

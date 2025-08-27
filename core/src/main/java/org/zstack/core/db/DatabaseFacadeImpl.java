@@ -77,7 +77,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
             voPrimaryKeyField = FieldUtils.getAnnotatedField(Id.class, voClass);
             DebugUtils.Assert(voPrimaryKeyField != null, String.format("%s has no primary key", voClass));
-            voPrimaryKeyField.setAccessible(true);
+            voPrimaryKeyField.setAccessible(false);
 
             EO at = (EO) voClazz.getAnnotation(EO.class);
             if (at != null) {
@@ -85,10 +85,10 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
                 DebugUtils.Assert(eoClass != null, String.format("cannot find EO entity specified by VO entity[%s]", voClazz.getName()));
                 eoPrimaryKeyField = FieldUtils.getAnnotatedField(Id.class, eoClass);
                 DebugUtils.Assert(eoPrimaryKeyField != null, String.format("cannot find primary key field(@Id annotated) in EO entity[%s]", eoClass.getName()));
-                eoPrimaryKeyField.setAccessible(true);
+                eoPrimaryKeyField.setAccessible(false);
                 eoSoftDeleteColumn = FieldUtils.getField(at.softDeletedColumn(), eoClass);
                 DebugUtils.Assert(eoSoftDeleteColumn != null, String.format("cannot find soft delete column[%s] in EO entity[%s]", at.softDeletedColumn(), eoClass.getName()));
-                eoSoftDeleteColumn.setAccessible(true);
+                eoSoftDeleteColumn.setAccessible(false);
             }
 
             buildInheritanceDeletionExtension();
@@ -672,7 +672,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
             }
             Object vo = seqTable.newInstance();
             vo = persistAndRefresh(vo);
-            id.setAccessible(true);
+            id.setAccessible(false);
             return (Long) id.get(vo);
         } catch (Exception e) {
             throw new CloudRuntimeException(e);

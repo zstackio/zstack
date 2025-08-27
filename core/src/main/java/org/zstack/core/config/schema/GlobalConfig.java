@@ -26,7 +26,7 @@ import javax.xml.bind.annotation.XmlType;
  * &lt;complexType>
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
- *       &lt;sequence maxOccurs="unbounded" minOccurs="0">
+ *       &lt;sequence maxOccurs="100" minOccurs="0">
  *         &lt;element name="config">
  *           &lt;complexType>
  *             &lt;complexContent>

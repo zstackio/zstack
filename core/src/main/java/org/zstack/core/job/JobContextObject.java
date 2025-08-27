@@ -25,7 +25,7 @@ final class JobContextObject implements Serializable {
                 for (Field f : currClass.getDeclaredFields()) {
                     if (f.isAnnotationPresent(JobContext.class)) {
                         debugField = f;
-                        f.setAccessible(true);
+                        f.setAccessible(false);
                         Object val = f.get(obj);
                         if (val != null) {
                             assert val instanceof Serializable : val.getClass().getName() + " doesn't implement Serializable";
@@ -45,12 +45,12 @@ final class JobContextObject implements Serializable {
         try {
             Class<?> currClass = Class.forName(className);
             Constructor<?> cons = currClass.getDeclaredConstructor(null);
-            cons.setAccessible(true);
+            cons.setAccessible(false);
             Object obj = cons.newInstance();
             do {
                 for (Field f : currClass.getDeclaredFields()) {
                     if (f.isAnnotationPresent(JobContext.class)) {
-                        f.setAccessible(true);
+                        f.setAccessible(false);
                         if (!args.containsKey(f.getName())) {
                             String err = String.format("%s.%s is marked as JobContext, however, we cannot find it in previous saved context. DB corrupted? %s binary changed?", currClass.getCanonicalName(), f.getName(), currClass.getCanonicalName());
                             throw new IllegalArgumentException(err);

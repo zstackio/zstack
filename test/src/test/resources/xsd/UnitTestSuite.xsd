@@ -7,7 +7,7 @@
 	<xsd:element name="UnitTestSuiteConfig">
 		<xsd:complexType>
 			<xsd:sequence>
-				<xsd:sequence maxOccurs="unbounded" minOccurs="0">
+				<xsd:sequence maxOccurs="100" minOccurs="0">
 					<xsd:element name="TestCase">
 						<xsd:complexType>
 							<xsd:attribute name="class" type="xsd:string" use="required"></xsd:attribute>
@@ -16,7 +16,7 @@
 						</xsd:complexType>
 					</xsd:element>
 				</xsd:sequence>
-				<xsd:sequence maxOccurs="unbounded" minOccurs="0">
+				<xsd:sequence maxOccurs="100" minOccurs="0">
 					<xsd:element name="Import">
 						<xsd:complexType>
 							<xsd:attribute name="resource" type="xsd:string" use="required"></xsd:attribute>

@@ -10,7 +10,7 @@
                 <xsd:element name="scope" type="xsd:string" />
                 <xsd:element name="title" type="xsd:string" />
                 <xsd:element name="documentId" type="xsd:string" />
-                <xsd:sequence maxOccurs="unbounded" minOccurs="0">
+                <xsd:sequence maxOccurs="100" minOccurs="0">
                     <xsd:element name="req">
                         <xsd:complexType>
                             <xsd:sequence>
@@ -18,13 +18,13 @@
                                 <xsd:element name="goal" type="xsd:string" />
                                 <xsd:element name="details" type="xsd:string" />
                                 <xsd:element name="title" type="xsd:string" />
-                                <xsd:sequence maxOccurs="unbounded" minOccurs="0">
+                                <xsd:sequence maxOccurs="100" minOccurs="0">
                                     <xsd:element name="subResource" type="xsd:string" />
                                 </xsd:sequence>
-                                <xsd:sequence maxOccurs="unbounded" minOccurs="0">
+                                <xsd:sequence maxOccurs="100" minOccurs="0">
                                     <xsd:element name="relationalResource" type="xsd:string" />
                                 </xsd:sequence>
-                                <xsd:sequence maxOccurs="unbounded" minOccurs="0">
+                                <xsd:sequence maxOccurs="100" minOccurs="0">
                                     <xsd:element name="api">
                                         <xsd:complexType>
                                             <xsd:sequence>
@@ -51,7 +51,7 @@
                         <xsd:sequence>
                             <xsd:element name="scope" type="xsd:string"/>
                             <xsd:element name="node_order" type="xsd:string"/>
-                            <xsd:sequence maxOccurs="unbounded" minOccurs="0">
+                            <xsd:sequence maxOccurs="100" minOccurs="0">
                                 <xsd:element name="requirement" >
                                     <xsd:complexType>
                                         <xsd:sequence>

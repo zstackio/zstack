@@ -192,7 +192,7 @@ public class Platform {
                 }
             }
 
-            f.setAccessible(true);
+            f.setAccessible(false);
             try {
                 f.set(null, valueToSet);
                 globalProperties.put(name, valueToSet == null ? "null" : valueToSet.toString());
@@ -523,14 +523,14 @@ public class Platform {
         reflections.getSubTypesOf(DynamicObject.class).forEach(clz -> {
             DynamicObjectMetadata metadata = new DynamicObjectMetadata();
             FieldUtils.getAllFields(clz).forEach(f -> {
-                f.setAccessible(true);
+                f.setAccessible(false);
                 metadata.fields.put(f.getName(), f);
             });
 
             Class p = clz;
             while (p != Object.class) {
                 for (Method m : p.getDeclaredMethods()) {
-                    m.setAccessible(true);
+                    m.setAccessible(false);
                     metadata.methods.put(m.getName(), m);
                 }
                 p = p.getSuperclass();
@@ -578,7 +578,7 @@ public class Platform {
             }
 
             logger.debug(String.format("calling static init method[%s:%s]", init.getDeclaringClass(), init.getName()));
-            init.setAccessible(true);
+            init.setAccessible(false);
             init.invoke(null);
         }
     }

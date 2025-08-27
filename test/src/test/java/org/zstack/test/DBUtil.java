@@ -23,29 +23,29 @@ public class DBUtil {
 
     public static void reDeployDB() {
         logger.info("Deploying database ...");
-        String home = System.getProperty("user.dir");
+        String home = PathUtil.validateSystemProperty(System.getProperty("user.dir"));
         String baseDir = Utils.getPathUtil().join(home, "../");
         Properties prop = new Properties();
 
         try {
             prop.load(DBUtil.class.getClassLoader().getResourceAsStream("zstack.properties"));
 
-            String user = System.getProperty("DB.user");
+            String user = PathUtil.validateSystemProperty(System.getProperty("DB.user"));
             if (user == null) {
-                user = prop.getProperty("DB.user");
+                user = PathUtil.validateSystemProperty(prop.getProperty("DB.user"));
                 if (user == null) {
-                    user = prop.getProperty("DbFacadeDataSource.user");
+                    user = PathUtil.validateSystemProperty(prop.getProperty("DbFacadeDataSource.user"));
                 }
                 if (user == null) {
                     throw new CloudRuntimeException("cannot find DB user in zstack.properties, please set either DB.user or DbFacadeDataSource.user");
                 }
             }
 
-            String password = System.getProperty("DB.password");
+            String password = PathUtil.validateSystemProperty(System.getProperty("DB.password"));
             if (password == null) {
-                password = prop.getProperty("DB.password");
+                password = PathUtil.validateSystemProperty(prop.getProperty("DB.password"));
                 if (password == null) {
-                    password = prop.getProperty("DbFacadeDataSource.password");
+                    password = PathUtil.validateSystemProperty(prop.getProperty("DbFacadeDataSource.password"));
                 }
                 if (password == null) {
                     throw new CloudRuntimeException("cannot find DB user in zstack.properties, please set either DB.password or DbFacadeDataSource.password");
@@ -66,13 +66,13 @@ public class DBUtil {
         Platform.getUuid();
 
         logger.info("Redeploying cassandra");
-        String cqlsh = System.getProperty("Cassandra.cqlsh");
+        String cqlsh = PathUtil.validateSystemProperty(System.getProperty("Cassandra.cqlsh"));
         if (cqlsh == null) {
             throw new RuntimeException("please set Cassandra.cqlsh in zstack.properties");
         }
 
         if (cqlsh.startsWith("~")) {
-            String userHome = System.getProperty("user.home");
+            String userHome = PathUtil.validateSystemProperty(System.getProperty("user.home"));
             cqlsh = cqlsh.replaceAll("~", userHome);
         }
 
@@ -80,17 +80,17 @@ public class DBUtil {
             throw new RuntimeException(String.format("cannot find %s", cqlsh));
         }
 
-        String cqlbin = System.getProperty("Cassandra.bin");
+        String cqlbin = PathUtil.validateSystemProperty(System.getProperty("Cassandra.bin"));
         if (cqlbin == null) {
             throw new RuntimeException("please set Cassandra.bin in zstack.properties");
         }
 
         if (cqlbin.startsWith("~")) {
-            String userHome = System.getProperty("user.home");
+            String userHome = PathUtil.validateSystemProperty(System.getProperty("user.home"));
             cqlbin = cqlbin.replaceAll("~", userHome);
         }
 
-        File cassandraHome = new File(PathUtil.join(System.getProperty("user.home"), ".cassandra"));
+        File cassandraHome = new File(PathUtil.join(PathUtil.validateSystemProperty(System.getProperty("user.home")), ".cassandra"));
         if (!cassandraHome.exists()) {
             cassandraHome.mkdirs();
         }

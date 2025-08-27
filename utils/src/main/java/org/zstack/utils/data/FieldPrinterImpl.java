@@ -12,7 +12,7 @@ public class FieldPrinterImpl implements FieldPrinter {
 			Field[] fields = clazz.getDeclaredFields();
 			List<String> ret = new ArrayList<String>(fields.length);
 			for (Field f : fields) {
-				f.setAccessible(true);
+				f.setAccessible(false);
 				String name = f.getName();
 				Object value = f.get(obj);
 				if (f.getType().isArray()) {

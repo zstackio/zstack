@@ -693,7 +693,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
             for (Field f : clazz.getDeclaredFields()) {
                 if (f.isEnumConstant()) {
                     String name = f.getName().toUpperCase();
-                    f.setAccessible(true);
+                    f.setAccessible(false);
                     String value = f.get(null).toString();
                     sb.append(String.format("\n%s = '%s'", name, value));
                 }
@@ -706,7 +706,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                 }
 
                 String name = f.getName().toUpperCase();
-                f.setAccessible(true);
+                f.setAccessible(false);
                 String value = f.get(null).toString();
                 sb.append(String.format("\n%s = '%s'", name, value));
             }

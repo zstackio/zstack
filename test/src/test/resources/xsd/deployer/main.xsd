@@ -25,9 +25,9 @@
                 <xsd:element name="vm" type="VmUnion" minOccurs="0"/>
 
                 <xsd:element name="instanceOfferings" type="InstanceOfferingUnion" minOccurs="0"/>
-                <xsd:element name="diskOffering" type="DiskOfferingConfig" maxOccurs="unbounded" minOccurs="0"/>
-                <xsd:element name="account" type="AccountConfig" maxOccurs="unbounded" minOccurs="0"/>
-                <xsd:element name="dns" type="DnsConfig" maxOccurs="unbounded" minOccurs="0"/>
+                <xsd:element name="diskOffering" type="DiskOfferingConfig" maxOccurs="100" minOccurs="0"/>
+                <xsd:element name="account" type="AccountConfig" maxOccurs="100" minOccurs="0"/>
+                <xsd:element name="dns" type="DnsConfig" maxOccurs="100" minOccurs="0"/>
             </xsd:sequence>
         </xsd:complexType>
     </xsd:element>

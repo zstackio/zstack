@@ -7,8 +7,8 @@
         <xsd:complexType>
             <xsd:sequence>
                 <xsd:element name="default.analyzer.name" type="xsd:string"/>
-                <xsd:element name="analyzerDef" type="analyzerDefType" maxOccurs="unbounded" minOccurs="0"/>
-                <xsd:element name="index" type="indexType" maxOccurs="unbounded" minOccurs="0"/>
+                <xsd:element name="analyzerDef" type="analyzerDefType" maxOccurs="100" minOccurs="0"/>
+                <xsd:element name="index" type="indexType" maxOccurs="100" minOccurs="0"/>
             </xsd:sequence>
         </xsd:complexType>
     </xsd:element>
@@ -20,14 +20,14 @@
                     <xsd:attribute name="factory" type="xsd:string" use="required"/>
                 </xsd:complexType>
             </xsd:element>
-            <xsd:element name="filter" minOccurs="0" maxOccurs="unbounded" type="filterType"/>
+            <xsd:element name="filter" minOccurs="0" maxOccurs="100" type="filterType"/>
         </xsd:sequence>
         <xsd:attribute name="name" type="xsd:string" use="required"/>
     </xsd:complexType>
 
     <xsd:complexType name="filterType">
         <xsd:sequence>
-            <xsd:element name="param" maxOccurs="unbounded" minOccurs="0">
+            <xsd:element name="param" maxOccurs="100" minOccurs="0">
                 <xsd:complexType>
                     <xsd:attribute name="name" type="xsd:string" use="required"/>
                     <xsd:attribute name="value" type="xsd:string" use="required"/>
@@ -39,7 +39,7 @@
 
     <xsd:complexType name="indexType">
         <xsd:sequence>
-            <xsd:element name="prop" maxOccurs="unbounded" minOccurs="0">
+            <xsd:element name="prop" maxOccurs="100" minOccurs="0">
                 <xsd:complexType>
                     <xsd:attribute name="name" type="xsd:string" use="required"/>
                     <xsd:attribute name="analyzer" type="xsd:string"/>

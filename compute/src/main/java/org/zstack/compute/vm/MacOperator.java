@@ -14,6 +14,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -86,7 +87,7 @@ public class MacOperator {
         if (!matcher.matches()) {
             throw new OperationFailureException(operr("Not a valid MAC address [%s]", mac));
         }
-        if ("00:00:00:00:00:00".equals(lowercaseMac) || "ff:ff:ff:ff:ff:ff".equals(lowercaseMac)) {
+        if ("00:00:00:00:00:00".toUpperCase(Locale.ENGLISH).equals(lowercaseMac) || "ff:ff:ff:ff:ff:ff".toUpperCase(Locale.ENGLISH).equals(lowercaseMac)) {
             throw new OperationFailureException(operr("Disallowed address"));
         }
         if (isMulticastMac(lowercaseMac)){

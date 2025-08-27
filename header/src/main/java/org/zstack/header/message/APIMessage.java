@@ -130,7 +130,7 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
                     at = defaultAnnotation;
                 }
 
-                f.setAccessible(true);
+                f.setAccessible(false);
                 FieldParam fp = new FieldParam();
                 fp.field = f;
                 fp.param = at;
@@ -208,7 +208,7 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
             Field f = fp.field;
             final APIParam at = fp.param;
 
-            f.setAccessible(true);
+            f.setAccessible(false);
             Object value = f.get(this);
 
             if (value instanceof String && !at.noTrim()) {

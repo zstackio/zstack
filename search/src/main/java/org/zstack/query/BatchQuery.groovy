@@ -427,7 +427,7 @@ class BatchQuery {
     // c.f. https://stackoverflow.com/questions/41465834
     private static void clearAllClassInfo(Class<?> type) {
         Field globalClassValue = ClassInfo.class.getDeclaredField("globalClassValue")
-        globalClassValue.setAccessible(true)
+        globalClassValue.setAccessible(false)
         GroovyClassValue classValueBean = (GroovyClassValue) globalClassValue.get(null)
         classValueBean.remove(type)
     }

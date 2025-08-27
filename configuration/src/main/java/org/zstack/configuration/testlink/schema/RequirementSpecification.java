@@ -30,7 +30,7 @@ import java.util.List;
  *                 &lt;sequence>
  *                   &lt;element name="scope" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *                   &lt;element name="node_order" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *                   &lt;sequence maxOccurs="unbounded" minOccurs="0">
+ *                   &lt;sequence maxOccurs="100" minOccurs="0">
  *                     &lt;element name="requirement">
  *                       &lt;complexType>
  *                         &lt;complexContent>
@@ -108,7 +108,7 @@ public class RequirementSpecification {
      *       &lt;sequence>
      *         &lt;element name="scope" type="{http://www.w3.org/2001/XMLSchema}string"/>
      *         &lt;element name="node_order" type="{http://www.w3.org/2001/XMLSchema}string"/>
-     *         &lt;sequence maxOccurs="unbounded" minOccurs="0">
+     *         &lt;sequence maxOccurs="100" minOccurs="0">
      *           &lt;element name="requirement">
      *             &lt;complexType>
      *               &lt;complexContent>

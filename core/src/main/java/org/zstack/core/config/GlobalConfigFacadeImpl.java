@@ -189,7 +189,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                 for (Class def : definitionClasses) {
                     for (Field field : def.getDeclaredFields()) {
                         if (Modifier.isStatic(field.getModifiers()) && GlobalConfig.class.isAssignableFrom(field.getType())) {
-                            field.setAccessible(true);
+                            field.setAccessible(false);
 
                             try {
                                 GlobalConfig config = (GlobalConfig) field.get(null);
@@ -528,7 +528,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
             private void link() {
                 for (Field field : globalConfigFields) {
-                    field.setAccessible(true);
+                    field.setAccessible(false);
                     try {
                         GlobalConfig config = (GlobalConfig) field.get(null);
                         if (config == null) {

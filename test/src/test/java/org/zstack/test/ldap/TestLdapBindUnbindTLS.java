@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.springframework.util.SystemPropertyUtils;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.header.identity.AccountInventory;
@@ -21,6 +22,7 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.path.PathUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,7 +70,7 @@ public class TestLdapBindUnbindTLS {
         String url = "ldap://172.20.12.176:389";
         String basedn = "dc=learnitguide,dc=net";
         String managerName = "cn=Manager,dc=learnitguide,dc=net";
-        String managerPassword = "password";
+        String managerPassword = PathUtil.validateSystemProperty(System.getProperty("placeholderName"));
         String uid = "star.guo";
         String password = "miao";
         // add ldap server

@@ -15,7 +15,7 @@ public class ArrayHelper {
                 K obj = (K) e.nextElement();
                 Class ck = obj.getClass();
                 Field f = ck.getDeclaredField(fieldName);
-                f.setAccessible(true);
+                f.setAccessible(false);
                 lst.add((T) f.get(obj));
             }
             return lst.toArray((T[]) Array.newInstance(returnClassType, lst.size()));
@@ -31,7 +31,7 @@ public class ArrayHelper {
             for (K k : c) {
                 Class ck = k.getClass();
                 Field f = ck.getDeclaredField(fieldName);
-                f.setAccessible(true);
+                f.setAccessible(false);
                 lst.add((T) f.get(k));
             }
             return lst.toArray((T[]) Array.newInstance(returnClassType, lst.size()));

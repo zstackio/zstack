@@ -333,7 +333,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                             "query reply[%s] has no method setInventories()", replyClass.getName()
                     ));
                 }
-                setter.setAccessible(true);
+                setter.setAccessible(false);
                 replySetter.put(inventoryClass, setter);
             }
 
@@ -574,7 +574,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             for (String field : apiNoSeeFields.get(clz.getName())) {
                 try {
                     Field f = clz.getDeclaredField(field);
-                    f.setAccessible(true);
+                    f.setAccessible(false);
                     for (Object inv : inventories) {
                         if (!f.getType().isPrimitive() && clz.isInstance(inv)) {
                             f.set(inv, null);

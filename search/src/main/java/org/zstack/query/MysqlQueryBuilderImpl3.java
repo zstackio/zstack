@@ -166,18 +166,18 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             inventoryClass = invClass;
             entityPrimaryKeyField = FieldUtils.getAnnotatedField(Id.class, entityClass);
             primaryKey = entityPrimaryKeyField.getName();
-            entityPrimaryKeyField.setAccessible(true);
+            entityPrimaryKeyField.setAccessible(false);
             inventoryPrimaryKeyField = FieldUtils.getField(primaryKey, inventoryClass);
             if (inventoryPrimaryKeyField != null) {
-                inventoryPrimaryKeyField.setAccessible(true);
+                inventoryPrimaryKeyField.setAccessible(false);
             }
 
             inventoryTypeField = FieldUtils.getAnnotatedFieldOfThisClass(TypeField.class, invClass);
             if (inventoryTypeField != null) {
-                inventoryTypeField.setAccessible(true);
+                inventoryTypeField.setAccessible(false);
                 entityTypeField = FieldUtils.getField(inventoryTypeField.getName(), entityClass);
                 DebugUtils.Assert(entityTypeField != null, String.format("the type field[%s] of inventory class[%s] is not on entity class[%s]", inventoryTypeField.getName(), inventoryClass.getName(), entityClass.getName()));
-                entityTypeField.setAccessible(true);
+                entityTypeField.setAccessible(false);
             }
 
 
@@ -209,7 +209,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             objectInstantiator = objenesis.getInstantiatorOf(inventoryClass);
             List<Field> allFields = FieldUtils.getAllFields(inventoryClass);
             for (Field f : allFields) {
-                f.setAccessible(true);
+                f.setAccessible(false);
                 allFieldsMap.put(f.getName(), f);
 
                 if (!f.isAnnotationPresent(Unqueryable.class) && !f.isAnnotationPresent(Queryable.class)) {

@@ -182,7 +182,7 @@ public class ShellUtils {
                 }
 
                 Field pidField = clz.getDeclaredField("pid");
-                pidField.setAccessible(true);
+                pidField.setAccessible(false);
                 Object value = pidField.get(process);
                 return (Integer) value;
             } catch (Exception e) {
@@ -200,9 +200,9 @@ public class ShellUtils {
 
                 ProcessBuilder pb = new ProcessBuilder(Arrays.asList("/bin/bash", "-c", command));
                 if (baseDir == null) {
-                    baseDir = System.getProperty("user.home");
+                    baseDir = PathUtil.validateSystemProperty(System.getProperty("user.home"));
                 }
-                pb.directory(new File(baseDir));
+                pb.directory(new File(PathUtil.validateAndNormalizePath(baseDir)));
 
                 process = pb.start();
                 command = Utils.maskSensitiveInfo(command);

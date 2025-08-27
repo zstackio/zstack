@@ -23,7 +23,7 @@ import java.util.List;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;sequence maxOccurs="unbounded" minOccurs="0">
+ *         &lt;sequence maxOccurs="100" minOccurs="0">
  *           &lt;element name="TestCase">
  *             &lt;complexType>
  *               &lt;complexContent>
@@ -36,7 +36,7 @@ import java.util.List;
  *             &lt;/complexType>
  *           &lt;/element>
  *         &lt;/sequence>
- *         &lt;sequence maxOccurs="unbounded" minOccurs="0">
+ *         &lt;sequence maxOccurs="100" minOccurs="0">
  *           &lt;element name="Import">
  *             &lt;complexType>
  *               &lt;complexContent>

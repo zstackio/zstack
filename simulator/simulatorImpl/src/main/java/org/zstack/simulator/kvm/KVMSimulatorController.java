@@ -20,6 +20,7 @@ import org.zstack.simulator.AsyncRESTReplyer;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.path.PathUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -380,7 +381,7 @@ public class KVMSimulatorController {
             throw new CloudRuntimeException("checkPhysicalInterface exception on purpose");
         }
         
-        CheckPhysicalNetworkInterfaceCmd cmd = JSONObjectUtil.toObject(body, CheckPhysicalNetworkInterfaceCmd.class);
+        CheckPhysicalNetworkInterfaceCmd cmd = JSONObjectUtil.toObject(PathUtil.validData(body), CheckPhysicalNetworkInterfaceCmd.class);
         CheckPhysicalNetworkInterfaceResponse rsp = new CheckPhysicalNetworkInterfaceResponse();
         if (config.checkPhysicalInterfaceSuccess) {
             rsp.setSuccess(true);

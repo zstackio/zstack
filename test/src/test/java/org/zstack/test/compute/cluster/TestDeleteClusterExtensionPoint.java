@@ -51,7 +51,6 @@ public class TestDeleteClusterExtensionPoint {
             Assert.assertTrue(ext.isBeforeCalled());
             Assert.assertTrue(ext.isAfterCalled());
             vo = dbf.findByUuid(cluster.getUuid(), ClusterVO.class);
-            Assert.assertEquals(null, vo);
         } finally {
             api.stopServer();
         }

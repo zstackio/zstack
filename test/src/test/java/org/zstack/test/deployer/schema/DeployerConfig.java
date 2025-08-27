@@ -27,9 +27,9 @@ import java.util.List;
  *         &lt;element name="images" type="{http://zstack.org/schema/zstack}ImageUnion" minOccurs="0"/>
  *         &lt;element name="vm" type="{http://zstack.org/schema/zstack}VmUnion" minOccurs="0"/>
  *         &lt;element name="instanceOfferings" type="{http://zstack.org/schema/zstack}InstanceOfferingUnion" minOccurs="0"/>
- *         &lt;element name="diskOffering" type="{http://zstack.org/schema/zstack}DiskOfferingConfig" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="account" type="{http://zstack.org/schema/zstack}AccountConfig" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="dns" type="{http://zstack.org/schema/zstack}DnsConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="diskOffering" type="{http://zstack.org/schema/zstack}DiskOfferingConfig" maxOccurs="100" minOccurs="0"/>
+ *         &lt;element name="account" type="{http://zstack.org/schema/zstack}AccountConfig" maxOccurs="100" minOccurs="0"/>
+ *         &lt;element name="dns" type="{http://zstack.org/schema/zstack}DnsConfig" maxOccurs="100" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>

@@ -25,7 +25,7 @@ public class ParamValidator {
             Field f = entry.getKey();
             Param param = entry.getValue();
 
-            f.setAccessible(true);
+            f.setAccessible(false);
             Object value = f.get(verifiable);
             if (param.required() && value == null) {
                 errors.add(String.format("field[%s] cannot be null.", f.getName()));

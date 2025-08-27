@@ -55,7 +55,7 @@ public class Entity {
                 .stream().filter(f -> !Modifier.isStatic(f.getModifiers()) && !Modifier.isTransient(f.getModifiers()))
                 .forEach(f -> {
                     fields.put(f.getName(), f);
-                    f.setAccessible(true);
+                    f.setAccessible(false);
                 });
     }
 

@@ -49,7 +49,7 @@ public class ResourceVO {
         ResourceAttributes at = getClass().getAnnotation(ResourceAttributes.class);
         f = FieldUtils.getField(at == null ? "name" : at.nameField(), getClass());
         if (f != null) {
-            f.setAccessible(true);
+            f.setAccessible(false);
             nameFields.put(getClass(), f);
         }
 

@@ -35,9 +35,9 @@ public class ObjectUtils {
             }
 
             for (Field f : FieldUtils.getAllFields(srcClass)) {
-                f.setAccessible(true);
+                f.setAccessible(false);
                 Field dstf = dstFields.get(f.getName());
-                dstf.setAccessible(true);
+                dstf.setAccessible(false);
                 dstf.set(dst, f.get(src));
             }
 

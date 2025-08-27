@@ -149,17 +149,17 @@ public class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
             });
             Method call = action.getClass().getMethod("call");
             Field f = action.getClass().getDeclaredField("sessionId");
-            f.setAccessible(true);
+            f.setAccessible(false);
             f.set(action, ZQLContext.getAPISessionUuid());
             Object result = call.invoke(action);
             Field err = result.getClass().getField("error");
-            err.setAccessible(true);
+            err.setAccessible(false);
             Object ob = err.get(result);
             if (ob != null) {
                 throw new OperationFailureException(operr("call action[%s] failed, cause: %s", apiName, JSONObjectUtil.toJsonString(ob)));
             } else {
                 Field field = result.getClass().getField("value");
-                field.setAccessible(true);
+                field.setAccessible(false);
                 ob = field.get(result);
                 return result(ob, o);
             }
@@ -177,7 +177,7 @@ public class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
 
     private Object result(Object res, List<String> outputs) throws ReflectiveOperationException {
         Field f = FieldUtils.getField(outputs.get(0), res.getClass());
-        f.setAccessible(true);
+        f.setAccessible(false);
         Object tmp = f.get(res);
         if (outputs.size() == 1) {
             return tmp;
@@ -198,7 +198,7 @@ public class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
     private void setField(Object o, String key, Object value) {
         try {
             Field f = o.getClass().getDeclaredField(key);
-            f.setAccessible(true);
+            f.setAccessible(false);
             if (f.getType().getSimpleName().equals("Integer") && value instanceof Long) {
                 f.set(o, ((Long)value).intValue());
             } else if (f.getType().getSimpleName().equals("Long") && value instanceof Integer) {

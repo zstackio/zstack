@@ -6,21 +6,21 @@
 
     <xsd:complexType name="PrimaryStorageUnion">
         <xsd:sequence>
-            <xsd:element name="simulatorPrimaryStorage" type="SimulatorPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
-            <xsd:element name="nfsPrimaryStorage" type="NfsPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
-            <xsd:element name="iscsiBtrfsPrimaryStorage" type="IscsiFileSystemPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
-            <xsd:element name="localPrimaryStorage" type="LocalPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
-            <xsd:element name="cephPrimaryStorage" type="CephPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
-            <xsd:element name="sharedMountPointPrimaryStorage" type="SharedMountPointPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="simulatorPrimaryStorage" type="SimulatorPrimaryStorageConfig" maxOccurs="100" minOccurs="0"/>
+            <xsd:element name="nfsPrimaryStorage" type="NfsPrimaryStorageConfig" maxOccurs="100" minOccurs="0"/>
+            <xsd:element name="iscsiBtrfsPrimaryStorage" type="IscsiFileSystemPrimaryStorageConfig" maxOccurs="100" minOccurs="0"/>
+            <xsd:element name="localPrimaryStorage" type="LocalPrimaryStorageConfig" maxOccurs="100" minOccurs="0"/>
+            <xsd:element name="cephPrimaryStorage" type="CephPrimaryStorageConfig" maxOccurs="100" minOccurs="0"/>
+            <xsd:element name="sharedMountPointPrimaryStorage" type="SharedMountPointPrimaryStorageConfig" maxOccurs="100" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 
     <xsd:complexType name="BackupStorageUnion">
         <xsd:sequence>
-            <xsd:element name="simulatorBackupStorage" type="SimulatorBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
-            <xsd:element name="sftpBackupStorage" type="SftpBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
-            <xsd:element name="cephBackupStorage" type="CephBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
-            <xsd:element name="imageStoreBackupStorage" type="ImageStoreBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="simulatorBackupStorage" type="SimulatorBackupStorageConfig" maxOccurs="100" minOccurs="0"/>
+            <xsd:element name="sftpBackupStorage" type="SftpBackupStorageConfig" maxOccurs="100" minOccurs="0"/>
+            <xsd:element name="cephBackupStorage" type="CephBackupStorageConfig" maxOccurs="100" minOccurs="0"/>
+            <xsd:element name="imageStoreBackupStorage" type="ImageStoreBackupStorageConfig" maxOccurs="100" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 

@@ -10,12 +10,12 @@
                 <xsd:element name="id" type="xsd:string"
                     minOccurs="0"></xsd:element>
 
-                <xsd:sequence maxOccurs="unbounded" minOccurs="0">
+                <xsd:sequence maxOccurs="100" minOccurs="0">
                     <xsd:element name="interceptor" type="xsd:string"
                         minOccurs="0"></xsd:element>
                 </xsd:sequence>
 
-                <xsd:sequence maxOccurs="unbounded" minOccurs="0">
+                <xsd:sequence maxOccurs="100" minOccurs="0">
                     <xsd:element name="message">
                         <xsd:complexType>
                             <xsd:sequence>
@@ -23,11 +23,11 @@
                                     minOccurs="1"></xsd:element>
                                 <xsd:element name="serviceId" type="xsd:string"
                                     minOccurs="0"></xsd:element>
-                                <xsd:sequence maxOccurs="unbounded" minOccurs="0">
+                                <xsd:sequence maxOccurs="100" minOccurs="0">
                                     <xsd:element name="interceptor" type="xsd:string"
                                         minOccurs="0"></xsd:element>
                                 </xsd:sequence>
-                                <xsd:sequence maxOccurs="unbounded" minOccurs="0">
+                                <xsd:sequence maxOccurs="100" minOccurs="0">
                                     <xsd:element name="role" type="xsd:string"
                                         minOccurs="0"></xsd:element>
                                 </xsd:sequence>

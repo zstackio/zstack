@@ -30,7 +30,7 @@ import javax.xml.bind.annotation.XmlType;
  *             &lt;/complexContent>
  *           &lt;/complexType>
  *         &lt;/element>
- *         &lt;element name="filter" type="{http://zstack.org/schema/zstack}filterType" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="filter" type="{http://zstack.org/schema/zstack}filterType" maxOccurs="100" minOccurs="0"/>
  *       &lt;/sequence>
  *       &lt;attribute name="name" use="required" type="{http://www.w3.org/2001/XMLSchema}string" />
  *     &lt;/restriction>

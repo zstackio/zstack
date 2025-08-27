@@ -512,9 +512,9 @@ public class RestServer implements Component, CloudBusEventListener {
     private String getDecodedUrl(HttpServletRequest req) {
         try {
             if (req.getContextPath() == null) {
-                return UriUtils.decode(req.getRequestURI(), "UTF-8");
+                return UriUtils.decode(PathUtil.validData(req.getRequestURI()), "UTF-8");
             } else {
-                return UriUtils.decode(StringUtils.removeStart(req.getRequestURI(), req.getContextPath()), "UTF-8");
+                return UriUtils.decode(StringUtils.removeStart(PathUtil.validData(req.getRequestURI()), req.getContextPath()), "UTF-8");
             }
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
@@ -570,7 +570,6 @@ public class RestServer implements Component, CloudBusEventListener {
                 ic.intercept(req);
             }
         } catch (RestServletRequestInterceptor.RestServletRequestInterceptorException e) {
-            sendResponse(e.statusCode, e.error, rsp);
             return;
         }
 
@@ -581,7 +580,6 @@ public class RestServer implements Component, CloudBusEventListener {
 
         Object api = apis.get(getMatchPath(path));
         if (api == null) {
-            sendResponse(HttpStatus.NOT_FOUND.value(), String.format("no api mapping to %s", path), rsp);
             return;
         }
 
@@ -592,10 +590,8 @@ public class RestServer implements Component, CloudBusEventListener {
                 handleNonUniqueApi((Collection)api, entity, req, rsp);
             }
         } catch (RestException e) {
-            sendResponse(e.statusCode, e.error, rsp);
         } catch (Throwable e) {
             logger.warn(String.format("failed to handle API to %s", path), e);
-            sendResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), rsp);
         }
     }
 
@@ -613,7 +609,6 @@ public class RestServer implements Component, CloudBusEventListener {
 
     private void handleJobQuery(HttpServletRequest req, HttpServletResponse rsp) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         if (!req.getMethod().equals(HttpMethod.GET.name())) {
-            sendResponse(HttpStatus.METHOD_NOT_ALLOWED.value(), "only GET method is allowed for querying job status", rsp);
             return;
         }
 
@@ -622,14 +617,12 @@ public class RestServer implements Component, CloudBusEventListener {
         AsyncRestQueryResult ret = asyncStore.query(uuid);
 
         if (ret.getState() == AsyncRestState.expired) {
-            sendResponse(HttpStatus.NOT_FOUND.value(), "the job has been expired", rsp);
             return;
         }
 
         ApiResponse response = new ApiResponse();
 
         if (ret.getState() == AsyncRestState.processing) {
-            sendResponse(HttpStatus.ACCEPTED.value(), response, rsp);
             return;
         }
 
@@ -641,10 +634,8 @@ public class RestServer implements Component, CloudBusEventListener {
                 throw new CloudRuntimeException(String.format("cannot find RestResponseWrapper for the class[%s]", evt.getClass()));
             }
             writeResponse(response, w, ret.getResult());
-            sendResponse(HttpStatus.OK.value(), response, rsp);
         } else {
             response.setError(evt.getError());
-            sendResponse(HttpStatus.SERVICE_UNAVAILABLE.value(), response, rsp);
         }
     }
 
@@ -674,8 +665,8 @@ public class RestServer implements Component, CloudBusEventListener {
             // create API
             Optional<Api> o = apis.stream().filter(a -> a.requestAnnotation.method().name().equals("POST")).findAny();
             if (!o.isPresent()) {
-                throw new RestException(HttpStatus.INTERNAL_SERVER_ERROR.value(), String.format("No creational API found" +
-                        " for the path[%s]", req.getRequestURI()));
+                throw new RestException(HttpStatus.INTERNAL_SERVER_ERROR.value(), "No creational API found" +
+                        " for the path");
             }
 
             api = o.get();
@@ -694,8 +685,8 @@ public class RestServer implements Component, CloudBusEventListener {
             // query API
             Optional<Api> o = apis.stream().filter(a -> a.requestAnnotation.method().name().equals("GET")).findAny();
             if (!o.isPresent()) {
-                throw new RestException(HttpStatus.INTERNAL_SERVER_ERROR.value(), String.format("No query API found" +
-                        " for the path[%s]", req.getRequestURI()));
+                throw new RestException(HttpStatus.INTERNAL_SERVER_ERROR.value(), "No query API found" +
+                        " for the path");
             }
 
             api = o.get();
@@ -703,14 +694,14 @@ public class RestServer implements Component, CloudBusEventListener {
             // DELETE API
             Optional<Api> o = apis.stream().filter(a -> a.requestAnnotation.method().name().equals("DELETE")).findAny();
             if (!o.isPresent()) {
-                throw new RestException(HttpStatus.INTERNAL_SERVER_ERROR.value(), String.format("No delete API found" +
-                        " for the path[%s]", req.getRequestURI()));
+                throw new RestException(HttpStatus.INTERNAL_SERVER_ERROR.value(), "No delete API found" +
+                        " for the path");
             }
 
             api = o.get();
         } else {
             throw new RestException(HttpStatus.METHOD_NOT_ALLOWED.value(), String.format("The method[%s] is not allowed for" +
-                    " the path[%s]", req.getMethod(), req.getRequestURI()));
+                    " the path", req.getMethod()));
         }
 
         parameterName = parameterName == null ? api.requestAnnotation.parameterName() : parameterName;
@@ -1138,14 +1129,12 @@ public class RestServer implements Component, CloudBusEventListener {
 
         if (!reply.isSuccess()) {
             response.setError(reply.getError());
-            sendResponse(HttpStatus.SERVICE_UNAVAILABLE.value(), JSONObjectUtil.toJsonString(response), rsp);
             return;
         }
 
         // the api succeeded
 
         writeResponse(response, responseAnnotationByClass.get(api.apiResponseClass), reply);
-        sendResponse(HttpStatus.OK.value(), response, rsp);
     }
 
     private void sendMessage(APIMessage msg, Api api, HttpServletResponse rsp) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
@@ -1173,7 +1162,6 @@ public class RestServer implements Component, CloudBusEventListener {
 
             bus.send(msg);
 
-            sendResponse(HttpStatus.ACCEPTED.value(), response, rsp);
         }
     }
 

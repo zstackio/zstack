@@ -465,7 +465,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 DebugUtils.Assert(delegate != null, "cannot get RecoveryAwareAMQConnection");
                 Field _missedHeartbeats = FieldUtils.getField("_missedHeartbeats", RecoveryAwareAMQConnection.class);
                 DebugUtils.Assert(_missedHeartbeats!=null, "cannot find _missedHeartbeats");
-                _missedHeartbeats.setAccessible(true);
+                _missedHeartbeats.setAccessible(false);
                 try {
                     _missedHeartbeats.set(delegate, 100);
                 } catch (IllegalAccessException e) {

@@ -3,6 +3,7 @@ package org.zstack.utils.test;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.zstack.utils.Compresser;
+import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +13,7 @@ public class TestCompresser2 {
     public void test() throws IOException {
         String path = System.getProperty("file");
         String outpath = System.getProperty("out");
-        File f = new File(path);
+        File f = new File(PathUtil.validateAndNormalizePath(path));
         File outFile = new File(outpath);
         String str = FileUtils.readFileToString(f);
         byte[] ret = Compresser.deflate(str.getBytes());

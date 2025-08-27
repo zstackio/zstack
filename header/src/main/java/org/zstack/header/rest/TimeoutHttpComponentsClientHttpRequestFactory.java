@@ -32,15 +32,15 @@ public class TimeoutHttpComponentsClientHttpRequestFactory extends HttpComponent
 
         try {
             Field httpContextField = request.getClass().getDeclaredField("httpContext");
-            httpContextField.setAccessible(true);
+            httpContextField.setAccessible(false);
             HttpContext httpContext = (HttpContext) httpContextField.get(request);
             RequestConfig requestConfig = (RequestConfig) httpContext.getAttribute("http.request-config");
 
             Field connectTimeoutField = requestConfig.getClass().getDeclaredField("connectTimeout");
-            connectTimeoutField.setAccessible(true);
+            connectTimeoutField.setAccessible(false);
             connectTimeoutField.set(requestConfig, config.connectTimeout);
             Field socketTimeoutField = requestConfig.getClass().getDeclaredField("socketTimeout");
-            socketTimeoutField.setAccessible(true);
+            socketTimeoutField.setAccessible(false);
             socketTimeoutField.set(requestConfig, config.readTimeout);
 
         }catch (Throwable t){

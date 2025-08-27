@@ -37,7 +37,7 @@ public class RBACEntity {
             }
 
             try {
-                field.setAccessible(true);
+                field.setAccessible(false);
                 Object obj = field.get(apiMessage);
 
                 if (obj == null) {

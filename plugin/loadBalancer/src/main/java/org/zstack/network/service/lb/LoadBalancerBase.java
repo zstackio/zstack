@@ -2765,7 +2765,7 @@ public class LoadBalancerBase {
                                 .find();
                         if (server.containsKey("weight")) {
                             Long serverIpWeight = Long.valueOf(server.get("weight"));
-                            if(serverIpWeight != serverIpVO.getWeight()){
+                            if(!Objects.equals(serverIpWeight, serverIpVO.getWeight())){
                                 serverIpVO.setWeight(serverIpWeight);
                                 dbf.update(serverIpVO);
                                 canRefresh = true;

@@ -23,7 +23,7 @@ import java.util.List;
  *         &lt;element name="protocol" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="instancePort" type="{http://www.w3.org/2001/XMLSchema}unsignedInt" minOccurs="0"/>
  *         &lt;element name="loadBalancerPort" type="{http://www.w3.org/2001/XMLSchema}unsignedInt" minOccurs="0"/>
- *         &lt;element name="vmNicRef" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="vmNicRef" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="100" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>

@@ -75,7 +75,7 @@ public class DeployerValidator {
 
     private void validateObject(Object obj) throws IllegalArgumentException, IllegalAccessException {
         for (Field f : obj.getClass().getDeclaredFields()) {
-            f.setAccessible(true);
+            f.setAccessible(false);
             if (Collection.class.isAssignableFrom(f.getType())) {
                 validateCollection(f, obj);
             } else {

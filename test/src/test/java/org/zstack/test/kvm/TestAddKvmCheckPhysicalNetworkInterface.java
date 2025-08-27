@@ -50,10 +50,8 @@ public class TestAddKvmCheckPhysicalNetworkInterface {
         config.connectException = false;
         config.hostFactException = false;
         config.hostFactSuccess = true;
-        ClusterInventory cinv = api.listClusters(null).get(0);
         APIAddKVMHostMsg msg = new APIAddKVMHostMsg();
         msg.setName("KVM-1");
-        msg.setClusterUuid(cinv.getUuid());
         msg.setManagementIp("localhost");
         msg.setUsername("admin");
         msg.setPassword("password");

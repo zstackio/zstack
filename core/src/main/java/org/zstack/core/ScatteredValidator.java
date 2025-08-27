@@ -43,7 +43,7 @@ public abstract class ScatteredValidator {
                 }
             }
 
-            m.setAccessible(true);
+            m.setAccessible(false);
             methods.add(m);
         }
         return methods;

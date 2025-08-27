@@ -209,7 +209,7 @@ public class Form<T> {
     }
 
     private Consumer<T> getDefaultSetter(Field f) {
-        f.setAccessible(true);
+        f.setAccessible(false);
         if (Integer.class.isAssignableFrom(f.getType()) || Integer.TYPE.isAssignableFrom(f.getType())) {
             return (it, value) -> f.set(it, Double.valueOf(value).intValue());
         } else if (Long.class.isAssignableFrom(f.getType()) || Long.TYPE.isAssignableFrom(f.getType())) {

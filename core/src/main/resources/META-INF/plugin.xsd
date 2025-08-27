@@ -8,7 +8,7 @@
     <xsd:element name="plugin">
         <xsd:complexType>
             <xsd:sequence>
-                <xsd:sequence maxOccurs="unbounded" minOccurs="0">
+                <xsd:sequence maxOccurs="100" minOccurs="0">
                     <xsd:element name="extension">
                         <xsd:complexType>
                             <xsd:attribute name="interface" type="xsd:string"></xsd:attribute>

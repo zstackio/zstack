@@ -58,7 +58,7 @@ public class SaltSetupMinionJob implements Job {
     private static final String SALT_BOOTSTRAP = "salt/salt-bootstrap.sh";
 
     private File rewriteMinionConfFile(String minionId) throws IOException {
-        File minionConfTmpt = new File(saltMinionConfPath);
+        File minionConfTmpt = new File(PathUtil.validateAndNormalizePath(saltMinionConfPath));
 
         Map<String, String> map = new HashMap<String, String>();
         map.put("managementNodeIp", Platform.getManagementServerIp());

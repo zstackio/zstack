@@ -19,7 +19,7 @@ import java.util.List;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="clusters" type="{http://zstack.org/schema/zstack}ClusterUnion" minOccurs="0"/>
- *         &lt;element name="backupStorageRef" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="backupStorageRef" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="100" minOccurs="0"/>
  *         &lt;element name="l2Networks" type="{http://zstack.org/schema/zstack}L2NetworkUnion" minOccurs="0"/>
  *         &lt;element name="primaryStorages" type="{http://zstack.org/schema/zstack}PrimaryStorageUnion" minOccurs="0"/>
  *       &lt;/sequence>

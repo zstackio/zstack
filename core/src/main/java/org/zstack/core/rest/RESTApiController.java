@@ -16,6 +16,7 @@ import org.zstack.header.rest.RestAPIResponse;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.path.PathUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,9 +34,9 @@ public class RESTApiController {
     @RequestMapping(value = RESTConstant.REST_API_RESULT + "{uuid}", method = {RequestMethod.GET, RequestMethod.PUT})
     public void queryResult(@PathVariable String uuid, HttpServletResponse rsp) throws IOException {
         try {
-            RestAPIResponse apiRsp = restApi.getResult(uuid);
+            RestAPIResponse apiRsp = restApi.getResult(PathUtil.validData(uuid));
             if (apiRsp == null) {
-                rsp.sendError(HttpStatus.SC_NOT_FOUND, String.format("No api result[uuid:%s] found", uuid));
+                rsp.sendError(HttpStatus.SC_NOT_FOUND, String.format("No api result[uuid:%s] found", PathUtil.validData(uuid)));
                 return;
             }
             rsp.setCharacterEncoding("UTF-8");
@@ -76,8 +77,8 @@ public class RESTApiController {
             PrintWriter writer = response.getWriter();
             writer.write(ret);
         } catch (Throwable t) {
-            StringBuilder sb = new StringBuilder(String.format("Error when calling %s", request.getRequestURI()));
-            sb.append(String.format("\nheaders: %s", entity.getHeaders().toString()));
+            StringBuilder sb = new StringBuilder("Error when calling ");
+            sb.append(String.format("\nheaders: %s", PathUtil.validData(entity.getHeaders().toString())));
             sb.append(String.format("\nbody: %s", entity.getBody()));
             sb.append(String.format("\nexception message: %s", t.getMessage()));
             logger.debug(sb.toString(), t);

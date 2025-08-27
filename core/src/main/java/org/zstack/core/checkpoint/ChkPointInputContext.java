@@ -18,7 +18,7 @@ class ChkPointInputContext implements Serializable {
             do {
                 for (Field f : cp.getClass().getDeclaredFields()) {
                     if (f.isAnnotationPresent(ChkPointInput.class)) {
-                        f.setAccessible(true);
+                        f.setAccessible(false);
                         if (!inputs.containsKey(f.getName())) {
                             String err = "Cannot find input field: " + f.getName() + " in context for CheckPoint " + cp.getClass().getCanonicalName()
                                     + ". This is probably source code changed after last time saving check point context";
@@ -43,7 +43,7 @@ class ChkPointInputContext implements Serializable {
         do {
             for (Field f : cp.getClass().getDeclaredFields()) {
                 if (f.isAnnotationPresent(ChkPointInput.class)) {
-                    f.setAccessible(true);
+                    f.setAccessible(false);
                     inputs.put(f.getName(), f.get(cp));
                 }
             }
