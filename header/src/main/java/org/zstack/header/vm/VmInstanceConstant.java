@@ -80,7 +80,7 @@ public interface VmInstanceConstant {
         SetVmQga
     }
 
-    String USER_VM_REGEX_PASSWORD = "[\\da-zA-Z-`=\\\\\\[\\];',./~!@#$%^&*()_+|{}:\"<>?]{1,}";
+    String USER_VM_REGEX_PASSWORD = "[\\da-zA-Z-`=\\\\\\[\\];',./~!@#$%^&*()_+|{}:\"<>?]{0,}";
 
     enum Capability {
         LiveMigration,

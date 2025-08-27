@@ -2690,33 +2690,6 @@ abstract class ApiHelper {
     }
 
 
-    def attachGuestToolsIsoToVm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AttachGuestToolsIsoToVmAction.class) Closure c) {
-        def a = new org.zstack.sdk.AttachGuestToolsIsoToVmAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def attachIscsiServerToCluster(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AttachIscsiServerToClusterAction.class) Closure c) {
         def a = new org.zstack.sdk.AttachIscsiServerToClusterAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -12707,33 +12680,6 @@ abstract class ApiHelper {
     }
 
 
-    def detachGuestToolsIsoFromVm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DetachGuestToolsIsoFromVmAction.class) Closure c) {
-        def a = new org.zstack.sdk.DetachGuestToolsIsoFromVmAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def detachHostFromHostSchedulingRuleGroup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DetachHostFromHostSchedulingRuleGroupAction.class) Closure c) {
         def a = new org.zstack.sdk.DetachHostFromHostSchedulingRuleGroupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -16325,33 +16271,6 @@ abstract class ApiHelper {
     }
 
 
-    def getLatestGuestToolsForVm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetLatestGuestToolsForVmAction.class) Closure c) {
-        def a = new org.zstack.sdk.GetLatestGuestToolsForVmAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def getLicenseAddOns(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetLicenseAddOnsAction.class) Closure c) {
         def a = new org.zstack.sdk.GetLicenseAddOnsAction()
         
@@ -18460,33 +18379,6 @@ abstract class ApiHelper {
 
     def getVmEmulatorPinning(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmEmulatorPinningAction.class) Closure c) {
         def a = new org.zstack.sdk.GetVmEmulatorPinningAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def getVmGuestToolsInfo(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmGuestToolsInfoAction.class) Closure c) {
-        def a = new org.zstack.sdk.GetVmGuestToolsInfoAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -22445,35 +22337,6 @@ abstract class ApiHelper {
 
     def queryGpuDevice(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryGpuDeviceAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryGpuDeviceAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-        a.conditions = a.conditions.collect { it.toString() }
-
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def queryGuestToolsState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryGuestToolsStateAction.class) Closure c) {
-        def a = new org.zstack.sdk.QueryGuestToolsStateAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -32025,33 +31888,6 @@ abstract class ApiHelper {
     }
 
 
-    def updateGuestToolsState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateGuestToolsStateAction.class) Closure c) {
-        def a = new org.zstack.sdk.UpdateGuestToolsStateAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def updateHaStrategyCondition(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateHaStrategyConditionAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateHaStrategyConditionAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -34266,33 +34102,6 @@ abstract class ApiHelper {
     }
 
 
-    def updateVmNetworkConfig(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateVmNetworkConfigAction.class) Closure c) {
-        def a = new org.zstack.sdk.UpdateVmNetworkConfigAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def updateVmNicDriver(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateVmNicDriverAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateVmNicDriverAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -35354,6 +35163,307 @@ abstract class ApiHelper {
 
     def syncDatabaseBackupFromImageStoreBackupStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.databasebackup.SyncDatabaseBackupFromImageStoreBackupStorageAction.class) Closure c) {
         def a = new org.zstack.sdk.databasebackup.SyncDatabaseBackupFromImageStoreBackupStorageAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def attachGuestToolsIsoToVm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.guesttools.AttachGuestToolsIsoToVmAction.class) Closure c) {
+        def a = new org.zstack.sdk.guesttools.AttachGuestToolsIsoToVmAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def detachGuestToolsIsoFromVm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.guesttools.DetachGuestToolsIsoFromVmAction.class) Closure c) {
+        def a = new org.zstack.sdk.guesttools.DetachGuestToolsIsoFromVmAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getLatestGuestToolsForVm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.guesttools.GetLatestGuestToolsForVmAction.class) Closure c) {
+        def a = new org.zstack.sdk.guesttools.GetLatestGuestToolsForVmAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getVmGuestToolsInfo(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.guesttools.GetVmGuestToolsInfoAction.class) Closure c) {
+        def a = new org.zstack.sdk.guesttools.GetVmGuestToolsInfoAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryGuestToolsState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.guesttools.QueryGuestToolsStateAction.class) Closure c) {
+        def a = new org.zstack.sdk.guesttools.QueryGuestToolsStateAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updateGuestToolsState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.guesttools.UpdateGuestToolsStateAction.class) Closure c) {
+        def a = new org.zstack.sdk.guesttools.UpdateGuestToolsStateAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updateVmNetworkConfig(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.guesttools.UpdateVmNetworkConfigAction.class) Closure c) {
+        def a = new org.zstack.sdk.guesttools.UpdateVmNetworkConfigAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def createVmCustomSpecification(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.guesttools.advanced.CreateVmCustomSpecificationAction.class) Closure c) {
+        def a = new org.zstack.sdk.guesttools.advanced.CreateVmCustomSpecificationAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def deleteVmCustomSpecification(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.guesttools.advanced.DeleteVmCustomSpecificationAction.class) Closure c) {
+        def a = new org.zstack.sdk.guesttools.advanced.DeleteVmCustomSpecificationAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryVmCustomSpecification(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.guesttools.advanced.QueryVmCustomSpecificationAction.class) Closure c) {
+        def a = new org.zstack.sdk.guesttools.advanced.QueryVmCustomSpecificationAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updateVmCustomSpecification(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.guesttools.advanced.UpdateVmCustomSpecificationAction.class) Closure c) {
+        def a = new org.zstack.sdk.guesttools.advanced.UpdateVmCustomSpecificationAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

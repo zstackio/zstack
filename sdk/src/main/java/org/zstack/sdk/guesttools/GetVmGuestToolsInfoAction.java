@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.guesttools;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AttachGuestToolsIsoToVmAction extends AbstractAction {
+public class GetVmGuestToolsInfoAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AttachGuestToolsIsoToVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AttachGuestToolsIsoToVmResult value;
+        public org.zstack.sdk.guesttools.GetVmGuestToolsInfoResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -27,6 +27,9 @@ public class AttachGuestToolsIsoToVmAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.Set debug;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -46,12 +49,6 @@ public class AttachGuestToolsIsoToVmAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -60,8 +57,8 @@ public class AttachGuestToolsIsoToVmAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AttachGuestToolsIsoToVmResult value = res.getResult(org.zstack.sdk.AttachGuestToolsIsoToVmResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AttachGuestToolsIsoToVmResult() : value; 
+        org.zstack.sdk.guesttools.GetVmGuestToolsInfoResult value = res.getResult(org.zstack.sdk.guesttools.GetVmGuestToolsInfoResult.class);
+        ret.value = value == null ? new org.zstack.sdk.guesttools.GetVmGuestToolsInfoResult() : value; 
 
         return ret;
     }
@@ -90,11 +87,11 @@ public class AttachGuestToolsIsoToVmAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/vm-instances/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/vm-instances/{uuid}/guest-tools-infos";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "attachGuestToolsIsoToVm";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

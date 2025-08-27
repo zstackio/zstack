@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.guesttools.advanced;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateVmNetworkConfigAction extends AbstractAction {
+public class DeleteVmCustomSpecificationAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateVmNetworkConfigAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateVmNetworkConfigResult value;
+        public org.zstack.sdk.guesttools.advanced.DeleteVmCustomSpecificationResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,10 @@ public class UpdateVmNetworkConfigAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
+    public java.lang.String uuid;
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List vmNicUuids;
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +63,8 @@ public class UpdateVmNetworkConfigAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateVmNetworkConfigResult value = res.getResult(org.zstack.sdk.UpdateVmNetworkConfigResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateVmNetworkConfigResult() : value; 
+        org.zstack.sdk.guesttools.advanced.DeleteVmCustomSpecificationResult value = res.getResult(org.zstack.sdk.guesttools.advanced.DeleteVmCustomSpecificationResult.class);
+        ret.value = value == null ? new org.zstack.sdk.guesttools.advanced.DeleteVmCustomSpecificationResult() : value; 
 
         return ret;
     }
@@ -93,11 +93,11 @@ public class UpdateVmNetworkConfigAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/vm-instances/{vmInstanceUuid}/update-nic-config";
+        info.httpMethod = "DELETE";
+        info.path = "/vm-custom-specifications/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateVmNetworkConfig";
+        info.parameterName = "";
         return info;
     }
 

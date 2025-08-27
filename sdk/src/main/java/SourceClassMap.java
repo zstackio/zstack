@@ -94,8 +94,9 @@ public class SourceClassMap {
 			put("org.zstack.externalbackup.zbox.ZBoxVmBackupInfo", "org.zstack.sdk.zbox.ZBoxVmBackupInfo");
 			put("org.zstack.externalbackup.zbox.ZBoxVolumeBackupInfo", "org.zstack.sdk.zbox.ZBoxVolumeBackupInfo");
 			put("org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory", "org.zstack.sdk.FaultToleranceVmGroupInventory");
-			put("org.zstack.guesttools.GuestToolsInventory", "org.zstack.sdk.GuestToolsInventory");
-			put("org.zstack.guesttools.GuestToolsStateInventory", "org.zstack.sdk.GuestToolsStateInventory");
+			put("org.zstack.guesttools.GuestToolsInventory", "org.zstack.sdk.guesttools.GuestToolsInventory");
+			put("org.zstack.guesttools.GuestToolsStateInventory", "org.zstack.sdk.guesttools.GuestToolsStateInventory");
+			put("org.zstack.guesttools.advanced.VmCustomSpecificationInventory", "org.zstack.sdk.guesttools.advanced.VmCustomSpecificationInventory");
 			put("org.zstack.ha.HaStrategyConditionInventory", "org.zstack.sdk.HaStrategyConditionInventory");
 			put("org.zstack.header.acl.AccessControlListEntryInventory", "org.zstack.sdk.AccessControlListEntryInventory");
 			put("org.zstack.header.acl.AccessControlListInventory", "org.zstack.sdk.AccessControlListInventory");
@@ -127,6 +128,8 @@ public class SourceClassMap {
 			put("org.zstack.header.cluster.PowerOffHardwareResult", "org.zstack.sdk.PowerOffHardwareResult");
 			put("org.zstack.header.configuration.DiskOfferingInventory", "org.zstack.sdk.DiskOfferingInventory");
 			put("org.zstack.header.configuration.InstanceOfferingInventory", "org.zstack.sdk.InstanceOfferingInventory");
+			put("org.zstack.header.configuration.VmCustomSpecificationDomainMode", "org.zstack.sdk.VmCustomSpecificationDomainMode");
+			put("org.zstack.header.configuration.VmCustomSpecificationStruct", "org.zstack.sdk.VmCustomSpecificationStruct");
 			put("org.zstack.header.console.ConsoleInventory", "org.zstack.sdk.ConsoleInventory");
 			put("org.zstack.header.console.ConsoleProxyAgentInventory", "org.zstack.sdk.ConsoleProxyAgentInventory");
 			put("org.zstack.header.core.external.service.ExternalServiceCapabilities", "org.zstack.sdk.ExternalServiceCapabilities");
@@ -802,8 +805,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GlobalConfigOptions", "org.zstack.core.config.GlobalConfigOptions");
 			put("org.zstack.sdk.GlobalConfigTemplateInventory", "org.zstack.templateConfig.GlobalConfigTemplateInventory");
 			put("org.zstack.sdk.GpuDeviceInventory", "org.zstack.pciDevice.gpu.GpuDeviceInventory");
-			put("org.zstack.sdk.GuestToolsInventory", "org.zstack.guesttools.GuestToolsInventory");
-			put("org.zstack.sdk.GuestToolsStateInventory", "org.zstack.guesttools.GuestToolsStateInventory");
 			put("org.zstack.sdk.HaStrategyConditionInventory", "org.zstack.ha.HaStrategyConditionInventory");
 			put("org.zstack.sdk.HaiTaiSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.haitai.HaiTaiSecretResourcePoolInventory");
 			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");
@@ -1137,6 +1138,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmCPUSpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmCPUSpendingDetails");
 			put("org.zstack.sdk.VmCapabilities", "org.zstack.header.vm.VmCapabilities");
 			put("org.zstack.sdk.VmCdRomInventory", "org.zstack.header.vm.cdrom.VmCdRomInventory");
+			put("org.zstack.sdk.VmCustomSpecificationDomainMode", "org.zstack.header.configuration.VmCustomSpecificationDomainMode");
+			put("org.zstack.sdk.VmCustomSpecificationStruct", "org.zstack.header.configuration.VmCustomSpecificationStruct");
 			put("org.zstack.sdk.VmDnsInventory", "org.zstack.header.vm.VmDnsInventory");
 			put("org.zstack.sdk.VmExternalBackupInfo", "org.zstack.externalbackup.VmExternalBackupInfo");
 			put("org.zstack.sdk.VmInstanceInventory", "org.zstack.header.vm.VmInstanceInventory");
@@ -1205,6 +1208,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory", "org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStruct", "org.zstack.header.storage.database.backup.DatabaseBackupStruct");
 			put("org.zstack.sdk.databasebackup.DatabaseType", "org.zstack.header.storage.database.backup.DatabaseType");
+			put("org.zstack.sdk.guesttools.GuestToolsInventory", "org.zstack.guesttools.GuestToolsInventory");
+			put("org.zstack.sdk.guesttools.GuestToolsStateInventory", "org.zstack.guesttools.GuestToolsStateInventory");
+			put("org.zstack.sdk.guesttools.advanced.VmCustomSpecificationInventory", "org.zstack.guesttools.advanced.VmCustomSpecificationInventory");
 			put("org.zstack.sdk.iam1.accounts.AccountGroupInventory", "org.zstack.iam1.entity.accounts.AccountGroupInventory");
 			put("org.zstack.sdk.iam1.accounts.AccountGroupResourceView", "org.zstack.iam1.entity.accounts.AccountGroupResourceView");
 			put("org.zstack.sdk.iam1.accounts.AccountGroupRoleView", "org.zstack.iam1.entity.accounts.AccountGroupRoleView");

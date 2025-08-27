@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.guesttools;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ChangeVmPasswordAction extends AbstractAction {
+public class GetLatestGuestToolsForVmAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ChangeVmPasswordAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ChangeVmPasswordResult value;
+        public org.zstack.sdk.guesttools.GetLatestGuestToolsForVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -27,12 +27,6 @@ public class ChangeVmPasswordAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
-
-    @Param(required = true, validRegexValues = "[\\da-zA-Z-`=\\\\\\[\\];',./~!@#$%^&*()_+|{}:\"<>?]{0,}", maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = true)
-    public java.lang.String password;
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = true)
-    public java.lang.String account;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -52,12 +46,6 @@ public class ChangeVmPasswordAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -66,8 +54,8 @@ public class ChangeVmPasswordAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ChangeVmPasswordResult value = res.getResult(org.zstack.sdk.ChangeVmPasswordResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ChangeVmPasswordResult() : value; 
+        org.zstack.sdk.guesttools.GetLatestGuestToolsForVmResult value = res.getResult(org.zstack.sdk.guesttools.GetLatestGuestToolsForVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.guesttools.GetLatestGuestToolsForVmResult() : value; 
 
         return ret;
     }
@@ -96,11 +84,11 @@ public class ChangeVmPasswordAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/vm-instances/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/vm-instances/{uuid}/latest-guest-tools";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "changeVmPassword";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

@@ -2,7 +2,6 @@ package org.zstack.compute.vm;
 
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.validator.routines.DomainValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
@@ -1357,6 +1356,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         smsg.setRootDisk(msg.getRootDisk());
                         smsg.setDataDisks(msg.getDataDisks());
                         smsg.setDeprecatedDataVolumeSpecs(msg.getDeprecatedDataVolumeSpecs());
+                        smsg.setVmCustomSpecification(msg.getVmCustomSpecification());
                         bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, finalVo.getUuid());
                         bus.send(smsg, new CloudBusCallBack(smsg) {
                             @Override
@@ -1749,13 +1749,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     private void installHostnameValidator() {
         class HostNameValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
-            private void validateHostname(String tag, String hostname) {
-                DomainValidator domainValidator = DomainValidator.getInstance(true);
-                if (!domainValidator.isValid(hostname)) {
-                    throw new ApiMessageInterceptionException(argerr("hostname[%s] specified in system tag[%s] is not a valid domain name", hostname, tag));
-                }
-            }
-
             @Override
             public void validateSystemTagInCreateMessage(APICreateMessage cmsg) {
                 final NewVmInstanceMessage msg = (NewVmInstanceMessage) cmsg;
@@ -1768,8 +1761,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         }
 
                         String hostname = VmSystemTags.HOSTNAME.getTokenByTag(sysTag, VmSystemTags.HOSTNAME_TOKEN);
-
-                        validateHostname(sysTag, hostname);
+                        VmHostnameUtils.validateHostname(hostname, ImagePlatform.Windows.toString().equals(msg.getPlatform()));
                     }
                 }
             }
@@ -1803,12 +1795,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
             public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
                 if (VmSystemTags.HOSTNAME.isMatch(systemTag)) {
                     String hostname = VmSystemTags.HOSTNAME.getTokenByTag(systemTag, VmSystemTags.HOSTNAME_TOKEN);
-                    validateHostname(systemTag, hostname);
-
-                    SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-                    q.select(VmInstanceVO_.defaultL3NetworkUuid);
-                    q.add(VmInstanceVO_.uuid, Op.EQ, resourceUuid);
-                    String defaultL3Uuid = q.findValue();
+                    boolean isWindows = Q.New(VmInstanceVO.class)
+                            .eq(VmInstanceVO_.uuid, resourceUuid)
+                            .eq(VmInstanceVO_.platform, ImagePlatform.Windows.toString())
+                            .isExists();
+                    VmHostnameUtils.validateHostname(hostname, isWindows);
                 } else if (VmSystemTags.BOOT_ORDER.isMatch(systemTag)) {
                     validateBootOrder(systemTag);
                 }

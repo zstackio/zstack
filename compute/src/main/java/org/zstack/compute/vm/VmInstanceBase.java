@@ -7700,6 +7700,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setRootDisk(struct.getRootDisk());
         spec.setDataDisks(struct.getDataDisks());
         spec.setDeprecatedDisksSpecs(struct.getDeprecatedDataVolumeSpecs());
+        spec.setVmCustomSpecification(struct.getVmCustomSpecification());
 
         List<CdRomSpec> cdRomSpecs = buildVmCdRomSpecsForNewCreated(spec);
         spec.setCdRomSpecs(cdRomSpecs);
