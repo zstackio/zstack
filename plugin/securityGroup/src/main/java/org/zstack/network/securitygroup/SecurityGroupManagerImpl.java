@@ -1032,6 +1032,18 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             q.add(VmNicSecurityGroupRefVO_.vmInstanceUuid, Op.EQ, msg.getVmInstanceUuid());
             nicUuids = q.listValue();
         }
+        if (msg.getHostUuid() == null ||msg.getHostUuid().isEmpty()) {
+            String VmUuid = Q.New(VmNicVO.class).in(VmNicVO_.uuid, nicUuids)
+                    .select(VmNicVO_.vmInstanceUuid)
+                    .findValue();
+
+            String HostUuid = Q.New(VmInstanceVO.class)
+                    .eq(VmInstanceVO_.uuid, VmUuid)
+                    .select(VmInstanceVO_.hostUuid)
+                    .findValue();
+
+            msg.setHostUuid(HostUuid);
+        }
 
         if (nicUuids.isEmpty()) {
             checkDefaultRulesOnHost(msg.getHostUuid());

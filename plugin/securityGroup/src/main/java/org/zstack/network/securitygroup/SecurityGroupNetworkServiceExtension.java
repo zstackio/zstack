@@ -9,7 +9,13 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.asyncbatch.While;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.Completion;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -24,6 +30,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 import java.util.stream.Collectors;
 import javax.persistence.Query;
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -116,31 +123,161 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
 
     @Override
     public void applyNetworkService(VmInstanceSpec servedVm, Map<String, Object> data, final Completion completion) {
-        List<String> sgUuids = syncSystemTagToVmNicSecurityGroup(servedVm.getVmInventory().getUuid());
+        syncSystemTagToVmNicSecurityGroup(servedVm.getVmInventory().getUuid());
 
-        Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(SecurityGroupProviderFactory.networkServiceType,
-                VmNicSpec.getL3NetworkInventoryOfSpec(servedVm.getL3Networks()));
+        Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(
+                SecurityGroupProviderFactory.networkServiceType,
+                VmNicSpec.getL3NetworkInventoryOfSpec(servedVm.getL3Networks())
+        );
         if (map.isEmpty()) {
             completion.success();
             return;
         }
 
-        RefreshSecurityGroupRulesOnVmMsg msg = new RefreshSecurityGroupRulesOnVmMsg();
-        msg.setVmInstanceUuid(servedVm.getVmInventory().getUuid());
-        msg.setHostUuid(servedVm.getDestHost().getUuid());
-        msg.setSgUuids(sgUuids);
-        msg.setOperation(servedVm.getCurrentVmOperation());
-        bus.makeLocalServiceId(msg, SecurityGroupConstant.SERVICE_ID);
-        bus.send(msg, new CloudBusCallBack(completion) {
+        List<VmNicInventory> destNics = servedVm.getDestNics();
+
+        List<String> vmNicUuids = destNics.stream()
+                .map(VmNicInventory::getUuid)
+                .collect(Collectors.toList());
+
+        List<String> sgUuids = Q.New(VmNicSecurityGroupRefVO.class)
+                .in(VmNicSecurityGroupRefVO_.vmNicUuid, vmNicUuids)
+                .select(VmNicSecurityGroupRefVO_.securityGroupUuid)
+                .listValues();
+
+        if (sgUuids == null || sgUuids.isEmpty()) {
+            logger.warn(String.format("No security groups found for vmNics: " + vmNicUuids));
+            completion.success();
+            return;
+        }
+
+        Set<String> allRelatedSgUuids = new HashSet<>(sgUuids);
+
+        List<String> remoteSGUuids = Q.New(SecurityGroupRuleVO.class)
+                .in(SecurityGroupRuleVO_.remoteSecurityGroupUuid, sgUuids)
+                .select(SecurityGroupRuleVO_.securityGroupUuid)
+                .listValues();
+
+        allRelatedSgUuids.addAll(remoteSGUuids);
+
+        Set<String> vmUuidsToRefresh = new HashSet<>();
+
+        vmUuidsToRefresh.add(servedVm.getVmInventory().getUuid());
+
+        List<String> vmUuids = Q.New(VmNicSecurityGroupRefVO.class)
+                .in(VmNicSecurityGroupRefVO_.securityGroupUuid, new ArrayList<>(allRelatedSgUuids))
+                .select(VmNicSecurityGroupRefVO_.vmInstanceUuid)
+                .listValues();
+
+        vmUuidsToRefresh.addAll(vmUuids);
+
+        FlowChain schain = FlowChainBuilder.newSimpleFlowChain().setName(String.format("apply-security-group-to-vm-%s", servedVm.getVmInventory().getUuid()));
+        schain.allowEmptyFlow();
+
+        Flow applyToCurrentVmFlow = new Flow() {
+            String __name__ = "apply-security-group-rules-to-current-vm";
+
             @Override
-            public void run(MessageReply reply) {
-                if (reply.isSuccess()) {
-                    completion.success();
-                } else {
-                    completion.fail(reply.getError());
-                }
+            public void run(FlowTrigger trigger, Map data) {
+                logger.debug(String.format("Applying security group rules to current VM[uuid:%s]", servedVm.getVmInventory().getUuid()));
+
+                RefreshSecurityGroupRulesOnVmMsg msg = new RefreshSecurityGroupRulesOnVmMsg();
+                msg.setVmInstanceUuid(servedVm.getVmInventory().getUuid());
+                msg.setHostUuid(servedVm.getDestHost().getUuid());
+                msg.setSgUuids(sgUuids);
+                msg.setOperation(servedVm.getCurrentVmOperation());
+                bus.makeLocalServiceId(msg, SecurityGroupConstant.SERVICE_ID);
+
+                bus.send(msg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            trigger.next();
+                        } else {
+                            trigger.fail(operr("Failed to apply security group rules to current VM[uuid:%s]",
+                                    servedVm.getVmInventory().getUuid())
+                                    .causedBy(reply.getError()));
+                        }
+                    }
+                });
             }
-        });
+
+            @Override
+            public void rollback(FlowRollback rollback, Map data) {
+                logger.debug(String.format("No rollback needed for applying security group rules to current VM[uuid:%s]", servedVm.getVmInventory().getUuid()));
+                rollback.rollback();
+            }
+        };
+
+        schain.then(applyToCurrentVmFlow);
+
+        Flow applyToOtherVmsFlow = new Flow() {
+            String __name__ = "apply-security-group-rules-to-other-vms";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                Set<String> otherVmUuids = new HashSet<>(vmUuidsToRefresh);
+                otherVmUuids.remove(servedVm.getVmInventory().getUuid());
+
+                if (otherVmUuids.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+
+                List<ErrorCode> errs = Collections.synchronizedList(new ArrayList<>());
+
+                logger.debug(String.format("Applying security group rules to %d other VMs: %s", otherVmUuids.size(), otherVmUuids));
+
+                new While<>(otherVmUuids)
+                        .each((vmUuid, wcompl) -> {
+                            RefreshSecurityGroupRulesOnVmMsg msg = new RefreshSecurityGroupRulesOnVmMsg();
+                            msg.setVmInstanceUuid(vmUuid);
+                            bus.makeTargetServiceIdByResourceUuid(msg, SecurityGroupConstant.SERVICE_ID, vmUuid);
+
+                            bus.send(msg, new CloudBusCallBack(wcompl) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        logger.warn(String.format("Failed to refresh security group rules for VM[uuid:%s]: %s",
+                                                vmUuid, reply.getError()));
+                                        errs.add(reply.getError());
+                                    }
+                                    wcompl.done();
+                                }
+                            });
+                        })
+                        .run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (errs.isEmpty()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(operr("Failed to apply security group rules to some VMs"));
+                                }
+                            }
+                        });
+            }
+
+            @Override
+            public void rollback(FlowRollback rollback, Map data) {
+                logger.debug("Rolling back security group application to other VMs... (no-op)");
+                rollback.rollback();
+            }
+        };
+
+        schain.then(applyToOtherVmsFlow);
+
+        schain.error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode err, Map data) {
+                completion.fail(err);
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).start();
     }
 
     @Override
