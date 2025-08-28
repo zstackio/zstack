@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.host.HostManager;
-import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.allocator.HostCandidate;
@@ -72,7 +71,8 @@ public class HostOsVersionAllocatorFlow  extends AbstractHostAllocatorFlow {
 
     private Map<String, HostOperationSystem> generateHostUuidOsMap(List<HostVO> hostList) {
         final Map<String, String> hostHypervisorTypeMap = hostList.stream()
-                .collect(Collectors.toMap(ResourceVO::getUuid, HostAO::getHypervisorType));
+                .collect(Collectors.toMap(ResourceVO::getUuid, HostAO::getHypervisorType,
+                        (existing, replacement) -> replacement));
         final Set<String> hypervisorTypeSet = new HashSet<>(hostHypervisorTypeMap.values());
 
         final Map<String, HostOperationSystem> results = new HashMap<>(hostList.size());
