@@ -23,6 +23,12 @@ doc {
 		since "3.7"
 	}
 	field {
+		name "vendorVersion"
+		desc "厂商版本"
+		type "String"
+		since "5.4"
+	}
+	field {
 		name "name"
 		desc "资源名称"
 		type "String"

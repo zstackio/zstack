@@ -20,6 +20,7 @@ import java.util.Map;
 public class SdnControllerInventory implements Serializable {
     private String uuid;
     private String vendorType;
+    private String vendorVersion;
     private String name;
     private String description;
     private String ip;
@@ -39,6 +40,7 @@ public class SdnControllerInventory implements Serializable {
     public SdnControllerInventory(SdnControllerVO vo) {
         this.setUuid(vo.getUuid());
         this.setVendorType(vo.getVendorType());
+        this.setVendorVersion(vo.getVendorVersion());
         this.setDescription(vo.getDescription());
         this.setName(vo.getName());
         this.setIp(vo.getIp());
@@ -87,6 +89,14 @@ public class SdnControllerInventory implements Serializable {
 
     public void setVendorType(String vendorType) {
         this.vendorType = vendorType;
+    }
+
+    public String getVendorVersion() {
+        return vendorVersion;
+    }
+
+    public void setVendorVersion(String vendorVersion) {
+        this.vendorVersion = vendorVersion;
     }
 
     public String getName() {

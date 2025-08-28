@@ -27,6 +27,9 @@ public class SdnControllerVO extends ResourceVO implements OwnedByAccount, ToInv
     private String vendorType;
 
     @Column
+    private String vendorVersion;
+
+    @Column
     private String name;
 
     @Column
@@ -75,6 +78,14 @@ public class SdnControllerVO extends ResourceVO implements OwnedByAccount, ToInv
 
     public void setVendorType(String vendorType) {
         this.vendorType = vendorType;
+    }
+
+    public String getVendorVersion() {
+        return vendorVersion;
+    }
+
+    public void setVendorVersion(String vendorVersion) {
+        this.vendorVersion = vendorVersion;
     }
 
     public String getName() {
