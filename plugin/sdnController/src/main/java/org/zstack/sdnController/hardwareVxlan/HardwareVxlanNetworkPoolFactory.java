@@ -15,6 +15,7 @@ import org.zstack.header.network.l3.APICreateL3NetworkMsg;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkChecker;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
+import org.zstack.network.l3.L3NetworkHelper;
 import org.zstack.sdnController.header.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -110,7 +111,19 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
             vxlanInterceptor.validateSystemTagFormat(msg.getSystemTags());
         }
 
-        vxlanInterceptor.validateVniRangeOverlap(L2NetworkInventory.valueOf(l2NetworkVO), msg.getClusterUuid());
+        String sdnUuid = L3NetworkHelper.getSdnControllerUuidFromL2Uuid(msg.getL2NetworkUuid());
+        if (sdnUuid == null) {
+            return;
+        }
+
+        SdnControllerVO sdnControllerVO = dbf.findByUuid(sdnUuid, SdnControllerVO.class);
+        if (sdnControllerVO == null) {
+            logger.warn(String.format("skip VNI overlap validation: SDN controller[%s] not found", sdnUuid));
+            return;
+        }
+        if (SdnControllerConstant.H3C_VCFC_CONTROLLER.equals(sdnControllerVO.getVendorType())) {
+            vxlanInterceptor.validateVniRangeOverlap(L2NetworkInventory.valueOf(l2NetworkVO), msg.getClusterUuid());
+        }
     }
 
     private void validate(APICreateL3NetworkMsg msg) {
