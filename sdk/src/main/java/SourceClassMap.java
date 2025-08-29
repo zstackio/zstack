@@ -120,6 +120,7 @@ public class SourceClassMap {
 			put("org.zstack.container.entity.NativeClusterInventory", "org.zstack.sdk.NativeClusterInventory");
 			put("org.zstack.container.entity.NativeHostInventory", "org.zstack.sdk.NativeHostInventory");
 			put("org.zstack.container.entity.ProjectRepositoryInventory", "org.zstack.sdk.ProjectRepositoryInventory");
+			put("org.zstack.container.entity.ZakuImageInventory", "org.zstack.sdk.ZakuImageInventory");
 			put("org.zstack.core.config.GlobalConfigInventory", "org.zstack.sdk.GlobalConfigInventory");
 			put("org.zstack.core.config.GlobalConfigOptions", "org.zstack.sdk.GlobalConfigOptions");
 			put("org.zstack.core.config.GuestOsCharacterInventory", "org.zstack.sdk.GuestOsCharacterInventory");
@@ -1520,6 +1521,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ZBoxVmBackupInfo", "org.zstack.externalbackup.zbox.ZBoxVmBackupInfo");
 			put("org.zstack.sdk.ZBoxVolumeBackupInfo", "org.zstack.externalbackup.zbox.ZBoxVolumeBackupInfo");
 			put("org.zstack.sdk.ZQLQueryReturn", "org.zstack.zql.ZQLQueryReturn");
+			put("org.zstack.sdk.ZakuImageInventory", "org.zstack.container.entity.ZakuImageInventory");
 			put("org.zstack.sdk.ZdfsInventory", "org.zstack.header.zdfs.ZdfsInventory");
 			put("org.zstack.sdk.ZdfsService", "org.zstack.ai.message.ModelCenterServiceInventory$ZdfsService");
 			put("org.zstack.sdk.ZdfsStorageInventory", "org.zstack.header.zdfs.ZdfsStorageInventory");
