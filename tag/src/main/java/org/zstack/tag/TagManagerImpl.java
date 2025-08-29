@@ -95,7 +95,13 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                             f.getDeclaringClass(), f.getName()));
                 }
 
-                if (PatternedSystemTag.class.isAssignableFrom(f.getType())) {
+                if (EphemeralPatternSystemTag.class.isAssignableFrom(f.getType())) {
+                    EphemeralPatternSystemTag ptag = new EphemeralPatternSystemTag(((EphemeralPatternSystemTag) stag).getTagFormatWithoutEphemeralPrefix(), stag.getResourceClass());
+                    ptag.setValidators(stag.getValidators());
+                    f.set(null, ptag);
+                    systemTags.add(ptag);
+                    stag = ptag;
+                } else if (PatternedSystemTag.class.isAssignableFrom(f.getType())) {
                     PatternedSystemTag ptag = new PatternedSystemTag(stag.getTagFormat(), stag.getResourceClass());
                     ptag.setValidators(stag.getValidators());
                     f.set(null, ptag);
