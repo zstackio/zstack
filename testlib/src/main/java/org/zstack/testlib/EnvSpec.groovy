@@ -40,7 +40,6 @@ import org.zstack.sdk.sns.CreateSNSTopicAction
 import org.zstack.sdk.sns.DeleteSNSApplicationEndpointAction
 import org.zstack.sdk.sns.DeleteSNSApplicationPlatformAction
 import org.zstack.sdk.sns.DeleteSNSTopicAction
-import org.zstack.sdk.sns.platform.aliyunsms.CreateSNSAliyunSmsEndpointAction
 import org.zstack.sdk.sns.platform.dingtalk.CreateSNSDingTalkEndpointAction
 import org.zstack.sdk.sns.platform.email.CreateSNSEmailEndpointAction
 import org.zstack.sdk.sns.platform.email.CreateSNSEmailPlatformAction
@@ -164,7 +163,6 @@ class EnvSpec extends ApiHelper implements Node  {
             [SubscribeEventAction.metaClass, SubscribeEventAction.Result.metaClass, UnsubscribeEventAction.class],
             [CreateSNSHttpEndpointAction.metaClass, CreateSNSHttpEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
             [CreateSNSDingTalkEndpointAction.metaClass, CreateSNSDingTalkEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
-            [CreateSNSAliyunSmsEndpointAction.metaClass, CreateSNSAliyunSmsEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
             [CreateSNSTextTemplateAction.metaClass, CreateSNSTextTemplateAction.Result.metaClass, DeleteSNSTextTemplateAction.class],
             [CreateAliyunSmsSNSTextTemplateAction.metaClass, CreateAliyunSmsSNSTextTemplateAction.Result.metaClass, DeleteSNSTextTemplateAction.class],
             [CreateEmailMonitorTriggerActionAction.metaClass, CreateEmailMonitorTriggerActionAction.Result.metaClass, DeleteMonitorTriggerActionAction.class],
@@ -176,8 +174,6 @@ class EnvSpec extends ApiHelper implements Node  {
             [CreateTagAction.metaClass, CreateTagAction.Result.metaClass, DeleteTagAction.class],
             [CreateResourcePriceAction.metaClass, CreateResourcePriceAction.Result.metaClass, DeleteResourcePriceAction.class],
             [CreatePriceTableAction.metaClass, CreatePriceTableAction.Result.metaClass, DeletePriceTableAction.class],
-            [CreateAliyunProxyVpcAction.metaClass, CreateAliyunProxyVpcAction.Result.metaClass, DeleteAliyunProxyVpcAction.class],
-            [CreateAliyunProxyVSwitchAction.metaClass, CreateAliyunProxyVSwitchAction.Result.metaClass, DeleteAliyunProxyVSwitchAction.class],
             [CreateMonitorGroupAction.metaClass, CreateMonitorGroupAction.Result.metaClass, DeleteMonitorGroupAction.class],
             [CreateMonitorTemplateAction.metaClass, CreateMonitorTemplateAction.Result.metaClass, DeleteMonitorTemplateAction.class],
             [CreateDirectoryAction.metaClass, CreateDirectoryAction.Result.metaClass, DeleteDirectoryAction.class],
