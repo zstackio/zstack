@@ -15,12 +15,6 @@ public class APICreateL2HardwareVxlanNetworkPoolMsg extends APICreateL2NetworkMs
     @APIParam(resourceType = SdnControllerVO.class)
     private String sdnControllerUuid;
 
-    @APIParam(required = false, numberRange = {0, 16777214})
-    private Integer startVlan;
-
-    @APIParam(required = false, numberRange = {0, 16777214})
-    private Integer endVlan;
-
     @Override
     public String getType() {
         return SdnControllerConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE;
@@ -32,22 +26,6 @@ public class APICreateL2HardwareVxlanNetworkPoolMsg extends APICreateL2NetworkMs
 
     public void setSdnControllerUuid(String sdnControllerUuid) {
         this.sdnControllerUuid = sdnControllerUuid;
-    }
-
-    public Integer getStartVlan() {
-        return startVlan;
-    }
-
-    public void setStartVlan(Integer startVlan) {
-        this.startVlan = startVlan;
-    }
-
-    public Integer getEndVlan() {
-        return endVlan;
-    }
-
-    public void setEndVlan(Integer endVlan) {
-        this.endVlan = endVlan;
     }
 
     public static APICreateL2HardwareVxlanNetworkPoolMsg __example__() {

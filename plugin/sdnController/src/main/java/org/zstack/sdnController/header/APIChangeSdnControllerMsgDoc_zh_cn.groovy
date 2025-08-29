@@ -66,6 +66,15 @@ doc {
 					optional true
 					since "5.3.28"
 				}
+				column {
+					name "vlanRanges"
+					enclosedIn "changeSdnController"
+					desc ""
+					location "body"
+					type "List"
+					optional true
+					since "5.3.28"
+				}
 			}
         }
 

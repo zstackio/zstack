@@ -31,9 +31,11 @@ import org.zstack.header.network.l2.DeleteL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.SdnControllerDeleteExtensionPoint;
 import org.zstack.header.network.l3.SdnControllerL3;
+import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO;
 import org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO_;
 import org.zstack.sdnController.header.*;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -46,6 +48,8 @@ import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.sdnController.header.SdnControllerFlowDataParam.*;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SdnControllerBase {
@@ -166,6 +170,20 @@ public class SdnControllerBase {
                 if (changed) {
                     self = dbf.updateAndRefresh(self);
                     chain.getData().put(SDN_CONTROLLER_CHANGED, changed);
+                }
+
+                if (msg.getVlanRanges() != null && !msg.getVlanRanges().isEmpty()) {
+                    SdnControllerSystemTags.VLAN_RANGE.delete(self.getUuid());
+                    for (String vlanRange : msg.getVlanRanges()) {
+                        List<String> vlans = Arrays.asList(vlanRange.split("-"));
+                        SystemTagCreator creator = SdnControllerSystemTags.VLAN_RANGE.newSystemTagCreator(self.getUuid());
+                        creator.setTagByTokens(map(
+                                e(SdnControllerSystemTags.START_VLAN_TOKEN, vlans.get(0)),
+                                e(SdnControllerSystemTags.END_VLAN_TOKEN, vlans.get(1))));
+                        creator.inherent = true;
+                        creator.recreate = true;
+                        creator.create();
+                    }
                 }
 
                 trigger.next();
