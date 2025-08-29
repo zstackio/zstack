@@ -50,12 +50,6 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
         HardwareL2VxlanNetworkPoolVO vo = new HardwareL2VxlanNetworkPoolVO(ovo);
         vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo.setSdnControllerUuid(vxlanMsg.getSdnControllerUuid());
-        if (vxlanMsg.getStartVlan() != null) {
-            vo.setStartVlan(vxlanMsg.getStartVlan());
-        }
-        if (vxlanMsg.getEndVlan() != null) {
-            vo.setEndVlan(vxlanMsg.getEndVlan());
-        }
         vo = dbf.persistAndRefresh(vo);
 
         HardwareL2VxlanNetworkPoolInventory inv = HardwareL2VxlanNetworkPoolInventory.valueOf(vo);

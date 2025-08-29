@@ -36,4 +36,12 @@ public class HuaweiIMasterSdnControllerInventory extends org.zstack.sdk.SdnContr
         return this.vrouters;
     }
 
+    public java.util.List vlanRanges;
+    public void setVlanRanges(java.util.List vlanRanges) {
+        this.vlanRanges = vlanRanges;
+    }
+    public java.util.List getVlanRanges() {
+        return this.vlanRanges;
+    }
+
 }

@@ -6,8 +6,10 @@ import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.DefaultTimeout;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,6 +34,9 @@ public class APIChangeSdnControllerMsg extends APIMessage implements SdnControll
     @APIParam(required = false, maxLength = 255)
     @NoLogging
     private String password;
+
+    @APIParam(required = false, maxLength = 255)
+    private List<String> vlanRanges;
 
     public String getUuid() {
         return uuid;
@@ -60,6 +65,14 @@ public class APIChangeSdnControllerMsg extends APIMessage implements SdnControll
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public List<String> getVlanRanges() {
+        return vlanRanges;
+    }
+
+    public void setVlanRanges(List<String> vlanRanges) {
+        this.vlanRanges = vlanRanges;
     }
 
     public static APIChangeSdnControllerMsg __example__() {
