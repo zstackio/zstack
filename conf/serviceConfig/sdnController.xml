@@ -39,4 +39,9 @@
         <name>org.zstack.sdnController.header.APIQuerySdnControllerMsg</name>
         <serviceId>query</serviceId>
     </message>
+
+    <message>
+        <name>org.zstack.network.hostNetworkInterface.APIQueryPhysicalSwitchMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>

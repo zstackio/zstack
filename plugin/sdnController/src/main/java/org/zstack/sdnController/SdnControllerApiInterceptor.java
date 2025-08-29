@@ -53,6 +53,7 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         }
     }
 
+    @Override
     public List<Class> getMessageClassToIntercept() {
         List<Class> ret = new ArrayList<>();
         ret.add(APIAttachSecurityGroupToL3NetworkMsg.class);
@@ -65,10 +66,12 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         return ret;
     }
 
+    @Override
     public InterceptorPosition getPosition() {
         return InterceptorPosition.END;
     }
 
+    @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIAddSdnControllerMsg) {
             validate((APIAddSdnControllerMsg)msg);
@@ -78,11 +81,7 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
             validate((APISdnControllerRemoveHostMsg)msg);
         } else if (msg instanceof APISdnControllerChangeHostMsg) {
             validate((APISdnControllerChangeHostMsg)msg);
-        } else if (msg instanceof APIAttachSecurityGroupToL3NetworkMsg) {
-            validate((APIAttachSecurityGroupToL3NetworkMsg)msg);
-        } else if (msg instanceof APIAddVmNicToSecurityGroupMsg) {
-            validate((APIAddVmNicToSecurityGroupMsg) msg);
-        } else if (msg instanceof APISetVmNicSecurityGroupMsg) {
+        }  else if (msg instanceof APISetVmNicSecurityGroupMsg) {
             validate((APISetVmNicSecurityGroupMsg) msg);
         } else if (msg instanceof APIAddSecurityGroupRuleMsg) {
             validate((APIAddSecurityGroupRuleMsg) msg);
@@ -147,30 +146,6 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
                                 "because rule remote security group sdn controller uuid[:%s] is different from security group controller uuid[:%s]",
                         remoteControllerUuid, sgControllerUuid));
             }
-        }
-    }
-
-    private void validate(APIAddVmNicToSecurityGroupMsg msg) {
-        String sgControllerUuid = SecurityGroupHelper.getSdnControllerUuid(msg.getSecurityGroupUuid());
-        for (String uuid : msg.getVmNicUuids()) {
-            VmNicVO nicVO = dbf.findByUuid(uuid, VmNicVO.class);
-            String nicControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(nicVO.getL3NetworkUuid());
-            if (!StringUtils.equals(sgControllerUuid, nicControllerUuid)) {
-                throw new ApiMessageInterceptionException(argerr("could not add vmnic to securityGroup, " +
-                                "because they have different sdn controller[nic controller uuid:%s, security group controller uuid:%s]",
-                        nicControllerUuid, sgControllerUuid));
-            }
-        }
-    }
-
-
-    private void validate(APIAttachSecurityGroupToL3NetworkMsg msg) {
-        String l3SdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(msg.getL3NetworkUuid());
-        String sgSdnControllerUuid = SecurityGroupHelper.getSdnControllerUuid(msg.getSecurityGroupUuid());
-        if (!StringUtils.equals(l3SdnControllerUuid, sgSdnControllerUuid)) {
-            throw new ApiMessageInterceptionException(argerr("could not attach l3 network to securityGroup, " +
-                    "because they have different sdn controller[l3 controller uuid:%s, security group controller uuid:%s]",
-                    l3SdnControllerUuid, sgSdnControllerUuid));
         }
     }
 
