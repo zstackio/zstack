@@ -1069,6 +1069,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             if (!virtIOTagExists && CollectionUtils.isNotEmpty(rootDiskAO.getSystemTags())) {
                 virtIOTagExists = rootDiskAO.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat());
             }
+
+            // root disk must be the first
+            msg.getDiskAOs().remove(rootDiskAO);
+            msg.getDiskAOs().add(0, rootDiskAO);
         }
 
         if (virtIOTagExists && msg.getVirtio() == Boolean.FALSE) {

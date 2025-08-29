@@ -14,11 +14,14 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.SystemTagUtils;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
+import static org.zstack.compute.vm.VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME;
+import static org.zstack.compute.vm.VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.findOneOrNull;
 import static org.zstack.utils.CollectionUtils.isEmpty;
@@ -116,6 +119,25 @@ public class VmInstanceUtils {
         }
         cmsg.setDeprecatedDataVolumeSpecs(deprecatedDataVolumeSpecs);
 
+        if (!isEmpty(msg.getSystemTags())) {
+            for (Iterator<String> it = msg.getSystemTags().iterator(); it.hasNext();) {
+                String tag = it.next();
+                // systemTags:  primaryStorageUuidForDataVolume::{uuid} -> candidatePrimaryStorageUuidsForDataVolume
+                if (PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.isMatch(tag)) {
+                    String psUuid = PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.getTokenByTag(tag, PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN);
+                    cmsg.setCandidatePrimaryStorageUuidsForDataVolume(list(psUuid));
+
+                    if (cmsg.getDiskAOs() != null) {
+                        cmsg.getDiskAOs().stream()
+                                .filter(diskAO -> !diskAO.isBoot())
+                                .forEach(diskAO -> diskAO.setPrimaryStorageUuid(psUuid));
+                    }
+                    cmsg.getDeprecatedDataVolumeSpecs().forEach(diskAO -> diskAO.setPrimaryStorageUuid(psUuid));
+                    it.remove();
+                }
+            }
+        }
+
         return cmsg;
     }
 
@@ -124,7 +146,7 @@ public class VmInstanceUtils {
             return null;
         }
 
-        return SystemTagUtils.findTagValue(systemTags, VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME, VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN);
+        return SystemTagUtils.findTagValue(systemTags, PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME, PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN);
     }
 
     public static UpdateVmInstanceSpec convertToSpec(UpdateVmInstanceMsg message, VmInstanceVO vm) {
