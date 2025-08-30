@@ -1,7 +1,8 @@
 package org.zstack.test.integration.configuration.systemTag
 
-import org.zstack.header.configuration.DiskOfferingVO
+import org.zstack.header.identity.AccountVO
 import org.zstack.header.zone.ZoneVO
+import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.CreateSystemTagAction
 import org.zstack.testlib.*
 import org.zstack.utils.data.SizeUnit
@@ -19,12 +20,13 @@ class SystemTagCase extends SubCase{
     @Override
     void environment() {
         env = env{
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(20)
-            }
             zone{
                 name = "zone"
+            }
+
+            account {
+                name = "test-account"
+                password = "password"
             }
         }
     }
@@ -72,18 +74,18 @@ class SystemTagCase extends SubCase{
     }
 
     void testCreateSystemTagForTypeNotMatchedResource() {
-        DiskOfferingSpec diskOfferingSpec = env.specByName('diskOffering')
+        logger.info("Test-011: host::reservedCpu:: is cluster system tag, expect fail if attach tag to account")
+        def account = env.inventoryByName("test-account") as AccountInventory
 
-        CreateSystemTagAction a = new CreateSystemTagAction(
-                resourceType: DiskOfferingVO.getSimpleName(),
-                resourceUuid: diskOfferingSpec.inventory.uuid,
-                tag: "host::reservedCpu::{capacity}",
-                sessionId: Test.currentEnvSpec.session.uuid
-        )
-
-        CreateSystemTagAction.Result res = a.call()
-
-        assert res.error != null
+        expectApiFailure({
+            createSystemTag {
+                delegate.resourceType = AccountVO.getSimpleName()
+                delegate.resourceUuid = account.uuid
+                delegate.tag = "host::reservedCpu::${SizeUnit.GIGABYTE.toByte(8)}".toString()
+            }
+        }) {
+            assert delegate.code == "SYS.1007"
+        }
     }
 
     @Override

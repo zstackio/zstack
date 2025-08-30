@@ -9,6 +9,7 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+
 /**
  * Created by GuoYi on 17/08/2018.
  */
@@ -72,15 +73,10 @@ class BootModeCase extends SubCase {
                 }
             }
 
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-
             vm {
                 name = "vm"
-                useInstanceOffering("instanceOffering")
+                cpu = 4
+                memoryGB(8)
                 useImage("image1")
                 useL3Networks("l3")
                 useHost("host1")
@@ -106,7 +102,7 @@ class BootModeCase extends SubCase {
     }
 
     void testBootModeSystemTag() {
-        // create bootMode tag for exiting image
+        logger.info("Test-001: create bootMode tag for exiting image")
         def img = env.inventoryByName("image1") as ImageInventory
         def _tag = createSystemTag {
             resourceUuid = img.uuid
@@ -127,7 +123,7 @@ class BootModeCase extends SubCase {
         } as List<SystemTagInventory>
         assert tags.size() == 1
 
-        // create new image with bootMode
+        logger.info("Test-002: create new image with bootMode")
         BackupStorageInventory bs = env.inventoryByName("sftp") as BackupStorageInventory
         img = addImage {
             name = "image2"
@@ -163,7 +159,7 @@ class BootModeCase extends SubCase {
         } as List<SystemTagInventory>
         assert tags.size() == 1
 
-        // create bootMode tag for exiting vm instance
+        logger.info("Test-003: create bootMode tag for exiting vm instance")
         def vm = env.inventoryByName("vm") as VmInstanceInventory
         _tag = createSystemTag {
             resourceUuid = vm.uuid
@@ -184,12 +180,12 @@ class BootModeCase extends SubCase {
         } as List<SystemTagInventory>
         assert tags.size() == 1
 
-        // create new vm instance using image with bootMode
-        InstanceOfferingInventory offering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        logger.info("Test-004: create new vm instance using image with bootMode")
         L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
         vm = createVmInstance {
             name = "New-VM"
-            instanceOfferingUuid = offering.uuid
+            cpuNum = 4
+            memorySize = SizeUnit.GIGABYTE.toByte(8)
             imageUuid = img.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -217,7 +213,7 @@ class BootModeCase extends SubCase {
             uuid = vm.uuid
         }
 
-        // commit vm instance to image
+        logger.info("Test-005: commit vm instance to image")
         img = createRootVolumeTemplateFromRootVolume {
             name = "template"
             rootVolumeUuid = vm.getRootVolumeUuid()
