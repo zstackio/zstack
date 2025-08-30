@@ -20,7 +20,6 @@ import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
-import org.zstack.utils.data.SizeUnit
 
 class ConsoleProxyCase extends SubCase {
     EnvSpec env
@@ -38,17 +37,6 @@ class ConsoleProxyCase extends SubCase {
             account {
                 name = "test"
                 password = "password"
-            }
-
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(1)
-                cpu = 1
-            }
-
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(20)
             }
 
             sftpBackupStorage {
@@ -109,7 +97,8 @@ class ConsoleProxyCase extends SubCase {
 
             vm {
                 name = "vm"
-                useInstanceOffering("instanceOffering")
+                cpu = 1
+                memoryGB(1)
                 useImage("image1")
                 useL3Networks("l3")
             }
