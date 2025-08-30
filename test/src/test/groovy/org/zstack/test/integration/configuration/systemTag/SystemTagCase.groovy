@@ -85,6 +85,9 @@ class SystemTagCase extends SubCase{
             }
         }) {
             assert delegate.code == "SYS.1007"
+            assert delegate.opaque
+            assert delegate.opaque["resource.type"] == AccountVO.getSimpleName()
+            assert delegate.opaque["tag"] == "host::reservedCpu::${SizeUnit.GIGABYTE.toByte(8)}".toString()
         }
     }
 

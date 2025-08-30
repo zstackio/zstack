@@ -272,8 +272,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         try {
             resourceConfigSystemTag.newResourceConfig(resourceUuid, tag);
         } catch (GlobalConfigException e) {
-            logger.debug(String.format("Failed to create resource config, because %s", e.getMessage()));
-            throw new ApiMessageInterceptionException(argerr(e.getMessage()));
+            throw new ApiMessageInterceptionException(argerr("failed to create resource config")
+                    .withOpaque("exception", e.getMessage()));
         }
 
         return null;
@@ -652,7 +652,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
             if (resourceConfigSystemTag.isMatch(tag)) {
                 throw new ApiMessageInterceptionException(
-                        argerr("no system tag matches[%s] for resourceType[%s]", tag, msg.getResourceType()));
+                        argerr("no system tag matches[%s] for resourceType[%s]", tag, msg.getResourceType())
+                        .withOpaque("tag", tag)
+                        .withOpaque("resource.type", msg.getResourceType()));
             }
         }
 
@@ -690,7 +692,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
         if (resourceConfigSystemTag.isMatch(msg.getTag())) {
             throw new ApiMessageInterceptionException(
-                    argerr("no system tag matches[%s] for resourceType[%s]", msg.getTag(), msg.getResourceType()));
+                    argerr("no system tag matches[%s] for resourceType[%s]", msg.getTag(), msg.getResourceType())
+                    .withOpaque("tag", msg.getTag())
+                    .withOpaque("resource.type", msg.getResourceType()));
         }
 
         SystemTagInventory inv = createNonInherentSystemTag(msg.getResourceUuid(), msg.getTag(), msg.getResourceType());
@@ -777,13 +781,17 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     public void validateSystemTag(String resourceUuid, String resourceType, String tag) {
         if (!isValidSystemTag(resourceUuid, resourceType, tag)) {
             throw new ApiMessageInterceptionException(
-                    argerr("no system tag matches[%s] for resourceType[%s]", tag, resourceType));
+                    argerr("no system tag matches[%s] for resourceType[%s]", tag, resourceType)
+                    .withOpaque("tag", tag)
+                    .withOpaque("resource.type", resourceType));
         }
 
         for (ValidateSystemTagExtensionPoint exp: pluginRgty.getExtensionList(ValidateSystemTagExtensionPoint.class)) {
             if (!exp.validateSystemTag(resourceUuid, resourceType, tag)) {
                 throw new ApiMessageInterceptionException(
-                        argerr("validate system tag [%s] for resourceType[%s] failed", tag, resourceType));
+                        argerr("validate system tag [%s] for resourceType[%s] failed", tag, resourceType)
+                        .withOpaque("tag", tag)
+                        .withOpaque("resource.type", resourceType));
             }
         }
     }
