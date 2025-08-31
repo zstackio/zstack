@@ -14,7 +14,6 @@ import org.zstack.kvm.KVMConstant
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.userdata.UserdataConstant
-import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
 import org.zstack.test.integration.ZStackTest
@@ -40,17 +39,6 @@ The vm doesn't support to attach vm, which use image-1 that platform type is oth
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-
-            diskOffering {
-                name = "diskOffering"
-                diskSize =  SizeUnit.GIGABYTE.toByte(10)
-            }
-
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -135,17 +123,19 @@ The vm doesn't support to attach vm, which use image-1 that platform type is oth
             }
 
             vm {
+                cpu = 4
+                memoryGB(8)
                 name = "vm-other"
                 useImage("image-1")
                 useL3Networks("l3")
-                useInstanceOffering("instanceOffering")
             }
 
             vm {
+                cpu = 4
+                memoryGB(8)
                 name = "vm-2"
                 useImage("image-2")
                 useL3Networks("l3")
-                useInstanceOffering("instanceOffering")
             }
 
         }
@@ -161,12 +151,11 @@ The vm doesn't support to attach vm, which use image-1 that platform type is oth
     }
 
     void testGetCandidateVmForAttaching(){
-        def offering = env.inventoryByName("diskOffering") as DiskOfferingInventory
         def vm = env.inventoryByName("vm-other") as VmInstanceInventory
         def vm2  = env.inventoryByName("vm-2") as VmInstanceInventory
         def volume = createDataVolume {
             name = "test-1"
-            diskOfferingUuid =  offering.uuid
+            diskSize = SizeUnit.GIGABYTE.toByte(10)
         } as VolumeInventory
 
         //vms are runing
@@ -193,11 +182,10 @@ The vm doesn't support to attach vm, which use image-1 that platform type is oth
     }
 
     void testAttachVolumeToVm(){
-        def offering = env.inventoryByName("diskOffering") as DiskOfferingInventory
         def vm = env.inventoryByName("vm-2") as VmInstanceInventory
         def volume = createDataVolume {
             name = "test-2" 
-            diskOfferingUuid =  offering.uuid
+            diskSize = SizeUnit.GIGABYTE.toByte(10)
         } as VolumeInventory
         
         KVMAgentCommands.AttachDataVolumeCmd cmd = null
@@ -217,10 +205,9 @@ The vm doesn't support to attach vm, which use image-1 that platform type is oth
     
     void testAttachVolumeToVmImageOther(){
         def vm = env.inventoryByName("vm-other") as VmInstanceInventory
-        def offering = env.inventoryByName("diskOffering") as DiskOfferingInventory
         def volume = createDataVolume {
             name = "test-3"
-            diskOfferingUuid = offering.uuid
+            diskSize = SizeUnit.GIGABYTE.toByte(10)
         } as VolumeInventory
 
         UpdateQuery.New(VmInstanceVO.class)

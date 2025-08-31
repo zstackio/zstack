@@ -28,17 +28,6 @@ class DeleteIsoCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(20)
-            }
-
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -120,10 +109,14 @@ class DeleteIsoCase extends SubCase {
 
             vm {
                 name = "vm"
+                cpu = 4
+                memoryGB(8)
                 useL3Networks("l3")
-                useInstanceOffering("instanceOffering")
-                useRootDiskOffering("diskOffering")
                 useImage("iso_1")
+                disk {
+                    boot = true
+                    sizeGB(20)
+                }
             }
         }
 
@@ -139,28 +132,38 @@ class DeleteIsoCase extends SubCase {
     void testDeleteIso() {
         VmGlobalConfig.VM_DEFAULT_CD_ROM_NUM.updateValue(3)
 
-        ImageInventory image = env.inventoryByName("image")
-        ImageInventory iso1 = env.inventoryByName("iso_1")
-        ImageInventory iso2 = env.inventoryByName("iso_2")
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
-        L3NetworkInventory l3 = env.inventoryByName("l3")
+        def image = env.inventoryByName("image") as ImageInventory
+        def iso1 = env.inventoryByName("iso_1") as ImageInventory
+        def iso2 = env.inventoryByName("iso_2") as ImageInventory
+        def l3 = env.inventoryByName("l3") as L3NetworkInventory
 
-        VmInstanceInventory newVm = createVmInstance {
+        def newVm = createVmInstance {
             name = "new-vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 4
+            memorySize = SizeUnit.GIGABYTE.toByte(8)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
-            rootDiskOfferingUuid = diskOffering.uuid
-        }
+            diskAOs = [
+                [
+                    boot: true,
+                    size: SizeUnit.GIGABYTE.toByte(20)
+                ]
+            ]
+        } as VmInstanceInventory
 
-        VmInstanceInventory newVm2 = createVmInstance {
+        def newVm2 = createVmInstance {
             name = "new-vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 4
+            memorySize = SizeUnit.GIGABYTE.toByte(8)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
-            rootDiskOfferingUuid = diskOffering.uuid
-        }
+            diskAOs = [
+                [
+                    boot: true,
+                    size: SizeUnit.GIGABYTE.toByte(20)
+                ]
+            ]
+        } as VmInstanceInventory
 
         attachIsoToVmInstance {
             vmInstanceUuid = newVm.uuid

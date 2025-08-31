@@ -30,15 +30,6 @@ class CreateRootVolumeTemplateFromVolumeSnapshotCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(20)
-            }
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -103,10 +94,14 @@ class CreateRootVolumeTemplateFromVolumeSnapshotCase extends SubCase {
 
             vm {
                 name = "vm"
-                useInstanceOffering("instanceOffering")
+                cpu = 4
+                memoryGB(8)
                 useImage("image")
                 useL3Networks("l3")
-                useDiskOfferings("diskOffering")
+                disk {
+                    boot = true
+                    sizeGB(20)
+                }
             }
         }
     }
@@ -152,12 +147,13 @@ class CreateRootVolumeTemplateFromVolumeSnapshotCase extends SubCase {
         assert osType == image.guestOsType
         assert archType == image.architecture
 
-        VmInstanceInventory newVm = createVmInstance {
+        def newVm = createVmInstance {
             name = "new-image-vm"
             l3NetworkUuids = [vm.getDefaultL3NetworkUuid()]
-            instanceOfferingUuid = vm.instanceOfferingUuid
+            cpuNum = 4
+            memorySize = SizeUnit.GIGABYTE.toByte(8)
             imageUuid = vm.imageUuid
-        }
+        } as VmInstanceInventory
         assert vm.platform == newVm.platform
 
 
