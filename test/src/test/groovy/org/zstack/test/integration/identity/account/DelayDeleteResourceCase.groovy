@@ -39,17 +39,6 @@ class DelayDeleteResourceCase extends SubCase {
     void environment() {
         // one base vm, with a data volume
         env = makeEnv {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(20)
-            }
-
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -143,10 +132,16 @@ class DelayDeleteResourceCase extends SubCase {
 
             vm {
                 name = "vm"
-                useInstanceOffering("instanceOffering")
+                cpu = 4
+                memoryGB(8)
                 useImage("image1")
                 useL3Networks("l3")
-                useDiskOfferings("diskOffering")
+                disk {
+                    boot = true
+                }
+                disk {
+                    sizeGB(20)
+                }
             }
         }
     }

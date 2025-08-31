@@ -4,22 +4,22 @@ import org.hibernate.exception.ConstraintViolationException
 import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.core.db.SQLBatch
-import org.zstack.header.configuration.InstanceOfferingVO
-import org.zstack.header.configuration.InstanceOfferingVO_
-import org.zstack.header.identity.AccountConstant
 import org.zstack.core.db.DBSourceUtils
 import org.zstack.header.vo.ResourceVO
 import org.zstack.header.vo.ResourceVO_
+import org.zstack.header.zone.ZoneVO
+import org.zstack.header.zone.ZoneVO_
 import org.zstack.testlib.SubCase
 
 import java.sql.SQLException
+import java.sql.Timestamp
 
 /**
  * Created by david on 7/13/17.
  */
 class DatabaseWrapperCase extends SubCase {
-
     @Override
     void setup() {
     }
@@ -37,55 +37,50 @@ class DatabaseWrapperCase extends SubCase {
     }
 
     void testQ() {
-        def offerings = Q.New(InstanceOfferingVO.class)
-                .eq(InstanceOfferingVO_.memorySize, 1234)
+        def zoneList1 = Q.New(ZoneVO.class)
+                .eq(ZoneVO_.uuid, "1234")
                 .list()
 
-        assert offerings != null : "list should always return non-null"
-        assert offerings.isEmpty() : "expect no offerings found"
+        assert zoneList1 != null : "list should always return non-null"
+        assert zoneList1.isEmpty() : "expect no zone found"
 
-        offerings = Q.New(InstanceOfferingVO.class)
-                .eq(InstanceOfferingVO_.memorySize, 1234)
-                .select(InstanceOfferingVO_.cpuNum)
+        def zoneList2 = Q.New(ZoneVO.class)
+                .eq(ZoneVO_.uuid, "1234")
+                .select(ZoneVO_.@name)
                 .listValues()
 
-        assert offerings != null : "listValues should always return non-null"
-        assert offerings.isEmpty() : "expect no values found"
+        assert zoneList2 != null : "listValues should always return non-null"
+        assert zoneList2.isEmpty() : "expect no values found"
 
-        offerings = Q.New(InstanceOfferingVO.class)
-                .eq(InstanceOfferingVO_.memorySize, 1234)
-                .select(InstanceOfferingVO_.cpuNum)
-                .select(InstanceOfferingVO_.memorySize)
+        def zoneList3 = Q.New(ZoneVO.class)
+                .eq(ZoneVO_.uuid, "1234")
+                .select(ZoneVO_.@name)
+                .select(ZoneVO_.description)
                 .listTuple()
-        assert offerings != null : "listTuples should always return non-null"
-        assert offerings.isEmpty() : "expect no tuples found"
+        assert zoneList3 != null : "listTuples should always return non-null"
+        assert zoneList3.isEmpty() : "expect no tuples found"
 
-        List<String> offeringUuids = Collections.emptyList()
         try {
-            Q.New(InstanceOfferingVO.class)
-                    .in(InstanceOfferingVO_.uuid, offeringUuids)
-                    .list();
+            Q.New(ZoneVO.class)
+                    .in(ZoneVO_.uuid, ["1234"])
+                    .list()
         } catch (RuntimeException e) {
             assert e.getMessage() == "Op.IN value cannot be null or empty"
         }
     }
 
     void testSQLBatch() {
-        def offeringUuid = Platform.uuid
+        def zoneUuid = Platform.uuid
         DatabaseFacade dbf = bean(DatabaseFacade.class)
 
-        InstanceOfferingVO v2 = new InstanceOfferingVO()
-        def offeringUuid2 = Platform.uuid
-        v2.memorySize = 22345
-        v2.cpuNum = 5
-        v2.cpuSpeed = 0
-        v2.uuid = offeringUuid2
-        v2.duration = "Permanent"
-        v2.name = "offeringA"
-        v2.state = "Enabled"
-        v2.sortKey = 0
-        v2.type = "UserVm"
-        v2.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
+        ZoneVO v2 = new ZoneVO()
+        def zoneUuid2 = Platform.uuid
+        v2.name = "22222"
+        v2.type = "zstack"
+        v2.uuid = zoneUuid2
+        v2.description = "Permanent"
+        v2.setDefault(true)
+        v2.createDate = new Timestamp(System.currentTimeMillis())
         dbf.persist(v2)
 
         try {
@@ -93,14 +88,14 @@ class DatabaseWrapperCase extends SubCase {
 
                 @Override
                 protected void scripts() {
-                    InstanceOfferingVO v = new InstanceOfferingVO()
-                    v.memorySize = 12345
-                    v.cpuNum = 5
-                    v.uuid = offeringUuid
+                    ZoneVO v = new ZoneVO()
+                    v2.name = "33333"
+                    v2.type = "zstack"
+                    v2.uuid = zoneUuid
 
-                    sql(InstanceOfferingVO.class)
-                            .eq(InstanceOfferingVO_.uuid, offeringUuid2)
-                            .set(InstanceOfferingVO_.memorySize, 1122)
+                    sql(ZoneVO.class)
+                            .eq(ZoneVO_.uuid, zoneUuid)
+                            .set(ZoneVO_.description, "wrong desc")
                             .update()
 
                     dbf.getEntityManager().persist(v)
@@ -111,12 +106,14 @@ class DatabaseWrapperCase extends SubCase {
         } catch (Throwable ignored) {
         }
 
-        assert !dbf.isExist(offeringUuid, InstanceOfferingVO.class)
-        def v3 = dbf.findByUuid(offeringUuid2, InstanceOfferingVO.class)
+        assert !dbf.isExist(zoneUuid, ZoneVO.class)
+        def v3 = dbf.findByUuid(zoneUuid2, ZoneVO.class)
         assert v3 != null
-        assert v3.memorySize == v2.memorySize
+        assert v3.description == v2.description
 
-        dbf.remove(v2)
+        SQL.New(ZoneVO)
+                .eq(ZoneVO_.uuid, zoneUuid2)
+                .delete()
 
         String uuid = Platform.getUuid()
         try {
