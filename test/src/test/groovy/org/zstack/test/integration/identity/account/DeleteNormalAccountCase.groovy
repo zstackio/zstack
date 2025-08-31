@@ -13,7 +13,6 @@ import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.VmInstanceInventory
-import org.zstack.sdk.VolumeInventory
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -49,17 +48,6 @@ class DeleteNormalAccountCase extends SubCase {
     void environment() {
         // one base vm, with a data volume
         env = makeEnv {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(20)
-            }
-
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -153,10 +141,16 @@ class DeleteNormalAccountCase extends SubCase {
 
             vm {
                 name = "vm"
-                useInstanceOffering("instanceOffering")
+                cpu = 4
+                memoryGB(8)
                 useImage("image1")
                 useL3Networks("l3")
-                useDiskOfferings("diskOffering")
+                disk {
+                    boot = true
+                }
+                disk {
+                    sizeGB(20)
+                }
             }
         }
     }
@@ -182,7 +176,6 @@ class DeleteNormalAccountCase extends SubCase {
 
     void testAdminAdoptOrphanedResourceAfterDeletedNormalAccount() {
         VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
-        VolumeInventory vol = vm.getAllVolumes().find { i -> i.getUuid() != vm.getRootVolumeUuid() }
 
         // gather resources which should be referenced in AccountResourceRefVO and belong to admin
         // these should later belong to admin again

@@ -1,7 +1,6 @@
 package org.zstack.test.integration.identity
 
 import org.zstack.header.network.l3.L3NetworkConstant
-import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.L2NetworkInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PortForwardingRuleInventory
@@ -53,7 +52,6 @@ class InvalidDeleteResourceCase extends SubCase{
             } as SessionInventory
 
             testL3Network()
-            testDiskOffering()
             testVolumeSnapshot()
             testDataVolume()
             testPortForwardingRule()
@@ -78,20 +76,6 @@ class InvalidDeleteResourceCase extends SubCase{
         }
     }
 
-    void testDiskOffering(){
-        DiskOfferingInventory diskOfferingInventory = createDiskOffering {
-            name = "testDiskOffering"
-            diskSize = SizeUnit.GIGABYTE.toByte(20)
-        }
-
-        expect([AssertionError.class]){
-            deleteDiskOffering {
-                uuid = diskOfferingInventory.uuid
-                sessionId = testSessionInventory.uuid
-            }
-        }
-    }
-
     void testVolumeSnapshot(){
         VmInstanceInventory vmInstanceInventory = env.inventoryByName("vm")
 
@@ -108,11 +92,12 @@ class InvalidDeleteResourceCase extends SubCase{
         }
     }
 
-    void testDataVolume(){
-        VolumeInventory volumeInventory = createDataVolume {
+    void testDataVolume() {
+        logger.info("Test-031: volume is owner by admin, can not deleted by other account")
+        def volumeInventory = createDataVolume {
             name = 'testDataVolume'
-            diskOfferingUuid = env.inventoryByName("diskOffering").uuid
-        }
+            diskSize = SizeUnit.GIGABYTE.toByte(20)
+        } as VolumeInventory
 
         expect([AssertionError.class]){
             deleteDataVolume {

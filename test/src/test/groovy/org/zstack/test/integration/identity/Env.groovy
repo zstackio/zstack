@@ -22,17 +22,6 @@ use:
 
     static EnvSpec oneVmBasicEnv() {
         return Test.makeEnv {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(20)
-            }
-
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -126,7 +115,8 @@ use:
 
             vm {
                 name = "vm"
-                useInstanceOffering("instanceOffering")
+                cpu = 4
+                memoryGB(8)
                 useImage("image1")
                 useL3Networks("l3")
             }

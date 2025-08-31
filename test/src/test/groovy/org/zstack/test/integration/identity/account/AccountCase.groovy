@@ -16,7 +16,6 @@ import org.zstack.identity.QuotaGlobalConfig
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.ImageInventory
-import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.UpdateAccountAction
@@ -25,6 +24,7 @@ import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.identity.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.data.SizeUnit
 
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
@@ -84,7 +84,6 @@ class AccountCase extends SubCase {
             value = 3
         }
 
-        def instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
         def image = env.inventoryByName("image1" ) as ImageInventory
         def l3 = env.inventoryByName("pubL3") as L3NetworkInventory
 
@@ -98,7 +97,8 @@ class AccountCase extends SubCase {
         createVmInstance {
             name = "vm"
             imageUuid = image.uuid
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 4
+            memorySize = SizeUnit.GIGABYTE.toByte(8)
             l3NetworkUuids = [l3.uuid]
             sessionId = s2.uuid
         }
@@ -106,7 +106,8 @@ class AccountCase extends SubCase {
         createVmInstance {
             name = "vm-2"
             imageUuid = image.uuid
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 4
+            memorySize = SizeUnit.GIGABYTE.toByte(8)
             l3NetworkUuids = [l3.uuid]
             sessionId = s2.uuid
         }
