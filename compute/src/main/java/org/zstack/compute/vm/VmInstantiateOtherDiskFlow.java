@@ -129,6 +129,7 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                         amsg.setDiskOfferingUuid(diskAO.getDiskOfferingUuid());
                         amsg.setRequiredPrimaryStorageUuid(diskAO.getPrimaryStorageUuid());
                         amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
+                        amsg.setTags(diskAO.getSystemTags());
                         bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                         bus.send(amsg, new CloudBusCallBack(innerTrigger) {
                             @Override

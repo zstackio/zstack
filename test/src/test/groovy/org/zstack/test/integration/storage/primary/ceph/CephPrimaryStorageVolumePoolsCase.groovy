@@ -105,26 +105,10 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
                 }
             }
 
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(10)
-            }
-
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-
-            instanceOffering {
-                name = "instanceOffering2"
-                memory = SizeUnit.GIGABYTE.toByte(1)
-                cpu = 1
-            }
-
             vm {
                 name = "vm"
-                useInstanceOffering("instanceOffering")
+                cpu = 4
+                memoryGB(8)
                 useImage("image")
                 useL3Networks("l3")
             }
@@ -134,10 +118,8 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
 
     VmInstanceInventory vm
     VmInstanceInventory root_pool_vm
-    DiskOfferingInventory diskOffering
     CephPrimaryStorageInventory primaryStorage
     L3NetworkInventory l3
-    InstanceOfferingInventory instanceOffering2
     ImageInventory image
 
     void testCreateDataVolumeInPool() {
@@ -151,7 +133,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         VolumeInventory vol = createDataVolume {
             name = "data"
             primaryStorageUuid = primaryStorage.uuid
-            diskOfferingUuid = diskOffering.uuid
+            diskSize = SizeUnit.GIGABYTE.toByte(10)
             systemTags = [CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.instantiateTag([(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN) : HIGH_POOL_NAME])]
         }
 
@@ -173,29 +155,13 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         VolumeInventory vol = createDataVolume {
             name = "data"
             primaryStorageUuid = primaryStorage.uuid
-            diskOfferingUuid = diskOffering.uuid
+            diskSize = SizeUnit.GIGABYTE.toByte(10)
         }
 
         String dataVolumePoolName = CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL.getTokenByResourceUuid(primaryStorage.uuid, CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL_TOKEN)
         assert cmd != null
         assert cmd.installPath == vol.installPath
         assert cmd.installPath.contains(dataVolumePoolName)
-    }
-
-    void testVmRootAndDataVolumeUseDesignatedPool() {
-        String rootVolumePoolName = CephSystemTags.USE_CEPH_ROOT_POOL.getTokenByResourceUuid(root_pool_vm.rootVolumeUuid,CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN)
-        VolumeInventory rootVolume = root_pool_vm.allVolumes.find { it.uuid == root_pool_vm.rootVolumeUuid }
-
-        String defaultDataVolumePoolName = CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL.getTokenByResourceUuid(primaryStorage.uuid, CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL_TOKEN)
-        VolumeInventory dataVolume = root_pool_vm.allVolumes.find { it.type == DATA_POOL_TYPE }
-
-        assert rootVolumePoolName != null
-        assert rootVolume != null
-        assert rootVolume.installPath.contains(rootVolumePoolName)
-
-        assert defaultDataVolumePoolName != null
-        assert dataVolume != null
-        assert !dataVolume.installPath.contains(defaultDataVolumePoolName)
     }
 
     void testVmRootVolumeUseDefaultPool() {
@@ -318,27 +284,66 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         L3NetworkSpec l3Spec = env.specByName("l3")
         root_pool_vm = createVmInstance {
             name = "new_root_pool_vm"
-            instanceOfferingUuid = vm.instanceOfferingUuid
+            cpuNum = 4
+            memorySize = SizeUnit.GIGABYTE.toByte(8)
             imageUuid = vm.imageUuid
             l3NetworkUuids = asList((l3Spec.inventory.uuid))
-            dataDiskOfferingUuids = [diskOffering.uuid]
             sessionId = adminSession()
-            rootVolumeSystemTags = [CephSystemTags.USE_CEPH_ROOT_POOL.instantiateTag([(CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN) : NEW_ROOT_POOL_NAME])]
-            dataVolumeSystemTags = [CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.instantiateTag([(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN) : HIGH_POOL_NAME])]
             systemTags = ["primaryStorageUuidForDataVolume::${primaryStorage.uuid}".toString()]
+            diskAOs = [
+                [
+                    boot : true,
+                    systemTags : [
+                        CephSystemTags.USE_CEPH_ROOT_POOL.instantiateTag([(CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN) : NEW_ROOT_POOL_NAME]),
+                    ]
+                ],
+                [
+                    size : SizeUnit.GIGABYTE.toByte(10),
+                    systemTags : [
+                        CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.instantiateTag([(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN) : HIGH_POOL_NAME]),
+                    ]
+                ],
+            ]
         } as VmInstanceInventory
+
+        logger.info("Test 001: testVmRootAndDataVolumeUseDesignatedPool")
+        String rootVolumePoolName = CephSystemTags.USE_CEPH_ROOT_POOL.getTokenByResourceUuid(root_pool_vm.rootVolumeUuid,CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN)
+        VolumeInventory rootVolume = root_pool_vm.allVolumes.find { it.uuid == root_pool_vm.rootVolumeUuid }
+
+        String defaultDataVolumePoolName = CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL.getTokenByResourceUuid(primaryStorage.uuid, CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL_TOKEN)
+        VolumeInventory dataVolume = root_pool_vm.allVolumes.find { it.type == DATA_POOL_TYPE }
+
+        assert rootVolumePoolName != null
+        assert rootVolume != null
+        assert rootVolume.installPath.contains(rootVolumePoolName)
+
+        assert defaultDataVolumePoolName != null
+        assert dataVolume != null
+        assert !dataVolume.installPath.contains(defaultDataVolumePoolName)
     }
 
     void testReimageVmAndAllocatePool() {
+        env.cleanSimulatorHandlers()
+
         L3NetworkSpec l3Spec = env.specByName("l3") as L3NetworkSpec
         VmInstanceInventory new_root_pool_vm = createVmInstance {
             name = "new_root_pool_vm"
-            instanceOfferingUuid = vm.instanceOfferingUuid
+            cpuNum = 4
+            memorySize = SizeUnit.GIGABYTE.toByte(8)
             imageUuid = vm.imageUuid
             l3NetworkUuids = asList((l3Spec.inventory.uuid))
-            dataDiskOfferingUuids = [diskOffering.uuid]
             sessionId = adminSession()
-            rootVolumeSystemTags = [CephSystemTags.USE_CEPH_ROOT_POOL.instantiateTag([(CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN): NEW_ROOT_POOL_NAME])]
+            diskAOs = [
+                [
+                    boot : true,
+                    systemTags : [
+                        CephSystemTags.USE_CEPH_ROOT_POOL.instantiateTag([(CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN): NEW_ROOT_POOL_NAME]),
+                    ]
+                ],
+                [
+                    size : SizeUnit.GIGABYTE.toByte(10),
+                ],
+            ]
         } as VmInstanceInventory
 
         stopVmInstance {
@@ -359,12 +364,24 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
             description = "use one dataDiskSize and check volume install path"
             l3NetworkUuids = [l3.uuid]
             imageUuid = image.uuid
-            instanceOfferingUuid = instanceOffering2.uuid
+            cpuNum = 1
+            memorySize = SizeUnit.GIGABYTE.toByte(1)
             primaryStorageUuidForRootVolume = primaryStorage.uuid
-            dataDiskSizes = [SizeUnit.GIGABYTE.toByte(1)]
             systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): primaryStorage.uuid])]
-            rootVolumeSystemTags = ["ceph::rootPoolName::new_root_pool"]
-            dataVolumeSystemTags = ["ceph::pool::new_data_pool"]
+            diskAOs = [
+                [
+                    boot : true,
+                    systemTags : [
+                        "ceph::rootPoolName::new_root_pool",
+                    ]
+                ],
+                [
+                    size : SizeUnit.GIGABYTE.toByte(1),
+                    systemTags : [
+                        "ceph::pool::new_data_pool",
+                    ]
+                ],
+            ]
         } as VmInstanceInventory
 
         String rootVolumeInstallPath = Q.New(VolumeVO.class).select(VolumeVO_.installPath).eq(VolumeVO_.uuid, vm1.rootVolumeUuid).findValue()
@@ -375,25 +392,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         deleteVm(vm1.uuid)
         deleteVolume(dataVolumeUuid)
 
-        VmInstanceInventory vm2 = createVmInstance {
-            name = "vm2"
-            description = "use diskOffering and dataDiskSize and check the nums of volume"
-            l3NetworkUuids = [l3.uuid]
-            imageUuid = image.uuid
-            instanceOfferingUuid = instanceOffering2.uuid
-            primaryStorageUuidForRootVolume = primaryStorage.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid]
-            dataDiskSizes = [SizeUnit.GIGABYTE.toByte(1), SizeUnit.GIGABYTE.toByte(1), SizeUnit.GIGABYTE.toByte(2)]
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): primaryStorage.uuid])]
-            rootVolumeSystemTags = ["ceph::rootPoolName::new_root_pool"]
-            dataVolumeSystemTags = ["ceph::pool::new_data_pool"]
-        } as VmInstanceInventory
-        assert vm2.allVolumes.size() == 5
-        List<String> dataVolumeUuids = vm2.allVolumes.stream().map({ it -> it.uuid }).filter { uuid -> uuid != vm2.rootVolumeUuid }.collect()
-        List<String> dataVolumeInstallPaths = Q.New(VolumeVO.class).select(VolumeVO_.installPath).in(VolumeVO_.uuid, dataVolumeUuids).listValues()
-        dataVolumeInstallPaths.forEach({ path -> assert path.contains("new_data_pool") })
-        deleteVm(vm2.uuid)
-        vm2.allVolumes.stream().filter { uuid -> uuid != vm2.rootVolumeUuid }.forEach { it -> deleteVolume(it.uuid) }
+        // disk offering is deprecated soon
     }
 
     void deleteVm(String vmUuid) {
@@ -418,15 +417,12 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
     void test() {
         env.create {
             vm = (env.specByName("vm") as VmSpec).inventory
-            diskOffering = (env.specByName("diskOffering") as DiskOfferingSpec).inventory
             primaryStorage = (env.specByName("ceph-pri") as CephPrimaryStorageSpec).inventory
             l3 = env.inventoryByName("l3") as L3NetworkInventory
-            instanceOffering2 = env.inventoryByName("instanceOffering2") as InstanceOfferingInventory
             image = env.inventoryByName("image") as ImageInventory
 
             createRootPoolVm()
             testVmRootVolumeUseDefaultPool()
-            testVmRootAndDataVolumeUseDesignatedPool()
             testCreateDataVolumeInPool()
             testCreateDataVolumeInDefaultPool()
             testAddAndDeletePool()
