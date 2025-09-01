@@ -1204,9 +1204,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
             @Override
             public void setup() {
-                if (!CollectionUtils.isEmpty(msg.getDiskAOs())) {
-                    otherDisks = msg.getDiskAOs().stream().filter(diskAO -> !diskAO.isBoot()).collect(Collectors.toList());
-                    setDiskAOsName(otherDisks);
+                if (!CollectionUtils.isEmpty(msg.getDataDisks())) {
+                    setDiskAOsName(otherDisks = msg.getDataDisks());
                     attachOtherDisks = !otherDisks.isEmpty();
                 }
 
@@ -1315,7 +1314,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         smsg.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
                         smsg.setL3NetworkUuids(msg.getL3NetworkSpecs());
 
-                        final DiskAO rootDisk = msg.findBootDisk();
+                        final DiskAO rootDisk = msg.getRootDisk();
                         DiskOfferingVO dvo = null;
                         if (rootDisk != null) {
                             if (rootDisk.getDiskOfferingUuid() != null) {
@@ -1355,7 +1354,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         smsg.setTimeout(msg.getTimeout());
                         smsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
                         smsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
-                        smsg.setDiskAOs(msg.getDiskAOs());
+                        smsg.setRootDisk(msg.getRootDisk());
+                        smsg.setDataDisks(msg.getDataDisks());
                         smsg.setDeprecatedDataVolumeSpecs(msg.getDeprecatedDataVolumeSpecs());
                         bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, finalVo.getUuid());
                         bus.send(smsg, new CloudBusCallBack(smsg) {

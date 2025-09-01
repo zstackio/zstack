@@ -123,9 +123,15 @@ public class VmAllocateHostFlow implements Flow {
         }
         msg.setAllowNoL3Networks(true);
 
-        if (!CollectionUtils.isEmpty(spec.getDiskAOs())) {
-            msg.getRequiredPrimaryStorageUuids().addAll(spec.getDiskAOs().stream()
-                    .map(DiskAO::getPrimaryStorageUuid).filter(Objects::nonNull).collect(Collectors.toList()));
+        if (spec.getRootDisk() != null && spec.getRootDisk().getPrimaryStorageUuid() != null) {
+            msg.getRequiredPrimaryStorageUuids().add(spec.getRootDisk().getPrimaryStorageUuid());
+        }
+
+        if (!CollectionUtils.isEmpty(spec.getDataDisks())) {
+            msg.getRequiredPrimaryStorageUuids().addAll(spec.getDataDisks().stream()
+                    .map(DiskAO::getPrimaryStorageUuid)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList()));
         }
 
         setImageRequiredPrimaryStorageUuidFromDiskAO(msg, spec);
@@ -133,15 +139,14 @@ public class VmAllocateHostFlow implements Flow {
     }
 
     private void setImageRequiredPrimaryStorageUuidFromDiskAO(DesignatedAllocateHostMsg msg, VmInstanceSpec spec) {
-        if (CollectionUtils.isEmpty(spec.getDiskAOs())) {
+        final DiskAO rootDisk = spec.getRootDisk();
+        if (rootDisk == null) {
             return;
         }
 
-        spec.getDiskAOs().stream().filter(DiskAO::isBoot).findFirst().ifPresent(rootDiskAO -> {
-            if (rootDiskAO.getPrimaryStorageUuid() != null) {
-                msg.setImageRequiredPrimaryStorageUuid(rootDiskAO.getPrimaryStorageUuid());
-            }
-        });
+        if (rootDisk.getPrimaryStorageUuid() != null) {
+            msg.setImageRequiredPrimaryStorageUuid(rootDisk.getPrimaryStorageUuid());
+        }
     }
 
     @Override

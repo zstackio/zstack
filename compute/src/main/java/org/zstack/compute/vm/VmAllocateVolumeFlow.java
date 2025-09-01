@@ -93,7 +93,7 @@ public class VmAllocateVolumeFlow implements Flow {
             DebugUtils.Assert(vspec.getType() != null, "VolumeType can not be null!");
 
             if (vspec.isRoot()) {
-                DiskAO disk = isEmpty(spec.getDiskAOs()) ? null : spec.getDiskAOs().get(0);
+                DiskAO disk = spec.getRootDisk();
                 msg.setResourceUuid((String) ctx.get("uuid"));
 
                 String name = disk == null ? null : disk.getName();
@@ -116,9 +116,8 @@ public class VmAllocateVolumeFlow implements Flow {
                     tags.addAll(disk.getSystemTags());
                 }
             } else if (vspec.isData()) {
-                int volumeIndex = dataVolumeIndex + 1;
-                DiskAO disk = isEmpty(spec.getDiskAOs()) ? null :
-                        spec.getDiskAOs().size() > volumeIndex ? spec.getDiskAOs().get(volumeIndex) : null;
+                DiskAO disk = isEmpty(spec.getDataDisks()) ? null :
+                        spec.getDataDisks().size() > dataVolumeIndex ? spec.getDataDisks().get(dataVolumeIndex) : null;
                 DiskAO deprecatedDisk = isEmpty(spec.getDeprecatedDisksSpecs()) ? null :
                         spec.getDeprecatedDisksSpecs().size() > dataVolumeIndex ? spec.getDeprecatedDisksSpecs().get(dataVolumeIndex) : null;
 

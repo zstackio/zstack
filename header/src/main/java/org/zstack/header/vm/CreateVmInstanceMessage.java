@@ -30,12 +30,12 @@ public interface CreateVmInstanceMessage {
     String getType();
 
     default String getRootDiskOfferingUuid() {
-        final DiskAO bootDisk = findBootDisk();
+        final DiskAO bootDisk = getRootDisk();
         return bootDisk == null ? null : bootDisk.getDiskOfferingUuid();
     }
 
     default long getRootDiskSize() {
-        final DiskAO bootDisk = findBootDisk();
+        final DiskAO bootDisk = getRootDisk();
         return bootDisk == null ? 0 : bootDisk.getSize();
     }
 
@@ -55,9 +55,7 @@ public interface CreateVmInstanceMessage {
 
     String getStrategy(); // VmCreationStrategy
 
-    List<DiskAO> getDiskAOs();
+    DiskAO getRootDisk();
 
-    default DiskAO findBootDisk() {
-        return isEmpty(getDiskAOs()) ? null : findOneOrNull(getDiskAOs(),DiskAO::isBoot);
-    }
+    List<DiskAO> getDataDisks();
 }
