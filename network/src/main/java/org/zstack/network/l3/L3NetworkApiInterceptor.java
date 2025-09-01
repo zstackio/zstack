@@ -24,6 +24,7 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
@@ -547,6 +548,22 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr(
                     "ipRangeUuids, L3NetworkUuids, zoneUuids must have at least one be none-empty list, or all is set to true"
             ));
+        }
+
+        if (!CollectionUtils.isEmpty(msg.getL3NetworkUuids())) {
+            List<String> enableIPAML3Uuids = Q.New(L3NetworkVO.class)
+                    .eq(L3NetworkVO_.enableIPAM, true)
+                    .in(L3NetworkVO_.uuid, msg.getL3NetworkUuids())
+                    .select(L3NetworkVO_.uuid)
+                    .listValues();
+
+            if (enableIPAML3Uuids.isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "all the specified L3 networks are IPAM disabled, cannot get ip address capacity"
+                ));
+            } else {
+                msg.setL3NetworkUuids(enableIPAML3Uuids);
+            }
         }
 
         if (msg.isAll() && (msg.getZoneUuids() == null || msg.getZoneUuids().isEmpty())) {
