@@ -14489,6 +14489,33 @@ abstract class ApiHelper {
     }
 
 
+    def deleteHuaweiIMasterFabric(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteHuaweiIMasterFabricAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteHuaweiIMasterFabricAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def deleteHuaweiIMasterTenant(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteHuaweiIMasterTenantAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteHuaweiIMasterTenantAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -14518,6 +14545,33 @@ abstract class ApiHelper {
 
     def deleteHuaweiIMasterVRouter(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteHuaweiIMasterVRouterAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteHuaweiIMasterVRouterAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def deleteHuaweiIMasterVpc(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteHuaweiIMasterVpcAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteHuaweiIMasterVpcAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
