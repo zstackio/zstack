@@ -32,8 +32,6 @@ class VmSpec extends Spec implements HasSession {
     List<String> rootVolumeSystemTags = []
     @SpecParam
     List<String> dataVolumeSystemTags = []
-    @SpecParam
-    Map<String, List<String>> dataVolumeSystemTagsOnIndex = [:]
     private List<String> volumeToAttach = []
     private List<DiskAO> disks = []
 
@@ -198,7 +196,6 @@ class VmSpec extends Spec implements HasSession {
             delegate.systemTags = systemTags
             delegate.rootVolumeSystemTags = rootVolumeSystemTags
             delegate.dataVolumeSystemTags = dataVolumeSystemTags
-            delegate.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex
             delegate.virtio = virtio
 
             if (!disks.isEmpty()) {
