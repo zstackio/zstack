@@ -18,7 +18,6 @@ import org.zstack.header.volume.CreateDataVolumeTemplateFromDataVolumeReply
 import org.zstack.header.volume.SyncVolumeSizeMsg
 import org.zstack.header.volume.SyncVolumeSizeReply
 import org.zstack.sdk.CreateRootVolumeTemplateFromRootVolumeAction
-import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
@@ -38,7 +37,6 @@ class ImageOperationsCase extends SubCase {
     DatabaseFacade dbf
     VmInstanceInventory vm
     org.zstack.sdk.BackupStorageInventory bs
-    DiskOfferingInventory disk
 
     @Override
     void setup() {
@@ -48,15 +46,6 @@ class ImageOperationsCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(20)
-            }
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -120,7 +109,8 @@ class ImageOperationsCase extends SubCase {
 
             vm {
                 name = "vm"
-                useInstanceOffering("instanceOffering")
+                cpu = 4
+                memoryGB(8)
                 useImage("image1")
                 useL3Networks("l3")
             }
@@ -341,12 +331,10 @@ class ImageOperationsCase extends SubCase {
                 return rsp
         }
 
-        disk = env.inventoryByName("diskOffering") as DiskOfferingInventory
-
-        VolumeInventory volume = createDataVolume {
+        def volume = createDataVolume {
             name = "test-data-volume"
-            diskOfferingUuid = disk.uuid
-        }
+            diskSize = SizeUnit.GIGABYTE.toByte(20)
+        } as VolumeInventory
 
         attachDataVolumeToVm {
             vmInstanceUuid = vm.uuid
@@ -377,10 +365,10 @@ class ImageOperationsCase extends SubCase {
             bus.reply(msg, reply)
         }
 
-        VolumeInventory volume = createDataVolume {
+        def volume = createDataVolume {
             name = "test-data-volume2"
-            diskOfferingUuid = disk.uuid
-        }
+            diskSize = SizeUnit.GIGABYTE.toByte(20)
+        } as VolumeInventory
 
         attachDataVolumeToVm {
             vmInstanceUuid = vm.uuid

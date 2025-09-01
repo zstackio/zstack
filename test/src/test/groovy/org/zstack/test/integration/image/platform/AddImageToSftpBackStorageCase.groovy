@@ -9,11 +9,9 @@ import org.zstack.sdk.VmInstanceInventory
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
 import org.zstack.test.integration.ZStackTest
-import org.zstack.testlib.BackupStorageSpec
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-import org.zstack.utils.gson.JSONObjectUtil
 
 /**
  * Created by shixin on 2018/03/21.
@@ -31,16 +29,6 @@ class AddImageToSftpBackStorageCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(20)
-            }
-
             zone {
                 name = "zone"
                 description = "test"
