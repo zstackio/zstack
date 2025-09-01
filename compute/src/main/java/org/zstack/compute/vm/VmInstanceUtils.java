@@ -52,9 +52,15 @@ public class VmInstanceUtils {
         } else {
             cmsg.setVirtio(msg.getVirtio());
         }
-        cmsg.setDiskAOs(msg.getDiskAOs());
 
-        if (isEmpty(cmsg.getDiskAOs())) {
+        if (!isEmpty(msg.getDiskAOs())) {
+            DiskAO rootDisk = findOneOrNull(msg.getDiskAOs(), DiskAO::isBoot);
+            cmsg.setRootDisk(rootDisk);
+            cmsg.setDataDisks(new ArrayList<>(msg.getDiskAOs()));
+            cmsg.getDataDisks().remove(rootDisk);
+        }
+
+        if (cmsg.getRootDisk() == null) {
             DiskAO bootDisk = DiskAO.rootDisk();
 
             if (msg.getRootDiskOfferingUuid() != null) {
@@ -65,9 +71,9 @@ public class VmInstanceUtils {
             bootDisk.setPlatform(msg.getPlatform());
             bootDisk.setGuestOsType(msg.getGuestOsType());
             bootDisk.setArchitecture(msg.getArchitecture());
-            cmsg.setDiskAOs(list(bootDisk));
+            cmsg.setRootDisk(bootDisk);
         } else {
-            DiskAO bootDisk = findOneOrNull(cmsg.getDiskAOs(), DiskAO::isBoot);
+            DiskAO bootDisk = cmsg.getRootDisk();
             if (msg.getRootDiskOfferingUuid() != null) {
                 bootDisk.setDiskOfferingUuid(msg.getRootDiskOfferingUuid());
             } else if (msg.getRootDiskSize() != null) {
@@ -127,10 +133,8 @@ public class VmInstanceUtils {
                     String psUuid = PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.getTokenByTag(tag, PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN);
                     cmsg.setCandidatePrimaryStorageUuidsForDataVolume(list(psUuid));
 
-                    if (cmsg.getDiskAOs() != null) {
-                        cmsg.getDiskAOs().stream()
-                                .filter(diskAO -> !diskAO.isBoot())
-                                .forEach(diskAO -> diskAO.setPrimaryStorageUuid(psUuid));
+                    if (cmsg.getDataDisks() != null) {
+                        cmsg.getDataDisks().forEach(diskAO -> diskAO.setPrimaryStorageUuid(psUuid));
                     }
                     cmsg.getDeprecatedDataVolumeSpecs().forEach(diskAO -> diskAO.setPrimaryStorageUuid(psUuid));
                     it.remove();

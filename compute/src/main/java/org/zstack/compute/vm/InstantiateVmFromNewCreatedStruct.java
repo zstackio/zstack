@@ -31,7 +31,8 @@ public class InstantiateVmFromNewCreatedStruct {
     private List<String> sshKeyPairUuids;
     private final List<String> candidatePrimaryStorageUuidsForRootVolume = new ArrayList<>();
     private final List<String> candidatePrimaryStorageUuidsForDataVolume = new ArrayList<>();
-    private List<DiskAO> diskAOs;
+    private DiskAO rootDisk;
+    private List<DiskAO> dataDisks;
     private List<DiskAO> deprecatedDataVolumeSpecs = new ArrayList<>();
 
     public List<String> getCandidatePrimaryStorageUuidsForRootVolume() {
@@ -56,13 +57,20 @@ public class InstantiateVmFromNewCreatedStruct {
         }
     }
 
-
-    public List<DiskAO> getDiskAOs() {
-        return diskAOs;
+    public DiskAO getRootDisk() {
+        return rootDisk;
     }
 
-    public void setDiskAOs(List<DiskAO> diskAOs) {
-        this.diskAOs = diskAOs;
+    public void setRootDisk(DiskAO rootDisk) {
+        this.rootDisk = rootDisk;
+    }
+
+    public List<DiskAO> getDataDisks() {
+        return dataDisks;
+    }
+
+    public void setDataDisks(List<DiskAO> dataDisks) {
+        this.dataDisks = dataDisks;
     }
 
     public List<DiskAO> getDeprecatedDataVolumeSpecs() {
@@ -149,7 +157,8 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setSoftAvoidHostUuids(msg.getSoftAvoidHostUuids());
         struct.setAvoidHostUuids(msg.getAvoidHostUuids());
         struct.setDisableL3Networks(msg.getDisableL3Networks());
-        struct.setDiskAOs(msg.getDiskAOs());
+        struct.setRootDisk(msg.getRootDisk());
+        struct.setDataDisks(msg.getDataDisks());
         struct.setDeprecatedDataVolumeSpecs(msg.getDeprecatedDataVolumeSpecs());
         return struct;
     }
@@ -167,7 +176,8 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
         struct.setRequiredHostUuid(msg.getHostUuid());
         struct.setDisableL3Networks(msg.getDisableL3Networks());
-        struct.setDiskAOs(msg.getDiskAOs());
+        struct.setRootDisk(msg.getRootDisk());
+        struct.setDataDisks(msg.getDataDisks());
         struct.setDeprecatedDataVolumeSpecs(msg.getDeprecatedDataVolumeSpecs());
         return struct;
     }
