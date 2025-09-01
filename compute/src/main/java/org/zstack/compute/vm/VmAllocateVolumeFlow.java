@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 import static org.zstack.utils.CollectionUtils.filter;
+import static org.zstack.utils.CollectionUtils.isEmpty;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -76,26 +77,33 @@ public class VmAllocateVolumeFlow implements Flow {
 
         List<VolumeSpec> volumeSpecs = spec.getVolumeSpecs();
         List<CreateVolumeMsg> msgs = new ArrayList<>(volumeSpecs.size());
+        int dataVolumeIndex = 0;
+
         for (VolumeSpec vspec : volumeSpecs) {
             CreateVolumeMsg msg = new CreateVolumeMsg();
             Set<String> tags = new HashSet<>();
-            if (vspec != null) {
-                if (vspec.getTags() != null) {
-                    tags.addAll(vspec.getTags());
-                }
-            } else {
+            if (vspec == null) {
                 continue;
+            }
+
+            if (vspec.getTags() != null) {
+                tags.addAll(vspec.getTags());
             }
 
             DebugUtils.Assert(vspec.getType() != null, "VolumeType can not be null!");
 
             if (vspec.isRoot()) {
+                DiskAO disk = isEmpty(spec.getDiskAOs()) ? null : spec.getDiskAOs().get(0);
                 msg.setResourceUuid((String) ctx.get("uuid"));
-                msg.setName("ROOT-for-" + spec.getVmInventory().getName());
-                msg.setDescription(String.format("Root volume for VM[uuid:%s]", spec.getVmInventory().getUuid()));
 
+                String name = disk == null ? null : disk.getName();
+                msg.setName(name == null ? "ROOT-for-" + spec.getVmInventory().getName() : name);
+
+                msg.setDescription(String.format("Root volume for VM[uuid:%s]", spec.getVmInventory().getUuid()));
                 if (spec.getImageSpec().relayOnImage()) {
                     msg.setRootImageUuid(spec.getImageSpec().getInventory().getUuid());
+                } else if (disk != null && disk.getTemplateUuid() != null) {
+                    msg.setRootImageUuid(disk.getTemplateUuid());
                 }
 
                 msg.setFormat(spec.getVolumeFormatFromImage());
@@ -103,13 +111,34 @@ public class VmAllocateVolumeFlow implements Flow {
                 if (spec.getRootVolumeSystemTags() != null) {
                     tags.addAll(spec.getRootVolumeSystemTags());
                 }
+
+                if (disk != null && !isEmpty(disk.getSystemTags())) {
+                    tags.addAll(disk.getSystemTags());
+                }
             } else if (vspec.isData()) {
-                msg.setName(String.format("DATA-for-%s", spec.getVmInventory().getName()));
+                int volumeIndex = dataVolumeIndex + 1;
+                DiskAO disk = isEmpty(spec.getDiskAOs()) ? null :
+                        spec.getDiskAOs().size() > volumeIndex ? spec.getDiskAOs().get(volumeIndex) : null;
+                DiskAO deprecatedDisk = isEmpty(spec.getDeprecatedDisksSpecs()) ? null :
+                        spec.getDeprecatedDisksSpecs().size() > dataVolumeIndex ? spec.getDeprecatedDisksSpecs().get(dataVolumeIndex) : null;
+
+                String name = disk == null ? null : disk.getName();
+                msg.setName(name == null ? "DATA-for-" + spec.getVmInventory().getName() : name);
+
                 msg.setDescription(String.format("DataVolume-%s", spec.getVmInventory().getUuid()));
                 msg.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(spec.getDestHost().getHypervisorType()).toString());
+
                 if (spec.getDataVolumeSystemTags() != null) {
                     tags.addAll(spec.getDataVolumeSystemTags());
                 }
+                if (deprecatedDisk != null && !isEmpty(deprecatedDisk.getSystemTags())) {
+                    tags.addAll(deprecatedDisk.getSystemTags());
+                }
+                if (disk != null && !isEmpty(disk.getSystemTags())) {
+                    tags.addAll(disk.getSystemTags());
+                }
+
+                dataVolumeIndex++;
             } else {
                 continue;
             }

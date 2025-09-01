@@ -1067,8 +1067,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             msg.setRootDiskSize(rootDiskSize);
 
             if (!virtIOTagExists && CollectionUtils.isNotEmpty(rootDiskAO.getSystemTags())) {
-                virtIOTagExists = rootDiskAO.getSystemTags().contains(VmSystemTags.VIRTIO.getTagFormat());
+                // "driver::virtio" is tag for VmInstanceVO (not for VolumeVO)
+                virtIOTagExists = rootDiskAO.getSystemTags().remove(VmSystemTags.VIRTIO.getTagFormat());
             }
+
+            // root disk must be the first
+            msg.getDiskAOs().remove(rootDiskAO);
+            msg.getDiskAOs().add(0, rootDiskAO);
         }
 
         if (virtIOTagExists && msg.getVirtio() == Boolean.FALSE) {
