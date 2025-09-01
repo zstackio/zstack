@@ -1123,7 +1123,8 @@ class EnvSpec extends ApiHelper implements Node  {
         def handler = httpHandlers[url]
 
         if (handler == null) {
-            for (String httpUrl : httpHandlers.keys()) {
+            List<String> keys = (httpHandlers.keySet() as List).sort {a, b  -> b.size() - a.size() }
+            for (String httpUrl : keys) {
                 if (Pattern.matches(httpUrl, url)) {
                     handler = httpHandlers.get(httpUrl)
                     break

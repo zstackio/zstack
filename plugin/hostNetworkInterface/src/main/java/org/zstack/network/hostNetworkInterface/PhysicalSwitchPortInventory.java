@@ -28,6 +28,9 @@ public class PhysicalSwitchPortInventory implements Serializable {
     private Timestamp lastOpDate;
 
     public static PhysicalSwitchPortInventory valueOf(PhysicalSwitchPortVO vo) {
+        if (vo == null) {
+            return null;
+        }
         PhysicalSwitchPortInventory inv = new PhysicalSwitchPortInventory();
         inv.setUuid(vo.getUuid());
         inv.setName(vo.getName());
