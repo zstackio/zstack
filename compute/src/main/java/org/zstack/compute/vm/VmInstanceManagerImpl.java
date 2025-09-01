@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.compute.vm.quota.*;
+import org.zstack.configuration.DiskOfferingSystemTags;
+import org.zstack.configuration.InstanceOfferingSystemTags;
+import org.zstack.configuration.OfferingUserConfigUtils;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.*;
@@ -32,6 +35,8 @@ import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.*;
+import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
+import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -822,13 +827,31 @@ public class VmInstanceManagerImpl extends AbstractService implements
             } else {
                 Tuple t = Q.New(DiskOfferingVO.class).eq(DiskOfferingVO_.uuid, msg.getRootDiskOfferingUuid())
                         .select(DiskOfferingVO_.diskSize, DiskOfferingVO_.allocatorStrategy).findTuple();
+
                 rmsg.setSize((long) t.get(0));
                 rmsg.setAllocationStrategy((String) t.get(1));
                 rmsg.setDiskOfferingUuid(msg.getRootDiskOfferingUuid());
+
+                if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(msg.getRootDiskOfferingUuid())) {
+                    DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(msg.getRootDiskOfferingUuid(), DiskOfferingUserConfig.class);
+                    if (config.getAllocate() != null && config.getAllocate().getPrimaryStorage() != null) {
+                        String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
+                        rmsg.setRequiredPrimaryStorageUuid(psUuid);
+                    }
+                }
             }
         } else {
             rmsg.setSize(imageInv.getSize());
         }
+
+        if (msg.getInstanceOfferingUuid() != null && InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.hasTag(msg.getInstanceOfferingUuid())) {
+            InstanceOfferingUserConfig config = OfferingUserConfigUtils.getInstanceOfferingConfig(msg.getInstanceOfferingUuid(), InstanceOfferingUserConfig.class);
+            if (config.getAllocate() != null && config.getAllocate().getPrimaryStorage() != null) {
+                String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
+                rmsg.setRequiredPrimaryStorageUuid(psUuid);
+            }
+        }
+
         rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
         rmsg.setPossiblePrimaryStorageTypes(new ArrayList<>(psTypes));
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
@@ -842,6 +865,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
             amsg.setRequiredClusterUuids(clusterUuids);
             amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
             amsg.setDiskOfferingUuid(dinv.getUuid());
+            if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(dinv.getUuid())) {
+                DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(dinv.getUuid(), DiskOfferingUserConfig.class);
+                if (config.getAllocate() != null && config.getAllocate().getPrimaryStorage() != null) {
+                    String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
+                    amsg.setRequiredPrimaryStorageUuid(psUuid);
+                }
+            }
+
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
             msgs.add(amsg);
         }

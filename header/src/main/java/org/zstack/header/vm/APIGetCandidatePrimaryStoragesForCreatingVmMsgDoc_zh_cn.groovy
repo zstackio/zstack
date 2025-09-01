@@ -120,6 +120,15 @@ doc {
 					optional true
 					since "2.1"
 				}
+				column {
+					name "instanceOfferingUuid"
+					enclosedIn ""
+					desc "计算规格UUID"
+					location "query"
+					type "String"
+					optional true
+					since "5.4.0"
+				}
 			}
         }
 
