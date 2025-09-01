@@ -165,6 +165,8 @@ public class SourceClassMap {
 			put("org.zstack.guesttools.GuestVmScriptExecutedRecordDetailInventory", "org.zstack.sdk.GuestVmScriptExecutedRecordDetailInventory");
 			put("org.zstack.guesttools.GuestVmScriptExecutedRecordInventory", "org.zstack.sdk.GuestVmScriptExecutedRecordInventory");
 			put("org.zstack.guesttools.GuestVmScriptInventory", "org.zstack.sdk.GuestVmScriptInventory");
+			put("org.zstack.guesttools.InvocationRecord", "org.zstack.sdk.InvocationRecord");
+			put("org.zstack.guesttools.InvocationRecordDetail", "org.zstack.sdk.InvocationRecordDetail");
 			put("org.zstack.ha.HaStrategyConditionInventory", "org.zstack.sdk.HaStrategyConditionInventory");
 			put("org.zstack.header.acl.AccessControlListEntryInventory", "org.zstack.sdk.AccessControlListEntryInventory");
 			put("org.zstack.header.acl.AccessControlListInventory", "org.zstack.sdk.AccessControlListInventory");
@@ -292,6 +294,8 @@ public class SourceClassMap {
 			put("org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent$Failure", "org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotFailure");
 			put("org.zstack.header.image.APIGetUploadImageJobDetailsReply$JobDetails", "org.zstack.sdk.JobDetails");
 			put("org.zstack.header.image.ImageBackupStorageRefInventory", "org.zstack.sdk.ImageBackupStorageRefInventory");
+			put("org.zstack.header.image.ImageGroupInventory", "org.zstack.sdk.ImageGroupInventory");
+			put("org.zstack.header.image.ImageGroupRefInventory", "org.zstack.sdk.ImageGroupRefInventory");
 			put("org.zstack.header.image.ImageInventory", "org.zstack.sdk.ImageInventory");
 			put("org.zstack.header.longjob.LongJobInventory", "org.zstack.sdk.LongJobInventory");
 			put("org.zstack.header.longjob.LongJobState", "org.zstack.sdk.LongJobState");
@@ -1064,6 +1068,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.IdentityZoneProperty", "org.zstack.header.identityzone.IdentityZoneProperty");
 			put("org.zstack.sdk.ImageBackupStorageRefInventory", "org.zstack.header.image.ImageBackupStorageRefInventory");
 			put("org.zstack.sdk.ImageCacheInventory", "org.zstack.header.storage.primary.ImageCacheInventory");
+			put("org.zstack.sdk.ImageGroupInventory", "org.zstack.header.image.ImageGroupInventory");
+			put("org.zstack.sdk.ImageGroupRefInventory", "org.zstack.header.image.ImageGroupRefInventory");
 			put("org.zstack.sdk.ImageInventory", "org.zstack.header.image.ImageInventory");
 			put("org.zstack.sdk.ImagePackageInventory", "org.zstack.ovf.datatype.ImagePackageInventory");
 			put("org.zstack.sdk.ImagePackageState", "org.zstack.ovf.datatype.ImagePackageState");
@@ -1077,6 +1083,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.InputType", "org.zstack.abstraction.OptionType$InputType");
 			put("org.zstack.sdk.InstallPathRecycleInventory", "org.zstack.header.core.trash.InstallPathRecycleInventory");
 			put("org.zstack.sdk.InstanceOfferingInventory", "org.zstack.header.configuration.InstanceOfferingInventory");
+			put("org.zstack.sdk.InvocationRecord", "org.zstack.guesttools.InvocationRecord");
+			put("org.zstack.sdk.InvocationRecordDetail", "org.zstack.guesttools.InvocationRecordDetail");
 			put("org.zstack.sdk.IpCapacityData", "org.zstack.header.network.l3.datatypes.IpCapacityData");
 			put("org.zstack.sdk.IpRangeInventory", "org.zstack.header.network.l3.IpRangeInventory");
 			put("org.zstack.sdk.IpRangeType", "org.zstack.header.network.l3.IpRangeType");

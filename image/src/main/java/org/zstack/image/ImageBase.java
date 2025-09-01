@@ -3,8 +3,7 @@ package org.zstack.image;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.compute.vm.IsoOperator;
-import org.zstack.compute.vm.VmSystemTags;
+import org.zstack.compute.vm.*;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -36,8 +35,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.message.*;
 import org.zstack.header.storage.backup.*;
-import org.zstack.header.vm.DetachIsoFromVmInstanceMsg;
-import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
@@ -51,8 +49,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.*;
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -295,6 +292,7 @@ public class ImageBase implements Image {
             bus.reply(msg, reply);
             return;
         }
+        dbf.remove(ref);
 
         DeleteBitsOnBackupStorageMsg dmsg = new DeleteBitsOnBackupStorageMsg();
         dmsg.setBackupStorageUuid(ref.getBackupStorageUuid());
@@ -314,7 +312,6 @@ public class ImageBase implements Image {
                 }
 
                 returnBackupStorageCapacity(ref.getBackupStorageUuid(), self.getActualSize());
-                dbf.remove(ref);
 
                 //TODO remove ref from metadata, this logic should after all refs deleted
                 runAfterExpungeImageExtension(ref.getBackupStorageUuid());
@@ -453,9 +450,7 @@ public class ImageBase implements Image {
             }
         });
 
-
         List<Object> refs = new ArrayList<>();
-
         for (final ImageBackupStorageRefVO ref : toDelete) {
             chain.then(new NoRollbackFlow() {
                 String __name__ = String.format("delete-image-%s-from-backup-storage-%s", self.getUuid(), ref.getBackupStorageUuid());
@@ -463,6 +458,8 @@ public class ImageBase implements Image {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
                     if (deletionPolicy == ImageDeletionPolicy.Direct) {
+                        dbf.remove(ref);
+
                         DeleteBitsOnBackupStorageMsg dmsg = new DeleteBitsOnBackupStorageMsg();
                         dmsg.setBackupStorageUuid(ref.getBackupStorageUuid());
                         dmsg.setInstallPath(ref.getInstallPath());
@@ -471,16 +468,22 @@ public class ImageBase implements Image {
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
-                                    //TODO
                                     logger.warn(String.format("failed to delete image[uuid:%s, name:%s] from backup storage[uuid:%s] because %s," +
                                                     " need to garbage collect it",
                                             self.getUuid(), self.getName(), reply.getError(), ref.getBackupStorageUuid()));
-                                } else {
-                                    returnBackupStorageCapacity(ref.getBackupStorageUuid(), self.getActualSize());
-                                    dbf.remove(ref);
-                                    // now delete ref in metadata
-                                    runAfterExpungeImageExtension(ref.getBackupStorageUuid());
+
+                                    BackupStorageDeleteBitGC gc = new BackupStorageDeleteBitGC();
+                                    gc.NAME = String.format("gc-delete-bits-%s-on-backup-storage-%s", msg.getImageUuid(), ref.getBackupStorageUuid());
+                                    gc.backupStorageUuid = ref.getBackupStorageUuid();
+                                    gc.imageUuid = msg.getImageUuid();
+                                    gc.installPath = ref.getInstallPath();
+                                    gc.deduplicateSubmit(ImageGlobalConfig.DELETION_GARBAGE_COLLECTION_INTERVAL.value(Long.class),
+                                            TimeUnit.SECONDS);
                                 }
+
+                                returnBackupStorageCapacity(ref.getBackupStorageUuid(), self.getActualSize());
+                                // now delete ref in metadata
+                                runAfterExpungeImageExtension(ref.getBackupStorageUuid());
                                 trigger.next();
                             }
                         });
@@ -492,7 +495,6 @@ public class ImageBase implements Image {
                     } else {
                         ref.setStatus(ImageStatus.Deleted);
                         refs.add(ref);
-
                         trigger.next();
                     }
                 }
@@ -579,9 +581,7 @@ public class ImageBase implements Image {
                 bus.reply(msg, reply);
             }
         });
-
     }
-
 
     private void handle(OverlayMessage msg) {
         thdf.chainSubmit(new ChainTask(msg) {
@@ -815,7 +815,7 @@ public class ImageBase implements Image {
 
             if (bsUuids.isEmpty()) {
                 throw new OperationFailureException(operr("the image[uuid:%s, name:%s] is not deleted on any backup storage",
-                                self.getUuid(), self.getName()));
+                        self.getUuid(), self.getName()));
             }
         } else {
             for (final String bsUuid : msg.getBackupStorageUuids()) {
@@ -831,12 +831,12 @@ public class ImageBase implements Image {
 
                 if (ref == null) {
                     throw new OperationFailureException(argerr("the image[uuid:%s, name:%s] is not on the backup storage[uuid:%s]",
-                                    self.getUuid(), self.getName(), bsUuid));
+                            self.getUuid(), self.getName(), bsUuid));
                 }
 
                 if (ref.getStatus() != ImageStatus.Deleted) {
                     throw new OperationFailureException(argerr("the image[uuid:%s, name:%s] is not deleted on the backup storage[uuid:%s]",
-                                    self.getUuid(), self.getName(), bsUuid));
+                            self.getUuid(), self.getName(), bsUuid));
                 }
 
                 bsUuids.add(bsUuid);
