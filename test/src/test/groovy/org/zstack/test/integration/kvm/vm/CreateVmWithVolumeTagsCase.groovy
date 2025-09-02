@@ -1,11 +1,10 @@
 package org.zstack.test.integration.kvm.vm
 
 
-import org.zstack.sdk.CreateVmInstanceAction
 import org.zstack.sdk.ImageInventory
-import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.TagInventory
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -27,17 +26,6 @@ class CreateVmWithVolumeTagsCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(20)
-            }
-
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -118,21 +106,28 @@ class CreateVmWithVolumeTagsCase extends SubCase {
     }
 
     void createVmWithVolumeTags() {
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
-        ImageInventory image = env.inventoryByName("image1")
-        L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
+        def image = env.inventoryByName("image1") as ImageInventory
+        def pubL3 = env.inventoryByName("pubL3") as L3NetworkInventory
 
-        CreateVmInstanceAction action = new CreateVmInstanceAction()
-        action.name = "vm"
-        action.instanceOfferingUuid = instanceOffering.uuid
-        action.imageUuid = image.uuid
-        action.l3NetworkUuids = [pubL3.uuid]
-        action.rootVolumeSystemTags = ["volumeMaxIncrementalSnapshotNum::10"]
-        action.dataVolumeSystemTags = ["volumeMaxIncrementalSnapshotNum::10"]
-        action.sessionId = adminSession()
-        CreateVmInstanceAction.Result result = action.call()
+        def result = createVmInstance {
+            delegate.name = "vm"
+            delegate.cpuNum = 4
+            delegate.memorySize = SizeUnit.GIGABYTE.toByte(8)
+            delegate.l3NetworkUuids = [pubL3.uuid]
+            delegate.imageUuid = image.uuid
+            delegate.diskAOs = [
+                [
+                    boot : true,
+                    systemTags : [
+                        "volumeMaxIncrementalSnapshotNum::10"
+                    ]
+                ],
+            ]
+        } as VmInstanceInventory
 
-        List<TagInventory> tags = querySystemTag {conditions=["resourceUuid=${result.value.inventory.rootVolumeUuid}".toString()]}
+        def tags = querySystemTag {
+            conditions=["resourceUuid=${result.rootVolumeUuid}".toString()]
+        } as List<TagInventory>
         assert tags.tag.contains("volumeMaxIncrementalSnapshotNum::10")
     }
 }
