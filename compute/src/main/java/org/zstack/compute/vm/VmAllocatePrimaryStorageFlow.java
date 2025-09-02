@@ -4,17 +4,17 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.allocator.HostAllocatorManager;
-import org.zstack.core.asyncbatch.AsyncLoop;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -34,12 +34,15 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.zstack.header.image.ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA;
+import static org.zstack.utils.CollectionUtils.isEmpty;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocatePrimaryStorageFlow implements Flow {
@@ -59,8 +62,55 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         HostInventory destHost = spec.getDestHost();
 
-        // allocate ps for root volume
+        msgs.add(buildMessageForRootVolume(spec, destHost));
+        msgs.addAll(buildMessageForDataVolumes(spec, destHost));
+
+        new While<>(msgs).each((msg, whileCompletion) -> {
+            bus.send(msg, new CloudBusCallBack(whileCompletion) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        whileCompletion.addError(reply.getError());
+                        whileCompletion.allDone();
+                        return;
+                    }
+
+                    VolumeSpec volumeSpec = new VolumeSpec();
+                    AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                    volumeSpec.setAllocatedInstallUrl(ar.getAllocatedInstallUrl());
+                    volumeSpec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
+                    volumeSpec.setSize(ar.getSize());
+                    volumeSpec.setType(PrimaryStorageAllocationPurpose.CreateNewVm.toString().equals(msg.getPurpose()) ?
+                            VolumeType.Root.toString() : VolumeType.Data.toString());
+                    volumeSpec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
+                    volumeSpec.setTags(msg.getSystemTags());
+                    if (VolumeType.Root.toString().equals(volumeSpec.getType())) {
+                        spec.setAllocatedPrimaryStorageUuidForRootVolume(ar.getPrimaryStorageInventory().getUuid());
+                    } else {
+                        spec.setAllocatedPrimaryStorageUuidForDataVolume(ar.getPrimaryStorageInventory().getUuid());
+                    }
+
+                    spec.getVolumeSpecs().add(volumeSpec);
+                    whileCompletion.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(trigger) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().isEmpty()) {
+                    trigger.next();
+                } else {
+                    trigger.fail(errorCodeList.getCauses().get(0));
+                }
+            }
+        });
+    }
+
+    private AllocatePrimaryStorageSpaceMsg buildMessageForRootVolume(final VmInstanceSpec spec, HostInventory destHost) {
         AllocatePrimaryStorageSpaceMsg rmsg = new AllocatePrimaryStorageSpaceMsg();
+
+        DiskAO disk = spec.getRootDisk();
+
         rmsg.setCandidatePrimaryStorageUuids(spec.getCandidatePrimaryStorageUuidsForRootVolume());
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         if (spec.getImageSpec() != null) {
@@ -73,7 +123,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             Optional.ofNullable(spec.getImageSpec().getSelectedBackupStorage())
                     .ifPresent(it -> rmsg.setBackupStorageUuid(it.getBackupStorageUuid()));
         }
-        rmsg.setSize(spec.getRootDiskAllocateSize());
+        rmsg.setSize(disk != null && disk.getSize() > 0 ? disk.getSize() : spec.getRootDiskAllocateSize());
         if (spec.getRootDiskOffering() != null) {
             rmsg.setDiskOfferingUuid(spec.getRootDiskOffering().getUuid());
             rmsg.setAllocationStrategy(spec.getRootDiskOffering().getAllocatorStrategy());
@@ -82,74 +132,54 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         rmsg.setRequiredHostUuid(destHost.getUuid());
         rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
         rmsg.setPossiblePrimaryStorageTypes(selectPsTypesFromSpec(spec));
-        rmsg.setSystemTags(spec.getRootVolumeSystemTags());
+
+        Set<String> tags = new HashSet<>();
+        if (disk != null && disk.getSystemTags() != null) {
+            tags.addAll(disk.getSystemTags());
+        }
+        if (spec.getRootVolumeSystemTags() != null) {
+            tags.addAll(spec.getRootVolumeSystemTags());
+        }
+
+        rmsg.setSystemTags(new ArrayList<>(tags));
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
-        msgs.add(rmsg);
+        return rmsg;
+    }
 
+    private List<AllocatePrimaryStorageSpaceMsg> buildMessageForDataVolumes(final VmInstanceSpec spec, HostInventory destHost) {
+        int dataVolumeCount = isEmpty(spec.getDeprecatedDisksSpecs()) ? 0 : spec.getDeprecatedDisksSpecs().size();
 
-        // allocate ps for data volumes
-        for (DiskAO dinv : spec.getDeprecatedDisksSpecs()) {
+        if (dataVolumeCount == 0) {
+            return Collections.emptyList();
+        }
+
+        List<AllocatePrimaryStorageSpaceMsg> msgs = new ArrayList<>();
+        for (int i = 0; i < dataVolumeCount; i++) {
+            DiskAO deprecatedDisk = isEmpty(spec.getDeprecatedDisksSpecs()) || i >= spec.getDeprecatedDisksSpecs().size() ?
+                    null : spec.getDeprecatedDisksSpecs().get(i);
+
             AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
             amsg.setCandidatePrimaryStorageUuids(spec.getCandidatePrimaryStorageUuidsForDataVolume());
-            amsg.setSize(dinv.getSize());
+            amsg.setSize(deprecatedDisk != null && deprecatedDisk.getSize() > 0 ? deprecatedDisk.getSize() : 0);
             amsg.setRequiredHostUuid(destHost.getUuid());
             amsg.setAllocationStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
             amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
-            amsg.setDiskOfferingUuid(dinv.getDiskOfferingUuid());
-            amsg.setSystemTags(spec.getDataVolumeSystemTags());
+            amsg.setDiskOfferingUuid(deprecatedDisk != null ? deprecatedDisk.getDiskOfferingUuid() : null);
+
+            Set<String> tags = new HashSet<>();
+            if (spec.getDataVolumeSystemTags() != null) {
+                tags.addAll(spec.getDataVolumeSystemTags());
+            }
+            if (deprecatedDisk != null && !isEmpty(deprecatedDisk.getSystemTags())) {
+                tags.addAll(deprecatedDisk.getSystemTags());
+            }
+
+            amsg.setSystemTags(new ArrayList<>(tags));
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
             msgs.add(amsg);
         }
 
-        new AsyncLoop<AllocatePrimaryStorageSpaceMsg>(trigger) {
-            @Override
-            protected Collection<AllocatePrimaryStorageSpaceMsg> collectionForLoop() {
-                return msgs;
-            }
-
-            @Override
-            protected void run(AllocatePrimaryStorageSpaceMsg msg, Completion completion) {
-                bus.send(msg, new CloudBusCallBack(completion) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            completion.fail(reply.getError());
-                            return;
-                        }
-
-                        VolumeSpec volumeSpec = new VolumeSpec();
-                        AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
-                        volumeSpec.setAllocatedInstallUrl(ar.getAllocatedInstallUrl());
-                        volumeSpec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
-                        volumeSpec.setSize(ar.getSize());
-                        volumeSpec.setType(PrimaryStorageAllocationPurpose.CreateNewVm.toString().equals(msg.getPurpose()) ?
-                                VolumeType.Root.toString() : VolumeType.Data.toString());
-                        volumeSpec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
-                        if (VolumeType.Root.toString().equals(volumeSpec.getType())) {
-                            spec.setAllocatedPrimaryStorageUuidForRootVolume(ar.getPrimaryStorageInventory().getUuid());
-                            volumeSpec.setTags(spec.getRootVolumeSystemTags());
-                        } else {
-                            spec.setAllocatedPrimaryStorageUuidForDataVolume(ar.getPrimaryStorageInventory().getUuid());
-                            volumeSpec.setTags(spec.getDataVolumeSystemTags());
-                        }
-
-                        spec.getVolumeSpecs().add(volumeSpec);
-
-                        completion.success();
-                    }
-                });
-            }
-
-            @Override
-            protected void done() {
-                trigger.next();
-            }
-
-            @Override
-            protected void error(ErrorCode errorCode) {
-                trigger.fail(errorCode);
-            }
-        }.start();
+        return msgs;
     }
 
     @Override
