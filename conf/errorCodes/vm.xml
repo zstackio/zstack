@@ -86,5 +86,20 @@
         <id>1017</id>
         <description>Cannot get vnc setting.</description>
     </code>
+
+    <code>
+        <id>1200</id>
+        <description>VM allocation error</description>
+    </code>
+
+    <code>
+        <id>1201</id>
+        <description>Wrong specific host error</description>
+    </code>
+
+    <code>
+        <id>1202</id>
+        <description>Wrong specific primary storage error</description>
+    </code>
 </error>
 

@@ -15,6 +15,7 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -41,7 +42,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.header.image.ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA;
+import static org.zstack.header.vm.VmErrors.WRONG_SPECIFIC_PS_ERROR;
 import static org.zstack.utils.CollectionUtils.isEmpty;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -111,7 +114,6 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
 
         DiskAO disk = spec.getRootDisk();
 
-        rmsg.setCandidatePrimaryStorageUuids(spec.getCandidatePrimaryStorageUuidsForRootVolume());
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         if (spec.getImageSpec() != null) {
             if (spec.getImageSpec().getInventory() != null) {
@@ -131,7 +133,20 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
 
         rmsg.setRequiredHostUuid(destHost.getUuid());
         rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
-        rmsg.setPossiblePrimaryStorageTypes(selectPsTypesFromSpec(spec));
+
+        final List<String> candidatePs = spec.getCandidatePrimaryStorageUuidsForRootVolume();
+        if (disk != null && disk.getPrimaryStorageUuid() != null) {
+            if (!isEmpty(candidatePs) && !candidatePs.contains(disk.getPrimaryStorageUuid())) {
+                throw new OperationFailureException(err(WRONG_SPECIFIC_PS_ERROR,
+                        "failed to allocate root volume to the primary storage[%s]", disk.getPrimaryStorageUuid())
+                        .withOpaque("required.primary.storage.uuid", disk.getPrimaryStorageUuid())
+                        .withOpaque("candidate.primary.storage.uuid.list", candidatePs));
+            }
+            rmsg.setRequiredPrimaryStorageUuid(disk.getPrimaryStorageUuid());
+        } else {
+            rmsg.setCandidatePrimaryStorageUuids(candidatePs);
+            rmsg.setPossiblePrimaryStorageTypes(selectPsTypesFromSpec(spec));
+        }
 
         Set<String> tags = new HashSet<>();
         if (disk != null && disk.getSystemTags() != null) {
