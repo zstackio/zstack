@@ -40,6 +40,7 @@ import java.util.*;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionUtils.isEmpty;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
@@ -125,7 +126,14 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
     public void run(final FlowTrigger trigger, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
-        String localStorageUuid = getRequiredStorageUuid(spec.getDestHost().getUuid(), spec.getRequiredPrimaryStorageUuidForRootVolume());
+        String rootPs = spec.getRootDisk().getPrimaryStorageUuid();
+        List<String> rootPsCandidates = spec.getCandidatePrimaryStorageUuidsForRootVolume();
+        if (rootPs == null && !isEmpty(rootPsCandidates) && rootPsCandidates.size() == 1) {
+            rootPs = rootPsCandidates.get(0);
+            spec.getRootDisk().setPrimaryStorageUuid(rootPs);
+        }
+
+        String localStorageUuid = getRequiredStorageUuid(spec.getDestHost().getUuid(), rootPs);
 
 
         List<String> primaryStorageTypes = null;

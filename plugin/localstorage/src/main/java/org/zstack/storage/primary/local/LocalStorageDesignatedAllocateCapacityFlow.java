@@ -120,10 +120,16 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
     }
 
     private ErrorCode checkIfSpecifyPrimaryStorage(VmInstanceSpec spec) {
-        if (spec.getRequiredPrimaryStorageUuidForRootVolume() == null) {
-            ErrorCode errorCode = operr("The cluster[uuid=%s] mounts multiple primary storage[LocalStorage, other non-LocalStorage primary storage], You must specify the primary storage where the root disk is located",
-                    spec.getDestHost().getClusterUuid());
-            return errorCode;
+        String rootPs = spec.getRootDisk().getPrimaryStorageUuid();
+        List<String> rootPsCandidates = spec.getCandidatePrimaryStorageUuidsForRootVolume();
+        if (rootPs == null) {
+            if (!isEmpty(rootPsCandidates) && rootPsCandidates.size() == 1) {
+                rootPs = rootPsCandidates.get(0);
+                spec.getRootDisk().setPrimaryStorageUuid(rootPs);
+            } else {
+                return operr("The cluster[uuid=%s] mounts multiple primary storage[LocalStorage, other non-LocalStorage primary storage], You must specify the primary storage where the root disk is located",
+                        spec.getDestHost().getClusterUuid());
+            }
         }
 
         if(!isEmpty(spec.getDeprecatedDisksSpecs()) && spec.getRequiredPrimaryStorageUuidForDataVolume() == null){
@@ -151,7 +157,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
         if (spec.getImageSpec() != null && spec.getImageSpec().getInventory() != null) {
             rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
         }
-        rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
+        rmsg.setRequiredPrimaryStorageUuid(spec.getRootDisk().getPrimaryStorageUuid());
         rmsg.setRequiredHostUuid(spec.getDestHost().getUuid());
         rmsg.setSize(spec.getRootDiskAllocateSize());
         rmsg.setSystemTags(spec.getRootVolumeSystemTags());
@@ -167,7 +173,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
 
         String requiredPrimaryStorageType = Q.New(PrimaryStorageVO.class)
                 .select(PrimaryStorageVO_.type)
-                .eq(PrimaryStorageVO_.uuid, spec.getRequiredPrimaryStorageUuidForRootVolume())
+                .eq(PrimaryStorageVO_.uuid, spec.getRootDisk().getPrimaryStorageUuid())
                 .findValue();
         if(LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(requiredPrimaryStorageType)){
             rmsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);

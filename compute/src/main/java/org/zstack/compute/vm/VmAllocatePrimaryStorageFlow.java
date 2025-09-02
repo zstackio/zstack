@@ -85,7 +85,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
                     volumeSpec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
                     volumeSpec.setTags(msg.getSystemTags());
                     if (VolumeType.Root.toString().equals(volumeSpec.getType())) {
-                        spec.setAllocatedPrimaryStorageUuidForRootVolume(ar.getPrimaryStorageInventory().getUuid());
+                        spec.getRootDisk().setPrimaryStorageUuid(ar.getPrimaryStorageInventory().getUuid());
                     } else {
                         spec.setAllocatedPrimaryStorageUuidForDataVolume(ar.getPrimaryStorageInventory().getUuid());
                     }

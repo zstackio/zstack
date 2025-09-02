@@ -423,8 +423,14 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                     return null;
                 }
 
-                boolean requireNoneLocalStorage = spec.getRequiredPrimaryStorageUuidForRootVolume() != null && Q.New(PrimaryStorageVO.class)
-                        .eq(PrimaryStorageVO_.uuid, spec.getRequiredPrimaryStorageUuidForRootVolume())
+                String rootPs = spec.getRootDisk().getPrimaryStorageUuid();
+                List<String> rootPsCandidates = spec.getCandidatePrimaryStorageUuidsForRootVolume();
+                if (rootPs == null && !isEmpty(rootPsCandidates) && rootPsCandidates.size() == 1) {
+                    rootPs = rootPsCandidates.get(0);
+                }
+
+                boolean requireNoneLocalStorage = rootPs != null && Q.New(PrimaryStorageVO.class)
+                        .eq(PrimaryStorageVO_.uuid, rootPs)
                         .notEq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)
                         .isExists();
                 requireNoneLocalStorage = requireNoneLocalStorage && (isEmpty(spec.getDeprecatedDisksSpecs()) ||
@@ -445,8 +451,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                         .param("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE)
                         .list().isEmpty();
 
-                if (!isOnlyLocalStorage && (spec.getRequiredPrimaryStorageUuidForRootVolume() != null ||
-                        spec.getRequiredPrimaryStorageUuidForDataVolume() != null)) {
+                if (!isOnlyLocalStorage && (rootPs != null || spec.getRequiredPrimaryStorageUuidForDataVolume() != null)) {
                     return new LocalStorageDesignatedAllocateCapacityFlow();
                 } else {
                     return new LocalStorageDefaultAllocateCapacityFlow();
