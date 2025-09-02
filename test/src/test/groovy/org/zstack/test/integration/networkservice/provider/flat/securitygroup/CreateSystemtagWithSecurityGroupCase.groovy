@@ -44,8 +44,12 @@ class CreateSystemtagWithSecurityGroupCase extends SubCase {
 
     void testCreateVmWithSystemtag() {
         KVMAgentCommands.ApplySecurityGroupRuleCmd cmd = null
+        Set<KVMAgentCommands.ApplySecurityGroupRuleCmd> allCmds = [] as Set
         env.afterSimulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) { rsp, HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
+            if (cmd.vmNicTOs != null && !cmd.vmNicTOs.isEmpty()) {
+                allCmds << cmd
+            }
 
             return rsp
         }
@@ -64,11 +68,12 @@ class CreateSystemtagWithSecurityGroupCase extends SubCase {
         assert refvos.get(0).priority == 1
 
         retryInSecs {
-            assert cmd != null
-            assert cmd.vmNicTOs.get(0).vmNicUuid == vm1.vmNics[0].uuid
+            assert allCmds != null
+            assert allCmds.find { it.vmNicTOs.get(0).vmNicUuid == vm1.vmNics[0].uuid }
         }
 
         cmd = null
+        allCmds = []
 
         vm2 = createVmInstance {
             name = "vm2"
@@ -84,11 +89,12 @@ class CreateSystemtagWithSecurityGroupCase extends SubCase {
         assert refvos.find { it.securityGroupUuid == sg2.uuid }.priority == 2
 
         retryInSecs {
-            assert cmd != null
-            assert cmd.vmNicTOs.get(0).vmNicUuid == vm2.vmNics[0].uuid
+            assert allCmds != null
+            assert allCmds.find { it.vmNicTOs.get(0).vmNicUuid == vm2.vmNics[0].uuid }
         }
 
         cmd = null
+        allCmds = []
 
         createSystemTag {
             resourceType = VmInstanceVO.class.simpleName
@@ -107,15 +113,19 @@ class CreateSystemtagWithSecurityGroupCase extends SubCase {
         assert refvos.find { it.securityGroupUuid == sg3.uuid }.priority == 3
 
         retryInSecs {
-            assert cmd != null
-            assert cmd.vmNicTOs.get(0).vmNicUuid == vm2.vmNics[0].uuid
+            assert allCmds != null
+            assert allCmds.find { it.vmNicTOs.get(0).vmNicUuid == vm2.vmNics[0].uuid }
         }
     }
 
     void testAttachNicWithSystemtag() {
         KVMAgentCommands.ApplySecurityGroupRuleCmd cmd = null
+        Set<KVMAgentCommands.ApplySecurityGroupRuleCmd> allCmds = [] as Set
         env.afterSimulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) { rsp, HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
+            if (cmd.vmNicTOs != null && !cmd.vmNicTOs.isEmpty()) {
+                allCmds << cmd
+            }
 
             return rsp
         }
@@ -133,11 +143,12 @@ class CreateSystemtagWithSecurityGroupCase extends SubCase {
         assert refvos.find { it.securityGroupUuid == sg3.uuid }.priority == 1
 
         retryInSecs {
-            assert cmd != null
-            assert cmd.vmNicTOs.get(0).vmNicUuid == vm3.vmNics[0].uuid
+            assert allCmds != null
+            assert allCmds.find { it.vmNicTOs.get(0).vmNicUuid == vm3.vmNics[0].uuid }
         }
 
         cmd = null
+        allCmds = []
 
         attachSecurityGroupToL3Network {
             securityGroupUuid = sg3.uuid
@@ -155,8 +166,8 @@ class CreateSystemtagWithSecurityGroupCase extends SubCase {
         assert refvos.find { it.securityGroupUuid == sg3.uuid }.priority == 1
 
         retryInSecs {
-            assert cmd != null
-            assert cmd.vmNicTOs.size() == 2
+            assert allCmds != null
+            assert allCmds.find {  it.vmNicTOs.size() == 2  }
         }
     }
 
