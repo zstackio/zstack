@@ -2,7 +2,6 @@ package org.zstack.tag;
 
 import java.sql.SQLIntegrityConstraintViolationException;
 import org.hibernate.TransactionException;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -15,13 +14,13 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.tag.*;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.PersistenceException;
 import javax.persistence.Tuple;
@@ -29,6 +28,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 
 import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.inerr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SystemTag {
@@ -46,9 +46,16 @@ public class SystemTag {
     protected List<SystemTagLifeCycleListener> lifeCycleListeners = new ArrayList<>();
     protected List<SystemTagOperationJudger> judgers = new ArrayList<>();
 
+    private boolean ephemeral = false;
+
     public SystemTag(String tagFormat, Class resourceClass) {
         this.tagFormat = tagFormat;
         this.resourceClass = resourceClass;
+    }
+
+    public static SystemTag makeEphemeralTag(String tagScript) {
+        String tagFormat = String.format("%s::%s", TagConstant.EPHEMERAL_TAG_PREFIX, tagScript);
+        return new SystemTag(tagFormat, SystemTagVO.class).markAsEphemeral();
     }
 
     public enum SystemTagOperation {
@@ -244,6 +251,12 @@ public class SystemTag {
     }
 
     public SystemTagCreator newSystemTagCreator(String resUuid) {
+        if (ephemeral) {
+            throw new OperationFailureException(inerr("ephemeral tag cannot be persist")
+                    .withOpaque("resource.uuid", resUuid)
+                    .withOpaque("tag.format", tagFormat));
+        }
+
         SystemTag self = this;
 
         return new SystemTagCreator() {
@@ -460,5 +473,14 @@ public class SystemTag {
 
     public void setValidators(List<SystemTagValidator> validators) {
         this.validators = validators;
+    }
+
+    public SystemTag markAsEphemeral() {
+        this.ephemeral = true;
+        return this;
+    }
+
+    public boolean isEphemeral() {
+        return ephemeral;
     }
 }

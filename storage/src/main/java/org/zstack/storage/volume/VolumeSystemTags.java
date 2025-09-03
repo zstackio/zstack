@@ -3,17 +3,16 @@ package org.zstack.storage.volume;
 import org.zstack.header.core.NonCloneable;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagDefinition;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeVO;
-import org.zstack.tag.EphemeralSystemTag;
 import org.zstack.tag.PatternedSystemTag;
+import org.zstack.tag.SystemTag;
 
 /**
  * Created by miao on 12/23/16.
  */
 @TagDefinition
 public class VolumeSystemTags {
-    public static EphemeralSystemTag SHAREABLE = new EphemeralSystemTag("shareable");
+    public static SystemTag SHAREABLE = SystemTag.makeEphemeralTag("shareable");
 
     public static String VOLUME_MAX_INCREMENTAL_SNAPSHOT_NUM_TOKEN = "volumeSnapshotMaxNum";
     public static PatternedSystemTag VOLUME_MAX_INCREMENTAL_SNAPSHOT_NUM = new PatternedSystemTag(String.format("volumeMaxIncrementalSnapshotNum::{%s}", VOLUME_MAX_INCREMENTAL_SNAPSHOT_NUM_TOKEN), VolumeVO.class);
@@ -37,16 +36,16 @@ public class VolumeSystemTags {
     public static PatternedSystemTag PACKER_BUILD = new PatternedSystemTag("packer", VolumeVO.class);
 
     @NonCloneable
-    public static EphemeralSystemTag FAST_CREATE = new EphemeralSystemTag("volume::fastCreate");
+    public static SystemTag FAST_CREATE = SystemTag.makeEphemeralTag("volume::fastCreate");
 
     @NonCloneable
-    public static EphemeralSystemTag FLATTEN = new EphemeralSystemTag("volume::flatten");
+    public static SystemTag FLATTEN = SystemTag.makeEphemeralTag("volume::flatten");
 
     @NonCloneable
-    public static EphemeralSystemTag FORMAT_QCOW2 = new EphemeralSystemTag("volume::format::qcow2");
+    public static SystemTag FORMAT_QCOW2 = SystemTag.makeEphemeralTag("volume::format::qcow2");
 
     @NonCloneable
-    public static EphemeralSystemTag NO_ZERO_FILLED_VOLUME = new EphemeralSystemTag("volume::noZeroFilled");
+    public static SystemTag NO_ZERO_FILLED_VOLUME = SystemTag.makeEphemeralTag("volume::noZeroFilled");
 
     public static String VOLUME_QOS_TOKEN = "qos";
     public static PatternedSystemTag VOLUME_QOS = new PatternedSystemTag(String.format("%s::{%s}", VOLUME_QOS_TOKEN, VOLUME_QOS_TOKEN), VolumeVO.class);

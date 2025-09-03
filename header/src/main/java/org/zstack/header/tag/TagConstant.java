@@ -13,8 +13,4 @@ public interface TagConstant {
     String RESOURCE_CONFIG_CATEGORY_TOKEN = "category";
     String RESOURCE_CONFIG_NAME_TOKEN = "name";
     String RESOURCE_CONFIG_VALUE_TOKEN = "value";
-
-    static boolean isEphemeralTag(String tag) {
-        return tag.startsWith(String.format("%s::", EPHEMERAL_TAG_PREFIX));
-    }
 }
