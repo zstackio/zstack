@@ -40,7 +40,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private List<String> sshKeyPairUuids;
     private final List<String> candidatePrimaryStorageUuidsForRootVolume = new ArrayList<>();
     private final List<String> candidatePrimaryStorageUuidsForDataVolume = new ArrayList<>();
-    private DiskAO rootDisk;
+    private DiskAO rootDisk = DiskAO.rootDisk();
     private List<DiskAO> dataDisks;
     private List<DiskAO> deprecatedDataVolumeSpecs = new ArrayList<>();
 

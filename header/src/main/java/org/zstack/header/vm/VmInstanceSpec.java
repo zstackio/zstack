@@ -335,7 +335,6 @@ public class VmInstanceSpec implements Serializable {
     private String requiredClusterUuid;
     private String requiredHostUuid;
     private String memorySnapshotUuid;
-    private String allocatedPrimaryStorageUuidForRootVolume;
     private String allocatedPrimaryStorageUuidForDataVolume;
     private final List<String> candidatePrimaryStorageUuidsForRootVolume = new ArrayList<>();
     private final List<String> candidatePrimaryStorageUuidsForDataVolume = new ArrayList<>();
@@ -399,7 +398,7 @@ public class VmInstanceSpec implements Serializable {
     }
 
     private List<String> disableL3Networks;
-    private DiskAO rootDisk;
+    private DiskAO rootDisk = DiskAO.rootDisk();
     private List<DiskAO> dataDisks;
     private List<DiskAO> deprecatedDisksSpecs = new ArrayList<>();
 
@@ -766,11 +765,6 @@ public class VmInstanceSpec implements Serializable {
         return nsTypes;
     }
 
-    @Deprecated
-    public String getRequiredPrimaryStorageUuidForRootVolume() {
-        return this.candidatePrimaryStorageUuidsForRootVolume.isEmpty() ? null : this.candidatePrimaryStorageUuidsForRootVolume.get(0);
-    }
-
     public void setRequiredPrimaryStorageUuidForRootVolume(String primaryStorageUuidForRootVolume) {
         this.candidatePrimaryStorageUuidsForRootVolume.clear();
         if (primaryStorageUuidForRootVolume != null) {
@@ -867,14 +861,6 @@ public class VmInstanceSpec implements Serializable {
 
     public void setDisableL3Networks(List<String> disableL3Networks) {
         this.disableL3Networks = disableL3Networks;
-    }
-
-    public String getAllocatedPrimaryStorageUuidForRootVolume() {
-        return allocatedPrimaryStorageUuidForRootVolume;
-    }
-
-    public void setAllocatedPrimaryStorageUuidForRootVolume(String allocatedPrimaryStorageUuidForRootVolume) {
-        this.allocatedPrimaryStorageUuidForRootVolume = allocatedPrimaryStorageUuidForRootVolume;
     }
 
     public String getAllocatedPrimaryStorageUuidForDataVolume() {
