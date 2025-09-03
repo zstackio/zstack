@@ -67,9 +67,6 @@ public class TagManagerImpl extends AbstractService implements TagManager,
      * systemTagsMap["a"] = [SystemTag: "a::b::c", PatternSystemTag: "a::b::\{token}"]
      */
     private Map<String, List<SystemTag>> systemTagsMap = new HashMap<>();
-    private List<SystemTag> adminOnlySystemTags = new ArrayList<>();
-    private List<PatternedSystemTag> sensitiveTags = new ArrayList<>();
-    private List<SystemTag> nonCloneableTags = new ArrayList<>();
     private Map<String, List<SystemTag>> resourceTypeSystemTagMap = new HashMap<>();
     private ResourceConfigSystemTag resourceConfigSystemTag;
     private Map<String, Class> resourceTypeClassMap = new HashMap<>();
@@ -122,15 +119,15 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                 }
 
                 if (f.isAnnotationPresent(AdminOnlyTag.class)) {
-                    adminOnlySystemTags.add(stag);
+                    stag.markAsAdminOnly();
                 }
 
                 if (f.isAnnotationPresent(NonCloneable.class)) {
-                    nonCloneableTags.add(stag);
+                    stag.disableClone();
                 }
 
                 if (f.isAnnotationPresent(SensitiveTag.class) && stag instanceof PatternedSystemTag) {
-                    sensitiveTags.add((PatternedSystemTag) stag);
+                    stag.markAsSensitive();
                     ((PatternedSystemTag) stag).annotation = f.getAnnotation(SensitiveTag.class);
                 }
 
@@ -189,10 +186,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     private String hideSensitiveInfoInTag(String tag) {
-        for (PatternedSystemTag sensitiveTag : sensitiveTags) {
-            if (sensitiveTag.isMatch(tag)) {
-                return sensitiveTag.hideSensitiveInfo(tag);
-            }
+        final SystemTag systemTag = findMatchingSystemTag(tag);
+        if (systemTag instanceof PatternedSystemTag && systemTag.isSensitive()) {
+            return ((PatternedSystemTag) systemTag).hideSensitiveInfo(tag);
         }
 
         return tag;
@@ -518,6 +514,18 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         return list == null ? null : list.stream().filter(t -> t.isMatch(tag)).findFirst().orElse(null);
     }
 
+    public SystemTag findMatchingSystemTag(String tag, String resourceType) {
+        if (tag == null) {
+            return null;
+        }
+        String head = tag.split("::")[0];
+        List<SystemTag> list = systemTagsMap.get(head);
+        return list == null ? null : list.stream()
+                .filter(t -> t.isMatch(tag) && resourceType.equals(t.resourceClass.getSimpleName()))
+                .findFirst()
+                .orElse(null);
+    }
+
     @Override
     public void deleteSystemTag(String uuid) {
         SystemTagVO vo = Q.New(SystemTagVO.class).eq(SystemTagVO_.uuid, uuid).find();
@@ -837,8 +845,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     public boolean isCloneable(String tag, String resourceType) {
-        return nonCloneableTags.stream().noneMatch(it -> resourceType.equals(it.resourceClass.getSimpleName())
-                && it.isMatch(tag));
+        final SystemTag systemTag = findMatchingSystemTag(tag, resourceType);
+        return systemTag == null ? false : systemTag.isCloneable();
     }
 
     @Override
@@ -1021,7 +1029,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             return null;
         }
 
-        if (adminOnlySystemTags.stream().anyMatch(it -> it.isMatch(tag))) {
+        final SystemTag systemTag = findMatchingSystemTag(tag);
+        if (systemTag != null && systemTag.isAdminOnly()) {
             return operr("tag[%s] is only for admin", tag);
         }
         return null;

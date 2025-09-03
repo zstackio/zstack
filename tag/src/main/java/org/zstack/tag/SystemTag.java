@@ -47,6 +47,9 @@ public class SystemTag {
     protected List<SystemTagOperationJudger> judgers = new ArrayList<>();
 
     private boolean ephemeral = false;
+    private boolean adminOnly = false;
+    private boolean cloneable = true;
+    private boolean sensitive = false;
 
     public SystemTag(String tagFormat, Class resourceClass) {
         this.tagFormat = tagFormat;
@@ -480,7 +483,34 @@ public class SystemTag {
         return this;
     }
 
+    public SystemTag markAsAdminOnly() {
+        this.adminOnly = true;
+        return this;
+    }
+
+    public SystemTag disableClone() {
+        this.cloneable = false;
+        return this;
+    }
+
+    public SystemTag markAsSensitive() {
+        this.sensitive = true;
+        return this;
+    }
+
     public boolean isEphemeral() {
         return ephemeral;
+    }
+
+    public boolean isAdminOnly() {
+        return adminOnly;
+    }
+
+    public boolean isCloneable() {
+        return cloneable;
+    }
+
+    public boolean isSensitive() {
+        return sensitive;
     }
 }
