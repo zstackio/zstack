@@ -3,6 +3,7 @@ package org.zstack.network.hostNetworkInterface.lldp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -38,6 +39,8 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private EventFacade evtf;
 
     private final Map<String, Object> interfaceLocks = new ConcurrentHashMap<>();
 
@@ -194,14 +197,32 @@ select name,ethTrunkName,switchUuid from PhysicalSwitchPortVO limit 1;
             PhysicalSwitchVO switchVO = Q.New(PhysicalSwitchVO.class)
                     .eq(PhysicalSwitchVO_.name, refVO.getSystemName()).limit(1).find();
             if (switchVO != null) {
+                PhysicalSwitchPortVO oldPhysicalSwitchPortVO = Q.New(PhysicalSwitchPortVO.class)
+                        .eq(PhysicalSwitchPortVO_.peerInterfaceUuid, interfaceUuid).find();
                 PhysicalSwitchPortVO physicalSwitchPortVO = Q.New(PhysicalSwitchPortVO.class)
                         .eq(PhysicalSwitchPortVO_.switchUuid, switchVO.getUuid())
                         .eq(PhysicalSwitchPortVO_.name, refVO.getPortId()).limit(1).find();
                 if (physicalSwitchPortVO != null) {
                     logger.debug(String.format("link host network interface[uuid:%s] to physical switch port[uuid:%s,name:%s]",
                             interfaceUuid, physicalSwitchPortVO.getUuid(), physicalSwitchPortVO.getName()));
+                    if (physicalSwitchPortVO.getPeerInterfaceUuid() != null && physicalSwitchPortVO.getPeerInterfaceUuid().equals(interfaceUuid)) {
+                        logger.debug(String.format("physical switch port[uuid:%s,name:%s] is already linked to host network interface[uuid:%s], skip",
+                                physicalSwitchPortVO.getUuid(), physicalSwitchPortVO.getName(), physicalSwitchPortVO.getPeerInterfaceUuid()));
+                        return;
+                    }
                     physicalSwitchPortVO.setPeerInterfaceUuid(interfaceUuid);
                     dbf.update(physicalSwitchPortVO);
+
+                    if (oldPhysicalSwitchPortVO != null) {
+                        oldPhysicalSwitchPortVO.setPeerInterfaceUuid(null);
+                        dbf.update(oldPhysicalSwitchPortVO);
+                    }
+
+                    HostNetworkInterfaceCanonicalEvents.PeerPortChangedData data = new HostNetworkInterfaceCanonicalEvents.PeerPortChangedData();
+                    data.setInterfaceUuid(interfaceUuid);
+                    data.setOldPhysicalSwitchPort(PhysicalSwitchPortInventory.valueOf(oldPhysicalSwitchPortVO));
+                    data.setNewPhysiaclSwitchPort(PhysicalSwitchPortInventory.valueOf(physicalSwitchPortVO));
+                    evtf.fire(HostNetworkInterfaceCanonicalEvents.PEER_PORT_CHANGED, data);
                 }
             }
         }
