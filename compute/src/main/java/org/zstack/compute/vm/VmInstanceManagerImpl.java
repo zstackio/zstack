@@ -831,17 +831,17 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 rmsg.setSize((long) t.get(0));
                 rmsg.setAllocationStrategy((String) t.get(1));
                 rmsg.setDiskOfferingUuid(msg.getRootDiskOfferingUuid());
-
-                if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(msg.getRootDiskOfferingUuid())) {
-                    DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(msg.getRootDiskOfferingUuid(), DiskOfferingUserConfig.class);
-                    if (config.getAllocate() != null && config.getAllocate().getPrimaryStorage() != null) {
-                        String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
-                        rmsg.setRequiredPrimaryStorageUuid(psUuid);
-                    }
-                }
             }
         } else {
             rmsg.setSize(imageInv.getSize());
+        }
+
+        if (msg.getRootDiskOfferingUuid() != null && DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(msg.getRootDiskOfferingUuid())) {
+            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(msg.getRootDiskOfferingUuid(), DiskOfferingUserConfig.class);
+            if (config.getAllocate() != null && config.getAllocate().getPrimaryStorage() != null) {
+                String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
+                rmsg.setRequiredPrimaryStorageUuid(psUuid);
+            }
         }
 
         if (msg.getInstanceOfferingUuid() != null && InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.hasTag(msg.getInstanceOfferingUuid())) {

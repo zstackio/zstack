@@ -286,6 +286,15 @@ class GetCandidatePrimaryStorageCase extends SubCase{
             result = getCandidatePrimaryStoragesForCreatingVm {
                 imageUuid = imageOnSftp.uuid
                 l3NetworkUuids = [l3.uuid]
+                rootDiskOfferingUuid = diskOffering.uuid
+            } as GetCandidatePrimaryStoragesForCreatingVmResult
+
+            assert result.rootVolumePrimaryStorages.size() == 1
+            assert result.rootVolumePrimaryStorages.get(0).uuid == local3.uuid
+
+            result = getCandidatePrimaryStoragesForCreatingVm {
+                imageUuid = imageOnSftp.uuid
+                l3NetworkUuids = [l3.uuid]
                 instanceOfferingUuid = instanceOffering.uuid
             } as GetCandidatePrimaryStoragesForCreatingVmResult
 

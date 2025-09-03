@@ -163,6 +163,14 @@ public class VmAbnormalLifeCycleStruct {
                         && Objects.equals(struct.getCurrentHostUuid(), struct.getOriginalHostUuid());
             }
         },
+        VmNoStateFromUnknownStateHostNotChanged {
+            @Override
+            boolean match(VmAbnormalLifeCycleStruct struct) {
+                return struct.getOriginalState() == VmInstanceState.Unknown
+                        && struct.getCurrentState() == VmInstanceState.NoState
+                        && Objects.equals(struct.getCurrentHostUuid(), struct.getOriginalHostUuid());
+            }
+        },
         VmNoStateFromCrashedStateHostNotChanged {
             @Override
             boolean match(VmAbnormalLifeCycleStruct struct) {
