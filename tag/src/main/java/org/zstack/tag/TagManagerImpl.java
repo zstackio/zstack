@@ -60,7 +60,13 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private List<SystemTag> systemTags = new ArrayList<>();
+    /**
+     * tag "a::b::c" will save in systemTagsMap with tag "a",
+     * tag "a::b::\{token}" will save in systemTagsMap with tag "a".
+     * <br/>
+     * systemTagsMap["a"] = [SystemTag: "a::b::c", PatternSystemTag: "a::b::\{token}"]
+     */
+    private Map<String, List<SystemTag>> systemTagsMap = new HashMap<>();
     private List<SystemTag> adminOnlySystemTags = new ArrayList<>();
     private List<PatternedSystemTag> sensitiveTags = new ArrayList<>();
     private List<SystemTag> nonCloneableTags = new ArrayList<>();
@@ -95,20 +101,23 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                             f.getDeclaringClass(), f.getName()));
                 }
 
+                String head = stag.getTagFormat().split("::")[0];
+                List<SystemTag> list = systemTagsMap.computeIfAbsent(head, k -> new ArrayList<>());
+
                 if (stag.isEphemeral()) {
                     // ephemeral tag is not needed to inject and validate
-                    systemTags.add(stag);
+                    list.add(stag);
                 } else if (stag instanceof PatternedSystemTag) {
                     PatternedSystemTag ptag = new PatternedSystemTag(stag.getTagFormat(), stag.getResourceClass());
                     ptag.setValidators(stag.getValidators());
                     f.set(null, ptag);
-                    systemTags.add(ptag);
+                    list.add(ptag);
                     stag = ptag;
                 } else {
                     SystemTag sstag = new SystemTag(stag.getTagFormat(), stag.getResourceClass());
                     sstag.setValidators(stag.getValidators());
                     f.set(null, sstag);
-                    systemTags.add(sstag);
+                    list.add(sstag);
                     stag = sstag;
                 }
 
@@ -501,7 +510,12 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     public SystemTag findMatchingSystemTag(String tag) {
-        return systemTags.parallelStream().filter(t -> t.isMatch(tag)).findFirst().orElse(null);
+        if (tag == null) {
+            return null;
+        }
+        String head = tag.split("::")[0];
+        List<SystemTag> list = systemTagsMap.get(head);
+        return list == null ? null : list.stream().filter(t -> t.isMatch(tag)).findFirst().orElse(null);
     }
 
     @Override
@@ -954,7 +968,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     private boolean isMatchedSystemTag(String tag) {
-        return systemTags.parallelStream().anyMatch(stag -> stag.isMatch(tag));
+        return findMatchingSystemTag(tag) != null;
     }
 
     @Override
