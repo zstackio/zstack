@@ -4,6 +4,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.DiskOfferingInventory;
+import org.zstack.header.configuration.VmCustomSpecificationStruct;
 import org.zstack.header.host.CpuArchitecture;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -398,6 +399,7 @@ public class VmInstanceSpec implements Serializable {
 
     private List<String> disableL3Networks;
     private List<DiskAO> diskAOs;
+    private VmCustomSpecificationStruct vmCustomSpecification;
 
     public List<DiskAO> getDiskAOs() {
         return diskAOs;
@@ -405,6 +407,14 @@ public class VmInstanceSpec implements Serializable {
 
     public void setDiskAOs(List<DiskAO> diskAOs) {
         this.diskAOs = diskAOs;
+    }
+
+    public VmCustomSpecificationStruct getVmCustomSpecification() {
+        return vmCustomSpecification;
+    }
+
+    public void setVmCustomSpecification(VmCustomSpecificationStruct vmCustomSpecification) {
+        this.vmCustomSpecification = vmCustomSpecification;
     }
 
     public boolean isSkipIpAllocation() {

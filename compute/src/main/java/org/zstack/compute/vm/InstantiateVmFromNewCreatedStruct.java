@@ -1,11 +1,8 @@
 package org.zstack.compute.vm;
 
+import org.zstack.header.configuration.VmCustomSpecificationStruct;
 import org.zstack.header.host.CpuArchitecture;
-import org.zstack.header.vm.CreateVmInstanceMsg;
-import org.zstack.header.vm.DiskAO;
-import org.zstack.header.vm.InstantiateNewCreatedVmInstanceMsg;
-import org.zstack.header.vm.VmCreationStrategy;
-import org.zstack.header.vm.VmNicSpec;
+import org.zstack.header.vm.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +31,7 @@ public class InstantiateVmFromNewCreatedStruct {
     private final List<String> candidatePrimaryStorageUuidsForRootVolume = new ArrayList<>();
     private final List<String> candidatePrimaryStorageUuidsForDataVolume = new ArrayList<>();
     private List<DiskAO> diskAOs;
+    private VmCustomSpecificationStruct vmCustomSpecification;
 
     public List<String> getCandidatePrimaryStorageUuidsForRootVolume() {
         return candidatePrimaryStorageUuidsForRootVolume;
@@ -64,6 +62,14 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public void setDiskAOs(List<DiskAO> diskAOs) {
         this.diskAOs = diskAOs;
+    }
+
+    public VmCustomSpecificationStruct getVmCustomSpecification() {
+        return vmCustomSpecification;
+    }
+
+    public void setVmCustomSpecification(VmCustomSpecificationStruct vmCustomSpecification) {
+        this.vmCustomSpecification = vmCustomSpecification;
     }
 
     public List<String> getRootVolumeSystemTags() {
@@ -153,6 +159,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
         struct.setDisableL3Networks(msg.getDisableL3Networks());
         struct.setDiskAOs(msg.getDiskAOs());
+        struct.setVmCustomSpecification(msg.getVmCustomSpecification());
         return struct;
     }
 
@@ -172,6 +179,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
         struct.setDisableL3Networks(msg.getDisableL3Networks());
         struct.setDiskAOs(msg.getDiskAOs());
+        struct.setVmCustomSpecification(msg.getVmCustomSpecification());
         return struct;
     }
 

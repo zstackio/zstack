@@ -1,6 +1,6 @@
-package org.zstack.sdk;
+package org.zstack.sdk.guesttools;
 
-import org.zstack.sdk.GuestToolsInventory;
+import org.zstack.sdk.guesttools.GuestToolsInventory;
 
 public class GetLatestGuestToolsForVmResult {
     public GuestToolsInventory inventory;

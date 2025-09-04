@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.guesttools;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ChangeBareMetal2InstancePasswordAction extends AbstractAction {
+public class GetLatestGuestToolsForVmAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ChangeBareMetal2InstancePasswordAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ChangeBareMetal2InstancePasswordResult value;
+        public org.zstack.sdk.guesttools.GetLatestGuestToolsForVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -27,12 +27,6 @@ public class ChangeBareMetal2InstancePasswordAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = true)
-    public java.lang.String username;
-
-    @Param(required = true, validRegexValues = "[\\da-zA-Z-`=\\\\\\[\\];',./~!@#$%^&*()_+|{}:\"<>?]{0,}", maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = true)
-    public java.lang.String password;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -52,12 +46,6 @@ public class ChangeBareMetal2InstancePasswordAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -66,8 +54,8 @@ public class ChangeBareMetal2InstancePasswordAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ChangeBareMetal2InstancePasswordResult value = res.getResult(org.zstack.sdk.ChangeBareMetal2InstancePasswordResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ChangeBareMetal2InstancePasswordResult() : value; 
+        org.zstack.sdk.guesttools.GetLatestGuestToolsForVmResult value = res.getResult(org.zstack.sdk.guesttools.GetLatestGuestToolsForVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.guesttools.GetLatestGuestToolsForVmResult() : value; 
 
         return ret;
     }
@@ -96,11 +84,11 @@ public class ChangeBareMetal2InstancePasswordAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/baremetal2/bm-instances/{uuid}/action";
+        info.httpMethod = "GET";
+        info.path = "/vm-instances/{uuid}/latest-guest-tools";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "changeBareMetal2InstancePassword";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

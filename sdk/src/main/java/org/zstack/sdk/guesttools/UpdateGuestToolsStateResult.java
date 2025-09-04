@@ -1,6 +1,6 @@
-package org.zstack.sdk;
+package org.zstack.sdk.guesttools;
 
-import org.zstack.sdk.GuestToolsStateInventory;
+import org.zstack.sdk.guesttools.GuestToolsStateInventory;
 
 public class UpdateGuestToolsStateResult {
     public GuestToolsStateInventory inventory;

@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.guesttools;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetVmGuestToolsInfoAction extends AbstractAction {
+public class UpdateGuestToolsStateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetVmGuestToolsInfoAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetVmGuestToolsInfoResult value;
+        public org.zstack.sdk.guesttools.UpdateGuestToolsStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,7 @@ public class GetVmGuestToolsInfoAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Set debug;
+    public java.lang.String vmInstanceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -57,8 +54,8 @@ public class GetVmGuestToolsInfoAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetVmGuestToolsInfoResult value = res.getResult(org.zstack.sdk.GetVmGuestToolsInfoResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetVmGuestToolsInfoResult() : value; 
+        org.zstack.sdk.guesttools.UpdateGuestToolsStateResult value = res.getResult(org.zstack.sdk.guesttools.UpdateGuestToolsStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.guesttools.UpdateGuestToolsStateResult() : value; 
 
         return ret;
     }
@@ -87,11 +84,11 @@ public class GetVmGuestToolsInfoAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/vm-instances/{uuid}/guest-tools-infos";
+        info.httpMethod = "PUT";
+        info.path = "/vm-instances/{vmInstanceUuid}/guesttools-state";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "";
+        info.parameterName = "updateGuestToolsState";
         return info;
     }
 

@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.guesttools;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryGuestToolsStateAction extends QueryAction {
+public class UpdateVmNetworkConfigAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryGuestToolsStateAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryGuestToolsStateResult value;
+        public org.zstack.sdk.guesttools.UpdateVmNetworkConfigResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,6 +25,35 @@ public class QueryGuestToolsStateAction extends QueryAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vmInstanceUuid;
+
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List vmNicUuids;
+
+    @Param(required = false)
+    public java.util.List systemTags;
+
+    @Param(required = false)
+    public java.util.List userTags;
+
+    @Param(required = false)
+    public String sessionId;
+
+    @Param(required = false)
+    public String accessKeyId;
+
+    @Param(required = false)
+    public String accessKeySecret;
+
+    @Param(required = false)
+    public String requestIp;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -34,8 +63,8 @@ public class QueryGuestToolsStateAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryGuestToolsStateResult value = res.getResult(org.zstack.sdk.QueryGuestToolsStateResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryGuestToolsStateResult() : value; 
+        org.zstack.sdk.guesttools.UpdateVmNetworkConfigResult value = res.getResult(org.zstack.sdk.guesttools.UpdateVmNetworkConfigResult.class);
+        ret.value = value == null ? new org.zstack.sdk.guesttools.UpdateVmNetworkConfigResult() : value; 
 
         return ret;
     }
@@ -64,11 +93,11 @@ public class QueryGuestToolsStateAction extends QueryAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/guesttools";
+        info.httpMethod = "PUT";
+        info.path = "/vm-instances/{vmInstanceUuid}/update-nic-config";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "updateVmNetworkConfig";
         return info;
     }
 

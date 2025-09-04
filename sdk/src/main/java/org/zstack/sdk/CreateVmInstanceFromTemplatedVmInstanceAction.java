@@ -73,6 +73,9 @@ public class CreateVmInstanceFromTemplatedVmInstanceAction extends AbstractActio
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public org.zstack.sdk.VmCustomSpecificationStruct vmCustomSpecification;
+
     @Param(required = false)
     public java.util.List systemTags;
 
