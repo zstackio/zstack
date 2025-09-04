@@ -16,7 +16,8 @@ public class DomainUtils {
     }
 
     public static Boolean curl(String url) {
-        ShellResult rst = ShellUtils.runAndReturn(String.format("curl %s", url), true);
+        String command = String.format("curl -sf --head --connect-timeout 5 %s", url);
+        ShellResult rst = ShellUtils.runAndReturn(command, true);
         return rst.getRetCode() == 0;
     }
 

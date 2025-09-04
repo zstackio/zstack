@@ -17,6 +17,7 @@ import java.util.Set;
                 @EntityGraph.Neighbour(type = ImageBackupStorageRefVO.class, myField = "uuid", targetField = "imageUuid")
         }
 )
+@Inheritance(strategy = InheritanceType.JOINED)
 public class ImageVO extends ImageAO implements OwnedByAccount, ToInventory {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "imageUuid", insertable = false, updatable = false)

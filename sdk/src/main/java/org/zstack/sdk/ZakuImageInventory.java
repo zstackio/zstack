@@ -1,8 +1,8 @@
-package org.zstack.sdk.iam2.container;
+package org.zstack.sdk;
 
 
 
-public class ContainerImageInventory  {
+public class ZakuImageInventory  {
 
     public java.lang.String name;
     public void setName(java.lang.String name) {

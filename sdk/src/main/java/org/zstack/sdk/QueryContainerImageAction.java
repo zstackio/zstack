@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class LoginIAM2VirtualIDWithLdapAction extends AbstractAction {
+public class QueryContainerImageAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class LoginIAM2VirtualIDWithLdapAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.LoginIAM2VirtualIDWithLdapResult value;
+        public org.zstack.sdk.QueryContainerImageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,6 @@ public class LoginIAM2VirtualIDWithLdapAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String password;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String verifyCode;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String captchaUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map clientInfo;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @NonAPIParam
-    public boolean isSuppressCredentialCheck = true;
-
-    @Param(required = false)
-    public String requestIp;
 
 
     private Result makeResult(ApiResult res) {
@@ -60,8 +34,8 @@ public class LoginIAM2VirtualIDWithLdapAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.LoginIAM2VirtualIDWithLdapResult value = res.getResult(org.zstack.sdk.LoginIAM2VirtualIDWithLdapResult.class);
-        ret.value = value == null ? new org.zstack.sdk.LoginIAM2VirtualIDWithLdapResult() : value; 
+        org.zstack.sdk.QueryContainerImageResult value = res.getResult(org.zstack.sdk.QueryContainerImageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryContainerImageResult() : value; 
 
         return ret;
     }
@@ -90,11 +64,11 @@ public class LoginIAM2VirtualIDWithLdapAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/iam2/login/virtual-ids/ldap";
-        info.needSession = false;
+        info.httpMethod = "GET";
+        info.path = "/container/images";
+        info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "loginIAM2VirtualIDWithLdap";
+        info.parameterName = "";
         return info;
     }
 
