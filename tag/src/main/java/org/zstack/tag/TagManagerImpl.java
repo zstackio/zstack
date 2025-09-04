@@ -1,6 +1,7 @@
 package org.zstack.tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -98,7 +99,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                             f.getDeclaringClass(), f.getName()));
                 }
 
-                String head = stag.getTagFormat().split("::")[0];
+                String head = findHeadForSystemTag(stag.getTagFormat());
                 List<SystemTag> list = systemTagsMap.computeIfAbsent(head, k -> new ArrayList<>());
 
                 if (stag.isEphemeral()) {
@@ -132,11 +133,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                 }
 
                 stag.setTagMgr(this);
-                List<SystemTag> lst = resourceTypeSystemTagMap.get(stag.getResourceClass().getSimpleName());
-                if (lst == null) {
-                    lst = new ArrayList<>();
-                    resourceTypeSystemTagMap.put(stag.getResourceClass().getSimpleName(), lst);
-                }
+                List<SystemTag> lst = resourceTypeSystemTagMap.computeIfAbsent(
+                        stag.getResourceClass().getSimpleName(), k -> new ArrayList<>());
                 lst.add(stag);
             }
         }
@@ -167,7 +165,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         for (Class cmsgClz : createMessageClass) {
             TagResourceType at = (TagResourceType) cmsgClz.getAnnotation(TagResourceType.class);
             Class resType = at.value();
-            if (!resourceTypeClassMap.values().contains(resType)) {
+            if (!resourceTypeClassMap.containsValue(resType)) {
                 throw new CloudRuntimeException(String.format(
                         "tag resource type[%s] defined in @TagResourceType of class[%s] is not a VO entity",
                         resType.getName(), cmsgClz.getName()));
@@ -202,12 +200,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                             ext.getClass(), resType));
                 }
 
-                List<SystemTagLifeCycleExtension> lst = lifeCycleExtensions.get(resType);
-                if (lst == null) {
-                    lst = new ArrayList<>();
-                    lifeCycleExtensions.put(resType, lst);
-                }
-
+                List<SystemTagLifeCycleExtension> lst = lifeCycleExtensions.computeIfAbsent(resType, k -> new ArrayList<>());
                 lst.add(ext);
             }
         }
@@ -231,7 +224,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Transactional
     private TagInventory createTag(String resourceUuid, String tag, TagType type, String resourceType) {
-        if (!resourceTypeClassMap.keySet().contains(resourceType)) {
+        if (!resourceTypeClassMap.containsKey(resourceType)) {
             throw new IllegalArgumentException(String.format("no resource type[%s] found for tag", resourceType));
         }
 
@@ -504,12 +497,16 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         return hasTag(resourceUuid, tag.toString(), TagType.System);
     }
 
+    private String findHeadForSystemTag(@NonNull String tag) {
+        return tag.split("::")[0];
+    }
+
     @Override
     public SystemTag findMatchingSystemTag(String tag) {
         if (tag == null) {
             return null;
         }
-        String head = tag.split("::")[0];
+        String head = findHeadForSystemTag(tag);
         List<SystemTag> list = systemTagsMap.get(head);
         return list == null ? null : list.stream().filter(t -> t.isMatch(tag)).findFirst().orElse(null);
     }
@@ -518,7 +515,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         if (tag == null) {
             return null;
         }
-        String head = tag.split("::")[0];
+        String head = findHeadForSystemTag(tag);
         List<SystemTag> list = systemTagsMap.get(head);
         return list == null ? null : list.stream()
                 .filter(t -> t.isMatch(tag) && resourceType.equals(t.resourceClass.getSimpleName()))
@@ -828,11 +825,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             throw new CloudRuntimeException(String.format("cannot find resource type[%s] in tag system ", resourceType));
         }
 
-        List<SystemTagResourceDeletionOperator> operators = resourceDeletionOperators.get(resourceType);
-        if (operators == null) {
-            operators = new ArrayList<>();
-            resourceDeletionOperators.put(resourceType, operators);
-        }
+        List<SystemTagResourceDeletionOperator> operators =
+                resourceDeletionOperators.computeIfAbsent(resourceType, k -> new ArrayList<>());
         operators.add(operator);
     }
 
@@ -855,11 +849,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             throw new CloudRuntimeException(String.format("cannot find resource type[%s] in tag system ", resourceType));
         }
 
-        List<SystemTagCreateMessageValidator> validators = createMessageValidators.get(resourceType);
-        if (validators == null) {
-            validators = new ArrayList<SystemTagCreateMessageValidator>();
-            createMessageValidators.put(resourceType, validators);
-        }
+        List<SystemTagCreateMessageValidator> validators =
+                createMessageValidators.computeIfAbsent(resourceType, k -> new ArrayList<>());
         validators.add(validator);
     }
 
@@ -949,7 +940,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     public List<Class> getMessageClassToIntercept() {
-        return list((Class) APICreateMessage.class);
+        return list(APICreateMessage.class);
     }
 
     @Override

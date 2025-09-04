@@ -255,7 +255,7 @@ public class SystemTag {
 
     public SystemTagCreator newSystemTagCreator(String resUuid) {
         if (ephemeral) {
-            throw new OperationFailureException(inerr("ephemeral tag cannot be persist")
+            throw new OperationFailureException(inerr("ephemeral tag cannot be persisted")
                     .withOpaque("resource.uuid", resUuid)
                     .withOpaque("tag.format", tagFormat));
         }
