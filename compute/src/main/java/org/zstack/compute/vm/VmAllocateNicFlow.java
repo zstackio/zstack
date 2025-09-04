@@ -136,8 +136,8 @@ public class VmAllocateNicFlow implements Flow {
             if (!StringUtils.isEmpty(nicSpec.getNicDriverType())) {
                 nic.setDriverType(nicSpec.getNicDriverType());
             } else {
-                boolean vmHasVirtio = VmSystemTags.VIRTIO.hasTag(spec.getVmInventory().getUuid());
-                nicManager.setNicDriverType(nic, vmHasVirtio,
+                boolean vmImageHasVirtio = VmSystemTags.VIRTIO.hasTag(spec.getVmInventory().getUuid());
+                nicManager.setNicDriverType(nic, vmImageHasVirtio,
                         ImagePlatform.valueOf(spec.getVmInventory().getPlatform()).isParaVirtualization(),
                         spec.getVmInventory());
             }
