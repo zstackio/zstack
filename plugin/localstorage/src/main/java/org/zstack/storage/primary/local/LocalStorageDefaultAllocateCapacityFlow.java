@@ -11,8 +11,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -135,46 +133,8 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
 
         String localStorageUuid = getRequiredStorageUuid(spec.getDestHost().getUuid(), rootPs);
 
-
-        List<String> primaryStorageTypes = null;
-        if (spec.getImageSpec().isNeedDownload() || spec.getImageSpec().getSelectedBackupStorage() != null) {
-            SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
-            q.select(BackupStorageVO_.type);
-            q.add(BackupStorageVO_.uuid, Op.EQ, spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
-            String bsType = q.findValue();
-            primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
-            DebugUtils.Assert(primaryStorageTypes != null, "why primaryStorageTypes is null");
-        }
-
         List<AllocatePrimaryStorageSpaceMsg> msgs = new ArrayList<>();
-
-        AllocatePrimaryStorageSpaceMsg rmsg = new AllocatePrimaryStorageSpaceMsg();
-        rmsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
-        rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
-        if (spec.getImageSpec() != null) {
-            if (spec.getImageSpec().getInventory() != null) {
-                rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
-            }
-            Optional.ofNullable(spec.getImageSpec().getSelectedBackupStorage())
-                    .ifPresent(it -> rmsg.setBackupStorageUuid(it.getBackupStorageUuid()));
-        }
-        rmsg.setRequiredPrimaryStorageUuid(localStorageUuid);
-        rmsg.setRequiredHostUuid(spec.getDestHost().getUuid());
-        rmsg.setSize(spec.getRootDiskAllocateSize());
-        rmsg.setSystemTags(spec.getRootVolumeSystemTags());
-        if (spec.getRootDiskOffering() != null) {
-            rmsg.setDiskOfferingUuid(spec.getRootDiskOffering().getUuid());
-        }
-
-        if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
-            rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
-        } else if (spec.getCurrentVmOperation() == VmOperation.AttachVolume) {
-            rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
-        }
-
-        bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
-
-        rmsg.setPossiblePrimaryStorageTypes(primaryStorageTypes);
+        AllocatePrimaryStorageSpaceMsg rmsg = buildMessageForRootVolume(spec, localStorageUuid);
         msgs.add(rmsg);
 
         if (!spec.getDeprecatedDisksSpecs().isEmpty()) {
@@ -275,6 +235,54 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
                 trigger.fail(errorCode);
             }
         }.start();
+    }
+
+    private AllocatePrimaryStorageSpaceMsg buildMessageForRootVolume(final VmInstanceSpec spec, String localStorageUuid) {
+        List<String> primaryStorageTypes = null;
+        if (spec.getImageSpec().isNeedDownload() || spec.getImageSpec().getSelectedBackupStorage() != null) {
+            String bsType = Q.New(BackupStorageVO.class)
+                    .select(BackupStorageVO_.type)
+                    .eq(BackupStorageVO_.uuid, spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid())
+                    .findValue();
+            primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
+            DebugUtils.Assert(primaryStorageTypes != null, "why primaryStorageTypes is null");
+        }
+
+        AllocatePrimaryStorageSpaceMsg rmsg = new AllocatePrimaryStorageSpaceMsg();
+        rmsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
+        rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
+        if (spec.getImageSpec() != null) {
+            if (spec.getImageSpec().getInventory() != null) {
+                rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
+            }
+            Optional.ofNullable(spec.getImageSpec().getSelectedBackupStorage())
+                    .ifPresent(it -> rmsg.setBackupStorageUuid(it.getBackupStorageUuid()));
+        }
+        rmsg.setRequiredPrimaryStorageUuid(localStorageUuid);
+        rmsg.setPossiblePrimaryStorageTypes(primaryStorageTypes);
+        rmsg.setRequiredHostUuid(spec.getDestHost().getUuid());
+        rmsg.setSize(spec.getRootDiskAllocateSize());
+        if (spec.getRootDiskOffering() != null) {
+            rmsg.setDiskOfferingUuid(spec.getRootDiskOffering().getUuid());
+        }
+
+        if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
+            rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
+        } else if (spec.getCurrentVmOperation() == VmOperation.AttachVolume) {
+            rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
+        }
+
+        List<String> tags = new ArrayList<>();
+        if (!isEmpty(spec.getRootVolumeSystemTags())) {
+            tags.addAll(spec.getRootVolumeSystemTags());
+        }
+        if (!isEmpty(spec.getRootDisk().getSystemTags())) {
+            tags.addAll(spec.getRootDisk().getSystemTags());
+        }
+        rmsg.setSystemTags(tags);
+
+        bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
+        return rmsg;
     }
 
     private List<String> getLocalStorageInCluster(String clusterUuid) {
