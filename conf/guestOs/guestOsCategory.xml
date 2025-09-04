@@ -26,6 +26,18 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>CentOS Stream</name>
+        <version>9</version>
+        <osRelease>CentOS Stream 9</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>CentOS Stream</name>
+        <version>10</version>
+        <osRelease>CentOS Stream 10</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>RedHat</name>
         <version>5</version>
         <osRelease>RHEL 5</osRelease>
@@ -56,6 +68,12 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>RedHat</name>
+        <version>10</version>
+        <osRelease>RHEL 10</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>Ubuntu</name>
         <version>16</version>
         <osRelease>Ubuntu 16</osRelease>
@@ -77,6 +95,12 @@
         <name>Ubuntu</name>
         <version>22</version>
         <osRelease>Ubuntu 22</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Ubuntu</name>
+        <version>24</version>
+        <osRelease>Ubuntu 24</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
@@ -104,9 +128,33 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>Debian</name>
+        <version>11</version>
+        <osRelease>Debian 11</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Debian</name>
+        <version>12</version>
+        <osRelease>Debian 12</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Debian</name>
+        <version>13</version>
+        <osRelease>Debian 13</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>Fedora</name>
         <version></version>
         <osRelease>Fedora</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Fedora</name>
+        <version>42</version>
+        <osRelease>Fedora 42</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
@@ -128,6 +176,12 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>Kylin</name>
+        <version>11</version>
+        <osRelease>Kylin 11</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>UOS</name>
         <version>20</version>
         <osRelease>UOS 20</osRelease>
@@ -143,6 +197,12 @@
         <name>openEuler</name>
         <version>22.03</version>
         <osRelease>openEuler 22.03</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>openEuler</name>
+        <version>24.03</version>
+        <osRelease>openEuler 24.03</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
@@ -179,6 +239,42 @@
         <name>Oracle</name>
         <version>7</version>
         <osRelease>Oracle Linux 7</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Oracle</name>
+        <version>8</version>
+        <osRelease>Oracle Linux 8</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Oracle</name>
+        <version>9</version>
+        <osRelease>Oracle Linux 9</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Rocky Linux</name>
+        <version>8</version>
+        <osRelease>Rocky Linux 8</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Rocky Linux</name>
+        <version>9</version>
+        <osRelease>Rocky Linux 9</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Rocky Linux</name>
+        <version>10</version>
+        <osRelease>Rocky Linux 10</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>AnolisOS</name>
+        <version>8</version>
+        <osRelease>AnolisOS 8</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
@@ -228,6 +324,12 @@
         <name>Windows</name>
         <version>2022</version>
         <osRelease>WindowsServer 2022</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Windows</platform>
+        <name>Windows</name>
+        <version>2025</version>
+        <osRelease>WindowsServer 2025</osRelease>
     </osInfo>
     <osInfo>
         <platform>Windows</platform>
