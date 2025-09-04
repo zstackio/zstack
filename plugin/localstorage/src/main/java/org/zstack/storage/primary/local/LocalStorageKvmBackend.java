@@ -2196,7 +2196,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 cmd.imagePath = makeCachedImageInstallUrlFromImageUuidForTemplate(msg.getVolume().getRootImageUuid());
                 cmd.volumePath = makeRootVolumeInstallUrl(msg.getVolume());
 
-                httpCall(REINIT_IMAGE_PATH, hostUuid, cmd, ReinitImageRsp.class, new ReturnValueCompletion<ReinitImageRsp>(completion) {
+                httpCall(REINIT_IMAGE_PATH, hostUuid, cmd, ReinitImageRsp.class, new ReturnValueCompletion<ReinitImageRsp>(trigger) {
                     @Override
                     public void success(ReinitImageRsp rsp) {
                         reply.setNewVolumeInstallPath(rsp.getNewVolumeInstallPath());
