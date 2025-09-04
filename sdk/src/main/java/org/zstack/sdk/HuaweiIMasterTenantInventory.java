@@ -28,11 +28,11 @@ public class HuaweiIMasterTenantInventory  {
         return this.description;
     }
 
-    public java.lang.String fabricIds;
-    public void setFabricIds(java.lang.String fabricIds) {
+    public java.util.List fabricIds;
+    public void setFabricIds(java.util.List fabricIds) {
         this.fabricIds = fabricIds;
     }
-    public java.lang.String getFabricIds() {
+    public java.util.List getFabricIds() {
         return this.fabricIds;
     }
 

@@ -25,7 +25,6 @@ public class SdnControllerInventory implements Serializable {
     private String description;
     private String ip;
     private String username;
-    @NoLogging
     private String password;
     private SdnControllerStatus status;
     private Timestamp createDate;
