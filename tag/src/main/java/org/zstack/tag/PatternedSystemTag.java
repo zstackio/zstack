@@ -7,6 +7,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
+import org.zstack.header.tag.TagConstant;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -26,6 +27,13 @@ public class PatternedSystemTag extends SystemTag {
 
     public PatternedSystemTag(String tagFormat, Class resourceClass) {
         super(tagFormat, resourceClass);
+    }
+
+    public static PatternedSystemTag makeEphemeralTag(String tagFormatWithoutPrefix) {
+        String tagFormat = String.format("%s::%s", TagConstant.EPHEMERAL_TAG_PREFIX, tagFormatWithoutPrefix);
+        PatternedSystemTag tag = new PatternedSystemTag(tagFormat, SystemTagVO.class);
+        tag.markAsEphemeral();
+        return tag;
     }
 
     @Override

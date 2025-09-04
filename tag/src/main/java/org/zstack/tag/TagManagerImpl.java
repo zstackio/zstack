@@ -60,10 +60,13 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private List<SystemTag> systemTags = new ArrayList<>();
-    private List<SystemTag> adminOnlySystemTags = new ArrayList<>();
-    private List<PatternedSystemTag> sensitiveTags = new ArrayList<>();
-    private List<SystemTag> nonCloneableTags = new ArrayList<>();
+    /**
+     * tag "a::b::c" will save in systemTagsMap with tag "a",
+     * tag "a::b::\{token}" will save in systemTagsMap with tag "a".
+     * <br/>
+     * systemTagsMap["a"] = [SystemTag: "a::b::c", PatternSystemTag: "a::b::\{token}"]
+     */
+    private Map<String, List<SystemTag>> systemTagsMap = new HashMap<>();
     private Map<String, List<SystemTag>> resourceTypeSystemTagMap = new HashMap<>();
     private ResourceConfigSystemTag resourceConfigSystemTag;
     private Map<String, Class> resourceTypeClassMap = new HashMap<>();
@@ -95,34 +98,36 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                             f.getDeclaringClass(), f.getName()));
                 }
 
-                if (PatternedSystemTag.class.isAssignableFrom(f.getType())) {
+                String head = stag.getTagFormat().split("::")[0];
+                List<SystemTag> list = systemTagsMap.computeIfAbsent(head, k -> new ArrayList<>());
+
+                if (stag.isEphemeral()) {
+                    // ephemeral tag is not needed to inject and validate
+                    list.add(stag);
+                } else if (stag instanceof PatternedSystemTag) {
                     PatternedSystemTag ptag = new PatternedSystemTag(stag.getTagFormat(), stag.getResourceClass());
                     ptag.setValidators(stag.getValidators());
                     f.set(null, ptag);
-                    systemTags.add(ptag);
+                    list.add(ptag);
                     stag = ptag;
-                } else if (EphemeralSystemTag.class.isAssignableFrom(f.getType())) {
-                    // pass
-                    // ephemeral tag is not needed to inject and validate
-                    systemTags.add(stag);
                 } else {
                     SystemTag sstag = new SystemTag(stag.getTagFormat(), stag.getResourceClass());
                     sstag.setValidators(stag.getValidators());
                     f.set(null, sstag);
-                    systemTags.add(sstag);
+                    list.add(sstag);
                     stag = sstag;
                 }
 
                 if (f.isAnnotationPresent(AdminOnlyTag.class)) {
-                    adminOnlySystemTags.add(stag);
+                    stag.markAsAdminOnly();
                 }
 
                 if (f.isAnnotationPresent(NonCloneable.class)) {
-                    nonCloneableTags.add(stag);
+                    stag.disableClone();
                 }
 
                 if (f.isAnnotationPresent(SensitiveTag.class) && stag instanceof PatternedSystemTag) {
-                    sensitiveTags.add((PatternedSystemTag) stag);
+                    stag.markAsSensitive();
                     ((PatternedSystemTag) stag).annotation = f.getAnnotation(SensitiveTag.class);
                 }
 
@@ -181,10 +186,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     private String hideSensitiveInfoInTag(String tag) {
-        for (PatternedSystemTag sensitiveTag : sensitiveTags) {
-            if (sensitiveTag.isMatch(tag)) {
-                return sensitiveTag.hideSensitiveInfo(tag);
-            }
+        final SystemTag systemTag = findMatchingSystemTag(tag);
+        if (systemTag instanceof PatternedSystemTag && systemTag.isSensitive()) {
+            return ((PatternedSystemTag) systemTag).hideSensitiveInfo(tag);
         }
 
         return tag;
@@ -352,7 +356,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Override
     public void createNonInherentSystemTags(List<String> sysTags, String resourceUuid, String resourceType) {
         for (String tag : sysTags) {
-            if (TagConstant.isEphemeralTag(tag)) {
+            if (isEphemeralTag(tag)) {
                 continue;
             }
             createNonInherentSystemTag(resourceUuid, tag, resourceType);
@@ -502,7 +506,24 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     public SystemTag findMatchingSystemTag(String tag) {
-        return systemTags.parallelStream().filter(t -> t.isMatch(tag)).findFirst().orElse(null);
+        if (tag == null) {
+            return null;
+        }
+        String head = tag.split("::")[0];
+        List<SystemTag> list = systemTagsMap.get(head);
+        return list == null ? null : list.stream().filter(t -> t.isMatch(tag)).findFirst().orElse(null);
+    }
+
+    public SystemTag findMatchingSystemTag(String tag, String resourceType) {
+        if (tag == null) {
+            return null;
+        }
+        String head = tag.split("::")[0];
+        List<SystemTag> list = systemTagsMap.get(head);
+        return list == null ? null : list.stream()
+                .filter(t -> t.isMatch(tag) && resourceType.equals(t.resourceClass.getSimpleName()))
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
@@ -824,8 +845,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     public boolean isCloneable(String tag, String resourceType) {
-        return nonCloneableTags.stream().noneMatch(it -> resourceType.equals(it.resourceClass.getSimpleName())
-                && it.isMatch(tag));
+        final SystemTag systemTag = findMatchingSystemTag(tag, resourceType);
+        return systemTag == null ? false : systemTag.isCloneable();
     }
 
     @Override
@@ -846,7 +867,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     public void createTags(List<String> systemTags, List<String> userTags, String resourceUuid, String resourceType) {
         if (systemTags != null && !systemTags.isEmpty()) {
             for (String sysTag : systemTags) {
-                if (TagConstant.isEphemeralTag(sysTag)) {
+                if (isEphemeralTag(sysTag)) {
                     continue;
                 }
 
@@ -946,7 +967,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         }
 
         for (String s : msg.getSystemTags()) {
-            if (!TagConstant.isEphemeralTag(s)) {
+            if (!isEphemeralTag(s)) {
                 return true;
             }
         }
@@ -955,7 +976,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     private boolean isMatchedSystemTag(String tag) {
-        return systemTags.parallelStream().anyMatch(stag -> stag.isMatch(tag));
+        return findMatchingSystemTag(tag) != null;
     }
 
     @Override
@@ -1008,7 +1029,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             return null;
         }
 
-        if (adminOnlySystemTags.stream().anyMatch(it -> it.isMatch(tag))) {
+        final SystemTag systemTag = findMatchingSystemTag(tag);
+        if (systemTag != null && systemTag.isAdminOnly()) {
             return operr("tag[%s] is only for admin", tag);
         }
         return null;
@@ -1102,5 +1124,10 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Override
     public void postHardDelete(Collection entityIds, Class entityClass) {
         postDelete(entityIds, entityClass);
+    }
+
+    public boolean isEphemeralTag(String tag) {
+        final SystemTag systemTag = findMatchingSystemTag(tag);
+        return systemTag != null && systemTag.isEphemeral();
     }
 }
