@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -173,7 +174,6 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        /* no need to release vni because vni is saved in VxlanNetworkVO */
                         trigger.rollback();
                     }
                 });
@@ -370,7 +370,7 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
                 error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        dbf.removeByPrimaryKey(vo.getUuid(), VxlanNetworkVO.class);
+                        dbf.removeByPrimaryKey(vo.getUuid(), HardwareL2VxlanNetworkVO.class);
                         completion.fail(errCode);
                     }
                 });
