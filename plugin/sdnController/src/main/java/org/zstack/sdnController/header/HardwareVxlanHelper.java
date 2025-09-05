@@ -2,7 +2,6 @@ package org.zstack.sdnController.header;
 
 import org.zstack.core.db.Q;
 import org.zstack.header.host.HostInventory;
-import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 
 public class HardwareVxlanHelper {
     public static class VxlanHostMappingStruct {

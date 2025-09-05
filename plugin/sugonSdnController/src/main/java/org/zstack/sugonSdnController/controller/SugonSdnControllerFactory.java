@@ -7,7 +7,7 @@ import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerFactory;
 import org.zstack.sdnController.SdnControllerL2;
 import org.zstack.sdnController.SdnControllerType;
-import org.zstack.sdnController.header.SdnControllerVO;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 
 public class SugonSdnControllerFactory implements SdnControllerFactory {
 

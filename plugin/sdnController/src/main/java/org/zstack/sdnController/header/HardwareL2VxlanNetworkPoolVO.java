@@ -2,6 +2,7 @@ package org.zstack.sdnController.header;
 
 import org.zstack.header.network.l2.L2NetworkEO;
 import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.ForeignKey;

@@ -5,7 +5,7 @@ import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.network.l3.SdnControllerL3;
 import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.network.securitygroup.SecurityGroupSdnBackend;
-import org.zstack.sdnController.header.SdnControllerVO;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 
 public interface SdnControllerFactory {
     SdnControllerType getVendorType();

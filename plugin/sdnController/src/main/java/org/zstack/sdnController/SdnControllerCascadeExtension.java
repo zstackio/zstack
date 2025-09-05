@@ -18,6 +18,10 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.sdncontroller.SdnControllerHostRefVO;
+import org.zstack.header.network.sdncontroller.SdnControllerHostRefVO_;
+import org.zstack.header.network.sdncontroller.SdnControllerInventory;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.sdnController.header.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -26,7 +30,6 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;

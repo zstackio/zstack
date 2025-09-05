@@ -34,7 +34,7 @@ import org.zstack.sdnController.SdnControllerL2;
 import org.zstack.sdnController.SdnControllerManager;
 import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory;
 import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO;
-import org.zstack.sdnController.header.SdnControllerVO;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

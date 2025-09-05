@@ -1,10 +1,5 @@
-package org.zstack.sdnController.header
+package org.zstack.header.network.sdncontroller
 
-import org.zstack.sdnController.header.SdnControllerStatus
-import java.sql.Timestamp
-import org.zstack.sdnController.header.SdnVniRange
-import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory
-import org.zstack.sdnController.header.SdnControllerHostRefInventory
 
 doc {
 
@@ -60,7 +55,7 @@ doc {
 	}
 	ref {
 		name "status"
-		path "org.zstack.sdnController.header.SdnControllerInventory.status"
+		path "org.zstack.header.network.sdncontroller.SdnControllerInventory.status"
 		desc "null"
 		type "SdnControllerStatus"
 		since "5.3.0"
@@ -77,29 +72,5 @@ doc {
 		desc "最后一次修改时间"
 		type "Timestamp"
 		since "3.7"
-	}
-	ref {
-		name "vniRanges"
-		path "org.zstack.sdnController.header.SdnControllerInventory.vniRanges"
-		desc "null"
-		type "List"
-		since "3.7"
-		clz SdnVniRange.class
-	}
-	ref {
-		name "vxlanPools"
-		path "org.zstack.sdnController.header.SdnControllerInventory.vxlanPools"
-		desc "null"
-		type "List"
-		since "3.7"
-		clz HardwareL2VxlanNetworkPoolInventory.class
-	}
-	ref {
-		name "hostRefs"
-		path "org.zstack.sdnController.header.SdnControllerInventory.hostRefs"
-		desc "null"
-		type "List"
-		since "5.3.0"
-		clz SdnControllerHostRefInventory.class
 	}
 }
