@@ -11,6 +11,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.db.SQL;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
 import org.zstack.header.identity.AccountConstant;
@@ -64,7 +65,11 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
     }
 
     private void handleLocalMessage(Message msg) {
-        bus.dealWithUnknownMessage(msg);
+        if (msg instanceof GetHostNetworkInterfaceLldpMsg) {
+            handle((GetHostNetworkInterfaceLldpMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -228,10 +233,8 @@ select name,ethTrunkName,switchUuid from PhysicalSwitchPortVO limit 1;
         }
     }
 
-    private void handle(APIGetHostNetworkInterfaceLldpMsg msg) {
-        APIGetHostNetworkInterfaceLldpReply greply = new APIGetHostNetworkInterfaceLldpReply();
-
-        HostNetworkInterfaceVO interfaceVO = dbf.findByUuid(msg.getInterfaceUuid(), HostNetworkInterfaceVO.class);
+    void doGetHostNetworkInterfaceLLdpInfo(String interfaceUuid, ReturnValueCompletion<HostNetworkInterfaceLldpRefInventory> completion) {
+        HostNetworkInterfaceVO interfaceVO = dbf.findByUuid(interfaceUuid, HostNetworkInterfaceVO.class);
         final LldpKvmAgentCommands.GetLldpInfoCmd cmd = new LldpKvmAgentCommands.GetLldpInfoCmd();
         cmd.setPhysicalInterfaceName(interfaceVO.getInterfaceName());
 
@@ -240,28 +243,65 @@ select name,ethTrunkName,switchUuid from PhysicalSwitchPortVO limit 1;
         kmsg.setHostUuid(interfaceVO.getHostUuid());
         kmsg.setCommand(cmd);
         bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, interfaceVO.getHostUuid());
-        bus.send(kmsg, new CloudBusCallBack(msg) {
+        bus.send(kmsg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    greply.setError(reply.getError());
-                    bus.reply(msg, greply);
+                    completion.fail(reply.getError());
                     return;
                 } else {
                     KVMHostAsyncHttpCallReply r = reply.castReply();
                     LldpKvmAgentCommands.GetLldpInfoResponse rsp = r.toResponse(LldpKvmAgentCommands.GetLldpInfoResponse.class);
                     if (!rsp.isSuccess()) {
-                        greply.setError(operr("operation error, because %s", rsp.getError()));
+                        completion.fail(operr("operation error, because %s", rsp.getError()));
                     } else {
-                        HostNetworkInterfaceLldpVO vo = Q.New(HostNetworkInterfaceLldpVO.class).eq(HostNetworkInterfaceLldpVO_.interfaceUuid, msg.getInterfaceUuid()).find();
-
-                        syncHostNetworkInterfaceLldpInDb(msg.getInterfaceUuid(), rsp.getLldpInfo());
+                        HostNetworkInterfaceLldpVO vo = Q.New(HostNetworkInterfaceLldpVO.class)
+                                .eq(HostNetworkInterfaceLldpVO_.interfaceUuid, interfaceUuid).find();
+                        syncHostNetworkInterfaceLldpInDb(interfaceUuid, rsp.getLldpInfo());
                         HostNetworkInterfaceLldpRefVO lldpRefVO =  Q.New(HostNetworkInterfaceLldpRefVO.class)
                                 .eq(HostNetworkInterfaceLldpRefVO_.lldpUuid, vo.getUuid())
                                 .find();
-                        greply.setLldp(lldpRefVO != null ? HostNetworkInterfaceLldpRefInventory.valueOf(lldpRefVO) : null);
+                        if (lldpRefVO != null) {
+                            completion.success(HostNetworkInterfaceLldpRefInventory.valueOf(lldpRefVO));
+                        } else {
+                            completion.fail(operr("get lldp ref for[%s] failed", interfaceUuid));
+                        }
                     }
                 }
+            }
+        });
+    }
+
+    private void handle(GetHostNetworkInterfaceLldpMsg msg) {
+        GetHostNetworkInterfaceLldpReply reply = new GetHostNetworkInterfaceLldpReply();
+        doGetHostNetworkInterfaceLLdpInfo(msg.getInterfaceUuid(), new ReturnValueCompletion<HostNetworkInterfaceLldpRefInventory>(msg) {
+            @Override
+            public void success(HostNetworkInterfaceLldpRefInventory returnValue) {
+                reply.setLldp(returnValue);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(APIGetHostNetworkInterfaceLldpMsg msg) {
+        APIGetHostNetworkInterfaceLldpReply greply = new APIGetHostNetworkInterfaceLldpReply();
+
+        doGetHostNetworkInterfaceLLdpInfo(msg.getInterfaceUuid(), new ReturnValueCompletion<HostNetworkInterfaceLldpRefInventory>(msg) {
+            @Override
+            public void success(HostNetworkInterfaceLldpRefInventory returnValue) {
+                greply.setLldp(returnValue);
+                bus.reply(msg, greply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                greply.setError(errorCode);
                 bus.reply(msg, greply);
             }
         });

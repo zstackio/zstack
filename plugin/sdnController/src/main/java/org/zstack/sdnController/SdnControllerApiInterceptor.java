@@ -30,6 +30,7 @@ import org.zstack.utils.network.NetworkUtils;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -87,6 +88,8 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
             validate((APIAddSecurityGroupRuleMsg) msg);
         } else if (msg instanceof APIChangeVmNicNetworkMsg) {
             validate((APIChangeVmNicNetworkMsg) msg);
+        } else if (msg instanceof APIChangeSdnControllerMsg) {
+            validate((APIChangeSdnControllerMsg) msg);
         }
 
         setServiceId(msg);
@@ -233,4 +236,53 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         }
     }
 
+    private void validateVlanRanges(List<String> ranges) {
+        List<SdnVlanRange> sdnVlanRanges = new ArrayList<>();
+        for (String range : ranges) {
+            List<String> vlans = Arrays.asList(range.split("-"));
+            if (vlans.size() != 2) {
+                throw new ApiMessageInterceptionException(argerr("could not change sdn controller, " +
+                        "because vlan range[%s] is not in the correct format", range));
+            }
+            
+            try {
+                int start = Integer.parseInt(vlans.get(0));
+                int end = Integer.parseInt(vlans.get(1));
+                if (start > end) {
+                    throw new ApiMessageInterceptionException(argerr("could not change sdn controller, " +
+                            "because vlan range[%s] is not in the correct format", range));
+                }
+                
+                for (SdnVlanRange vrange : sdnVlanRanges) {
+                    if (isOverlappedVlanRange(start, end, vrange.startVlan, vrange.endVlan)) {
+                        throw new ApiMessageInterceptionException(argerr("could not change sdn controller, " +
+                                "because vlan range[%s] is overlapped with other vlan range", range));
+                    }
+                }
+                SdnVlanRange vlanRange = new SdnVlanRange();
+                vlanRange.startVlan = start;
+                vlanRange.endVlan = end;
+                sdnVlanRanges.add(vlanRange);
+            } catch (Exception e) {
+                throw new ApiMessageInterceptionException(argerr("could not change sdn controller, " +
+                        "because vlan range[%s] is not in the correct format", range));
+            }
+        }
+    }
+
+    private boolean isOverlappedVlanRange(int start, int end, Integer startVlan, Integer endVlan) {
+        // Two ranges [start, end] and [startVlan, endVlan] overlap if:
+        // 1. start is within [startVlan, endVlan], OR
+        // 2. end is within [startVlan, endVlan], OR
+        // 3. [start, end] completely contains [startVlan, endVlan]
+        return (start >= startVlan && start <= endVlan) ||
+               (end >= startVlan && end <= endVlan) ||
+               (start <= startVlan && end >= endVlan);
+    }
+
+    private void validate(APIChangeSdnControllerMsg msg) {
+        if (msg.getVlanRanges() != null && !msg.getVlanRanges().isEmpty()) {
+            validateVlanRanges(msg.getVlanRanges());
+        }
+    }
 }
