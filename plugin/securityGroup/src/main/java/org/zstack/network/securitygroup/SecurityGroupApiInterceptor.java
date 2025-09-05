@@ -127,6 +127,9 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         return msg;
     }
 
+    private String normalizeIpOrPort(String value) {
+        return value == null ? null : StringUtils.deleteWhitespace(value);
+    }
 
     private void validate(APIChangeResourceOwnerMsg msg) {
         AccountResourceRefVO ref = Q.New(AccountResourceRefVO.class).eq(AccountResourceRefVO_.resourceUuid, msg.getResourceUuid()).find();
@@ -168,6 +171,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         if (msg.getAllowedCidr() == null) {
             msg.setAllowedCidr(msg.getIpVersion() == IPv6Constants.IPv4 ? SecurityGroupConstant.WORLD_OPEN_CIDR : SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6);
         } else {
+            //remove extra space characters
+            msg.setAllowedCidr(normalizeIpOrPort(msg.getAllowedCidr()));
             validateIps(msg.getAllowedCidr(), msg.getIpVersion());
         }
 
@@ -180,14 +185,17 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         }
 
         if (msg.getSrcIpRange() != null) {
+            msg.setSrcIpRange(normalizeIpOrPort(msg.getSrcIpRange()));;
             validateIps(msg.getSrcIpRange(), msg.getIpVersion());
         }
 
         if (msg.getDstIpRange() != null) {
+            msg.setDstIpRange(normalizeIpOrPort(msg.getDstIpRange()));
             validateIps(msg.getDstIpRange(), msg.getIpVersion());
         }
 
         if (msg.getDstPortRange() != null) {
+            msg.setDstPortRange(normalizeIpOrPort(msg.getDstPortRange()));
             validatePorts(msg.getDstPortRange());
         }
 
@@ -575,6 +583,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             if (StringUtils.isNotEmpty(msg.getRemoteSecurityGroupUuid())) {
                 throw new ApiMessageInterceptionException(argerr("could not change security group rule, because srcIpRange[%s] is set, remoteSecurityGroupUuid[%s] must be empty", msg.getSrcIpRange(), msg.getRemoteSecurityGroupUuid()));
             }
+
+            msg.setSrcIpRange(normalizeIpOrPort(msg.getSrcIpRange()));
             validateIps(msg.getSrcIpRange(), vo.getIpVersion());
         }
 
@@ -588,6 +598,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             if (StringUtils.isNotEmpty(msg.getRemoteSecurityGroupUuid())) {
                 throw new ApiMessageInterceptionException(argerr("could not change security group rule, because dstIpRange[%s] is set, remoteSecurityGroupUuid[%s] must be empty", msg.getDstIpRange(), msg.getRemoteSecurityGroupUuid()));
             }
+
+            msg.setDstIpRange(normalizeIpOrPort(msg.getDstIpRange()));
             validateIps(msg.getDstIpRange(), vo.getIpVersion());
         }
 
@@ -638,6 +650,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             if (SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol())) {
                 throw new ApiMessageInterceptionException(argerr("could not change security group rule, because rule protocol is [%s], dstPortRange cannot be set", msg.getProtocol()));
             }
+            msg.setDstPortRange(normalizeIpOrPort(msg.getDstPortRange()));
             validatePorts(msg.getDstPortRange());
         } else if (msg.getDstPortRange() != null) {
             if (SecurityGroupRuleProtocolType.TCP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.UDP.toString().equals(msg.getProtocol())) {
@@ -1065,6 +1078,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                     if (ao.getRemoteSecurityGroupUuid() != null) {
                         throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the ip range[%s] and remoteSecurityGroupUuid[%s] are in conflict", ao.getDstIpRange(), ao.getRemoteSecurityGroupUuid()));
                     }
+                    ao.setDstIpRange(normalizeIpOrPort(ao.getDstIpRange()));
                     validateIps(ao.getDstIpRange(), ao.getIpVersion());
                 }
             } else {
@@ -1083,6 +1097,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                     if (ao.getRemoteSecurityGroupUuid() != null) {
                         throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the ip range[%s] and remoteSecurityGroupUuid[%s] are in conflict", ao.getSrcIpRange(), ao.getRemoteSecurityGroupUuid()));
                     }
+                    ao.setSrcIpRange(normalizeIpOrPort(ao.getSrcIpRange()));
                     validateIps(ao.getSrcIpRange(), ao.getIpVersion());
                 }
             }
@@ -1122,6 +1137,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                 if (ao.getDstPortRange() == null) {
                     throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the protocol type TCP/UDP must set dstPortRange"));
                 }
+                ao.setDstPortRange(normalizeIpOrPort(ao.getDstPortRange()));
                 validatePorts(ao.getDstPortRange());
             }
         }

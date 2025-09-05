@@ -629,6 +629,55 @@ class ChangeSecurityGroupRuleCase extends SubCase {
         assert rule2.dstPortRange == '400-500'
     }
 
+    void testStripSpaceTabNewLineFromRule() {
+        SecurityGroupRuleAO r = new SecurityGroupRuleAO()
+        r.type = "Egress"
+        r.description = "testStripSpaceTabNewLine"
+        r.ipVersion = 4
+        r.dstPortRange = "433, 8888"
+        r.dstIpRange = "1.1.1.1, 2.2.2.2, 3.3.3.0/24"
+        r.protocol = "TCP"
+
+        sg2 = addSecurityGroupRule {
+            securityGroupUuid = sg2.uuid
+            rules = [r]
+        }
+
+        SecurityGroupRuleInventory rule = sg2.rules.find { it.description == "testStripSpaceTabNewLine" }
+
+        SQL.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sg2.uuid)
+                .eq(SecurityGroupRuleVO_.uuid, rule.uuid)
+                .set(SecurityGroupRuleVO_.dstPortRange, "433, \n \t8888\n")
+                .set(SecurityGroupRuleVO_.dstIpRange, "\t1.1.1.1, \n2.2.2.2, \t \n3.3.3.0/24 \n")
+                .update()
+
+        KVMAgentCommands.ApplySecurityGroupRuleCmd cmd = null
+        env.afterSimulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
+            return rsp
+        }
+
+        addVmNicToSecurityGroup{
+            securityGroupUuid = sg2.uuid
+            vmNicUuids = [vm2.vmNics.get(0).uuid]
+        }
+
+        Boolean find = false
+        retryInSecs(100) {
+            assert cmd != null : "ApplySecurityGroupRuleCmd not received"
+            for (ruleTOLists in cmd.ruleTOs.values()) {
+                for (ruleTO in ruleTOLists) {
+                    if (ruleTO.dstIpRange == "1.1.1.1,2.2.2.2,3.3.3.0/24" && ruleTO.dstPortRange == "433,8888" ) {
+                        find = true
+                        break
+                    }
+                }
+            }
+            assert find : "RuleTOs not found with expected dstIpRange and dstPortRange"
+        }
+    }
+
+
     @Override
     void clean() {
         env.delete()
@@ -676,5 +725,6 @@ class ChangeSecurityGroupRuleCase extends SubCase {
         testChangeRuleDuplicate()
         testChangeRuleParamLimit()
         testChangeRuleWithOldRules()
+        testStripSpaceTabNewLineFromRule()
     }
 }
