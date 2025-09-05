@@ -46,7 +46,7 @@ import static org.zstack.core.Platform.operr;
 
 public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBackend implements
         PortForwardingBackend, Component, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint,
-        VirtualRouterHaGetCallbackExtensionPoint {
+        VirtualRouterHaGetCallbackExtensionPoint, VirtualRouterAfterDetachNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VirtualRouterPortForwardingBackend.class);
 
     @Autowired
@@ -484,6 +484,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
                             vrVO.getUuid(), ret.getError());
                     completion.fail(err);
                 } else {
+                    /* move clean up db to afterDetachNic
                     List<Tuple> pfs = findPortForwardingTuplesOnVmNic(nic);
                     List<String> ruleUuids = pfs.stream().map(p -> p.get(0, PortForwardingRuleVO.class).getUuid()).collect(Collectors.toList());
                     proxy.detachNetworkService(vr.getUuid(), PortForwardingRuleVO.class.getSimpleName(), ruleUuids);
@@ -497,6 +498,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
                             }
                         }.execute();
                     }
+                    */
 
                     String info = String.format("sync port forwardings on virtual router[uuid:%s] successfully",
                             vrVO.getUuid());
@@ -572,5 +574,74 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
         structs.add(revokePF);
 
         return structs;
+    }
+
+    @Override
+    public void afterDetachVirtualRouterNic(VmNicInventory nic, Completion completion) {
+        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+            completion.success();
+            return;
+        }
+
+        if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(nic.getVmInstanceUuid())) {
+            completion.success();
+            return;
+        }
+
+        try {
+            nwServiceMgr.getTypeOfNetworkServiceProviderForService(nic.getL3NetworkUuid(), PortForwardingConstant.PORTFORWARDING_TYPE);
+        } catch (OperationFailureException e) {
+            completion.success();
+            return;
+        }
+
+        VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find();
+        if (vrVO == null) {
+            completion.success();
+            return;
+        }
+        final VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
+
+        class DbCleaner {
+            void run() {
+                List<Tuple> pfs = findPortForwardingTuplesOnVmNic(nic);
+                List<String> ruleUuids = pfs.stream().map(p -> p.get(0, PortForwardingRuleVO.class).getUuid()).collect(Collectors.toList());
+                proxy.detachNetworkService(vr.getUuid(), PortForwardingRuleVO.class.getSimpleName(), ruleUuids);
+                for (Tuple t : pfs) {
+                    PortForwardingRuleVO rule = t.get(0, PortForwardingRuleVO.class);
+                    new SQLBatch() {
+                        @Override
+                        protected void scripts() {
+                            sql(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.uuid, rule.getUuid())
+                                    .set(PortForwardingRuleVO_.guestIp, null).set(PortForwardingRuleVO_.vmNicUuid, null).update();
+                        }
+                    }.execute();
+                }
+            }
+        }
+        DbCleaner cleaner = new DbCleaner();
+
+        String peerVrUuid = haBackend.getVirtualRouterPeerUuid(vr.getUuid());
+        if (peerVrUuid == null || peerVrUuid.isEmpty()) {
+            cleaner.run();
+            completion.success();
+            return;
+        }
+
+        VirtualRouterVmVO peerVrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, peerVrUuid).find();
+        if (peerVrVO == null) {
+            cleaner.run();
+            completion.success();
+            return;
+        }
+        VirtualRouterVmInventory peerVr = VirtualRouterVmInventory.valueOf(peerVrVO);
+        List<String> allL3Uuids = peerVr.getAllL3Networks();
+        if (allL3Uuids != null && allL3Uuids.contains(nic.getL3NetworkUuid())) {
+            completion.success();
+            return;
+        }
+
+        cleaner.run();
+        completion.success();
     }
 }
