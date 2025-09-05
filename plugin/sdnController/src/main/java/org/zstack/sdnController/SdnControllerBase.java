@@ -181,7 +181,8 @@ public class SdnControllerBase {
                                 e(SdnControllerSystemTags.START_VLAN_TOKEN, vlans.get(0)),
                                 e(SdnControllerSystemTags.END_VLAN_TOKEN, vlans.get(1))));
                         creator.inherent = true;
-                        creator.recreate = true;
+                        creator.recreate = false;
+                        creator.ignoreIfExisting = true;
                         creator.create();
                     }
                 }
