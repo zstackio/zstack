@@ -2261,7 +2261,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             cmd.srcPath = snapshot.getPrimaryStorageInstallPath();
                             cmd.dstPath = dstPath;
                             cmd.shareable = false;
-                            httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(completion) {
+                            httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(trigger) {
                                 @Override
                                 public void success(CpRsp rsp) {
                                     if (rsp.actualSize != null) {
