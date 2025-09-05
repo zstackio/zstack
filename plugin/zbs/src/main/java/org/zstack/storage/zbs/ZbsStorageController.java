@@ -10,6 +10,8 @@ import org.zstack.cbd.kvm.CbdVolumeTo;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.asyncbatch.While;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -24,9 +26,11 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostAO_;
+import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.image.ImageConstant;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.addon.*;
 import org.zstack.header.storage.addon.primary.*;
@@ -35,6 +39,8 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeStats;
+import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
+import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMHostVO;
 import org.zstack.kvm.KVMHostVO_;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -69,6 +75,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     protected RESTFacade restf;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private CloudBus bus;
 
     private ExternalPrimaryStorageVO self;
     private AddonInfo addonInfo;
@@ -76,6 +84,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     public static final String DEPLOY_CLIENT_PATH = "/zbs/primarystorage/client/deploy";
     public static final String GET_CAPACITY_PATH = "/zbs/primarystorage/capacity";
+    public static final String GET_FACTS_PATH = "/zbs/primarystorage/facts";
     public static final String COPY_PATH = "/zbs/primarystorage/copy";
     public static final String CREATE_VOLUME_PATH = "/zbs/primarystorage/volume/create";
     public static final String DELETE_VOLUME_PATH = "/zbs/primarystorage/volume/delete";
@@ -88,6 +97,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String CREATE_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/create";
     public static final String DELETE_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/delete";
     public static final String ROLLBACK_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/rollback";
+    public static final String CHECK_HOST_STORAGE_CONNECTION_PATH = "/zbs/primarystorage/check/host/connection";
 
     private static final StorageCapabilities capabilities = new StorageCapabilities();
 
@@ -158,16 +168,17 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void deployClient(HostInventory h, Completion comp) {
-        String clientPassword = Q.New(KVMHostVO.class).select(KVMHostVO_.password).eq(KVMHostVO_.uuid, h.getUuid()).findValue();
-        if (clientPassword == null) {
-            comp.fail(operr("failed to get client[uuid:%s] password", h.getUuid()));
+        KVMHostVO host = Q.New(KVMHostVO.class).eq(KVMHostVO_.uuid, h.getUuid()).find();
+        if (host == null) {
+            comp.fail(operr("cannot found kvm host[uuid:%s], unable to deploy client", h.getUuid()));
             return;
         }
 
         DeployClientCmd cmd = new DeployClientCmd();
         cmd.setIp(h.getManagementIp());
-        cmd.setPassword(clientPassword);
-
+        cmd.setPort(host.getPort());
+        cmd.setUsername(host.getUsername());
+        cmd.setPassword(host.getPassword());
         httpCall(DEPLOY_CLIENT_PATH, cmd, DeployClientRsp.class, new ReturnValueCompletion<DeployClientRsp>(comp) {
             @Override
             public void success(DeployClientRsp returnValue) {
@@ -188,6 +199,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         CreateVolumeCmd cmd = new CreateVolumeCmd();
         cmd.setLogicalPool(config.getLogicalPoolName());
         cmd.setVolume(ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME);
+        cmd.setSize(ZbsConstants.ZBS_HEARTBEAT_VOLUME_SIZE_IN_GIGABYTE);
         cmd.setSkipIfExisting(true);
 
         httpCall(CREATE_VOLUME_PATH, cmd, CreateVolumeRsp.class, new ReturnValueCompletion<CreateVolumeRsp>(comp) {
@@ -216,11 +228,11 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public HeartbeatVolumeTO getHeartbeatVolumeActiveInfo(HostInventory h) {
         reloadDbInfo();
 
-        // FIXME: hard code for install path
         CbdHeartbeatVolumeTO to = new CbdHeartbeatVolumeTO();
-        to.setInstallPath(String.format("cbd:%s_physical/%s/%s", config.getLogicalPoolName(), config.getLogicalPoolName(), ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME));
+        to.setInstallPath(buildHeartbeatVolumePath(config.getLogicalPoolName()));
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
         to.setCoveringPaths(Collections.singletonList(config.getLogicalPoolName()));
+
         return to;
     }
 
@@ -297,6 +309,29 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 });
 
                 flow(new NoRollbackFlow() {
+                    String __name__ = "get-facts";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        httpCall(GET_FACTS_PATH, new GetFactsCmd(), GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(trigger) {
+                            @Override
+                            public void success(GetFactsRsp returnValue) {
+                                ClusterInfo info = new ClusterInfo();
+                                info.setUuid(returnValue.getUuid());
+                                info.setVersion(returnValue.getVersion());
+                                newAddonInfo.setClusterInfo(info);
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
                     String __name__ = "deploy-client";
 
                     List<PrimaryStorageClusterRefVO> refs = Q.New(PrimaryStorageClusterRefVO.class)
@@ -319,19 +354,18 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                                 .list();
 
                         new While<>(hosts).each((h, comp) -> {
-                            String clientPassword = Q.New(KVMHostVO.class)
-                                    .select(KVMHostVO_.password)
-                                    .eq(KVMHostVO_.uuid, h.getUuid())
-                                    .findValue();
-
-                            if (clientPassword == null) {
-                                comp.addError(operr("failed to get ZBS client[uuid:%s] password.", h.getUuid()));
+                            KVMHostVO host = Q.New(KVMHostVO.class).eq(KVMHostVO_.uuid, h.getUuid()).find();
+                            if (host == null) {
+                                comp.addError(operr("cannot found kvm host[uuid:%s], unable to deploy client", h.getUuid()));
+                                comp.allDone();
+                                return;
                             }
 
                             DeployClientCmd cmd = new DeployClientCmd();
                             cmd.setIp(h.getManagementIp());
-                            cmd.setPassword(clientPassword);
-
+                            cmd.setPort(host.getPort());
+                            cmd.setUsername(host.getUsername());
+                            cmd.setPassword(host.getPassword());
                             httpCall(DEPLOY_CLIENT_PATH, cmd, DeployClientRsp.class, new ReturnValueCompletion<DeployClientRsp>(comp) {
                                 @Override
                                 public void success(DeployClientRsp returnValue) {
@@ -341,7 +375,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                                 @Override
                                 public void fail(ErrorCode errorCode) {
                                     comp.addError(errorCode);
-                                    comp.done();
+                                    comp.allDone();
                                 }
                             });
                         }).run(new WhileDoneCompletion(trigger) {
@@ -382,7 +416,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         reloadDbInfo();
         final List<ZbsPrimaryStorageMdsBase> mds = CollectionUtils.transformAndRemoveNull(addonInfo.getMdsInfos(), ZbsPrimaryStorageMdsBase::new);
         new While<>(mds).each((m, comp) -> {
-            m.ping(new Completion(comp) {
+            m.ping(addonInfo.getClusterInfo(), new Completion(comp) {
                 @Override
                 public void success() {
                     m.getSelf().setStatus(MdsStatus.Connected);
@@ -458,14 +492,31 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void reportNodeHealthy(HostInventory host, ReturnValueCompletion<NodeHealthy> comp) {
-        NodeHealthy healthy = new NodeHealthy();
+        CheckHostStorageConnectionCmd cmd = new CheckHostStorageConnectionCmd();
+        cmd.setHostUuid(host.getUuid());
+        cmd.setPath(buildHeartbeatVolumePath(config.getLogicalPoolName()));
 
-        Arrays.asList(VolumeProtocol.CBD).forEach(it -> {
-            // TODO: CHECK_HOST_STORAGE_CONNECTION_PATH
-            healthy.setHealthy(it, StorageHealthy.Ok);
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setCommand(cmd);
+        msg.setHostUuid(host.getUuid());
+        msg.setPath(CHECK_HOST_STORAGE_CONNECTION_PATH);
+        msg.setNoStatusCheck(true);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.send(msg, new CloudBusCallBack(comp) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    comp.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                CheckHostStorageConnectionRsp rsp = hreply.toResponse(CheckHostStorageConnectionRsp.class);
+                NodeHealthy healthy = new NodeHealthy();
+                healthy.setHealthy(VolumeProtocol.CBD, rsp.isSuccess() ? StorageHealthy.Ok : StorageHealthy.Failed);
+                comp.success(healthy);
+            }
         });
-
-        comp.success(healthy);
     }
 
     @Override
@@ -507,7 +558,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         CreateVolumeCmd cmd = new CreateVolumeCmd();
         cmd.setLogicalPool(config.getLogicalPoolName());
         cmd.setVolume(v.getName());
-        cmd.setSize((long)Math.ceil(SizeUnit.BYTE.toGigaByte((double)v.getSize())));
+        cmd.setUnit(getSizeUnit(addonInfo.getClusterInfo().getVersion()));
+        cmd.setSize(alignSizeTo(v.getSize(), cmd.getUnit()));
         cmd.setSkipIfExisting(true);
 
         httpCall(CREATE_VOLUME_PATH, cmd, CreateVolumeRsp.class, new ReturnValueCompletion<CreateVolumeRsp>(comp) {
@@ -592,7 +644,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                     public void run(FlowTrigger trigger, Map data) {
                         ExpandVolumeCmd cmd = new ExpandVolumeCmd();
                         cmd.setPath(stats.getInstallPath());
-                        cmd.setSize(SizeUnit.BYTE.toGigaByte(dst.getSize()));
+                        cmd.setUnit(getSizeUnit(addonInfo.getClusterInfo().getVersion()));
+                        cmd.setSize(alignSizeTo(dst.getSize(), cmd.getUnit()));
 
                         httpCall(EXPAND_VOLUME_PATH, cmd, ExpandVolumeRsp.class, new ReturnValueCompletion<ExpandVolumeRsp>(trigger) {
                             @Override
@@ -707,7 +760,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public void expandVolume(String installPath, long size, ReturnValueCompletion<VolumeStats> comp) {
         ExpandVolumeCmd cmd = new ExpandVolumeCmd();
         cmd.setPath(installPath);
-        cmd.setSize(SizeUnit.BYTE.toGigaByte(size));
+        cmd.setUnit(getSizeUnit(addonInfo.getClusterInfo().getVersion()));
+        cmd.setSize(alignSizeTo(size, cmd.getUnit()));
 
         httpCall(EXPAND_VOLUME_PATH, cmd, ExpandVolumeRsp.class, new ReturnValueCompletion<ExpandVolumeRsp>(comp) {
             @Override
@@ -922,6 +976,12 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         ResourceConfig rc = rcf.getResourceConfig(VolumeGlobalConfig.VOLUME_PHYSICAL_BLOCK_SIZE.getIdentity());
         rc.updateValue(self.getUuid(), ZbsConstants.VOLUME_PHYSICAL_BLOCK_SIZE);
         completion.success();
+    }
+
+    @Override
+    public long alignSize(long size) {
+        String unit = getSizeUnit(addonInfo.getClusterInfo().getVersion());
+        return convertSizeToByte(alignSizeTo(size, unit), unit);
     }
 
     public void doDeleteVolume(String installPath, Boolean force, Completion comp) {
@@ -1319,9 +1379,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     }
 
-    public static class ExpandVolumeCmd extends AgentCommand {
+    public static class ExpandVolumeCmd extends SizeCmd {
         private String path;
-        private long size;
 
         public String getPath() {
             return path;
@@ -1329,14 +1388,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         public void setPath(String path) {
             this.path = path;
-        }
-
-        public long getSize() {
-            return size;
-        }
-
-        public void setSize(long size) {
-            this.size = size;
         }
     }
 
@@ -1532,10 +1583,30 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
     }
 
-    public static class CreateVolumeCmd extends AgentCommand {
+    public static class SizeCmd extends AgentCommand {
+        private long size;
+        private String unit;
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+
+        public String getUnit() {
+            return unit;
+        }
+
+        public void setUnit(String unit) {
+            this.unit = unit;
+        }
+    }
+
+    public static class CreateVolumeCmd extends SizeCmd {
         private String logicalPool;
         private String volume;
-        private long size = 1L;
         private boolean skipIfExisting;
 
         public String getLogicalPool() {
@@ -1552,14 +1623,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         public void setVolume(String volume) {
             this.volume = volume;
-        }
-
-        public long getSize() {
-            return size;
-        }
-
-        public void setSize(long size) {
-            this.size = size;
         }
 
         public boolean isSkipIfExisting() {
@@ -1585,6 +1648,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     public static class DeployClientCmd extends AgentCommand {
         private String ip;
+        private Integer port;
+        private String username;
         private String password;
 
         public String getIp() {
@@ -1595,6 +1660,22 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             this.ip = ip;
         }
 
+        public Integer getPort() {
+            return port;
+        }
+
+        public void setPort(Integer port) {
+            this.port = port;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
         public String getPassword() {
             return password;
         }
@@ -1602,6 +1683,54 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         public void setPassword(String password) {
             this.password = password;
         }
+    }
+
+    public static class GetFactsRsp extends AgentResponse {
+        private String uuid;
+        private String version;
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
+        }
+    }
+
+    public static class GetFactsCmd extends AgentCommand {
+    }
+
+    public static class CheckHostStorageConnectionCmd extends AgentCommand {
+        public String hostUuid;
+        private String path;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+    }
+
+    public static class CheckHostStorageConnectionRsp extends AgentResponse {
     }
 
     public static class AgentResponse extends ZbsMdsBase.AgentResponse {

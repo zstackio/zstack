@@ -1,6 +1,7 @@
 package org.zstack.storage.zbs;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.cbd.ClusterInfo;
 import org.zstack.cbd.MdsInfo;
 import org.zstack.cbd.MdsStatus;
 import org.zstack.compute.host.HostGlobalConfig;
@@ -117,6 +118,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                             runner.installChecker(callBackChecker);
                             runner.setUsername(getSelf().getUsername());
                             runner.setPassword(getSelf().getPassword());
+                            runner.setSshPort(getSelf().getPort());
                             runner.setTargetIp(getSelf().getAddr());
                             runner.setTargetUuid(getSelf().getAddr());
                             runner.setAgentPort(ZbsGlobalProperty.PRIMARY_STORAGE_AGENT_PORT);
@@ -273,7 +275,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
     }
 
     @Override
-    public void ping(Completion completion) {
+    public void ping(ClusterInfo clusterInfo, Completion completion) {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
@@ -282,7 +284,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                pingMds(new Completion(completion) {
+                pingMds(clusterInfo, new Completion(completion) {
                     @Override
                     public void success() {
                         completion.success();
@@ -304,7 +306,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
         });
     }
 
-    private void pingMds(final Completion completion) {
+    private void pingMds(ClusterInfo clusterInfo, final Completion completion) {
         final Integer MAX_PING_CNT = ZbsConstants.PRIMARY_STORAGE_MDS_MAXIMUM_PING_FAILURE;
         final List<Integer> stepCount = new ArrayList<>();
         for (int i = 1; i <= MAX_PING_CNT; i++) {
@@ -313,6 +315,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
         new While<>(stepCount).each((step, comp) -> {
             PingCmd cmd = new PingCmd();
+            cmd.setClusterInfo(clusterInfo);
             cmd.setAddr(getSelf().getAddr());
             restf.asyncJsonPost(ZbsAgentUrl.primaryStorageUrl(getSelf().getAddr(), PING_PATH),
                     cmd, new JsonAsyncRESTCallback<PingRsp>(completion) {
@@ -367,6 +370,15 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
     }
 
     public static class PingCmd extends ZbsMdsBase.AgentCommand {
+        private ClusterInfo clusterInfo;
+
+        public ClusterInfo getClusterInfo() {
+            return clusterInfo;
+        }
+
+        public void setClusterInfo(ClusterInfo clusterInfo) {
+            this.clusterInfo = clusterInfo;
+        }
     }
 
     public static class SyncMetadataRsp extends ZbsMdsBase.AgentResponse {

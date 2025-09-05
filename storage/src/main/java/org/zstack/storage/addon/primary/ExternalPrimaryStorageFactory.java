@@ -21,7 +21,9 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostResizeVolumeExtensionPoint;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostResizeVolumeStruct;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
@@ -55,7 +57,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
         VmAttachVolumeExtensionPoint, VmDetachVolumeExtensionPoint, BeforeTakeLiveSnapshotsOnVolumes,
         CreateTemplateFromVolumeSnapshotExtensionPoint, MarkRootVolumeAsSnapshotExtension, VmInstanceMigrateExtensionPoint,
-        ManagementNodeChangeListener, PrimaryStorageFeatureAllocatorExtensionPoint {
+        ManagementNodeChangeListener, PrimaryStorageFeatureAllocatorExtensionPoint, HostResizeVolumeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ExternalBackupStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE);
 
@@ -968,5 +970,15 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         }
 
         return candidates;
+    }
+
+    public HostResizeVolumeStruct beforeKvmHostResizeVolume(HostResizeVolumeStruct struct, VolumeInventory vol, String hostUuid) {
+        PrimaryStorageControllerSvc controller = controllers.get(vol.getPrimaryStorageUuid());
+        if (controller == null) {
+            return struct;
+        }
+
+        struct.setSize(controller.alignSize(struct.getSize()));
+        return struct;
     }
 }

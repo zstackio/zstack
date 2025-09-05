@@ -3,6 +3,7 @@ package org.zstack.storage.zbs;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.cbd.ClusterInfo;
 import org.zstack.cbd.MdsInfo;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.Completion;
@@ -41,7 +42,7 @@ public abstract class ZbsMdsBase {
     }
 
     public abstract void connect(Completion completion);
-    public abstract void ping(Completion completion);
+    public abstract void ping(ClusterInfo clusterInfo, Completion completion);
     protected abstract String makeHttpPath(String ip, String path);
 
     protected void checkSshAndTools() {
@@ -111,7 +112,6 @@ public abstract class ZbsMdsBase {
 
     public static class AgentResponse {
         private String error;
-        @Deprecated
         private boolean success = true;
 
         public String getError() {
@@ -123,7 +123,6 @@ public abstract class ZbsMdsBase {
             this.error = error;
         }
 
-        @Deprecated
         public boolean isSuccess() {
             return success;
         }

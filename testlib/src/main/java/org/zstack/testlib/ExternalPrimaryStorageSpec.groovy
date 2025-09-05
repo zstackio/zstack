@@ -3,6 +3,7 @@ package org.zstack.testlib
 import org.springframework.http.HttpEntity
 import org.zstack.cbd.LogicalPoolInfo
 import org.zstack.cbd.kvm.KvmCbdCommands
+import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
@@ -65,6 +66,29 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
 
                 def rsp = new ZbsStorageController.DeployClientRsp()
+                rsp.success = true
+
+                return rsp
+            }
+
+            simulator(ZbsStorageController.GET_FACTS_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                ZbsStorageController.GetFactsCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.GetFactsCmd.class)
+                ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
+                assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
+
+                def rsp = new ZbsStorageController.GetFactsRsp()
+                rsp.uuid = "123456789"
+                rsp.version = "1.6.1-for-test"
+                rsp.success = true
+
+                return rsp
+            }
+
+            simulator(ZbsStorageController.CHECK_HOST_STORAGE_CONNECTION_PATH) { HttpEntity<String> e ->
+                ZbsStorageController.CheckHostStorageConnectionCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckHostStorageConnectionCmd.class)
+                assert cmd.hostUuid != null
+
+                def rsp = new ZbsStorageController.CheckHostStorageConnectionRsp()
                 rsp.success = true
 
                 return rsp
