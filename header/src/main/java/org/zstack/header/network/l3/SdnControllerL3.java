@@ -9,5 +9,4 @@ public interface SdnControllerL3 {
     void deleteL3Network(L3NetworkInventory inv, Completion completion);
     void createIpRange(IpRangeInventory inv, Completion completion);
     void deleteIpRange(IpRangeInventory inv, Completion completion);
-    void createVRouter(Completion completion);
 }
