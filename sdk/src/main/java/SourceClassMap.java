@@ -653,11 +653,15 @@ public class SourceClassMap {
 			put("org.zstack.sns.platform.universalsms.supplier.emay.SNSEmaySmsEndpointInventory", "org.zstack.sdk.sns.platform.universalsms.supplier.emay.SNSEmaySmsEndpointInventory");
 			put("org.zstack.sns.platform.wecom.SNSWeComAtPersonInventory", "org.zstack.sdk.sns.platform.wecom.SNSWeComAtPersonInventory");
 			put("org.zstack.sns.platform.wecom.SNSWeComEndpointInventory", "org.zstack.sdk.sns.platform.wecom.SNSWeComEndpointInventory");
+			put("org.zstack.sso.header.AttributePurpose", "org.zstack.sdk.AttributePurpose");
 			put("org.zstack.sso.header.CasClientInventory", "org.zstack.sdk.CasClientInventory");
 			put("org.zstack.sso.header.CasState", "org.zstack.sdk.CasState");
+			put("org.zstack.sso.header.ExtendedAttribute", "org.zstack.sdk.ExtendedAttribute");
 			put("org.zstack.sso.header.OAuth2ClientInventory", "org.zstack.sdk.OAuth2ClientInventory");
 			put("org.zstack.sso.header.OAuth2TokenInventory", "org.zstack.sdk.OAuth2TokenInventory");
 			put("org.zstack.sso.header.RedirectUrlTemplate", "org.zstack.sdk.RedirectUrlTemplate");
+			put("org.zstack.sso.header.RuleAttributeType", "org.zstack.sdk.RuleAttributeType");
+			put("org.zstack.sso.header.SSOClientAttributeInventory", "org.zstack.sdk.SSOClientAttributeInventory");
 			put("org.zstack.sso.header.SSOClientInventory", "org.zstack.sdk.SSOClientInventory");
 			put("org.zstack.sso.header.SSORedirectTemplateInventory", "org.zstack.sdk.SSORedirectTemplateInventory");
 			put("org.zstack.sso.header.SSOServerTokenInventory", "org.zstack.sdk.SSOServerTokenInventory");
@@ -879,6 +883,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ApplicationDevelopmentServiceInventory", "org.zstack.ai.entity.ApplicationDevelopmentServiceInventory");
 			put("org.zstack.sdk.ArchitectureImageMapping", "org.zstack.ai.message.ArchitectureImageMapping");
 			put("org.zstack.sdk.AttachTagResult", "org.zstack.tag2.AttachTagResult");
+			put("org.zstack.sdk.AttributePurpose", "org.zstack.sso.header.AttributePurpose");
 			put("org.zstack.sdk.AuditData", "org.zstack.header.zwatch.AuditData");
 			put("org.zstack.sdk.AuditDataV1", "org.zstack.header.zwatch.AuditDataV1");
 			put("org.zstack.sdk.AuditDataV2", "org.zstack.header.zwatch.AuditDataV2");
@@ -1010,6 +1015,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.EthernetVfStatus", "org.zstack.header.sriov.EthernetVfStatus");
 			put("org.zstack.sdk.EventLogInventory", "org.zstack.core.eventlog.EventLogInventory");
 			put("org.zstack.sdk.ExponBlockVolumeInventory", "org.zstack.header.volume.block.ExponBlockVolumeInventory");
+			put("org.zstack.sdk.ExtendedAttribute", "org.zstack.sso.header.ExtendedAttribute");
 			put("org.zstack.sdk.ExternalBackupInventory", "org.zstack.externalbackup.ExternalBackupInventory");
 			put("org.zstack.sdk.ExternalBackupState", "org.zstack.externalbackup.ExternalBackupState");
 			put("org.zstack.sdk.ExternalBackupStorageInventory", "org.zstack.header.storage.addon.backup.ExternalBackupStorageInventory");
@@ -1330,8 +1336,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.RootVolumeSpending", "org.zstack.billing.spendingcalculator.volume.root.RootVolumeSpending");
 			put("org.zstack.sdk.RootVolumeSpendingInventory", "org.zstack.billing.spendingcalculator.volume.root.RootVolumeSpendingInventory");
 			put("org.zstack.sdk.RouterAreaInventory", "org.zstack.header.protocol.RouterAreaInventory");
+			put("org.zstack.sdk.RuleAttributeType", "org.zstack.sso.header.RuleAttributeType");
 			put("org.zstack.sdk.RunningState", "org.zstack.storage.device.localRaid.RunningState");
 			put("org.zstack.sdk.RunningTaskInfo", "org.zstack.header.core.progress.RunningTaskInfo");
+			put("org.zstack.sdk.SSOClientAttributeInventory", "org.zstack.sso.header.SSOClientAttributeInventory");
 			put("org.zstack.sdk.SSOClientInventory", "org.zstack.sso.header.SSOClientInventory");
 			put("org.zstack.sdk.SSORedirectTemplateInventory", "org.zstack.sso.header.SSORedirectTemplateInventory");
 			put("org.zstack.sdk.SSOServerTokenInventory", "org.zstack.sso.header.SSOServerTokenInventory");

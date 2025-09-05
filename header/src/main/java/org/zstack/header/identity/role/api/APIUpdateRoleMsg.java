@@ -1,6 +1,7 @@
 package org.zstack.header.identity.role.api;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.Constants;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.PolicyVO;
 import org.zstack.header.identity.PolicyStatementEffect;
@@ -18,7 +19,8 @@ import java.util.List;
 @RestRequest(path = "/identities/roles/{uuid}/actions",
         method = HttpMethod.PUT,
         isAction = true,
-        responseClass = APIUpdateRoleEvent.class)
+        responseClass = APIUpdateRoleEvent.class,
+        morphTransform = Constants.MORPH_TRANSFORM_IAM1)
 public class APIUpdateRoleMsg extends APIMessage implements RoleMessage {
     @APIParam(resourceType = RoleVO.class)
     private String uuid;

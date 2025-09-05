@@ -73,6 +73,9 @@ public class CreateOAuthClientAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List scopeList;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List attributes;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
