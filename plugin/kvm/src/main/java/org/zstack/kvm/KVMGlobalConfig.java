@@ -140,4 +140,9 @@ public class KVMGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig KVMAGENT_PHYSICAL_MEMORY_USAGE_HARD_LIMIT = new GlobalConfig(CATEGORY, "kvmagent.physicalmemory.usage.hardlimit");
+
+    @GlobalConfigDef(defaultValue = "0G", description = "minimum free memory size to start vm, size in GB")
+    @BindResourceConfig({HostVO.class, ClusterVO.class})
+    public static GlobalConfig MINIMUM_MEMORY_SIZE_BEFORE_START_VM = new GlobalConfig(CATEGORY, "min.free.memory.size");
+
 }
