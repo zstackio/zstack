@@ -2279,6 +2279,9 @@ public class KVMAgentCommands {
         @GrayVersion(value = "5.0.0")
         private List<String> oemStrings = new ArrayList<>();
 
+        @GrayVersion(value = "5.4.0")
+        private Long HostMinimumFreeMemorySize;
+
         // TODO: only for test
         @GrayVersion(value = "5.0.0")
         private boolean useColoBinary;
@@ -2845,6 +2848,14 @@ public class KVMAgentCommands {
 
         public void setVmCpuVendorId(String vmCpuVendorId) {
             this.vmCpuVendorId = vmCpuVendorId;
+        }
+
+        public Long getHostMinimumFreeMemorySize() {
+            return HostMinimumFreeMemorySize;
+        }
+
+        public void setHostMinimumFreeMemorySize(Long hostMinimumFreeMemorySize) {
+            HostMinimumFreeMemorySize = hostMinimumFreeMemorySize;
         }
     }
 
