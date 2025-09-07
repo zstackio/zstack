@@ -31,7 +31,7 @@ import org.zstack.header.network.l2.DeleteL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.SdnControllerDeleteExtensionPoint;
 import org.zstack.header.network.l3.SdnControllerL3;
-import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.network.sdncontroller.*;
 import org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO;
 import org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO_;
 import org.zstack.sdnController.header.*;

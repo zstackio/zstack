@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
@@ -16,6 +17,8 @@ import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.network.sdncontroller.SdnControllerInventory;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.CollectionUtils;
@@ -178,7 +181,9 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(ZoneVO.class.getSimpleName(), AccountVO.class.getSimpleName());
+        return Arrays.asList(ZoneVO.class.getSimpleName(),
+                AccountVO.class.getSimpleName(),
+                SdnControllerVO.class.getSimpleName());
     }
 
     @Override
@@ -227,6 +232,32 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
 
             if (!vos.isEmpty()) {
                 ret = L2NetworkInventory.valueOf(vos);
+            }
+        } else if (SdnControllerVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            List<String> controllerUuids = CollectionUtils.transformToList((List<SdnControllerInventory>) action.getParentIssuerContext(), new Function<String, SdnControllerInventory>() {
+                @Override
+                public String call(SdnControllerInventory arg) {
+                    return arg.getUuid();
+                }
+            });
+            if (controllerUuids.isEmpty()) {
+                return null;
+            }
+
+            ret = new ArrayList<>();
+            for (String controllerUuid : controllerUuids) {
+                String tag = String.format("%s::%s", L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN, controllerUuid);
+                List<L2NetworkVO> l2Vos = SQL.New("select l2 from L2NetworkVO l2, SystemTagVO tag " +
+                                "where tag.resourceUuid=l2.uuid " +
+                                "and tag.resourceType='L2NetworkVO' " +
+                                "and tag.tag=:tag", L2NetworkVO.class)
+                        .param("tag", tag).list();
+                if (!l2Vos.isEmpty()) {
+                    ret.addAll(L2NetworkInventory.valueOf(l2Vos));
+                }
+            }
+            if (ret.isEmpty()) {
+                ret = null;
             }
         }
 

@@ -2,7 +2,7 @@ package org.zstack.sdnController.h3cVcfc;
 
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
-import org.zstack.sdnController.header.SdnControllerVO;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.tag.PatternedSystemTag;
 
 @TagDefinition

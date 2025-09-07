@@ -1,4 +1,4 @@
-package org.zstack.sdnController.header;
+package org.zstack.header.network.sdncontroller;
 
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.host.HostInventory;

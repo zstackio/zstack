@@ -1,4 +1,4 @@
-package org.zstack.sdnController.header;
+package org.zstack.header.network.sdncontroller;
 
 import org.zstack.header.host.HostEO;
 import org.zstack.header.search.SqlTrigger;
@@ -9,7 +9,6 @@ import org.zstack.header.vo.SoftDeletionCascade;
 import org.zstack.header.vo.SoftDeletionCascades;
 
 import javax.persistence.*;
-import java.util.HashMap;
 
 /**
  * Created by shixin.ruan on 09/30/2019.

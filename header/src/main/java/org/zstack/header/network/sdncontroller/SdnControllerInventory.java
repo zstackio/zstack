@@ -1,19 +1,13 @@
-package org.zstack.sdnController.header;
+package org.zstack.header.network.sdncontroller;
 
 import org.zstack.header.configuration.PythonClassInventory;
-import org.zstack.header.log.NoLogging;
-import org.zstack.header.query.ExpandedQueries;
-import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
-import org.zstack.sdnController.SdnControllerSystemTags;
-import org.zstack.sdnController.h3cVcfc.H3cVcfcSdnControllerSystemTags;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 @Inventory(mappingVOClass = SdnControllerVO.class)
 @PythonClassInventory
@@ -29,9 +23,6 @@ public class SdnControllerInventory implements Serializable {
     private SdnControllerStatus status;
     private Timestamp createDate;
     private Timestamp lastOpDate;
-    private List<SdnVniRange> vniRanges;
-    private List<HardwareL2VxlanNetworkPoolInventory> vxlanPools;
-    private List<SdnControllerHostRefInventory> hostRefs;
 
     public SdnControllerInventory() {
     }
@@ -48,18 +39,6 @@ public class SdnControllerInventory implements Serializable {
         this.setStatus(vo.getStatus());
         this.setCreateDate(vo.getCreateDate());
         this.setLastOpDate(vo.getLastOpDate());
-        this.vniRanges = new ArrayList<>();
-        if (vo.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
-            List<Map<String, String>> tokenList = SdnControllerSystemTags.VNI_RANGE.getTokensOfTagsByResourceUuid(vo.getUuid());
-            for (Map<String, String> tokens : tokenList) {
-                SdnVniRange range = new SdnVniRange();
-                range.startVni = Integer.valueOf(tokens.get(SdnControllerSystemTags.START_VNI_TOKEN));
-                range.endVni = Integer.valueOf(tokens.get(SdnControllerSystemTags.END_VNI_TOKEN));
-                this.vniRanges.add(range);
-            }
-        }
-        this.setVxlanPools(HardwareL2VxlanNetworkPoolInventory.valueOf2(vo.getVxlanPools()));
-        this.setHostRefs(SdnControllerHostRefInventory.valueOf(vo.getHostRefVOS()));
     }
 
     public static SdnControllerInventory valueOf(SdnControllerVO vo) {
@@ -154,35 +133,11 @@ public class SdnControllerInventory implements Serializable {
         this.lastOpDate = lastOpDate;
     }
 
-    public List<SdnVniRange> getVniRanges() {
-        return vniRanges;
-    }
-
-    public void setVniRanges(List<SdnVniRange> vniRanges) {
-        this.vniRanges = vniRanges;
-    }
-
-    public List<HardwareL2VxlanNetworkPoolInventory> getVxlanPools() {
-        return vxlanPools;
-    }
-
-    public void setVxlanPools(List<HardwareL2VxlanNetworkPoolInventory> vxlanPools) {
-        this.vxlanPools = vxlanPools;
-    }
-
     public SdnControllerStatus getStatus() {
         return status;
     }
 
     public void setStatus(SdnControllerStatus status) {
         this.status = status;
-    }
-
-    public List<SdnControllerHostRefInventory> getHostRefs() {
-        return hostRefs;
-    }
-
-    public void setHostRefs(List<SdnControllerHostRefInventory> hostRefs) {
-        this.hostRefs = hostRefs;
     }
 }
