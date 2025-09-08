@@ -179,6 +179,8 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
         }).start();
     }
 
+    // called by handle(DetachL2NetworkFromClusterMsg msg)
+    @Override
     protected void deleteL2Bridge(List<String> clusterUuids, Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("detach-hardware-vxlan"));
