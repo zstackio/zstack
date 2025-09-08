@@ -16,7 +16,7 @@ import java.util.Map;
 @XInfiniRestRequest(
     path = "/bs-volumes/{id}",
     method = HttpMethod.PATCH,
-    responseClass = GetVolumeResponse.class,
+    responseClass = UpdateVolumeResponse.class,
     category = XInfiniApiCategory.AFA
 )
 public class UpdateVolumeRequest extends XInfiniRequest {
@@ -27,10 +27,21 @@ public class UpdateVolumeRequest extends XInfiniRequest {
     private int id;
 
     @Param(required = false)
-    private long sizeMb;
+    private Long sizeMb;
 
     @Param(required = false)
     private String name;
+
+    @Param(required = false)
+    private XinfiniVolumeQos qos;
+
+    public XinfiniVolumeQos getQos() {
+        return qos;
+    }
+
+    public void setQos(XinfiniVolumeQos qos) {
+        this.qos = qos;
+    }
 
     public String getName() {
         return name;
@@ -48,11 +59,11 @@ public class UpdateVolumeRequest extends XInfiniRequest {
         this.creator = creator;
     }
 
-    public long getSizeMb() {
+    public Long getSizeMb() {
         return sizeMb;
     }
 
-    public void setSizeMb(long sizeMb) {
+    public void setSizeMb(Long sizeMb) {
         this.sizeMb = sizeMb;
     }
 

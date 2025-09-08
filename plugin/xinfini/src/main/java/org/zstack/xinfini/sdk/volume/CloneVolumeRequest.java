@@ -34,7 +34,18 @@ public class CloneVolumeRequest extends XInfiniRequest {
     private boolean flatten;
 
     @Param(required = false)
+    private XinfiniVolumeQos qos;
+
+    @Param(required = false)
     private String description;
+
+    public XinfiniVolumeQos getQos() {
+        return qos;
+    }
+
+    public void setQos(XinfiniVolumeQos qos) {
+        this.qos = qos;
+    }
 
     public int getBsSnapId() {
         return bsSnapId;

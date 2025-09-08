@@ -49,6 +49,7 @@ import org.zstack.xinfini.sdk.vhost.BdcModule;
 import org.zstack.xinfini.sdk.vhost.BdcRunState;
 import org.zstack.xinfini.sdk.volume.VolumeModule;
 import org.zstack.xinfini.sdk.volume.VolumeSnapshotModule;
+import org.zstack.xinfini.sdk.volume.XinfiniVolumeQos;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -742,7 +743,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     private void cloneVolume(String srcInstallPath, CreateVolumeSpec dst, ReturnValueCompletion<VolumeStats> comp, boolean flatten) {
         int snapId = getSnapIdFromPath(srcInstallPath);
-        VolumeModule vol = apiHelper.cloneVolume(snapId, dst.getName(), null, flatten);
+        VolumeModule vol = apiHelper.cloneVolume(snapId, dst.getName(), null, flatten, XinfiniVolumeQos.valueOf(dst.getQos()));
 
         if (SizeUnit.MEGABYTE.toByte(vol.getSpec().getSizeMb()) < dst.getSize()) {
             vol = apiHelper.expandVolume(vol.getSpec().getId(), convertBytesToMegaBytes(dst.getSize()));
@@ -827,14 +828,24 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public void setVolumeQos(BaseVolumeInfo v, Completion comp) {
-        // TODO support qos
-        throw new OperationFailureException(operr("not support set volume qos yet"));
+        if (v.getQos() == null) {
+            comp.success();
+            return;
+        }
+
+        if (v.getQos().getReadBandwidth() != null || v.getQos().getWriteBandwidth() != null
+            || v.getQos().getReadIOPS() != null || v.getQos().getWriteIOPS() != null) {
+            throw new OperationFailureException(operr("xinfini only support set total qos"));
+        }
+
+        apiHelper.setVolumeQos(getVolIdFromPath(v.getInstallPath()), XinfiniVolumeQos.valueOf(v.getQos()));
+        comp.success();
     }
 
     @Override
     public void deleteVolumeQos(BaseVolumeInfo v, Completion comp) {
-        // TODO support qos
-        throw new OperationFailureException(operr("not support set volume qos yet"));
+        apiHelper.deleteVolumeQos(getVolIdFromPath(v.getInstallPath()));
+        comp.success();
     }
 
     @Override
@@ -860,7 +871,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         if (vol != null) {
             return vol;
         }
-        vol = apiHelper.cloneVolume(snapId, dstVolumeName, null, false);
+        vol = apiHelper.cloneVolume(snapId, dstVolumeName, null, false, null);
         return vol;
     }
 
