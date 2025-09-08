@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HuaweiIMasterVpcVO` (
     `tenantId` varchar(32) NOT NULL,
     `fabricId` varchar(2048) NOT NULL,
     `sdnControllerUuid` varchar(32) NOT NULL,
+    `isVpcDeployed` BOOLEAN NOT NULL DEFAULT TRUE,
     `state` varchar(32) NOT NULL DEFAULT "Enabled",
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
