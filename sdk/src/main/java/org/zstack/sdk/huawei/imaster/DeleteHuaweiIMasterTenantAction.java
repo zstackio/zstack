@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.huawei.imaster;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteHuaweiIMasterFabricAction extends AbstractAction {
+public class DeleteHuaweiIMasterTenantAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteHuaweiIMasterFabricAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteHuaweiIMasterFabricResult value;
+        public org.zstack.sdk.huawei.imaster.DeleteHuaweiIMasterTenantResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -66,8 +66,8 @@ public class DeleteHuaweiIMasterFabricAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteHuaweiIMasterFabricResult value = res.getResult(org.zstack.sdk.DeleteHuaweiIMasterFabricResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteHuaweiIMasterFabricResult() : value; 
+        org.zstack.sdk.huawei.imaster.DeleteHuaweiIMasterTenantResult value = res.getResult(org.zstack.sdk.huawei.imaster.DeleteHuaweiIMasterTenantResult.class);
+        ret.value = value == null ? new org.zstack.sdk.huawei.imaster.DeleteHuaweiIMasterTenantResult() : value; 
 
         return ret;
     }
@@ -97,7 +97,7 @@ public class DeleteHuaweiIMasterFabricAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/sdn-controller/huawei-imaster/fabrics/{uuid}";
+        info.path = "/sdn-controller/huawei-imaster/tenants/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

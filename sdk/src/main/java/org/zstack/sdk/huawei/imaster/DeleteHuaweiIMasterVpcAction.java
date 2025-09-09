@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.huawei.imaster;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteHuaweiIMasterVRouterAction extends AbstractAction {
+public class DeleteHuaweiIMasterVpcAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteHuaweiIMasterVRouterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteHuaweiIMasterVRouterResult value;
+        public org.zstack.sdk.huawei.imaster.DeleteHuaweiIMasterVpcResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -66,8 +66,8 @@ public class DeleteHuaweiIMasterVRouterAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteHuaweiIMasterVRouterResult value = res.getResult(org.zstack.sdk.DeleteHuaweiIMasterVRouterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteHuaweiIMasterVRouterResult() : value; 
+        org.zstack.sdk.huawei.imaster.DeleteHuaweiIMasterVpcResult value = res.getResult(org.zstack.sdk.huawei.imaster.DeleteHuaweiIMasterVpcResult.class);
+        ret.value = value == null ? new org.zstack.sdk.huawei.imaster.DeleteHuaweiIMasterVpcResult() : value; 
 
         return ret;
     }
@@ -97,7 +97,7 @@ public class DeleteHuaweiIMasterVRouterAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/sdn-controller/huawei-imaster/vrouters/{uuid}";
+        info.path = "/sdn-controller/huawei-imaster/vpcs/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

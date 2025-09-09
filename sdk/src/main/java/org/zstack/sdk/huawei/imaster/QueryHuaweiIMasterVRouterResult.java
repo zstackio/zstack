@@ -1,8 +1,8 @@
-package org.zstack.sdk;
+package org.zstack.sdk.huawei.imaster;
 
 
 
-public class QueryHuaweiIMasterTenantResult {
+public class QueryHuaweiIMasterVRouterResult {
     public java.util.List inventories;
     public void setInventories(java.util.List inventories) {
         this.inventories = inventories;

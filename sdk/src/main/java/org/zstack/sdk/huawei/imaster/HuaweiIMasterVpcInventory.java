@@ -1,8 +1,8 @@
-package org.zstack.sdk;
+package org.zstack.sdk.huawei.imaster;
 
 
 
-public class HuaweiIMasterTenantInventory  {
+public class HuaweiIMasterVpcInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -28,12 +28,20 @@ public class HuaweiIMasterTenantInventory  {
         return this.description;
     }
 
-    public java.util.List fabricIds;
-    public void setFabricIds(java.util.List fabricIds) {
-        this.fabricIds = fabricIds;
+    public java.lang.String tenantId;
+    public void setTenantId(java.lang.String tenantId) {
+        this.tenantId = tenantId;
     }
-    public java.util.List getFabricIds() {
-        return this.fabricIds;
+    public java.lang.String getTenantId() {
+        return this.tenantId;
+    }
+
+    public java.lang.String fabricId;
+    public void setFabricId(java.lang.String fabricId) {
+        this.fabricId = fabricId;
+    }
+    public java.lang.String getFabricId() {
+        return this.fabricId;
     }
 
     public java.lang.String sdnControllerUuid;
@@ -50,6 +58,14 @@ public class HuaweiIMasterTenantInventory  {
     }
     public java.lang.String getState() {
         return this.state;
+    }
+
+    public java.lang.Boolean isVpcDeployed;
+    public void setIsVpcDeployed(java.lang.Boolean isVpcDeployed) {
+        this.isVpcDeployed = isVpcDeployed;
+    }
+    public java.lang.Boolean getIsVpcDeployed() {
+        return this.isVpcDeployed;
     }
 
     public java.sql.Timestamp createDate;

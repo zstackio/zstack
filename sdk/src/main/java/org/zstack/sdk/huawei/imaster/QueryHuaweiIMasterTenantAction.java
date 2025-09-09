@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.huawei.imaster;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteHuaweiIMasterTenantAction extends AbstractAction {
+public class QueryHuaweiIMasterTenantAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteHuaweiIMasterTenantAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteHuaweiIMasterTenantResult value;
+        public org.zstack.sdk.huawei.imaster.QueryHuaweiIMasterTenantResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,6 @@ public class DeleteHuaweiIMasterTenantAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false)
-    public java.lang.String sdnControllerUuid;
-
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -66,8 +34,8 @@ public class DeleteHuaweiIMasterTenantAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteHuaweiIMasterTenantResult value = res.getResult(org.zstack.sdk.DeleteHuaweiIMasterTenantResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteHuaweiIMasterTenantResult() : value; 
+        org.zstack.sdk.huawei.imaster.QueryHuaweiIMasterTenantResult value = res.getResult(org.zstack.sdk.huawei.imaster.QueryHuaweiIMasterTenantResult.class);
+        ret.value = value == null ? new org.zstack.sdk.huawei.imaster.QueryHuaweiIMasterTenantResult() : value; 
 
         return ret;
     }
@@ -96,10 +64,10 @@ public class DeleteHuaweiIMasterTenantAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/sdn-controller/huawei-imaster/tenants/{uuid}";
+        info.httpMethod = "GET";
+        info.path = "/sdn-controller/huawei-imaster/tenants";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }

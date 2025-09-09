@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.huawei.imaster;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateHuaweiIMasterVRouterAction extends AbstractAction {
+public class PullHuaweiIMasterControllerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateHuaweiIMasterVRouterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateHuaweiIMasterVRouterResult value;
+        public org.zstack.sdk.huawei.imaster.PullHuaweiIMasterControllerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,20 +25,11 @@ public class CreateHuaweiIMasterVRouterAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String huaweiVpcUuid;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String uuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public boolean pullSwitch = true;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -72,8 +63,8 @@ public class CreateHuaweiIMasterVRouterAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateHuaweiIMasterVRouterResult value = res.getResult(org.zstack.sdk.CreateHuaweiIMasterVRouterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateHuaweiIMasterVRouterResult() : value; 
+        org.zstack.sdk.huawei.imaster.PullHuaweiIMasterControllerResult value = res.getResult(org.zstack.sdk.huawei.imaster.PullHuaweiIMasterControllerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.huawei.imaster.PullHuaweiIMasterControllerResult() : value; 
 
         return ret;
     }
@@ -102,11 +93,11 @@ public class CreateHuaweiIMasterVRouterAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/sdn-controller/huawei-imaster/vrouters";
+        info.httpMethod = "PUT";
+        info.path = "/sdn-controller/huawei-imaster/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "pullHuaweiIMasterController";
         return info;
     }
 

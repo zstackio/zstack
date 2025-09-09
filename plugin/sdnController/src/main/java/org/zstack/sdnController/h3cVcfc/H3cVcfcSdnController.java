@@ -376,7 +376,7 @@ public class H3cVcfcSdnController implements SdnController, SdnControllerL2 {
 
     @Override
     @SdnControllerLog
-    public void detachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, Completion completion) {
+    public void detachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, List<String> clusterUuid, Completion completion) {
         completion.success();
     }
 

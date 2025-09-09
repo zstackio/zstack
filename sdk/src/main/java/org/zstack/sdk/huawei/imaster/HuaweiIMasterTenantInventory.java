@@ -1,8 +1,8 @@
-package org.zstack.sdk;
+package org.zstack.sdk.huawei.imaster;
 
 
 
-public class HuaweiIMasterVRouterInventory  {
+public class HuaweiIMasterTenantInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -28,28 +28,12 @@ public class HuaweiIMasterVRouterInventory  {
         return this.description;
     }
 
-    public java.lang.String logicalNetworkId;
-    public void setLogicalNetworkId(java.lang.String logicalNetworkId) {
-        this.logicalNetworkId = logicalNetworkId;
+    public java.util.List fabricIds;
+    public void setFabricIds(java.util.List fabricIds) {
+        this.fabricIds = fabricIds;
     }
-    public java.lang.String getLogicalNetworkId() {
-        return this.logicalNetworkId;
-    }
-
-    public java.lang.String tenantId;
-    public void setTenantId(java.lang.String tenantId) {
-        this.tenantId = tenantId;
-    }
-    public java.lang.String getTenantId() {
-        return this.tenantId;
-    }
-
-    public java.lang.String fabricUuid;
-    public void setFabricUuid(java.lang.String fabricUuid) {
-        this.fabricUuid = fabricUuid;
-    }
-    public java.lang.String getFabricUuid() {
-        return this.fabricUuid;
+    public java.util.List getFabricIds() {
+        return this.fabricIds;
     }
 
     public java.lang.String sdnControllerUuid;

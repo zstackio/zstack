@@ -242,7 +242,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
     }
 
     @Override
-    public void detachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, Completion completion) {
+    public void detachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, List<String> clusterUuid, Completion completion) {
         completion.success();
     }
 

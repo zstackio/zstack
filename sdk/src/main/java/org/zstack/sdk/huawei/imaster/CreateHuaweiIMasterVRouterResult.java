@@ -1,6 +1,6 @@
-package org.zstack.sdk;
+package org.zstack.sdk.huawei.imaster;
 
-import org.zstack.sdk.HuaweiIMasterVRouterInventory;
+import org.zstack.sdk.huawei.imaster.HuaweiIMasterVRouterInventory;
 
 public class CreateHuaweiIMasterVRouterResult {
     public HuaweiIMasterVRouterInventory inventory;

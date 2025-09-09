@@ -1,8 +1,8 @@
-package org.zstack.sdk;
+package org.zstack.sdk.huawei.imaster;
 
 
 
-public class HuaweiIMasterVpcInventory  {
+public class HuaweiIMasterVRouterInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -28,6 +28,14 @@ public class HuaweiIMasterVpcInventory  {
         return this.description;
     }
 
+    public java.lang.String logicalNetworkId;
+    public void setLogicalNetworkId(java.lang.String logicalNetworkId) {
+        this.logicalNetworkId = logicalNetworkId;
+    }
+    public java.lang.String getLogicalNetworkId() {
+        return this.logicalNetworkId;
+    }
+
     public java.lang.String tenantId;
     public void setTenantId(java.lang.String tenantId) {
         this.tenantId = tenantId;
@@ -36,12 +44,12 @@ public class HuaweiIMasterVpcInventory  {
         return this.tenantId;
     }
 
-    public java.lang.String fabricId;
-    public void setFabricId(java.lang.String fabricId) {
-        this.fabricId = fabricId;
+    public java.lang.String fabricUuid;
+    public void setFabricUuid(java.lang.String fabricUuid) {
+        this.fabricUuid = fabricUuid;
     }
-    public java.lang.String getFabricId() {
-        return this.fabricId;
+    public java.lang.String getFabricUuid() {
+        return this.fabricUuid;
     }
 
     public java.lang.String sdnControllerUuid;
@@ -58,14 +66,6 @@ public class HuaweiIMasterVpcInventory  {
     }
     public java.lang.String getState() {
         return this.state;
-    }
-
-    public java.lang.Boolean isVpcDeployed;
-    public void setIsVpcDeployed(java.lang.Boolean isVpcDeployed) {
-        this.isVpcDeployed = isVpcDeployed;
-    }
-    public java.lang.Boolean getIsVpcDeployed() {
-        return this.isVpcDeployed;
     }
 
     public java.sql.Timestamp createDate;

@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.huawei.imaster;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryHuaweiIMasterVRouterAction extends QueryAction {
+public class QueryHuaweiIMasterVpcAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryHuaweiIMasterVRouterAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryHuaweiIMasterVRouterResult value;
+        public org.zstack.sdk.huawei.imaster.QueryHuaweiIMasterVpcResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryHuaweiIMasterVRouterAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryHuaweiIMasterVRouterResult value = res.getResult(org.zstack.sdk.QueryHuaweiIMasterVRouterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryHuaweiIMasterVRouterResult() : value; 
+        org.zstack.sdk.huawei.imaster.QueryHuaweiIMasterVpcResult value = res.getResult(org.zstack.sdk.huawei.imaster.QueryHuaweiIMasterVpcResult.class);
+        ret.value = value == null ? new org.zstack.sdk.huawei.imaster.QueryHuaweiIMasterVpcResult() : value; 
 
         return ret;
     }
@@ -65,7 +65,7 @@ public class QueryHuaweiIMasterVRouterAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/sdn-controller/huawei-imaster/vrouters";
+        info.path = "/sdn-controller/huawei-imaster/vpcs";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

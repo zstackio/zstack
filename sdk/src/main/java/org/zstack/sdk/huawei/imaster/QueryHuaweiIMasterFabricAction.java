@@ -1,4 +1,4 @@
-package org.zstack.sdk;
+package org.zstack.sdk.huawei.imaster;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +12,7 @@ public class QueryHuaweiIMasterFabricAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryHuaweiIMasterFabricResult value;
+        public org.zstack.sdk.huawei.imaster.QueryHuaweiIMasterFabricResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryHuaweiIMasterFabricAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryHuaweiIMasterFabricResult value = res.getResult(org.zstack.sdk.QueryHuaweiIMasterFabricResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryHuaweiIMasterFabricResult() : value; 
+        org.zstack.sdk.huawei.imaster.QueryHuaweiIMasterFabricResult value = res.getResult(org.zstack.sdk.huawei.imaster.QueryHuaweiIMasterFabricResult.class);
+        ret.value = value == null ? new org.zstack.sdk.huawei.imaster.QueryHuaweiIMasterFabricResult() : value; 
 
         return ret;
     }
