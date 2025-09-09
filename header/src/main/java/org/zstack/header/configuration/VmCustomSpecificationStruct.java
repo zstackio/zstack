@@ -3,9 +3,11 @@ package org.zstack.header.configuration;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.rest.SDK;
 
+import java.io.Serializable;
+
 @PythonClassInventory
 @SDK(sdkClassName = "VmCustomSpecificationStruct")
-public class VmCustomSpecificationStruct {
+public class VmCustomSpecificationStruct implements Serializable {
     private String uuid;
     private String platform;
     private String hostname;
