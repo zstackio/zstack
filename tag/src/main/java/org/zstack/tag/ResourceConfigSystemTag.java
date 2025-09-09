@@ -23,6 +23,7 @@ public class ResourceConfigSystemTag extends PatternedSystemTag {
                 TagConstant.RESOURCE_CONFIG_CATEGORY_TOKEN,
                 TagConstant.RESOURCE_CONFIG_NAME_TOKEN,
                 TagConstant.RESOURCE_CONFIG_VALUE_TOKEN), SystemTagVO.class);
+        this.markAsEphemeral();
     }
 
     @Override
