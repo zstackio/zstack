@@ -856,6 +856,12 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         query.add(HostVO_.state, SimpleQuery.Op.NOT_IN, HostState.PreMaintenance, HostState.Maintenance);
         query.add(HostVO_.status, SimpleQuery.Op.EQ, HostStatus.Connected);
         final List<HostVO> hosts = query.list();
+        if (hosts.isEmpty()) {
+            evt.setInventory(self.toInventory());
+            bus.publish(evt);
+            return;
+        }
+
         List<HostInventory> hvinvs = HostInventory.valueOf(hosts);
 
         prepareL2NetworkOnHosts(msg.getL2NetworkUuid(), hvinvs, true, new Completion(msg) {

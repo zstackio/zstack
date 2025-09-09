@@ -60,6 +60,14 @@ public class HuaweiIMasterVpcInventory  {
         return this.state;
     }
 
+    public java.lang.Boolean isVpcDeployed;
+    public void setIsVpcDeployed(java.lang.Boolean isVpcDeployed) {
+        this.isVpcDeployed = isVpcDeployed;
+    }
+    public java.lang.Boolean getIsVpcDeployed() {
+        return this.isVpcDeployed;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

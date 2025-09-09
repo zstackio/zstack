@@ -3,7 +3,6 @@ package org.zstack.sdnController.hardwareVxlan;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
@@ -18,12 +17,6 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
-import org.zstack.network.hostNetworkInterface.*;
-import org.zstack.network.hostNetworkInterface.lldp.LldpConstant;
-import org.zstack.network.hostNetworkInterface.lldp.api.GetHostNetworkInterfaceLldpMsg;
-import org.zstack.network.hostNetworkInterface.lldp.api.GetHostNetworkInterfaceLldpReply;
-import org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpVO;
-import org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpVO_;
 import org.zstack.network.l2.vxlan.vtep.*;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
@@ -39,7 +32,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
@@ -61,6 +53,7 @@ public class HardwareVxlanNetworkPool extends VxlanNetworkPool {
         return (HardwareL2VxlanNetworkPoolVO) self;
     }
 
+    @Override
     protected HardwareL2VxlanNetworkPoolInventory getSelfInventory() {
         return HardwareL2VxlanNetworkPoolInventory.valueOf(getSelf1());
     }
@@ -103,99 +96,6 @@ public class HardwareVxlanNetworkPool extends VxlanNetworkPool {
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("prepare-l2-%s-on-hosts", self.getUuid()));
-        chain.then(new NoRollbackFlow() {
-            String __name__ = "check-physical-interface-lldp";
-
-            @Override
-            public boolean skip(Map data) {
-                return !applyToSdn;
-            }
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                if (CoreGlobalProperty.UNIT_TEST_ON) {
-                    // it hard to simulate in ut
-                    trigger.next();
-                    return;
-                }
-
-                new While<>(hosts).step((host, whileCompletion) -> {
-                    List<HostNetworkInterfaceVO> intfvos = Q.New(HostNetworkInterfaceVO.class)
-                            .eq(HostNetworkInterfaceVO_.hostUuid, host.getUuid())
-                            .eq(HostNetworkInterfaceVO_.interfaceName, self.getPhysicalInterface()).list();
-                    if (intfvos == null || intfvos.isEmpty()) {
-                        HostNetworkBondingVO bondvo = Q.New(HostNetworkBondingVO.class)
-                                .eq(HostNetworkBondingVO_.hostUuid, host.getUuid())
-                                .eq(HostNetworkBondingVO_.bondingName, self.getPhysicalInterface()).find();
-                        if (bondvo == null || bondvo.getSlaves().isEmpty()) {
-                            whileCompletion.addError(operr("can not find interface[%s] on host[uuid:%s]",
-                                    self.getPhysicalInterface(), host.getUuid()));
-                            whileCompletion.allDone();
-                            return;
-                        }
-
-                        intfvos = new ArrayList<>(bondvo.getSlaves());
-                    }
-
-                    List<String> interfaceUuids = intfvos.stream().map(HostNetworkInterfaceVO::getUuid).collect(Collectors.toList());
-                    List<HostNetworkInterfaceLldpVO> lldpvos = Q.New(HostNetworkInterfaceLldpVO.class)
-                            .in(HostNetworkInterfaceLldpVO_.interfaceUuid, interfaceUuids).list();
-                    for (HostNetworkInterfaceLldpVO lldpvo : lldpvos) {
-                        if (lldpvo.getNeighborDevice() != null) {
-                            interfaceUuids.remove(lldpvo.getInterfaceUuid());
-                        }
-                    }
-                    if (interfaceUuids.isEmpty()) {
-                        whileCompletion.done();
-                        return;
-                    }
-
-                    new While<>(interfaceUuids).step((uuid, wcomp) -> {
-                        GetHostNetworkInterfaceLldpMsg msg = new GetHostNetworkInterfaceLldpMsg();
-                        msg.setInterfaceUuid(uuid);
-                        bus.makeTargetServiceIdByResourceUuid(msg, LldpConstant.SERVICE_ID, uuid);
-                        bus.send(msg, new CloudBusCallBack(wcomp) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    wcomp.addError(reply.getError());
-                                    wcomp.allDone();
-                                    return;
-                                }
-
-                                GetHostNetworkInterfaceLldpReply reply1 = reply.castReply();
-                                if (reply1.getLldp() == null) {
-                                    wcomp.addError(operr("get llpd for interface[uuid:%s] failed", uuid));
-                                    wcomp.allDone();
-                                    return;
-                                }
-                                wcomp.done();
-                            }
-                        });
-                    }, 5).run(new WhileDoneCompletion(whileCompletion) {
-                        @Override
-                        public void done(ErrorCodeList errorCodeList) {
-                            if (!errorCodeList.getCauses().isEmpty()) {
-                                whileCompletion.addError(errorCodeList.getCauses().get(0));
-                                whileCompletion.allDone();
-                                return;
-                            } else {
-                                whileCompletion.done();
-                            }
-                        }
-                    });
-                }, 5).run(new WhileDoneCompletion(trigger) {
-                    @Override
-                    public void done(ErrorCodeList errorCodeList) {
-                        if (errorCodeList.getCauses().isEmpty()) {
-                            trigger.next();
-                        } else {
-                            trigger.fail(errorCodeList.getCauses().get(0));
-                        }
-                    }
-                });
-            }
-        });
         chain.then(new NoRollbackFlow() {
             String __name__ = "check-physical-interface";
 

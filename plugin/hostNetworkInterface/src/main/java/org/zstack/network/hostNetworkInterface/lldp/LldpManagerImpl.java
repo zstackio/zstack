@@ -1,6 +1,7 @@
 package org.zstack.network.hostNetworkInterface.lldp;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
@@ -11,8 +12,11 @@ import org.zstack.core.Platform;
 import org.zstack.core.db.SQL;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.*;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.message.APIMessage;
@@ -20,6 +24,8 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
+import org.zstack.kvm.KVMHostInventory;
+import org.zstack.kvm.KVMPingAgentNoFailureExtensionPoint;
 import org.zstack.network.hostNetworkInterface.*;
 import org.zstack.network.hostNetworkInterface.lldp.api.*;
 import org.zstack.network.hostNetworkInterface.lldp.entity.*;
@@ -33,7 +39,8 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
-public class LldpManagerImpl extends AbstractService implements HostAfterConnectedExtensionPoint, HostDeleteExtensionPoint {
+public class LldpManagerImpl extends AbstractService implements HostAfterConnectedExtensionPoint, HostDeleteExtensionPoint,
+        KVMPingAgentNoFailureExtensionPoint {
     private static final CLogger logger = Utils.getLogger(LldpManagerImpl.class);
 
     @Autowired
@@ -417,6 +424,59 @@ select name,ethTrunkName,switchUuid from PhysicalSwitchPortVO limit 1;
     @Override
     public void afterDeleteHost(HostInventory inventory) {
 
+    }
+
+    @Override
+    public void kvmPingAgentNoFailure(KVMHostInventory host, NoErrorCompletion completion) {
+        List<String> interfaceUuids = Q.New(HostNetworkInterfaceVO.class)
+                .select(HostNetworkInterfaceVO_.uuid)
+                .eq(HostNetworkInterfaceVO_.hostUuid, host.getUuid())
+                .listValues();
+        if (interfaceUuids.isEmpty()) {
+            completion.done();
+            return;
+        }
+
+        List<HostNetworkInterfaceLldpVO> lldpVOS = Q.New(HostNetworkInterfaceLldpVO.class)
+                .in(HostNetworkInterfaceLldpVO_.interfaceUuid, interfaceUuids)
+                .list();
+        List<HostNetworkInterfaceLldpVO> toUpdate = new ArrayList<>();
+        for (HostNetworkInterfaceLldpVO lldpVO : lldpVOS) {
+            if (LldpConstant.mode.disable.toString().equals(lldpVO.getMode())) {
+                continue;
+            }
+
+            if (lldpVO.getNeighborDevice() != null) {
+                continue;
+            }
+
+            toUpdate.add(lldpVO);
+        }
+
+        if (toUpdate.isEmpty()) {
+            completion.done();
+            return;
+        }
+
+        new While<>(toUpdate).each((lldpVO, wcomp) -> {
+            doGetHostNetworkInterfaceLLdpInfo(lldpVO.getInterfaceUuid(), new ReturnValueCompletion<HostNetworkInterfaceLldpRefInventory>(wcomp) {
+                @Override
+                public void success(HostNetworkInterfaceLldpRefInventory returnValue) {
+                    wcomp.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    logger.debug("get lldp info failed, ignore it");
+                    wcomp.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.done();
+            }
+        });
     }
 
     @Override

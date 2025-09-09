@@ -24,6 +24,7 @@
             <zstack:extension interface="org.zstack.header.Service"/>
             <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostDeleteExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMPingAgentNoFailureExtensionPoint" />
         </zstack:plugin>
     </bean>
 </beans>
