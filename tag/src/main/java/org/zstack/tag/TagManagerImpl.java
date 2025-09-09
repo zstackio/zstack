@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.isEmpty;
 import static org.zstack.utils.CollectionUtils.removeDuplicateFromList;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
@@ -99,24 +100,26 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                             f.getDeclaringClass(), f.getName()));
                 }
 
-                String head = findHeadForSystemTag(stag.getTagFormat());
-                List<SystemTag> list = systemTagsMap.computeIfAbsent(head, k -> new ArrayList<>());
+                boolean ephemeral = stag.isEphemeral();
 
-                if (stag.isEphemeral()) {
-                    // ephemeral tag is not needed to inject and validate
-                    list.add(stag);
-                } else if (stag instanceof PatternedSystemTag) {
+                // re-create system tag to autowired components by spring framework
+                if (stag instanceof PatternedSystemTag) {
                     PatternedSystemTag ptag = new PatternedSystemTag(stag.getTagFormat(), stag.getResourceClass());
                     ptag.setValidators(stag.getValidators());
-                    f.set(null, ptag);
-                    list.add(ptag);
                     stag = ptag;
                 } else {
                     SystemTag sstag = new SystemTag(stag.getTagFormat(), stag.getResourceClass());
                     sstag.setValidators(stag.getValidators());
-                    f.set(null, sstag);
-                    list.add(sstag);
                     stag = sstag;
+                }
+
+                String head = findHeadForSystemTag(stag.getTagFormat());
+                List<SystemTag> list = systemTagsMap.computeIfAbsent(head, k -> new ArrayList<>());
+                list.add(stag);
+                f.set(null, stag);
+
+                if (ephemeral) {
+                    stag.markAsEphemeral();
                 }
 
                 if (f.isAnnotationPresent(AdminOnlyTag.class)) {
@@ -948,67 +951,49 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         return InterceptorPosition.END;
     }
 
-    private boolean isCheckSystemTags(APIMessage msg) {
-        if (msg.getSystemTags() == null) {
-            return false;
-        }
-
-        if (msg.getSystemTags().isEmpty()) {
-            return false;
-        }
-
-        for (String s : msg.getSystemTags()) {
-            if (!isEphemeralTag(s)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private boolean isMatchedSystemTag(String tag) {
         return findMatchingSystemTag(tag) != null;
     }
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
-        APICreateMessage cmsg = (APICreateMessage) msg;
-        if (isCheckSystemTags(msg)) {
-            cmsg.setSystemTags(removeDuplicateFromList(cmsg.getSystemTags()));
+        List<String> systemTags = msg.getSystemTags();
+        if (isEmpty(systemTags)) {
+            return msg;
+        }
 
-            for (String tag : cmsg.getSystemTags()) {
-                boolean matchSystemTag = isMatchedSystemTag(tag);
-                boolean matchResourceTag = isResourceConfigSystemTag(tag);
+        msg.setSystemTags(removeDuplicateFromList(systemTags));
+        for (String tag : msg.getSystemTags()) {
+            boolean matchSystemTag = isMatchedSystemTag(tag);
+            boolean matchResourceTag = isResourceConfigSystemTag(tag);
 
-                ErrorCode err = checkPemission(tag, msg.getSession());
-                if (err != null) {
-                    throw new ApiMessageInterceptionException(err);
-                }
-
-                if (!matchSystemTag && !matchResourceTag) {
-                    throw new ApiMessageInterceptionException(argerr("no system tag matches %s", tag));
-                }
-
-                // resource config system tag will create new resource config
-                // so need a early validate for api message
-                if (matchResourceTag) {
-                    resourceConfigSystemTag.validateResourceConfig(tag);
-                }
+            ErrorCode err = checkPemission(tag, msg.getSession());
+            if (err != null) {
+                throw new ApiMessageInterceptionException(err);
             }
 
-            Class resourceType = resourceTypeCreateMessageMap.get(cmsg.getClass());
-            if (resourceType == null) {
-                throw new ApiMessageInterceptionException(inerr(
-                        "API message[%s] doesn't define resource type by @TagResourceType",
-                        cmsg.getClass().getName()
-                ));
+            if (!matchSystemTag && !matchResourceTag) {
+                throw new ApiMessageInterceptionException(argerr("no system tag matches %s", tag));
             }
 
-            List<SystemTagCreateMessageValidator> validators = createMessageValidators.get(resourceType.getSimpleName());
-            if (validators != null && !validators.isEmpty()) {
-                for (SystemTagCreateMessageValidator validator : validators) {
-                    validator.validateSystemTagInCreateMessage(cmsg);
-                }
+            // resource config system tag will create new resource config
+            // so need an early validate for api message
+            if (matchResourceTag) {
+                resourceConfigSystemTag.validateResourceConfig(tag);
+            }
+        }
+
+        Class<?> resourceType = resourceTypeCreateMessageMap.get(msg.getClass());
+        if (resourceType == null) {
+            logger.warn(msg.getClass().getName() +
+                    " doesn't define resource type by @TagResourceType, skip validate resource config system tag");
+            return msg;
+        }
+
+        List<SystemTagCreateMessageValidator> validators = createMessageValidators.get(resourceType.getSimpleName());
+        if (validators != null && !validators.isEmpty()) {
+            for (SystemTagCreateMessageValidator validator : validators) {
+                validator.validateSystemTagInCreateMessage((APICreateMessage) msg);
             }
         }
 
