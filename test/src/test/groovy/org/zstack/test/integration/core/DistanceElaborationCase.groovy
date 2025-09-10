@@ -40,6 +40,6 @@ class DistanceElaborationCase extends SubCase {
         def err = Platform.operr("arg 'startTime' should format like 'yyyy-MM-dd HH:mm:ss' or '1545380003000'") as ErrorCode
         assert err.messages != null
         assert err.messages.method == ElaborationSearchMethod.distance
-        assert err.messages.message_cn == "输入参数中 'startTime' 的格式应该类似 'yyyy-MM-dd HH:mm:ss' 或 '1545380003000'。"
+        assert err.messages.message_en == "'startTime' must be in format of 'yyyy-MM-dd HH:mm:ss' or '1545380003000'."
     }
 }

@@ -34,7 +34,7 @@ public class CoreGlobalProperty {
     public static boolean EXPOSE_SIMULATOR_TYPE;
     @GlobalProperty(name = "exitJVMOnStop", defaultValue = "true")
     public static boolean EXIT_JVM_ON_STOP;
-    @GlobalProperty(name = "locale", defaultValue = "zh_CN")
+    @GlobalProperty(name = "locale", defaultValue = "en_US")
     public static String LOCALE;
     @GlobalProperty(name = "user.home")
     public static String USER_HOME;
