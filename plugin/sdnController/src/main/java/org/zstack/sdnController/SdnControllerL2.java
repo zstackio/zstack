@@ -24,7 +24,7 @@ public interface SdnControllerL2 {
     void postAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
 
     void deleteSdnController(SdnControllerDeletionMsg msg, SdnControllerInventory sdn, Completion completion);
-    void detachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, Completion completion);
+    void detachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, List<String> clusterUuids, Completion completion);
     void deleteL2Network(L2NetworkInventory inv, Completion completion);
 
     List<SdnVniRange> getVniRange(SdnControllerInventory controller);

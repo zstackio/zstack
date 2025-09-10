@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.huawei.imaster;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class PullHuaweiIMasterControllerAction extends AbstractAction {
+public class DeleteHuaweiIMasterFabricAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class PullHuaweiIMasterControllerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.PullHuaweiIMasterControllerResult value;
+        public org.zstack.sdk.huawei.imaster.DeleteHuaweiIMasterFabricResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,8 +28,11 @@ public class PullHuaweiIMasterControllerAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean pullSwitch = true;
+    @Param(required = false)
+    public java.lang.String sdnControllerUuid;
+
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +66,8 @@ public class PullHuaweiIMasterControllerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.PullHuaweiIMasterControllerResult value = res.getResult(org.zstack.sdk.PullHuaweiIMasterControllerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.PullHuaweiIMasterControllerResult() : value; 
+        org.zstack.sdk.huawei.imaster.DeleteHuaweiIMasterFabricResult value = res.getResult(org.zstack.sdk.huawei.imaster.DeleteHuaweiIMasterFabricResult.class);
+        ret.value = value == null ? new org.zstack.sdk.huawei.imaster.DeleteHuaweiIMasterFabricResult() : value; 
 
         return ret;
     }
@@ -93,11 +96,11 @@ public class PullHuaweiIMasterControllerAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/sdn-controller/huawei-imaster/{uuid}/actions";
+        info.httpMethod = "DELETE";
+        info.path = "/sdn-controller/huawei-imaster/fabrics/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "pullHuaweiIMasterController";
+        info.parameterName = "";
         return info;
     }
 

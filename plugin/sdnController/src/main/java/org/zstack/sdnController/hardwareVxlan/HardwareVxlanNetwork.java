@@ -194,7 +194,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
                 SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
 
                 SdnControllerL2 controller = sdnControllerManager.getSdnControllerL2(sdn);
-                controller.detachL2NetworkFromCluster(vxlan, null, new Completion(trigger) {
+                controller.detachL2NetworkFromCluster(vxlan, clusterUuids, new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -207,6 +207,8 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
                 });
             }
         }).then(new NoRollbackFlow() {
+            final String __name__ = "detach-hardware-vxlan-from-host";
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 HardwareVxlanNetwork.super.deleteL2Bridge(clusterUuids, new Completion(trigger) {

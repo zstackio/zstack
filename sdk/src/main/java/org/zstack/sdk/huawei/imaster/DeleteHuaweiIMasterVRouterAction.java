@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.huawei.imaster;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryHuaweiIMasterVpcAction extends QueryAction {
+public class DeleteHuaweiIMasterVRouterAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryHuaweiIMasterVpcAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryHuaweiIMasterVpcResult value;
+        public org.zstack.sdk.huawei.imaster.DeleteHuaweiIMasterVRouterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,6 +25,38 @@ public class QueryHuaweiIMasterVpcAction extends QueryAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
+
+    @Param(required = false)
+    public java.lang.String sdnControllerUuid;
+
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
+
+    @Param(required = false)
+    public java.util.List systemTags;
+
+    @Param(required = false)
+    public java.util.List userTags;
+
+    @Param(required = false)
+    public String sessionId;
+
+    @Param(required = false)
+    public String accessKeyId;
+
+    @Param(required = false)
+    public String accessKeySecret;
+
+    @Param(required = false)
+    public String requestIp;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -34,8 +66,8 @@ public class QueryHuaweiIMasterVpcAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryHuaweiIMasterVpcResult value = res.getResult(org.zstack.sdk.QueryHuaweiIMasterVpcResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryHuaweiIMasterVpcResult() : value; 
+        org.zstack.sdk.huawei.imaster.DeleteHuaweiIMasterVRouterResult value = res.getResult(org.zstack.sdk.huawei.imaster.DeleteHuaweiIMasterVRouterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.huawei.imaster.DeleteHuaweiIMasterVRouterResult() : value; 
 
         return ret;
     }
@@ -64,10 +96,10 @@ public class QueryHuaweiIMasterVpcAction extends QueryAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/sdn-controller/huawei-imaster/vpcs";
+        info.httpMethod = "DELETE";
+        info.path = "/sdn-controller/huawei-imaster/vrouters/{uuid}";
         info.needSession = true;
-        info.needPoll = false;
+        info.needPoll = true;
         info.parameterName = "";
         return info;
     }
