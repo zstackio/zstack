@@ -42,3 +42,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ImageGroupRefVO` (
 
 ALTER TABLE SecurityGroupRuleVO MODIFY COLUMN `dstPortRange` varchar(1024) DEFAULT NULL;
 ALTER TABLE SecurityGroupRuleVO MODIFY COLUMN `srcPortRange` varchar(1024) DEFAULT NULL;
+
+# Delete data with blank lines at the end (Reconnect host added again)
+DELETE FROM `zstack`.`HostNetworkInterfaceVO` WHERE `pciDeviceAddress` LIKE '%\n';
