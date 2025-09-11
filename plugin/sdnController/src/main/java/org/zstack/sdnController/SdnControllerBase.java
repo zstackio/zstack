@@ -173,7 +173,7 @@ public class SdnControllerBase {
                 }
 
                 if (msg.getVlanRanges() != null && !msg.getVlanRanges().isEmpty()) {
-                    SdnControllerSystemTags.VLAN_RANGE.delete(self.getUuid());
+                    SdnControllerSystemTags.VLAN_RANGE.deleteInherentTag(self.getUuid());
                     for (String vlanRange : msg.getVlanRanges()) {
                         List<String> vlans = Arrays.asList(vlanRange.split("-"));
                         SystemTagCreator creator = SdnControllerSystemTags.VLAN_RANGE.newSystemTagCreator(self.getUuid());
