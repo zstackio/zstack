@@ -9,4 +9,5 @@ public class RestInfo {
     public boolean needSession;
     public boolean needPoll;
     public String parameterName;
+    public String morphTransform;
 }

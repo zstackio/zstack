@@ -101,6 +101,7 @@ public class BatchCreateIAM2VirtualIDFromConfigFileAction extends AbstractAction
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
+        info.morphTransform = "IAM2";
         return info;
     }
 

@@ -101,6 +101,7 @@ public class UpdateOrganizationQuotaAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "updateOrganizationQuota";
+        info.morphTransform = "IAM2";
         return info;
     }
 

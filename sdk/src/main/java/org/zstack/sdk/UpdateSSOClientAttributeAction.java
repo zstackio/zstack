@@ -1,10 +1,10 @@
-package org.zstack.sdk.iam2.api;
+package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteIAM2OrganizationAction extends AbstractAction {
+public class UpdateSSOClientAttributeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteIAM2OrganizationAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.DeleteIAM2OrganizationResult value;
+        public org.zstack.sdk.UpdateSSOClientAttributeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -27,6 +27,15 @@ public class DeleteIAM2OrganizationAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String value;
+
+    @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String purpose;
+
+    @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -60,8 +69,8 @@ public class DeleteIAM2OrganizationAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.DeleteIAM2OrganizationResult value = res.getResult(org.zstack.sdk.iam2.api.DeleteIAM2OrganizationResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.DeleteIAM2OrganizationResult() : value; 
+        org.zstack.sdk.UpdateSSOClientAttributeResult value = res.getResult(org.zstack.sdk.UpdateSSOClientAttributeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateSSOClientAttributeResult() : value; 
 
         return ret;
     }
@@ -90,12 +99,11 @@ public class DeleteIAM2OrganizationAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/iam2/organizations/{uuid}";
+        info.httpMethod = "PUT";
+        info.path = "/sso/client/attributes/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
-        info.morphTransform = "IAM2";
+        info.parameterName = "updateSSOClientAttribute";
         return info;
     }
 

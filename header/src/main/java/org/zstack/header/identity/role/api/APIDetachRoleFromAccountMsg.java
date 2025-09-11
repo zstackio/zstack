@@ -1,15 +1,12 @@
 package org.zstack.header.identity.role.api;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.identity.AccountVO;
-import org.zstack.header.identity.role.RoleStateEvent;
-import org.zstack.header.identity.role.RoleVO;
+import org.zstack.header.Constants;
 import org.zstack.header.message.APIDeleteMessage;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
-@RestRequest(path = "/identities/accounts/{accountUuid}/roles/{roleUuid}", method = HttpMethod.DELETE, responseClass = APIDetachRoleFromAccountEvent.class)
+@RestRequest(path = "/identities/accounts/{accountUuid}/roles/{roleUuid}", method = HttpMethod.DELETE, responseClass = APIDetachRoleFromAccountEvent.class, morphTransform = Constants.MORPH_TRANSFORM_IAM1)
 public class APIDetachRoleFromAccountMsg extends APIDeleteMessage implements RoleMessage {
     @APIParam
     private String roleUuid;

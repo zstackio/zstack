@@ -101,6 +101,7 @@ public class DetachRoleFromAccountAction extends AbstractAction {
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
+        info.morphTransform = "IAM1";
         return info;
     }
 

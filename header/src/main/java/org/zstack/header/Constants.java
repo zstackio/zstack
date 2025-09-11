@@ -16,4 +16,7 @@ public interface Constants {
     String CATEGORY_METADATA = "metadata";
 
     String UUID_FOR_EXAMPLE = "UUID_FOR_EXAMPLE";
+
+    String MORPH_TRANSFORM_IAM1 = "IAM1";
+    String MORPH_TRANSFORM_IAM2 = "IAM2";
 }
