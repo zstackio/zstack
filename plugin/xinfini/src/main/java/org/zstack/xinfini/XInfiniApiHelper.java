@@ -283,12 +283,16 @@ public class XInfiniApiHelper {
                 (GetVolumeSnapshotResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
     }
 
-    public VolumeModule cloneVolume(int snapId, String name, String desc, boolean flatten) {
+    public VolumeModule cloneVolume(int snapId, String name, String desc, boolean flatten, XinfiniVolumeQos qos) {
         CloneVolumeRequest req = new CloneVolumeRequest();
         req.setName(name);
         req.setDescription(desc);
         req.setBsSnapId(snapId);
         req.setFlatten(flatten);
+        if (qos != null) {
+            req.setQos(qos);
+        }
+
         CloneVolumeResponse rsp = callErrorOut(req, CloneVolumeResponse.class);
         GetVolumeRequest gReq = new GetVolumeRequest();
         gReq.setId(rsp.getSpec().getId());
@@ -317,6 +321,24 @@ public class XInfiniApiHelper {
         gReq.setId(volId);
         return retryUtilStateActive(gReq, GetVolumeResponse.class,
                 (GetVolumeResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
+    }
+
+    public VolumeModule setVolumeQos(int volId, XinfiniVolumeQos qos) {
+        UpdateVolumeRequest req = new UpdateVolumeRequest();
+        req.setCreator(XInfiniConstants.DEFAULT_CREATOR);
+        req.setId(volId);
+        req.setQos(qos);
+        callErrorOut(req, UpdateVolumeResponse.class);
+        return getVolume(volId);
+    }
+
+    public VolumeModule deleteVolumeQos(int volId) {
+        UpdateVolumeRequest req = new UpdateVolumeRequest();
+        req.setCreator(XInfiniConstants.DEFAULT_CREATOR);
+        req.setId(volId);
+        req.setQos(new XinfiniVolumeQos());
+        callErrorOut(req, UpdateVolumeResponse.class);
+        return getVolume(volId);
     }
 
     private <T extends XInfiniResponse> void retryUtilResourceDeletedIn10Secs(XInfiniRequest req,
