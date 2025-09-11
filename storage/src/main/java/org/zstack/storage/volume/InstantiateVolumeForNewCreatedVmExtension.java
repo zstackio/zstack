@@ -201,16 +201,29 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
             recovering = image.getSelectedBackupStorage().getInstallPath().startsWith("nbd://");
         } catch (NullPointerException ignored) {
         }
+
+        LinkedHashSet<String> systemTags = new LinkedHashSet<>();
+        if (spec.getRootVolumeSystemTags() != null) {
+            systemTags.addAll(spec.getRootVolumeSystemTags());
+        }
+        if (spec.getRootDisk().getSystemTags() != null) {
+            systemTags.addAll(spec.getRootDisk().getSystemTags());
+        }
+
         if (recovering) {
             InstantiateVolumeMsg cmsg = fillMsg(new InstantiateRootVolumeForRecoveryMsg(), spec.getDestRootVolume(), spec);
             ((InstantiateRootVolumeForRecoveryMsg) cmsg).setSelectedBackupStorage(image.getSelectedBackupStorage());
+            cmsg.setSystemTags(new ArrayList<>(systemTags));
             msgs.add(cmsg);
         } else if (image.getInventory() != null && ImageMediaType.RootVolumeTemplate.toString().equals(image.getInventory().getMediaType())) {
             InstantiateVolumeMsg rmsg = fillMsg(new InstantiateRootVolumeMsg(), spec.getDestRootVolume(), spec);
             ((InstantiateRootVolumeMsg) rmsg).setTemplateSpec(image);
+            rmsg.setSystemTags(new ArrayList<>(systemTags));
             msgs.add(rmsg);
         } else {
-            msgs.add(fillMsg(new InstantiateVolumeMsg(), spec.getDestRootVolume(), spec));
+            InstantiateVolumeMsg rmsg = fillMsg(new InstantiateVolumeMsg(), spec.getDestRootVolume(), spec);
+            rmsg.setSystemTags(new ArrayList<>(systemTags));
+            msgs.add(rmsg);
         }
 
         if (spec.getDataVolumeTemplateUuids() != null) {
