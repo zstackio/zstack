@@ -1212,7 +1212,10 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 cache.setImageUuid(image.getUuid());
                 cache.setMediaType(ImageConstant.ImageMediaType.valueOf(image.getMediaType()));
                 cache.setInstallUrl(volStats.getInstallPath());
-                cache.setSize(volStats.getSize());
+                // zbs report size in 20~30s interval, so we can't use volStats.getActualSize(),
+                // Currently, all external storages are thinly provisioned. For now,
+                // we will use the actual size of the image.
+                cache.setSize(image.getActualSize());
                 cache.setPrimaryStorageUuid(self.getUuid());
                 dbf.persist(cache);
                 completion.success(ImageCacheInventory.valueOf(cache));
