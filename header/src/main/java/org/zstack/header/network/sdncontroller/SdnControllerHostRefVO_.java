@@ -1,4 +1,4 @@
-package org.zstack.sdnController.header;
+package org.zstack.header.network.sdncontroller;
 
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;

@@ -1,12 +1,10 @@
-package org.zstack.sdnController.header;
+package org.zstack.header.network.sdncontroller;
 
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
-import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.NoView;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ToInventory;
-import org.zstack.header.zone.ZoneEO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -43,11 +41,6 @@ public class SdnControllerVO extends ResourceVO implements OwnedByAccount, ToInv
 
     @Column
     private String password;
-
-    @OneToMany(fetch=FetchType.EAGER)
-    @JoinColumn(name="sdnControllerUuid", insertable=false, updatable=false)
-    @NoView
-    private Set<HardwareL2VxlanNetworkPoolVO> vxlanPools = new HashSet<HardwareL2VxlanNetworkPoolVO>();
 
     @OneToMany(fetch=FetchType.EAGER)
     @JoinColumn(name="sdnControllerUuid", insertable=false, updatable=false)
@@ -142,14 +135,6 @@ public class SdnControllerVO extends ResourceVO implements OwnedByAccount, ToInv
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
-    }
-
-    public Set<HardwareL2VxlanNetworkPoolVO> getVxlanPools() {
-        return vxlanPools;
-    }
-
-    public void setVxlanPools(Set<HardwareL2VxlanNetworkPoolVO> vxlanPools) {
-        this.vxlanPools = vxlanPools;
     }
 
     @Override

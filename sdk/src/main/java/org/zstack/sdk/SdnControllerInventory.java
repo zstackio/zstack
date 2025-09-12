@@ -92,28 +92,4 @@ public class SdnControllerInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List vniRanges;
-    public void setVniRanges(java.util.List vniRanges) {
-        this.vniRanges = vniRanges;
-    }
-    public java.util.List getVniRanges() {
-        return this.vniRanges;
-    }
-
-    public java.util.List vxlanPools;
-    public void setVxlanPools(java.util.List vxlanPools) {
-        this.vxlanPools = vxlanPools;
-    }
-    public java.util.List getVxlanPools() {
-        return this.vxlanPools;
-    }
-
-    public java.util.List hostRefs;
-    public void setHostRefs(java.util.List hostRefs) {
-        this.hostRefs = hostRefs;
-    }
-    public java.util.List getHostRefs() {
-        return this.hostRefs;
-    }
-
 }

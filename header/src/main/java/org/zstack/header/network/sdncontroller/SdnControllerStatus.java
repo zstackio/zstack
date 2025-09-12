@@ -1,4 +1,4 @@
-package org.zstack.sdnController.header;
+package org.zstack.header.network.sdncontroller;
 
 public enum SdnControllerStatus {
     Connecting,

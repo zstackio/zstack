@@ -4,10 +4,10 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.*;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
-import org.zstack.header.zone.ZoneVO;
 
 @TagResourceType(SdnControllerVO.class)
 @Action(category = SdnControllerConstant.ACTION_CATEGORY)

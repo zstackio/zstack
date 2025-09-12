@@ -139,6 +139,24 @@ doc {
 					optional true
 					since "4.8.0"
 				}
+				column {
+					name "startVlan"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Integer"
+					optional true
+					since "5.3.28"
+				}
+				column {
+					name "endVlan"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Integer"
+					optional true
+					since "5.3.28"
+				}
 			}
         }
 

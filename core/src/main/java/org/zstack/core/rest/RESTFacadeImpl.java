@@ -632,7 +632,9 @@ public class RESTFacadeImpl implements RESTFacade {
         boolean valid = false;
         if (method == HttpMethod.DELETE && rsp.getStatusCode() == org.springframework.http.HttpStatus.NO_CONTENT) {
             valid = true;
-        } else if (method == HttpMethod.POST && rsp.getStatusCode() == org.springframework.http.HttpStatus.CREATED) {
+        } else if (method == HttpMethod.POST &&
+                (rsp.getStatusCode() == org.springframework.http.HttpStatus.CREATED ||
+                        rsp.getStatusCode() == org.springframework.http.HttpStatus.NO_CONTENT)) {
             valid = true;
         } else if (rsp.getStatusCode() == org.springframework.http.HttpStatus.OK || rsp.getStatusCode() == org.springframework.http.HttpStatus.ACCEPTED) {
             valid = true;

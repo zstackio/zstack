@@ -28,6 +28,10 @@
     </message>
 
     <message>
+        <name>org.zstack.sdnController.header.APIChangeSdnControllerMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.sdnController.header.APIReconnectSdnControllerMsg</name>
     </message>
 
@@ -38,5 +42,11 @@
 
     <message>
         <name>org.zstack.sdnController.header.APIPullSdnControllerTenantMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.network.hostNetworkInterface.APIQueryPhysicalSwitchMsg</name>
+        <serviceId>query</serviceId>
     </message>
 </service>

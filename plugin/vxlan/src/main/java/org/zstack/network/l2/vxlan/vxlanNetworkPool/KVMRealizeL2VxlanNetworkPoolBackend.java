@@ -236,7 +236,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                     VxlanKvmAgentCommands.CreateVxlanBridgeCmd bridgeCmd = new VxlanKvmAgentCommands.CreateVxlanBridgeCmd();
                     bridgeCmd.setVtepIp((String) data.get(VTEP_IP));
                     bridgeCmd.setBridgeName(getBridgeName(vo.toInventory()));
-                    bridgeCmd.setVni(vo.getVni());
+                    bridgeCmd.setVni(vo.getVirtualNetworkId());
                     bridgeCmd.setDstport(dstport);
                     bridgeCmd.setL2NetworkUuid(vo.getUuid());
                     bridgeCmd.setMtu(new MtuGetter().getL2Mtu(L2VxlanNetworkInventory.valueOf(vo)));
@@ -331,7 +331,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
         if (KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2Network.getUuid(), L2NetworkVO.class)) {
             return KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l2Network.getUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
         }
-        return KVMRealizeL2VxlanNetworkBackend.makeBridgeName(vo.getVni());
+        return KVMRealizeL2VxlanNetworkBackend.makeBridgeName(vo.getVirtualNetworkId());
     }
 
     public Map<String, String> getAttachedCidrs(String l2NetworkUuid) {

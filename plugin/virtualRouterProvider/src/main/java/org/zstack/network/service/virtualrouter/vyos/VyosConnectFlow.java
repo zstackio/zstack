@@ -165,10 +165,10 @@ public class VyosConnectFlow extends NoRollbackFlow {
                         String url = vrMgr.buildUrl(mgmtNic.getIp(), VirtualRouterConstant.VR_INIT);
 
                         int timeoutInSeconds = ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class);
-                        int interval = 30 ; /* seonds*/
+                        int interval = 120 ; /* seonds*/
 
                         List<Integer> steps = new ArrayList<>(timeoutInSeconds/interval);
-                        for (int i = 0; i < timeoutInSeconds/interval; i++) {
+                        for (int i = 0; i <= timeoutInSeconds/interval; i++) {
                             steps.add(i);
                         }
                         List<ErrorCode> errs = new ArrayList<>();

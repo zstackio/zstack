@@ -1,6 +1,6 @@
 package org.zstack.sdnController.header
 
-import org.zstack.sdnController.header.SdnControllerInventory
+import org.zstack.header.network.sdncontroller.SdnControllerInventory
 import org.zstack.header.errorcode.ErrorCode
 
 doc {

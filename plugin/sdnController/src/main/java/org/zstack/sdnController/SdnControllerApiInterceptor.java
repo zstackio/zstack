@@ -14,6 +14,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.sdncontroller.SdnControllerHostRefVO;
+import org.zstack.header.network.sdncontroller.SdnControllerHostRefVO_;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
+import org.zstack.header.network.sdncontroller.SdnControllerVO_;
 import org.zstack.header.vm.APIAttachL3NetworkToVmMsg;
 import org.zstack.header.vm.APIChangeVmNicNetworkMsg;
 import org.zstack.header.vm.VmInstanceVO;
@@ -30,6 +34,8 @@ import org.zstack.utils.network.NetworkUtils;
 import java.util.List;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.argerr;
@@ -52,6 +58,7 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         }
     }
 
+    @Override
     public List<Class> getMessageClassToIntercept() {
         List<Class> ret = new ArrayList<>();
         ret.add(APIAttachSecurityGroupToL3NetworkMsg.class);
@@ -65,10 +72,12 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         return ret;
     }
 
+    @Override
     public InterceptorPosition getPosition() {
         return InterceptorPosition.END;
     }
 
+    @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIAddSdnControllerMsg) {
             validate((APIAddSdnControllerMsg)msg);
@@ -78,20 +87,16 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
             validate((APISdnControllerRemoveHostMsg)msg);
         } else if (msg instanceof APISdnControllerChangeHostMsg) {
             validate((APISdnControllerChangeHostMsg)msg);
-        } else if (msg instanceof APIAttachSecurityGroupToL3NetworkMsg) {
-            validate((APIAttachSecurityGroupToL3NetworkMsg)msg);
-        } else if (msg instanceof APIAddVmNicToSecurityGroupMsg) {
-            validate((APIAddVmNicToSecurityGroupMsg) msg);
-        } else if (msg instanceof APISetVmNicSecurityGroupMsg) {
+        }  else if (msg instanceof APISetVmNicSecurityGroupMsg) {
             validate((APISetVmNicSecurityGroupMsg) msg);
         } else if (msg instanceof APIAddSecurityGroupRuleMsg) {
             validate((APIAddSecurityGroupRuleMsg) msg);
-        } else if (msg instanceof APIAttachL3NetworkToVmMsg) {
-            validate((APIAttachL3NetworkToVmMsg) msg);
         } else if (msg instanceof APIChangeVmNicNetworkMsg) {
             validate((APIChangeVmNicNetworkMsg) msg);
         } else if (msg instanceof APIPullSdnControllerTenantMsg) {
             validate((APIPullSdnControllerTenantMsg) msg);
+        } else if (msg instanceof APIChangeSdnControllerMsg) {
+            validate((APIChangeSdnControllerMsg) msg);
         }
 
         setServiceId(msg);
@@ -191,42 +196,18 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         }
     }
 
-    private void validate(APIAddVmNicToSecurityGroupMsg msg) {
-        String sgControllerUuid = SecurityGroupHelper.getSdnControllerUuid(msg.getSecurityGroupUuid());
-        for (String uuid : msg.getVmNicUuids()) {
-            VmNicVO nicVO = dbf.findByUuid(uuid, VmNicVO.class);
-            String nicControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(nicVO.getL3NetworkUuid());
-            if (!StringUtils.equals(sgControllerUuid, nicControllerUuid)) {
-                throw new ApiMessageInterceptionException(argerr("could not add vmnic to securityGroup, " +
-                                "because they have different sdn controller[nic controller uuid:%s, security group controller uuid:%s]",
-                        nicControllerUuid, sgControllerUuid));
-            }
-        }
-    }
-
-
-    private void validate(APIAttachSecurityGroupToL3NetworkMsg msg) {
-        String l3SdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(msg.getL3NetworkUuid());
-        String sgSdnControllerUuid = SecurityGroupHelper.getSdnControllerUuid(msg.getSecurityGroupUuid());
-        if (!StringUtils.equals(l3SdnControllerUuid, sgSdnControllerUuid)) {
-            throw new ApiMessageInterceptionException(argerr("could not attach l3 network to securityGroup, " +
-                    "because they have different sdn controller[l3 controller uuid:%s, security group controller uuid:%s]",
-                    l3SdnControllerUuid, sgSdnControllerUuid));
-        }
-    }
-
     private void validate(APIAddSdnControllerMsg msg) {
         if (!SdnControllerType.getAllTypeNames().contains(msg.getVendorType())) {
-            throw new ApiMessageInterceptionException(argerr("Sdn controller type: %s in not in the supported list: %s ", msg.getVendorType(), SdnControllerType.getAllTypeNames()));
+            throw new ApiMessageInterceptionException(argerr("could not add sdn controller because type: %s in not in the supported list: %s", msg.getVendorType(), SdnControllerType.getAllTypeNames()));
         }
 
         if (!NetworkUtils.isUnicastIPAddress(msg.getIp())) {
-            throw new ApiMessageInterceptionException(argerr("Sdn controller ip[%s] is not an unicast address ", msg.getIp()));
+            throw new ApiMessageInterceptionException(argerr("could not add sdn controller because ip[%s] is not an unicast address", msg.getIp()));
         }
 
         boolean existed = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.ip, msg.getIp()).isExists();
         if (existed) {
-            throw new ApiMessageInterceptionException(argerr("Sdn controller with ip [%s] is already added ", msg.getIp()));
+            throw new ApiMessageInterceptionException(argerr("could not add sdn controller because controller [ip:%s] is already added", msg.getIp()));
         }
     }
 
@@ -344,4 +325,53 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         }
     }
 
+    private void validateVlanRanges(List<String> ranges) {
+        List<SdnVlanRange> sdnVlanRanges = new ArrayList<>();
+        for (String range : ranges) {
+            List<String> vlans = Arrays.asList(range.split("-"));
+            if (vlans.size() != 2) {
+                throw new ApiMessageInterceptionException(argerr("could not change sdn controller, " +
+                        "because vlan range[%s] is not in the correct format", range));
+            }
+            
+            try {
+                int start = Integer.parseInt(vlans.get(0));
+                int end = Integer.parseInt(vlans.get(1));
+                if (start > end) {
+                    throw new ApiMessageInterceptionException(argerr("could not change sdn controller, " +
+                            "because vlan range[%s] is not in the correct format", range));
+                }
+                
+                for (SdnVlanRange vrange : sdnVlanRanges) {
+                    if (isOverlappedVlanRange(start, end, vrange.startVlan, vrange.endVlan)) {
+                        throw new ApiMessageInterceptionException(argerr("could not change sdn controller, " +
+                                "because vlan range[%s] is overlapped with other vlan range", range));
+                    }
+                }
+                SdnVlanRange vlanRange = new SdnVlanRange();
+                vlanRange.startVlan = start;
+                vlanRange.endVlan = end;
+                sdnVlanRanges.add(vlanRange);
+            } catch (Exception e) {
+                throw new ApiMessageInterceptionException(argerr("could not change sdn controller, " +
+                        "because vlan range[%s] is not in the correct format", range));
+            }
+        }
+    }
+
+    private boolean isOverlappedVlanRange(int start, int end, Integer startVlan, Integer endVlan) {
+        // Two ranges [start, end] and [startVlan, endVlan] overlap if:
+        // 1. start is within [startVlan, endVlan], OR
+        // 2. end is within [startVlan, endVlan], OR
+        // 3. [start, end] completely contains [startVlan, endVlan]
+        return (start >= startVlan && start <= endVlan) ||
+               (end >= startVlan && end <= endVlan) ||
+               (start <= startVlan && end >= endVlan);
+    }
+
+    private void validate(APIChangeSdnControllerMsg msg) {
+        if (msg.getVlanRanges() != null && !msg.getVlanRanges().isEmpty()) {
+            validateVlanRanges(msg.getVlanRanges());
+        }
+    }
 }

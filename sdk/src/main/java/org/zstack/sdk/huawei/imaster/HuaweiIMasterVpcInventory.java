@@ -1,0 +1,87 @@
+package org.zstack.sdk.huawei.imaster;
+
+
+
+public class HuaweiIMasterVpcInventory  {
+
+    public java.lang.String uuid;
+    public void setUuid(java.lang.String uuid) {
+        this.uuid = uuid;
+    }
+    public java.lang.String getUuid() {
+        return this.uuid;
+    }
+
+    public java.lang.String name;
+    public void setName(java.lang.String name) {
+        this.name = name;
+    }
+    public java.lang.String getName() {
+        return this.name;
+    }
+
+    public java.lang.String description;
+    public void setDescription(java.lang.String description) {
+        this.description = description;
+    }
+    public java.lang.String getDescription() {
+        return this.description;
+    }
+
+    public java.lang.String tenantId;
+    public void setTenantId(java.lang.String tenantId) {
+        this.tenantId = tenantId;
+    }
+    public java.lang.String getTenantId() {
+        return this.tenantId;
+    }
+
+    public java.lang.String fabricId;
+    public void setFabricId(java.lang.String fabricId) {
+        this.fabricId = fabricId;
+    }
+    public java.lang.String getFabricId() {
+        return this.fabricId;
+    }
+
+    public java.lang.String sdnControllerUuid;
+    public void setSdnControllerUuid(java.lang.String sdnControllerUuid) {
+        this.sdnControllerUuid = sdnControllerUuid;
+    }
+    public java.lang.String getSdnControllerUuid() {
+        return this.sdnControllerUuid;
+    }
+
+    public java.lang.String state;
+    public void setState(java.lang.String state) {
+        this.state = state;
+    }
+    public java.lang.String getState() {
+        return this.state;
+    }
+
+    public java.lang.Boolean isVpcDeployed;
+    public void setIsVpcDeployed(java.lang.Boolean isVpcDeployed) {
+        this.isVpcDeployed = isVpcDeployed;
+    }
+    public java.lang.Boolean getIsVpcDeployed() {
+        return this.isVpcDeployed;
+    }
+
+    public java.sql.Timestamp createDate;
+    public void setCreateDate(java.sql.Timestamp createDate) {
+        this.createDate = createDate;
+    }
+    public java.sql.Timestamp getCreateDate() {
+        return this.createDate;
+    }
+
+    public java.sql.Timestamp lastOpDate;
+    public void setLastOpDate(java.sql.Timestamp lastOpDate) {
+        this.lastOpDate = lastOpDate;
+    }
+    public java.sql.Timestamp getLastOpDate() {
+        return this.lastOpDate;
+    }
+
+}

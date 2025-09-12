@@ -6,8 +6,10 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.identity.AccountVO_;
@@ -16,6 +18,10 @@ import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.network.sdncontroller.SdnControllerInventory;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
+import org.zstack.header.network.sdncontroller.SdnControllerVO_;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.sdnController.SdnController;
@@ -29,6 +35,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
+import javax.persistence.Tuple;
 import java.util.*;
 
 import static org.zstack.core.Platform.operr;
@@ -40,6 +47,8 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
 
     @Autowired
     CloudBus bus;
+    @Autowired
+    DatabaseFacade dbf;
 
     private SdnControllerVO sdnControllerVO;
     private TfHttpClient client;
@@ -101,6 +110,17 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
     }
 
     @Override
+    public void createSdnControllerDb(APIAddSdnControllerMsg msg, SdnControllerVO vo, Completion completion) {
+        dbf.persist(vo);
+        completion.success();
+    }
+
+    @Override
+    public void deleteSdnControllerDb(SdnControllerVO vo) {
+        dbf.removeByPrimaryKey(vo.getUuid(), SdnControllerVO.class);
+    }
+
+    @Override
     public void initSdnController(APIAddSdnControllerMsg msg, Completion completion) {
         completion.success();
     }
@@ -130,8 +150,9 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
         completion.success();
     }
 
+
     @Override
-    public void attachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+    public void attachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> clusterUuids, List<String> systemTags, Completion completion) {
         completion.success();
     }
 
@@ -224,7 +245,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
     }
 
     @Override
-    public void detachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, Completion completion) {
+    public void detachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, List<String> clusterUuid, Completion completion) {
         completion.success();
     }
 

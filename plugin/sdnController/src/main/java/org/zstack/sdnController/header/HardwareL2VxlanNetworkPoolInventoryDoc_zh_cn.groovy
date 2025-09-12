@@ -1,16 +1,8 @@
 package org.zstack.sdnController.header
 
-import org.zstack.network.l2.vxlan.vtep.VtepInventory
-import org.zstack.network.l2.vxlan.vtep.RemoteVtepInventory
-import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory
-import org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeInventory
-import java.lang.Integer
-import java.lang.Boolean
-import java.sql.Timestamp
-
 doc {
 
-	title "在这里输入结构的名称"
+	title "硬件VXLAN资源池清单"
 
 	field {
 		name "sdnControllerUuid"

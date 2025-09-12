@@ -194,11 +194,12 @@
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO</class>
         <class>org.zstack.header.core.encrypt.EncryptEntityMetadataVO</class>
         <class>org.zstack.storage.ceph.primary.CephOsdGroupVO</class>
-        <class>org.zstack.sdnController.header.SdnControllerVO</class>
+        <class>org.zstack.header.network.sdncontroller.SdnControllerVO</class>
+        <class>org.zstack.header.network.sdncontroller.SdnControllerHostRefVO</class>
         <class>org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO</class>
+        <class>org.zstack.sdnController.header.HardwareL2VxlanNetworkVO</class>
         <class>org.zstack.sdnController.header.VxlanHostMappingVO</class>
         <class>org.zstack.sdnController.header.VxlanClusterMappingVO</class>
-        <class>org.zstack.sdnController.header.SdnControllerHostRefVO</class>
         <class>org.zstack.sdnController.header.H3cSdnControllerTenantVO</class>
         <class>org.zstack.sdnController.header.H3cSdnSubnetIpRangeRefVO</class>
         <class>org.zstack.header.volume.VolumeHostRefVO</class>
@@ -219,5 +220,7 @@
         <class>org.zstack.kvm.xmlhook.XmlHookVmInstanceRefVO</class>
         <class>org.zstack.log.server.LogServerVO</class>
         <class>org.zstack.header.network.l3.L3NetworkSequenceNumberVO</class>
+        <class>org.zstack.network.hostNetworkInterface.PhysicalSwitchVO</class>
+        <class>org.zstack.network.hostNetworkInterface.PhysicalSwitchPortVO</class>
     </persistence-unit>
 </persistence>

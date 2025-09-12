@@ -1,18 +1,30 @@
 package org.zstack.sugonSdnController.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.network.securitygroup.SecurityGroupSdnBackend;
 import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerFactory;
 import org.zstack.sdnController.SdnControllerL2;
 import org.zstack.sdnController.SdnControllerType;
-import org.zstack.sdnController.header.SdnControllerVO;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 
 public class SugonSdnControllerFactory implements SdnControllerFactory {
 
     SdnControllerType sdnControllerType = new SdnControllerType(SugonSdnControllerConstant.TF_CONTROLLER);
+
+    @Autowired
+    private DatabaseFacade dbf;
+
     @Override
     public SdnControllerType getVendorType() {
         return sdnControllerType;
+    }
+
+    @Override
+    public SdnControllerVO persistSdnController(SdnControllerVO vo) {
+        vo = dbf.persistAndRefresh(vo);
+        return vo;
     }
 
     @Override

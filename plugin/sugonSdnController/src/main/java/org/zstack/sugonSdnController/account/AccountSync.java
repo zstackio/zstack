@@ -10,8 +10,8 @@ import org.zstack.header.identity.BeforeCreateAccountExtensionPoint;
 import org.zstack.header.identity.BeforeDeleteAccountExtensionPoint;
 import org.zstack.header.identity.BeforeUpdateAccountExtensionPoint;
 import org.zstack.sdnController.SdnControllerManager;
-import org.zstack.sdnController.header.SdnControllerVO;
-import org.zstack.sdnController.header.SdnControllerVO_;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
+import org.zstack.header.network.sdncontroller.SdnControllerVO_;
 
 /**
  * @description:

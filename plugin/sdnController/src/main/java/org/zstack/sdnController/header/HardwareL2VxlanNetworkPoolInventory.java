@@ -3,6 +3,7 @@ package org.zstack.sdnController.header;
 import org.zstack.core.db.Q;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.sdncontroller.SdnControllerInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
@@ -27,6 +28,8 @@ import java.util.*;
 })
 public class HardwareL2VxlanNetworkPoolInventory extends L2VxlanNetworkPoolInventory {
     private String sdnControllerUuid;
+    private Integer startVlan;
+    private Integer endVlan;
 
     public HardwareL2VxlanNetworkPoolInventory() {
     }
@@ -34,6 +37,8 @@ public class HardwareL2VxlanNetworkPoolInventory extends L2VxlanNetworkPoolInven
     protected HardwareL2VxlanNetworkPoolInventory(HardwareL2VxlanNetworkPoolVO vo) {
         super(vo);
         setSdnControllerUuid(vo.getSdnControllerUuid());
+        setStartVlan(vo.getStartVlan());
+        setEndVlan(vo.getEndVlan());
         setAttachedVniRanges(VniRangeInventory.valueOf(vo.getAttachedVniRanges()));
         List<VxlanNetworkVO> networkVOS = Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.poolUuid, vo.getUuid()).list();
         setAttachedVxlanNetworkRefs(L2VxlanNetworkInventory.valueOf1(networkVOS));
@@ -57,5 +62,21 @@ public class HardwareL2VxlanNetworkPoolInventory extends L2VxlanNetworkPoolInven
 
     public void setSdnControllerUuid(String sdnControllerUuid) {
         this.sdnControllerUuid = sdnControllerUuid;
+    }
+
+    public Integer getStartVlan() {
+        return startVlan;
+    }
+
+    public void setStartVlan(Integer startVlan) {
+        this.startVlan = startVlan;
+    }
+
+    public Integer getEndVlan() {
+        return endVlan;
+    }
+
+    public void setEndVlan(Integer endVlan) {
+        this.endVlan = endVlan;
     }
 }

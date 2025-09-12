@@ -1,8 +1,10 @@
 package org.zstack.network.hostNetworkInterface.lldp;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -10,7 +12,11 @@ import org.zstack.core.Platform;
 import org.zstack.core.db.SQL;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.*;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.message.APIMessage;
@@ -18,6 +24,8 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
+import org.zstack.kvm.KVMHostInventory;
+import org.zstack.kvm.KVMPingAgentNoFailureExtensionPoint;
 import org.zstack.network.hostNetworkInterface.*;
 import org.zstack.network.hostNetworkInterface.lldp.api.*;
 import org.zstack.network.hostNetworkInterface.lldp.entity.*;
@@ -31,13 +39,16 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
-public class LldpManagerImpl extends AbstractService implements HostAfterConnectedExtensionPoint, HostDeleteExtensionPoint {
+public class LldpManagerImpl extends AbstractService implements HostAfterConnectedExtensionPoint, HostDeleteExtensionPoint,
+        KVMPingAgentNoFailureExtensionPoint {
     private static final CLogger logger = Utils.getLogger(LldpManagerImpl.class);
 
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private EventFacade evtf;
 
     private final Map<String, Object> interfaceLocks = new ConcurrentHashMap<>();
 
@@ -61,7 +72,11 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
     }
 
     private void handleLocalMessage(Message msg) {
-        bus.dealWithUnknownMessage(msg);
+        if (msg instanceof GetHostNetworkInterfaceLldpMsg) {
+            handle((GetHostNetworkInterfaceLldpMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -167,13 +182,66 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
                 refVO.setLastOpDate(new Timestamp(System.currentTimeMillis()));
                 dbf.updateAndRefresh(refVO);
             }
+
+            /* link host network interface to physical interface based on:
+            HostNetworkInterfaceLldpRefVO.systemName == PhysicalSwitchVO.name
+                && HostNetworkInterfaceLldpRefVO.portId == PhysicalSwitchPortVO.name
+            > select lldpUuid,chassisId,systemName,portId,aggregationPortId from HostNetworkInterfaceLldpRefVO;     +----------------------------------+-------------------+------------+------------+-------------------+
+| lldpUuid                         | chassisId         | systemName | portId     | aggregationPortId |
++----------------------------------+-------------------+------------+------------+-------------------+
+| 0a89ae9894274b608b3e5cd29b20e216 | c0:e3:fb:65:ab:d1 | huawei_152 | 10GE1/0/13 |              NULL |
+| d3905992b4c043099c86785b0ee3186d | c0:e3:fb:65:ab:d1 | huawei_152 | 10GE1/0/11 |                 1 |
++----------------------------------+-------------------+------------+------------+-------------------+
+ select uuid,name,mac from PhysicalSwitchVO;
++----------------------------------+------------+-------------------+
+| uuid                             | name       | mac               |
++----------------------------------+------------+-------------------+
+| b9d708c427c630b1b9fffe2d989c3a48 | huawei_152 | C0:E3:FB:65:AB:D1 |
++----------------------------------+------------+-------------------+
+1 row in set (0.000 sec)
+select name,ethTrunkName,switchUuid from PhysicalSwitchPortVO limit 1;
++------------+--------------+----------------------------------+
+| name       | ethTrunkName | switchUuid                       |
++------------+--------------+----------------------------------+
+| 10GE1/0/30 | NULL         | b9d708c427c630b1b9fffe2d989c3a48 |
++------------+--------------+----------------------------------+
+            */
+            PhysicalSwitchVO switchVO = Q.New(PhysicalSwitchVO.class)
+                    .eq(PhysicalSwitchVO_.name, refVO.getSystemName()).limit(1).find();
+            if (switchVO != null) {
+                PhysicalSwitchPortVO oldPhysicalSwitchPortVO = Q.New(PhysicalSwitchPortVO.class)
+                        .eq(PhysicalSwitchPortVO_.peerInterfaceUuid, interfaceUuid).find();
+                PhysicalSwitchPortVO physicalSwitchPortVO = Q.New(PhysicalSwitchPortVO.class)
+                        .eq(PhysicalSwitchPortVO_.switchUuid, switchVO.getUuid())
+                        .eq(PhysicalSwitchPortVO_.name, refVO.getPortId()).limit(1).find();
+                if (physicalSwitchPortVO != null) {
+                    logger.debug(String.format("link host network interface[uuid:%s] to physical switch port[uuid:%s,name:%s]",
+                            interfaceUuid, physicalSwitchPortVO.getUuid(), physicalSwitchPortVO.getName()));
+                    if (physicalSwitchPortVO.getPeerInterfaceUuid() != null && physicalSwitchPortVO.getPeerInterfaceUuid().equals(interfaceUuid)) {
+                        logger.debug(String.format("physical switch port[uuid:%s,name:%s] is already linked to host network interface[uuid:%s], skip",
+                                physicalSwitchPortVO.getUuid(), physicalSwitchPortVO.getName(), physicalSwitchPortVO.getPeerInterfaceUuid()));
+                        return;
+                    }
+                    physicalSwitchPortVO.setPeerInterfaceUuid(interfaceUuid);
+                    dbf.update(physicalSwitchPortVO);
+
+                    if (oldPhysicalSwitchPortVO != null) {
+                        oldPhysicalSwitchPortVO.setPeerInterfaceUuid(null);
+                        dbf.update(oldPhysicalSwitchPortVO);
+                    }
+
+                    HostNetworkInterfaceCanonicalEvents.PeerPortChangedData data = new HostNetworkInterfaceCanonicalEvents.PeerPortChangedData();
+                    data.setInterfaceUuid(interfaceUuid);
+                    data.setOldPhysicalSwitchPort(PhysicalSwitchPortInventory.valueOf(oldPhysicalSwitchPortVO));
+                    data.setNewPhysiaclSwitchPort(PhysicalSwitchPortInventory.valueOf(physicalSwitchPortVO));
+                    evtf.fire(HostNetworkInterfaceCanonicalEvents.PEER_PORT_CHANGED, data);
+                }
+            }
         }
     }
 
-    private void handle(APIGetHostNetworkInterfaceLldpMsg msg) {
-        APIGetHostNetworkInterfaceLldpReply greply = new APIGetHostNetworkInterfaceLldpReply();
-
-        HostNetworkInterfaceVO interfaceVO = dbf.findByUuid(msg.getInterfaceUuid(), HostNetworkInterfaceVO.class);
+    void doGetHostNetworkInterfaceLLdpInfo(String interfaceUuid, ReturnValueCompletion<HostNetworkInterfaceLldpRefInventory> completion) {
+        HostNetworkInterfaceVO interfaceVO = dbf.findByUuid(interfaceUuid, HostNetworkInterfaceVO.class);
         final LldpKvmAgentCommands.GetLldpInfoCmd cmd = new LldpKvmAgentCommands.GetLldpInfoCmd();
         cmd.setPhysicalInterfaceName(interfaceVO.getInterfaceName());
 
@@ -182,28 +250,65 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
         kmsg.setHostUuid(interfaceVO.getHostUuid());
         kmsg.setCommand(cmd);
         bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, interfaceVO.getHostUuid());
-        bus.send(kmsg, new CloudBusCallBack(msg) {
+        bus.send(kmsg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    greply.setError(reply.getError());
-                    bus.reply(msg, greply);
+                    completion.fail(reply.getError());
                     return;
                 } else {
                     KVMHostAsyncHttpCallReply r = reply.castReply();
                     LldpKvmAgentCommands.GetLldpInfoResponse rsp = r.toResponse(LldpKvmAgentCommands.GetLldpInfoResponse.class);
                     if (!rsp.isSuccess()) {
-                        greply.setError(operr("operation error, because %s", rsp.getError()));
+                        completion.fail(operr("operation error, because %s", rsp.getError()));
                     } else {
-                        HostNetworkInterfaceLldpVO vo = Q.New(HostNetworkInterfaceLldpVO.class).eq(HostNetworkInterfaceLldpVO_.interfaceUuid, msg.getInterfaceUuid()).find();
-
-                        syncHostNetworkInterfaceLldpInDb(msg.getInterfaceUuid(), rsp.getLldpInfo());
+                        HostNetworkInterfaceLldpVO vo = Q.New(HostNetworkInterfaceLldpVO.class)
+                                .eq(HostNetworkInterfaceLldpVO_.interfaceUuid, interfaceUuid).find();
+                        syncHostNetworkInterfaceLldpInDb(interfaceUuid, rsp.getLldpInfo());
                         HostNetworkInterfaceLldpRefVO lldpRefVO =  Q.New(HostNetworkInterfaceLldpRefVO.class)
                                 .eq(HostNetworkInterfaceLldpRefVO_.lldpUuid, vo.getUuid())
                                 .find();
-                        greply.setLldp(lldpRefVO != null ? HostNetworkInterfaceLldpRefInventory.valueOf(lldpRefVO) : null);
+                        if (lldpRefVO != null) {
+                            completion.success(HostNetworkInterfaceLldpRefInventory.valueOf(lldpRefVO));
+                        } else {
+                            completion.fail(operr("get lldp ref for[%s] failed", interfaceUuid));
+                        }
                     }
                 }
+            }
+        });
+    }
+
+    private void handle(GetHostNetworkInterfaceLldpMsg msg) {
+        GetHostNetworkInterfaceLldpReply reply = new GetHostNetworkInterfaceLldpReply();
+        doGetHostNetworkInterfaceLLdpInfo(msg.getInterfaceUuid(), new ReturnValueCompletion<HostNetworkInterfaceLldpRefInventory>(msg) {
+            @Override
+            public void success(HostNetworkInterfaceLldpRefInventory returnValue) {
+                reply.setLldp(returnValue);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(APIGetHostNetworkInterfaceLldpMsg msg) {
+        APIGetHostNetworkInterfaceLldpReply greply = new APIGetHostNetworkInterfaceLldpReply();
+
+        doGetHostNetworkInterfaceLLdpInfo(msg.getInterfaceUuid(), new ReturnValueCompletion<HostNetworkInterfaceLldpRefInventory>(msg) {
+            @Override
+            public void success(HostNetworkInterfaceLldpRefInventory returnValue) {
+                greply.setLldp(returnValue);
+                bus.reply(msg, greply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                greply.setError(errorCode);
                 bus.reply(msg, greply);
             }
         });
@@ -319,6 +424,59 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
     @Override
     public void afterDeleteHost(HostInventory inventory) {
 
+    }
+
+    @Override
+    public void kvmPingAgentNoFailure(KVMHostInventory host, NoErrorCompletion completion) {
+        List<String> interfaceUuids = Q.New(HostNetworkInterfaceVO.class)
+                .select(HostNetworkInterfaceVO_.uuid)
+                .eq(HostNetworkInterfaceVO_.hostUuid, host.getUuid())
+                .listValues();
+        if (interfaceUuids.isEmpty()) {
+            completion.done();
+            return;
+        }
+
+        List<HostNetworkInterfaceLldpVO> lldpVOS = Q.New(HostNetworkInterfaceLldpVO.class)
+                .in(HostNetworkInterfaceLldpVO_.interfaceUuid, interfaceUuids)
+                .list();
+        List<HostNetworkInterfaceLldpVO> toUpdate = new ArrayList<>();
+        for (HostNetworkInterfaceLldpVO lldpVO : lldpVOS) {
+            if (LldpConstant.mode.disable.toString().equals(lldpVO.getMode())) {
+                continue;
+            }
+
+            if (lldpVO.getNeighborDevice() != null) {
+                continue;
+            }
+
+            toUpdate.add(lldpVO);
+        }
+
+        if (toUpdate.isEmpty()) {
+            completion.done();
+            return;
+        }
+
+        new While<>(toUpdate).each((lldpVO, wcomp) -> {
+            doGetHostNetworkInterfaceLLdpInfo(lldpVO.getInterfaceUuid(), new ReturnValueCompletion<HostNetworkInterfaceLldpRefInventory>(wcomp) {
+                @Override
+                public void success(HostNetworkInterfaceLldpRefInventory returnValue) {
+                    wcomp.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    logger.debug("get lldp info failed, ignore it");
+                    wcomp.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.done();
+            }
+        });
     }
 
     @Override

@@ -37,6 +37,8 @@ public class SdnControllerConstant {
 
     public static final String SDN_CONTROLLER_VROUTER_PREFIX = "VR_";
 
+    public static final String DEFAULT_SDN_CONTROLLER_VERSION = "V1";
+
     public enum Processes{
         Pre,
         Post
@@ -58,6 +60,7 @@ public class SdnControllerConstant {
 
     public enum Params {
         HARDWARE_VXLAN_POOLS,
-        VXLAN_NETWORK
+        VXLAN_NETWORK,
+        SDN_CONTROLLER,
     }
 }

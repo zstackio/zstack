@@ -1,10 +1,10 @@
-package org.zstack.sdnController.header
+package org.zstack.header.network.sdncontroller
 
 
 
 doc {
 
-	title "SDN控制器状态清单"
+	title "SDN控制器状态"
 
 	field {
 		name "Connecting"

@@ -10,8 +10,9 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
 import org.zstack.header.network.l2.*;
+import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.*;
-import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerL2;
 import org.zstack.sdnController.SdnControllerManager;
 import org.zstack.sdnController.header.*;
@@ -67,20 +68,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
         ext.realize(inv, hostUuid, completion);
     }
 
-    @Override
-    public void attachL2NetworkToClusterOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
-        List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, vxlan.getPoolUuid())
-                .select(L2NetworkClusterRefVO_.clusterUuid).listValues();
-        if (clusterUuids == null || clusterUuids.isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        List<HostVO> hosts = Q.New(HostVO.class).in(HostVO_.clusterUuid, clusterUuids)
-                .notIn(HostVO_.state, asList(HostState.PreMaintenance, HostState.Maintenance))
-                .eq(HostVO_.status, HostStatus.Connected).list();
-        List<HostInventory> hvinvs = HostInventory.valueOf(hosts);
-
+    public void attachL2NetworkToHosts(L2VxlanNetworkInventory vxlan, List<HostInventory> hvinvs, Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("attach-hardware-vxlan-%s-on-hosts", vxlan.getUuid()));
         chain.then(new NoRollbackFlow() {
@@ -124,17 +112,127 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     }
 
     @Override
+    public void attachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, APICreateL2NetworkMsg msg, Completion completion) {
+        List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, vxlan.getPoolUuid())
+                .select(L2NetworkClusterRefVO_.clusterUuid).listValues();
+        if (clusterUuids == null || clusterUuids.isEmpty()) {
+            logger.debug(String.format("no cluster attached to hardware vxlan network[uuid:%s, name:%s]",
+                    vxlan.getUuid(), vxlan.getName()));
+            completion.success();
+            return;
+        }
+
+        List<HostVO> hosts = Q.New(HostVO.class).in(HostVO_.clusterUuid, clusterUuids)
+                .notIn(HostVO_.state, asList(HostState.PreMaintenance, HostState.Maintenance))
+                .eq(HostVO_.status, HostStatus.Connected).list();
+        List<HostInventory> hvinvs = HostInventory.valueOf(hosts);
+
+        attachL2NetworkToHosts(vxlan, hvinvs, completion);
+    }
+
+    @Override
     public void deleteHook(Completion completion) {
-        deleteVxlanNetworkOnSdnController((VxlanNetworkVO) self, new Completion(completion) {
-            @Override
-            public void success() {
-                completion.success();
-            }
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("delete-hardware-vxlan"));
+        chain.then(new NoRollbackFlow() {
+            final String __name__ = "delete-hardware-vxlan-from-sdn";
 
             @Override
-            public void fail(ErrorCode errorCode) {
+            public void run(FlowTrigger trigger, Map data) {
+                deleteVxlanNetworkOnSdnController((VxlanNetworkVO) self, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                HardwareVxlanNetwork.super.deleteL2Bridge(null, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
                 completion.success();
             }
-        });
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
+    // called by handle(DetachL2NetworkFromClusterMsg msg)
+    @Override
+    protected void deleteL2Bridge(List<String> clusterUuids, Completion completion) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("detach-hardware-vxlan"));
+        chain.then(new NoRollbackFlow() {
+            final String __name__ = "detach-hardware-vxlan-from-sdn";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                L2VxlanNetworkInventory vxlan = getSelfInventory();
+                HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
+                SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
+
+                SdnControllerL2 controller = sdnControllerManager.getSdnControllerL2(sdn);
+                controller.detachL2NetworkFromCluster(vxlan, clusterUuids, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            final String __name__ = "detach-hardware-vxlan-from-host";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                HardwareVxlanNetwork.super.deleteL2Bridge(clusterUuids, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 }

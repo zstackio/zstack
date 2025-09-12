@@ -14,8 +14,8 @@ import org.zstack.header.message.Message;
 import org.zstack.header.network.l2.*;
 import org.zstack.network.l2.L2NoVlanNetwork;
 import org.zstack.sdnController.SdnControllerManager;
-import org.zstack.sdnController.header.SdnControllerVO;
-import org.zstack.sdnController.header.SdnControllerVO_;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
+import org.zstack.header.network.sdncontroller.SdnControllerVO_;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
