@@ -3907,6 +3907,7 @@ public class KVMAgentCommands {
     }
 
     public static class MergeSnapshotRsp extends AgentResponse {
+        public long size;
     }
 
     public static class MergeSnapshotCmd extends AgentCommand implements HasThreadContext {
@@ -4015,7 +4016,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class BlockCommitVolumeCmd extends AgentCommand implements HasThreadContext {
+    public static class BlockCommitCmd extends AgentCommand implements HasThreadContext {
         @GrayVersion(value = "5.0.0")
         private String vmUuid;
         @GrayVersion(value = "5.0.0")
@@ -4026,6 +4027,8 @@ public class KVMAgentCommands {
         private String top;
         @GrayVersion(value = "5.0.0")
         private String base;
+        @GrayVersion(value = "5.4.0")
+        private List<String> topChildrenInstallPathInDb = new ArrayList<>();
 
         public String getVmUuid() {
             return vmUuid;
@@ -4033,14 +4036,6 @@ public class KVMAgentCommands {
 
         public void setVmUuid(String vmUuid) {
             this.vmUuid = vmUuid;
-        }
-
-        public String getVolumeUuid() {
-            return volumeUuid;
-        }
-
-        public void setVolumeUuid(String volumeUuid) {
-            this.volumeUuid = volumeUuid;
         }
 
         public VolumeTO getVolume() {
@@ -4066,12 +4061,17 @@ public class KVMAgentCommands {
         public void setBase(String base) {
             this.base = base;
         }
+
+        public List<String> getTopChildrenInstallPathInDb() {
+            return topChildrenInstallPathInDb;
+        }
+
+        public void setTopChildrenInstallPathInDb(List<String> topChildrenInstallPathInDb) {
+            this.topChildrenInstallPathInDb = topChildrenInstallPathInDb;
+        }
     }
 
-    public static class BlockCommitVolumeResponse extends AgentResponse {
-        @Validation
-        @GrayVersion(value = "5.0.0")
-        private String newVolumeInstallPath;
+    public static class BlockCommitResponse extends AgentResponse {
         @Validation(notZero = true)
         @GrayVersion(value = "5.0.0")
         private long size;
@@ -4083,13 +4083,51 @@ public class KVMAgentCommands {
         public void setSize(long size) {
             this.size = size;
         }
+    }
 
-        public String getNewVolumeInstallPath() {
-            return newVolumeInstallPath;
+    public static class BlockPullCmd extends AgentCommand implements HasThreadContext {
+        @GrayVersion(value = "5.4.0")
+        private String vmUuid;
+        @GrayVersion(value = "5.4.0")
+        private VolumeTO volume;
+        @GrayVersion(value = "5.4.0")
+        private String base;
+
+        public String getVmUuid() {
+            return vmUuid;
         }
 
-        public void setNewVolumeInstallPath(String newVolumeInstallPath) {
-            this.newVolumeInstallPath = newVolumeInstallPath;
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public VolumeTO getVolume() {
+            return volume;
+        }
+
+        public void setVolume(VolumeTO volume) {
+            this.volume = volume;
+        }
+
+        public String getBase() {
+            return base;
+        }
+
+        public void setBase(String base) {
+            this.base = base;
+        }
+    }
+
+    public static class BlockPullResponse extends AgentResponse {
+        @GrayVersion(value = "5.4.0")
+        private long size;
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
         }
     }
 

@@ -9,6 +9,8 @@ public class VolumeSnapshotDeletionMsg extends DeletionMessage implements Volume
     private String volumeUuid;
     private boolean volumeDeletion;
     private boolean dbOnly;
+    private String direction;
+    private String scope;
     /**
      * @ignore
      */
@@ -56,5 +58,21 @@ public class VolumeSnapshotDeletionMsg extends DeletionMessage implements Volume
 
     public void setDbOnly(boolean dbOnly) {
         this.dbOnly = dbOnly;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+
+    public String getDirection() {
+        return direction;
+    }
+
+    public void setDirection(String direction) {
+        this.direction = direction;
     }
 }
