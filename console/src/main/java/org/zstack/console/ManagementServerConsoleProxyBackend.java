@@ -477,11 +477,40 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
             ConsoleProxyAgentVO vo;
             String oldProxyIp;
             int oldProxyPort;
-            int newProxyPort = msg.getConsoleProxyPort() == 0 ? CoreGlobalProperty.CONSOLE_PROXY_PORT : msg.getConsoleProxyPort();
+            int newProxyPort = msg.getConsoleProxyPort() == null ? CoreGlobalProperty.CONSOLE_PROXY_PORT : msg.getConsoleProxyPort();
 
 
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "verify-console-proxy-port";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (msg.getConsoleProxyPort() == null) {
+                            trigger.next();
+                            return;
+                        }
+
+                        vo = dbf.findByUuid(msg.getUuid(), ConsoleProxyAgentVO.class);
+                        if ((int)msg.getConsoleProxyPort() == vo.getConsoleProxyPort()) {
+                            trigger.next();
+                            return;
+                        }
+
+                        ShellUtils.ShellRunner runner = new ShellUtils.ShellRunner();
+                        runner.setCommand(String.format("netstat -nltp | grep -E ':%d\\s+'", msg.getConsoleProxyPort()));
+                        runner.setVerbose(false);
+                        runner.setWithSudo(true);
+                        runner.setSuppressTraceLog(true);
+                        ShellResult res = runner.run();
+                        String stdout = res.getStdout();
+                        if (res.getRetCode() == 0) {
+                            trigger.fail(argerr("there is other process using the port: %s", stdout));
+                        } else {
+                            trigger.next();
+                        }
+                    }
+                });
                 flow(new Flow() {
                     String __name__ = "update-console-proxy-agent-vo";
                     @Override
