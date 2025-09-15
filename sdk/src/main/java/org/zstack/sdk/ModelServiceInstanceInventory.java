@@ -12,6 +12,14 @@ public class ModelServiceInstanceInventory  {
         return this.uuid;
     }
 
+    public java.lang.String name;
+    public void setName(java.lang.String name) {
+        this.name = name;
+    }
+    public java.lang.String getName() {
+        return this.name;
+    }
+
     public java.lang.String modelServiceGroupUuid;
     public void setModelServiceGroupUuid(java.lang.String modelServiceGroupUuid) {
         this.modelServiceGroupUuid = modelServiceGroupUuid;
@@ -90,6 +98,22 @@ public class ModelServiceInstanceInventory  {
     }
     public java.lang.Integer getNodeRank() {
         return this.nodeRank;
+    }
+
+    public java.lang.Long clusterId;
+    public void setClusterId(java.lang.Long clusterId) {
+        this.clusterId = clusterId;
+    }
+    public java.lang.Long getClusterId() {
+        return this.clusterId;
+    }
+
+    public java.lang.String namespace;
+    public void setNamespace(java.lang.String namespace) {
+        this.namespace = namespace;
+    }
+    public java.lang.String getNamespace() {
+        return this.namespace;
     }
 
     public VmInstanceInventory vm;
