@@ -5,6 +5,7 @@ import okhttp3.logging.HttpLoggingInterceptor;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -129,6 +130,7 @@ public class HTTP {
         private Request request;
 
         private boolean build;
+        private MultipartBody.Builder multipartBody;
 
         public Param getParam() {
             return param;
@@ -196,6 +198,32 @@ public class HTTP {
             return this;
         }
 
+        public Builder formData(Map<String, Object> formFields) {
+            if (formFields == null) {
+                throw new IllegalArgumentException("formFields cannot be null");
+            }
+
+            if (param.body != null) {
+                throw new IllegalStateException("Cannot set both body and form data");
+            }
+
+            multipartBody = new MultipartBody.Builder().setType(MultipartBody.FORM);
+            formFields.forEach((k, v) -> {
+                if (k == null || v == null) {
+                    return; // skip null entries
+                }
+
+                if (v instanceof File) {
+                    File file = (File) v;
+                    RequestBody fileBody = RequestBody.create(file, MediaType.parse("application/octet-stream"));
+                    multipartBody.addFormDataPart(k, file.getName(), fileBody);
+                } else {
+                    multipartBody.addFormDataPart(k, v.toString());
+                }
+            });
+            return this;
+        }
+
         public Response callWithException() throws IOException {
             build();
 
@@ -254,15 +282,23 @@ public class HTTP {
             }
 
             if ("POST".equals(param.method)) {
-                DebugUtils.Assert(param.body != null, "POST requires body");
-                rb.post(RequestBody.create(MediaType.parse(contentType), param.body));
+                if (multipartBody != null) {
+                    rb.post(multipartBody.build());
+                } else {
+                    DebugUtils.Assert(param.body != null, "POST requires body");
+                    rb.post(RequestBody.create(param.body, MediaType.parse(contentType)));
+                }
             } else if ("GET".equals(param.method)) {
                 rb.get();
             } else if ("DELETE".equals(param.method)) {
                 rb.delete();
             } else if ("PUT".equals(param.method)) {
-                DebugUtils.Assert(param.body != null, "PUT requires body");
-                rb.put(RequestBody.create(MediaType.parse(contentType), param.body));
+                if (multipartBody != null) {
+                    rb.put(multipartBody.build());
+                } else {
+                    DebugUtils.Assert(param.body != null, "PUT requires body");
+                    rb.put(RequestBody.create(param.body, MediaType.parse(contentType)));
+                }
             } else if ("HEAD".equals(param.method)) {
                 rb.head();
             } else {
