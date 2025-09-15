@@ -321,6 +321,11 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
+        <osRelease>AlmaLinux 9</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
         <osRelease>AnolisOS 8</osRelease>
     </osInfo>
     <osInfo>

@@ -350,6 +350,12 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>AlmaLinux</name>
+        <version>9</version>
+        <osRelease>AlmaLinux 9</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>AnolisOS</name>
         <version>8</version>
         <osRelease>AnolisOS 8</osRelease>
