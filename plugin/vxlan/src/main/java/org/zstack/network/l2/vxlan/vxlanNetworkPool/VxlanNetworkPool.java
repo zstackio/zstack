@@ -833,6 +833,25 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         }
     }
 
+    private void addVxlanNetworkClusterRefs(String clusterUuid, String l2Uuid) {
+        List<L2NetworkClusterRefVO> refs = new ArrayList<>();
+        L2NetworkClusterRefVO rvo = new L2NetworkClusterRefVO();
+        rvo.setClusterUuid(clusterUuid);
+        rvo.setL2NetworkUuid(l2Uuid);
+        refs.add(rvo);
+
+        List<String> uuids = Q.New(VxlanNetworkVO.class)
+                .select(VxlanNetworkVO_.uuid).eq(VxlanNetworkVO_.poolUuid, l2Uuid).listValues();
+        for (String uuid : uuids) {
+            rvo = new L2NetworkClusterRefVO();
+            rvo.setClusterUuid(clusterUuid);
+            rvo.setL2NetworkUuid(uuid);
+            refs.add(rvo);
+        }
+
+        dbf.persistCollection(refs);
+    }
+
     private void handle(final APIAttachL2NetworkToClusterMsg msg) {
         final APIAttachL2NetworkToClusterEvent evt = new APIAttachL2NetworkToClusterEvent(msg.getId());
         SimpleQuery<L2NetworkClusterRefVO> rq = dbf.createQuery(L2NetworkClusterRefVO.class);
@@ -857,6 +876,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         query.add(HostVO_.status, SimpleQuery.Op.EQ, HostStatus.Connected);
         final List<HostVO> hosts = query.list();
         if (hosts.isEmpty()) {
+            addVxlanNetworkClusterRefs(msg.getClusterUuid(), msg.getL2NetworkUuid());
+            self = dbf.reload(self);
             evt.setInventory(self.toInventory());
             bus.publish(evt);
             return;
@@ -867,20 +888,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         prepareL2NetworkOnHosts(msg.getL2NetworkUuid(), hvinvs, true, new Completion(msg) {
             @Override
             public void success() {
-                L2NetworkClusterRefVO rvo = new L2NetworkClusterRefVO();
-                rvo.setClusterUuid(msg.getClusterUuid());
-                rvo.setL2NetworkUuid(self.getUuid());
-                dbf.persist(rvo);
-
-                List<String> uuids = Q.New(VxlanNetworkVO.class)
-                        .select(VxlanNetworkVO_.uuid).eq(VxlanNetworkVO_.poolUuid, msg.getL2NetworkUuid()).listValues();
-                for (String uuid : uuids) {
-                    rvo = new L2NetworkClusterRefVO();
-                    rvo.setClusterUuid(msg.getClusterUuid());
-                    rvo.setL2NetworkUuid(uuid);
-                    dbf.persist(rvo);
-                }
-
+                addVxlanNetworkClusterRefs(msg.getClusterUuid(), msg.getL2NetworkUuid());
 
                 logger.debug(String.format("successfully attached L2VxlanNetworkPool[uuid:%s] to cluster [uuid:%s]", self.getUuid(), msg.getClusterUuid()));
                 self = dbf.findByUuid(self.getUuid(), L2NetworkVO.class);
