@@ -12,16 +12,11 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l3.IpRangeInventory;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.sdncontroller.SdnControllerInventory;
-import org.zstack.header.network.sdncontroller.SdnControllerVO;
+import org.zstack.header.network.sdncontroller.*;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.sdnController.*;
@@ -30,7 +25,6 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Tuple;
 import java.util.*;
 
 import static org.zstack.core.Platform.operr;

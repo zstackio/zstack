@@ -1,6 +1,7 @@
 package org.zstack.sdnController.header;
 
 import org.zstack.header.network.l2.APICreateL2NetworkEvent;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.rest.RestResponse;
 
 /**

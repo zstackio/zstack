@@ -13,14 +13,14 @@ import org.zstack.sdk.ZoneInventory
 import org.zstack.sdnController.SdnControllerGlobalConfig
 import org.zstack.sdnController.SdnControllerSystemTags
 import org.zstack.sdnController.h3cVcfc.H3cVcfcV2Commands
-import org.zstack.sdnController.header.SdnControllerConstant
+import org.zstack.header.network.sdncontroller.SdnControllerConstant
 import org.zstack.sdnController.header.H3cSdnControllerTenantVO
 import org.zstack.sdnController.header.H3cSdnControllerTenantVO_
 import org.zstack.header.network.l3.L3NetworkConstant
 import org.zstack.sdnController.h3cVcfc.H3cVcfcSdnControllerSystemTags
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.utils.gson.JSONObjectUtil
+
 /**
  * Created by shixin on 2019/09/30.
  */

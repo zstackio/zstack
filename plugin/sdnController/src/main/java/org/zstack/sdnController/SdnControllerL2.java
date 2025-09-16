@@ -8,7 +8,7 @@ import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
-import org.zstack.sdnController.header.SdnControllerDeletionMsg;
+import org.zstack.header.network.sdncontroller.SdnControllerDeletionMsg;
 import org.zstack.header.network.sdncontroller.SdnControllerInventory;
 import org.zstack.sdnController.header.SdnVlanRange;
 import org.zstack.sdnController.header.SdnVniRange;

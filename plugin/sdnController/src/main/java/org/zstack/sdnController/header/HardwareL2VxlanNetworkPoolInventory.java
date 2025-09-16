@@ -3,6 +3,7 @@ package org.zstack.sdnController.header;
 import org.zstack.core.db.Q;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.sdncontroller.SdnControllerInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;

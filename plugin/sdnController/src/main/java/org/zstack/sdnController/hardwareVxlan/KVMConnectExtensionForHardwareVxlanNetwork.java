@@ -20,7 +20,7 @@ import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
-import org.zstack.sdnController.header.SdnControllerConstant;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;

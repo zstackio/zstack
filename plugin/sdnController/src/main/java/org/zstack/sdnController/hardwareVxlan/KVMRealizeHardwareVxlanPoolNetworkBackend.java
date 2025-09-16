@@ -20,7 +20,7 @@ import org.zstack.kvm.KVMCompleteNicInformationExtensionPoint;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMHostUtils;
 import org.zstack.network.service.MtuGetter;
-import org.zstack.sdnController.header.SdnControllerConstant;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

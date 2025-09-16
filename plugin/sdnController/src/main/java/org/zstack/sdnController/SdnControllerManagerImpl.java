@@ -25,9 +25,7 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.SdnControllerL3;
-import org.zstack.header.network.sdncontroller.SdnControllerInventory;
-import org.zstack.header.network.sdncontroller.SdnControllerStatus;
-import org.zstack.header.network.sdncontroller.SdnControllerVO;
+import org.zstack.header.network.sdncontroller.*;
 import org.zstack.header.network.service.GetSdnControllerExtensionPoint;
 import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.header.vm.*;
@@ -38,7 +36,6 @@ import org.zstack.network.securitygroup.SecurityGroupManager;
 import org.zstack.network.securitygroup.SecurityGroupSdnBackend;
 import org.zstack.sdnController.header.*;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

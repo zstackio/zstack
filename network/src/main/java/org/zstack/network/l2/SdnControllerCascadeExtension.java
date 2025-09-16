@@ -1,4 +1,4 @@
-package org.zstack.sdnController;
+package org.zstack.network.l2;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,11 +18,7 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.sdncontroller.SdnControllerHostRefVO;
-import org.zstack.header.network.sdncontroller.SdnControllerHostRefVO_;
-import org.zstack.header.network.sdncontroller.SdnControllerInventory;
-import org.zstack.header.network.sdncontroller.SdnControllerVO;
-import org.zstack.sdnController.header.*;
+import org.zstack.header.network.sdncontroller.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;

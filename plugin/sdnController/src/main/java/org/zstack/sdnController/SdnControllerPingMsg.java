@@ -1,7 +1,7 @@
 package org.zstack.sdnController;
 
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.sdnController.header.SdnControllerMessage;
+import org.zstack.header.network.sdncontroller.SdnControllerMessage;
 
 /**
  * Created by shixin.ruan on 06/26/2025.

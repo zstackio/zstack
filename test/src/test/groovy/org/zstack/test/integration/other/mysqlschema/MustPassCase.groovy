@@ -13,6 +13,7 @@ class MustPassCase extends SubCase {
 
     @Override
     void setup() {
+        useSpring(Mysql57Test.springSpec)
     }
 
     @Override

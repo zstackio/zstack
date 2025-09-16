@@ -13,6 +13,7 @@ import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.*;
