@@ -1176,17 +1176,17 @@ public class KVMHost extends HostBase implements Host {
         }
 
         KVMHostVO host = dbf.findByUuid(msg.getHostUuid(), KVMHostVO.class);
-        HTTP.Builder hb = HTTP.post();
-        hb.body("");
-        try {
-            hb.url(String.format("http://localhost:%s?username=%s&&hostname=%s&&port=%s&&password=%s",
-                    KVMGlobalConfig.HOST_WEBSSH_PORT.value(),
-                    msg.getUserName(),
-                    host.getManagementIp(),
-                    host.getPort().toString(),
-                    msg.getPassword()));
+        Map<String, Object> formMap = new HashMap<>();
+        formMap.put("username", msg.getUserName());
+        formMap.put("hostname", host.getManagementIp());
+        formMap.put("port", host.getPort().toString());
+        formMap.put("password", msg.getPassword());
 
-            Response r = hb.callWithException();
+        HTTP.Builder hb = HTTP.post()
+                .url(String.format("http://localhost:%s", KVMGlobalConfig.HOST_WEBSSH_PORT.value()))
+                .formData(formMap);
+
+        try (Response r = hb.callWithException()) {
             // 1. webssh maybe is not running
             if (!r.isSuccessful()) {
                 reply.setError(inerr("webssh server is unreachable for %s", r.message()));
@@ -1208,7 +1208,7 @@ public class KVMHost extends HostBase implements Host {
             bus.reply(msg, reply);
         } catch (IOException | NullPointerException e) {
             throw new CloudRuntimeException(
-                    String.format("get host[%s] webssh url failed. because %s", host.getUuid(), e.getMessage())
+                    String.format("get host[%s] webssh url failed: %s", host.getUuid(), e.getMessage())
             );
         }
     }
