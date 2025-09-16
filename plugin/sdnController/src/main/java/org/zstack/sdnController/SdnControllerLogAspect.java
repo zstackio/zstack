@@ -9,9 +9,9 @@ import org.springframework.stereotype.Component;
 
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.sdnController.header.APIAddSdnControllerMsg;
-import org.zstack.sdnController.header.SdnControllerConstant.Processes;
-import org.zstack.sdnController.header.SdnControllerConstant.Operations;
-import org.zstack.sdnController.header.SdnControllerConstant.ResourceTypes;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant.Processes;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant.Operations;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant.ResourceTypes;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

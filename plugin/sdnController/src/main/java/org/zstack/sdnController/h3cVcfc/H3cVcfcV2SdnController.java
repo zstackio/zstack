@@ -16,6 +16,7 @@ import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.sdnController.SdnControllerLog;

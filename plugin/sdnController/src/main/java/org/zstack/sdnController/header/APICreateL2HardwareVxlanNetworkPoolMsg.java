@@ -3,6 +3,7 @@ package org.zstack.sdnController.header;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.rest.RestRequest;
 

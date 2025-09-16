@@ -1,4 +1,4 @@
-package org.zstack.sdnController.header;
+package org.zstack.header.network.sdncontroller;
 
 import org.zstack.header.message.NeedReplyMessage;
 
@@ -7,14 +7,6 @@ public class SdnControllerRemoveHostMsg extends NeedReplyMessage implements SdnC
     private String hostUuid;
     private String vSwitchType;
     private boolean createChain = true;
-
-    public static SdnControllerRemoveHostMsg fromApi(APISdnControllerRemoveHostMsg amsg) {
-        SdnControllerRemoveHostMsg msg = new SdnControllerRemoveHostMsg();
-        msg.setSdnControllerUuid(amsg.getSdnControllerUuid());
-        msg.setHostUuid(amsg.getHostUuid());
-        msg.setvSwitchType(amsg.getvSwitchType());
-        return msg;
-    }
 
     public void setSdnControllerUuid(String sdnControllerUuid) {
         this.sdnControllerUuid = sdnControllerUuid;

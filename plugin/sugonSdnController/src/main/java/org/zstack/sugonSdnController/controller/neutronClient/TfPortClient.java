@@ -5,7 +5,7 @@ import org.bouncycastle.util.IPAddress;
 import org.zstack.core.db.Q;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
-import org.zstack.sdnController.header.SdnControllerConstant;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.network.sdncontroller.SdnControllerVO_;
 import org.zstack.sugonSdnController.controller.api.*;

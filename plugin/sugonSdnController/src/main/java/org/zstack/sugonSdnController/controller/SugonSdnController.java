@@ -9,7 +9,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
-import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.identity.AccountVO_;
@@ -18,10 +17,7 @@ import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.network.sdncontroller.SdnControllerInventory;
-import org.zstack.header.network.sdncontroller.SdnControllerVO;
-import org.zstack.header.network.sdncontroller.SdnControllerVO_;
-import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.network.sdncontroller.*;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.sdnController.SdnController;
@@ -35,7 +31,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.Tuple;
 import java.util.*;
 
 import static org.zstack.core.Platform.operr;

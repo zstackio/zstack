@@ -7,7 +7,7 @@ import org.zstack.kvm.KVMConstant
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
 import org.zstack.sdk.*
-import org.zstack.sdnController.header.SdnControllerConstant
+import org.zstack.header.network.sdncontroller.SdnControllerConstant
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 

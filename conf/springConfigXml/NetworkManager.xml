@@ -142,6 +142,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="SdnControllerCascadeExtension" class="org.zstack.network.l2.SdnControllerCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="AddressPoolIpRangeFactory" class="org.zstack.network.l3.AddressPoolIpRangeFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.l3.IpRangeFactory"/>

@@ -23,6 +23,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory;
 import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;

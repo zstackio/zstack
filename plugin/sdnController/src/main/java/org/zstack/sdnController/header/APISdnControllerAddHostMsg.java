@@ -6,6 +6,8 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
+import org.zstack.header.network.sdncontroller.SdnControllerMessage;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.rest.RestRequest;
 

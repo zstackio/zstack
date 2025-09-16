@@ -2,12 +2,12 @@ package org.zstack.sdnController.h3cVcfc;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.network.securitygroup.SecurityGroupSdnBackend;
 import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerFactory;
 import org.zstack.sdnController.*;
-import org.zstack.sdnController.header.*;
 
 public class H3cVcfcSdnControllerFactory implements SdnControllerFactory {
     SdnControllerType sdnControllerType = new SdnControllerType(SdnControllerConstant.H3C_VCFC_CONTROLLER);

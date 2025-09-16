@@ -4,6 +4,8 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
+import org.zstack.header.network.sdncontroller.SdnControllerMessage;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.rest.RestRequest;
 

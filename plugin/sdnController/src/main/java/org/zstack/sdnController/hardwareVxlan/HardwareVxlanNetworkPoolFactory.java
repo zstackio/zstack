@@ -12,6 +12,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.APICreateL3NetworkMsg;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory;
 import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;

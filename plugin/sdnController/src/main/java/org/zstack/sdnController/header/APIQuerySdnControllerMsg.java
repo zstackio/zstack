@@ -2,6 +2,7 @@ package org.zstack.sdnController.header;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.sdncontroller.SdnControllerInventory;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;

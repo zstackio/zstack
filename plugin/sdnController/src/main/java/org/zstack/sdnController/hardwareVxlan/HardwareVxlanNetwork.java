@@ -10,12 +10,12 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.*;
 import org.zstack.sdnController.SdnControllerL2;
 import org.zstack.sdnController.SdnControllerManager;
-import org.zstack.sdnController.header.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

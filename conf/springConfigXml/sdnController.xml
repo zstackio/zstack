@@ -68,12 +68,6 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="SdnControllerCascadeExtension" class="org.zstack.sdnController.SdnControllerCascadeExtension">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
-        </zstack:plugin>
-    </bean>
-
     <bean id="KVMConnectExtensionForHardwareVxlanNetwork" class="org.zstack.sdnController.hardwareVxlan.KVMConnectExtensionForHardwareVxlanNetwork">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />

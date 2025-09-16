@@ -539,7 +539,10 @@ public class SdnControllerBase {
     private void handle(APISdnControllerRemoveHostMsg amsg) {
         APISdnControllerRemoveHostEvent event = new APISdnControllerRemoveHostEvent(amsg.getId());
 
-        SdnControllerRemoveHostMsg msg = SdnControllerRemoveHostMsg.fromApi(amsg);
+        SdnControllerRemoveHostMsg msg = new SdnControllerRemoveHostMsg();
+        msg.setSdnControllerUuid(amsg.getSdnControllerUuid());
+        msg.setHostUuid(amsg.getHostUuid());
+        msg.setvSwitchType(amsg.getvSwitchType());
         sdnControllerRemoveHostInQueue(msg, new Completion(msg) {
             @Override
             public void success() {
