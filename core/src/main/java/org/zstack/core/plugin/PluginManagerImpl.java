@@ -353,7 +353,7 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                         continue;
                     }
 
-                    if (entryName.matches(".*\\d.*")) {
+                    if (entryName.matches(".*\\$\\d+\\.class$")) {
                         // eg: org.zstack.CipherOnCloudCryptoPlugin$1.class
                         continue;
                     }
