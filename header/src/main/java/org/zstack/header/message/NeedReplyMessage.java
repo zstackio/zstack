@@ -32,6 +32,14 @@ public abstract class NeedReplyMessage extends Message {
         return systemTags != null && systemTags.stream().anyMatch(isMatch);
     }
 
+    public boolean removeSystemTag(Predicate<String> isMatch) {
+        if (systemTags == null) {
+            return false;
+        }
+
+        return systemTags.removeIf(isMatch);
+    }
+
     public void addSystemTag(String systemTag){
         if (systemTags == null) {
             systemTags = new ArrayList<>();
