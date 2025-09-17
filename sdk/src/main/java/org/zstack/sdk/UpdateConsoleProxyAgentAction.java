@@ -32,7 +32,7 @@ public class UpdateConsoleProxyAgentAction extends AbstractAction {
     public java.lang.String consoleProxyOverriddenIp;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
-    public int consoleProxyPort = 0;
+    public java.lang.Integer consoleProxyPort;
 
     @Param(required = false)
     public java.util.List systemTags;
