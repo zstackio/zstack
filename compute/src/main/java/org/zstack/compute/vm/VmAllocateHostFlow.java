@@ -110,10 +110,7 @@ public class VmAllocateHostFlow implements Flow {
         }
 
         if (msg.getAllocatorStrategy() == null &&
-                (spec.getRequiredClusterUuid() != null
-                        || spec.getRequiredHostUuid() != null
-                        || CollectionUtils.isEmpty(spec.getRequiredClusterUuids())
-                        || CollectionUtils.isEmpty(spec.getVmInventory().getVmNics()))) {
+                (!CollectionUtils.isEmpty(msg.getClusterUuids()) || msg.getHostUuid() != null)) {
             msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
         }
 
