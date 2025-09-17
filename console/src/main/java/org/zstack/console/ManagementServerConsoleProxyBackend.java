@@ -485,6 +485,24 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
 
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "verify-console-proxy-port";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        ShellUtils.ShellRunner runner = new ShellUtils.ShellRunner();
+                        runner.setCommand(String.format("netstat -nltp4 | grep  :%d\b", msg.getConsoleProxyPort()));
+                        runner.setVerbose(false);
+                        runner.setWithSudo(true);
+                        runner.setSuppressTraceLog(true);
+                        ShellResult res = runner.run();
+                        String stdout = res.getStdout();
+                        if (res.getRetCode() == 0) {
+                            trigger.fail(argerr("there is other process using the port: %s", stdout));
+                        } else {
+                            trigger.next();
+                        }
+                    }
+                });
                 flow(new Flow() {
                     String __name__ = "update-console-proxy-agent-vo";
                     @Override
