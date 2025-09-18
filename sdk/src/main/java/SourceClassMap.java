@@ -321,6 +321,7 @@ public class SourceClassMap {
 			put("org.zstack.header.network.l3.ReservedIpRangeInventory", "org.zstack.sdk.ReservedIpRangeInventory");
 			put("org.zstack.header.network.l3.UsedIpInventory", "org.zstack.sdk.UsedIpInventory");
 			put("org.zstack.header.network.l3.datatypes.IpCapacityData", "org.zstack.sdk.IpCapacityData");
+			put("org.zstack.header.network.sdncontroller.SdnControllerHostRefInventory", "org.zstack.sdk.SdnControllerHostRefInventory");
 			put("org.zstack.header.network.sdncontroller.SdnControllerInventory", "org.zstack.sdk.SdnControllerInventory");
 			put("org.zstack.header.network.sdncontroller.SdnControllerStatus", "org.zstack.sdk.SdnControllerStatus");
 			put("org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory", "org.zstack.sdk.NetworkServiceL3NetworkRefInventory");
@@ -1371,6 +1372,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ScsiLunHostRefInventory", "org.zstack.header.storageDevice.ScsiLunHostRefInventory");
 			put("org.zstack.sdk.ScsiLunInventory", "org.zstack.header.storageDevice.ScsiLunInventory");
 			put("org.zstack.sdk.ScsiLunVmInstanceRefInventory", "org.zstack.header.storageDevice.ScsiLunVmInstanceRefInventory");
+			put("org.zstack.sdk.SdnControllerHostRefInventory", "org.zstack.header.network.sdncontroller.SdnControllerHostRefInventory");
 			put("org.zstack.sdk.SdnControllerInventory", "org.zstack.header.network.sdncontroller.SdnControllerInventory");
 			put("org.zstack.sdk.SdnControllerStatus", "org.zstack.header.network.sdncontroller.SdnControllerStatus");
 			put("org.zstack.sdk.SdnVlanRange", "org.zstack.sdnController.header.SdnVlanRange");

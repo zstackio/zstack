@@ -76,6 +76,14 @@ public class SdnControllerInventory  {
         return this.status;
     }
 
+    public java.util.List hostRefs;
+    public void setHostRefs(java.util.List hostRefs) {
+        this.hostRefs = hostRefs;
+    }
+    public java.util.List getHostRefs() {
+        return this.hostRefs;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
