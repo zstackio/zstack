@@ -119,6 +119,7 @@ public class SourceClassMap {
 			put("org.zstack.container.entity.ContainerManagementEndpointInventory", "org.zstack.sdk.ContainerManagementEndpointInventory");
 			put("org.zstack.container.entity.NativeClusterInventory", "org.zstack.sdk.NativeClusterInventory");
 			put("org.zstack.container.entity.NativeHostInventory", "org.zstack.sdk.NativeHostInventory");
+			put("org.zstack.container.entity.PodInventory", "org.zstack.sdk.PodInventory");
 			put("org.zstack.container.entity.ProjectRepositoryInventory", "org.zstack.sdk.ProjectRepositoryInventory");
 			put("org.zstack.container.entity.ZakuImageInventory", "org.zstack.sdk.ZakuImageInventory");
 			put("org.zstack.core.config.GlobalConfigInventory", "org.zstack.sdk.GlobalConfigInventory");
@@ -1257,6 +1258,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PhysicalDriveSmartSelfTestHistoryInventory", "org.zstack.storage.device.localRaid.PhysicalDriveSmartSelfTestHistoryInventory");
 			put("org.zstack.sdk.PluginDriverInventory", "org.zstack.header.core.external.plugin.PluginDriverInventory");
 			put("org.zstack.sdk.PluginSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.plugin.PluginSecretResourcePoolInventory");
+			put("org.zstack.sdk.PodInventory", "org.zstack.container.entity.PodInventory");
 			put("org.zstack.sdk.PolicyInventory", "org.zstack.header.identity.PolicyInventory");
 			put("org.zstack.sdk.PolicyRouteRuleInventory", "org.zstack.policyRoute.PolicyRouteRuleInventory");
 			put("org.zstack.sdk.PolicyRouteRuleProtocol", "org.zstack.policyRoute.PolicyRouteRuleProtocol");

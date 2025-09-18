@@ -116,6 +116,14 @@ public class ModelServiceInstanceInventory  {
         return this.namespace;
     }
 
+    public java.lang.String accountUuid;
+    public void setAccountUuid(java.lang.String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
+    public java.lang.String getAccountUuid() {
+        return this.accountUuid;
+    }
+
     public VmInstanceInventory vm;
     public void setVm(VmInstanceInventory vm) {
         this.vm = vm;
