@@ -209,6 +209,11 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
+
+            simulator(ZbsStorageController.GET_VOLUME_CLIENTS_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                return new ZbsStorageController.GetVolumeClientsRsp()
+            }
+
             simulator(KvmCbdCommands.SETUP_CBD_SELF_FENCER_PATH) {
                 return new KvmCbdCommands.AgentRsp()
             }

@@ -13,7 +13,6 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -99,6 +98,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String DELETE_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/delete";
     public static final String ROLLBACK_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/rollback";
     public static final String CHECK_HOST_STORAGE_CONNECTION_PATH = "/zbs/primarystorage/check/host/connection";
+    public static final String GET_VOLUME_CLIENTS_PATH = "/zbs/primarystorage/volume/clients";
 
     private static final StorageCapabilities capabilities = new StorageCapabilities();
 
@@ -130,17 +130,18 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void deactivate(String installPath, String protocol, HostInventory h, Completion comp) {
-
+        // not support inactive client yet
+        comp.success();
     }
 
     @Override
     public void deactivate(String installPath, String protocol, ActiveVolumeClient client, Completion comp) {
-
+        comp.success();
     }
 
     @Override
     public void blacklist(String installPath, String protocol, HostInventory h, Completion comp) {
-
+        comp.success();
     }
 
     @Override
@@ -156,7 +157,23 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     @Override
     public List<ActiveVolumeClient> getActiveClients(String installPath, String protocol) {
         if (VolumeProtocol.CBD.toString().equals(protocol)) {
-            return Collections.emptyList();
+            GetVolumeClientsCmd cmd = new GetVolumeClientsCmd();
+            cmd.setPath(installPath);
+            GetVolumeClientsRsp rsp = syncHttpCall(GET_VOLUME_CLIENTS_PATH, cmd, GetVolumeClientsRsp.class);
+            List<ActiveVolumeClient> clients = new ArrayList<>();
+
+            if (!rsp.isSuccess()) {
+                throw new OperationFailureException(operr(rsp.getError()));
+            }
+
+            if (rsp.getClients() != null) {
+                for (ClientInfo clientInfo : rsp.getClients()) {
+                    ActiveVolumeClient client = new ActiveVolumeClient();
+                    client.setManagerIp(clientInfo.getIp());
+                    clients.add(client);
+                }
+            }
+            return clients;
         } else {
             throw new OperationFailureException(operr("not supported protocol[%s] for active", protocol));
         }
@@ -169,7 +186,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void deployClient(HostInventory h, Completion comp) {
-        KVMHostVO host = Q.New(KVMHostVO.class).eq(KVMHostVO_.uuid, h.getUuid()).find();
+        KVMHostVO host = org.zstack.core.db.Q.New(KVMHostVO.class).eq(KVMHostVO_.uuid, h.getUuid()).find();
         if (host == null) {
             comp.fail(operr("cannot found kvm host[uuid:%s], unable to deploy client", h.getUuid()));
             return;
@@ -222,7 +239,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void deactivateHeartbeatVolume(HostInventory h, Completion comp) {
-
+        comp.success();
     }
 
     @Override
@@ -335,7 +352,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 flow(new NoRollbackFlow() {
                     String __name__ = "deploy-client";
 
-                    List<PrimaryStorageClusterRefVO> refs = Q.New(PrimaryStorageClusterRefVO.class)
+                    List<PrimaryStorageClusterRefVO> refs = org.zstack.core.db.Q.New(PrimaryStorageClusterRefVO.class)
                             .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, self.getUuid())
                             .list();
 
@@ -350,12 +367,12 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                                 .map(PrimaryStorageClusterRefVO::getClusterUuid)
                                 .collect(Collectors.toList());
 
-                        List<HostVO> hosts = Q.New(HostVO.class)
+                        List<HostVO> hosts = org.zstack.core.db.Q.New(HostVO.class)
                                 .in(HostAO_.clusterUuid, clusterUuids)
                                 .list();
 
                         new While<>(hosts).each((h, comp) -> {
-                            KVMHostVO host = Q.New(KVMHostVO.class).eq(KVMHostVO_.uuid, h.getUuid()).find();
+                            KVMHostVO host = org.zstack.core.db.Q.New(KVMHostVO.class).eq(KVMHostVO_.uuid, h.getUuid()).find();
                             if (host == null) {
                                 comp.addError(operr("cannot found kvm host[uuid:%s], unable to deploy client", h.getUuid()));
                                 comp.allDone();
@@ -803,12 +820,12 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void setVolumeQos(BaseVolumeInfo v, Completion comp) {
-
+        comp.success();
     }
 
     @Override
     public void deleteVolumeQos(BaseVolumeInfo v, Completion comp) {
-
+        comp.success();
     }
 
     @Override
@@ -929,7 +946,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void expungeSnapshot(String installPath, Completion comp) {
-
+        comp.success();
     }
 
     @Override
@@ -990,7 +1007,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void setTrashExpireTime(int timeInSeconds, Completion completion) {
-
+        completion.success();
     }
 
     @Override
@@ -1042,12 +1059,20 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }).collect(Collectors.toList());
     }
 
-    protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
-        httpCall(path, cmd, retClass, callback, null, 0);
+    protected <T extends AgentResponse> T syncHttpCall(final String path, final AgentCommand cmd, final Class<T> retClass) {
+        return httpCall(path, cmd, retClass, null, 0, true);
     }
 
-    protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback, TimeUnit unit, long timeout) {
-        new HttpCaller<>(path, cmd, retClass, callback, unit, timeout).call();
+    protected <T extends AgentResponse> T httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, TimeUnit unit, long timeout, boolean sync) {
+        return new HttpCaller<>(path, cmd, retClass, null, unit, timeout, sync).syncCall();
+    }
+
+    protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
+        httpCall(path, cmd, retClass, callback, null, 0, false);
+    }
+
+    protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback, TimeUnit unit, long timeout, boolean sync) {
+        new HttpCaller<>(path, cmd, retClass, callback, unit, timeout, sync).call();
     }
 
     public class HttpCaller<T extends AgentResponse> {
@@ -1061,14 +1086,15 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         private final ReturnValueCompletion<T> callback;
         private final TimeUnit unit;
         private final long timeout;
+        private final boolean sync;
 
         private boolean tryNext = false;
 
         public HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback) {
-            this(path, cmd, retClass, callback, null, 0);
+            this(path, cmd, retClass, callback, null, 0, false);
         }
 
-        public HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback, TimeUnit unit, long timeout) {
+        public HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback, TimeUnit unit, long timeout, boolean sync) {
             this.path = path;
             this.cmd = cmd;
             this.retClass = retClass;
@@ -1076,12 +1102,19 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             this.unit = unit;
             this.timeout = timeout;
             this.mdsInfos = prepareMds();
+            this.sync = sync;
         }
 
         public void call() {
             prepareMdsIterator();
             prepareCmd();
             doCall();
+        }
+
+        public T syncCall() {
+            prepareMdsIterator();
+            prepareCmd();
+            return doSyncCall();
         }
 
         HttpCaller<T> setTargetMds(String mdsAddr) {
@@ -1118,6 +1151,29 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         private void prepareMdsIterator() {
             it = mdsInfos.stream().map(ZbsPrimaryStorageMdsBase::new).collect(Collectors.toList()).iterator();
+        }
+
+        private T doSyncCall() {
+            if (!it.hasNext()) {
+                throw new OperationFailureException(operr(errorCodes, "all MDS cannot execute http call[%s]", path));
+            }
+
+            ZbsPrimaryStorageMdsBase base = it.next();
+            cmd.setAddr(base.getSelf().getAddr());
+
+            T ret = base.syncCall(path, cmd, retClass, unit, timeout);
+            if (!ret.isSuccess()) {
+                logger.warn(String.format("failed to execute http call[%s] on MDS[%s], error is: %s",
+                        path, base.getSelf().getAddr(), JSONObjectUtil.toJsonString(ret.getError())));
+                errorCodes.getCauses().add(operr(ret.getError()));
+                if (tryNext) {
+                    return doSyncCall();
+                } else {
+                    throw new OperationFailureException(operr(errorCodes, "all MDS cannot execute http call[%s]", path));
+                }
+            }
+
+            return ret;
         }
 
         private void doCall() {
@@ -1626,6 +1682,56 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         public void setForce(boolean force) {
             this.force = force;
+        }
+    }
+
+    public static class GetVolumeClientsCmd extends AgentCommand {
+        private String path;
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+    }
+
+    public static class ClientInfo {
+        public ClientInfo(String ip, int port) {
+            this.ip = ip;
+            this.port = port;
+        }
+
+        private String ip;
+        private int port;
+
+        public String getIp() {
+            return ip;
+        }
+
+        public void setIp(String ip) {
+            this.ip = ip;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public void setPort(int port) {
+            this.port = port;
+        }
+    }
+
+    public static class GetVolumeClientsRsp extends AgentResponse {
+        private List<ClientInfo> clients;
+
+        public List<ClientInfo> getClients() {
+            return clients;
+        }
+
+        public void setClients(List<ClientInfo> clients) {
+            this.clients = clients;
         }
     }
 
