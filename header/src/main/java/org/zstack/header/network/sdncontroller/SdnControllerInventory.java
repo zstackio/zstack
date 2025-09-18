@@ -21,6 +21,7 @@ public class SdnControllerInventory implements Serializable {
     private String username;
     private String password;
     private SdnControllerStatus status;
+    private List<SdnControllerHostRefInventory> hostRefs;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -37,6 +38,7 @@ public class SdnControllerInventory implements Serializable {
         this.setUsername(vo.getUsername());
         this.setPassword(vo.getPassword());
         this.setStatus(vo.getStatus());
+        this.setHostRefs(SdnControllerHostRefInventory.valueOf(vo.getHostRefVOS()));
         this.setCreateDate(vo.getCreateDate());
         this.setLastOpDate(vo.getLastOpDate());
     }
@@ -139,5 +141,13 @@ public class SdnControllerInventory implements Serializable {
 
     public void setStatus(SdnControllerStatus status) {
         this.status = status;
+    }
+
+    public List<SdnControllerHostRefInventory> getHostRefs() {
+        return hostRefs;
+    }
+
+    public void setHostRefs(List<SdnControllerHostRefInventory> hostRefs) {
+        this.hostRefs = hostRefs;
     }
 }
