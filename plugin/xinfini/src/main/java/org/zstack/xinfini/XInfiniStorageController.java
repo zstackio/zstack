@@ -833,8 +833,10 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
             return;
         }
 
-        if (v.getQos().getReadBandwidth() != null || v.getQos().getWriteBandwidth() != null
-            || v.getQos().getReadIOPS() != null || v.getQos().getWriteIOPS() != null) {
+        if ((v.getQos().getReadBandwidth() != null && v.getQos().getReadBandwidth() > 0)
+                || (v.getQos().getWriteBandwidth() != null && v.getQos().getWriteBandwidth() > 0)
+                || (v.getQos().getReadIOPS() != null && v.getQos().getReadIOPS() > 0)
+                || v.getQos().getWriteIOPS() != null && v.getQos().getWriteIOPS() > 0) {
             throw new OperationFailureException(operr("xinfini only support set total qos"));
         }
 
