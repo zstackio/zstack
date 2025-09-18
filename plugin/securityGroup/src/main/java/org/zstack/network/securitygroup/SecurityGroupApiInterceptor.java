@@ -704,7 +704,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         }
         String portArray[];
         if (ports.contains(SecurityGroupConstant.IP_SPLIT)) {
-            String[] tmpPorts = ports.split(SecurityGroupConstant.IP_SPLIT);
+            // The port range in iptables, such as 10-20, will occupy the number of two multiports
+            String[] tmpPorts = ports.split(String.format("%s|%s", SecurityGroupConstant.IP_SPLIT, SecurityGroupConstant.RANGE_SPLIT));
             if (tmpPorts.length > SecurityGroupGlobalProperty.PORT_GROUP_NUMBER_LIMIT) {
                 throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid ports[%s], port range[%s] number[%d] is out of max limit[%d]", ports, Arrays.toString(tmpPorts), tmpPorts.length, SecurityGroupGlobalProperty.PORT_GROUP_NUMBER_LIMIT));
             }
