@@ -10,19 +10,19 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.externalStorage.primary.ExternalStorageConstant;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.addon.NodeHealthy;
 import org.zstack.header.storage.addon.StorageHealthy;
-import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
-import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO;
-import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
+import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceState;
@@ -31,6 +31,7 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.kvm.*;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -329,13 +330,19 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
         List<VolumeInventory> vols = getManagerExclusiveVolume(spec);
 
         for (VolumeInventory vol : vols) {
-            PrimaryStorageNodeSvc nodeSvc = getNodeService(vol);
+            PrimaryStorageNodeSvc nodeSvc = extPsFactory.getNodeSvc(vol.getPrimaryStorageUuid());
             if (nodeSvc == null) {
                 continue;
             }
 
-            nodeSvc.getActiveClients(vol.getInstallPath(), vol.getProtocol()).forEach(client -> {
+            List<ActiveVolumeClient> clients = nodeSvc.getActiveClients(vol.getInstallPath(), vol.getProtocol());
+            clients.forEach(client -> {
                 if (!client.getManagerIp().equals(host.getManagementIp()) && !client.isInBlacklist()) {
+                    // hard code for zbs, zbs not support deactive and blacklist yet
+                    if (vol.getProtocol().equals(ExternalStorageConstant.CBD_PROTOCOL)) {
+                        throw new OperationFailureException(operr("find active clients for volume[uuid:%s, installPath %s, client:%s]",
+                                vol.getUuid(), vol.getInstallPath(), client.getManagerIp()));
+                    }
                     // TODO use async call
                     HostVO clientHost = Q.New(HostVO.class).eq(HostVO_.managementIp, client.getManagerIp()).find();
                     if (clientHost != null) {
@@ -388,12 +395,16 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
         vols.add(spec.getDestRootVolume());
         vols.addAll(spec.getDestDataVolumes());
 
+        List<ExternalPrimaryStorageVO> pss = Q.New(ExternalPrimaryStorageVO.class)
+                .in(ExternalPrimaryStorageVO_.uuid, vols.stream().map(VolumeInventory::getPrimaryStorageUuid).collect(Collectors.toList()))
+                .list();
+        Map<String, String> psIdentities = pss.stream()
+                .collect(Collectors.toMap(ExternalPrimaryStorageVO::getUuid, ExternalPrimaryStorageVO::getIdentity));
         vols.removeIf(info -> {
-            if (info.getInstallPath() == null || info.isShareable()) {
+            if (info.getInstallPath() == null || info.isShareable() || !psIdentities.containsKey(info.getPrimaryStorageUuid())) {
                 return true;
             }
-            String identity = info.getInstallPath().split("://")[0];
-            return !extPsFactory.support(identity);
+            return !extPsFactory.support(psIdentities.get(info.getPrimaryStorageUuid()));
         });
 
         return vols;
