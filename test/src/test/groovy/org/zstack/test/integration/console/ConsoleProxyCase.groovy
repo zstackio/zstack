@@ -195,6 +195,14 @@ class ConsoleProxyCase extends SubCase {
         }
 
         ConsoleProxyAgentVO agent = dbf.listAll(ConsoleProxyAgentVO)[0]
+
+        updateConsoleProxyAgent {
+            uuid = agent.uuid
+            consoleProxyOverriddenIp = "127.0.0.2"
+        }
+        agent = dbf.reload(agent)
+        assert agent.consoleProxyOverriddenIp == "127.0.0.2"
+        
         updateConsoleProxyAgent {
             uuid = agent.uuid
             consoleProxyOverriddenIp = "127.0.0.1"
