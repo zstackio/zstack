@@ -95,6 +95,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
                         if (msg == rootVolumeAllocationMsg) {
                             vspec.setSize(ar.getSize());
                             vspec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
+                            vspec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
                             vspec.setType(VolumeType.Root.toString());
                         } else {
                             vspec.setSize(ar.getSize());
