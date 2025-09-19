@@ -1016,6 +1016,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     @Override
     public void setTrashExpireTime(int timeInSeconds, Completion completion) {
         //TODO
+        completion.success();
     }
 
     @Override

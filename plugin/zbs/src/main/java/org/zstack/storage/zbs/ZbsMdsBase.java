@@ -76,6 +76,10 @@ public abstract class ZbsMdsBase {
         }
     }
 
+    public <T extends AgentResponse> T syncCall(final String path, final Object cmd, final Class<T> retClass, TimeUnit unit, long timeout) {
+        return restf.syncJsonPost(makeHttpPath(self.getAddr(), path), cmd, retClass, unit, timeout);
+    }
+
     public <T extends AgentResponse> void httpCall(final String path, final Object cmd, final Class<T> retClass, final ReturnValueCompletion<T> completion) {
         httpCall(path, cmd, retClass, completion, null, 0);
     }
