@@ -11,10 +11,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.Platform;
 import org.zstack.core.db.SQL;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.*;
@@ -458,6 +455,9 @@ select name,ethTrunkName,switchUuid from PhysicalSwitchPortVO limit 1;
             return;
         }
 
+        completion.done();
+
+        NopeCompletion nope = new NopeCompletion();
         new While<>(toUpdate).each((lldpVO, wcomp) -> {
             doGetHostNetworkInterfaceLLdpInfo(lldpVO.getInterfaceUuid(), new ReturnValueCompletion<HostNetworkInterfaceLldpRefInventory>(wcomp) {
                 @Override
@@ -471,10 +471,10 @@ select name,ethTrunkName,switchUuid from PhysicalSwitchPortVO limit 1;
                     wcomp.done();
                 }
             });
-        }).run(new WhileDoneCompletion(completion) {
+        }).run(new WhileDoneCompletion(nope) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                completion.done();
+                nope.success();
             }
         });
     }
