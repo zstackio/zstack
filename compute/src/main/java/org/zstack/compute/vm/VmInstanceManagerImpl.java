@@ -1792,7 +1792,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         }
 
                         String hostname = VmSystemTags.HOSTNAME.getTokenByTag(sysTag, VmSystemTags.HOSTNAME_TOKEN);
-                        VmHostnameUtils.validateHostname(hostname);
+                        VmHostnameUtils.validateHostname(hostname, ImagePlatform.Windows.toString().equals(msg.getPlatform()));
                     }
                 }
             }
@@ -1826,12 +1826,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
             public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
                 if (VmSystemTags.HOSTNAME.isMatch(systemTag)) {
                     String hostname = VmSystemTags.HOSTNAME.getTokenByTag(systemTag, VmSystemTags.HOSTNAME_TOKEN);
-                    VmHostnameUtils.validateHostname(hostname);
-
-                    SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-                    q.select(VmInstanceVO_.defaultL3NetworkUuid);
-                    q.add(VmInstanceVO_.uuid, Op.EQ, resourceUuid);
-                    String defaultL3Uuid = q.findValue();
+                    boolean isWindows = Q.New(VmInstanceVO.class)
+                            .eq(VmInstanceVO_.uuid, resourceUuid)
+                            .eq(VmInstanceVO_.platform, ImagePlatform.Windows.toString())
+                            .isExists();
+                    VmHostnameUtils.validateHostname(hostname, isWindows);
                 } else if (VmSystemTags.BOOT_ORDER.isMatch(systemTag)) {
                     validateBootOrder(systemTag);
                 }
