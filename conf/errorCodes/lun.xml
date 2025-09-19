@@ -1,0 +1,14 @@
+<error>
+    <prefix>LUN</prefix>
+
+    <code>
+        <id>1000</id>
+        <description>lun has been created</description>
+    </code>
+
+    <code>
+        <id>1001</id>
+        <description>cannot find the lun</description>
+    </code>
+</error>
+

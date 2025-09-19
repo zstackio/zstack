@@ -135,4 +135,11 @@
         <type>java.lang.Integer</type>
     </config>
 
+    <config>
+        <category>host</category>
+        <name>host.status.combine.primaryStorage</name>
+        <description>whether host change into disconnected when no primary storage accessible</description>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
 </globalConfig>

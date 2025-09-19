@@ -830,7 +830,7 @@ public class VmInstanceSpec implements Serializable {
 
     public long getRootDiskAllocateSize() {
         if (rootDiskOffering == null) {
-            return this.getImageSpec().getInventory().getSize();
+            return Math.max(this.getImageSpec().getInventory().getSize(), this.getImageSpec().getInventory().getActualSize());
         }
         return rootDiskOffering.getDiskSize();
     }

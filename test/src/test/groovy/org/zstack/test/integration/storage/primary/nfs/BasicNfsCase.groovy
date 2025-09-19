@@ -1,6 +1,7 @@
 package org.zstack.test.integration.storage.primary.nfs
 
 import org.springframework.http.HttpEntity
+import org.zstack.compute.host.HostGlobalConfig
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.header.host.*
@@ -207,6 +208,12 @@ class BasicNfsCase extends SubCase {
             ps1 = env.inventoryByName("nfs1")
             vm = env.inventoryByName("vm")
             vr = Q.New(VirtualRouterVmVO.class).find()
+
+            updateGlobalConfig {
+                category = HostGlobalConfig.CATEGORY
+                name = HostGlobalConfig.HOST_STATUS_COMBINE_PRIMARY_STORAGE_STATUS.name
+                value = true
+            }
 
             testReconnectPrimaryStorageWillCmdToAllHost()
             testUpdatePrimaryStorageMountPoint()

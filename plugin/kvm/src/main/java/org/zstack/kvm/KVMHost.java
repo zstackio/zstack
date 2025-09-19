@@ -5973,10 +5973,14 @@ public class KVMHost extends HostBase implements Host {
                     return;
                 }
 
-                errorCodeList.getCauses().add(operr("host[uuid:%s]'s %s changed, old:%s, new:%s",
-                        self.getUuid(),
-                        systemTag.getTagFormat(),
-                        oldValue, newValue));
+                if (errorCodeList != null) {
+                    errorCodeList.getCauses().add(operr("host[uuid:%s]'s %s changed, old:%s, new:%s",
+                            self.getUuid(),
+                            systemTag.getTagFormat(),
+                            oldValue, newValue));
+
+                }
+
 
                 createTagWithoutNonValue(systemTag, token, newValue, true);
             }
@@ -5985,7 +5989,8 @@ public class KVMHost extends HostBase implements Host {
                 ErrorCodeList errorCodeList = new ErrorCodeList();
 
                 recordHardwareChangesAndCreateTag(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName(), errorCodeList);
-                recordHardwareChangesAndCreateTag(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), errorCodeList);
+                // FIXME: hardcode for hygon CPU
+                recordHardwareChangesAndCreateTag(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), null);
                 recordHardwareChangesAndCreateTag(HostSystemTags.CPU_PROCESSOR_NUM, HostSystemTags.CPU_PROCESSOR_NUM_TOKEN, ret.getCpuProcessorNum(), errorCodeList);
                 recordHardwareChangesAndCreateTag(HostSystemTags.CPU_CACHE, HostSystemTags.CPU_CACHE_TOKEN, ret.getCpuCache(), errorCodeList);
                 recordHardwareChangesAndCreateTag(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), errorCodeList);

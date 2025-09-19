@@ -1,13 +1,12 @@
 package org.zstack.compute.host;
 
 import org.zstack.core.config.GlobalConfig;
-import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
-import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.zone.ZoneVO;
+import org.zstack.resourceconfig.BindResourceConfig;
 
 /**
  */
@@ -56,4 +55,6 @@ public class HostGlobalConfig {
     @GlobalConfigValidation(numberGreaterThan = 1)
     public static GlobalConfig SYNC_HOST_HW_MONITOR_INTERVAL = new GlobalConfig(CATEGORY, "sync.host.hw.monitor.interval");
 
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig HOST_STATUS_COMBINE_PRIMARY_STORAGE_STATUS = new GlobalConfig(CATEGORY, "host.status.combine.primaryStorage");
 }
