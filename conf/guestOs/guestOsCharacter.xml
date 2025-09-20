@@ -76,6 +76,11 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
+        <osRelease>RHEL 10</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
         <osRelease>Ubuntu 14</osRelease>
     </osInfo>
     <osInfo>
@@ -295,6 +300,12 @@
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
         <osRelease>WindowsServer 2022</osRelease>
+        <hygonTag>false</hygonTag>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
+        <osRelease>WindowsServer 2025</osRelease>
         <hygonTag>false</hygonTag>
     </osInfo>
     <osInfo>
