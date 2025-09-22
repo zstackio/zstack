@@ -47,6 +47,13 @@ public class LldpManagerImpl extends AbstractService implements HostAfterConnect
     @Autowired
     private EventFacade evtf;
 
+    private enum LLDPGetNeighbourState {
+        None,
+        STARTING,
+        Done,
+    }
+
+    private final Map<String, LLDPGetNeighbourState> getNeighbourStateMap = new ConcurrentHashMap<>();
     private final Map<String, Object> interfaceLocks = new ConcurrentHashMap<>();
 
     private Object getInterfaceLock(String interfaceUuid) {
@@ -242,6 +249,7 @@ select name,ethTrunkName,switchUuid from PhysicalSwitchPortVO limit 1;
         final LldpKvmAgentCommands.GetLldpInfoCmd cmd = new LldpKvmAgentCommands.GetLldpInfoCmd();
         cmd.setPhysicalInterfaceName(interfaceVO.getInterfaceName());
 
+        getNeighbourStateMap.put(interfaceUuid, LLDPGetNeighbourState.STARTING);
         KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
         kmsg.setPath(LldpConstant.GET_LLDP_INFO_PATH);
         kmsg.setHostUuid(interfaceVO.getHostUuid());
@@ -252,10 +260,12 @@ select name,ethTrunkName,switchUuid from PhysicalSwitchPortVO limit 1;
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
                     completion.fail(reply.getError());
+                    getNeighbourStateMap.put(interfaceUuid, LLDPGetNeighbourState.Done);
                     return;
                 } else {
                     KVMHostAsyncHttpCallReply r = reply.castReply();
                     LldpKvmAgentCommands.GetLldpInfoResponse rsp = r.toResponse(LldpKvmAgentCommands.GetLldpInfoResponse.class);
+                    getNeighbourStateMap.put(interfaceUuid, LLDPGetNeighbourState.Done);
                     if (!rsp.isSuccess()) {
                         completion.fail(operr("operation error, because %s", rsp.getError()));
                     } else {
@@ -425,6 +435,12 @@ select name,ethTrunkName,switchUuid from PhysicalSwitchPortVO limit 1;
 
     @Override
     public void kvmPingAgentNoFailure(KVMHostInventory host, NoErrorCompletion completion) {
+        boolean autoGetLldpNeighbor = LldpGlobalConfig.AUTO_GET_LLDP_NEIGHBOUR.value(Boolean.class);
+        if (!autoGetLldpNeighbor) {
+            completion.done();
+            return;
+        }
+
         List<String> interfaceUuids = Q.New(HostNetworkInterfaceVO.class)
                 .select(HostNetworkInterfaceVO_.uuid)
                 .eq(HostNetworkInterfaceVO_.hostUuid, host.getUuid())
@@ -459,6 +475,12 @@ select name,ethTrunkName,switchUuid from PhysicalSwitchPortVO limit 1;
 
         NopeCompletion nope = new NopeCompletion();
         new While<>(toUpdate).each((lldpVO, wcomp) -> {
+            LLDPGetNeighbourState state = getNeighbourStateMap.get(lldpVO.getInterfaceUuid());
+            if (state == LLDPGetNeighbourState.STARTING) {
+                wcomp.done();
+                return;
+            }
+
             doGetHostNetworkInterfaceLLdpInfo(lldpVO.getInterfaceUuid(), new ReturnValueCompletion<HostNetworkInterfaceLldpRefInventory>(wcomp) {
                 @Override
                 public void success(HostNetworkInterfaceLldpRefInventory returnValue) {
