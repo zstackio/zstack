@@ -62,12 +62,6 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
-        <name>RedHat</name>
-        <version>10</version>
-        <osRelease>RHEL 10</osRelease>
-    </osInfo>
-    <osInfo>
-        <platform>Linux</platform>
         <name>Ubuntu</name>
         <version>14</version>
         <osRelease>Ubuntu 14</osRelease>

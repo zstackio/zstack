@@ -76,11 +76,6 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
-        <osRelease>RHEL 10</osRelease>
-    </osInfo>
-    <osInfo>
-        <architecture>x86_64</architecture>
-        <platform>Linux</platform>
         <osRelease>Ubuntu 14</osRelease>
     </osInfo>
     <osInfo>
