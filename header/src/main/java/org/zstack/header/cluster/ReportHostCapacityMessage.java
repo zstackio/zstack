@@ -10,6 +10,15 @@ public class ReportHostCapacityMessage extends NeedReplyMessage {
     private String hostUuid;
     private int cpuNum;
     private int cpuSockets;
+    private int cpuCoreNum;
+
+    public int getCpuCoreNum() {
+        return cpuCoreNum;
+    }
+
+    public void setCpuCoreNum(int cpuCoreNum) {
+        this.cpuCoreNum = cpuCoreNum;
+    }
 
     public int getCpuSockets() {
         return cpuSockets;
