@@ -1,0 +1,8 @@
+<error>
+    <prefix>SoftwarePackage</prefix>
+
+    <code>
+        <id>1000</id>
+        <description>Failed to upload software package</description>
+    </code>
+</error>

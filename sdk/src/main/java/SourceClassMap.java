@@ -561,6 +561,8 @@ public class SourceClassMap {
 			put("org.zstack.sns.platform.snmp.SNSSnmpPlatformInventory", "org.zstack.sdk.sns.platform.snmp.SNSSnmpPlatformInventory");
 			put("org.zstack.sns.platform.wecom.SNSWeComAtPersonInventory", "org.zstack.sdk.sns.platform.wecom.SNSWeComAtPersonInventory");
 			put("org.zstack.sns.platform.wecom.SNSWeComEndpointInventory", "org.zstack.sdk.sns.platform.wecom.SNSWeComEndpointInventory");
+			put("org.zstack.softwarePackage.header.JobDetails", "org.zstack.sdk.softwarePackage.header.JobDetails");
+			put("org.zstack.softwarePackage.header.SoftwarePackageInventory", "org.zstack.sdk.softwarePackage.header.SoftwarePackageInventory");
 			put("org.zstack.sso.header.CasClientInventory", "org.zstack.sdk.CasClientInventory");
 			put("org.zstack.sso.header.OAuth2ClientInventory", "org.zstack.sdk.OAuth2ClientInventory");
 			put("org.zstack.sso.header.OAuth2TokenInventory", "org.zstack.sdk.OAuth2TokenInventory");
@@ -1406,6 +1408,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.sns.platform.snmp.SNSSnmpPlatformInventory", "org.zstack.sns.platform.snmp.SNSSnmpPlatformInventory");
 			put("org.zstack.sdk.sns.platform.wecom.SNSWeComAtPersonInventory", "org.zstack.sns.platform.wecom.SNSWeComAtPersonInventory");
 			put("org.zstack.sdk.sns.platform.wecom.SNSWeComEndpointInventory", "org.zstack.sns.platform.wecom.SNSWeComEndpointInventory");
+			put("org.zstack.sdk.softwarePackage.header.JobDetails", "org.zstack.softwarePackage.header.JobDetails");
+			put("org.zstack.sdk.softwarePackage.header.SoftwarePackageInventory", "org.zstack.softwarePackage.header.SoftwarePackageInventory");
 			put("org.zstack.sdk.zcex.entity.ZceXClusterView", "org.zstack.zcex.entity.ZceXClusterView");
 			put("org.zstack.sdk.zcex.entity.ZceXHostSummaryView", "org.zstack.zcex.entity.ZceXHostSummaryView");
 			put("org.zstack.sdk.zcex.entity.ZceXInventory", "org.zstack.zcex.entity.ZceXInventory");
