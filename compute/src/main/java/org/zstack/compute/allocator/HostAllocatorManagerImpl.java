@@ -286,6 +286,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             vo.setAvailablePhysicalMemory(availMem);
             vo.setCpuNum(msg.getCpuNum());
             vo.setCpuSockets(msg.getCpuSockets());
+            vo.setCpuCoreNum(msg.getCpuCoreNum());
 
             HostCapacityStruct s = new HostCapacityStruct();
             s.setCpuSockets(vo.getCpuSockets());
@@ -308,6 +309,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             vo.setAvailablePhysicalMemory(availMem);
             vo.setTotalMemory(msg.getTotalMemory());
             vo.setCpuSockets(msg.getCpuSockets());
+            vo.setCpuCoreNum(msg.getCpuCoreNum());
 
             HostCapacityStruct s = new HostCapacityStruct();
             s.setCapacityVO(vo);
@@ -327,10 +329,10 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     }
 
     private boolean needUpdateCapacity(HostCapacityVO vo, ReportHostCapacityMessage msg, long totalCpu, long avaliCpu, long availMem) {
-        return vo.getCpuNum() != msg.getCpuNum() || vo.getTotalCpu() != totalCpu 
+        return vo.getCpuNum() != msg.getCpuNum() || vo.getTotalCpu() != totalCpu
                 || vo.getAvailableCpu() != avaliCpu || vo.getTotalPhysicalMemory() != msg.getTotalMemory()
                 || vo.getAvailablePhysicalMemory() != availMem || vo.getTotalMemory() != msg.getTotalMemory()
-                || vo.getCpuSockets() != msg.getCpuSockets();
+                || vo.getCpuSockets() != msg.getCpuSockets() || vo.getCpuCoreNum() != msg.getCpuCoreNum();
     }
 
     private void handle(final AllocateHostMsg msg) {

@@ -10,6 +10,7 @@ public class HostCapacityVO_ {
     public static volatile SingularAttribute<HostCapacityVO, Long> totalCpu;
     public static volatile SingularAttribute<HostCapacityVO, Integer> cpuNum;
     public static volatile SingularAttribute<HostCapacityVO, Integer> cpuSockets;
+    public static volatile SingularAttribute<HostCapacityVO, Integer> cpuCoreNum;
     public static volatile SingularAttribute<HostCapacityVO, Long> availableMemory;
     public static volatile SingularAttribute<HostCapacityVO, Long> availableCpu;
     public static volatile SingularAttribute<HostCapacityVO, Long> totalPhysicalMemory;

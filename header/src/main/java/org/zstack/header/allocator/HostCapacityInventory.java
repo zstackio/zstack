@@ -15,6 +15,7 @@ public class HostCapacityInventory {
     private Long totalCpu;
     private Integer cpuNum;
     private Integer cpuSockets;
+    private Integer cpuCoreNum;
     private Long availableMemory;
     private Long availableCpu;
     private Long totalPhysicalMemory;
@@ -31,6 +32,7 @@ public class HostCapacityInventory {
         inv.setTotalPhysicalMemory(vo.getTotalPhysicalMemory());
         inv.setCpuNum(vo.getCpuNum());
         inv.setCpuSockets(vo.getCpuSockets());
+        inv.setCpuCoreNum(vo.getCpuCoreNum());
         return inv;
     }
 
@@ -40,6 +42,14 @@ public class HostCapacityInventory {
             invs.add(valueOf(vo));
         }
         return invs;
+    }
+
+    public Integer getCpuCoreNum() {
+        return cpuCoreNum;
+    }
+
+    public void setCpuCoreNum(Integer cpuCoreNum) {
+        this.cpuCoreNum = cpuCoreNum;
     }
 
     public Integer getCpuSockets() {
