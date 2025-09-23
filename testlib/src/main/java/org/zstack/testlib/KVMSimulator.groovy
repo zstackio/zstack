@@ -254,11 +254,11 @@ class KVMSimulator implements Simulator {
                             .param("deviceId", cmd.volume.getDeviceId())
                             .find()
 
-                    assert vol : "cannot find dest volume[path: ${cmd.destPath}, deviceId: ${cmd.volume.getDeviceId()}] of VM[uuid: ${cmd.vmUuid}] in database"
+                    assert vol: "cannot find dest volume[path: ${cmd.destPath}, deviceId: ${cmd.volume.getDeviceId()}] of VM[uuid: ${cmd.vmUuid}] in database"
                     volume = vol.toInventory()
 
                     primaryStorageType = q(PrimaryStorageVO.class).select(PrimaryStorageVO_.type).eq(PrimaryStorageVO_.uuid, vol.primaryStorageUuid).findValue()
-                    assert primaryStorageType : "cannot find primary storage[uuid: ${vol.primaryStorageUuid}]"
+                    assert primaryStorageType: "cannot find primary storage[uuid: ${vol.primaryStorageUuid}]"
                 }
             }.execute()
 
@@ -274,10 +274,10 @@ class KVMSimulator implements Simulator {
             KVMAgentCommands.TakeSnapshotCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.TakeSnapshotCmd.class)
 
             VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, cmd.volumeUuid).find()
-            assert volume : "cannot find volume[uuid: ${cmd.volumeUuid}]"
+            assert volume: "cannot find volume[uuid: ${cmd.volumeUuid}]"
             String primaryStorageType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
                     .eq(PrimaryStorageVO_.uuid, volume.primaryStorageUuid).findValue()
-            assert primaryStorageType : "cannot find primary storage[uuid: ${volume.primaryStorageUuid}] from volume[uuid: ${volume.uuid}, name: ${volume.name}]"
+            assert primaryStorageType: "cannot find primary storage[uuid: ${volume.primaryStorageUuid}] from volume[uuid: ${volume.uuid}, name: ${volume.name}]"
             VFSPrimaryStorageTakeSnapshotBackend bkd = getVFSPrimaryStorageTakeSnapshotBackend(primaryStorageType)
 
             VFSSnapshot snapshot = bkd.takeSnapshot(e, espec, cmd, volume.toInventory() as VolumeInventory)
@@ -361,7 +361,7 @@ class KVMSimulator implements Simulator {
             // assume all data volumes has same deviceType.
             if (Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type).listValues().stream().distinct().count() == 1) {
                 assert (cmd.addons["attachedDataVolumes"] as List<VolumeTO>).stream()
-                        .allMatch({vol -> vol.deviceType == cmd.volume.deviceType})
+                        .allMatch({ vol -> vol.deviceType == cmd.volume.deviceType })
             }
             return new KVMAgentCommands.AttachDataVolumeResponse()
         }
@@ -443,7 +443,7 @@ class KVMSimulator implements Simulator {
         }
 
         spec.simulator(KVMConstant.KVM_DELETE_VHOST_USER_CLIENT_PATH) {
-             return new KVMAgentCommands.AgentResponse()
+            return new KVMAgentCommands.AgentResponse()
         }
 
         spec.simulator(KVMConstant.KVM_SYNC_VM_DEVICEINFO_PATH) { HttpEntity<String> e ->
@@ -461,7 +461,7 @@ class KVMSimulator implements Simulator {
         spec.simulator(KVMConstant.KVM_START_VM_PATH) { HttpEntity<String> e ->
             StartVmCmd cmd = JSONObjectUtil.toObject(e.body, StartVmCmd.class)
             assert new HashSet<>(cmd.dataVolumes.deviceId).size() == cmd.dataVolumes.size()
-            StartVmResponse  rsp = new StartVmResponse()
+            StartVmResponse rsp = new StartVmResponse()
             rsp.virtualDeviceInfoList = []
             List<VolumeTO> pciInfo = new ArrayList<VolumeTO>()
             pciInfo.add(cmd.rootVolume)
@@ -575,12 +575,12 @@ class KVMSimulator implements Simulator {
             KVMAgentCommands.CheckFileOnHostCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.CheckFileOnHostCmd.class)
             KVMAgentCommands.CheckFileOnHostResponse response = new KVMAgentCommands.CheckFileOnHostResponse()
             response.existPaths = new HashMap<>()
-            cmd.paths.forEach({path -> response.existPaths.put(path, "")})
+            cmd.paths.forEach({ path -> response.existPaths.put(path, "") })
             return response
         }
 
         spec.simulator(KVMConstant.KVM_HOST_NUMA_PATH) {
-            def rsp = new  KVMAgentCommands.GetHostNUMATopologyResponse()
+            def rsp = new KVMAgentCommands.GetHostNUMATopologyResponse()
             return rsp
         }
 
@@ -595,7 +595,7 @@ class KVMSimulator implements Simulator {
             return rsp
         }
 
-        spec.simulator(KVMConstant.KVM_BLOCK_COMMIT_VOLUME_PATH)  { HttpEntity<String> e ->
+        spec.simulator(KVMConstant.KVM_BLOCK_COMMIT_VOLUME_PATH) { HttpEntity<String> e ->
             def rsp = new BlockCommitResponse()
             rsp.size = 1
             return rsp
@@ -605,11 +605,11 @@ class KVMSimulator implements Simulator {
             BlockCommitCmd cmd = JSONObjectUtil.toObject(e.body, BlockCommitCmd.class)
 
             VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, cmd.volume.getVolumeUuid()).find()
-            assert volume : "cannot find volume[uuid: ${cmd.volume.getVolumeUuid()}]"
+            assert volume: "cannot find volume[uuid: ${cmd.volume.getVolumeUuid()}]"
 
             String primaryStorageType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
                     .eq(PrimaryStorageVO_.uuid, volume.primaryStorageUuid).findValue()
-            assert primaryStorageType : "cannot find primary storage[uuid: ${volume.primaryStorageUuid}] " +
+            assert primaryStorageType: "cannot find primary storage[uuid: ${volume.primaryStorageUuid}] " +
                     "from volume[uuid: ${volume.uuid}, name: ${volume.name}]"
 
             VFSPrimaryStorageTakeSnapshotBackend bkd = getVFSPrimaryStorageTakeSnapshotBackend(primaryStorageType)
@@ -617,7 +617,7 @@ class KVMSimulator implements Simulator {
             return rsp
         }
 
-        spec.simulator(KVMConstant.KVM_BLOCK_PULL_VOLUME_PATH)  { HttpEntity<String> e ->
+        spec.simulator(KVMConstant.KVM_BLOCK_PULL_VOLUME_PATH) { HttpEntity<String> e ->
             def rsp = new BlockPullResponse()
             rsp.size = 1
             return rsp
@@ -627,11 +627,11 @@ class KVMSimulator implements Simulator {
             BlockPullCmd cmd = JSONObjectUtil.toObject(e.body, BlockPullCmd.class)
 
             VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, cmd.volume.getVolumeUuid()).find()
-            assert volume : "cannot find volume[uuid: ${cmd.getVolume().getVolumeUuid()}]"
+            assert volume: "cannot find volume[uuid: ${cmd.getVolume().getVolumeUuid()}]"
 
             String primaryStorageType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
                     .eq(PrimaryStorageVO_.uuid, volume.primaryStorageUuid).findValue()
-            assert primaryStorageType : "cannot find primary storage[uuid: ${volume.primaryStorageUuid}] " +
+            assert primaryStorageType: "cannot find primary storage[uuid: ${volume.primaryStorageUuid}] " +
                     "from volume[uuid: ${volume.uuid}, name: ${volume.name}]"
 
             VFSPrimaryStorageTakeSnapshotBackend bkd = getVFSPrimaryStorageTakeSnapshotBackend(primaryStorageType)
@@ -649,6 +649,28 @@ class KVMSimulator implements Simulator {
 
         spec.simulator(KVMConstant.KVM_UPDATE_HOST_NQN_PATH) {
             def rsp = new KVMAgentCommands.UpdateHostNqnRsp()
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_HOST_FILE_DOWNLOAD_PATH) {
+            DownloadFileResponse rsp = new DownloadFileResponse()
+            rsp.md5sum = "00df1327d49e4631a21f4467aa729c11"
+            rsp.size = 1024
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_HOST_FILE_UPLOAD_PATH) {
+            UploadFileResponse rsp = new UploadFileResponse()
+            rsp.directUploadPath = "http://172.1.1.1/host/file/direct-upload"
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_HOST_FILE_DOWNLOAD_PROGRESS_PATH) {
+            GetDownloadFileProgressResponse rsp = new GetDownloadFileProgressResponse()
+            rsp.completed = false
+            rsp.downloadSize = 1
+            rsp.size = 1024
+            rsp.lastOpTime = System.currentTimeMillis()
             return rsp
         }
     }
