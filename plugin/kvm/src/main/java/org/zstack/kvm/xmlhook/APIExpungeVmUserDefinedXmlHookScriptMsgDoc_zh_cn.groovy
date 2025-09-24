@@ -11,7 +11,7 @@ doc {
 
     rest {
         request {
-			url "DELETE /v1/vm-instances/xml-hook-script"
+			url "DELETE /v1/vm-instances/xml-hook-script/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
@@ -25,7 +25,7 @@ doc {
 					name "uuid"
 					enclosedIn ""
 					desc "资源的UUID，唯一标示该资源"
-					location "body"
+					location "url"
 					type "String"
 					optional false
 					since "5.2.0"

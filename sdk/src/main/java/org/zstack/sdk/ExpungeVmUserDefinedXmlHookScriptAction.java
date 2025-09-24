@@ -91,7 +91,7 @@ public class ExpungeVmUserDefinedXmlHookScriptAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/vm-instances/xml-hook-script";
+        info.path = "/vm-instances/xml-hook-script/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
