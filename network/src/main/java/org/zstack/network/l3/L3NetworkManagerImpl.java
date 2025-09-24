@@ -325,14 +325,14 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     return ret;
                 } else if (msg.getZoneUuids() != null && !msg.getZoneUuids().isEmpty()) {
                     reply.setResourceType(ZoneVO.class.getSimpleName());
-                    String sql = "select ipr.startIp, ipr.endIp, ipr.netmask, ipr.ipVersion, zone.uuid from IpRangeVO ipr, L3NetworkVO l3, ZoneVO zone where ipr.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids)";
+                    String sql = "select ipr.startIp, ipr.endIp, ipr.netmask, ipr.ipVersion, zone.uuid from IpRangeVO ipr, L3NetworkVO l3, ZoneVO zone where ipr.l3NetworkUuid = l3.uuid and l3.enableIPAM = true and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids)";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("uuids", msg.getZoneUuids());
                     List<Tuple> ts = q.getResultList();
                     ts = IpRangeHelper.stripNetworkAndBroadcastAddress(ts);
                     calcElementTotalIp(ts, ret);
 
-                    sql = "select count(distinct uip.ip), zone.uuid, uip.ipVersion from UsedIpVO uip, L3NetworkVO l3, ZoneVO zone where uip.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by zone.uuid, uip.ipVersion";
+                    sql = "select count(distinct uip.ip), zone.uuid, uip.ipVersion from UsedIpVO uip, L3NetworkVO l3, ZoneVO zone where uip.l3NetworkUuid = l3.uuid and l3.enableIPAM = true and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by zone.uuid, uip.ipVersion";
                     TypedQuery<Tuple> cq = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     cq.setParameter("uuids", msg.getZoneUuids());
                     cq.setParameter("notAccountMetaData", notAccountMetaDatas);
