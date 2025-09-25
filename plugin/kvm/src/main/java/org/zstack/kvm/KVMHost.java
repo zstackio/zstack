@@ -1794,6 +1794,7 @@ public class KVMHost extends HostBase implements Host {
                 rmsg.setTotalMemory(rsp.getTotalMemory());
                 rmsg.setUsedMemory(rsp.getUsedMemory());
                 rmsg.setCpuSockets(rsp.getCpuSockets());
+                rmsg.setCpuCoreNum(rsp.getCpuCoreNum());
                 rmsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
                 bus.send(rmsg, new CloudBusCallBack(msg) {
                     @Override
