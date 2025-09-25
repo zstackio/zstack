@@ -138,7 +138,7 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 def rsp = new ZbsStorageController.CreateVolumeRsp()
                 rsp.setSize(actualSize)
                 rsp.setActualSize(actualSize)
-                rsp.setInstallPath("cbd:pool1/lpool1/volume")
+                rsp.setInstallPath(String.format("cbd:pool1/%s/%s", cmd.logicalPool, cmd.volume))
 
                 return rsp
             }
@@ -158,7 +158,7 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
 
                 def rsp = new ZbsStorageController.CreateSnapshotRsp()
                 rsp.setSize(actualSize)
-                rsp.setInstallPath("cbd:pool1/lpool1/image@image")
+                rsp.setInstallPath(cmd.path + "@" + cmd.snapshot)
 
                 return rsp
             }
@@ -170,8 +170,8 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
 
                 def rsp = new ZbsStorageController.CloneVolumeRsp()
                 rsp.setSize(actualSize)
-                rsp.setInstallPath("cbd:pool1/lpool1/clone")
-
+                // replace volume name
+                rsp.setInstallPath(cmd.path.replaceAll("([^/]+)\$", cmd.dstVolume))
                 return rsp
             }
 
@@ -203,7 +203,7 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
 
                 def rsp = new ZbsStorageController.CopyRsp()
-                rsp.setInstallPath("cbd:pool1/lpool1/copy")
+                rsp.setInstallPath(cmd.path.replaceAll("([^/]+)\$", cmd.dstVolume))
                 rsp.setSize(actualSize)
 
                 return rsp
