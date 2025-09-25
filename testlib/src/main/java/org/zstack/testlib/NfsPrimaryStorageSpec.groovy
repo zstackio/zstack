@@ -455,6 +455,7 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
 
             simulator(NfsPrimaryStorageKVMBackend.NFS_TO_NFS_MIGRATE_BITS_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.NfsToNfsMigrateBitsCmd.class)
+                // all fast clone case must be mock by itself
                 assert cmd.independentPath == null
                 return new NfsPrimaryStorageKVMBackendCommands.NfsToNfsMigrateBitsRsp()
             }
