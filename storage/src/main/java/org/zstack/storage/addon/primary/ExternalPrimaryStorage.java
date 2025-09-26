@@ -1819,7 +1819,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        ImageInventory image = ImageInventory.valueOf(dbf.findByUuid(msg.getVolume().getRootImageUuid(), ImageVO.class));
+                        ImageVO ivo = dbf.findByUuid(msg.getVolume().getRootImageUuid(), ImageVO.class);
+                        if (ivo == null) {
+                            throw new OperationFailureException(operr("cannot reinit rootvolume [%s] because image [%s] has been deleted and imagecache cannot be found",
+                                    msg.getVolume().getUuid(), msg.getVolume().getRootImageUuid()));
+                        }
+
+                        ImageInventory image = ImageInventory.valueOf(ivo);
                         downloadImageCache(image, new ReturnValueCompletion<ImageCacheInventory>(trigger) {
                             @Override
                             public void success(ImageCacheInventory returnValue) {
