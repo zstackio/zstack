@@ -1,4 +1,8 @@
 package org.zstack.sdnController.header
+import org.zstack.network.l2.vxlan.vtep.VtepInventory
+import org.zstack.network.l2.vxlan.vtep.RemoteVtepInventory
+import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeInventory
 
 doc {
 
