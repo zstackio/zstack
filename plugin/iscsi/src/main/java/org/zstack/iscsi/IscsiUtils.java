@@ -11,6 +11,8 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.storage.backup.BackupStorageSystemTags;
 
 import java.util.Collections;
@@ -52,5 +54,9 @@ public class IscsiUtils {
 
     public static String getBSInitiatorName(String bsUuid) {
         return BackupStorageSystemTags.ISCSI_INITIATOR_NAME.getTokenByResourceUuid(bsUuid, BackupStorageVO.class, BackupStorageSystemTags.ISCSI_INITIATOR_NAME_TOKEN);
+    }
+
+    public static String getBMInitiatorName(String vmUuid) {
+        return String.format("iqn.2015-01.io.zstack:initiator.instance.%s", vmUuid);
     }
 }

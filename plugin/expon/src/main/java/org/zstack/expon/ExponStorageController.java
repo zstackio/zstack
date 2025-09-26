@@ -21,6 +21,7 @@ import org.zstack.expon.sdk.pool.FailureDomainModule;
 import org.zstack.expon.sdk.uss.UssGatewayModule;
 import org.zstack.expon.sdk.vhost.VhostControllerModule;
 import org.zstack.expon.sdk.volume.ExponVolumeQos;
+import org.zstack.expon.sdk.volume.VolumeLunModule;
 import org.zstack.expon.sdk.volume.VolumeModule;
 import org.zstack.expon.sdk.volume.VolumeSnapshotModule;
 import org.zstack.header.core.Completion;
@@ -37,13 +38,12 @@ import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.storage.primary.ImageCacheInventory;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
-import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeProtocol;
-import org.zstack.header.volume.VolumeStats;
+import org.zstack.header.volume.*;
+import org.zstack.header.volume.block.BlockVolumeVO;
 import org.zstack.iscsi.IscsiUtils;
 import org.zstack.iscsi.kvm.IscsiHeartbeatVolumeTO;
 import org.zstack.iscsi.kvm.IscsiVolumeTO;
+import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -76,8 +76,6 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     private ExponConfig config;
     public ExponAddonInfo addonInfo;
     public final ExponApiHelper apiHelper;
-    @Autowired
-    private ExternalPrimaryStorageFactory extPsFactory;
 
     // TODO static nqn
     private final static String hostNqn = "nqn.2014-08.org.nvmexpress:uuid:zstack";
@@ -239,6 +237,10 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     private synchronized ActiveVolumeTO activeIscsiVolume(HostInventory h, BaseVolumeInfo vol, boolean shareable) {
         String clientIqn = IscsiUtils.getHostInitiatorName(h.getUuid());
+        if (!KVMConstant.KVM_HYPERVISOR_TYPE.equals(h.getHypervisorType())) {
+            VolumeVO volume = dbf.findByUuid(vol.getUuid(), VolumeVO.class);
+            clientIqn = IscsiUtils.getBMInitiatorName(volume.getVmInstanceUuid());
+        }
         if (clientIqn == null) {
             throw new RuntimeException(String.format("cannot get host[uuid:%s] initiator name", h.getUuid()));
         }
@@ -533,6 +535,9 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
                 } else {
                     c.setManagerIp(it);
                 }
+                VolumeLunModule lunDetail = apiHelper.getVolumeLunDetail(getVolIdFromPath(installPath));
+                // path: uuid/poolId/lunid
+                c.setPath(String.format("%s/%s/%s", lunDetail.getUuid(), lunDetail.getPoolId(), lunDetail.getLunId()));
                 return c;
             }).collect(Collectors.toList());
         } else {
@@ -578,14 +583,13 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     @Override
     public void deactivate(String installPath, String protocol, ActiveVolumeClient client, Completion comp) {
-        HostVO host = Q.New(HostVO.class).eq(HostVO_.managementIp, client.getManagerIp()).find();
-        if (host != null) {
-            deactivate(installPath, protocol, HostInventory.valueOf(host), comp);
-        } else {
-            // bm instance InitiatorName
+        if (VolumeProtocol.iSCSI.toString().equals(protocol)) {
             deactivateIscsi(installPath, client.getQualifiedName());
             comp.success();
+            return;
         }
+        HostVO host = Q.New(HostVO.class).eq(HostVO_.managementIp, client.getManagerIp()).find();
+        deactivate(installPath, protocol, HostInventory.valueOf(host), comp);
     }
 
     public void cleanActiveRecord(VolumeInventory vol) {
@@ -751,6 +755,10 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     private void deactivateIscsi(String installPath, HostInventory h) {
         String iqn = IscsiUtils.getHostInitiatorName(h.getUuid());
+        if (!KVMConstant.KVM_HYPERVISOR_TYPE.equals(h.getHypervisorType())) {
+            VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.installPath, installPath).find();
+            iqn = IscsiUtils.getBMInitiatorName(volume.getLastVmInstanceUuid());
+        }
         if (iqn == null) {
             throw new RuntimeException(String.format("cannot get host[uuid:%s] initiator name", h.getUuid()));
         }
@@ -955,10 +963,10 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     private String getProtocolByHypervisorType(String type) {
-        NodeHealthyCheckProtocolExtensionPoint point = extPsFactory.nodeHealthyCheckProtocolExtensions.get(type);
-        if (point != null) {
-            return point.getHealthyProtocol();
+        if (!KVMConstant.KVM_HYPERVISOR_TYPE.equals(type)) {
+            return VolumeProtocol.iSCSI.toString();
         }
+
         return VolumeProtocol.Vhost.toString();
     }
 

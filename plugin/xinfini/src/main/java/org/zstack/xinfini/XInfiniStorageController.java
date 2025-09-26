@@ -25,6 +25,7 @@ import org.zstack.header.xinfini.XInfiniConstants;
 import org.zstack.iscsi.IscsiUtils;
 import org.zstack.iscsi.kvm.IscsiHeartbeatVolumeTO;
 import org.zstack.iscsi.kvm.IscsiVolumeTO;
+import org.zstack.kvm.KVMConstant;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.storage.volume.VolumeConfigsGetter;
@@ -75,8 +76,6 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     private XInfiniConfig config;
     private XInfiniAddonInfo addonInfo;
     private final XInfiniApiHelper apiHelper;
-    @Autowired
-    private ExternalPrimaryStorageFactory extPsFactory;
     @Autowired
     private ResourceConfigFacade rcf;
 
@@ -639,9 +638,8 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     }
 
     private String getProtocolByHypervisorType(String type) {
-        NodeHealthyCheckProtocolExtensionPoint point = extPsFactory.nodeHealthyCheckProtocolExtensions.get(type);
-        if (point != null) {
-            return point.getHealthyProtocol();
+        if (!KVMConstant.KVM_HYPERVISOR_TYPE.equals(type)) {
+            return VolumeProtocol.iSCSI.toString();
         }
         return VolumeProtocol.Vhost.toString();
     }

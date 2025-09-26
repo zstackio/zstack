@@ -29,6 +29,7 @@ import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.addon.IscsiRemoteTarget;
 import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
@@ -39,6 +40,7 @@ import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.block.BlockVolumeVO;
 import org.zstack.storage.addon.backup.ExternalBackupStorageFactory;
 import org.zstack.storage.primary.PrimaryStorageFeatureAllocatorExtensionPoint;
 import org.zstack.storage.snapshot.MarkRootVolumeAsSnapshotExtension;
@@ -458,6 +460,24 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         svc.activate(BaseVolumeInfo.valueOf(volume), host, volume.isShareable(), new ReturnValueCompletion<ActiveVolumeTO>(completion) {
             @Override
             public void success(ActiveVolumeTO returnValue) {
+                VolumeVO volumeVO = dbf.findByUuid(volume.getUuid(), VolumeVO.class);
+                if (!(volumeVO instanceof BlockVolumeVO)) {
+                    completion.success();
+                    return;
+                }
+                String uri = svc.getActivePath(BaseVolumeInfo.valueOf(volume),
+                        host, volume.isShareable());
+                IscsiRemoteTarget target = IscsiRemoteTarget.fromUri(uri);
+                if (target == null) {
+                    completion.success();
+                    return;
+                }
+
+                BlockVolumeVO blockVolumeVO = (BlockVolumeVO) volumeVO;
+                if (!blockVolumeVO.getIscsiPath().contains(target.getIqn())) {
+                    blockVolumeVO.setIscsiPath(String.format("%s%s", blockVolumeVO.getIscsiPath(), target.getIqn()));
+                    dbf.updateAndRefresh(blockVolumeVO);
+                }
                 completion.success();
             }
 
