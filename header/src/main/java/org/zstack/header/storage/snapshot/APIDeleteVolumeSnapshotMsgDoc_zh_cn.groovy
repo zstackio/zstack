@@ -46,7 +46,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.10.6"
+					since "5.4.0"
 				}
 				column {
 					name "scope"
@@ -55,7 +55,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.10.6"
+					since "5.4.0"
 				}
 				column {
 					name "systemTags"
