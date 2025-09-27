@@ -186,7 +186,7 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
         return null;
     }
 
-    private String checkCephVolumeSnapshot(String installPath) {
+    private String checkInnerVolumeSnapshot(String installPath) {
         List<String> uuids = Q.New(VolumeSnapshotVO.class).like(VolumeSnapshotVO_.primaryStorageInstallPath, installPath + "@%").select(VolumeSnapshotVO_.uuid).listValues();
         if (uuids.size() > 0) {
             return String.format("%s is still in using by volumesnapshot %s, cannot remove it from trash before delete them", installPath, uuids);
@@ -199,7 +199,7 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
         if (uuids.size() > 0) {
             return String.format("%s is still in using by volumesnapshot %s, cannot remove it from trash before delete them", installPath, uuids);
         }
-        return checkCephVolumeSnapshot(installPath);
+        return checkInnerVolumeSnapshot(installPath);
     }
 
     private String checkImage(String installPath) {
@@ -220,7 +220,7 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
         if (details != null) {
             return details;
         }
-        details = checkCephVolumeSnapshot(installPath);
+        details = checkInnerVolumeSnapshot(installPath);
         if (details != null) {
             return details;
         }

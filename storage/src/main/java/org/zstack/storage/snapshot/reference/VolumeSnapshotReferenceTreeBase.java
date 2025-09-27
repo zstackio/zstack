@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -25,6 +26,7 @@ import org.zstack.header.storage.snapshot.reference.DeleteVolumeSnapshotReferenc
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceInventory;
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceTreeInventory;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -108,7 +110,10 @@ public class VolumeSnapshotReferenceTreeBase {
             return;
         }
 
-        boolean rootDeleted = msg.getLeaf().getParentId() == null && !dbf.isExist(msg.getLeaf().getVolumeUuid(), VolumeVO.class);
+        boolean rootDeleted = msg.getLeaf().getParentId() == null && !Q.New(VolumeVO.class)
+                .eq(VolumeVO_.uuid, msg.getLeaf().getVolumeUuid())
+                .eq(VolumeVO_.primaryStorageUuid, msg.getTree().getPrimaryStorageUuid())
+                .isExists();
         String endPath = rootDeleted ? self.getRootInstallUrl() : msg.getLeaf().getVolumeSnapshotInstallUrl();
         String startPath = msg.getLeaf().getDirectSnapshotInstallUrl();
         if (startPath.equals(endPath) && !rootDeleted) {
