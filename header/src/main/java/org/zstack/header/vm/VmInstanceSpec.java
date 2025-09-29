@@ -4,6 +4,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.DiskOfferingInventory;
+import org.zstack.header.configuration.VmCustomSpecificationStruct;
 import org.zstack.header.host.CpuArchitecture;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -401,6 +402,7 @@ public class VmInstanceSpec implements Serializable {
     private DiskAO rootDisk = DiskAO.rootDisk();
     private List<DiskAO> dataDisks;
     private List<DiskAO> deprecatedDisksSpecs = new ArrayList<>();
+    private VmCustomSpecificationStruct vmCustomSpecification;
 
     public DiskAO getRootDisk() {
         return rootDisk;
@@ -424,6 +426,14 @@ public class VmInstanceSpec implements Serializable {
 
     public void setDeprecatedDisksSpecs(List<DiskAO> deprecatedDisksSpecs) {
         this.deprecatedDisksSpecs = deprecatedDisksSpecs;
+    }
+
+    public VmCustomSpecificationStruct getVmCustomSpecification() {
+        return vmCustomSpecification;
+    }
+
+    public void setVmCustomSpecification(VmCustomSpecificationStruct vmCustomSpecification) {
+        this.vmCustomSpecification = vmCustomSpecification;
     }
 
     public boolean isSkipIpAllocation() {

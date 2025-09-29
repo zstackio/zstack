@@ -1,11 +1,8 @@
 package org.zstack.compute.vm;
 
+import org.zstack.header.configuration.VmCustomSpecificationStruct;
 import org.zstack.header.host.CpuArchitecture;
-import org.zstack.header.vm.CreateVmInstanceMsg;
-import org.zstack.header.vm.DiskAO;
-import org.zstack.header.vm.InstantiateNewCreatedVmInstanceMsg;
-import org.zstack.header.vm.VmCreationStrategy;
-import org.zstack.header.vm.VmNicSpec;
+import org.zstack.header.vm.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +31,7 @@ public class InstantiateVmFromNewCreatedStruct {
     private DiskAO rootDisk;
     private List<DiskAO> dataDisks;
     private List<DiskAO> deprecatedDataVolumeSpecs = new ArrayList<>();
+    private VmCustomSpecificationStruct vmCustomSpecification;
 
     public List<String> getCandidatePrimaryStorageUuidsForRootVolume() {
         return candidatePrimaryStorageUuidsForRootVolume;
@@ -79,6 +77,14 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public void setDeprecatedDataVolumeSpecs(List<DiskAO> deprecatedDataVolumeSpecs) {
         this.deprecatedDataVolumeSpecs = deprecatedDataVolumeSpecs;
+    }
+
+    public VmCustomSpecificationStruct getVmCustomSpecification() {
+        return vmCustomSpecification;
+    }
+
+    public void setVmCustomSpecification(VmCustomSpecificationStruct vmCustomSpecification) {
+        this.vmCustomSpecification = vmCustomSpecification;
     }
 
     public List<String> getRootVolumeSystemTags() {
@@ -160,6 +166,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setRootDisk(msg.getRootDisk());
         struct.setDataDisks(msg.getDataDisks());
         struct.setDeprecatedDataVolumeSpecs(msg.getDeprecatedDataVolumeSpecs());
+        struct.setVmCustomSpecification(msg.getVmCustomSpecification());
         return struct;
     }
 
@@ -179,6 +186,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setRootDisk(msg.getRootDisk());
         struct.setDataDisks(msg.getDataDisks());
         struct.setDeprecatedDataVolumeSpecs(msg.getDeprecatedDataVolumeSpecs());
+        struct.setVmCustomSpecification(msg.getVmCustomSpecification());
         return struct;
     }
 

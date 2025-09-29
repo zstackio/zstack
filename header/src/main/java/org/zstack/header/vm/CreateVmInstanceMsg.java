@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.configuration.VmCustomSpecificationStruct;
 import org.zstack.header.message.NeedReplyMessage;
 
 import java.util.ArrayList;
@@ -43,6 +44,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private DiskAO rootDisk = DiskAO.rootDisk();
     private List<DiskAO> dataDisks;
     private List<DiskAO> deprecatedDataVolumeSpecs = new ArrayList<>();
+    private VmCustomSpecificationStruct vmCustomSpecification;
 
     public List<String> getCandidatePrimaryStorageUuidsForRootVolume() {
         return candidatePrimaryStorageUuidsForRootVolume;
@@ -352,5 +354,13 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
 
     public void setVirtio(Boolean virtio) {
         this.virtio = virtio;
+    }
+
+    public VmCustomSpecificationStruct getVmCustomSpecification() {
+        return vmCustomSpecification;
+    }
+
+    public void setVmCustomSpecification(VmCustomSpecificationStruct vmCustomSpecification) {
+        this.vmCustomSpecification = vmCustomSpecification;
     }
 }
