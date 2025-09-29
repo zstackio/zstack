@@ -2,6 +2,7 @@ CALL ADD_COLUMN('ModelServiceInstanceVO', 'name', 'VARCHAR(255)', 1, NULL);
 CALL ADD_COLUMN('ModelServiceInstanceVO', 'namespace', 'VARCHAR(255)', 1, NULL);
 
 -- Delete old vm records for pod and resync will be done after node started
+DELETE FROM `ResourceVO` where resourceType = 'VmInstanceVO' and uuid in (SELECT uuid FROM `VmInstanceEO` where hypervisorType = 'Native');
 DELETE FROM `VmInstanceEO` where hypervisorType = 'Native';
 
 CREATE TABLE  `zstack`.`PodVO` (
