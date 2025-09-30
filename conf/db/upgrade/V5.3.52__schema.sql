@@ -14,6 +14,53 @@ CREATE TABLE  `zstack`.`PodVO` (
 CALL ADD_COLUMN('GpuDeviceVO', 'gpuType', 'VARCHAR(255)', 1, NULL);
 CALL ADD_COLUMN('GpuDeviceSpecVO', 'gpuType', 'VARCHAR(255)', 1, NULL);
 
+DROP PROCEDURE IF EXISTS update_gpu_type_from_pci;
+
+DELIMITER $$
+
+CREATE PROCEDURE update_gpu_type_from_pci()
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE pci_uuid_val VARCHAR(32);
+    DECLARE pci_host_uuid_val VARCHAR(32);
+    DECLARE pci_description_val VARCHAR(2048);
+    DECLARE kvm_host_count INT;
+
+    DECLARE cur CURSOR FOR
+        SELECT pd.uuid, pd.hostUuid, pd.description
+        FROM PciDeviceVO pd
+        INNER JOIN GpuDeviceVO gd ON pd.uuid = gd.uuid;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    OPEN cur;
+
+    read_loop: LOOP
+        FETCH cur INTO pci_uuid_val, pci_host_uuid_val, pci_description_val;
+
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        SELECT COUNT(*) INTO kvm_host_count FROM KVMHostVO WHERE uuid = pci_host_uuid_val;
+
+        IF kvm_host_count > 0 THEN
+            UPDATE GpuDeviceVO
+            SET gpuType = pci_description_val
+            WHERE uuid = pci_uuid_val;
+        END IF;
+
+    END LOOP;
+
+    SELECT CURTIME();
+
+    CLOSE cur;
+END$$
+
+DELIMITER ;
+
+CALL update_gpu_type_from_pci();
+
 UPDATE ModelCenterVO m
 LEFT JOIN L3NetworkEO l ON m.storageNetworkUuid = l.uuid
 SET m.storageNetworkUuid = NULL
