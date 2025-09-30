@@ -27,7 +27,7 @@ public class JsonSchemaBuilder {
 
     private boolean isSkip(Field f) {
         return f.isAnnotationPresent(NoJsonSchema.class) || Modifier.isStatic(f.getModifiers())
-                || f.isAnnotationPresent(GsonTransient.class);
+                || f.isAnnotationPresent(GsonTransient.class) || Modifier.isTransient(f.getModifiers());
     }
 
     private void build(Object o, Stack<String> paths) throws IllegalAccessException {

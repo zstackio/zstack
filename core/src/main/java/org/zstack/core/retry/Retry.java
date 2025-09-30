@@ -1,5 +1,6 @@
 package org.zstack.core.retry;
 
+import org.zstack.header.Confirm;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -10,6 +11,8 @@ import org.zstack.utils.logging.CLogger;
 import static org.zstack.core.Platform.i18n;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -40,6 +43,7 @@ public abstract class Retry<T> {
 
     protected int times, count = 5;
     protected int interval = 1;
+    protected final List<Function<Throwable, Confirm>> retryConditions = new ArrayList<>();
 
     private static final CLogger logger = Utils.getLogger(Retry.class);
 

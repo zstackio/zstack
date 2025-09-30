@@ -1,5 +1,7 @@
 package org.zstack.testlib
 
+import com.google.gson.JsonParser
+import com.google.gson.JsonSyntaxException
 import okhttp3.OkHttpClient
 import org.apache.commons.lang.StringUtils
 import org.zstack.core.Platform
@@ -15,6 +17,8 @@ import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor
 import org.zstack.header.message.AbstractBeforeSendMessageInterceptor
 import org.zstack.header.message.Event
 import org.zstack.header.message.Message
+import org.zstack.sdk.ErrorCode
+import org.zstack.sdk.ErrorCodeList
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.ZQLQueryReturn
 import org.zstack.sdk.ZSClient
@@ -999,6 +1003,56 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
             throw new Exception("expected to get a Throwable of ${lst.collect { it.name }} but got ${t.class.name}")
 
         }
+    }
+
+    static void expectApiFailure(Closure c, @DelegatesTo(strategy = Closure.OWNER_FIRST, value = ErrorCodeList.class) Closure errorCodeChecker) {
+        AssertionError error = null
+
+        try {
+            c()
+        } catch (AssertionError t) {
+            error = t
+        } catch (Throwable t) {
+            throw new Exception("expected to get a Throwable of AssertionError but got ${t.class.name}", t)
+        }
+
+        if (error == null) {
+            throw new ExpectedException("expect AssertionError raised, but nothing happens")
+        }
+
+        def message = error.message
+        if (!message.startsWith("API failure: ")) {
+            throw new Exception("unexpected API failure", error)
+        }
+
+        ErrorCodeList code
+        try {
+            int startIndex = "API failure: ".length()
+            int endIndex = message.indexOf(". Expression: ")
+            code = JSONObjectUtil.toObject(message.substring(startIndex, endIndex), ErrorCodeList)
+        } catch (JsonSyntaxException | IndexOutOfBoundsException ignored) {
+            throw new Exception("unexpected API failure", error)
+        }
+
+        if (code.code == "sdk.1000") {
+            code = extractOriginalErrorFromSDKError(code)
+        }
+
+        errorCodeChecker.resolveStrategy = Closure.OWNER_FIRST
+        errorCodeChecker.delegate = code
+        errorCodeChecker.call()
+    }
+
+    /**
+     * MN always return HTTP code 503 when MN raise Identity ErrorCode.
+     * ZStack SDK will warp true error code with sdk.1000.
+     *
+     * The function would extract original error code from SDKErrorCode.
+     */
+    static ErrorCodeList extractOriginalErrorFromSDKError(ErrorCode sdkError) {
+        assert sdkError.code == "sdk.1000"
+        def errorCodeJson = JsonParser.parseString(sdkError.details).getAsJsonObject().get("error")
+        return JSONObjectUtil.rehashObject(errorCodeJson, ErrorCodeList.class)
     }
 
     protected void configProperty() {
