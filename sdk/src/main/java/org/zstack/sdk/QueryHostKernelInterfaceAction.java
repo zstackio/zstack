@@ -65,7 +65,7 @@ public class QueryHostKernelInterfaceAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/l2-networks/kernel-interfaces";
+        info.path = "/l3-networks/kernel-interfaces";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
