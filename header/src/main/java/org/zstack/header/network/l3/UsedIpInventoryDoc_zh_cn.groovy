@@ -62,12 +62,6 @@ doc {
 		since "4.10.0"
 	}
 	field {
-		name "ipInBinary"
-		desc "二进制存储的IP地址（字节数组，IPv4长度4，IPv6长度16，网络序）"
-		type "byte[]"
-		since "4.10.16"
-	}
-	field {
 		name "vmNicUuid"
 		desc "云主机网卡UUID"
 		type "String"
