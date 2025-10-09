@@ -46,7 +46,7 @@ public class CreateHostKernelInterfaceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String netmask;
 
-    @Param(required = false, validValues = {"Management"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"Management","Storage"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List trafficTypes;
 
     @Param(required = false)

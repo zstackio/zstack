@@ -41,7 +41,7 @@ public class StaticIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
 
         L3NetworkVO l3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, amsg.getL3NetworkUuid()).find();
         if (l3.enableIpAllocation()) {
-            throw new OperationFailureException(err(L3Errors.ALLOCATE_IP_ERROR, "l3Network[uuid:%s] is using IPAM, cannot allocate static ip",
+            throw new OperationFailureException(err(L3Errors.ALLOCATE_IP_ERROR, "IP allocation of l3Network[uuid:%s] enabled, cannot allocate static ip",
                     amsg.getL3NetworkUuid()));
         }
 
