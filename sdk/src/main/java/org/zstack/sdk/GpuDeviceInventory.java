@@ -36,4 +36,12 @@ public class GpuDeviceInventory extends org.zstack.sdk.PciDeviceInventory {
         return this.isDriverLoaded;
     }
 
+    public java.lang.String gpuType;
+    public void setGpuType(java.lang.String gpuType) {
+        this.gpuType = gpuType;
+    }
+    public java.lang.String getGpuType() {
+        return this.gpuType;
+    }
+
 }
