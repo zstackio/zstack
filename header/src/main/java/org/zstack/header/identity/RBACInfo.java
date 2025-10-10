@@ -19,7 +19,10 @@ public class RBACInfo implements RBACDescription {
                         APIChangeResourceOwnerMsg.class,
                         APIAttachRoleToAccountMsg.class,
                         APIDetachRoleFromAccountMsg.class,
-                        APICheckResourcePermissionMsg.class
+                        APICheckResourcePermissionMsg.class,
+                        APIQuerySharedResourceMsg.class,
+                        APISetResourceResponsibleMsg.class,
+                        APIDeleteResourceResponsibleMsg.class
                 ).normalAPIs("org.zstack.header.identity.**")
                 .targetResources(AccountVO.class, PolicyVO.class, RoleVO.class)
                 .build();
