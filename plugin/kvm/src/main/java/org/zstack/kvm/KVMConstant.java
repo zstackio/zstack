@@ -179,7 +179,7 @@ public interface KVMConstant {
 
     public static final String L2_PROVIDER_TYPE_LINUX_BRIDGE = "LinuxBridge";
 
-    public static final String DHCP_BIN_FILE_PATH = "/usr/local/zstack/dnsmasq";
+    public static final String DHCP_BIN_FILE_PATH = "/usr/local/cloud/dnsmasq";
     String KVM_HOST_NETWORK_INTERFACE_DEFAULT = "None";
 
     enum KvmVmState {

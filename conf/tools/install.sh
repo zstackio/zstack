@@ -77,8 +77,8 @@ elif [ $tool = 'zstack-ctl' ]; then
     rm -rf $CTL_VIRENV_PATH && virtualenv $CTL_VIRENV_PATH --python=python2.7 || exit 1
     . $CTL_VIRENV_PATH/bin/activate
     cd $cwd
-    TMPDIR=/usr/local/zstack/ pip install -i $pypi_path --trusted-host localhost --ignore-installed zstackctl-*.tar.gz || exit 1
-    TMPDIR=/usr/local/zstack/ pip install -i $pypi_path --trusted-host localhost --ignore-installed pycrypto==2.6.1 || exit 1
+    TMPDIR=/usr/local/cloud/ pip install -i $pypi_path --trusted-host localhost --ignore-installed zstackctl-*.tar.gz || exit 1
+    TMPDIR=/usr/local/cloud/ pip install -i $pypi_path --trusted-host localhost --ignore-installed pycrypto==2.6.1 || exit 1
     chmod +x /usr/bin/zstack-ctl
     python $CTL_VIRENV_PATH/lib/python2.7/site-packages/zstackctl/generate_zstackctl_bash_completion.py
 
@@ -98,8 +98,8 @@ elif [ $tool = 'zstack-sys' ]; then
         rm -rf $SYS_VIRENV_PATH && virtualenv $SYS_VIRENV_PATH --python=python2.7 || exit 1
         . $SYS_VIRENV_PATH/bin/activate
         cd $cwd
-        TMPDIR=/usr/local/zstack/ pip install -i $pypi_path --trusted-host localhost --ignore-installed setuptools==39.2.0 || exit 1
-        TMPDIR=/usr/local/zstack/ pip install -i $pypi_path --trusted-host localhost --ignore-installed ansible==4.10.0 || exit 1
+        TMPDIR=/usr/local/cloud/ pip install -i $pypi_path --trusted-host localhost --ignore-installed setuptools==39.2.0 || exit 1
+        TMPDIR=/usr/local/cloud/ pip install -i $pypi_path --trusted-host localhost --ignore-installed ansible==4.10.0 || exit 1
 
         cat > /usr/bin/ansible << EOF
 #! /bin/sh
@@ -189,7 +189,7 @@ elif [ $tool = 'zstack-dashboard' ]; then
 
 elif [ x"$tool" = x"zstack-ui" ]; then
     cd "$cwd"
-    default_zstack_home='/usr/local/zstack/'
+    default_zstack_home='/usr/local/cloud/'
     default_ui_home="$default_zstack_home"/zstack-ui/
     zstack_home=$(echo ~zstack)
     zstack_home=${zstack_home%/}/
