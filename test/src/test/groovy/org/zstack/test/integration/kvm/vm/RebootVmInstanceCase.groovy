@@ -62,6 +62,7 @@ class RebootVmInstanceCase extends SubCase{
 
         VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
         assert vo.state == VmInstanceState.Unknown
+        assert 1 == 1
     }
 
     @Override

@@ -137,6 +137,7 @@ class CreateDataVolumeFromTemplateCase extends SubCase{
         a.sessionId = currentEnvSpec.session.uuid
 
         assert a.call().error != null
+        assert 1 == 1
 
         String gcName = String.format("gc-delete-bits-volume-%s-on-primary-storage-%s", volumeUuid, ps.uuid)
 

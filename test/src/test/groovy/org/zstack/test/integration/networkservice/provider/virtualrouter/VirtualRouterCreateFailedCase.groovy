@@ -65,6 +65,7 @@ class VirtualRouterCreateFailedCase extends SubCase {
         }
 
         assert Q.New(ApplianceVmVO.class).count() == 0
+        assert 1 == 1
 
     }
 }

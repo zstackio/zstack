@@ -33,6 +33,7 @@ class ElaborationReconnectHostCase extends SubCase {
 
     void testElaboration() {
         def err = Platform.operr("Unable to reconnect host") as ErrorCode
+        assert 1 == 1
         assert err.elaboration != null
         assert err.elaboration.trim() == "错误信息: 无法重连物理机。"
 

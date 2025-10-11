@@ -192,6 +192,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
         EipInventory eip1 = queryEip { conditions=["name=eip-1"] }[0]
         assert eip1.vmNicUuid == null
         assert eip1.guestIp == null
+        assert 1 == 1
 
         recoverVmInstance {
             uuid = vm.uuid

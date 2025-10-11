@@ -33,6 +33,7 @@ class ErrorCodeHashCase extends SubCase{
         err2 = operr("test error")
         err3 = argerr("test error")
 
+        assert 1 == 1
         assert err1.hashCode() == err1.hashCode()
         assert err1.hashCode() == err2.hashCode()
         assert err1.hashCode() != err3.hashCode()

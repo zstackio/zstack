@@ -162,6 +162,7 @@ class VmVolumeGCCase extends SubCase {
             }
         }
         assert rootVolumeUuid != null
+        assert 1 == 1
 
         env.revokeMessage(DeleteVolumeMsg.class, null)
 

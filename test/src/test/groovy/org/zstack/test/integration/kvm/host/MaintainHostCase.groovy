@@ -172,6 +172,7 @@ class MaintainHostCase extends SubCase{
         }
 
         assert count == 1
+        assert 1 == 1
 
         cleanup()
 

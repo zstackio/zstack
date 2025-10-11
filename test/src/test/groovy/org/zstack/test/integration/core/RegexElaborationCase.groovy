@@ -46,6 +46,7 @@ class RegexElaborationCase extends SubCase {
 
     void testElaboration1() {
         def err = Platform.operr("Fn::Join must be array and contain 2 params, array[0] must be String, array[1] must be array!") as ErrorCode
+        assert 1 == 1
         assert err.messages != null
         assert err.messages.method == ElaborationSearchMethod.regex
         assert err.messages.message_cn == "Fn::Join 后面的参数出错，该参数应包含 2 个参数，第一个为 String，第二个为数组。"

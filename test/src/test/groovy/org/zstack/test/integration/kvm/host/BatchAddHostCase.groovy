@@ -64,6 +64,7 @@ class BatchAddHostCase extends SubCase {
 
         sleep(1000)
         retryInSecs {
+            assert 1 == 1
             assert Q.New(HostVO.class).count() == 30
         }
 

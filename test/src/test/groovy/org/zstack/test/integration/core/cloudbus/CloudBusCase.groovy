@@ -121,6 +121,7 @@ class CloudBusCase extends SubCase{
         bus.send(msg) 
         latch.await(10, TimeUnit.SECONDS) 
         assert isSuccess
+        assert 1 == 1
     }
 
     void testMessageReply() {

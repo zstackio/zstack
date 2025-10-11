@@ -124,6 +124,7 @@ class MigrateVolumeCase extends SubCase {
         }
 
         assert context.called
+        assert 1 == 1
         assertImageCacheVOIsExistedOnHost(dstHostUuid, false)
         assert originCap == Q.New(LocalStorageHostRefVO.class)
                 .eq(LocalStorageHostRefVO_.hostUuid, dstHostUuid)

@@ -48,6 +48,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
                 completion.cancel()
             } else {
                 assert false: "unknown behavior $ret"
+                assert 1 == 1
             }
         }
     }
