@@ -14,7 +14,7 @@ import static org.zstack.core.Platform.argerr;
 
 public class VmHostnameUtils {
     private static final Pattern HOSTNAME_PATTERN =
-            Pattern.compile("^(?=.{1,255}$)(?!-)([a-zA-Z0-9-]{1,63}(?<!-))(\\.[a-zA-Z0-9-]{1,63}(?<!-))*$");
+            Pattern.compile("^(?=.{1,255}$)([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)(\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
 
     private static final Pattern WINDOWS_HOSTNAME_PATTERN =
             Pattern.compile("^(?!-)(?![0-9]+$)[a-zA-Z0-9\\-\\p{IsHan}]{2,63}(?<!-)$");
