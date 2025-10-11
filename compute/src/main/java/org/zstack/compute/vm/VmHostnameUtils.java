@@ -13,8 +13,8 @@ import java.util.regex.Pattern;
 import static org.zstack.core.Platform.argerr;
 
 public class VmHostnameUtils {
-    private static final Pattern LABEL_PATTERN =
-            Pattern.compile("^(?!-)[a-zA-Z0-9-]{1,63}(?<!-)$");
+    private static final Pattern HOSTNAME_PATTERN =
+            Pattern.compile("^(?=.{1,255}$)([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)(\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
 
     private static final Pattern WINDOWS_HOSTNAME_PATTERN =
             Pattern.compile("^(?!-)(?![0-9]+$)[a-zA-Z0-9\\-\\p{IsHan}]{2,63}(?<!-)$");
@@ -71,7 +71,7 @@ public class VmHostnameUtils {
                 );
             }
         } else {
-            if (!LABEL_PATTERN.matcher(hostname).matches()) {
+            if (!HOSTNAME_PATTERN.matcher(hostname).matches()) {
                 throw new ApiMessageInterceptionException(
                         argerr("%s is not a valid hostname", hostname)
                 );
@@ -79,7 +79,7 @@ public class VmHostnameUtils {
         }
     }
 
-    public static void validateDomain(String domain, boolean isWindows) {
+    public static void validateDomain(String domain) {
         if (StringUtils.isEmpty(domain)) {
             return;
         }
@@ -92,16 +92,13 @@ public class VmHostnameUtils {
 
         String[] labels = domain.split("\\.");
         for (String label : labels) {
-            Pattern pattern = isWindows ? WINDOWS_DOMAIN_LABEL_PATTERN : LABEL_PATTERN;
-            boolean isValid = pattern.matcher(label).matches();
-
-            if (!isValid) {
+            if (!WINDOWS_DOMAIN_LABEL_PATTERN.matcher(label).matches()) {
                 throw new ApiMessageInterceptionException(
                         argerr("%s is not a valid domain label in %s", label, domain)
                 );
             }
 
-            if (isWindows && WINDOWS_RESERVED_NAMES.contains(label.toUpperCase(Locale.ROOT))) {
+            if (WINDOWS_RESERVED_NAMES.contains(label.toUpperCase(Locale.ROOT))) {
                 throw new ApiMessageInterceptionException(
                         argerr("%s is a reserved Windows label", label)
                 );
