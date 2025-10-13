@@ -2,10 +2,7 @@ package org.zstack.authentication.checkfile;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.EventFacade;
-import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.config.GlobalConfig;
@@ -156,6 +153,19 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
                 startFileCheck();
             }
         });
+
+        evtf.on(FVCanonicalEvents.FILE_STATUS_CHANGED_PATH, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                FileVerificationRecordsVO record = new FileVerificationRecordsVO();
+                FVCanonicalEvents.FileStatusChangedData d = (FVCanonicalEvents.FileStatusChangedData) data;
+                record.setNode(d.getNode());
+                record.setPath(d.getPath());
+                record.setFileVerificationUuid(d.getUuid());
+                record.setRecoverFlag(FileRestoreState.True.toString().equals(d.getRestore()));
+                dbf.persist(record);
+            }
+        });
     }
 
     private void checkFile() {
@@ -194,12 +204,13 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
         });
     }
 
-    private void sendChanged(String node, String path, String category, String restore){
+    private void sendChanged(String node, String path, String category, String restore, String uuid) {
         FVCanonicalEvents.FileStatusChangedData data = new FVCanonicalEvents.FileStatusChangedData();
         data.setNode(node);
         data.setPath(path);
-        data.setCatefory(category);
+        data.setCategory(category);
         data.setRestore(restore);
+        data.setUuid(uuid);
         evtf.fire(FVCanonicalEvents.FILE_STATUS_CHANGED_PATH, data);
     }
 
@@ -215,7 +226,7 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
 
     private String getLocalFileDigest(FileVerification fv){
         try {
-            FileInputStream fis = null;
+            FileInputStream fis;
             fis = new FileInputStream(fv.getPath());
             Class<?> clazz = Class.forName("org.apache.commons.codec.digest.DigestUtils");
             String methodName = fv.getHexType() + "Hex";
@@ -229,10 +240,10 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
 
     private void checkLocalFiles(List<FileVerificationVO> fvs){
         for (FileVerificationVO fv : fvs) {
-            boolean needRestore = false;
+            boolean needRestore;
             if (PathUtil.isDir(fv.getPath())) {
                 logger.warn(String.format("Filed to restore [%s.%s], it's a directory now.", fv.getNode(), fv.getPath()));
-                sendChanged(fv.getNode(), fv.getPath(), fv.getCategory(), FileRestoreState.False.toString());
+                sendChanged(fv.getNode(), fv.getPath(), fv.getCategory(), FileRestoreState.False.toString(), fv.getUuid());
                 continue;
             }
             if (PathUtil.exists(fv.getPath())) {
@@ -246,10 +257,10 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
                     backupRestoreLocalFile(PathUtil.join(LOCAL_BACKUP_DIR, fv.getUuid()), fv.getPath());
                 } catch (Exception e) {
                     logger.warn(String.format("The file[%s.%s] was modified and restore failed.", fv.getNode(), fv.getPath()));
-                    sendChanged(fv.getNode(), fv.getPath(), fv.getCategory(), FileRestoreState.False.toString());
+                    sendChanged(fv.getNode(), fv.getPath(), fv.getCategory(), FileRestoreState.False.toString(), fv.getUuid());
                 } finally {
                     logger.info(String.format("The file[%s.%s] was modified but successfully restored.", fv.getNode(), fv.getPath()));
-                    sendChanged(fv.getNode(), fv.getPath(), fv.getCategory(), FileRestoreState.True.toString());
+                    sendChanged(fv.getNode(), fv.getPath(), fv.getCategory(), FileRestoreState.True.toString(), fv.getUuid());
                 }
 
             }
@@ -279,10 +290,10 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
                 for (String uuid : rsp.changeList){
                     if (rsp.restoreFailedList.contains(uuid)){
                         logger.warn(String.format("The file[%s.%s] was modified and restore failed.", node, allFile.get(uuid).getPath()));
-                        sendChanged(node, allFile.get(uuid).getPath(), allFile.get(uuid).getCategory(), FileRestoreState.False.toString());
+                        sendChanged(node, allFile.get(uuid).getPath(), allFile.get(uuid).getCategory(), FileRestoreState.False.toString(), uuid);
                     }else{
                         logger.info(String.format("The file[%s.%s] was modified but successfully restored.", node, allFile.get(uuid).getPath()));
-                        sendChanged(node, allFile.get(uuid).getPath(), allFile.get(uuid).getCategory(), FileRestoreState.True.toString());
+                        sendChanged(node, allFile.get(uuid).getPath(), allFile.get(uuid).getCategory(), FileRestoreState.True.toString(), uuid);
                     }
                 }
             }
@@ -421,7 +432,6 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
         logger.info(String.format("Successfully remove file[%s.%s] from CheckList.", allFile.get(uuid).getNode(), allFile.get(uuid).getPath()));
         evt.setSuccess(true);
         bus.publish(evt);
-        return;
     }
 
     public void handle(APIRecoverVerificationFileMsg msg){
@@ -441,7 +451,6 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
         logger.info(String.format("Successfully recover file[%s.%s] to CheckList.", allFile.get(uuid).getNode(), allFile.get(uuid).getPath()));
         evt.setSuccess(true);
         bus.publish(evt);
-        return;
     }
 
     public void handle(APIDeleteVerificationFileMsg msg){
@@ -452,8 +461,5 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
         allFile.remove(uuid);
         evt.setSuccess(true);
         bus.publish(evt);
-        return;
     }
-
-
 }

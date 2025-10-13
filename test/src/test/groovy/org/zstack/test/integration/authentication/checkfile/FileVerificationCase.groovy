@@ -1,11 +1,12 @@
 package org.zstack.test.integration.authentication.checkfile
+
 import org.zstack.utils.Linux;
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.sdk.FileVerificationInventory
 
-class FileVerificationCase extends SubCase{
+class FileVerificationCase extends SubCase {
     EnvSpec env
 
     private String fileUuid;
@@ -30,6 +31,7 @@ class FileVerificationCase extends SubCase{
         }
         Linux.shell("touch ${FileVerificationForTest.LOCALFILE}")
     }
+
     @Override
     void test() {
         env.create {
@@ -40,12 +42,12 @@ class FileVerificationCase extends SubCase{
         }
     }
 
-    void testAddVerificationFile(){
-        addVerificationFile{
-            path=FileVerificationForTest.LOCALFILE
-            node=FileVerificationForTest.LOCALNODE
-            hexType=FileVerificationForTest.DEFAULTHEXTYPE
-            category=FileVerificationForTest.DEFAULTCATEGORY
+    void testAddVerificationFile() {
+        addVerificationFile {
+            path = FileVerificationForTest.LOCALFILE
+            node = FileVerificationForTest.LOCALNODE
+            hexType = FileVerificationForTest.DEFAULTHEXTYPE
+            category = FileVerificationForTest.DEFAULTCATEGORY
         }
         FileVerificationInventory fvi = queryVerificationFile {
             conditions = ["path=${FileVerificationForTest.LOCALFILE}", "node=${FileVerificationForTest.LOCALNODE}", "hexType=${FileVerificationForTest.DEFAULTHEXTYPE}"]
@@ -58,28 +60,29 @@ class FileVerificationCase extends SubCase{
         assert fvi.hexType == FileVerificationForTest.DEFAULTHEXTYPE
         assert fvi.category == FileVerificationForTest.DEFAULTCATEGORY
 
+        queryFileVerificationRecords {}
     }
 
 
-    void testRemoveVerificationFile(){
-        removeVerificationFile{
-            uuid=fileUuid
+    void testRemoveVerificationFile() {
+        removeVerificationFile {
+            uuid = fileUuid
         }
         FileVerificationInventory fvi = queryVerificationFile {}[0]
         assert fvi.state == "Disabled"
     }
 
-    void testRecoverVerificationFile(){
-        recoverVerificationFile{
-            uuid=fileUuid
+    void testRecoverVerificationFile() {
+        recoverVerificationFile {
+            uuid = fileUuid
         }
         FileVerificationInventory fvi = queryVerificationFile {}[0]
         assert fvi.state == "Enabled"
     }
 
-    void testDeleteVerificationFile(){
-        deleteVerificationFile{
-            uuid=fileUuid
+    void testDeleteVerificationFile() {
+        deleteVerificationFile {
+            uuid = fileUuid
         }
         FileVerificationInventory fvi = queryVerificationFile {
             conditions = ["uuid=${fileUuid}"]

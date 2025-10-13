@@ -9,6 +9,11 @@
     </message>
 
     <message>
+        <name>org.zstack.authentication.checkfile.APIQueryFileVerificationRecordsMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
         <name>org.zstack.authentication.checkfile.APIAddVerificationFileMsg</name>
     </message>
 

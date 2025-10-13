@@ -64,6 +64,8 @@ public class VmSystemTags {
     public static String VDI_MONITOR_NUMBER_TOKEN = "VDIMonitorNumber";
     public static PatternedSystemTag VDI_MONITOR_NUMBER = new PatternedSystemTag(String.format("VDIMonitorNumber::{%s}",VDI_MONITOR_NUMBER_TOKEN),VmInstanceVO.class);
 
+    public static PatternedSystemTag VDI = new PatternedSystemTag("vdi", VmInstanceVO.class);
+
     public static String INSTANCEOFFERING_ONLINECHANGE_TOKEN = "instanceOfferingOnliechange";
     public static PatternedSystemTag INSTANCEOFFERING_ONLIECHANGE = new PatternedSystemTag(String.format("instanceOfferingOnlinechange::{%s}",INSTANCEOFFERING_ONLINECHANGE_TOKEN),VmInstanceVO.class);
 
