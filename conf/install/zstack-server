@@ -16,7 +16,7 @@
 
 pidfile='/var/run/zstack/zstack-server.pid'
 TOMCAT_PATH="/usr/local/zstack/root/apache-tomcat"
-zstack_app=${ZSTACK_HOME-"$TOMCAT_PATH/webapps/zstack"}
+zstack_app=${ZSTACK_HOME-"$TOMCAT_PATH/webapps/cloud"}
 
 which zstack-ctl &>/dev/null
 if [ $? -ne 0 ]; then
