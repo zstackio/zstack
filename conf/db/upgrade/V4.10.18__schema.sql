@@ -17,3 +17,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmCustomSpecificationVO` (
     PRIMARY KEY  (`uuid`),
     CONSTRAINT `fkVmCustomSpecificationVOVmInstanceEO` FOREIGN KEY (`vmInstanceUuid`) REFERENCES `VmInstanceEO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DELETE FROM `zstack`.`ResourceConfigVO` WHERE category='sharedblock'  AND name='qcow2.allocation' AND value='metadata';
