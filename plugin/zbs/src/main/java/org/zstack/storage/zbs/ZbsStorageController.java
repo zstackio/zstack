@@ -211,7 +211,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public synchronized void activateHeartbeatVolume(HostInventory h, ReturnValueCompletion<HeartbeatVolumeTO> comp) {
-        reloadDbInfo();
+        if (config == null) {
+            reloadDbInfo();
+        }
 
         CreateVolumeCmd cmd = new CreateVolumeCmd();
         cmd.setLogicalPool(config.getLogicalPoolName());
@@ -243,7 +245,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public HeartbeatVolumeTO getHeartbeatVolumeActiveInfo(HostInventory h) {
-        reloadDbInfo();
+        if (config == null) {
+            reloadDbInfo();
+        }
 
         CbdHeartbeatVolumeTO to = new CbdHeartbeatVolumeTO();
         to.setInstallPath(buildHeartbeatVolumePath(config.getLogicalPoolName()));
@@ -431,22 +435,26 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     @Override
     public void ping(Completion completion) {
         reloadDbInfo();
-        final List<ZbsPrimaryStorageMdsBase> mds = CollectionUtils.transformAndRemoveNull(addonInfo.getMdsInfos(), ZbsPrimaryStorageMdsBase::new);
-        new While<>(mds).each((m, comp) -> {
-            m.ping(addonInfo.getClusterInfo(), new Completion(comp) {
-                @Override
-                public void success() {
-                    m.getSelf().setStatus(MdsStatus.Connected);
-                    comp.done();
-                }
 
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    m.getSelf().setStatus(MdsStatus.Disconnected);
-                    comp.done();
-                }
-            });
-        }).run(new WhileDoneCompletion(completion) {
+        if (addonInfo == null || addonInfo.getClusterInfo() == null) {
+            completion.fail(operr(String.format("addon info is null, primary storage[uuid:%s] is not ready, skip ping task", self.getUuid())));
+            return;
+        }
+
+        final List<ZbsPrimaryStorageMdsBase> mds = CollectionUtils.transformToList(addonInfo.getMdsInfos(), ZbsPrimaryStorageMdsBase::new);
+        new While<>(mds).each((m, comp) -> m.ping(addonInfo.getClusterInfo(), new Completion(comp) {
+            @Override
+            public void success() {
+                m.getSelf().setStatus(MdsStatus.Connected);
+                comp.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                m.getSelf().setStatus(MdsStatus.Disconnected);
+                comp.done();
+            }
+        })).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
@@ -543,7 +551,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public String allocateSpace(AllocateSpaceSpec aspec) {
-        reloadDbInfo();
+        if (config == null) {
+            reloadDbInfo();
+        }
 
         // TODO allocate pool
         LogicalPoolInfo logicalPoolInfo = allocateFreePool(aspec.getSize());
