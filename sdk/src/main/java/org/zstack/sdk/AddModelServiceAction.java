@@ -77,12 +77,6 @@ public class AddModelServiceAction extends AbstractAction {
     public java.util.List modelUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List gpuVendors;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List cpuArchitectures;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List architectureImages;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

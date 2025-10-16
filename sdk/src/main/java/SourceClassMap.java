@@ -18,11 +18,11 @@ public class SourceClassMap {
 			put("org.zstack.ai.entity.ModelEvaluationTaskInventory", "org.zstack.sdk.ModelEvaluationTaskInventory");
 			put("org.zstack.ai.entity.ModelInventory", "org.zstack.sdk.ModelInventory");
 			put("org.zstack.ai.entity.ModelServiceGroupDatasetRefInventory", "org.zstack.sdk.ModelServiceGroupDatasetRefInventory");
-			put("org.zstack.ai.entity.ModelServiceImageInventory", "org.zstack.sdk.ModelServiceImageInventory");
 			put("org.zstack.ai.entity.ModelServiceInstanceGroupInventory", "org.zstack.sdk.ModelServiceInstanceGroupInventory");
 			put("org.zstack.ai.entity.ModelServiceInstanceInventory", "org.zstack.sdk.ModelServiceInstanceInventory");
 			put("org.zstack.ai.entity.ModelServiceInventory", "org.zstack.sdk.ModelServiceInventory");
 			put("org.zstack.ai.entity.ModelServiceRefInventory", "org.zstack.sdk.ModelServiceRefInventory");
+			put("org.zstack.ai.entity.ModelServiceTemplateInventory", "org.zstack.sdk.ModelServiceTemplateInventory");
 			put("org.zstack.ai.entity.TrainedModelRecordInventory", "org.zstack.sdk.TrainedModelRecordInventory");
 			put("org.zstack.ai.message.ArchitectureImageMapping", "org.zstack.sdk.ArchitectureImageMapping");
 			put("org.zstack.ai.message.MaaSUsage", "org.zstack.sdk.MaaSUsage");
@@ -1208,11 +1208,11 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ModelInventory", "org.zstack.ai.entity.ModelInventory");
 			put("org.zstack.sdk.ModelService", "org.zstack.ai.message.ModelService");
 			put("org.zstack.sdk.ModelServiceGroupDatasetRefInventory", "org.zstack.ai.entity.ModelServiceGroupDatasetRefInventory");
-			put("org.zstack.sdk.ModelServiceImageInventory", "org.zstack.ai.entity.ModelServiceImageInventory");
 			put("org.zstack.sdk.ModelServiceInstanceGroupInventory", "org.zstack.ai.entity.ModelServiceInstanceGroupInventory");
 			put("org.zstack.sdk.ModelServiceInstanceInventory", "org.zstack.ai.entity.ModelServiceInstanceInventory");
 			put("org.zstack.sdk.ModelServiceInventory", "org.zstack.ai.entity.ModelServiceInventory");
 			put("org.zstack.sdk.ModelServiceRefInventory", "org.zstack.ai.entity.ModelServiceRefInventory");
+			put("org.zstack.sdk.ModelServiceTemplateInventory", "org.zstack.ai.entity.ModelServiceTemplateInventory");
 			put("org.zstack.sdk.MonInfo", "org.zstack.storage.ceph.primary.KVMCephVolumeTO$MonInfo");
 			put("org.zstack.sdk.MonInfo", "org.zstack.storage.ceph.primary.KvmCephCdRomTO$MonInfo");
 			put("org.zstack.sdk.MonInfo", "org.zstack.storage.ceph.primary.KvmCephIsoTO$MonInfo");
