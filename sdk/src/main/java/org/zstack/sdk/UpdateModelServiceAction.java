@@ -62,12 +62,6 @@ public class UpdateModelServiceAction extends AbstractAction {
     public java.lang.String framework;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List cpuArchitectures;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List gpuVendors;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List architectureImages;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
