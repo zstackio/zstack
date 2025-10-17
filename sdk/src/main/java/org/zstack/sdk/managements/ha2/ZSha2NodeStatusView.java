@@ -1,6 +1,6 @@
 package org.zstack.sdk.managements.ha2;
 
-
+import org.zstack.sdk.ErrorCode;
 
 public class ZSha2NodeStatusView  {
 
@@ -106,6 +106,14 @@ public class ZSha2NodeStatusView  {
     }
     public boolean getSlaveSqlRunning() {
         return this.slaveSqlRunning;
+    }
+
+    public ErrorCode error;
+    public void setError(ErrorCode error) {
+        this.error = error;
+    }
+    public ErrorCode getError() {
+        return this.error;
     }
 
 }
