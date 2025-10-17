@@ -1,8 +1,8 @@
-package org.zstack.sdk.managements.ha2;
+package org.zstack.sdk.managements.common;
 
 import org.zstack.sdk.ErrorCode;
 
-public class ZSha2NodeStatusView  {
+public class ManagementNodeStatusView  {
 
     public java.lang.String ip;
     public void setIp(java.lang.String ip) {
