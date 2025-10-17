@@ -9,8 +9,44 @@ public class FVCanonicalEvents {
     public static class FileStatusChangedData {
         private String node;
         private String path;
-        private String catefory;
+        private String currentDigest;
+        private String targetDigest;
+        private String category;
         private String restore;
+        private String reason;
+        private String uuid;
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+
+        public String getTargetDigest() {
+            return targetDigest;
+        }
+
+        public void setTargetDigest(String targetDigest) {
+            this.targetDigest = targetDigest;
+        }
+
+        public String getCurrentDigest() {
+            return currentDigest;
+        }
+
+        public void setCurrentDigest(String currentDigest) {
+            this.currentDigest = currentDigest;
+        }
+
+        public String getReason() {
+            return reason;
+        }
+
+        public void setReason(String reason) {
+            this.reason = reason;
+        }
 
         public String getNode() {
             return node;
@@ -28,12 +64,12 @@ public class FVCanonicalEvents {
             this.path = path;
         }
 
-        public String getCatefory() {
-            return catefory;
+        public String getCategory() {
+            return category;
         }
 
-        public void setCatefory(String catefory) {
-            this.catefory = catefory;
+        public void setCategory(String category) {
+            this.category = category;
         }
 
         public String getRestore() {
