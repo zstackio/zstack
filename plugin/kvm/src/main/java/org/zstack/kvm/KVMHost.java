@@ -4283,16 +4283,19 @@ public class KVMHost extends HostBase implements Host {
             value = value.substring(0, value.length() - 1);
         }
 
+        Long minMemSize = 0L;
         try {
-            Long minMemSize = Long.parseLong(value);
+            minMemSize = Long.parseLong(value);
             // Convert GB to bytes (1GB = 1024 * 1024 * 1024 bytes)
             minMemSize = minMemSize * 1024 * 1024 * 1024;
-            cmd.setHostMinimumFreeMemorySize(minMemSize);
         } catch (NumberFormatException e) {
             logger.warn(String.format("Invalid memory size format: %s, using default",
                     KVMGlobalConfig.MINIMUM_MEMORY_SIZE_BEFORE_START_VM.value()));
-            cmd.setHostMinimumFreeMemorySize(0L);
         }
+        if (minMemSize != 0L) {
+            cmd.setHostMinimumFreeMemorySize(minMemSize);
+        }
+
         cmd.setImagePlatform(platform);
         cmd.setImageArchitecture(architecture);
         cmd.setVmName(spec.getVmInventory().getName());
