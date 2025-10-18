@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
@@ -27,6 +28,8 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
     private HostCapacityOverProvisioningManager ratioMgr;
     @Autowired
     private HostCpuOverProvisioningManager cpuRatioMgr;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private boolean memoryCheck(long vmMemSize, long oldMemory, HostVO hvo) {
         if (HostAllocatorGlobalConfig.HOST_ALLOCATOR_MAX_MEMORY.value(Boolean.class)) {
@@ -35,7 +38,27 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
             }
         }
 
-        return ratioMgr.calculateHostAvailableMemoryByRatio(hvo.getUuid(), hvo.getCapacity().getAvailableMemory()) >= vmMemSize;
+        // aggregate reserved huge page bytes from extensions (non-overlapping, non-negative)
+        long hugePageMemReservedForSysCom = 0L;
+        final List<HugePageMemoryUsageExtensionPoint> extps =
+                pluginRgty.getExtensionList(HugePageMemoryUsageExtensionPoint.class);
+        for (HugePageMemoryUsageExtensionPoint extp : extps) {
+            try {
+                long usage = Math.max(0L, extp.getHugePageMemoryUsage(hvo.getUuid()));
+                hugePageMemReservedForSysCom = Math.addExact(hugePageMemReservedForSysCom, usage);
+            } catch (ArithmeticException ae) {
+                logger.warn(String.format("reserved huge page bytes overflow on host[%s], cap to Long.MAX_VALUE",
+                        hvo.getUuid()), ae);
+                hugePageMemReservedForSysCom = Long.MAX_VALUE;
+                break;
+            } catch (Exception e) {
+                logger.warn(String.format("failed to get huge page usage from %s on host[%s], ignore this extension",
+                        extp.getClass().getSimpleName(), hvo.getUuid()), e);
+            }
+        }
+        long available = hvo.getCapacity().getAvailableMemory();
+        long availableAfter = Math.max(0L, available - hugePageMemReservedForSysCom);
+        return ratioMgr.calculateHostAvailableMemoryByRatio(hvo.getUuid(), availableAfter) >= vmMemSize;
     }
 
 
