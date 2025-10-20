@@ -165,6 +165,9 @@ public class SourceClassMap {
 			put("org.zstack.header.bootstrap.MiniCandidateHostStruct", "org.zstack.sdk.MiniCandidateHostStruct");
 			put("org.zstack.header.bootstrap.MiniHostInfo", "org.zstack.sdk.MiniHostInfo");
 			put("org.zstack.header.bootstrap.MiniNetworkConfigStruct", "org.zstack.sdk.MiniNetworkConfigStruct");
+			put("org.zstack.header.candidate.CandidateDecision", "org.zstack.sdk.CandidateDecision");
+			put("org.zstack.header.candidate.CandidateDecisionEntry", "org.zstack.sdk.CandidateDecisionEntry");
+			put("org.zstack.header.candidate.CandidateResult", "org.zstack.sdk.CandidateResult");
 			put("org.zstack.header.cbt.CbtTaskInventory", "org.zstack.sdk.CbtTaskInventory");
 			put("org.zstack.header.cbt.CbtTaskResourceRefInventory", "org.zstack.sdk.CbtTaskResourceRefInventory");
 			put("org.zstack.header.cbt.CbtTaskStatus", "org.zstack.sdk.CbtTaskStatus");
@@ -443,6 +446,8 @@ public class SourceClassMap {
 			put("org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpInventory", "org.zstack.sdk.HostNetworkInterfaceLldpInventory");
 			put("org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpRefInventory", "org.zstack.sdk.HostNetworkInterfaceLldpRefInventory");
 			put("org.zstack.network.l2.virtualSwitch.header.HostKernelInterfaceInventory", "org.zstack.sdk.HostKernelInterfaceInventory");
+			put("org.zstack.network.l2.virtualSwitch.header.HostKernelInterfaceResult", "org.zstack.sdk.HostKernelInterfaceResult");
+			put("org.zstack.network.l2.virtualSwitch.header.HostKernelInterfaceStruct", "org.zstack.sdk.HostKernelInterfaceStruct");
 			put("org.zstack.network.l2.virtualSwitch.header.HostKernelInterfaceUsedIpInventory", "org.zstack.sdk.HostKernelInterfaceUsedIpInventory");
 			put("org.zstack.network.l2.virtualSwitch.header.L2PortGroupNetworkInventory", "org.zstack.sdk.L2PortGroupNetworkInventory");
 			put("org.zstack.network.l2.virtualSwitch.header.L2VirtualSwitchNetworkInventory", "org.zstack.sdk.L2VirtualSwitchNetworkInventory");
@@ -831,6 +836,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BlockVolumeInventory", "org.zstack.header.volume.block.BlockVolumeInventory");
 			put("org.zstack.sdk.CCSCertificateAccountRefInventory", "org.zstack.crypto.ccs.CCSCertificateAccountRefInventory");
 			put("org.zstack.sdk.CCSCertificateInventory", "org.zstack.crypto.ccs.CCSCertificateInventory");
+			put("org.zstack.sdk.CandidateDecision", "org.zstack.header.candidate.CandidateDecision");
+			put("org.zstack.sdk.CandidateDecisionEntry", "org.zstack.header.candidate.CandidateDecisionEntry");
+			put("org.zstack.sdk.CandidateResult", "org.zstack.header.candidate.CandidateResult");
 			put("org.zstack.sdk.CasClientInventory", "org.zstack.sso.header.CasClientInventory");
 			put("org.zstack.sdk.CbtTaskInventory", "org.zstack.header.cbt.CbtTaskInventory");
 			put("org.zstack.sdk.CbtTaskResourceRefInventory", "org.zstack.header.cbt.CbtTaskResourceRefInventory");
@@ -935,6 +943,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HostIommuStatusType", "org.zstack.pciDevice.HostIommuStatusType");
 			put("org.zstack.sdk.HostIpmiInventory", "org.zstack.header.host.HostIpmiInventory");
 			put("org.zstack.sdk.HostKernelInterfaceInventory", "org.zstack.network.l2.virtualSwitch.header.HostKernelInterfaceInventory");
+			put("org.zstack.sdk.HostKernelInterfaceResult", "org.zstack.network.l2.virtualSwitch.header.HostKernelInterfaceResult");
+			put("org.zstack.sdk.HostKernelInterfaceStruct", "org.zstack.network.l2.virtualSwitch.header.HostKernelInterfaceStruct");
 			put("org.zstack.sdk.HostKernelInterfaceUsedIpInventory", "org.zstack.network.l2.virtualSwitch.header.HostKernelInterfaceUsedIpInventory");
 			put("org.zstack.sdk.HostLoad", "org.zstack.drs.api.HostLoad");
 			put("org.zstack.sdk.HostNUMANode", "org.zstack.header.host.HostNUMANode");

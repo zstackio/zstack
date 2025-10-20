@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateHostKernelInterfaceAction extends AbstractAction {
+public class GetCandidateHostKernelInterfacesAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateHostKernelInterfaceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateHostKernelInterfaceResult value;
+        public org.zstack.sdk.GetCandidateHostKernelInterfacesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,23 +25,23 @@ public class UpdateHostKernelInterfaceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = false, noTrim = false)
+    public java.util.List hostUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String requiredIp;
+    public java.lang.String cidr;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String netmask;
-
-    @Param(required = false, validValues = {"Management","Storage"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"Management","Storage"}, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List trafficTypes;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean containsRejected = true;
+
+    @Param(required = false)
+    public java.lang.Integer limit = 1000;
+
+    @Param(required = false)
+    public java.lang.Integer start = 0;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -61,12 +61,6 @@ public class UpdateHostKernelInterfaceAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -75,8 +69,8 @@ public class UpdateHostKernelInterfaceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateHostKernelInterfaceResult value = res.getResult(org.zstack.sdk.UpdateHostKernelInterfaceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateHostKernelInterfaceResult() : value; 
+        org.zstack.sdk.GetCandidateHostKernelInterfacesResult value = res.getResult(org.zstack.sdk.GetCandidateHostKernelInterfacesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetCandidateHostKernelInterfacesResult() : value; 
 
         return ret;
     }
@@ -105,11 +99,11 @@ public class UpdateHostKernelInterfaceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/l3-networks/kernel-interfaces/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/hosts/kernel-interfaces";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "updateHostKernelInterface";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
