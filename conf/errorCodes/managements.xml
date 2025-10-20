@@ -25,5 +25,10 @@
         <id>2102</id>
         <description>Failed to parse ZSphere HA2 status</description>
     </code>
+
+    <code>
+        <id>2103</id>
+        <description>HA environment not installed</description>
+    </code>
 </error>
 
