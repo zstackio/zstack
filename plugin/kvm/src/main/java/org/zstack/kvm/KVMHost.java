@@ -565,13 +565,8 @@ public class KVMHost extends HostBase implements Host {
                 }
             }
 
-            if (commandStr.equals("{}")) {
-                commandStr = commandStr.replaceAll("\\}$",
-                        String.format("\"%s\":%s}", KVMConstant.KVM_HOST_ADDONS, JSONObjectUtil.toJsonString(kvmHostAddon)));
-            } else {
-                commandStr = commandStr.replaceAll("\\}$",
-                        String.format(",\"%s\":%s}", KVMConstant.KVM_HOST_ADDONS, JSONObjectUtil.toJsonString(kvmHostAddon)));
-            }
+            commandMap.put(KVMConstant.KVM_HOST_ADDONS, kvmHostAddon);
+            commandStr = JSONObjectUtil.toJsonString(commandMap);
         }
     }
     
