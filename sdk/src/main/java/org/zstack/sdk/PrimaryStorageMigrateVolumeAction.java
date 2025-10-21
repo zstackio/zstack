@@ -32,7 +32,7 @@ public class PrimaryStorageMigrateVolumeAction extends AbstractAction {
     public java.lang.String dstPrimaryStorageUuid;
 
     @Param(required = false, validValues = {"Specified","FollowVolume","FollowDestPrimaryStorage"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String volumeProvisioningStrategy;
+    public java.lang.String volumeProvisioningStrategy = "FollowDestPrimaryStorage";
 
     @Param(required = false)
     public java.util.List systemTags;
