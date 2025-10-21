@@ -25,19 +25,16 @@ public class CreateHostKernelInterfaceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String hostUuid;
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String l2NetworkUuid;
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String l3NetworkUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -118,7 +115,7 @@ public class CreateHostKernelInterfaceAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/l2-networks/kernel-interfaces";
+        info.path = "/l3-networks/kernel-interfaces";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
