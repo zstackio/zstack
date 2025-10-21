@@ -9,6 +9,7 @@ CALL ADD_COLUMN('ModelVO', 'artifactSizeBytes', 'bigint', 1, '0');
 CALL ADD_COLUMN('ModelVO', 'architectureType', 'varchar(255)', 1, NULL);
 CALL ADD_COLUMN('ModelVO', 'frameworkVersion', 'varchar(255)', 1, NULL);
 CALL ADD_COLUMN('ModelVO', 'requiredAccelerator', 'varchar(255)', 1, NULL);
+CALL ADD_COLUMN('ModelVO', 'quantizationType', 'varchar(255)', 1, NULL);
 
 CALL RENAME_TABLE('ModelServiceImageVO', 'ModelServiceTemplateVO');
 
