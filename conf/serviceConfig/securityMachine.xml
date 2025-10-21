@@ -33,6 +33,6 @@
     </message>
 
     <message>
-        <name>org.zstack.header.securitymachine.APIGetIntegrityEncryptValueMsg</name>
+        <name>org.zstack.header.securitymachine.api.securitymachine.APIGetIntegrityEncryptValueMsg</name>
     </message>
 </service>
