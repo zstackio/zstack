@@ -31,6 +31,8 @@ public class SourceClassMap {
 			put("org.zstack.ai.message.ModelCenterServiceInventory$ServiceStatus", "org.zstack.sdk.ServiceStatus");
 			put("org.zstack.ai.message.ModelCenterServiceInventory$ZdfsService", "org.zstack.sdk.ZdfsService");
 			put("org.zstack.ai.message.ModelService", "org.zstack.sdk.ModelService");
+			put("org.zstack.ai.message.ModelServiceMatchEntryName", "org.zstack.sdk.ModelServiceMatchEntryName");
+			put("org.zstack.ai.message.ModelServiceMatchStatus", "org.zstack.sdk.ModelServiceMatchStatus");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessGroupInventory", "org.zstack.sdk.AliyunNasAccessGroupInventory");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessRuleInventory", "org.zstack.sdk.AliyunNasAccessRuleInventory");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasFileSystemInventory", "org.zstack.sdk.AliyunNasFileSystemInventory");
@@ -1211,6 +1213,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ModelServiceInstanceGroupInventory", "org.zstack.ai.entity.ModelServiceInstanceGroupInventory");
 			put("org.zstack.sdk.ModelServiceInstanceInventory", "org.zstack.ai.entity.ModelServiceInstanceInventory");
 			put("org.zstack.sdk.ModelServiceInventory", "org.zstack.ai.entity.ModelServiceInventory");
+			put("org.zstack.sdk.ModelServiceMatchEntryName", "org.zstack.ai.message.ModelServiceMatchEntryName");
+			put("org.zstack.sdk.ModelServiceMatchStatus", "org.zstack.ai.message.ModelServiceMatchStatus");
 			put("org.zstack.sdk.ModelServiceRefInventory", "org.zstack.ai.entity.ModelServiceRefInventory");
 			put("org.zstack.sdk.ModelServiceTemplateInventory", "org.zstack.ai.entity.ModelServiceTemplateInventory");
 			put("org.zstack.sdk.MonInfo", "org.zstack.storage.ceph.primary.KVMCephVolumeTO$MonInfo");
