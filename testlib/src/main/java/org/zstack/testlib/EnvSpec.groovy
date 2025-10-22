@@ -63,6 +63,7 @@ import org.zstack.testlib.identity.IdentitySpec
 import org.zstack.testlib.identity.ldap.LdapServerSpec
 import org.zstack.testlib.identity.ldap.LdapVirtualEndpointSpec
 import org.zstack.testlib.vfs.VFS
+import org.zstack.testlib.vops.VOpsVirtualEndpointSpec
 import org.zstack.utils.BeanUtils
 import org.zstack.utils.DebugUtils
 import org.zstack.utils.data.Pair
@@ -387,6 +388,16 @@ class EnvSpec extends ApiHelper implements Node  {
         c()
         addChild(i)
         return i
+    }
+
+    VOpsVirtualEndpointSpec vops(
+            @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = VOpsVirtualEndpointSpec.class) Closure c) {
+        def subSpec = new VOpsVirtualEndpointSpec(this)
+        c.delegate = subSpec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        addChild(subSpec)
+        return subSpec
     }
 
     void adminLogin() {
