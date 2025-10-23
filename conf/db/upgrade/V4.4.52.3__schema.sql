@@ -24,3 +24,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`FileVerificationRecordsVO` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fkFileVerificationUuid` FOREIGN KEY (`fileVerificationUuid`) REFERENCES `FileVerificationVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`PortMirrorSessionVO` ADD COLUMN `dstEndPointType` varchar(32) NOT NULL DEFAULT 'VmNic';

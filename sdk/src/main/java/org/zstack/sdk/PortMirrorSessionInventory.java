@@ -69,6 +69,14 @@ public class PortMirrorSessionInventory  {
         return this.dstEndPoint;
     }
 
+    public java.lang.String dstEndPointType;
+    public void setDstEndPointType(java.lang.String dstEndPointType) {
+        this.dstEndPointType = dstEndPointType;
+    }
+    public java.lang.String getDstEndPointType() {
+        return this.dstEndPointType;
+    }
+
     public java.lang.String portMirrorUuid;
     public void setPortMirrorUuid(java.lang.String portMirrorUuid) {
         this.portMirrorUuid = portMirrorUuid;
