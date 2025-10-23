@@ -30,5 +30,6 @@ CREATE TABLE `zstack`.`KubernetesServiceVO` (
     `clusterIp` varchar(64) DEFAULT NULL,
     `externalIp` varchar(64) DEFAULT NULL,
     `ports` text,
+    `endpointUuid` varchar(32) NOT NULL,
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
