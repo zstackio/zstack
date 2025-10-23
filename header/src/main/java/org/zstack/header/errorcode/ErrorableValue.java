@@ -1,5 +1,7 @@
 package org.zstack.header.errorcode;
 
+import org.zstack.header.exception.CloudRuntimeException;
+
 import java.util.Objects;
 
 /**
@@ -16,6 +18,18 @@ public class ErrorableValue<T> {
     public static <T> ErrorableValue<T> ofErrorCode(ErrorCode error) {
         return new ErrorableValue<>(null,
                 Objects.requireNonNull(error, "errorCode in ErrorableValue can not be null"));
+    }
+
+    /**
+     * Make sure this ErrorableValue is not success
+     */
+    @SuppressWarnings("unchecked")
+    public <CASE> ErrorableValue<CASE> cast() {
+        if (isSuccess()) {
+            throw new CloudRuntimeException("Can not cast ErrorableValue");
+        } else {
+            return (ErrorableValue<CASE>) this;
+        }
     }
 
     protected ErrorableValue(T result, ErrorCode error) {
