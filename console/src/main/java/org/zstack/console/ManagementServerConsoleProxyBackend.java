@@ -495,7 +495,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                         }
 
                         ShellUtils.ShellRunner runner = new ShellUtils.ShellRunner();
-                        runner.setCommand(String.format("netstat -nltp4 | grep  :%d\b", msg.getConsoleProxyPort()));
+                        runner.setCommand(String.format("netstat -nltp | grep -E ':%d\\s+'", msg.getConsoleProxyPort()));
                         runner.setVerbose(false);
                         runner.setWithSudo(true);
                         runner.setSuppressTraceLog(true);
