@@ -247,7 +247,9 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVO.getApplianceVmType());
         ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVO);
         List<String> snatL3Uuids = app.getSnatL3NetworkOnRouter(vrUuid);
-        if (!snatL3Uuids.contains(publicNic.getL3NetworkUuid())) {
+        if (!snatL3Uuids.contains(publicNic.getL3NetworkUuid()) && !vr.isHaEnabled()) {
+            // for ha router, first router will detach snat service, it will cause second router can not remove snat
+            // so remove snat for ha router no matter snat is enabled
             completion.success();
             return;
         }
