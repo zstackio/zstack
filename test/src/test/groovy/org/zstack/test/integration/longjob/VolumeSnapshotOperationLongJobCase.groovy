@@ -9,6 +9,7 @@ import org.zstack.header.storage.snapshot.APIRevertVolumeFromSnapshotMsg
 import org.zstack.sdk.LongJobInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeSnapshotInventory
+import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -165,6 +166,15 @@ class VolumeSnapshotOperationLongJobCase extends SubCase {
         msg.setVolumeUuid(snapshot.getVolumeUuid())
 
         def id = Platform.getUuid()
+
+        env.afterSimulator(LocalStorageKvmBackend.REVERT_SNAPSHOT_PATH) { rsp ->
+            expectError {
+                startVmInstance {
+                    uuid = vm.uuid
+                }
+            }
+            return rsp
+        }
 
         def job = submitLongJob {
             jobName = msg.getClass().getSimpleName()

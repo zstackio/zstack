@@ -8,10 +8,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
-import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -2486,35 +2483,28 @@ public class VolumeSnapshotTreeBase {
     }
 
     private void handle(final APIRevertVolumeFromSnapshotMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
+        APIRevertVolumeFromSnapshotEvent evt = new APIRevertVolumeFromSnapshotEvent(msg.getId());
+
+        RevertVolumeSnapshotMsg rmsg = new RevertVolumeSnapshotMsg();
+        rmsg.setSnapshotUuid(msg.getSnapshotUuid());
+        rmsg.setVolumeUuid(msg.getVolumeUuid());
+        rmsg.setTreeUuid(msg.getTreeUuid());
+        rmsg.setSession(msg.getSession());
+        rmsg.setServiceId(msg.getServiceId());
+
+        VolumeSnapshotRevertOverlayVolumeMsg omsg = new VolumeSnapshotRevertOverlayVolumeMsg();
+        omsg.setVolumeUuid(msg.getVolumeUuid());
+        omsg.setMessage(rmsg);
+        bus.makeTargetServiceIdByResourceUuid(omsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
+        bus.send(omsg, new CloudBusCallBack(msg) {
             @Override
-            public String getSyncSignature() {
-                return syncSignature;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                APIRevertVolumeFromSnapshotEvent evt = new APIRevertVolumeFromSnapshotEvent(msg.getId());
-
-                revert(msg, new Completion(evt, chain) {
-                    @Override
-                    public void success() {
-                        bus.publish(evt);
-                        chain.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        evt.setError(errorCode);
-                        bus.publish(evt);
-                        chain.next();
-                    }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("revert-volume-%s-from-snapshot-%s", currentRoot.getVolumeUuid(), currentRoot.getUuid());
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    bus.publish(evt);
+                } else {
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                }
             }
         });
     }
@@ -2601,6 +2591,7 @@ public class VolumeSnapshotTreeBase {
                 });
 
                 if (msg instanceof RevertVolumeFromSnapshotGroupMsg) {
+                    // TODO refactor this logic to group snapshot creator
                     flow(new NoRollbackFlow() {
                         String __name__ = "add-snapshot-to-group";
                         String newGroupUuid = ((RevertVolumeFromSnapshotGroupMsg) msg).getNewSnapshotGroupUuid();

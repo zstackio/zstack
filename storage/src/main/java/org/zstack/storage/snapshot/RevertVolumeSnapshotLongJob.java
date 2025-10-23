@@ -18,6 +18,7 @@ import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.longjob.LongJobUtils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -45,7 +46,13 @@ public class RevertVolumeSnapshotLongJob implements LongJob {
         msg.setTreeUuid(apiMessage.getTreeUuid());
         msg.setSession(apiMessage.getSession());
         bus.makeServiceIdByManagementNodeId(msg, VolumeSnapshotConstant.SERVICE_ID, getRoutedMnId(apiMessage));
-        bus.send(msg, new CloudBusCallBack(completion) {
+
+
+        VolumeSnapshotRevertOverlayVolumeMsg omsg = new VolumeSnapshotRevertOverlayVolumeMsg();
+        omsg.setVolumeUuid(msg.getVolumeUuid());
+        omsg.setMessage(msg);
+        bus.makeTargetServiceIdByResourceUuid(omsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
+        bus.send(omsg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 auditResourceUuid = msg.getVolumeUuid();
