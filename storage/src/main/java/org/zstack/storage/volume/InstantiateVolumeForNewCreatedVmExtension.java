@@ -25,6 +25,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -33,6 +34,7 @@ import javax.persistence.Tuple;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantiateResourceExtensionPoint {
     private static final CLogger logger = Utils.getLogger(InstantiateVolumeForNewCreatedVmExtension.class);
@@ -187,8 +189,21 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
         }
 
         List<NeedReplyMessage> msgs = new ArrayList<>();
+        Map<String, List<String>> volumeTagsMap = Optional.ofNullable(spec.getVolumeSpecs())
+                .orElse(Collections.emptyList())
+                .stream()
+                .collect(Collectors.toMap(
+                        VmInstanceSpec.VolumeSpec::getAssociatedVolumeUuid,
+                        vspec -> vspec.getTags() != null ? vspec.getTags() : Collections.emptyList()
+                ));
+
         for (VolumeInventory volume : spec.getDestDataVolumes()) {
-            msgs.add(fillMsg(new InstantiateVolumeMsg(), volume, spec));
+            InstantiateVolumeMsg dmsg = fillMsg(new InstantiateVolumeMsg(), volume, spec);
+            List<String> tags = volumeTagsMap.get(volume.getUuid());
+            if (!CollectionUtils.isEmpty(tags)) {
+                dmsg.setSystemTags(tags);
+            }
+            msgs.add(dmsg);
         }
 
         for (VolumeInventory volume : spec.getDestCacheVolumes()) {
