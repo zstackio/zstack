@@ -1,5 +1,6 @@
 package org.zstack.test.integration.storage.snapshot
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.core.trash.StorageTrash
 import org.zstack.core.trash.TrashType
@@ -10,12 +11,16 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
 import org.zstack.sdk.VolumeSnapshotInventory
+import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.local.LocalStorageResourceRefVO
 import org.zstack.storage.primary.local.LocalStorageResourceRefVO_
 import org.zstack.test.integration.ldap.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
+import org.zstack.utils.gson.JSONObjectUtil
+
 /**
  * Created by ads6 on 2018/1/2.
  */
@@ -70,6 +75,14 @@ STEP:
 
         def installPath = root.installPath
         def size = root.size
+
+        env.preSimulator(LocalStorageKvmBackend.REVERT_SNAPSHOT_PATH) { HttpEntity<String> e ->
+            expectError {
+                startVmInstance {
+                    uuid = vm.uuid
+                }
+            }
+        }
 
         revertVolumeFromSnapshot {
             uuid = s1.uuid

@@ -37,6 +37,7 @@ public class OverlayMessage extends NeedReplyMessage {
     public String getTaskName() {
         String simpleName = messageClassName.substring(
                 messageClassName.lastIndexOf(".") + 1, messageClassName.lastIndexOf("Msg"));
+        simpleName = simpleName.replaceFirst("API", "");
         return CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, simpleName);
     }
 }
