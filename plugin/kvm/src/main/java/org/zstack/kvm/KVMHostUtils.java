@@ -33,17 +33,26 @@ public class KVMHostUtils {
      * @return normalized bridge name, or null if anything wrong
      */
     public static String getNormalizedBridgeName(String l2Uuid, String format) {
-        if (KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2Uuid, L2NetworkVO.class)) {
-            return KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l2Uuid, KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+        String current = KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l2Uuid, KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+        if (current != null) {
+            return current;
         }
 
         validateFormatString(format);
 
-        String newBridgeName = generateNewBridgeName(l2Uuid);
         String physicalInterface = getPhysicalInterface(l2Uuid, format);
+        String preferredBridgeName = String.format(format, physicalInterface);
 
-        return checkNameConflict(l2Uuid, String.format(format, physicalInterface)) ?
-                newBridgeName : String.format(format, physicalInterface);
+        if (!checkNameConflict(l2Uuid, preferredBridgeName)) {
+            return preferredBridgeName;
+        }
+
+        current = KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l2Uuid, KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+        if (current != null) {
+            return current;
+        }
+
+        return generateNewBridgeName(l2Uuid);
     }
 
     private static void validateFormatString(String format) {
