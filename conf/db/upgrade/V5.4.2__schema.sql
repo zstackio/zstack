@@ -30,3 +30,5 @@ CREATE TABLE `zstack`.`KubernetesServiceVO` (
     `endpointUuid` varchar(32) NOT NULL,
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL ADD_COLUMN('PodVO', 'clusterId', 'INT', 1, NULL);
