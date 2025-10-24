@@ -4,10 +4,14 @@ import org.zstack.header.configuration.PythonClass;
 
 @PythonClass
 public class UsedIpTO {
+    public static final String ACTION_CODE_ADD = "add";
+    public static final String ACTION_CODE_REMOVE = "remove";
+
     private int ipVersion;
     private String ip;
     private String netmask;
     private String gateway;
+    private String actionCode;
 
     public int getIpVersion() {
         return ipVersion;
@@ -41,6 +45,14 @@ public class UsedIpTO {
         this.gateway = gateway;
     }
 
+    public String getActionCode() {
+        return actionCode;
+    }
+
+    public void setActionCode(String actionCode) {
+        this.actionCode = actionCode;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -48,16 +60,9 @@ public class UsedIpTO {
         sb.append(String.format("ip: %s,", this.ip));
         sb.append(String.format("netmask: %s,", this.netmask));
         sb.append(String.format("gateway: %s,", this.gateway));
-
-        return sb.toString();
-    }
-
-    public String toFullString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("ipVersion: %s,", this.ipVersion));
-        sb.append(String.format("ip: %s,", this.ip));
-        sb.append(String.format("netmask: %s,", this.netmask));
-        sb.append(String.format("gateway: %s,", this.gateway));
+        if (this.actionCode != null) {
+            sb.append(String.format("action: %s,", this.actionCode));
+        }
 
         return sb.toString();
     }
