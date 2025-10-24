@@ -18,7 +18,7 @@
     <bean id="RESTFacade" class="org.zstack.core.rest.RESTFacadeImpl">
         <property name="hostname" value="${RESTFacade.hostname:AUTO}" />
         <property name="port" value="${RESTFacade.port:8080}" />
-        <property name="path" value="${RESTFacade.path:zstack}" />
+        <property name="path" value="${RESTFacade.path:cloud}" />
     </bean>
     
     <bean id="RESTApiFacade" class="org.zstack.core.rest.RESTApiFacadeImpl">
