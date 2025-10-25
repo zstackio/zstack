@@ -9,6 +9,7 @@ import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.ceph.CephConstants
+import org.zstack.storage.ceph.CephMonSystemTags
 import org.zstack.storage.ceph.CephPoolCapacity
 import org.zstack.storage.ceph.CephSystemTags
 import org.zstack.storage.ceph.DataSecurityPolicy
@@ -19,6 +20,7 @@ import org.zstack.testlib.vfs.VFSFile
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
+import javax.persistence.Tuple
 import java.nio.file.Path
 
 /**
@@ -665,6 +667,18 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                         .select(CephPrimaryStorageMonVO_.primaryStorageUuid)
                         .eq(CephPrimaryStorageMonVO_.hostname, cmd.dstMonHostname)
                         .findValue()
+                if (dstPrimaryStorageUuid == null) {
+                    List<Tuple> ts = Q.New(CephPrimaryStorageMonVO.class)
+                            .select(CephPrimaryStorageMonVO_.uuid, CephPrimaryStorageMonVO_.primaryStorageUuid)
+                            .listTuple()
+                    for (final def t in ts) {
+                        String extraIp = CephMonSystemTags.EXTRA_IPS.getTokenByResourceUuid(t.get(0, String.class), CephMonSystemTags.EXTRA_IPS_TOKEN)
+                        if (extraIp != null && extraIp.split(",").contains(cmd.dstMonHostname)) {
+                            dstPrimaryStorageUuid = t.get(1, String.class)
+                            break
+                        }
+                    }
+                }
                 String dstFsid = Q.New(CephPrimaryStorageVO.class)
                         .select(CephPrimaryStorageVO_.fsid)
                         .eq(CephPrimaryStorageVO_.uuid, dstPrimaryStorageUuid)
