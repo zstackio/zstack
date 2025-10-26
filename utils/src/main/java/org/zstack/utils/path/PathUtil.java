@@ -18,7 +18,6 @@ import java.util.*;
 public class PathUtil {
     private static final CLogger logger = Utils.getLogger(PathUtil.class);
     public static String HOME_DIR_PROPERTY_NAME = "user.home";
-
     public static String join(String... paths) {
         assert paths != null && paths.length > 0;
 
