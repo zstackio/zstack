@@ -41,6 +41,9 @@ public class HostAO extends ResourceVO {
     private String nqn;
 
     @Column
+    private String hostname;
+
+    @Column
     @Enumerated(EnumType.STRING)
     private HostState state;
 
@@ -156,5 +159,13 @@ public class HostAO extends ResourceVO {
 
     public void setNqn(String nqn) {
         this.nqn = nqn;
+    }
+
+    public String getHostname() {
+        return hostname;
+    }
+
+    public void setHostname(String hostname) {
+        this.hostname = hostname;
     }
 }

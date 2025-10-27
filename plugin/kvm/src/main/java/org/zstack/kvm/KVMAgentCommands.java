@@ -484,6 +484,7 @@ public class KVMAgentCommands {
         private VirtualizerInfoTO virtualizerInfo;
         private String iscsiInitiatorName;
         private String nqn;
+        private String hostname;
 
         public String getOsDistribution() {
             return osDistribution;
@@ -771,6 +772,14 @@ public class KVMAgentCommands {
 
         public void setNqn(String nqn) {
             this.nqn = nqn;
+        }
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
         }
     }
 
@@ -4593,5 +4602,12 @@ public class KVMAgentCommands {
     }
 
     public static class UpdateHostNqnRsp extends AgentResponse {
+    }
+
+    public static class UpdateHostnameCmd extends AgentCommand {
+        public String hostname;
+    }
+
+    public static class UpdateHostnameRsp extends AgentResponse {
     }
 }

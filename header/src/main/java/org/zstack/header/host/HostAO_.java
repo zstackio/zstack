@@ -22,4 +22,5 @@ public class HostAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<HostAO, Timestamp> lastOpDate;
     public static volatile SingularAttribute<HostAO, String> architecture;
     public static volatile SingularAttribute<HostAO, String> nqn;
+    public static volatile SingularAttribute<HostAO, String> hostname;
 }
