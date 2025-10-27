@@ -68,12 +68,36 @@ public class SoftwarePackageInventory  {
         return this.md5sum;
     }
 
+    public java.lang.String status;
+    public void setStatus(java.lang.String status) {
+        this.status = status;
+    }
+    public java.lang.String getStatus() {
+        return this.status;
+    }
+
     public long size;
     public void setSize(long size) {
         this.size = size;
     }
     public long getSize() {
         return this.size;
+    }
+
+    public java.sql.Timestamp createDate;
+    public void setCreateDate(java.sql.Timestamp createDate) {
+        this.createDate = createDate;
+    }
+    public java.sql.Timestamp getCreateDate() {
+        return this.createDate;
+    }
+
+    public java.sql.Timestamp lastOpDate;
+    public void setLastOpDate(java.sql.Timestamp lastOpDate) {
+        this.lastOpDate = lastOpDate;
+    }
+    public java.sql.Timestamp getLastOpDate() {
+        return this.lastOpDate;
     }
 
 }
