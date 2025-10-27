@@ -119,6 +119,7 @@ public class StaticIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
                 .eq(UsedIpVO_.l3NetworkUuid, amsg.getL3NetworkUuid())
                 .eq(UsedIpVO_.ipVersion, ipVersion)
                 .eq(UsedIpVO_.ip, ip)
+                .eq(UsedIpVO_.netmask, amsg.getNetmask())
                 .find();
         if (conflictIp != null) {
             throw new OperationFailureException(err(L3Errors.ALLOCATE_IP_ERROR, "ip[%s] has been occupied by other usedIp[uuid:%s]", ip, conflictIp.getUuid()));
