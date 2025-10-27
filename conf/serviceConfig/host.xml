@@ -80,4 +80,8 @@
     <message>
         <name>org.zstack.header.host.APIUpdateHostNqnMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.host.APIUpdateHostnameMsg</name>
+    </message>
 </service>

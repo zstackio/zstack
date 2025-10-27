@@ -179,6 +179,7 @@ class KVMSimulator implements Simulator {
             rsp.hvmCpuFlag = ""
             rsp.cpuCache = "64.0,4096.0,16384.0"
             rsp.nqn = "nqn.2014-08.org.nvmexpress:uuid:748d0363-8366-44db-803b-146effb96988"
+            rsp.hostname = "hostname"
             rsp.iscsiInitiatorName = "iqn.1994-05.com.redhat:" + hostUuid.substring(0, 12)
             rsp.virtualizerInfo = new VirtualizerInfoTO()
             rsp.virtualizerInfo.version = "4.2.0-627.g36ee592.el7"
@@ -672,6 +673,10 @@ class KVMSimulator implements Simulator {
             rsp.size = 1024
             rsp.lastOpTime = System.currentTimeMillis()
             return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_UPDATE_HOSTNAME_PATH) {
+            return new UpdateHostnameRsp()
         }
     }
 }
