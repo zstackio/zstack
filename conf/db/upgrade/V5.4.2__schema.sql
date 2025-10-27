@@ -32,3 +32,7 @@ CREATE TABLE `zstack`.`KubernetesServiceVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CALL ADD_COLUMN('PodVO', 'clusterId', 'INT', 1, NULL);
+
+DELETE FROM `AccountResourceRefVO`
+WHERE `concreteResourceType` = 'org.zstack.header.vm.VmInstanceVO'
+  AND `resourceUuid` NOT IN (SELECT `uuid` FROM `VmInstanceVO`);
