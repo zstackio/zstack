@@ -43278,6 +43278,87 @@ abstract class ApiHelper {
     }
 
 
+    def getManagementNodesStatus(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.managements.common.GetManagementNodesStatusAction.class) Closure c) {
+        def a = new org.zstack.sdk.managements.common.GetManagementNodesStatusAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getZSha2Status(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.managements.ha2.GetZSha2StatusAction.class) Closure c) {
+        def a = new org.zstack.sdk.managements.ha2.GetZSha2StatusAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def zSha2Demote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.managements.ha2.ZSha2DemoteAction.class) Closure c) {
+        def a = new org.zstack.sdk.managements.ha2.ZSha2DemoteAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def addSNSSmsReceiver(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.AddSNSSmsReceiverAction.class) Closure c) {
         def a = new org.zstack.sdk.sns.AddSNSSmsReceiverAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
