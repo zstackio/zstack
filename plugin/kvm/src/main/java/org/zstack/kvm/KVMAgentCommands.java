@@ -266,7 +266,16 @@ public class KVMAgentCommands {
         private boolean ignoreMsrs;
         private boolean pageTableExtensionDisabled;
         private int tcpServerPort;
+        private boolean isInstallHostShutdownHook;
         private String version;
+
+        public boolean isInstallHostShutdownHook() {
+            return isInstallHostShutdownHook;
+        }
+
+        public void setInstallHostShutdownHook(boolean installHostShutdownHook) {
+            isInstallHostShutdownHook = installHostShutdownHook;
+        }
 
         public boolean isIgnoreMsrs() {
             return ignoreMsrs;
@@ -4269,7 +4278,7 @@ public class KVMAgentCommands {
     }
 
     public static class ReportHostStopEventCmd {
-        public String hostIp;
+        public String hostUuid;
     }
 
     public static class ShutdownHostCmd extends AgentCommand {
