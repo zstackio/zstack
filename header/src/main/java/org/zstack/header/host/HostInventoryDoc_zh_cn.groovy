@@ -208,6 +208,12 @@ doc {
 		since "zsv 4.10.6"
 	}
 	field {
+		name "hostname"
+		desc "主机名"
+		type "String"
+		since "zsv 4.10.18"
+	}
+	field {
 		name "createDate"
 		desc "创建时间"
 		type "Timestamp"

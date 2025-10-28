@@ -1,6 +1,7 @@
 package org.zstack.compute.host;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.VmHostnameUtils;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.upgrade.UpgradeGlobalConfig;
@@ -17,6 +18,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.host.*;
+import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.APIMessage;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
@@ -73,6 +75,8 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetPhysicalMachineBlockDevicesMsg) msg);
         } else if (msg instanceof APIMountBlockDeviceMsg) {
             validate((APIMountBlockDeviceMsg) msg);
+        } else if (msg instanceof APIUpdateHostnameMsg) {
+            validate((APIUpdateHostnameMsg) msg);
         }
 
         return msg;
@@ -167,6 +171,10 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
 
         validatePath(msg.getPath());
         validateMountPoint(msg.getMountPoint());
+    }
+
+    private void validate(APIUpdateHostnameMsg msg) {
+        VmHostnameUtils.validateHostname(msg.getHostname(), false);
     }
 
     private void validatePath(String path) {

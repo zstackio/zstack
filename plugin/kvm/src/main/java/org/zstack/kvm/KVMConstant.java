@@ -118,6 +118,7 @@ public interface KVMConstant {
     String KVM_HOST_GET_BLOCK_DEVICES_PATH = "/host/blockdevices/get";
     String KVM_HOST_GET_SENSORS_PATH = "/host/sensors/get";
     String KVM_UPDATE_HOST_NQN_PATH = "/host/nqn/update";
+    String KVM_UPDATE_HOSTNAME_PATH = "/host/hostname/update";
 
     String KVM_HOST_FILE_DOWNLOAD_PATH = "/host/file/download";
     String KVM_HOST_FILE_UPLOAD_PATH = "/host/file/upload";

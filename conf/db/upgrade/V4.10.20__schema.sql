@@ -13,3 +13,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SoftwarePackageVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL INSERT_COLUMN('HostEO', 'hostname', 'varchar(256)', 1, NULL, 'nqn');
+DROP VIEW IF EXISTS `zstack`.`HostVO`;
+CREATE VIEW `zstack`.`HostVO` AS SELECT uuid, zoneUuid, clusterUuid, name, description, managementIp, hypervisorType,
+state, status, architecture, nqn, hostname, createDate, lastOpDate FROM `zstack`.`HostEO` WHERE deleted IS NULL;
