@@ -588,6 +588,16 @@ public class NetworkUtils {
         return isIpv4InRange(ipv4, info.getLowAddress(), info.getHighAddress());
     }
 
+    public static boolean isIpInCidr(String ip, String cidr) {
+        if (isIpv4Address(ip) && isCidr(cidr, IPv6Constants.IPv4)) {
+            return isIpv4InCidr(ip, cidr);
+        } else if (isIpv6Address(ip) && isCidr(cidr, IPv6Constants.IPv6)) {
+            return IPv6NetworkUtils.isIpv6InCidrRange(ip, cidr);
+        }
+
+        return false;
+    }
+
     public static List<String> filterIpv4sInCidr(List<String> ipv4s, String cidr) {
         DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
         SubnetUtils.SubnetInfo info = getSubnetInfo(new SubnetUtils(cidr));

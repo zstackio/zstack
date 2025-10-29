@@ -25,7 +25,7 @@ public class DeleteHostKernelInterfaceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String uuid;
 
     @Param(required = false)
@@ -94,7 +94,7 @@ public class DeleteHostKernelInterfaceAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/l2-networks/kernel-interfaces/{uuid}";
+        info.path = "/l3-networks/kernel-interfaces/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

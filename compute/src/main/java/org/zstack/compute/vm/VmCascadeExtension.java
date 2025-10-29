@@ -314,7 +314,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 if ((ip4 == null || uuids.contains(ip4.getIpRangeUuid()))
                         && (ip6 == null || uuids.contains(ip6.getIpRangeUuid()))) {
                     L3NetworkVO l3VO = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
-                    if (!l3VO.enableIpAllocation()) {
+                    if (!l3VO.getEnableIPAM()) {
                         continue;
                     }
 

@@ -4121,6 +4121,33 @@ abstract class ApiHelper {
     }
 
 
+    def batchCreateHostKernelInterface(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.BatchCreateHostKernelInterfaceAction.class) Closure c) {
+        def a = new org.zstack.sdk.BatchCreateHostKernelInterfaceAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def batchDeleteVolumeSnapshot(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.BatchDeleteVolumeSnapshotAction.class) Closure c) {
         def a = new org.zstack.sdk.BatchDeleteVolumeSnapshotAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -17947,6 +17974,33 @@ abstract class ApiHelper {
 
     def getCandidateClustersForAttachingL2Network(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetCandidateClustersForAttachingL2NetworkAction.class) Closure c) {
         def a = new org.zstack.sdk.GetCandidateClustersForAttachingL2NetworkAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getCandidateHostKernelInterfaces(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetCandidateHostKernelInterfacesAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetCandidateHostKernelInterfacesAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

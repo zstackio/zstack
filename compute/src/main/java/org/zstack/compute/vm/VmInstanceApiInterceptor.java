@@ -578,7 +578,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         info.ipv6Gateway = msg.getIpv6Gateway();
 
         ipOperator.validateStaticIp(info, l3NetworkVO, new ArrayList<>());
-        msg.setIp(info.ipv4Address);
         msg.setNetmask(info.ipv4Netmask);
         msg.setGateway(info.ipv4Gateway);
         msg.setIp6(info.ipv6Address);

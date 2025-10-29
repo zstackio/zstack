@@ -5139,7 +5139,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         q.setParameter("uuid", self.getUuid());
         List<String> attachedL3Uuids = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid).eq(VmNicVO_.vmInstanceUuid, self.getUuid()).listValues();
         List<L3NetworkVO> l3s = q.getResultList();
-        l3s = l3s.stream().filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty() || (!l3.enableIpAllocation() && !attachedL3Uuids.contains(l3.getUuid()))).collect(Collectors.toList());
+        l3s = l3s.stream()
+                .filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty() ||
+                        (!l3.getEnableIPAM() &&
+                                (!attachedL3Uuids.contains(l3.getUuid()) || VmGlobalConfig.MULTI_VNIC_SUPPORT.value(Boolean.class))))
+                .collect(Collectors.toList());
 
         return L3NetworkInventory.valueOf(l3s);
     }
@@ -5196,13 +5200,13 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return new ArrayList<>();
                 }
                 //filter l3 that already attached
-                if (!self.getVmNics().isEmpty()) {
+                if (!self.getVmNics().isEmpty() && !VmGlobalConfig.MULTI_VNIC_SUPPORT.value(Boolean.class)) {
                     List<String> vmL3Uuids = self.getVmNics().stream().flatMap(nic -> VmNicHelper.getL3Uuids(VmNicInventory.valueOf(nic)).stream())
                             .distinct().collect(Collectors.toList());
                     l3s = l3s.stream().filter(l3 -> !vmL3Uuids.contains(l3.getUuid())).collect(Collectors.toList());
                 }
 
-                l3s = l3s.stream().filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty() || !l3.enableIpAllocation()).collect(Collectors.toList());
+                l3s = l3s.stream().filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty() || !l3.getEnableIPAM()).collect(Collectors.toList());
                 return L3NetworkInventory.valueOf(l3s);
             }
 
@@ -6706,7 +6710,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 });
 
                 flowChain.then(new NoRollbackFlow() {
-                    String __name__ = "update-nic-ip-for-disable-ipam";
+                    String __name__ = "update-nic-ip-for-ip-allocation-disabled";
 
                     @Override
                     public boolean skip(Map data) {
