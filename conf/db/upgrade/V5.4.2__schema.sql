@@ -21,7 +21,7 @@ CALL ADD_COLUMN('ModelServiceTemplateVO', 'gpuVendor', 'varchar(255)', 1, NULL);
 
 CALL ADD_COLUMN('PodVO', 'namespace', 'varchar(64)', 1, NULL);
 
-CREATE TABLE `zstack`.`KubernetesServiceVO` (
+CREATE TABLE IF NOT EXISTS `zstack`.`KubernetesServiceVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `name` varchar(64) NOT NULL,
     `description` varchar(255) DEFAULT NULL,
@@ -31,6 +31,8 @@ CREATE TABLE `zstack`.`KubernetesServiceVO` (
     `externalIp` varchar(64) DEFAULT NULL,
     `ports` text,
     `endpointUuid` varchar(32) NOT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
