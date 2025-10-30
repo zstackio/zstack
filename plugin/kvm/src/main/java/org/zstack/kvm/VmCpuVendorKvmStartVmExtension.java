@@ -11,13 +11,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.vm.CreateVmInstanceMsg;
-import org.zstack.header.vm.VmInstanceCreateExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.kvm.KVMAgentCommands;
-import org.zstack.kvm.KVMHostInventory;
-import org.zstack.kvm.KVMStartVmExtensionPoint;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.resourceconfig.ResourceConfigVO;
@@ -25,7 +19,6 @@ import org.zstack.resourceconfig.ResourceConfigVO;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.zstack.compute.vm.VmCpuVendor.AuthenticAMD;
 import static org.zstack.kvm.KVMConstant.CPU_MODE_HOST_PASSTHROUGH;
 import static org.zstack.kvm.KVMConstant.CPU_MODE_HYGON_CUSTOMIZED;
 
@@ -49,12 +42,11 @@ public class VmCpuVendorKvmStartVmExtension implements KVMStartVmExtensionPoint,
         }
 
         ResourceConfig rc = rcf.getResourceConfig(VmGlobalConfig.VM_CPUID_VENDOR.getIdentity());
-        String vmCpuIdVendor = rc.getResourceConfigValueByResourceType(spec.getVmInventory().getUuid(), VmInstanceVO.class.getSimpleName(), String.class);
-        if (vmCpuIdVendor == null) {
-            rc.updateValue(spec.getVmInventory().getUuid(), AuthenticAMD.toString());
-        }
+        String vmCpuIdVendor = rc.getResourceConfigValue(spec.getVmInventory().getUuid(), String.class);
 
-        cmd.setVmCpuVendorId(rcf.getResourceConfigValue(VmGlobalConfig.VM_CPUID_VENDOR, spec.getVmInventory().getUuid(), String.class));
+        if (vmCpuIdVendor != null) {
+            cmd.setVmCpuVendorId(vmCpuIdVendor);
+        }
     }
 
     @Override

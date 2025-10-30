@@ -9,13 +9,16 @@ import org.zstack.kvm.KVMSystemTags
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.resourceconfig.ResourceConfigFacade
+import org.zstack.sdk.GlobalConfigInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
+import static org.zstack.kvm.KVMConstant.KVM_HOST_FACT_PATH
 import static org.zstack.utils.CollectionDSL.e
 import static org.zstack.utils.CollectionDSL.map
 
@@ -23,7 +26,7 @@ class VmSetVendorCase extends SubCase {
     EnvSpec env
     VmInstanceInventory vm
     ResourceConfigFacade rcf
-    def cpuModelName = "hygon"
+    def hygonCpuModelName = "hygon"
 
     @Override
     void clean() {
@@ -87,7 +90,7 @@ class VmSetVendorCase extends SubCase {
                         username = "root"
                         password = "password"
                         systemTags = [
-                                KVMSystemTags.CPU_MODEL_NAME.instantiateTag(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, cpuModelName)))
+                                KVMSystemTags.CPU_MODEL_NAME.instantiateTag(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, hygonCpuModelName)))
                         ]
                     }
 
@@ -160,6 +163,12 @@ class VmSetVendorCase extends SubCase {
 
     @Override
     void test() {
+        env.afterSimulator(KVM_HOST_FACT_PATH) { KVMAgentCommands.HostFactResponse rsp ->
+            rsp.cpuModelName = hygonCpuModelName
+            rsp.hostCpuModelName = hygonCpuModelName
+            return rsp
+        }
+
         env.create {
             rcf = bean(ResourceConfigFacade.class)
             vm = env.inventoryByName("vm") as VmInstanceInventory
@@ -173,6 +182,18 @@ class VmSetVendorCase extends SubCase {
         def l3 = env.inventoryByName("l3")
         def instance = env.inventoryByName("instanceOffering")
 
+        GlobalConfigInventory originCpuModel = queryGlobalConfig {
+            conditions = ["category=${VmGlobalConfig.CATEGORY}", "name=${VmGlobalConfig.VM_CPUID_VENDOR.name}"]
+        }[0] as GlobalConfigInventory
+
+        assert originCpuModel != null
+
+        env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { KVMAgentCommands.StartVmResponse rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
+            assert cmd.vmCpuVendorId == "AuthenticAMD"
+            return rsp
+        }
+
         def vm1 = createVmInstance {
             name = "vm1"
             imageUuid = image.uuid
@@ -180,7 +201,27 @@ class VmSetVendorCase extends SubCase {
             instanceOfferingUuid = instance.uuid
         }
 
-        assert rcf.getResourceConfigValue(VmGlobalConfig.VM_CPUID_VENDOR, vm1.uuid, String.class) == "AuthenticAMD"
+        updateGlobalConfig {
+            category = VmGlobalConfig.CATEGORY
+            name = VmGlobalConfig.VM_CPUID_VENDOR.name
+            value = "None"
+        }
+
+        env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { KVMAgentCommands.StartVmResponse rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
+            assert cmd.vmCpuVendorId == "None"
+            return rsp
+        }
+
+        rebootVmInstance {
+            uuid = vm1.uuid
+        }
+
+        updateGlobalConfig {
+            category = VmGlobalConfig.CATEGORY
+            name = VmGlobalConfig.VM_CPUID_VENDOR.name
+            value = "AuthenticAMD"
+        }
 
         updateResourceConfig {
             name = VmGlobalConfig.VM_CPUID_VENDOR.name
@@ -193,7 +234,11 @@ class VmSetVendorCase extends SubCase {
             uuid = vm1.uuid
         }
 
-        assert rcf.getResourceConfigValue(VmGlobalConfig.VM_CPUID_VENDOR, vm1.uuid, String.class) == "None"
+        updateGlobalConfig {
+            name = VmGlobalConfig.VM_CPUID_VENDOR.name
+            category = VmGlobalConfig.CATEGORY
+            value = originCpuModel.value
+        }
 
         destroyVmInstance {
             uuid = vm1.uuid
