@@ -6996,6 +6996,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.installPath = msg.getInstallPath();
         cmd.timeout = timeoutManager.getTimeout();
         cmd.taskUuid = msg.getTaskUuid();
+        cmd.sendCommandUrl = restf.getSendCommandUrl();
 
         String scheme;
         try {
