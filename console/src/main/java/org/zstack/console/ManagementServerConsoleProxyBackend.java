@@ -494,6 +494,12 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                             return;
                         }
 
+                        vo = dbf.findByUuid(msg.getUuid(), ConsoleProxyAgentVO.class);
+                        if ((int)msg.getConsoleProxyPort() == vo.getConsoleProxyPort()) {
+                            trigger.next();
+                            return;
+                        }
+
                         ShellUtils.ShellRunner runner = new ShellUtils.ShellRunner();
                         runner.setCommand(String.format("netstat -nltp | grep -E ':%d\\s+'", msg.getConsoleProxyPort()));
                         runner.setVerbose(false);
