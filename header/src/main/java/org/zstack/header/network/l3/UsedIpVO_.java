@@ -11,6 +11,7 @@ public class UsedIpVO_ {
     public static volatile SingularAttribute<UsedIpVO, String> l3NetworkUuid;
     public static volatile SingularAttribute<UsedIpVO, Integer> ipVersion;
     public static volatile SingularAttribute<UsedIpVO, String> ip;
+    public static volatile SingularAttribute<UsedIpVO, String> netmask;
     public static volatile SingularAttribute<UsedIpVO, String> usedFor;
     public static volatile SingularAttribute<UsedIpVO, String> metaData;
     public static volatile SingularAttribute<UsedIpVO, Long> ipInLong;

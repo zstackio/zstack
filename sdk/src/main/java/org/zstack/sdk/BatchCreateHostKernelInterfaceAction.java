@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateHostKernelInterfaceAction extends AbstractAction {
+public class BatchCreateHostKernelInterfaceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateHostKernelInterfaceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateHostKernelInterfaceResult value;
+        public org.zstack.sdk.BatchCreateHostKernelInterfaceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,20 +25,11 @@ public class UpdateHostKernelInterfaceAction extends AbstractAction {
         }
     }
 
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List structs;
+
     @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String requiredIp;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String netmask;
+    public java.lang.String l3NetworkUuid;
 
     @Param(required = false, validValues = {"Management","Storage"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List trafficTypes;
@@ -75,8 +66,8 @@ public class UpdateHostKernelInterfaceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateHostKernelInterfaceResult value = res.getResult(org.zstack.sdk.UpdateHostKernelInterfaceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateHostKernelInterfaceResult() : value; 
+        org.zstack.sdk.BatchCreateHostKernelInterfaceResult value = res.getResult(org.zstack.sdk.BatchCreateHostKernelInterfaceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.BatchCreateHostKernelInterfaceResult() : value; 
 
         return ret;
     }
@@ -105,11 +96,11 @@ public class UpdateHostKernelInterfaceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/l3-networks/kernel-interfaces/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/l3-networks/{l3NetworkUuid}/kernel-interfaces";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateHostKernelInterface";
+        info.parameterName = "params";
         return info;
     }
 

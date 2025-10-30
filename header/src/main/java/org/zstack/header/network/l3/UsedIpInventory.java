@@ -35,6 +35,7 @@ public class UsedIpInventory implements Serializable {
     @APINoSee
     private String metaData;
     private Long ipInLong;
+    @APINoSee
     private byte[] ipInBinary;
     private String vmNicUuid;
     private Timestamp createDate;
@@ -48,6 +49,7 @@ public class UsedIpInventory implements Serializable {
         this.setIpVersion(vo.getIpVersion());
         this.setIp(vo.getIp());
         this.setIpInLong(vo.getIpInLong());
+        this.setIpInBinary(vo.getIpInBinary());
         this.setIpRangeUuid(vo.getIpRangeUuid());
         this.setL3NetworkUuid(vo.getL3NetworkUuid());
         this.setGateway(vo.getGateway());
@@ -60,22 +62,7 @@ public class UsedIpInventory implements Serializable {
     }
 
     public static UsedIpInventory valueOf(UsedIpVO vo) {
-        UsedIpInventory inv = new UsedIpInventory();
-        inv.setCreateDate(vo.getCreateDate());
-        inv.setUuid(vo.getUuid());
-        inv.setIpVersion(vo.getIpVersion());
-        inv.setIp(vo.getIp());
-        inv.setIpInLong(vo.getIpInLong());
-        inv.setIpInBinary(vo.getIpInBinary());
-        inv.setIpRangeUuid(vo.getIpRangeUuid());
-        inv.setL3NetworkUuid(vo.getL3NetworkUuid());
-        inv.setGateway(vo.getGateway());
-        inv.setNetmask(vo.getNetmask());
-        inv.setUsedFor(vo.getUsedFor());
-        inv.setVmNicUuid(vo.getVmNicUuid());
-        inv.setMetaData(vo.getMetaData());
-        inv.setLastOpDate(vo.getLastOpDate());
-        return inv;
+        return new UsedIpInventory(vo);
     }
 
     public static List<UsedIpInventory> valueOf(Collection<UsedIpVO> vos) {
