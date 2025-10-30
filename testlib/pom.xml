@@ -203,6 +203,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>external-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.google.jimfs</groupId>
             <artifactId>jimfs</artifactId>
             <version>1.2</version>
