@@ -43,3 +43,6 @@ WHERE `concreteResourceType` = 'org.zstack.header.vm.VmInstanceVO'
   AND `resourceUuid` NOT IN (SELECT `uuid` FROM `VmInstanceVO`);
 
 CALL DROP_COLUMN('ModelCenterCapacityVO', 'installationUsedCapacity');
+CALL ADD_COLUMN('NativeClusterVO', 'status', 'varchar(32)', 1, NULL);
+
+UPDATE `NativeClusterVO` SET `status` = 'Status_Cluster_Running' WHERE `status` IS NULL;
