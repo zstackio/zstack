@@ -41,3 +41,5 @@ CALL ADD_COLUMN('PodVO', 'clusterId', 'INT', 1, NULL);
 DELETE FROM `AccountResourceRefVO`
 WHERE `concreteResourceType` = 'org.zstack.header.vm.VmInstanceVO'
   AND `resourceUuid` NOT IN (SELECT `uuid` FROM `VmInstanceVO`);
+
+CALL DROP_COLUMN('ModelCenterCapacityVO', 'installationUsedCapacity');
