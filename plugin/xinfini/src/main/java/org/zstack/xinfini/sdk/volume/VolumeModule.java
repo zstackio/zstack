@@ -89,22 +89,22 @@ public class VolumeModule extends BaseResource {
         private int poolId;
         private boolean flattened;
         private String serial;
-        private int maxTotalIops;
-        private int maxTotalBwBps;
+        private long maxTotalIops;
+        private long maxTotalBwBps;
 
-        public int getMaxTotalIops() {
+        public long getMaxTotalIops() {
             return maxTotalIops;
         }
 
-        public void setMaxTotalIops(int maxTotalIops) {
+        public void setMaxTotalIops(long maxTotalIops) {
             this.maxTotalIops = maxTotalIops;
         }
 
-        public int getMaxTotalBwBps() {
+        public long getMaxTotalBwBps() {
             return maxTotalBwBps;
         }
 
-        public void setMaxTotalBwBps(int maxTotalBwBps) {
+        public void setMaxTotalBwBps(long maxTotalBwBps) {
             this.maxTotalBwBps = maxTotalBwBps;
         }
 
