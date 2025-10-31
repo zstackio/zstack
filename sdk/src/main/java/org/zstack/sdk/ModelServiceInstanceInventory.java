@@ -100,22 +100,6 @@ public class ModelServiceInstanceInventory  {
         return this.nodeRank;
     }
 
-    public java.lang.Long clusterId;
-    public void setClusterId(java.lang.Long clusterId) {
-        this.clusterId = clusterId;
-    }
-    public java.lang.Long getClusterId() {
-        return this.clusterId;
-    }
-
-    public java.lang.String namespace;
-    public void setNamespace(java.lang.String namespace) {
-        this.namespace = namespace;
-    }
-    public java.lang.String getNamespace() {
-        return this.namespace;
-    }
-
     public java.lang.String accountUuid;
     public void setAccountUuid(java.lang.String accountUuid) {
         this.accountUuid = accountUuid;

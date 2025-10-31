@@ -116,6 +116,62 @@ public class ModelInventory  {
         return this.minGpuMemory;
     }
 
+    public java.lang.String versionSemver;
+    public void setVersionSemver(java.lang.String versionSemver) {
+        this.versionSemver = versionSemver;
+    }
+    public java.lang.String getVersionSemver() {
+        return this.versionSemver;
+    }
+
+    public java.lang.Boolean isLatestVersion;
+    public void setIsLatestVersion(java.lang.Boolean isLatestVersion) {
+        this.isLatestVersion = isLatestVersion;
+    }
+    public java.lang.Boolean getIsLatestVersion() {
+        return this.isLatestVersion;
+    }
+
+    public java.lang.String artifactChecksum;
+    public void setArtifactChecksum(java.lang.String artifactChecksum) {
+        this.artifactChecksum = artifactChecksum;
+    }
+    public java.lang.String getArtifactChecksum() {
+        return this.artifactChecksum;
+    }
+
+    public java.lang.Long artifactSizeBytes;
+    public void setArtifactSizeBytes(java.lang.Long artifactSizeBytes) {
+        this.artifactSizeBytes = artifactSizeBytes;
+    }
+    public java.lang.Long getArtifactSizeBytes() {
+        return this.artifactSizeBytes;
+    }
+
+    public java.lang.String architectureType;
+    public void setArchitectureType(java.lang.String architectureType) {
+        this.architectureType = architectureType;
+    }
+    public java.lang.String getArchitectureType() {
+        return this.architectureType;
+    }
+
+    public java.lang.String frameworkVersion;
+    public void setFrameworkVersion(java.lang.String frameworkVersion) {
+        this.frameworkVersion = frameworkVersion;
+    }
+    public java.lang.String getFrameworkVersion() {
+        return this.frameworkVersion;
+    }
+
+    public java.lang.String requiredAccelerator;
+    public void setRequiredAccelerator(java.lang.String requiredAccelerator) {
+        this.requiredAccelerator = requiredAccelerator;
+    }
+    public java.lang.String getRequiredAccelerator() {
+        return this.requiredAccelerator;
+    }
+
     public java.util.List modelServiceRefs;
     public void setModelServiceRefs(java.util.List modelServiceRefs) {
         this.modelServiceRefs = modelServiceRefs;

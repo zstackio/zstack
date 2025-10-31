@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class ModelServiceImageInventory  {
+public class ModelServiceTemplateInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -42,6 +42,14 @@ public class ModelServiceImageInventory  {
     }
     public java.lang.String getDockerImage() {
         return this.dockerImage;
+    }
+
+    public java.lang.String gpuVendor;
+    public void setGpuVendor(java.lang.String gpuVendor) {
+        this.gpuVendor = gpuVendor;
+    }
+    public java.lang.String getGpuVendor() {
+        return this.gpuVendor;
     }
 
     public java.sql.Timestamp createDate;

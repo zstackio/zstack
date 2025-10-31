@@ -52,14 +52,6 @@ public class ModelCenterCapacityInventory  {
         return this.modelEvaluationUsedCapacity;
     }
 
-    public long installationUsedCapacity;
-    public void setInstallationUsedCapacity(long installationUsedCapacity) {
-        this.installationUsedCapacity = installationUsedCapacity;
-    }
-    public long getInstallationUsedCapacity() {
-        return this.installationUsedCapacity;
-    }
-
     public long temporaryUsedCapacity;
     public void setTemporaryUsedCapacity(long temporaryUsedCapacity) {
         this.temporaryUsedCapacity = temporaryUsedCapacity;

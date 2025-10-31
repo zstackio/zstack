@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateModelServiceAction extends AbstractAction {
+public class MatchModelServiceTemplateWithModelAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateModelServiceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateModelServiceResult value;
+        public org.zstack.sdk.MatchModelServiceTemplateWithModelResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,76 +26,76 @@ public class UpdateModelServiceAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.util.List modelUuids;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List modelServiceUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
+    public java.lang.String uuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String yaml;
+    public java.lang.String modelUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String zoneUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer requestCpu;
+    public java.lang.String vmImageUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long requestMemory;
+    public java.lang.String primaryStorageUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String gpuComputeCapability;
+    public java.util.List datasetUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String startCommand;
+    public java.util.List modelServiceGroupUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String pythonVersion;
+    public java.lang.String dockerImage;
 
-    @Param(required = false, validValues = {"Endpoint","FineTune","App","ModelEval"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer cpuNum;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.Map environmentVariables;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.Map startupParameters;
+
+    @Param(required = true, validValues = {"VirtualMachine","Container"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
-    @Param(required = false, validValues = {"Other","Bentoml","HuggingFace"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String source;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String clusterUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String framework;
+    public java.lang.Long memorySize;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List architectureImages;
+    public java.util.List l3NetworkUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean supportDistributed;
+    public java.lang.Integer serviceBootUptime;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.HashMap environmentParameters;
+    public java.lang.String rootDiskOfferingUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.HashMap startupParameters;
+    public java.lang.Long rootDiskSize;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.HashMap inferenceParams;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String serviceName;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List servicePorts;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String serviceLivez;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String serviceReadyz;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer serviceBootupTime;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String serviceInstallPath;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String serviceStartCommand;
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -129,8 +129,8 @@ public class UpdateModelServiceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateModelServiceResult value = res.getResult(org.zstack.sdk.UpdateModelServiceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateModelServiceResult() : value; 
+        org.zstack.sdk.MatchModelServiceTemplateWithModelResult value = res.getResult(org.zstack.sdk.MatchModelServiceTemplateWithModelResult.class);
+        ret.value = value == null ? new org.zstack.sdk.MatchModelServiceTemplateWithModelResult() : value; 
 
         return ret;
     }
@@ -159,11 +159,11 @@ public class UpdateModelServiceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/ai/model-services/{uuid}";
+        info.httpMethod = "POST";
+        info.path = "/ai/model-services/templates";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateModelService";
+        info.parameterName = "param";
         return info;
     }
 
