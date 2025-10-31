@@ -101,6 +101,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     private static boolean stopped = false;
     private Future<Void> heartBeatTask = null;
     private HeartBeatDBSource heartBeatDBSource;
+    private static final String DEBUG_SIGNAL = "DumpNodeInfo";
     private List<ManagementNodeChangeListener> lifeCycleExtension = new ArrayList<ManagementNodeChangeListener>();
     // A dictionary (nodeId -> ManagementNodeInventory) of joined management Node
     final private Map<String, ManagementNodeInventory> joinedManagementNodes = new ConcurrentHashMap<>();
@@ -386,6 +387,20 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         }
     }
 
+    private void registerDebugDumpNodeInfo() {
+        DebugManager.registerDebugSignalHandler(DEBUG_SIGNAL, () -> {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n================ BEGIN: NODE INFO ===================\n");
+
+        destinationMaker.getAllNodeInfo().forEach((nodeInfo) -> {
+            sb.append(String.format("Node[%s, %s]\n", nodeInfo.getNodeUuid(), nodeInfo.getNodeIP()));
+        });
+
+        sb.append("================ END: NODE INFO =====================\n");
+        logger.debug(sb.toString());
+        });
+    }
+
     @Override
     public boolean start() {
         if (started) {
@@ -616,6 +631,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         stopped = false;
 
         installShutdownHook();
+        registerDebugDumpNodeInfo();
         DebugSignalHandler.listenTo("USR2", this);
 
         logger.info("Management node: " + getId() + " starts successfully");
