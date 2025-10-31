@@ -110,11 +110,6 @@ public class ResourceConfig {
         return TypeUtils.stringToValue(value, clz);
     }
 
-    public <T> T getResourceConfigValueByResourceType(String resourceUuid, String resourceType, Class<T> clz) {
-        String value = getResourceConfigValueByResourceType(resourceUuid, resourceType);
-        return TypeUtils.stringToValue(value, clz);
-    }
-
     public <T> Map<String, T> getResourceConfigValues(List<String> resourceUuids, Class<T> clz) {
         Map<String, T> values = new HashMap<>();
         getResourceConfigValues(resourceUuids).forEach((key, value) -> values.put(key, TypeUtils.stringToValue(value, clz)));
@@ -246,24 +241,6 @@ public class ResourceConfig {
         }
 
         return getter.getResourceConfigValue(resourceUuid);
-    }
-
-    @Transactional(readOnly = true)
-    protected String getResourceConfigValueByResourceType(String resourceUuid, String type) {
-        String resourceType = Q.New(ResourceVO.class).select(ResourceVO_.resourceType).eq(ResourceVO_.uuid, resourceUuid).findValue();
-        if (resourceType == null || !resourceType.equals(type)) {
-            logger.warn(String.format("no resource[uuid:%s] by resourceType[%s] found, cannot get it's resource config", resourceUuid, type));
-            return null;
-        }
-
-        ResourceConfigGetter getter = configGetter.get(resourceType);
-        if (getter == null) {
-            logger.warn(String.format("resource[uuid:%s, type:%s] is not bound to global config[category:%s, name:%s]",
-                    resourceUuid, resourceType, globalConfig.getCategory(), globalConfig.getName()));
-            return null;
-        }
-
-        return loadConfigValue(resourceUuid);
     }
 
     @Transactional(readOnly = true)
