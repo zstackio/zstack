@@ -8,6 +8,7 @@ import java.util.Map;
  * @author Xingwei Yu
  * @date 2024/8/21 10:38
  */
+// TODO refactor it, use controller interface not this fencer type class
 public class ExternalStorageFencerType {
     private static Map<String, String> types = Collections.synchronizedMap(new HashMap<String, String>());
 

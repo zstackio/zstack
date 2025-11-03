@@ -1336,6 +1336,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             String volumeType = msg.getVolume().getType();
             if (VolumeType.Data.toString().equals(volumeType) || VolumeType.Root.toString().equals(volumeType)) {
                 capability.setArrangementType(VolumeSnapshotArrangementType.CHAIN);
+                capability.setPlacementType(VolumeSnapshotCapability.VolumeSnapshotPlacementType.EXTERNAL);
             } else if (VolumeType.Memory.toString().equals(volumeType)) {
                 capability.setArrangementType(VolumeSnapshotArrangementType.INDIVIDUAL);
             } else {

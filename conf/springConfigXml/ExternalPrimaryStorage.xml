@@ -29,6 +29,8 @@
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
             <zstack:extension interface="org.zstack.storage.primary.PrimaryStorageFeatureAllocatorExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.host.HostResizeVolumeExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.storage.snapshot.VolumeSnapshotAfterDeleteExtensionPoint"/>
+            <zstack:extension interface="org.zstack.storage.volume.ChangeVolumeProcessingMethodExtensionPoint" />
         </zstack:plugin>
     </bean>
     <bean id="ExternalPrimaryStorageManagerImpl" class="org.zstack.storage.addon.primary.ExternalPrimaryStorageManagerImpl">
@@ -50,12 +52,6 @@
             <zstack:extension interface="org.zstack.kvm.KVMPingAgentNoFailureExtensionPoint" />
             <zstack:extension interface="org.zstack.kvm.KvmVmActiveVolumeSyncExtensionPoint"/>
             <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint"/>
-        </zstack:plugin>
-    </bean>
-
-    <bean id="ExternalPrimaryStorageChangeVolumeProcessingMethodExtension" class="org.zstack.storage.addon.primary.ExternalPrimaryStorageChangeVolumeProcessingMethodExtension">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.storage.volume.ChangeVolumeProcessingMethodExtensionPoint" />
         </zstack:plugin>
     </bean>
 </beans>

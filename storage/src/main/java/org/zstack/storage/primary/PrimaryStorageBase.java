@@ -413,6 +413,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((DeleteVolumeChainOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CleanUpStorageTrashOnPrimaryStorageMsg) {
             handle((CleanUpStorageTrashOnPrimaryStorageMsg)msg);
+        } else if (msg instanceof GetOwningVolumePathFromInternalSnapshotMsg) {
+            handle((GetOwningVolumePathFromInternalSnapshotMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -1762,6 +1764,11 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         UnlinkBitsOnPrimaryStorageReply reply = new UnlinkBitsOnPrimaryStorageReply();
         bus.reply(msg, reply);
     };
+
+    protected void handle(GetOwningVolumePathFromInternalSnapshotMsg msg) {
+        GetOwningVolumePathFromInternalSnapshotReply reply = new GetOwningVolumePathFromInternalSnapshotReply();
+        bus.reply(msg, reply);
+    }
 
     // don't attach any cluster
     public boolean isUnmounted() {

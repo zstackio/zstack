@@ -97,9 +97,10 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         VolumeSnapshotCapability scap = new VolumeSnapshotCapability();
         scap.setSupport(true);
         scap.setArrangementType(VolumeSnapshotCapability.VolumeSnapshotArrangementType.INDIVIDUAL);
+        scap.setPlacementType(VolumeSnapshotCapability.VolumeSnapshotPlacementType.INTERNAL);
         scap.setSupportCreateOnHypervisor(false);
         scap.setSupportLazyDelete(false);
-        scap.setVolumePathFromInnerSnapshotRegex("^[^@]+");
+        scap.setVolumePathFromInternalSnapshotRegex("^[^@]+");
         capabilities.setSnapshotCapability(scap);
         capabilities.setSupportCloneFromVolume(false);
         capabilities.setSupportStorageQos(false);
