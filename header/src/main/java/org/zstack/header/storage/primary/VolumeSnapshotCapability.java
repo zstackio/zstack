@@ -10,6 +10,11 @@ public class VolumeSnapshotCapability {
         CHAIN,
         INDIVIDUAL
     }
+    
+    public static enum VolumeSnapshotPlacementType {
+        INTERNAL,
+        EXTERNAL,
+    }
 
     private boolean support;
 
@@ -28,13 +33,14 @@ public class VolumeSnapshotCapability {
 
     private VolumeSnapshotArrangementType arrangementType;
 
+    private VolumeSnapshotPlacementType placementType;
+    
     /***
      * If volume snapshot is inner snapshot on volume, it must be set.
      * A regex match volume install path from inner volume snapshot install path.
      * such as pool/vol from pool/vol@snapshot can be extracted by regex ^[^@]+
      */
-    // TODO(mj) refactor it
-    private String volumePathFromInnerSnapshotRegex;
+    private String volumePathFromInternalSnapshotRegex;
 
     public boolean isSupport() {
         return support;
@@ -50,6 +56,14 @@ public class VolumeSnapshotCapability {
 
     public void setArrangementType(VolumeSnapshotArrangementType arrangementType) {
         this.arrangementType = arrangementType;
+    }
+
+    public VolumeSnapshotPlacementType getPlacementType() {
+        return placementType;
+    }
+
+    public void setPlacementType(VolumeSnapshotPlacementType placementType) {
+        this.placementType = placementType;
     }
 
     public boolean isSupportCreateOnHypervisor() {
@@ -68,11 +82,13 @@ public class VolumeSnapshotCapability {
         this.supportLazyDelete = supportLazyDelete;
     }
 
-    public String getVolumePathFromInnerSnapshotRegex() {
-        return volumePathFromInnerSnapshotRegex;
+    @Deprecated
+    public String getVolumePathFromInternalSnapshotRegex() {
+        return volumePathFromInternalSnapshotRegex;
     }
 
-    public void setVolumePathFromInnerSnapshotRegex(String volumePathFromInnerSnapshotRegex) {
-        this.volumePathFromInnerSnapshotRegex = volumePathFromInnerSnapshotRegex;
+    @Deprecated
+    public void setVolumePathFromInternalSnapshotRegex(String volumePathFromInternalSnapshotRegex) {
+        this.volumePathFromInternalSnapshotRegex = volumePathFromInternalSnapshotRegex;
     }
 }

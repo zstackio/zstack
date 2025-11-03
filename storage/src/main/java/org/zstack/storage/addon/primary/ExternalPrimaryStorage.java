@@ -55,6 +55,8 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -1866,12 +1868,18 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 });
 
                 flow(new NoRollbackFlow() {
-                    // TODO: hardcode for expon
                     final String __name__ = "delete-origin-root-volume-which-has-no-snapshot";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return controller.reportCapabilities().getSnapshotCapability()
+                                .getPlacementType() != VolumeSnapshotCapability.VolumeSnapshotPlacementType.INTERNAL;
+                    }
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         boolean hasSnapshot = Q.New(VolumeSnapshotVO.class)
+                                .eq(VolumeSnapshotVO_.volumeUuid, msg.getVolume().getUuid())
                                 .like(VolumeSnapshotVO_.primaryStorageInstallPath, String.format("%s%%", msg.getVolume().getInstallPath()))
                                 .isExists();
                         if (!hasSnapshot) {
@@ -1917,6 +1925,30 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(AskInstallPathForNewSnapshotMsg msg) {
         AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
+        bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(GetOwningVolumePathFromInternalSnapshotMsg msg) {
+        GetOwningVolumePathFromInternalSnapshotReply reply = new GetOwningVolumePathFromInternalSnapshotReply();
+        if (msg.getSnapshotPaths() != null) {
+            VolumeSnapshotCapability scap = controller.reportCapabilities().getSnapshotCapability();
+            if (scap.getPlacementType() == VolumeSnapshotCapability.VolumeSnapshotPlacementType.INTERNAL) {
+                Pattern pattern = Pattern.compile(scap.getVolumePathFromInternalSnapshotRegex());
+                for (String snapshotPath : msg.getSnapshotPaths()) {
+                    Matcher matcher = pattern.matcher(snapshotPath);
+                    if (matcher.find()) {
+                        String volumePath = matcher.group();
+                        reply.putOwningVolumePath(snapshotPath, volumePath);
+                    } else {
+                        reply.setError(operr("cannot find owning volume path from internal snapshot path[%s], " +
+                                "because the regex[%s] does not match the snapshot path", snapshotPath, scap.getVolumePathFromInternalSnapshotRegex()));
+                        break;
+                    }
+                }
+            }
+        }
+
         bus.reply(msg, reply);
     }
 
