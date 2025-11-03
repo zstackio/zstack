@@ -12,14 +12,6 @@ public class ArchitectureImageMapping  {
         return this.cpuArchitecture;
     }
 
-    public java.lang.String gpuVendor;
-    public void setGpuVendor(java.lang.String gpuVendor) {
-        this.gpuVendor = gpuVendor;
-    }
-    public java.lang.String getGpuVendor() {
-        return this.gpuVendor;
-    }
-
     public java.lang.String vmImageUuid;
     public void setVmImageUuid(java.lang.String vmImageUuid) {
         this.vmImageUuid = vmImageUuid;

@@ -164,12 +164,12 @@ public class ModelServiceInventory  {
         return this.cpuArchitectures;
     }
 
-    public java.util.List gpuVendors;
-    public void setGpuVendors(java.util.List gpuVendors) {
-        this.gpuVendors = gpuVendors;
+    public java.util.Map vendorToSpecUuidsMap;
+    public void setVendorToSpecUuidsMap(java.util.Map vendorToSpecUuidsMap) {
+        this.vendorToSpecUuidsMap = vendorToSpecUuidsMap;
     }
-    public java.util.List getGpuVendors() {
-        return this.gpuVendors;
+    public java.util.Map getVendorToSpecUuidsMap() {
+        return this.vendorToSpecUuidsMap;
     }
 
     public java.util.List modelServiceRefs;

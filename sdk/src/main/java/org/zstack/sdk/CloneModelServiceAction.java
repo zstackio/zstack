@@ -80,13 +80,13 @@ public class CloneModelServiceAction extends AbstractAction {
     public java.util.List cpuArchitectures;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List gpuVendors;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List architectureImages;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Boolean supportDistributed;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.Map vendorToSpecUuidsMap;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
