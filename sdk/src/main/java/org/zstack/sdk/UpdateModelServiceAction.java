@@ -97,6 +97,9 @@ public class UpdateModelServiceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String serviceStartCommand;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.Map vendorToSpecUuidsMap;
+
     @Param(required = false)
     public java.util.List systemTags;
 

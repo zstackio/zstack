@@ -46,3 +46,14 @@ CALL DROP_COLUMN('ModelCenterCapacityVO', 'installationUsedCapacity');
 CALL ADD_COLUMN('NativeClusterVO', 'status', 'varchar(32)', 1, NULL);
 
 UPDATE `NativeClusterVO` SET `status` = 'Status_Cluster_Running' WHERE `status` IS NULL;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceGpuVendorSpecRefVO` (
+    `id` bigint NOT NULL AUTO_INCREMENT,
+    `refUuid` bigint UNSIGNED NOT NULL,
+    `specUuid` varchar(32) NOT NULL,
+    CONSTRAINT `pkModelServiceGpuVendorSpecRef` PRIMARY KEY (`id`),
+    CONSTRAINT `ukModelServiceGpuVendorSpecRefRefSpec` UNIQUE (`refUuid`, `specUuid`),
+    CONSTRAINT `fkModelServiceGpuVendorSpecRefRefUuid` FOREIGN KEY (`refUuid`)
+            REFERENCES `ModelServiceGpuVendorVO`(`id`)
+            ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

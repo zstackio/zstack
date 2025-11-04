@@ -82,6 +82,9 @@ public class AddModelServiceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Boolean supportDistributed;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.Map vendorToSpecUuidsMap;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
