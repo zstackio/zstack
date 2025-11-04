@@ -40,7 +40,7 @@ public class CreatePortMirrorSessionAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String srcEndPoint;
 
-    @Param(required = true, maxLength = 32, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 32, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String dstEndPoint;
 
     @Param(required = false, validValues = {"VmNic","UpLinkPort"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
