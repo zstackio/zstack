@@ -7,4 +7,5 @@ public enum ModelServiceMatchEntryName {
 	FrameworkVersionCompatibility,
 	ArchitectureCompatibility,
 	QuantizationCompatibility,
+	ScalingCapability,
 }
