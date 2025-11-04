@@ -370,14 +370,24 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     }
 
     private void doAddHost(final AddHostMessage msg, ReturnValueCompletion<HostInventory > completion) {
-        if (Q.New(HostVO.class).eq(HostVO_.managementIp, msg.getManagementIp()).isExists()) {
-            completion.fail(argerr("there has been a host having managementIp[%s]", msg.getManagementIp()));
-            return;
-        }
-
         final ClusterVO cluster = findClusterByUuid(msg.getClusterUuid());
         if (cluster == null) {
             completion.fail(argerr("cluster[uuid:%s] is not existing", msg.getClusterUuid()));
+            return;
+        }
+
+        String hvType = cluster.getHypervisorType();
+        if (hvType == null) {
+            completion.fail(argerr("cluster[uuid:%s] has null hypervisorType", msg.getClusterUuid()));
+            return;
+        }
+
+        if (Q.New(HostVO.class)
+                .eq(HostVO_.managementIp, msg.getManagementIp())
+                .eq(HostVO_.hypervisorType, hvType)
+                .isExists()) {
+            completion.fail(argerr("there has been a host having managementIp[%s] for hypervisor[%s]",
+                    msg.getManagementIp(), hvType));
             return;
         }
 
