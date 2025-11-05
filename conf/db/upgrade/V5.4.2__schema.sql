@@ -57,3 +57,14 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelServiceGpuVendorSpecRefVO` (
             REFERENCES `ModelServiceGpuVendorVO`(`id`)
             ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE OR REPLACE VIEW PodGpuStatsVO AS
+SELECT
+    p.uuid AS podUuid,
+    COUNT(g.uuid) AS gpuCount,
+    COALESCE(CAST(ROUND(AVG(g.memory)) AS SIGNED), 0) AS avgAllocatedMb,
+    COALESCE(CAST(SUM(g.memory) AS SIGNED), 0) AS totalGpuMemMb
+FROM PodVO p
+    LEFT JOIN PciDeviceVO pci ON pci.vmInstanceUuid = p.uuid
+    LEFT JOIN GpuDeviceVO g ON g.uuid = pci.uuid
+GROUP BY p.uuid;
