@@ -1,12 +1,17 @@
 package org.zstack.testlib.vops
 
+import com.google.gson.JsonObject
 import org.springframework.beans.factory.annotation.Autowired
+import org.zstack.core.Platform
 import org.zstack.core.errorcode.ErrorFacade
 import org.zstack.header.errorcode.ErrorableValue
 import org.zstack.header.rest.RestHttp
 import org.zstack.externalservice.vops.VOpsClient
+import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.function.Function
+
+import static org.zstack.externalservice.vops.VOpsCommands.*;
 
 class VOpsClientForTest extends VOpsClient {
     public final VOpsVirtualEndpointSpec parent
@@ -127,4 +132,28 @@ class VOpsClientForTest extends VOpsClient {
             return ErrorableValue.of((T) currentHandler.function.apply(this))
         }
     }
+
+    {
+        addDefaultHandler(Handler.ofPut(ZSHA2_DEMOTE_PATH, { http ->
+            String apiId = Platform.getUuid()
+            def ret = JSONObjectUtil.toObject("{\"api_id\":\"${apiId}\"}".toString(), JsonObject)
+
+            def asyncRet = """\
+{
+    "finished": true,
+    "api_id": "${apiId}",
+    "progresses": [],
+    "success": true,
+    "results": {
+        "success": true
+    }
+}
+""".toString()
+            apiHandlers.put(apiId, Handler.ofGet("/api/${apiId}", { asyncHttp ->
+                JSONObjectUtil.toObject(asyncRet, JsonObject)
+            }))
+            return ret
+        }))
+    }
+
 }
