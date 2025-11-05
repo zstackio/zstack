@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`KubernetesServiceVO` (
     `externalIp` varchar(64) DEFAULT NULL,
     `ports` text,
     `endpointUuid` varchar(32) NOT NULL,
+    `clusterId` INT DEFAULT NULL,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`)
