@@ -31,8 +31,12 @@ public class CheckCephPluginAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List hostUuidList;
 
+    @Deprecated
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List ipList;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List externalHosts;
 
     @Param(required = false)
     public java.util.List systemTags;
