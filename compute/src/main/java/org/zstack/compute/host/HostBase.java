@@ -186,9 +186,32 @@ public abstract class HostBase extends AbstractHost {
             handle((APIGetHostPowerStatusMsg) msg);
         } else if (msg instanceof APIUpdateHostNqnMsg) {
             handle((APIUpdateHostNqnMsg) msg);
+        } else if (msg instanceof APIUpdateHostnameMsg) {
+            handle((APIUpdateHostnameMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateHostnameMsg msg) {
+        APIUpdateHostnameEvent event = new APIUpdateHostnameEvent(msg.getId());
+        UpdateHostnameMsg umsg = new UpdateHostnameMsg();
+        umsg.setUuid(msg.getUuid());
+        umsg.setHostname(msg.getHostname());
+        bus.makeTargetServiceIdByResourceUuid(umsg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.send(umsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                UpdateHostnameReply r = reply.castReply();
+                if (!r.isSuccess()) {
+                    event.setSuccess(false);
+                    event.setError(r.getError());
+                } else {
+                    event.setInventory(r.getInventory());
+                }
+                bus.publish(event);
+            }
+        });
     }
 
     private void handle(APIUpdateHostNqnMsg msg) {

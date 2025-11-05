@@ -1,10 +1,10 @@
-package org.zstack.sdk.zstone.api;
+package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateZStoneClusterConfigAction extends AbstractAction {
+public class UpdateHostnameAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateZStoneClusterConfigAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.zstone.api.UpdateZStoneClusterConfigResult value;
+        public org.zstack.sdk.UpdateHostnameResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,29 +28,8 @@ public class UpdateZStoneClusterConfigAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String softwarePackageUuid;
-
-    @Param(required = true, maxLength = 128, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String clusterName;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String managementIp;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String chronyIp;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String publicNetworkCidr;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String clusterNetworkCidr;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String managementNetworkCidr;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean force = false;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String hostname;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -84,8 +63,8 @@ public class UpdateZStoneClusterConfigAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.zstone.api.UpdateZStoneClusterConfigResult value = res.getResult(org.zstack.sdk.zstone.api.UpdateZStoneClusterConfigResult.class);
-        ret.value = value == null ? new org.zstack.sdk.zstone.api.UpdateZStoneClusterConfigResult() : value; 
+        org.zstack.sdk.UpdateHostnameResult value = res.getResult(org.zstack.sdk.UpdateHostnameResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateHostnameResult() : value; 
 
         return ret;
     }
@@ -115,10 +94,10 @@ public class UpdateZStoneClusterConfigAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/zstone-plugin/config/cluster";
+        info.path = "/hosts/hostname/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateZStoneClusterConfig";
+        info.parameterName = "updateHostname";
         return info;
     }
 

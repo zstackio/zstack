@@ -484,6 +484,7 @@ public class KVMAgentCommands {
         private VirtualizerInfoTO virtualizerInfo;
         private String iscsiInitiatorName;
         private String nqn;
+        private String hostname;
 
         public String getOsDistribution() {
             return osDistribution;
@@ -771,6 +772,14 @@ public class KVMAgentCommands {
 
         public void setNqn(String nqn) {
             this.nqn = nqn;
+        }
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
         }
     }
 
@@ -4397,6 +4406,52 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class DownloadFileCmd extends AgentCommand implements HasThreadContext, Serializable {
+        public String taskUuid;
+        public String installPath;
+        @NoLogging(type = NoLogging.Type.Uri)
+        public String url;
+        @NoLogging(type = NoLogging.Type.Uri)
+        public String urlScheme;
+        public long timeout;
+        @NoLogging(type = NoLogging.Type.Uri)
+        public String sendCommandUrl;
+    }
+
+    public static class DownloadFileResponse extends AgentResponse {
+        public String md5sum;
+        public long size;
+    }
+
+    public static class UploadFileCmd extends AgentCommand implements HasThreadContext, Serializable {
+        public String taskUuid;
+        public String installPath;
+        @NoLogging(type = NoLogging.Type.Uri)
+        public String url;
+        public long timeout;
+    }
+
+    public static class UploadFileResponse extends AgentResponse {
+        public String directUploadPath;
+    }
+
+    public static class GetDownloadFileProgressCmd extends AgentCommand {
+        public String taskUuid;
+    }
+
+    public static class GetDownloadFileProgressResponse extends AgentResponse {
+        public boolean completed;
+        public int progress;
+        public long size;
+        public long actualSize;
+        public String installPath;
+        public String format;
+        public long lastOpTime;
+        public long downloadSize;
+        public String md5sum;
+        public boolean supportSuspend;
+    }
+
     public static class TakeVmConsoleScreenshotCmd extends AgentCommand {
         private String vmUuid;
 
@@ -4549,5 +4604,12 @@ public class KVMAgentCommands {
     }
 
     public static class UpdateHostNqnRsp extends AgentResponse {
+    }
+
+    public static class UpdateHostnameCmd extends AgentCommand {
+        public String hostname;
+    }
+
+    public static class UpdateHostnameRsp extends AgentResponse {
     }
 }

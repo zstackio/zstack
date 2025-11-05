@@ -14,6 +14,7 @@ import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
 import org.zstack.core.timeout.TimeHelper;
 import org.zstack.header.core.*;
+import org.zstack.header.image.*;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
 import org.zstack.core.CoreGlobalProperty;
@@ -49,11 +50,6 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
-import org.zstack.header.image.ImageArchitecture;
-import org.zstack.header.image.ImageBootMode;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImagePlatform;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -97,6 +93,8 @@ import org.zstack.utils.tester.ZTester;
 
 import javax.persistence.TypedQuery;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -221,6 +219,9 @@ public class KVMHost extends HostBase implements Host {
     private String updateVmCpuQuotaPath;
     private String getBlockDevicesPath;
     private String getSensorsPath;
+    private String fileDownloadPath;
+    private String fileUploadPath;
+    private String fileDownloadProgressPath;
 
     public KVMHost(KVMHostVO self, KVMHostContext context) {
         super(self);
@@ -459,6 +460,18 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_HOST_GET_SENSORS_PATH);
         getSensorsPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_HOST_FILE_DOWNLOAD_PATH);
+        fileDownloadPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_HOST_FILE_UPLOAD_PATH);
+        fileUploadPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_HOST_FILE_DOWNLOAD_PROGRESS_PATH);
+        fileDownloadProgressPath = ub.build().toString();
     }
 
     static {
@@ -709,6 +722,12 @@ public class KVMHost extends HostBase implements Host {
             handle((GetHostSensorsMsg) msg);
         } else if (msg instanceof UpdateHostNqnMsg) {
             handle((UpdateHostNqnMsg) msg);
+        } else if (msg instanceof UpdateHostnameMsg) {
+            handle((UpdateHostnameMsg) msg);
+        } else if (msg instanceof UploadFileToHostMsg) {
+            handle((UploadFileToHostMsg) msg);
+        } else if (msg instanceof GetFileDownloadProgressMsg) {
+            handle((GetFileDownloadProgressMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -760,6 +779,61 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public String getName() {
                 return String.format("update-nqn-of-host-%s", msg.getHostUuid());
+            }
+        });
+    }
+
+    private void handle(UpdateHostnameMsg msg) {
+        UpdateHostnameReply ureply = new UpdateHostnameReply();
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return id;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                UpdateHostnameCmd cmd = new UpdateHostnameCmd();
+                cmd.hostname = msg.getHostname();
+
+                KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+                kmsg.setCommand(cmd);
+                kmsg.setPath(KVMConstant.KVM_UPDATE_HOSTNAME_PATH);
+                kmsg.setHostUuid(msg.getHostUuid());
+                bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, msg.getHostUuid());
+                bus.send(kmsg, new CloudBusCallBack(chain) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            ureply.setError(operr("fail to update hostname of host[uuid:%s]", msg.getHostUuid())
+                                    .withOpaque("response.error", reply.getError()));
+
+                            bus.reply(msg, ureply);
+                            chain.next();
+                            return;
+                        }
+
+                        KVMHostAsyncHttpCallReply r = reply.castReply();
+                        UpdateHostnameRsp rsp = r.toResponse(UpdateHostnameRsp.class);
+                        if (!rsp.isSuccess()) {
+                            ureply.setError(operr("fail to update hostname of host[uuid:%s]", msg.getHostUuid())
+                                    .withOpaque("response.error", rsp.getError()));
+                            bus.reply(msg, ureply);
+                            chain.next();
+                            return;
+                        }
+                        SQL.New(HostVO.class).eq(HostVO_.uuid, msg.getHostUuid()).set(HostVO_.hostname, msg.getHostname()).update();
+                        self = dbf.reload(self);
+                        ureply.setInventory(getSelfInventory());
+                        bus.reply(msg, ureply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("update-hostname-of-host-%s", msg.getHostUuid());
             }
         });
     }
@@ -5994,6 +6068,9 @@ public class KVMHost extends HostBase implements Host {
             private void saveGeneralHostHardwareFacts(HostFactResponse ret) {
                 HostVO host = getSelf();
                 host.setNqn(ret.getNqn());
+                if (StringUtils.isNotEmpty(ret.getHostname())) {
+                    host.setHostname(ret.getHostname());
+                }
                 dbf.update(host);
                 self = dbf.reload(self);
 
@@ -6865,6 +6942,135 @@ public class KVMHost extends HostBase implements Host {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
                 completion.done();
+            }
+        });
+    }
+
+    private void handle(UploadFileToHostMsg msg) {
+        RunInQueue inQueue = new RunInQueue(String.format("upload-file-to-host-%s", self.getUuid()), thdf, 10);
+        inQueue.name(String.format("upload-file-to-host-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> uploadFileToHost(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void uploadFileToHost(UploadFileToHostMsg msg, NoErrorCompletion completion) {
+        UploadFileToHostReply reply = new UploadFileToHostReply();
+
+        if (msg.getUrl().startsWith("upload://")) {
+            UploadFileCmd cmd = new UploadFileCmd();
+            cmd.url = msg.getUrl();
+            cmd.installPath = msg.getInstallPath();
+            cmd.timeout = timeoutManager.getTimeout();
+            cmd.taskUuid = msg.getTaskUuid();
+
+            new Http<>(fileUploadPath, cmd, UploadFileResponse.class).call(new ReturnValueCompletion<UploadFileResponse>(msg) {
+                @Override
+                public void success(UploadFileResponse rsp) {
+                    if (!rsp.isSuccess()) {
+                        reply.setError(operr("failed to upload file, because:%s", rsp.getError()));
+                        bus.reply(msg, reply);
+                        completion.done();
+                        return;
+                    }
+
+                    reply.setDirectUploadUrl(rsp.directUploadPath);
+                    bus.reply(msg, reply);
+                    completion.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                    completion.done();
+                }
+            });
+            return;
+        }
+
+        DownloadFileCmd cmd = new DownloadFileCmd();
+        cmd.url = msg.getUrl();
+        cmd.installPath = msg.getInstallPath();
+        cmd.timeout = timeoutManager.getTimeout();
+        cmd.taskUuid = msg.getTaskUuid();
+        cmd.sendCommandUrl = restf.getSendCommandUrl();
+
+        String scheme;
+        try {
+            URI uri = new URI(msg.getUrl());
+            scheme = uri.getScheme();
+        } catch (URISyntaxException e) {
+            reply.setError(operr("failed to parse upload URL [%s]: %s", msg.getUrl(), e.getMessage()));
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        }
+        if (scheme == null) {
+            reply.setError(operr("upload URL [%s] is missing a protocol prefix", msg.getUrl()));
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        }
+        cmd.urlScheme = scheme;
+
+        new Http<>(fileDownloadPath, cmd, DownloadFileResponse.class).call(new ReturnValueCompletion<DownloadFileResponse>(msg) {
+            @Override
+            public void success(DownloadFileResponse rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("failed to download file, because:%s", rsp.getError()));
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
+                }
+
+                reply.setMd5sum(rsp.md5sum);
+                reply.setSize(rsp.size);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
+    private void handle(GetFileDownloadProgressMsg msg) {
+        GetFileDownloadProgressReply r = new GetFileDownloadProgressReply();
+        GetDownloadFileProgressCmd cmd = new GetDownloadFileProgressCmd();
+        cmd.taskUuid = msg.getTaskUuid();
+        new Http<>(fileDownloadProgressPath, cmd, GetDownloadFileProgressResponse.class).call(new ReturnValueCompletion<GetDownloadFileProgressResponse>(msg) {
+            @Override
+            public void success(GetDownloadFileProgressResponse resp) {
+                if (!resp.isSuccess()) {
+                    r.setError(operr("failed to query download progress for task[%s] on host[uuid:%s], because: %s",
+                            msg.getTaskUuid(), self.getUuid(), resp.getError()));
+                } else {
+                    r.setCompleted(resp.completed);
+                    r.setProgress(resp.progress);
+                    r.setActualSize(resp.actualSize);
+                    r.setSize(resp.size);
+                    r.setInstallPath(resp.installPath);
+                    r.setDownloadSize(resp.downloadSize);
+                    r.setLastOpTime(resp.lastOpTime);
+                    r.setMd5sum(resp.md5sum);
+                    r.setSupportSuspend(resp.supportSuspend);
+                }
+                bus.reply(msg, r);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                r.setError(errorCode);
+                bus.reply(msg, r);
             }
         });
     }

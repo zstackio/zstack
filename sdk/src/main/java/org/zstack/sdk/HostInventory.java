@@ -252,6 +252,14 @@ public class HostInventory  {
         return this.nqn;
     }
 
+    public java.lang.String hostname;
+    public void setHostname(java.lang.String hostname) {
+        this.hostname = hostname;
+    }
+    public java.lang.String getHostname() {
+        return this.hostname;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
