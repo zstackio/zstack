@@ -2718,19 +2718,69 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     private List<VipTO> findVipsOnVirtualRouter(List<VmNicInventory> vfNics, String vrUuid) {
-        List<String> vipUuids = SQL.New("select vip.uuid from VipVO vip, VipPeerL3NetworkRefVO ref " +
-                        "where ref.vipUuid = vip.uuid " +
-                        "and (ref.l3NetworkUuid in (:l3NetworkUuids) " +
-                        "or vip.l3NetworkUuid in (:l3NetworkUuids))")
-                .param("l3NetworkUuids", vfNics.stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()))
-                .list();
+        List<String> l3Uuids = vfNics.stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList());
+        List<L3NetworkVO> l3Networks = Q.New(L3NetworkVO.class).in(L3NetworkVO_.uuid, l3Uuids).list();
 
-        vipUuids = getVirtualRouterVips(vrUuid, vipUuids);
-        if (vipUuids == null || vipUuids.isEmpty()) {
+        /* separate private l3 and public/system l3 by category */
+        List<String> guestL3Uuids = l3Networks.stream()
+                .filter(l3 -> L3NetworkCategory.Private.equals(l3.getCategory()))
+                .map(L3NetworkVO::getUuid)
+                .collect(Collectors.toList());
+        /* public and system l3 are both treated as public l3, because they are shared resources among VRs */
+        List<String> publicL3Uuids = l3Networks.stream()
+                .filter(l3 -> L3NetworkCategory.Public.equals(l3.getCategory()) ||
+                        L3NetworkCategory.System.equals(l3.getCategory()))
+                .map(L3NetworkVO::getUuid)
+                .collect(Collectors.toList());
+
+        Set<String> vipUuids = new HashSet<>();
+
+        /* for guest vf nics, find vips bindingto these l3 networks as peerL3 */
+        if (!guestL3Uuids.isEmpty()) {
+            List<String> guestVipUuids = SQL.New("select vip.uuid from VipVO vip, VipPeerL3NetworkRefVO ref " +
+                            "where ref.vipUuid = vip.uuid " +
+                            "and ref.l3NetworkUuid in (:l3NetworkUuids)")
+                    .param("l3NetworkUuids", guestL3Uuids)
+                    .list();
+            vipUuids.addAll(guestVipUuids);
+        }
+
+        /* for public vf nics, find vips bindingto this vr and bindingto these l3 networks as public l3 */
+        if (!publicL3Uuids.isEmpty()) {
+            List<String> publicVipUuids = SQL.New("select vip.uuid from VipVO vip, VirtualRouterVipVO ref " +
+                            "where ref.uuid = vip.uuid " +
+                            "and ref.virtualRouterVmUuid = :vrUuid " +
+                            "and vip.l3NetworkUuid in (:l3NetworkUuids)")
+                    .param("vrUuid", vrUuid)
+                    .param("l3NetworkUuids", publicL3Uuids)
+                    .list();
+            vipUuids.addAll(publicVipUuids);
+
+            String haUuid = haBackend.getVirtualRouterHaUuid(vrUuid);
+            if (haUuid != null) {
+                List<String> haVipUuids = SQL.New("select vip.uuid from VipVO vip, VpcHaGroupNetworkServiceRefVO ref " +
+                                "where ref.networkServiceUuid = vip.uuid " +
+                                "and ref.vpcHaRouterUuid = :haUuid " +
+                                "and ref.networkServiceName = :vipType " +
+                                "and vip.l3NetworkUuid in (:l3NetworkUuids)")
+                        .param("haUuid", haUuid)
+                        .param("vipType", VipVO.class.getSimpleName())
+                        .param("l3NetworkUuids", publicL3Uuids)
+                        .list();
+                vipUuids.addAll(haVipUuids);
+            }
+        }
+
+        if (vipUuids.isEmpty()) {
             return new ArrayList<>();
         }
 
-        List<VipVO> vips = Q.New(VipVO.class).in(VipVO_.uuid, vipUuids).list();
+        List<String> filteredVipUuids = getVirtualRouterVips(vrUuid, new ArrayList<>(vipUuids));
+        if (filteredVipUuids == null || filteredVipUuids.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<VipVO> vips = Q.New(VipVO.class).in(VipVO_.uuid, filteredVipUuids).list();
         VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf((VirtualRouterVmVO)
                 Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrUuid).find());
 

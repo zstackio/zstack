@@ -1208,6 +1208,7 @@ public class KVMAgentCommands {
         // only for vf nic
         private String vlanId;
         private String pciDeviceAddress;
+        private List<String> extraPciDeviceAddresses;
         // only for tf nic
         private String ipForTf;
         private String l2NetworkUuid;
@@ -1313,6 +1314,14 @@ public class KVMAgentCommands {
 
         public void setPciDeviceAddress(String pciDeviceAddress) {
             this.pciDeviceAddress = pciDeviceAddress;
+        }
+
+        public List<String> getExtraPciDeviceAddresses() {
+            return extraPciDeviceAddresses;
+        }
+
+        public void setExtraPciDeviceAddresses(List<String> extraPciDeviceAddresses) {
+            this.extraPciDeviceAddresses = extraPciDeviceAddresses;
         }
 
         public Integer getMtu() {

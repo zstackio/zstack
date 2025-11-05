@@ -20,4 +20,12 @@ public class VmVfNicInventory extends org.zstack.sdk.VmNicInventory {
         return this.haState;
     }
 
+    public java.lang.String secondaryPciDeviceUuid;
+    public void setSecondaryPciDeviceUuid(java.lang.String secondaryPciDeviceUuid) {
+        this.secondaryPciDeviceUuid = secondaryPciDeviceUuid;
+    }
+    public java.lang.String getSecondaryPciDeviceUuid() {
+        return this.secondaryPciDeviceUuid;
+    }
+
 }
