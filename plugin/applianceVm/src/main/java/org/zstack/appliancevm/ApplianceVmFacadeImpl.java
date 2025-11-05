@@ -88,6 +88,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     private FlowChainBuilder createApplianceVmWorkFlowBuilder;
     private Map<String, ApplianceVmBootstrapFlowFactory> bootstrapInfoFlowFactories = new HashMap<String, ApplianceVmBootstrapFlowFactory>();
     private Map<String, L2NetworkGetVniExtensionPoint> l2NetworkGetVniExtensionPointMap = new HashMap<>();
+    private List<ApplianceVmNicBootstrapExtensionPoint> nicBootstrapExtensions = Collections.emptyList();
 
     private String OWNER = String.format("ApplianceVm.%s", Platform.getManagementServerId());
 
@@ -224,6 +225,11 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             l2NetworkGetVniExtensionPointMap.put(ext.getL2NetworkVniType(), ext);
             logger.debug(String.format("add new l2NetworkGetVniExtensionPoint, %s: %s", ext.getL2NetworkVniType(), ext.getClass().getCanonicalName()));
         }
+
+        nicBootstrapExtensions = pluginRgty.getExtensionList(ApplianceVmNicBootstrapExtensionPoint.class);
+        if (nicBootstrapExtensions == null) {
+            nicBootstrapExtensions = Collections.emptyList();
+        }
     }
 
     private void deployAnsible() {
@@ -337,6 +343,13 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         return ret;
     }
 
+    private void fillVfNicBootstrapInfo(VmNicInventory nic, ApplianceVmNicTO to) {
+        to.setBondMode("none");
+        for (ApplianceVmNicBootstrapExtensionPoint ext : nicBootstrapExtensions) {
+            ext.fillNicBootstrapInfo(nic, to);
+        }
+    }
+
     @Override
     public Map<String, Object> prepareBootstrapInformation(VmInstanceSpec spec) {
         VmNicInventory mgmtNic = null;
@@ -376,6 +389,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         mto.setCategory(l3NetworkVO.getCategory().toString());
         mto.setL2type(l2NetworkVO.getType());
         mto.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
+        fillVfNicBootstrapInfo(mgmtNic, mto);
         if (l2NetworkGetVniExtensionPointMap == null || l2NetworkGetVniExtensionPointMap.isEmpty() ||
                 l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()) == null) {
             logger.debug("l2NetworkGetVniExtensionPointMap is null. skip to get vni");
@@ -414,6 +428,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             t.setL2type(l2NetworkVO.getType());
             t.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid(), spec.getVmInventory().getHostUuid()));
             t.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
+            fillVfNicBootstrapInfo(defaultRouteNic, t);
             t.setMtu(new MtuGetter().getMtu(l3NetworkVO.getUuid()));
             deviceId ++;
             extraTos.add(t);
@@ -430,6 +445,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             nto.setL2type(l2NetworkVO.getType());
             nto.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid(), spec.getVmInventory().getHostUuid()));
             nto.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
+            fillVfNicBootstrapInfo(nic, nto);
             nto.setMtu(new MtuGetter().getMtu(l3NetworkVO.getUuid()));
             extraTos.add(nto);
             deviceId ++;

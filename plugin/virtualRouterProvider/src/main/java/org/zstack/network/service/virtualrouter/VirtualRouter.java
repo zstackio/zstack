@@ -945,6 +945,22 @@ public class VirtualRouter extends ApplianceVmBase {
     public void detachNetworkService(String vrUuid, String networkServiceType, String l3NetworkUuid){
     }
 
+    private void fillNicBondMode(VmNicInventory nicInventory, VirtualRouterCommands.NicInfo info) {
+        info.setBondMode("none");
+
+        List<ApplianceVmNicBootstrapExtensionPoint> exts = pluginRgty.getExtensionList(ApplianceVmNicBootstrapExtensionPoint.class);
+        if (exts == null || exts.isEmpty()) {
+            return;
+        }
+
+        ApplianceVmNicTO nicTO = new ApplianceVmNicTO();
+        nicTO.setBondMode("none");
+        for (ApplianceVmNicBootstrapExtensionPoint ext : exts) {
+            ext.fillNicBootstrapInfo(nicInventory, nicTO);
+        }
+        info.setBondMode(nicTO.getBondMode());
+    }
+
     public class virtualRouterAfterAttachNicFlow extends NoRollbackFlow {
         @Override
         public void run(FlowTrigger trigger, Map data) {
@@ -987,6 +1003,7 @@ public class VirtualRouter extends ApplianceVmBase {
             }
             info.setMtu(new MtuGetter().getMtu(l3NetworkVO.getUuid()));
             info.setState(nicInventory.getState());
+            fillNicBondMode(nicInventory, info);
             cmd.setNics(Arrays.asList(info));
 
             VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();
