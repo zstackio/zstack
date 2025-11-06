@@ -80,3 +80,78 @@ SET gpuDevice.allocateStatus =
         WHEN pciDevice.vmInstanceUuid IS NOT NULL THEN 'Allocated'
         ELSE 'Unallocated'
     END;
+
+DELIMITER $$
+CREATE PROCEDURE update_system_model_service_gpu_vendors()
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE service_uuid VARCHAR(32);
+    DECLARE model_name VARCHAR(255);
+    DECLARE gpu_vendor_name VARCHAR(32);
+
+    -- Cursor to iterate over the models
+    DECLARE models_cursor CURSOR FOR
+        SELECT name, vendor FROM system_models_to_update;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    -- Temporary table to hold the data
+    CREATE TEMPORARY TABLE IF NOT EXISTS system_models_to_update (
+        name VARCHAR(255),
+        vendor VARCHAR(32)
+    );
+
+    -- Populate the temporary table
+    INSERT INTO system_models_to_update (name, vendor) VALUES
+    ('vLLM-0.7.2', 'NVIDIA'),
+    ('vLLM-0.8.5', 'NVIDIA'),
+    ('vLLM-0.9.2', 'NVIDIA'),
+    ('vLLM-0.11.0', 'NVIDIA'),
+    ('SGLang-0.4.9.post1', 'NVIDIA'),
+    ('SGLang-0.5.2', 'NVIDIA'),
+    ('Transformers-4.48.3', 'NVIDIA'),
+    ('Transformers-4.56.2', 'NVIDIA'),
+    ('sentence_transformers-3.1.1', 'NVIDIA'),
+    ('Diffusers-0.30.0', 'NVIDIA'),
+    ('Diffusers-0.35.1', 'NVIDIA'),
+    ('MindIE-2.0.RC1-910B', 'HUAWEI'),
+    ('MindIE-2.1.RC1-910B', 'HUAWEI'),
+    ('MindIE-1.0.0-310P', 'HUAWEI'),
+    ('vllm-Ascend-0.11.0', 'HUAWEI'),
+    ('vLLM-0.5.0-HYGON-Z100L', 'HAIGUANG'),
+    ('vLLM-0.8.5-HYGON-K100-AI', 'HAIGUANG'),
+    ('vLLM-0.9.2-HYGON-K100-AI', 'HAIGUANG'),
+    ('vLLM-0.7.2-HYGON-K100-AI', 'HAIGUANG'),
+    ('MinerU-2.5', 'NVIDIA');
+
+    OPEN models_cursor;
+    update_loop: LOOP
+        FETCH models_cursor INTO model_name, gpu_vendor_name;
+        IF done THEN
+            LEAVE update_loop;
+        END IF;
+
+        -- Find the model service uuid, only for system services
+        SELECT uuid INTO service_uuid FROM `zstack`.`ModelServiceVO` WHERE name = model_name AND system = 1 LIMIT 1;
+
+        -- If the model service exists, ensure the GPU vendor is associated
+        IF service_uuid IS NOT NULL THEN
+            IF NOT EXISTS (SELECT 1 FROM `zstack`.`ModelServiceGpuVendorVO` WHERE modelServiceUuid = service_uuid AND gpuVendor = gpu_vendor_name) THEN
+                INSERT INTO `zstack`.`ModelServiceGpuVendorVO` (modelServiceUuid, gpuVendor, createDate, lastOpDate)
+                VALUES (service_uuid, gpu_vendor_name, NOW(), NOW());
+            END IF;
+        END IF;
+
+        SET service_uuid = NULL;
+
+    END LOOP;
+    CLOSE models_cursor;
+
+    -- Clean up
+    DROP TEMPORARY TABLE system_models_to_update;
+
+END $$
+DELIMITER ;
+
+CALL update_system_model_service_gpu_vendors();
+DROP PROCEDURE IF EXISTS update_system_model_service_gpu_vendors;
