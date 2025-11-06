@@ -69,3 +69,14 @@ FROM PodVO p
     LEFT JOIN PciDeviceVO pci ON pci.vmInstanceUuid = p.uuid
     LEFT JOIN GpuDeviceVO g ON g.uuid = pci.uuid
 GROUP BY p.uuid;
+
+CALL ADD_COLUMN('GpuDeviceVO', 'allocateStatus', 'varchar(32)', 1, NULL);
+
+-- Upgrade GpuDeviceVO.allocateStatus based vmInstanceUuid
+UPDATE GpuDeviceVO gpuDevice
+JOIN PciDeviceVO pciDevice ON gpuDevice.uuid = pciDevice.uuid
+SET gpuDevice.allocateStatus =
+    CASE
+        WHEN pciDevice.vmInstanceUuid IS NOT NULL THEN 'Allocated'
+        ELSE 'Unallocated'
+    END;
