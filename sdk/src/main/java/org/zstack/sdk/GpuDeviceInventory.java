@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.GpuAllocateStatus;
 
 public class GpuDeviceInventory extends org.zstack.sdk.PciDeviceInventory {
 
@@ -42,6 +42,14 @@ public class GpuDeviceInventory extends org.zstack.sdk.PciDeviceInventory {
     }
     public java.lang.String getGpuType() {
         return this.gpuType;
+    }
+
+    public GpuAllocateStatus allocateStatus;
+    public void setAllocateStatus(GpuAllocateStatus allocateStatus) {
+        this.allocateStatus = allocateStatus;
+    }
+    public GpuAllocateStatus getAllocateStatus() {
+        return this.allocateStatus;
     }
 
 }
