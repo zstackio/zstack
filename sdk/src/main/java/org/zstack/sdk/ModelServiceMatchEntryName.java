@@ -1,11 +1,12 @@
 package org.zstack.sdk;
 
 public enum ModelServiceMatchEntryName {
-	TemplateExistence,
-	FrameworkCompatibility,
+	GpuVendorCompatibility,
 	AcceleratorCompatibility,
+	GpuPrecisionCompatibility,
+	TemplateExistence,
 	FrameworkVersionCompatibility,
+	ScalingCapability,
 	ArchitectureCompatibility,
 	QuantizationCompatibility,
-	ScalingCapability,
 }
