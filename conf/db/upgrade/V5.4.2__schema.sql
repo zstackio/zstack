@@ -117,12 +117,12 @@ BEGIN
     ('MindIE-2.0.RC1-910B', 'HUAWEI'),
     ('MindIE-2.1.RC1-910B', 'HUAWEI'),
     ('MindIE-1.0.0-310P', 'HUAWEI'),
-    ('vllm-Ascend-0.11.0', 'HUAWEI'),
+    ('vLLM-Ascend-0.11.0.rc0', 'HUAWEI'),
     ('vLLM-0.5.0-HYGON-Z100L', 'HAIGUANG'),
     ('vLLM-0.8.5-HYGON-K100-AI', 'HAIGUANG'),
     ('vLLM-0.9.2-HYGON-K100-AI', 'HAIGUANG'),
     ('vLLM-0.7.2-HYGON-K100-AI', 'HAIGUANG'),
-    ('MinerU-2.5', 'NVIDIA');
+    ('MinerU2.5-2509', 'NVIDIA');
 
     OPEN models_cursor;
     update_loop: LOOP
@@ -132,14 +132,30 @@ BEGIN
         END IF;
 
         -- Find the model service uuid, only for system services
-        SELECT uuid INTO service_uuid FROM `zstack`.`ModelServiceVO` WHERE name = model_name AND system = 1 LIMIT 1;
+        SELECT COUNT(*) INTO @cnt FROM `zstack`.`ModelServiceVO` WHERE name = model_name AND system = 1;
+        IF @cnt > 0 THEN
+            SELECT uuid INTO service_uuid FROM `zstack`.`ModelServiceVO` WHERE name = model_name AND system = 1 LIMIT 1;
+        ELSE
+            SET service_uuid = NULL;
+        END IF;
 
         -- If the model service exists, ensure the GPU vendor is associated
         IF service_uuid IS NOT NULL THEN
+            SELECT CONCAT('INFO: Processing model=', model_name, ', service_uuid=', service_uuid, ', desired_vendor=', gpu_vendor_name) AS msg;
+            -- delete different gpu vendors
+            DELETE FROM `zstack`.`ModelServiceGpuVendorVO`
+                WHERE modelServiceUuid = service_uuid
+                AND gpuVendor <> gpu_vendor_name;
+            SELECT CONCAT('INFO: Deleted different GPU vendors for service_uuid=', service_uuid, ', deleted_rows=', ROW_COUNT()) AS msg;
             IF NOT EXISTS (SELECT 1 FROM `zstack`.`ModelServiceGpuVendorVO` WHERE modelServiceUuid = service_uuid AND gpuVendor = gpu_vendor_name) THEN
-                INSERT INTO `zstack`.`ModelServiceGpuVendorVO` (modelServiceUuid, gpuVendor, createDate, lastOpDate)
-                VALUES (service_uuid, gpu_vendor_name, NOW(), NOW());
+                    INSERT INTO `zstack`.`ModelServiceGpuVendorVO` (modelServiceUuid, gpuVendor, createDate, lastOpDate)
+                    VALUES (service_uuid, gpu_vendor_name, NOW(), NOW());
+                    SELECT CONCAT('INFO: Inserted GPU vendor=', gpu_vendor_name, ' for service_uuid=', service_uuid, ', inserted_rows=', ROW_COUNT()) AS msg;
+            ELSE
+                SELECT CONCAT('INFO: GPU vendor=', gpu_vendor_name, ' already exists for service_uuid=', service_uuid) AS msg;
             END IF;
+        ELSE
+            SELECT CONCAT('WARN: Service not found for model=', model_name) AS msg;
         END IF;
 
         SET service_uuid = NULL;
