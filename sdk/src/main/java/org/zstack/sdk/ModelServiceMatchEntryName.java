@@ -5,7 +5,6 @@ public enum ModelServiceMatchEntryName {
 	AcceleratorCompatibility,
 	GpuPrecisionCompatibility,
 	TemplateExistence,
-	FrameworkVersionCompatibility,
 	ScalingCapability,
 	ArchitectureCompatibility,
 	QuantizationCompatibility,
