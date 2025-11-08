@@ -171,3 +171,10 @@ DELIMITER ;
 
 CALL update_system_model_service_gpu_vendors();
 DROP PROCEDURE IF EXISTS update_system_model_service_gpu_vendors;
+
+-- Delete unexpected ModelServiceTemplateVO entries of MindIE-1.0.0-310P
+DELETE FROM `zstack`.`ModelServiceTemplateVO`
+WHERE `modelServiceUuid` = 'fe4ed042ac074c55ba1e76921b175ba5' and `cpuArchitecture` = 'x86_64';
+
+DELETE FROM `zstack`.`ModelServiceCpuArchitectureVO`
+WHERE `modelServiceUuid` = 'fe4ed042ac074c55ba1e76921b175ba5' and `architecture` = 'x86_64';
