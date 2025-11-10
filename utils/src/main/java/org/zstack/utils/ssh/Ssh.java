@@ -1,21 +1,19 @@
 package org.zstack.utils.ssh;
 
 import com.jcraft.jsch.*;
-import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.StopWatch;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -48,7 +46,6 @@ public class Ssh {
     private int timeout = 5;
     private int execTimeout = 604800;
     private int socketTimeout = 300;
-    private List<SshRunner> commands = new ArrayList<SshRunner>();
     private Session session;
     private File privateKeyFile;
     private boolean closed = false;
@@ -61,7 +58,6 @@ public class Ssh {
     private interface SshRunner {
         SshResult run();
         String getCommand();
-        String getCommandWithoutPassword();
     }
 
     private class ScriptRunner {
@@ -149,6 +145,65 @@ public class Ssh {
         }
     }
 
+    public static class CommandScript {
+        public final String cmd;
+        private boolean sudo;
+        private String mode = MODE_SSH;
+        private final Map<String, String> parameters = new HashMap<>();
+
+        public static final String MODE_SSH = "ssh";
+        public static final String MODE_UPLOAD = "upload";
+        public static final String MODE_DOWNLOAD = "download";
+
+        public CommandScript(String cmd) {
+            this.cmd = cmd;
+        }
+        public CommandScript enableSudo() {
+            this.sudo = true;
+            return this;
+        }
+        public CommandScript withMode(String mode) {
+            this.mode = mode;
+            return this;
+        }
+        public CommandScript withParameter(String key, String value) {
+            parameters.put(key, value);
+            return this;
+        }
+        public String getParameter(String key) {
+            return parameters.get(key);
+        }
+        @Override
+        public String toString() {
+            return removeSensitiveInfoFromCmd(cmd);
+        }
+    }
+    private List<CommandScript> commandScripts = new ArrayList<>();
+
+    private SshRunner buildSshRunner(CommandScript commandScript) {
+        switch (commandScript.mode) {
+        case CommandScript.MODE_SSH: {
+            if (!commandScript.sudo || "root".equals(username)) {
+                return createCommand(commandScript.cmd);
+            } else if (password == null) {
+                return createCommand("sudo " + commandScript.cmd);
+            } else {
+                String quotePassword = "'" + password.replace("'", "'\\''") + "'";
+                return createCommand(String.format("echo %s | sudo -S %s", quotePassword, commandScript.cmd));
+            }
+        }
+
+        case CommandScript.MODE_UPLOAD:
+            return createScpCommand(commandScript.getParameter("from"), commandScript.getParameter("to"), true);
+
+        case CommandScript.MODE_DOWNLOAD:
+            return createScpCommand(commandScript.getParameter("from"), commandScript.getParameter("to"), false);
+
+        default:
+            throw new IllegalArgumentException(String.format("unsupported mode[%s]", commandScript.mode));
+        }
+    }
+
     public int getExecTimeout() {
         return execTimeout;
     }
@@ -214,7 +269,14 @@ public class Ssh {
 
     public Ssh command(String...cmds) {
         for (String cmd : cmds) {
-            commands.add(createCommand(cmd));
+            commandScripts.add(new CommandScript(cmd));
+        }
+        return this;
+    }
+
+    public Ssh sudoCommand(String...cmds) {
+        for (String cmd : cmds) {
+            commandScripts.add(new CommandScript(cmd).enableSudo());
         }
         return this;
     }
@@ -225,7 +287,7 @@ public class Ssh {
            @Override
            public SshResult run() {
                SshResult ret = new SshResult();
-               String cmdWithoutPassword = getCommandWithoutPassword();
+               String cmdWithoutPassword = removeSensitiveInfoFromCmd(getCommand());
                ret.setCommandToExecute(cmdWithoutPassword);
 
                try {
@@ -242,8 +304,8 @@ public class Ssh {
                             InputStream errs = channel.getErrStream()) {
                            channel.connect(getTimeoutInMilli(timeout));
 
-                           String output = IOUtils.toString(ins, Charsets.UTF_8);
-                           String stderr = IOUtils.toString(errs, Charsets.UTF_8);
+                           String output = IOUtils.toString(ins, StandardCharsets.UTF_8);
+                           String stderr = IOUtils.toString(errs, StandardCharsets.UTF_8);
                            ret.setReturnCode(channel.getExitStatus());
                            ret.setStderr(stderr);
                            ret.setStdout(output);
@@ -277,21 +339,22 @@ public class Ssh {
            public String getCommand() {
                return cmd;
            }
-
-           @Override
-           public String getCommandWithoutPassword() {
-               return cmd.replaceAll("echo .*?\\s*\\|\\s*sudo -S", "echo ****** | sudo -S");
-           }
        };
     }
 
     public Ssh scpUpload(final String local, final String remote) {
-        commands.add(createScpCommand(local, remote, false));
+        commandScripts.add(new CommandScript("scpUpload")
+                .withMode(CommandScript.MODE_UPLOAD)
+                .withParameter("from", local)
+                .withParameter("to", remote));
         return this;
     }
 
     public Ssh scpDownload(final String remote, final String local) {
-        commands.add(createScpCommand(remote, local, true));
+        commandScripts.add(new CommandScript("scpDownload")
+                .withMode(CommandScript.MODE_DOWNLOAD)
+                .withParameter("to", local)
+                .withParameter("from", remote));
         return this;
     }
 
@@ -339,11 +402,6 @@ public class Ssh {
                 } else {
                     return String.format("scp -P %d %s %s@%s:%s", port, src, username, hostname, dst);
                 }
-            }
-
-            @Override
-            public String getCommandWithoutPassword() {
-                return getCommand();
             }
         };
     }
@@ -450,11 +508,11 @@ public class Ssh {
         watch.start();
         try {
             build();
-            if (commands.isEmpty() && script == null) {
+            if (commandScripts.isEmpty() && script == null) {
                 throw new IllegalArgumentException("no command or scp command or script specified");
             }
 
-            if (!commands.isEmpty() && script != null) {
+            if (!commandScripts.isEmpty() && script != null) {
                 throw new IllegalArgumentException("you cannot use script with command or scp");
             }
 
@@ -477,7 +535,8 @@ public class Ssh {
                 return script.run();
             } else {
                 SshResult ret = null;
-                for (SshRunner runner : commands) {
+                for (CommandScript commandScript : commandScripts) {
+                    SshRunner runner = buildSshRunner(commandScript);
                     ret = runner.run();
                     if (ret.getReturnCode() != 0) {
                         return ret;
@@ -504,8 +563,7 @@ public class Ssh {
                 if (script != null) {
                     logger.trace(String.format("execute script[%s], cost time:%s", script.scriptName, watch.getTime()));
                 } else {
-                    String cmd = StringUtils.join(CollectionUtils.transform(
-                            commands, SshRunner::getCommandWithoutPassword), ",");
+                    String cmd = StringUtils.join(commandScripts, ",");
                     String info = s(
                             "\nssh execution[host: {0}, port:{1}]\n",
                             "command: {2}\n",
@@ -544,7 +602,7 @@ public class Ssh {
     }
 
     public Ssh reset() {
-        commands = new ArrayList<SshRunner>();
+        commandScripts.clear();
         return this;
     }
 
@@ -575,5 +633,9 @@ public class Ssh {
         writeFile(file, new byte[0]);
         setFilePosixPermissions(file, "rw-------");
         writeFile(file, content);
+    }
+
+    public static String removeSensitiveInfoFromCmd(String cmd) {
+        return cmd.replaceAll("echo .*?\\s*\\|\\s*sudo -S", "echo ****** | sudo -S");
     }
 }
