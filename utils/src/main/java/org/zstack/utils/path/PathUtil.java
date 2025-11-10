@@ -3,10 +3,12 @@ package org.zstack.utils.path;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.io.*;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -445,5 +447,21 @@ public class PathUtil {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static String normalizePathWithoutQuery(String path) {
+        try {
+            String normalizedPath = path.replaceFirst(
+                    "^([a-zA-Z]+:)(?!/{2})",
+                    "$1//");
+            final String query = new URI(normalizedPath).getQuery();
+            if (query != null) {
+                return StringUtils.removeEnd(path, '?' + query);
+            }
+        } catch (URISyntaxException ignored) {
+            logger.warn(String.format("unexpected path: %s", path));
+        }
+
+        return path;
     }
 }

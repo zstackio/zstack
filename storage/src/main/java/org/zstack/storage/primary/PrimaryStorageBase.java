@@ -761,6 +761,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                             r2.getVolume().getInstallPath(),
                             msg.getBackupStorageRef().getInstallPath())
                     );
+                    r.setProtocol(r2.getVolume().getProtocol());
                 }
                 bus.reply(msg, r);
             }
