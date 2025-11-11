@@ -147,7 +147,7 @@ public class Ssh {
                 return createCommand("sudo " + commandScript.cmd);
             } else {
                 String quotePassword = shellQuote(password);
-                return createCommand(String.format("echo %s | sudo -S %s", quotePassword, commandScript.cmd));
+                return createCommand(String.format("echo %s | sudo -S %s 2>/dev/null", quotePassword, commandScript.cmd));
             }
         }
 
