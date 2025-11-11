@@ -19,7 +19,10 @@ import static org.zstack.utils.path.PathUtil.*;
 
 /**
  * Created by frank on 12/5/2015.
+ *
+ * deprecated: TODO use Ssh.java instead. will merge to {@link Ssh} with a mode "localBashSsh"
  */
+@Deprecated
 public class SshShell {
     private static final CLogger logger = Utils.getLogger(SshShell.class);
 

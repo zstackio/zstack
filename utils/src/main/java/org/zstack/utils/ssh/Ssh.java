@@ -50,11 +50,6 @@ public class Ssh {
 
     private boolean init = false;
 
-    private interface SshRunner {
-        SshResult run();
-        String getCommand();
-    }
-
     private class ScriptRunner implements SshRunner {
         String rawScript;
         SshRunner scriptCommand;
