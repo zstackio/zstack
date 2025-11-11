@@ -29,9 +29,7 @@ public class SshFilesMd5Checker implements AnsibleChecker {
                 .setHostname(ip)
                 .setTimeout(5);
         try {
-            ssh.sudoCommand(String.format("echo %s | sudo -S md5sum %s 2>/dev/null",
-                    ShellUtils.escapeShellText(password),
-                    filePath));
+            ssh.sudoCommand(String.format("md5sum %s", filePath));
             SshResult ret = ssh.run();
             if (ret.getReturnCode() != 0) {
                 logger.warn(String.format("exec ssh command failed, return code: %d, stdout: %s, stderr: %s",

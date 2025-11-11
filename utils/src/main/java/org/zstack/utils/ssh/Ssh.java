@@ -1,14 +1,12 @@
 package org.zstack.utils.ssh;
 
 import com.jcraft.jsch.*;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,8 +22,6 @@ import static org.zstack.utils.StringDSL.s;
 import static org.zstack.utils.path.PathUtil.setFilePosixPermissions;
 import static org.zstack.utils.path.PathUtil.writeFile;
 
-/**
- */
 public class Ssh {
     private static final CLogger logger = Utils.getLogger(Ssh.class);
 
@@ -50,66 +46,16 @@ public class Ssh {
     private File privateKeyFile;
     private boolean closed = false;
     private boolean suppressException = false;
-    private ScriptRunner script;
-    private String language = "LANG=\"en_US.UTF-8\"; ";
+    private static final String LANGUAGE = "LANG=\"en_US.UTF-8\"; ";
 
     private boolean init = false;
 
-    private interface SshRunner {
-        SshResult run();
-        String getCommand();
-    }
-
-    private class ScriptRunner {
-        String scriptName;
-        File scriptFile;
+    private class ScriptRunner implements SshRunner {
+        String rawScript;
         SshRunner scriptCommand;
-        String scriptContent;
 
-        ScriptRunner(String scriptName, String parameters, Map token) {
-            this.scriptName = scriptName;
-            String scriptPath = PathUtil.findFileOnClassPath(scriptName, true).getAbsolutePath();
-            try {
-                if (parameters == null) {
-                    parameters = "";
-                }
-                if (token == null) {
-                    token = new HashMap();
-                }
-
-                String contents = FileUtils.readFileToString(new File(scriptPath));
-                String srcScript = String.format("zstack-script-%s", UUID.randomUUID().toString());
-                scriptFile = new File(PathUtil.join(PathUtil.getFolderUnderZStackHomeFolder("temp-scripts"), srcScript));
-                scriptContent = s(contents).formatByMap(token);
-
-                String remoteScript = ln(
-                        "cat << EOF1 > {remotePath}",
-                        "PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
-                        "{scriptContent}",
-                        "EOF1",
-                        "timeout {execTimeout} /bin/bash {remotePath} {parameters} 1>{stdout} 2>{stderr}",
-                        "ret=$?",
-                        "test -f {stdout} && cat {stdout}",
-                        "test -f {stderr} && cat {stderr} 1>&2",
-                        "rm -f {remotePath}",
-                        "rm -f {stdout}",
-                        "rm -f {stderr}",
-                        "exit $ret"
-                ).formatByMap(map(e("remotePath", String.format("/tmp/%s", UUID.randomUUID().toString())),
-                        e("scriptContent", scriptContent),
-                        e("parameters", parameters),
-                        e("execTimeout", execTimeout),
-                        e("stdout", String.format("/tmp/%s", UUID.randomUUID().toString())),
-                        e("stderr", String.format("/tmp/%s", UUID.randomUUID().toString()))
-                ));
-
-                scriptCommand = createCommand(remoteScript);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        ScriptRunner(String script) {
+        ScriptRunner(CommandScript script) {
+            this.rawScript = script.cmd;
             String remoteScript = ln(
                     "cat << EOF1 > {remotePath}",
                     "PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
@@ -129,19 +75,25 @@ public class Ssh {
                     e("stdout", String.format("/tmp/%s", UUID.randomUUID().toString())),
                     e("stderr", String.format("/tmp/%s", UUID.randomUUID().toString()))
             ));
-            scriptCommand = createCommand(remoteScript);
+
+            CommandScript become = new CommandScript(remoteScript);
+            if (script.sudo) {
+                become.enableSudo();
+            }
+            scriptCommand = buildSshRunner(become);
         }
 
-        SshResult run() {
+        @Override
+        public SshResult run() {
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("run script remotely[ip: %s, port: %s]:\n%s\n", hostname, port, rawScript));
+            }
             return scriptCommand.run();
         }
 
-        void cleanup() {
-            if (scriptFile != null) {
-                if (!scriptFile.delete()) {
-                    logger.warn("delete file failed: " +scriptFile.getAbsolutePath());
-                }
-            }
+        @Override
+        public String getCommand() {
+            return rawScript;
         }
     }
 
@@ -152,6 +104,7 @@ public class Ssh {
         private final Map<String, String> parameters = new HashMap<>();
 
         public static final String MODE_SSH = "ssh";
+        public static final String MODE_BATCH_SCRIPTS = "batchScripts";
         public static final String MODE_UPLOAD = "upload";
         public static final String MODE_DOWNLOAD = "download";
 
@@ -189,9 +142,12 @@ public class Ssh {
                 return createCommand("sudo " + commandScript.cmd);
             } else {
                 String quotePassword = shellQuote(password);
-                return createCommand(String.format("echo %s | sudo -S %s", quotePassword, commandScript.cmd));
+                return createCommand(String.format("echo %s | sudo -S %s 2>/dev/null", quotePassword, commandScript.cmd));
             }
         }
+
+        case CommandScript.MODE_BATCH_SCRIPTS:
+            return new ScriptRunner(commandScript);
 
         case CommandScript.MODE_UPLOAD:
             return createScpCommand(commandScript.getParameter("from"), commandScript.getParameter("to"), true);
@@ -282,7 +238,7 @@ public class Ssh {
     }
 
     private SshRunner createCommand(final String cmdWithoutPrefix) {
-       final String cmd = language + cmdWithoutPrefix;
+       final String cmd = LANGUAGE + cmdWithoutPrefix;
        return new SshRunner() {
            @Override
            public SshResult run() {
@@ -413,27 +369,17 @@ public class Ssh {
     }
 
     public Ssh shell(String script) {
-        DebugUtils.Assert(this.script==null, "every Ssh object can only specify one script");
-        this.script = new ScriptRunner(script);
+        boolean hasScript = false;
+        for (CommandScript cs : commandScripts) {
+            if (CommandScript.MODE_BATCH_SCRIPTS.equals(cs.mode)) {
+                hasScript = true;
+                break;
+            }
+        }
+        DebugUtils.Assert(!hasScript, "every Ssh object can only specify one script");
+        commandScripts.add(new CommandScript(script)
+                .withMode(CommandScript.MODE_BATCH_SCRIPTS));
         return this;
-    }
-
-    public Ssh script(String scriptName, String parameters, Map token) {
-        DebugUtils.Assert(script==null, "every Ssh object can only specify one script");
-        script = new ScriptRunner(scriptName, parameters, token);
-        return this;
-    }
-
-    public Ssh script(String scriptName, Map tokens) {
-        return script(scriptName, null, tokens);
-    }
-
-    public Ssh script(String scriptName, String parameters) {
-        return script(scriptName, parameters, null);
-    }
-
-    public Ssh script(String scriptName) {
-        return script(scriptName, null, null);
     }
 
     private static int getTimeoutInMilli(int seconds) {
@@ -490,10 +436,6 @@ public class Ssh {
             }
         }
 
-        if (script != null) {
-            script.cleanup();
-        }
-
         if (session != null) {
             session.disconnect();
         }
@@ -508,12 +450,8 @@ public class Ssh {
         watch.start();
         try {
             build();
-            if (commandScripts.isEmpty() && script == null) {
+            if (commandScripts.isEmpty()) {
                 throw new IllegalArgumentException("no command or scp command or script specified");
-            }
-
-            if (!commandScripts.isEmpty() && script != null) {
-                throw new IllegalArgumentException("you cannot use script with command or scp");
             }
 
             if (privateKey == null && password == null) {
@@ -528,23 +466,16 @@ public class Ssh {
                 throw new IllegalArgumentException("no hostname specified");
             }
 
-            if (script != null) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("run script remotely[ip: %s, port: %s]:\n%s\n", hostname, port, script.scriptContent));
+            SshResult ret = null;
+            for (CommandScript commandScript : commandScripts) {
+                SshRunner runner = buildSshRunner(commandScript);
+                ret = runner.run();
+                if (ret.getReturnCode() != 0) {
+                    return ret;
                 }
-                return script.run();
-            } else {
-                SshResult ret = null;
-                for (CommandScript commandScript : commandScripts) {
-                    SshRunner runner = buildSshRunner(commandScript);
-                    ret = runner.run();
-                    if (ret.getReturnCode() != 0) {
-                        return ret;
-                    }
-                }
-
-                return ret;
             }
+
+            return ret;
 
         } catch (IOException e) {
             StringBuilder sb = new StringBuilder("ssh exception\n");
@@ -560,17 +491,13 @@ public class Ssh {
         } finally {
             watch.stop();
             if (logger.isTraceEnabled()) {
-                if (script != null) {
-                    logger.trace(String.format("execute script[%s], cost time:%s", script.scriptName, watch.getTime()));
-                } else {
-                    String cmd = StringUtils.join(commandScripts, ",");
-                    String info = s(
-                            "\nssh execution[host: {0}, port:{1}]\n",
-                            "command: {2}\n",
-                            "cost time: {3}ms\n"
-                    ).format(hostname, port, cmd, watch.getTime());
-                    logger.trace(info);
-                }
+                String cmd = StringUtils.join(commandScripts, ",");
+                String info = s(
+                        "\nssh execution[host: {0}, port:{1}]\n",
+                        "command: {2}\n",
+                        "cost time: {3}ms\n"
+                ).format(hostname, port, cmd, watch.getTime());
+                logger.trace(info);
             }
         }
     }
@@ -616,17 +543,6 @@ public class Ssh {
         SshResult ret = run();
         close();
         ret.raiseExceptionIfFailed();
-    }
-
-    @Deprecated
-    public void runErrorByException() {
-        SshResult ret = run();
-        try {
-            ret.raiseExceptionIfFailed();
-        } catch (SshException e) {
-            close();
-            throw e;
-        }
     }
 
     private static void writeSecretFile(File file, String content) throws IOException {
