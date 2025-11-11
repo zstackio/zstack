@@ -29,12 +29,13 @@ public class SshFilesMd5Checker implements AnsibleChecker {
                 .setHostname(ip)
                 .setTimeout(5);
         try {
-            ssh.command(String.format("echo %s | sudo -S md5sum %s 2>/dev/null",
+            ssh.sudoCommand(String.format("echo %s | sudo -S md5sum %s 2>/dev/null",
                     ShellUtils.escapeShellText(password),
                     filePath));
             SshResult ret = ssh.run();
             if (ret.getReturnCode() != 0) {
-                logger.warn(String.format("Failed to get MD5 for file %s: %s", filePath, ret.getStderr()));
+                logger.warn(String.format("exec ssh command failed, return code: %d, stdout: %s, stderr: %s",
+                        ret.getReturnCode(), ret.getStdout(), ret.getStderr()));
                 return true;
             }
             ssh.reset();
@@ -52,10 +53,15 @@ public class SshFilesMd5Checker implements AnsibleChecker {
 
     @Override
     public void deleteDestFile() {
+        if (!filePath.contains("zstack")) {
+            logger.debug(String.format("skip delete dest file[%s] which is not zstack file", filePath));
+            return;
+        }
+
         Ssh ssh = new Ssh();
         ssh.setUsername(username).setPrivateKey(privateKey)
                 .setPassword(password).setPort(sshPort)
-                .setHostname(ip).command(String.format("rm -f %s", filePath)).runAndClose();
+                .setHostname(ip).sudoCommand(String.format("rm -f %s", filePath)).runAndClose();
         logger.debug(String.format("delete dest file[%s]", filePath));
     }
 

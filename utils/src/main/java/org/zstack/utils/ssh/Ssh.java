@@ -188,7 +188,7 @@ public class Ssh {
             } else if (password == null) {
                 return createCommand("sudo " + commandScript.cmd);
             } else {
-                String quotePassword = "'" + password.replace("'", "'\\''") + "'";
+                String quotePassword = shellQuote(password);
                 return createCommand(String.format("echo %s | sudo -S %s", quotePassword, commandScript.cmd));
             }
         }
@@ -637,5 +637,9 @@ public class Ssh {
 
     public static String removeSensitiveInfoFromCmd(String cmd) {
         return cmd.replaceAll("echo .*?\\s*\\|\\s*sudo -S", "echo ****** | sudo -S");
+    }
+
+    public static String shellQuote(String s) {
+        return "'" + s.replace("'", "'\\''") + "'";
     }
 }
