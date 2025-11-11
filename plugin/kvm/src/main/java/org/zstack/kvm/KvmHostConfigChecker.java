@@ -31,9 +31,11 @@ public class KvmHostConfigChecker implements AnsibleChecker {
                 .setPassword(password).setPort(sshPort)
                 .setHostname(targetIp);
         try {
-            ssh.command("cat /sys/kernel/mm/ksm/run");
+            ssh.sudoCommand("cat /sys/kernel/mm/ksm/run");
             SshResult ret = ssh.setTimeout(60).runAndClose();
             if (ret.getReturnCode() != 0) {
+                logger.warn(String.format("exec ssh command failed, return code: %d, stdout: %s, stderr: %s",
+                        ret.getReturnCode(), ret.getStdout(), ret.getStderr()));
                 return true;
             }
 

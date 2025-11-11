@@ -36,9 +36,11 @@ public class SshYamlChecker implements AnsibleChecker {
                 .setHostname(targetIp);
         try {
 
-            ssh.command(String.format("grep -o '%s' %s | uniq | wc -l", getGrepArgs(), yamlFilePath));
+            ssh.sudoCommand(String.format("grep -o '%s' %s | uniq | wc -l", getGrepArgs(), yamlFilePath));
             SshResult ret = ssh.run();
             if (ret.getReturnCode() != 0) {
+                logger.warn(String.format("exec ssh command failed, return code: %d, stdout: %s, stderr: %s",
+                        ret.getReturnCode(), ret.getStdout(), ret.getStderr()));
                 return true;
             }
 

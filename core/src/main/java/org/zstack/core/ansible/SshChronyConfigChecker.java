@@ -29,11 +29,13 @@ public class SshChronyConfigChecker implements AnsibleChecker {
                 .setPassword(password).setPort(sshPort)
                 .setHostname(targetIp);
         try {
-            ssh.command("awk '/^\\s*server/{print $2}' /etc/chrony.conf");
+            ssh.sudoCommand("awk '/^\\s*server/{print $2}' /etc/chrony.conf");
             SshResult ret = ssh.run();
             int returnCode = ret.getReturnCode();
             ssh.reset();
             if (returnCode != 0) {
+                logger.warn(String.format("exec ssh command failed, return code: %d, stdout: %s, stderr: %s",
+                        ret.getReturnCode(), ret.getStdout(), ret.getStderr()));
                 return true;
             }
 
