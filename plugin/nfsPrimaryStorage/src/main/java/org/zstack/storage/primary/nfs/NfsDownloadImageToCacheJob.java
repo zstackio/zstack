@@ -3,6 +3,7 @@ package org.zstack.storage.primary.nfs;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -10,13 +11,14 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.job.Job;
 import org.zstack.core.job.JobContext;
-import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageInventory;
@@ -24,13 +26,14 @@ import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
-import org.zstack.header.volume.VolumeInventory;
 import org.zstack.storage.primary.ImageCacheUtil;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.multiErr;
 
 /**
  */
@@ -97,9 +100,11 @@ public class NfsDownloadImageToCacheJob implements Job {
         chain.then(new ShareFlow() {
             String cacheInstallPath = NfsPrimaryStorageKvmHelper.makeCachedImageInstallUrl(primaryStorage, image.getInventory());
             long actualSize = image.getInventory().getActualSize();
+            ImageCacheVO cvo = new ImageCacheVO();
 
             @Override
             public void setup() {
+
                 flow(new Flow() {
                     String __name__ = "allocate-primary-storage";
 
@@ -195,10 +200,11 @@ public class NfsDownloadImageToCacheJob implements Job {
                     }
                 });
 
-                done(new FlowDoneHandler(completion) {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "save-db";
+
                     @Override
-                    public void handle(Map data) {
-                        ImageCacheVO cvo = new ImageCacheVO();
+                    public void run(FlowTrigger trigger, Map data) {
                         cvo.setImageUuid(image.getInventory().getUuid());
                         cvo.setInstallUrl(cacheInstallPath);
                         cvo.setMd5sum("no md5");
@@ -208,10 +214,48 @@ public class NfsDownloadImageToCacheJob implements Job {
                         cvo = dbf.persistAndRefresh(cvo);
                         logger.debug(String.format("successfully downloaded image[uuid:%s] in image cache[id:%s, path:%s]",
                                 image.getInventory().getUuid(), cvo.getId(), cvo.getInstallUrl()));
+                        trigger.next();
+                    }
+                });
 
-                        ImageCacheVO finalCvo = cvo;
-                        pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)
-                                .forEach(exp -> exp.saveEncryptAfterCreateImageCache(null, ImageCacheInventory.valueOf(finalCvo)));
+                flow(new NoRollbackFlow() {
+                    String __name__ = "invoke-after-create-image-cache-extensions";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        ImageCacheInventory inventory = ImageCacheInventory.valueOf(cvo);
+
+                        new While<>(pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)).each((ext, whileCompletion) -> {
+                            ext.saveEncryptAfterCreateImageCache(null, inventory, new Completion(whileCompletion) {
+                                @Override
+                                public void success() {
+                                    whileCompletion.done();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    whileCompletion.addError(errorCode);
+                                    whileCompletion.done();
+                                }
+                            });
+                        }).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (!errorCodeList.getCauses().isEmpty()) {
+                                    String details = multiErr(errorCodeList.getCauses()).getReadableDetails();
+                                        logger.warn(String.format(
+                                                "failed to invoke after create image cache extensions (but still continue): %s",
+                                                details));
+                                }
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
                         completion.success(ImageCacheInventory.valueOf(cvo));
                     }
                 });

@@ -2134,6 +2134,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 String snapshotPath;
                 long actualSize = image.getInventory().getActualSize();
                 String allocatedInstall;
+                ImageCacheVO cvo = new ImageCacheVO();
 
                 @Override
                 public void setup() {
@@ -2339,10 +2340,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
                     });
 
-                    done(new FlowDoneHandler(completion) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "save-db";
+
                         @Override
-                        public void handle(Map data) {
-                            ImageCacheVO cvo = new ImageCacheVO();
+                        public void run(FlowTrigger trigger, Map data) {
                             cvo.setMd5sum("not calculated");
                             cvo.setSize(image.getInventory().getActualSize());
                             cvo.setInstallUrl(snapshotPath);
@@ -2352,11 +2354,47 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             cvo.setState(ImageCacheState.ready);
                             cvo.setSize(actualSize);
                             cvo = dbf.persistAndRefresh(cvo);
+                            trigger.next();
+                        }
+                    });
 
-                            ImageCacheVO finalCvo = cvo;
-                            pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)
-                                    .forEach(exp -> exp.saveEncryptAfterCreateImageCache(null, ImageCacheInventory.valueOf(finalCvo)));
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "invoke-after-create-image-cache-extensions";
 
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            ImageCacheInventory inventory = ImageCacheInventory.valueOf(cvo);
+                            new While<>(pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)).each((ext, whileCompletion) -> {
+                                ext.saveEncryptAfterCreateImageCache(null, inventory, new Completion(whileCompletion) {
+                                    @Override
+                                    public void success() {
+                                        whileCompletion.done();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        whileCompletion.addError(errorCode);
+                                        whileCompletion.done();
+                                    }
+                                });
+                            }).run(new WhileDoneCompletion(trigger) {
+                                @Override
+                                public void done(ErrorCodeList errorCodeList) {
+                                    if (!errorCodeList.getCauses().isEmpty()) {
+                                        String details = multiErr(errorCodeList.getCauses()).getReadableDetails();
+                                        logger.warn(String.format(
+                                                "failed to invoke after create image cache extensions (but still continue): %s",
+                                                details));
+                                    }
+                                    trigger.next();
+                                }
+                            });
+                        }
+                    });
+
+                    done(new FlowDoneHandler(completion) {
+                        @Override
+                        public void handle(Map data) {
                             completion.success(cvo);
                         }
                     });
