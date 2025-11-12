@@ -5159,7 +5159,7 @@ public class KVMHost extends HostBase implements Host {
             public void handle(Map data) {
                 if (noStorageAccessible()) {
                     ErrorCodeList errorCodeList = (ErrorCodeList) data.get(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR);
-                    completion.fail(operr("host can not access any primary storage, %s", errorCodeList != null && StringUtils.isNotEmpty(errorCodeList.getReadableDetails()) ? errorCodeList.getReadableDetails() : "please check network"));
+                    completion.fail(multiErr(errorCodeList, "host can not access any primary storage"));
                 } else {
                     if (CoreGlobalProperty.UNIT_TEST_ON) {
                         completion.success();
@@ -6057,7 +6057,7 @@ public class KVMHost extends HostBase implements Host {
                         continue;
                     }
 
-                    hardwareChangedErrors.getCauses().add(operr("host[uuid:%s]'s %s changed, old:%s, new:%s",
+                    hardwareChangedErrors.add(operr("host[uuid:%s]'s %s changed, old:%s, new:%s",
                             self.getUuid(),
                             systemTag.getTagFormat(),
                             oldValue, newValue));
@@ -6112,17 +6112,18 @@ public class KVMHost extends HostBase implements Host {
 
                 saveHostExtraIps(ret);
 
-                if (hardwareChangedErrors.getCauses().isEmpty()) {
+                if (hardwareChangedErrors.isEmpty()) {
                     return;
                 }
 
                 // only log the hardware info change for existing host
                 if (info.isNewAdded()) {
-                    logger.debug(String.format("host[uuid:%s]'s hardware info changed, %s", self.getUuid(), hardwareChangedErrors.getCauses()));
+                    logger.debug(String.format("host[uuid:%s]'s hardware info changed, %s",
+                            self.getUuid(), multiErr(hardwareChangedErrors).getReadableDetails()));
                     return;
                 }
 
-                new HostHardwareChangedCanonicalEvent(self.getUuid(), hardwareChangedErrors).fire();
+                new HostHardwareChangedCanonicalEvent(self.getUuid(), multiErr(hardwareChangedErrors)).fire();
             }
 
             /**

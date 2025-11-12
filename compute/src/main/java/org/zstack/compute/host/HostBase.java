@@ -106,7 +106,7 @@ public abstract class HostBase extends AbstractHost {
     public static class HostHardwareChangedCanonicalEvent extends CanonicalEventEmitter {
         HostCanonicalEvents.HostHardwareChangedData data;
 
-        public HostHardwareChangedCanonicalEvent(String hostUuid, ErrorCodeList reason) {
+        public HostHardwareChangedCanonicalEvent(String hostUuid, ErrorCode reason) {
             data = new HostCanonicalEvents.HostHardwareChangedData();
             data.hostUuid = hostUuid;
             data.reason = reason;

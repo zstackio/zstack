@@ -163,9 +163,10 @@ public class LdapSyncHelper {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
                         if (!anySuccess.get()) {
-                            trigger.fail(err(LDAP_SYNC_ERROR, errorCodeList,
+                            trigger.fail(err(LDAP_SYNC_ERROR,
                                     "all ldap account importing attempt is failed. ldapServerUuid=%s",
-                                    importSpec.getSourceUuid()));
+                                    importSpec.getSourceUuid())
+                                    .withCause(errorCodeList));
                             return;
                         } else if (!errorCodeList.getCauses().isEmpty()) {
                             logger.warn("ldap account importing occur some errors: " +
@@ -266,9 +267,10 @@ public class LdapSyncHelper {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
                         if (!anySuccess.get()) {
-                            trigger.fail(err(LDAP_SYNC_ERROR, errorCodeList,
+                            trigger.fail(err(LDAP_SYNC_ERROR,
                                     "all ldap account unbinding attempt is failed. ldapServerUuid=%s",
-                                    importSpec.getSourceUuid()));
+                                    importSpec.getSourceUuid())
+                                    .withCause(errorCodeList));
                             return;
                         } else if (!errorCodeList.getCauses().isEmpty()) {
                             logger.warn("ldap account unbinding occur some errors: " +

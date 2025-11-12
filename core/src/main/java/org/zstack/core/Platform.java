@@ -970,6 +970,16 @@ public class Platform {
                 .withCause(causes);
     }
 
+    public static ErrorCode multiErr(ErrorCodeList errorCodeList, String fmt, Object...args) {
+        return err(SysErrors.MULTIPLE_REASONS, null, fmt, args)
+                .withCause(errorCodeList);
+    }
+
+    public static ErrorCode multiErr(ErrorCodeList errorCodeList) {
+        return err(SysErrors.MULTIPLE_REASONS, (ErrorCode) null, "Multiple errors")
+                .withCause(errorCodeList);
+    }
+
     private static void findElaborationFromCoreError(ErrorCode cause, ErrorCode result) {
         ErrorCode coreError = cause == null ? getCoreError(result) : getCoreError(cause);
         // use the core cause as elaboration if it existed

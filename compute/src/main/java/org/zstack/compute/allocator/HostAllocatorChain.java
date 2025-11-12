@@ -7,7 +7,6 @@ import org.zstack.header.allocator.HostCandidateProducer;
 import org.zstack.header.allocator.HostCandidateProducer.HostCandidateProducerContext;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -259,7 +258,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         this.errorCode = err(HostAllocatorError.NO_AVAILABLE_HOST, "[Host Allocation] no host meet the requirements");
         this.errorCode.setOpaque(buildOpaque());
 
-        ErrorCodeList errors = new ErrorCodeList();
+        ErrorCode errors = new ErrorCode();
         errors.setDetails("pagination error list in causes fields");
         this.errorCode.setCause(errors);
 

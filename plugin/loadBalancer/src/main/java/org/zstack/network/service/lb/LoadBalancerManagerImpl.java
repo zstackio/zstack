@@ -57,6 +57,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.multiErr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.*;
@@ -367,10 +368,10 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         }).run(new WhileDoneCompletion(trigger) {
                             @Override
                             public void done(ErrorCodeList errorCodeList) {
-                                if (errorCodeList.getCauses().isEmpty()) {
+                                if (errorCodeList.isEmpty()) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(errorCodeList);
+                                    trigger.fail(multiErr(errorCodeList));
                                 }
                             }
                         });

@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.multiErr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
@@ -435,11 +436,11 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                         errors.put(mgmgUuid, true);
                     } else {
                         errors.put(mgmgUuid, r.getError());
-                        errorCodes.getCauses().add(r.getError());
+                        errorCodes.add(r.getError());
                     }
                 }
-                if (!errorCodes.getCauses().isEmpty()) {
-                    evt.setError(errorCodes);
+                if (errorCodes.hasError()) {
+                    evt.setError(multiErr(errorCodes));
                 }
                 evt.setInventory(errors);
                 bus.publish(evt);
