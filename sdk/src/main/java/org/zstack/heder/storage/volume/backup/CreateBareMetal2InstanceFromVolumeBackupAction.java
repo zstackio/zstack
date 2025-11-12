@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.heder.storage.volume.backup;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateSchedulerJobGroupAction extends AbstractAction {
+public class CreateBareMetal2InstanceFromVolumeBackupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateSchedulerJobGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateSchedulerJobGroupResult value;
+        public org.zstack.heder.storage.volume.backup.CreateBareMetal2InstanceFromVolumeBackupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,17 +25,41 @@ public class CreateSchedulerJobGroupAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, validValues = {"startVm","stopVm","rebootVm","volumeSnapshot","volumeSnapshotGroup","volumeBackup","rootVolumeBackup","vmBackup","databaseBackup","runAutoScalingGroup","cancelIAM2ProjectLoginExpired","takeIAM2ProjectLoginExpired","baremetal2InstanceBackup","baremetal2RootVolumeBackup"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String zoneUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map parameters;
+    public java.lang.String clusterUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String gatewayUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String backupUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String chassisUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String chassisOfferingUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String chassisDiskUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String primaryStorageUuidForRootVolume;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List rootVolumeSystemTags;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String gatewayAllocatorStrategy;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -75,8 +99,8 @@ public class CreateSchedulerJobGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateSchedulerJobGroupResult value = res.getResult(org.zstack.sdk.CreateSchedulerJobGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateSchedulerJobGroupResult() : value; 
+        org.zstack.heder.storage.volume.backup.CreateBareMetal2InstanceFromVolumeBackupResult value = res.getResult(org.zstack.heder.storage.volume.backup.CreateBareMetal2InstanceFromVolumeBackupResult.class);
+        ret.value = value == null ? new org.zstack.heder.storage.volume.backup.CreateBareMetal2InstanceFromVolumeBackupResult() : value; 
 
         return ret;
     }
@@ -106,7 +130,7 @@ public class CreateSchedulerJobGroupAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/scheduler/jobgroups";
+        info.path = "/baremetal2-instance/from/volume-backup/{backupUuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
