@@ -69,6 +69,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.core.Platform.multiErr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.list;
@@ -1357,6 +1358,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         String psUuid;
                         long actualSize = image.getActualSize();
                         String allocatedInstallUrl;
+                        ImageCacheVO vo;
 
                         @Override
                         public void setup() {
@@ -1457,10 +1459,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 }
                             });
 
-                            done(new FlowDoneHandler(completion, chain) {
+                            flow(new NoRollbackFlow() {
+                                String __name__ = "save-db";
                                 @Override
-                                public void handle(Map data) {
-                                    ImageCacheVO vo = new ImageCacheVO();
+                                public void run(FlowTrigger trigger, Map data) {
+                                    vo = new ImageCacheVO();
                                     vo.setState(ImageCacheState.ready);
                                     vo.setMediaType(ImageMediaType.valueOf(image.getMediaType()));
                                     vo.setImageUuid(image.getUuid());
@@ -1474,15 +1477,54 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     vo.setInstallUrl(path.makeFullPath());
                                     dbf.persist(vo);
 
-                                    logger.debug(String.format("downloaded image[uuid:%s, name:%s] to the image cache of local primary storage[uuid: %s, installPath: %s] on host[uuid: %s]",
+                                    trigger.next();
+                                }
+                            });
+
+                            flow(new NoRollbackFlow() {
+                                String __name__ = "invoke-after-create-image-cache-extensions";
+                                @Override
+                                public void run(FlowTrigger trigger, Map data) {
+                                    logger.debug(String.format(
+                                            "downloaded image[uuid:%s, name:%s] to the image cache of local primary storage[uuid: %s, installPath: %s] on host[uuid: %s]",
                                             image.getUuid(), image.getName(), self.getUuid(), primaryStorageInstallPath, hostUuid));
 
                                     ImageCacheInventory inv = ImageCacheInventory.valueOf(vo);
                                     inv.setInstallUrl(primaryStorageInstallPath);
 
-                                    pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)
-                                            .forEach(exp -> exp.saveEncryptAfterCreateImageCache(hostUuid, inv));
+                                    new While<>(pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)).each((ext, whileCompletion) -> {
+                                        ext.saveEncryptAfterCreateImageCache(hostUuid, inv, new Completion(whileCompletion) {
+                                            @Override
+                                            public void success() {
+                                                whileCompletion.done();
+                                            }
 
+                                            @Override
+                                            public void fail(ErrorCode errorCode) {
+                                                whileCompletion.addError(errorCode);
+                                                whileCompletion.done();
+                                            }
+                                        });
+                                    }).run(new WhileDoneCompletion(trigger) {
+                                        @Override
+                                        public void done(ErrorCodeList errorCodeList) {
+                                            if (!errorCodeList.getCauses().isEmpty()) {
+                                                String details = multiErr(errorCodeList.getCauses()).getReadableDetails();
+                                                logger.warn(String.format(
+                                                        "failed to invoke after create image cache extensions (but still continue): %s",
+                                                        details));
+                                            }
+                                            trigger.next();
+                                        }
+                                    });
+                                }
+                            });
+
+                            done(new FlowDoneHandler(completion, chain) {
+                                @Override
+                                public void handle(Map data) {
+                                    ImageCacheInventory inv = ImageCacheInventory.valueOf(vo);
+                                    inv.setInstallUrl(primaryStorageInstallPath);
                                     completion.success(inv);
                                     chain.next();
                                 }
