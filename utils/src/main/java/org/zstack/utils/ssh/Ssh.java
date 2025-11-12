@@ -150,10 +150,10 @@ public class Ssh {
             return new ScriptRunner(commandScript);
 
         case CommandScript.MODE_UPLOAD:
-            return createScpCommand(commandScript.getParameter("from"), commandScript.getParameter("to"), true);
+            return createScpCommand(commandScript.getParameter("from"), commandScript.getParameter("to"), false);
 
         case CommandScript.MODE_DOWNLOAD:
-            return createScpCommand(commandScript.getParameter("from"), commandScript.getParameter("to"), false);
+            return createScpCommand(commandScript.getParameter("from"), commandScript.getParameter("to"), true);
 
         default:
             throw new IllegalArgumentException(String.format("unsupported mode[%s]", commandScript.mode));
