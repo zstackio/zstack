@@ -5700,9 +5700,9 @@ public class KVMHost extends HostBase implements Host {
                             List<String> extraPackagesFromExt = ext.appendExtraPackages(getSelfInventory());
                             if (extraPackagesFromExt != null && !extraPackagesFromExt.isEmpty()) {
                                 if (deployArguments.getExtraPackages() != null)
-                                    deployArguments.setExtraPackages(deployArguments.getExtraPackages() + "," + String.join(",", extraPackagesFromExt));
+                                    deployArguments.setExtraPackages(deployArguments.getExtraPackages() + " " + String.join(" ", extraPackagesFromExt));
                                 else
-                                    deployArguments.setExtraPackages(String.join(",", extraPackagesFromExt));
+                                    deployArguments.setExtraPackages(String.join(" ", extraPackagesFromExt));
                             }
 
                             ext.modifyDeploymentArguments(getSelfInventory(), deployArguments);
