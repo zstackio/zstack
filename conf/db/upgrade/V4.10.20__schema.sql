@@ -20,3 +20,9 @@ DROP VIEW IF EXISTS `zstack`.`HostVO`;
 CREATE VIEW `zstack`.`HostVO` AS SELECT uuid, zoneUuid, clusterUuid, name, description, managementIp, hypervisorType,
 state, status, architecture, nqn, hostname, createDate, lastOpDate FROM `zstack`.`HostEO` WHERE deleted IS NULL;
 
+UPDATE `zstack`.`VolumeSnapshotTreeVO` t JOIN `zstack`.`VolumeVO` v ON t.volumeUuid = v.uuid
+SET t.rootImageUuid = v.rootImageUuid
+WHERE t.current = true
+  AND v.rootImageUuid IS NOT NULL
+  AND t.rootImageUuid IS NULL;
+

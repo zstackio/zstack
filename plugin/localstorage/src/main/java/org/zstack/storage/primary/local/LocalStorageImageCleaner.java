@@ -28,6 +28,7 @@ import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.ImageCacheCleaner;
 import org.zstack.storage.primary.local.LocalStorageUtils.InstallPath;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
@@ -68,17 +70,33 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
 
     @Transactional
     protected List<ImageCacheShadowVO> createShadowImageCacheVOsForNewDeletedAndOld(String psUUid) {
-        List<Long> staleImageCacheIds;
-        if (force){
-            staleImageCacheIds = getStaleImageCacheIdsForLocalStorage(psUUid);
-        } else {
-            staleImageCacheIds = getStaleImageCacheIds(psUUid);
+        // 1. images has been deleted
+        List<Long> staleImageCacheIds = new ArrayList<>();
+        List<Long> imageDeletedCacheIds = getStaleImageCacheIds(psUUid);
+        if (!CollectionUtils.isEmpty(imageDeletedCacheIds)) {
+            staleImageCacheIds.addAll(imageDeletedCacheIds);
         }
 
-        if (staleImageCacheIds == null || staleImageCacheIds.isEmpty()) {
+        if (force){
+            // 2. no vm used but image is not deleted
+            // FIXME: it means nothing. think about host ref.
+            String sql;
+            if (psUUid == null) {
+                sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri where c.imageUuid not in (select vm.imageUuid from VmInstanceVO vm) and" +
+                        " c.primaryStorageUuid = pri.uuid and pri.type = :psType";
+                staleImageCacheIds.addAll(SQL.New(sql).param("psType", getPrimaryStorageType()).list());
+            } else {
+                sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri where c.imageUuid not in (select vm.imageUuid from VmInstanceVO vm) and" +
+                        " c.primaryStorageUuid = pri.uuid and pri.type = :psType and pri.uuid = :psUuid";
+                staleImageCacheIds.addAll(SQL.New(sql).param("psType", getPrimaryStorageType()).param("psUuid", psUUid).list());
+            }
+        }
+
+        if (staleImageCacheIds.isEmpty()) {
             return null;
         }
 
+        staleImageCacheIds = staleImageCacheIds.stream().distinct().collect(Collectors.toList());
         String sql = "select c from ImageCacheVO c where c.id in (:ids)";
         TypedQuery<ImageCacheVO> cq = dbf.getEntityManager().createQuery(sql, ImageCacheVO.class);
         cq.setParameter("ids", staleImageCacheIds);
@@ -106,13 +124,61 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
             query.setParameter("status", VolumeStatus.NotInstantiated);
             List<String> filterIds = query.getResultList();
 
+            // 3. no volume reference
             if (psUUid == null) {
-                sql = "select c from ImageCacheVO c where c.imageUuid not in (select vol.rootImageUuid from VolumeVO vol, LocalStorageResourceRefVO ref" +
-                        " where vol.uuid = ref.resourceUuid and ref.resourceType = :rtype and ref.hostUuid = :huuid and vol.rootImageUuid is not null) and c.id in (:ids)";
+                sql = "select c.id from ImageCacheVO c" +
+                        " where c.imageUuid not in" +
+                        " (select vol.rootImageUuid from VolumeVO vol, LocalStorageResourceRefVO ref" +
+                        " where vol.uuid = ref.resourceUuid" +
+                        " and ref.resourceType = :rtype" +
+                        " and ref.hostUuid = :huuid" +
+                        " and vol.rootImageUuid is not null)" +
+                        " and c.id in (:ids)";
             } else {
-                sql = "select c from ImageCacheVO c where c.imageUuid not in (select vol.rootImageUuid from VolumeVO vol, LocalStorageResourceRefVO ref" +
-                        " where vol.uuid = ref.resourceUuid and ref.resourceType = :rtype and ref.hostUuid = :huuid and ref.primaryStorageUuid = :psUuid and vol.rootImageUuid is not null) and c.id in (:ids)";
+                sql = "select c.id from ImageCacheVO c" +
+                        " where c.imageUuid not in" +
+                        " (select vol.rootImageUuid from VolumeVO vol, LocalStorageResourceRefVO ref" +
+                        " where vol.uuid = ref.resourceUuid" +
+                        " and ref.resourceType = :rtype" +
+                        " and ref.hostUuid = :huuid" +
+                        " and ref.primaryStorageUuid = :psUuid" +
+                        " and vol.rootImageUuid is not null)" +
+                        " and c.id in (:ids)";
             }
+            TypedQuery<Long> iq = dbf.getEntityManager().createQuery(sql, Long.class);
+            iq.setParameter("rtype", VolumeVO.class.getSimpleName());
+            iq.setParameter("huuid", hostUuid);
+            if (psUUid != null) {
+                iq.setParameter("psUuid", psUUid);
+            }
+            iq.setParameter("ids", cacheIds);
+            cacheIds = iq.getResultList();
+            if (cacheIds.isEmpty()) {
+                continue;
+            }
+
+            // 4. no volume snapshot tree reference
+            if (psUUid == null) {
+                sql = "select c from ImageCacheVO c" +
+                        " where c.imageUuid not in" +
+                        " (select tree.rootImageUuid from VolumeSnapshotTreeVO tree, LocalStorageResourceRefVO ref" +
+                        " where tree.volumeUuid = ref.resourceUuid" +
+                        " and ref.resourceType = :rtype" +
+                        " and ref.hostUuid = :huuid" +
+                        " and tree.rootImageUuid is not null)" +
+                        " and c.id in (:ids)";
+            } else {
+                sql = "select c from ImageCacheVO c" +
+                        " where c.imageUuid not in" +
+                        " (select tree.rootImageUuid from VolumeSnapshotTreeVO tree, LocalStorageResourceRefVO ref" +
+                        " where tree.volumeUuid = ref.resourceUuid" +
+                        " and ref.resourceType = :rtype" +
+                        " and ref.hostUuid = :huuid" +
+                        " and ref.primaryStorageUuid = :psUuid" +
+                        " and tree.rootImageUuid is not null)" +
+                        " and c.id in (:ids)";
+            }
+
             cq = dbf.getEntityManager().createQuery(sql, ImageCacheVO.class);
             cq.setParameter("rtype", VolumeVO.class.getSimpleName());
             cq.setParameter("huuid", hostUuid);
@@ -120,8 +186,8 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
                 cq.setParameter("psUuid", psUUid);
             }
             cq.setParameter("ids", cacheIds);
-            List<ImageCacheVO> results = cq.getResultList();
 
+            List<ImageCacheVO> results = cq.getResultList();
             results.removeIf(c -> filterIds.contains(c.getImageUuid()));
 
             stale.addAll(results);
