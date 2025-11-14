@@ -597,17 +597,17 @@ public class VolumeSnapshotTreeBase {
             tq.select(VolumeSnapshotTreeVO_.current);
             tq.add(VolumeSnapshotTreeVO_.uuid, Op.EQ, currentRoot.getTreeUuid());
             Boolean onCurrentTree = tq.findValue();
+            final String[] snapshotAllocatedUrl = new String[1];
 
             boolean needMerge = onCurrentTree && ancestorOfLatest && currentRoot.getPrimaryStorageUuid() != null && VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString().equals(currentRoot.getType());
             if (needMerge) {
                 flow(new Flow() {
                     String __name__ = "allocate-primary-storage";
-
-                    boolean success;
+                    String allocatedUrl;
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                        AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                         for (SnapshotDeletionExtensionPoint ext : pluginRgty.getExtensionList(SnapshotDeletionExtensionPoint.class)) {
                             String hostUuid = ext.getHostUuidByResourceUuid(currentRoot.getPrimaryStorageUuid() ,currentRoot.getVolumeUuid());
                             amsg.setRequiredHostUuid(hostUuid);
@@ -615,6 +615,7 @@ public class VolumeSnapshotTreeBase {
                         amsg.setRequiredPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
                         amsg.setSize(requiredSize);
                         amsg.setNoOverProvisioning(true);
+                        amsg.setRequiredInstallUri("volume://" + currentRoot.getVolumeUuid());
                         bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, currentRoot.getPrimaryStorageUuid());
                         bus.send(amsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -622,7 +623,8 @@ public class VolumeSnapshotTreeBase {
                                 if (!reply.isSuccess()) {
                                     trigger.fail(reply.getError());
                                 } else {
-                                    success = true;
+                                    allocatedUrl = ((AllocatePrimaryStorageSpaceReply) reply).getAllocatedInstallUrl();
+                                    snapshotAllocatedUrl[0] = allocatedUrl;
                                     trigger.next();
                                 }
                             }
@@ -631,11 +633,12 @@ public class VolumeSnapshotTreeBase {
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (success) {
-                            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                        if (allocatedUrl != null) {
+                            ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
                             imsg.setPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
                             imsg.setDiskSize(requiredSize);
                             imsg.setNoOverProvisioning(true);
+                            imsg.setAllocatedInstallUrl(allocatedUrl);
                             bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, currentRoot .getPrimaryStorageUuid());
                             bus.send(imsg);
                         }
@@ -658,10 +661,11 @@ public class VolumeSnapshotTreeBase {
                         bus.send(mmsg, new CloudBusCallBack(trigger) {
                             @Override
                             public void run(MessageReply reply) {
-                                IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
                                 imsg.setPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
                                 imsg.setDiskSize(requiredSize);
                                 imsg.setNoOverProvisioning(true);
+                                imsg.setAllocatedInstallUrl(snapshotAllocatedUrl[0]);
                                 bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, currentRoot.getPrimaryStorageUuid());
                                 bus.send(imsg);
                                 if (!reply.isSuccess()) {

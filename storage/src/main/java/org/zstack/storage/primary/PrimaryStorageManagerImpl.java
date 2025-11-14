@@ -5,6 +5,7 @@ import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.zstack.configuration.DiskOfferingSystemTags;
 import org.zstack.configuration.InstanceOfferingSystemTags;
 import org.zstack.configuration.OfferingUserConfigUtils;
@@ -728,7 +729,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 PSCapacityExtensionPoint PSCapacityExt = pluginRgty.getExtensionFromMap(inv.getType(), PSCapacityExtensionPoint.class);
                 allocatedInstallUrl[0] = inv.getUrl();
                 if (PSCapacityExt != null) {
-                    allocatedInstallUrl[0] = PSCapacityExt.buildAllocatedInstallUrl(msg, inv);
+                    allocatedInstallUrl[0] = PSCapacityExt.allocateSpaceDryRun(msg, inv);
                     if (allocatedInstallUrl[0] == null) {
                         return null;
                     }
@@ -751,7 +752,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 long avail = 0;
 
                 PSCapacityExtensionPoint PSCapacityExt = pluginRgty.getExtensionFromMap(inv.getType(), PSCapacityExtensionPoint.class);
-                allocatedInstallUrl[0] = PSCapacityExt.buildAllocatedInstallUrl(msg, inv);
+                allocatedInstallUrl[0] = PSCapacityExt.allocateSpaceDryRun(msg, inv);
                 capacityBeforeAllocate = PSCapacityExt.reserveCapacity(msg, allocatedInstallUrl[0], size, inv.getUuid());
 
                 long diff = capacityBeforeAllocate - size;

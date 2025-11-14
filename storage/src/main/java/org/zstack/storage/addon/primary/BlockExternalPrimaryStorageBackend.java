@@ -3,6 +3,10 @@ package org.zstack.storage.addon.primary;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.volume.block.GetAccessPathMsg;
 
+/**
+ * do not match external primary storage design.
+ */
+@Deprecated
 public interface BlockExternalPrimaryStorageBackend {
     String getType();
 

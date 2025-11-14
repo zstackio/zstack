@@ -3,16 +3,22 @@ package org.zstack.test.integration.storage.primary.addon.zbs
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageSpaceVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageSpaceVO_
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO_
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageStatus
 import org.zstack.cbd.MdsUri
-import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.*
+import org.zstack.storage.addon.primary.ExternalPrimaryStorageSystemTags
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus
 import org.zstack.storage.volume.VolumeGlobalConfig
+import org.zstack.storage.zbs.AddonInfo
+import org.zstack.storage.zbs.Config
 import org.zstack.storage.zbs.ZbsConstants
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
@@ -136,7 +142,7 @@ class ZbsPrimaryStorageCase extends SubCase {
                     identity = "zbs"
                     defaultOutputProtocol = "CBD"
                     config = "{\"mdsUrls\":[\"root:password@127.0.1.1\",\"root:password@127.0.1.2\",\"root:password@127.0.1.3\"],\"logicalPoolName\":\"lpool1\"}"
-                    url = "fake url"
+                    url = "zbs"
                 }
 
                 attachBackupStorage("sftp")
@@ -250,6 +256,41 @@ class ZbsPrimaryStorageCase extends SubCase {
                 .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
                 .findValue()
         assert addonInfo.contains("127.0.1.3")
+
+
+        assert Q.New(ExternalPrimaryStorageSpaceVO.class)
+                .eq(ExternalPrimaryStorageSpaceVO_.primaryStorageUuid, ps.uuid)
+                .count() == 1
+        // update multi pools
+        // Config.Pool
+        updateExternalPrimaryStorage {
+            uuid = ps.uuid
+            config = "{\"mdsUrls\":[\"root:password@127.0.1.1\",\"root:password@127.0.1.2\",\"root:password@127.0.1.3\"]," +
+                    "\"pools\":[{\"logicalName\":\"lpool1\"}, {\"logicalName\":\"lpool2\"}]}"
+        }
+
+        assert Q.New(ExternalPrimaryStorageSpaceVO.class)
+                .eq(ExternalPrimaryStorageSpaceVO_.primaryStorageUuid, ps.uuid)
+                .count() == 2
+
+        retryInSecs {
+            Config config = JSONObjectUtil.toObject(
+                    Q.New(ExternalPrimaryStorageVO.class)
+                            .select(ExternalPrimaryStorageVO_.config)
+                            .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                            .findValue(),
+                    Config.class)
+            AddonInfo info = JSONObjectUtil.toObject(
+                    Q.New(ExternalPrimaryStorageVO.class)
+                            .select(ExternalPrimaryStorageVO_.addonInfo)
+                            .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                            .findValue(),
+                    AddonInfo.class)
+            assert config.pools.size() == 2
+            assert info.logicalPoolInfos.size() == 2
+            assert config.poolNames.containsAll(["lpool1", "lpool2"])
+            assert info.logicalPoolInfos.collect { it.logicalPoolName }.containsAll(["lpool1", "lpool2"])
+        }
     }
 
     void testDefaultConfig() {
@@ -269,7 +310,6 @@ class ZbsPrimaryStorageCase extends SubCase {
 
         ps = queryPrimaryStorage {}[0] as ExternalPrimaryStorageInventory
         assert ps.name == "test-zbs-new-name"
-        assert ps.url == ZbsConstants.ZBS_CBD_PREFIX_SCHEME + ps.uuid
 
         reconnectPrimaryStorage {
             uuid = ps.uuid
@@ -321,7 +361,12 @@ class ZbsPrimaryStorageCase extends SubCase {
 
         def addonInfo = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
 
-        assert addonInfo == "{\"clusterInfo\":{\"uuid\":\"123456789\",\"version\":\"1.6.1-for-test\"},\"mdsInfos\":[{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.1\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"},{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.2\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"},{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.3\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}],\"logicalPoolInfos\":[{\"physicalPoolID\":1,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":1,\"usedSize\":322961408,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":968884224,\"physicalPoolName\":\"pool1\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool1\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":3221225472}]}"
+        assert addonInfo == "{\"clusterInfo\":{\"uuid\":\"123456789\",\"version\":\"1.6.1-for-test\"}," +
+                "\"mdsInfos\":[{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.1\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}," +
+                "{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.2\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}," +
+                "{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.3\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}]," +
+                "\"logicalPoolInfos\":[{\"physicalPoolID\":1,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":1,\"usedSize\":322961408,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":968884224,\"physicalPoolName\":\"pool1\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool1\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":3221225472}," +
+                "{\"physicalPoolID\":2,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":2,\"usedSize\":123456789,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":123456789,\"physicalPoolName\":\"pool2\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool2\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":987654321}]}"
 
         env.afterSimulator(ZbsPrimaryStorageMdsBase.PING_PATH) { rsp, HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.PingCmd.class)
@@ -338,7 +383,12 @@ class ZbsPrimaryStorageCase extends SubCase {
 
         addonInfo = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
 
-        assert addonInfo == "{\"clusterInfo\":{\"uuid\":\"123456789\",\"version\":\"1.6.1-for-test\"},\"mdsInfos\":[{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.1\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"},{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.2\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"},{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.3\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}],\"logicalPoolInfos\":[{\"physicalPoolID\":1,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":1,\"usedSize\":322961408,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":968884224,\"physicalPoolName\":\"pool1\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool1\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":3221225472}]}"
+        assert addonInfo == "{\"clusterInfo\":{\"uuid\":\"123456789\",\"version\":\"1.6.1-for-test\"}," +
+                "\"mdsInfos\":[{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.1\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"}," +
+                "{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.2\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}," +
+                "{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.3\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}]," +
+                "\"logicalPoolInfos\":[{\"physicalPoolID\":1,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":1,\"usedSize\":322961408,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":968884224,\"physicalPoolName\":\"pool1\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool1\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":3221225472}," +
+                "{\"physicalPoolID\":2,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":2,\"usedSize\":123456789,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":123456789,\"physicalPoolName\":\"pool2\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool2\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":987654321}]}"
 
         assert Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Connected
 
@@ -363,7 +413,12 @@ class ZbsPrimaryStorageCase extends SubCase {
 
         addonInfo = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
 
-        assert addonInfo == "{\"clusterInfo\":{\"uuid\":\"123456789\",\"version\":\"1.6.1-for-test\"},\"mdsInfos\":[{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.1\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"},{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.2\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"},{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.3\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"}],\"logicalPoolInfos\":[{\"physicalPoolID\":1,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":1,\"usedSize\":322961408,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":968884224,\"physicalPoolName\":\"pool1\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool1\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":3221225472}]}"
+        assert addonInfo == "{\"clusterInfo\":{\"uuid\":\"123456789\",\"version\":\"1.6.1-for-test\"}," +
+                "\"mdsInfos\":[{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.1\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"}," +
+                "{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.2\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"}," +
+                "{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.3\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"}]," +
+                "\"logicalPoolInfos\":[{\"physicalPoolID\":1,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":1,\"usedSize\":322961408,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":968884224,\"physicalPoolName\":\"pool1\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool1\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":3221225472}," +
+                "{\"physicalPoolID\":2,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":2,\"usedSize\":123456789,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":123456789,\"physicalPoolName\":\"pool2\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool2\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":987654321}]}"
 
         assert Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Disconnected
 
@@ -377,13 +432,26 @@ class ZbsPrimaryStorageCase extends SubCase {
     }
 
     void testDataVolumeLifecycle() {
+        long usedCapPoolBefore = getUsedCapacity("lpool2")
+        long usedCapPsBefore = getUsedCapacity()
         vol = createDataVolume {
             name = "test"
             diskOfferingUuid = diskOffering.uuid
             primaryStorageUuid = ps.uuid
-        } as VolumeInventory
+            systemTags = [ExternalPrimaryStorageSystemTags.REQUIRED_INSTALL_URL.instantiateTag(
+                    Collections.singletonMap(ExternalPrimaryStorageSystemTags.REQUIRED_INSTALL_URL_TOKEN, "zbs://lpool2"))]
 
+        } as VolumeInventory
+        assert getUsedCapacity("lpool2") == usedCapPoolBefore + vol.size
+        assert getUsedCapacity() == usedCapPsBefore + vol.size
+
+        assert vol.installPath.startsWith("zbs://lpool2")
         deleteVolume(vol.uuid)
+
+        retryInSecs {
+            assert getUsedCapacity("lpool2") == usedCapPoolBefore
+            assert getUsedCapacity() == usedCapPsBefore
+        }
     }
 
     void testNegativeScenario() {
@@ -511,5 +579,22 @@ class ZbsPrimaryStorageCase extends SubCase {
         expungeDataVolume {
             uuid = volUuid
         }
+    }
+
+    long getUsedCapacity(String poolName) {
+        ExternalPrimaryStorageSpaceVO spaceVO = Q.New(ExternalPrimaryStorageSpaceVO.class)
+                .eq(ExternalPrimaryStorageSpaceVO_.primaryStorageUuid, ps.uuid)
+                .eq(ExternalPrimaryStorageSpaceVO_.locationUrl, "zbs://" + poolName)
+                .find()
+
+        return spaceVO.totalCapacity - spaceVO.availableCapacity
+    }
+
+    long getUsedCapacity() {
+        PrimaryStorageCapacityVO cap = Q.New(PrimaryStorageCapacityVO.class)
+                .eq(PrimaryStorageCapacityVO_.uuid, ps.uuid)
+                .find()
+
+        return cap.totalCapacity - cap.availableCapacity
     }
 }

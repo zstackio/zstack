@@ -884,6 +884,26 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         config = StringUtils.isEmpty(self.getConfig()) ? new ExponConfig() : JSONObjectUtil.toObject(self.getConfig(), ExponConfig.class);
     }
 
+    // TODO: add more not found handling when support multi pool
+    @Override
+    public void getCapacity(List<String> locationUrl, ReturnValueCompletion<StorageCapacity> comp) {
+        List<FailureDomainModule> pools = getSelfPools();
+        StorageCapacity cap = new StorageCapacity();
+        long total = pools.stream().mapToLong(FailureDomainModule::getValidSize).sum();
+        long avail = total - pools.stream().mapToLong(FailureDomainModule::getRealDataSize).sum();
+        cap.setAvailableCapacity(avail);
+        cap.setTotalCapacity(total);
+        for (String url : locationUrl) {
+            String poolName = getPoolNameFromPath(url);
+            FailureDomainModule pool = pools.stream().filter(it -> it.getFailureDomainName().equals(poolName)).findFirst().orElse(null);
+            if (pool != null) {
+                cap.putCapacity(url, pool.getValidSize() - pool.getRealDataSize(), pool.getValidSize());
+            }
+        }
+
+        comp.success(cap);
+    }
+
     @Override
     public void reportCapacity(ReturnValueCompletion<StorageCapacity> comp) {
         reloadDbInfo();
@@ -1309,8 +1329,8 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     @Override
-    public void validateConfig(String config) {
-
+    public String validateConfig(String config) {
+        return config;
     }
 
     @Override
