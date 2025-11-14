@@ -295,6 +295,15 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 return new LocalStorageKvmBackend.CreateVolumeWithBackingRsp()
             }
 
+            VFS.vfsHook(LocalStorageKvmBackend.CREATE_VOLUME_WITH_BACKING_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.CreateVolumeWithBackingCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+
+                Volume image = vfs.getFile(cmd.templatePathInCache, true)
+                vfs.createQcow2(cmd.installPath, image.actualSize, image.virtualSize, cmd.templatePathInCache)
+                return rsp
+            }
+
             simulator(LocalStorageKvmBackend.CREATE_EMPTY_VOLUME_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 return new LocalStorageKvmBackend.CreateEmptyVolumeRsp()
             }

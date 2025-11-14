@@ -1,9 +1,13 @@
 package org.zstack.storage.snapshot.reference;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.*;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.ImageCacheVO;
@@ -24,6 +28,8 @@ import javax.persistence.LockModeType;
 import javax.persistence.Tuple;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 public class VolumeSnapshotReferenceUtils {
     private static final CLogger logger = Utils.getLogger(VolumeSnapshotReferenceUtils.class);
@@ -368,6 +374,65 @@ public class VolumeSnapshotReferenceUtils {
         VolumeSnapshotReferenceVO ref = getVolumeBackingRef(volume.getUuid());
         if (ref != null) {
             deleteAndRedirectSnapshotRef(ref);
+        }
+    }
+
+    /***
+     * handle volume or snapshot install path change, it MUST BE called in a TRANSACTION context, and the caller should
+     * ensure the volume or snapshot install path will be changed in this transaction. the whole API process MUST BE
+     * idempotent and safely interrupted without adverse effects.
+     * @param volumeUuid the volume install url changed, contains volume and snapshot
+     * @param oldAndNewPaths key is old path, value is new path
+     */
+    public static void handleVolumeInstallUrlChange(String volumeUuid, Map<String, String> oldAndNewPaths) {
+        if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+            throw new CloudRuntimeException("handleVolumeInstallUrlChange must be called in a transaction context, " +
+                    "and you should ensure the volume or snapshot install path will be changed in this transaction." +
+                    "the whole API process MUST BE idempotent and safely interrupted without adverse effects.");
+        }
+
+        if (MapUtils.isEmpty(oldAndNewPaths)) {
+            return;
+        }
+
+        List<VolumeInventory> refVols = getReferenceVolume(volumeUuid);
+        if (!refVols.isEmpty()) {
+            List<String> infos = refVols.stream().map(v -> String.format("uuid:%s, name:%s", v.getUuid(), v.getName())).collect(Collectors.toList());
+            throw new OperationFailureException(operr(" volume[uuid: %s] has been referenced by other volumes [%s], " +
+                    "can not change install path before flatten them and their descendants ", volumeUuid, infos.toString()));
+        }
+
+        VolumeSnapshotReferenceVO ref = getVolumeBackingRef(volumeUuid);
+        if (ref == null) {
+            return;
+        }
+        if (oldAndNewPaths.containsKey(ref.getReferenceInstallUrl())) {
+            SQL.New(VolumeSnapshotReferenceVO.class).eq(VolumeSnapshotReferenceVO_.id, ref.getId())
+                    .set(VolumeSnapshotReferenceVO_.referenceInstallUrl, oldAndNewPaths.get(ref.getReferenceInstallUrl()))
+                    .update();
+
+            logger.debug(String.format("update volume snapshot reference[referUuid:%s, referVolumeUuid:%s] install path from %s to %s",
+                    ref.getReferenceUuid(), ref.getReferenceVolumeUuid(), ref.getReferenceInstallUrl(), oldAndNewPaths.get(ref.getReferenceInstallUrl())));
+        } else {
+            logger.warn(String.format("volume snapshot reference[referUuid:%s, referVolumeUuid:%s] install path %s not in oldAndNewPaths",
+                    ref.getReferenceUuid(), ref.getReferenceVolumeUuid(), ref.getReferenceInstallUrl()));
+        }
+    }
+
+    public static void handleVolumeOverwrite(VolumeInventory originVolume, String newVolumeUuid) {
+        if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+            throw new CloudRuntimeException("handleVolumeUuidChange must be called in a transaction context, " +
+                    "and you should ensure the volume or snapshot install path will be changed in this transaction." +
+                    "the whole API process MUST BE idempotent and safely interrupted without adverse effects.");
+        }
+
+        VolumeSnapshotReferenceVO ref = getVolumeBackingRef(originVolume.getUuid());
+        if (ref != null && ref.getReferenceUuid().equals(originVolume.getUuid())
+                && ref.getReferenceInstallUrl().equals(originVolume.getInstallPath())
+                && ref.getReferenceType().equals(VolumeVO.class.getSimpleName())) {
+            SQL.New(VolumeSnapshotReferenceVO.class).eq(VolumeSnapshotReferenceVO_.id, ref.getId())
+                    .set(VolumeSnapshotReferenceVO_.referenceVolumeUuid, newVolumeUuid)
+                    .update();
         }
     }
 

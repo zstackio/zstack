@@ -1473,18 +1473,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         if (originVolumeDeletionPolicy != VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct) {
             return;
         }
-        boolean hasDirectBackingRef = Q.New(VolumeSnapshotReferenceVO.class)
-                .eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, originVolume.getUuid())
-                .eq(VolumeSnapshotReferenceVO_.referenceType, VolumeVO.class.getSimpleName())
-                .eq(VolumeSnapshotReferenceVO_.referenceInstallUrl, originVolume.getInstallPath())
-                .eq(VolumeSnapshotReferenceVO_.referenceUuid, originVolume.getUuid())
-                .isExists();
 
-        if (hasDirectBackingRef) {
-            SQL.New(VolumeSnapshotReferenceVO.class).eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, originVolume.getUuid())
-                    .set(VolumeSnapshotReferenceVO_.referenceVolumeUuid, transientVolume.getUuid())
-                    .update();
-        }
+        VolumeSnapshotReferenceUtils.handleVolumeOverwrite(originVolume, transientVolume.getUuid());
     }
 
     @Override

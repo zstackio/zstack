@@ -16,9 +16,11 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
-import org.zstack.core.thread.*;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.trash.TrashType;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.core.workflow.SimpleFlowChain;
@@ -35,9 +37,6 @@ import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
@@ -1787,7 +1786,9 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                 ChangeVolumeTypeOnPrimaryStorageReply cr = reply.castReply();
                                 newRootSnapshots.addAll(cr.getSnapshots());
                                 newRootVol = cr.getVolume();
-                                installPathsToGc.put(newRootVol, cr.getInstallPathToGc());
+                                if (cr.getInstallPathToGc() != null) {
+                                    installPathsToGc.put(newRootVol, cr.getInstallPathToGc());
+                                }
                                 trigger.next();
                             }
                         });
@@ -1817,7 +1818,9 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                 ChangeVolumeTypeOnPrimaryStorageReply cr = reply.castReply();
                                 oldRootSnapshots.addAll(cr.getSnapshots());
                                 oldRootVol = cr.getVolume();
-                                installPathsToGc.put(oldRootVol, cr.getInstallPathToGc());
+                                if (cr.getInstallPathToGc() != null) {
+                                    installPathsToGc.put(oldRootVol, cr.getInstallPathToGc());
+                                }
                                 trigger.next();
                             }
                         });
@@ -1833,6 +1836,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
                             @Override
                             protected void scripts() {
                                 VmInstanceVO vm = findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
+                                Map<String, String> oldRootVolOldAndNewInstallPaths = new HashMap<>();
+                                Map<String, String> newRootVolOldAndNewInstallPaths = new HashMap<>();
 
                                 VolumeVO oldRootVolumeVO = vm.getRootVolume();
                                 VolumeVO newRootVolumeVO = vm.getAllVolumes().stream().filter(it -> it.getUuid().equals(msg.getVolumeUuid()))
@@ -1840,11 +1845,13 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                                 operr("volume[uuid%s] should be attached.")
                                         ));
 
+                                oldRootVolOldAndNewInstallPaths.put(oldRootVolumeVO.getInstallPath(), oldRootVol.getInstallPath());
                                 oldRootVolumeVO.setType(VolumeType.Data);
                                 oldRootVolumeVO.setInstallPath(oldRootVol.getInstallPath());
                                 oldRootVolumeVO.setDeviceId(newRootVolumeVO.getDeviceId());
                                 merge(oldRootVolumeVO);
 
+                                newRootVolOldAndNewInstallPaths.put(newRootVolumeVO.getInstallPath(), newRootVol.getInstallPath());
                                 newRootVolumeVO.setType(VolumeType.Root);
                                 newRootVolumeVO.setInstallPath(newRootVol.getInstallPath());
                                 newRootVolumeVO.setDeviceId(0);
@@ -1852,6 +1859,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                                 for (VolumeSnapshotInventory newRootSnapshot : newRootSnapshots) {
                                     VolumeSnapshotVO snapshot = findByUuid(newRootSnapshot.getUuid(), VolumeSnapshotVO.class);
+                                    newRootVolOldAndNewInstallPaths.put(newRootSnapshot.getPrimaryStorageInstallPath(), newRootSnapshot.getPrimaryStorageInstallPath());
                                     snapshot.setVolumeType(VolumeType.Root.toString());
                                     snapshot.setPrimaryStorageInstallPath(newRootSnapshot.getPrimaryStorageInstallPath());
                                     merge(snapshot);
@@ -1859,10 +1867,19 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                                 for (VolumeSnapshotInventory oldRootSnapshot : oldRootSnapshots) {
                                     VolumeSnapshotVO snapshot = findByUuid(oldRootSnapshot.getUuid(), VolumeSnapshotVO.class);
+                                    oldRootVolOldAndNewInstallPaths.put(oldRootSnapshot.getPrimaryStorageInstallPath(), oldRootSnapshot.getPrimaryStorageInstallPath());
                                     snapshot.setVolumeType(VolumeType.Data.toString());
                                     snapshot.setPrimaryStorageInstallPath(oldRootSnapshot.getPrimaryStorageInstallPath());
                                     merge(snapshot);
                                 }
+
+                                // TODO use extension
+                                oldRootVolOldAndNewInstallPaths.entrySet().removeIf(entry -> entry.getKey().equals(entry.getValue()));
+                                newRootVolOldAndNewInstallPaths.entrySet().removeIf(entry -> entry.getKey().equals(entry.getValue()));
+                                VolumeSnapshotReferenceUtils.handleVolumeInstallUrlChange(oldRootVolumeVO.getUuid(),
+                                        oldRootVolOldAndNewInstallPaths);
+                                VolumeSnapshotReferenceUtils.handleVolumeInstallUrlChange(newRootVolumeVO.getUuid(),
+                                        newRootVolOldAndNewInstallPaths);
 
                                 vm.setRootVolumeUuid(newRootVolumeVO.getUuid());
                                 merge(vm);
@@ -1874,6 +1891,11 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "unlink-volumes-old-install-path";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return installPathsToGc.isEmpty();
+                    }
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -2007,16 +2029,23 @@ public class VolumeBase extends AbstractVolume implements Volume {
                         new SQLBatch() {
                             @Override
                             protected void scripts() {
+                                Map<String, String> oldAndNewInstallPaths = new HashMap<>();
+                                oldAndNewInstallPaths.put(self.getInstallPath(), changedVolume.getInstallPath());
                                 self.setType(msg.getType());
                                 self.setInstallPath(changedVolume.getInstallPath());
                                 merge(self);
 
                                 for (VolumeSnapshotInventory changedSnapshot : changedSnapshots) {
                                     VolumeSnapshotVO snapshot = findByUuid(changedSnapshot.getUuid(), VolumeSnapshotVO.class);
+                                    oldAndNewInstallPaths.put(snapshot.getPrimaryStorageInstallPath(), changedSnapshot.getPrimaryStorageInstallPath());
                                     snapshot.setVolumeType(msg.getType().toString());
                                     snapshot.setPrimaryStorageInstallPath(changedSnapshot.getPrimaryStorageInstallPath());
                                     merge(snapshot);
                                 }
+
+                                // TODO use extension
+                                oldAndNewInstallPaths.entrySet().removeIf(entry -> entry.getKey().equals(entry.getValue()));
+                                VolumeSnapshotReferenceUtils.handleVolumeInstallUrlChange(self.getUuid(), oldAndNewInstallPaths);
                             }
                         }.execute();
                         trigger.next();
@@ -2025,6 +2054,11 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "unlink-volume-old-install-path";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return installPathToGc == null;
+                    }
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
