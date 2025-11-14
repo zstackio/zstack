@@ -127,7 +127,7 @@ public class MacOperator {
     public static String generateMacWithDeviceId(short deviceId) {
         VmMacAddressSchemaType type;
         try {
-            type = VmMacAddressSchemaType.valueOf(VmGlobalProperty.vmMacAddressSchema.toLowerCase());
+            type = VmMacAddressSchemaType.valueOf(VmGlobalProperty.vmMacAddressSchema);
         } catch (Exception e) {
             type = VmMacAddressSchemaType.Random;
         }
@@ -148,8 +148,8 @@ public class MacOperator {
         }
 
         /* encode mgt ip address into mac address: for example,
-        * mgt ip is: 172.24.0.81, its hex string: AC 18 0 51,
-        * so mac address will look like: 18:00:51:xx:xx:yy
+        * mgt ip is: 172.24.0.81, its hex string: AC 18 00 51,
+        * so mac address will look like: fa:00:51:xx:xx:yy
         * xx:xx are random. yy is device ID */
         int mgtIpL = (int)NetworkUtils.ipv4StringToLong(mgtIp);
         String mgtIpStr = Integer.toHexString(mgtIpL);
@@ -158,7 +158,7 @@ public class MacOperator {
             mgtIpStr = compensate + mgtIpStr;
         }
 
-        StringBuilder sb = new StringBuilder(mgtIpStr.substring(2, 4)).append(":");
+        StringBuilder sb = new StringBuilder("fa").append(":");
         sb.append(mgtIpStr, 4, 6).append(":");
         sb.append(mgtIpStr, 6, 8).append(":");
 
