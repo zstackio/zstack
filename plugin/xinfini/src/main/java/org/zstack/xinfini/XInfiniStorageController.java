@@ -558,6 +558,30 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         config = StringUtils.isEmpty(self.getConfig()) ? new XInfiniConfig() : JSONObjectUtil.toObject(self.getConfig(), XInfiniConfig.class);
     }
 
+    // TODO: add more not found handling when support multi pool
+    @Override
+    public void getCapacity(List<String> requiredUrls, ReturnValueCompletion<StorageCapacity> comp) {
+        Map<Integer, XInfiniAddonInfo.Pool> pools = refreshPoolCapacity()
+                .stream()
+                .filter(it -> config.getPoolIds().contains(it.getId()))
+                .collect(Collectors.toMap(XInfiniAddonInfo.Pool::getId, it -> it));
+
+        long total = pools.values().stream().mapToLong(XInfiniAddonInfo.Pool::getTotalCapacity).sum();
+        long avail = pools.values().stream().mapToLong(XInfiniAddonInfo.Pool::getAvailableCapacity).sum();
+        StorageCapacity cap = new StorageCapacity();
+        cap.setAvailableCapacity(avail);
+        cap.setTotalCapacity(total);
+
+        for (String url : requiredUrls) {
+            int poolId = getPoolIdFromPath(url);
+            XInfiniAddonInfo.Pool pool = pools.get(poolId);
+            if (pool != null) {
+                cap.putCapacity(url, pool.getAvailableCapacity(), pool.getTotalCapacity());
+            }
+        }
+        comp.success(cap);
+    }
+
     @Override
     public void reportCapacity(ReturnValueCompletion<StorageCapacity> comp) {
         reloadDbInfo();
@@ -1009,8 +1033,8 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     }
 
     @Override
-    public void validateConfig(String config) {
-
+    public String validateConfig(String config) {
+        return config;
     }
 
     @Override

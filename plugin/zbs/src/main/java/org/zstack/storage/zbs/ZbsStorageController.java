@@ -19,13 +19,13 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostAO_;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
@@ -56,9 +56,14 @@ import org.zstack.utils.logging.CLogger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.storage.zbs.ZbsHelper.*;
 
@@ -82,6 +87,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     private ExternalPrimaryStorageVO self;
     private AddonInfo addonInfo;
     private Config config;
+
+    private Map<String, String> physicalPoolByLogicalPool = new ConcurrentHashMap<>();
 
     public static final String DEPLOY_CLIENT_PATH = "/zbs/primarystorage/client/deploy";
     public static final String GET_CAPACITY_PATH = "/zbs/primarystorage/capacity";
@@ -116,8 +123,10 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         capabilities.setSnapshotCapability(scap);
         capabilities.setSupportShareableVolume(true);
         capabilities.setSupportCloneFromVolume(false);
+        capabilities.setSupportCloneFromAnotherSpace(false);
         capabilities.setSupportStorageQos(false);
         capabilities.setSupportLiveExpandVolume(false);
+        capabilities.setSupportMultiSpace(true);
         capabilities.setSupportedImageFormats(Collections.singletonList(ImageConstant.RAW_FORMAT_STRING));
         capabilities.setDefaultIsoActiveProtocol(VolumeProtocol.CBD);
         capabilities.setDefaultImageExportProtocol(VolumeProtocol.NBD);
@@ -126,6 +135,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     @Override
     public void activate(BaseVolumeInfo v, HostInventory h, boolean shareable, ReturnValueCompletion<ActiveVolumeTO> comp) {
         if (VolumeProtocol.CBD.toString().equals(v.getProtocol())) {
+
             comp.success(new CbdVolumeTo());
             return;
         }
@@ -151,7 +161,11 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public String getActivePath(BaseVolumeInfo v, HostInventory h, boolean shareable) {
-        return null;
+        if (VolumeProtocol.CBD.toString().equals(v.getProtocol())) {
+            return convertZbsPathToCbdPath(v.getInstallPath(), this::getPhysicalPoolName);
+        } else {
+            throw new OperationFailureException(operr("not supported protocol[%s] for active", v.getProtocol()));
+        }
     }
 
     @Override
@@ -295,9 +309,10 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             @Override
             public void success(CreateVolumeRsp returnValue) {
                 CbdHeartbeatVolumeTO to = new CbdHeartbeatVolumeTO();
-                to.setInstallPath(returnValue.installPath);
+                String zbsPath = returnValue.installPath;
+                to.setInstallPath(ZbsHelper.convertZbsPathToCbdPath(zbsPath, ZbsStorageController.this::getPhysicalPoolName));
                 to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
-                to.setCoveringPaths(Collections.singletonList(config.getLogicalPoolName()));
+                to.setCoveringPaths(config.getPoolNames());
                 comp.success(to);
             }
 
@@ -319,10 +334,13 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             reloadDbInfo();
         }
 
+        String zbsPath = buildHeartbeatVolumePath(config.getLogicalPoolName());
+        String cbdPath = ZbsHelper.convertZbsPathToCbdPath(zbsPath, this::getPhysicalPoolName);
+
         CbdHeartbeatVolumeTO to = new CbdHeartbeatVolumeTO();
-        to.setInstallPath(buildHeartbeatVolumePath(config.getLogicalPoolName()));
+        to.setInstallPath(cbdPath);
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
-        to.setCoveringPaths(Collections.singletonList(config.getLogicalPoolName()));
+        to.setCoveringPaths(config.getPoolNames());
 
         return to;
     }
@@ -486,7 +504,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
-                        configUrl(self.getUuid());
                         addonInfo = newAddonInfo;
                         completion.success(JSONObjectUtil.rehashObject(newAddonInfo, LinkedHashMap.class));
                     }
@@ -547,11 +564,20 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     @Override
+    public void getCapacity(List<String> requiredUrls, ReturnValueCompletion<StorageCapacity> comp) {
+        List<String> poolNames = requiredUrls.stream().map(ZbsHelper::getPoolFromVolumePath).collect(Collectors.toList());
+        getPoolCapacities(poolNames, comp);
+    }
+
+    @Override
     public void reportCapacity(ReturnValueCompletion<StorageCapacity> comp) {
         reloadDbInfo();
+        getPoolCapacities(config.getPoolNames(), comp);
+    }
 
+    private void getPoolCapacities(List<String> poolNames, ReturnValueCompletion<StorageCapacity> comp) {
         GetCapacityCmd cmd = new GetCapacityCmd();
-        cmd.setLogicalPool(config.getLogicalPoolName());
+        cmd.logicalPoolNames = poolNames;
 
         httpCall(GET_CAPACITY_PATH, cmd, GetCapacityRsp.class, new ReturnValueCompletion<GetCapacityRsp>(comp) {
             @Override
@@ -570,6 +596,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 cap.setTotalCapacity(total);
                 cap.setAvailableCapacity(avail);
                 cap.setHealthy(StorageHealthy.Ok);
+                for (LogicalPoolInfo pool : logicalPoolInfos) {
+                    cap.putCapacity(buildPoolPath(pool.getLogicalPoolName()), pool.getCapacity() - pool.getUsedSize(), pool.getCapacity());
+                }
                 comp.success(cap);
             }
 
@@ -582,14 +611,26 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void reportHealthy(ReturnValueCompletion<StorageHealthy> comp) {
+        // TODO: more accurate healthy report
+        getPoolCapacities(config.getPoolNames(), new ReturnValueCompletion<StorageCapacity>(comp) {
+            @Override
+            public void success(StorageCapacity returnValue) {
+                comp.success(StorageHealthy.Ok);
+            }
 
+            @Override
+            public void fail(ErrorCode errorCode) {
+                comp.success(StorageHealthy.Unknown);
+            }
+        });
     }
 
     @Override
     public void reportNodeHealthy(HostInventory host, ReturnValueCompletion<NodeHealthy> comp) {
         CheckHostStorageConnectionCmd cmd = new CheckHostStorageConnectionCmd();
         cmd.setHostUuid(host.getUuid());
-        cmd.setPath(buildHeartbeatVolumePath(config.getLogicalPoolName()));
+        String zbsHbPath = buildHeartbeatVolumePath(config.getLogicalPoolName());
+        cmd.setPath(ZbsHelper.convertZbsPathToCbdPath(zbsHbPath, this::getPhysicalPoolName));
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
@@ -625,26 +666,34 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             reloadDbInfo();
         }
 
-        // TODO allocate pool
-        LogicalPoolInfo logicalPoolInfo = allocateFreePool(aspec.getSize());
+        Predicate<LogicalPoolInfo> p = aspec.getRequiredUrl() == null ? null : it -> {
+            String pool = getPoolFromVolumePath(aspec.getRequiredUrl());
+            return StringUtils.equals(pool, it.getLogicalPoolName());
+        };
+
+        LogicalPoolInfo logicalPoolInfo = allocateFreePool(aspec.getSize(), p);
         if (logicalPoolInfo == null) {
-            throw new OperationFailureException(operr("no available logical pool with enough space[%d]", aspec.getSize()));
+            throw new OperationFailureException(operr("no available logical pool with enough space[%d] and required url: %s",
+                    aspec.getSize(), aspec.getRequiredUrl()));
         }
 
-        return buildVolumePath("", config.getLogicalPoolName(), "");
+        return buildPoolPath(logicalPoolInfo.getLogicalPoolName());
     }
 
-    private LogicalPoolInfo allocateFreePool(long size) {
+    private LogicalPoolInfo allocateFreePool(long size, Predicate<LogicalPoolInfo> filter) {
         List<LogicalPoolInfo> logicalPoolInfos = getSelfPools();
-        return logicalPoolInfos.stream().filter(it -> it.getCapacity() - it.getUsedSize() > size)
-                .max(Comparator.comparingLong(it -> it.getCapacity() - it.getUsedSize()))
+        Stream<LogicalPoolInfo> s = logicalPoolInfos.stream().filter(it -> it.getCapacity() - it.getUsedSize() > size);
+        if (filter != null) {
+            s = s.filter(filter);
+        }
+
+        return s.max(Comparator.comparingLong(it -> it.getCapacity() - it.getUsedSize()))
                 .orElse(null);
     }
 
     private List<LogicalPoolInfo> getSelfPools() {
-        String configLogicalPoolName = config.getLogicalPoolName();
         List<LogicalPoolInfo> logicalPoolInfos = addonInfo.getLogicalPoolInfos();
-        logicalPoolInfos.removeIf(it -> !configLogicalPoolName.equals(it.getLogicalPoolName()));
+        logicalPoolInfos.removeIf(it -> !config.getPoolNames().contains(it.getLogicalPoolName()));
         return logicalPoolInfos;
     }
 
@@ -653,11 +702,13 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         reloadDbInfo();
 
         CreateVolumeCmd cmd = new CreateVolumeCmd();
-        cmd.setLogicalPool(config.getLogicalPoolName());
         cmd.setVolume(v.getName());
         cmd.setUnit(getSizeUnit(addonInfo.getClusterInfo().getVersion()));
         cmd.setSize(alignSizeTo(v.getSize(), cmd.getUnit()));
         cmd.setSkipIfExisting(true);
+        String poolName = v.getAllocatedUrl() != null ? getPoolFromVolumePath(v.getAllocatedUrl()) :
+                allocateFreePool(cmd.getSize(), null).getLogicalPoolName();
+        cmd.setLogicalPool(poolName);
 
         httpCall(CREATE_VOLUME_PATH, cmd, CreateVolumeRsp.class, new ReturnValueCompletion<CreateVolumeRsp>(comp) {
             @Override
@@ -740,7 +791,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         ExpandVolumeCmd cmd = new ExpandVolumeCmd();
-                        cmd.setPath(stats.getInstallPath());
+                        cmd.setPath(convertZbsPathToCbdPath(stats.getInstallPath(), ZbsStorageController.this::getPhysicalPoolName));
                         cmd.setUnit(getSizeUnit(addonInfo.getClusterInfo().getVersion()));
                         cmd.setSize(alignSizeTo(dst.getSize(), cmd.getUnit()));
 
@@ -850,9 +901,11 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     @Override
-    public void batchStats(Collection<String> installPath, ReturnValueCompletion<List<VolumeStats>> comp) {
+    public void batchStats(Collection<String> installPaths, ReturnValueCompletion<List<VolumeStats>> comp) {
         BatchQueryVolumeCmd cmd = new BatchQueryVolumeCmd();
-        cmd.setInstallPaths(installPath);
+
+        cmd.setInstallPaths(installPaths.stream().map(it -> convertZbsPathToCbdPath(it, this::getPhysicalPoolName))
+                .collect(Collectors.toList()));
 
         httpCall(BATCH_QUERY_VOLUME_PATH, cmd, BatchQueryVolumeRsp.class, new ReturnValueCompletion<BatchQueryVolumeRsp>(comp) {
             @Override
@@ -1053,23 +1106,42 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     @Override
-    public void validateConfig(String config) {
+    public String validateConfig(String config) throws ApiMessageInterceptionException {
         Config old = JSONObjectUtil.toObject(self.getConfig(), Config.class);
         Config current = JSONObjectUtil.toObject(config, Config.class);
-
-        if (current.getLogicalPoolName().contains("/")) {
-            throw new CloudRuntimeException(String.format("invalid logical pool name[%s]", current.getLogicalPoolName()));
+        if (current.getLogicalPoolName() == null && !CollectionUtils.isEmpty(current.getPools())) {
+            if (current.getPoolNames().contains(old.getLogicalPoolName())) {
+                current.setLogicalPoolName(old.getLogicalPoolName());
+            } else {
+                current.setLogicalPoolName(current.getPoolNames().get(0));
+            }
         }
 
-        if (current.getMdsUrls().isEmpty()) {
-            throw new OperationFailureException(operr("ensure at least one MDS is configured"));
+        if (current.getLogicalPoolName() != null && CollectionUtils.isEmpty(current.getPools())) {
+            current.setPools(Arrays.asList(new Config.Pool(current.getLogicalPoolName(), null)));
+        }
+
+        if (current.getLogicalPoolName().contains("/")) {
+            throw new ApiMessageInterceptionException(argerr("invalid logical pool name[%s]", current.getLogicalPoolName()));
+        }
+
+        if (!current.getPoolNames().contains(current.getLogicalPoolName())) {
+            throw new ApiMessageInterceptionException(argerr("invalid pool name[%s]", current.getLogicalPoolName()));
+        }
+
+        if (CollectionUtils.isEmpty(current.getPoolNames())) {
+            throw new ApiMessageInterceptionException(argerr("ensure at least one pool is configured"));
+        }
+
+        if (CollectionUtils.isEmpty(current.getMdsUrls())) {
+            throw new ApiMessageInterceptionException(argerr("ensure at least one MDS is configured"));
         }
 
         List<MdsInfo> newMdsInfos = parseMdsInfos(current.getMdsUrls());
         List<MdsInfo> duplicateMdsInfos = newMdsInfos.stream().collect(Collectors.groupingBy(MdsInfo::getAddr))
                 .values().stream().filter(addr -> addr.size() > 1).flatMap(List::stream).collect(Collectors.toList());
         if (!duplicateMdsInfos.isEmpty()) {
-            throw new OperationFailureException(operr("do not allow to add duplicate MDS[%s]",
+            throw new ApiMessageInterceptionException(argerr("do not allow to add duplicate MDS[%s]",
                     duplicateMdsInfos.stream().map(MdsInfo::getAddr).distinct().collect(Collectors.joining(", "))
             ));
         }
@@ -1083,6 +1155,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 base.checkStorageHealth();
             }
         }
+        return JSONObjectUtil.toJsonString(current);
     }
 
     @Override
@@ -1125,6 +1198,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         self = dbf.reload(self);
         addonInfo = StringUtils.isEmpty(self.getAddonInfo()) ? new AddonInfo() : JSONObjectUtil.toObject(self.getAddonInfo(), AddonInfo.class);
         config = StringUtils.isEmpty(self.getConfig()) ? new Config() : JSONObjectUtil.toObject(self.getConfig(), Config.class);
+        physicalPoolByLogicalPool = addonInfo.getLogicalPoolInfos().stream()
+                .collect(Collectors.toMap(LogicalPoolInfo::getLogicalPoolName, LogicalPoolInfo::getPhysicalPoolName) );
     }
 
     private List<MdsInfo> parseMdsInfos(List<String> mdsUrls) {
@@ -1137,6 +1212,19 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             mdsInfo.setAddr(uri.getHostname());
             return mdsInfo;
         }).collect(Collectors.toList());
+    }
+
+    protected String getPhysicalPoolName(String logicalPoolName) {
+        if (physicalPoolByLogicalPool.containsKey(logicalPoolName)) {
+            return physicalPoolByLogicalPool.get(logicalPoolName);
+        } else {
+            reloadDbInfo();
+            String physicalPool = physicalPoolByLogicalPool.get(logicalPoolName);
+            if (physicalPool == null) {
+                throw new OperationFailureException(operr("cannot find physical pool for logical pool[%s]", logicalPoolName));
+            }
+            return physicalPool;
+        }
     }
 
     protected <T extends AgentResponse> T syncHttpCall(final String path, final AgentCommand cmd, final Class<T> retClass) {
@@ -1211,6 +1299,10 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
 
         private void prepareCmd() {
+            if (cmd instanceof VolumeCommand) {
+                String cbdPath = convertZbsPathToCbdPath(((VolumeCommand) cmd).getPath(), ZbsStorageController.this::getPhysicalPoolName);
+                ((VolumeCommand) cmd).setPath(cbdPath);
+            }
             cmd.setUuid(self.getUuid());
         }
 
@@ -1268,6 +1360,13 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             ReturnValueCompletion<T> completion = new ReturnValueCompletion<T>(callback) {
                 @Override
                 public void success(T ret) {
+                    if (ret instanceof VolumeResponse) {
+                        String path = ((VolumeResponse) ret).installPath;
+                        if (path != null && path.startsWith("cbd:")) {
+                            ((VolumeResponse) ret).installPath = ZbsHelper.convertCbdPathToZbsPath(path);
+                        }
+                    }
+
                     callback.success(ret);
                 }
 
@@ -1309,64 +1408,10 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
     }
 
-    public static class CopyRsp extends AgentResponse {
-        private String installPath;
-        private long size;
-        private long actualSize;
-
-        public String getInstallPath() {
-            return installPath;
-        }
-
-        public void setInstallPath(String installPath) {
-            this.installPath = installPath;
-        }
-
-        public long getSize() {
-            return size;
-        }
-
-        public void setSize(long size) {
-            this.size = size;
-        }
-
-        public long getActualSize() {
-            return actualSize;
-        }
-
-        public void setActualSize(long actualSize) {
-            this.actualSize = actualSize;
-        }
+    public static class CopyRsp extends VolumeResponse {
     }
 
-    public static class RollbackSnapshotRsp extends AgentResponse {
-        private String installPath;
-        private long size;
-        private long actualSize;
-
-        public String getInstallPath() {
-            return installPath;
-        }
-
-        public void setInstallPath(String installPath) {
-            this.installPath = installPath;
-        }
-
-        public long getSize() {
-            return size;
-        }
-
-        public void setSize(long size) {
-            this.size = size;
-        }
-
-        public long getActualSize() {
-            return actualSize;
-        }
-
-        public void setActualSize(long actualSize) {
-            this.actualSize = actualSize;
-        }
+    public static class RollbackSnapshotRsp extends VolumeResponse {
     }
 
     public static class DeleteSnapshotRsp extends AgentResponse {
@@ -1440,97 +1485,16 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
     }
 
-    public static class CloneVolumeRsp extends AgentResponse {
-        private long size;
-        private long actualSize;
-        private String installPath;
-
-        public long getSize() {
-            return size;
-        }
-
-        public void setSize(long size) {
-            this.size = size;
-        }
-
-        public long getActualSize() {
-            return actualSize;
-        }
-
-        public void setActualSize(long actualSize) {
-            this.actualSize = actualSize;
-        }
-
-        public String getInstallPath() {
-            return installPath;
-        }
-
-        public void setInstallPath(String installPath) {
-            this.installPath = installPath;
-        }
+    public static class CloneVolumeRsp extends VolumeResponse {
     }
 
-    public static class CreateSnapshotRsp extends AgentResponse {
-        private String installPath;
-        private long size;
-        private long actualSize;
-
-        public String getInstallPath() {
-            return installPath;
-        }
-
-        public void setInstallPath(String installPath) {
-            this.installPath = installPath;
-        }
-
-        public long getSize() {
-            return size;
-        }
-
-        public void setSize(long size) {
-            this.size = size;
-        }
-
-        public long getActualSize() {
-            return actualSize;
-        }
-
-        public void setActualSize(long actualSize) {
-            this.actualSize = actualSize;
-        }
+    public static class CreateSnapshotRsp extends VolumeResponse {
     }
 
     public static class DeleteVolumeRsp extends AgentResponse {
     }
 
-    public static class CreateVolumeRsp extends AgentResponse {
-        private String installPath;
-        private long size;
-        private long actualSize;
-
-        public String getInstallPath() {
-            return installPath;
-        }
-
-        public void setInstallPath(String installPath) {
-            this.installPath = installPath;
-        }
-
-        public long getSize() {
-            return size;
-        }
-
-        public void setSize(long size) {
-            this.size = size;
-        }
-
-        public long getActualSize() {
-            return actualSize;
-        }
-
-        public void setActualSize(long actualSize) {
-            this.actualSize = actualSize;
-        }
+    public static class CreateVolumeRsp extends VolumeResponse {
     }
 
     public static class GetCapacityRsp extends AgentResponse {
@@ -1561,18 +1525,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
     }
 
-    public static class CopyCmd extends AgentCommand implements HasThreadContext {
-        private String path;
+    public static class CopyCmd extends VolumeCommand implements HasThreadContext {
         private String dstVolume;
         private long dstSize;
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
 
         public String getDstVolume() {
             return dstVolume;
@@ -1591,52 +1546,16 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
     }
 
-    public static class RollbackSnapshotCmd extends AgentCommand {
-        private String path;
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
+    public static class RollbackSnapshotCmd extends VolumeCommand {
     }
 
-    public static class DeleteSnapshotCmd extends AgentCommand {
-        private String path;
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
+    public static class DeleteSnapshotCmd extends VolumeCommand {
     }
 
-    public static class QueryVolumeCmd extends AgentCommand {
-        private String path;
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
+    public static class QueryVolumeCmd extends VolumeCommand {
     }
 
-    public static class FlattenVolumeCmd extends AgentCommand {
-        private String path;
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
+    public static class FlattenVolumeCmd extends VolumeCommand {
     }
 
     public static class BatchQueryVolumeCmd extends AgentCommand {
@@ -1672,17 +1591,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
     }
 
-    public static class CbdToNbdCmd extends AgentCommand {
-        private String path;
+    public static class CbdToNbdCmd extends VolumeCommand {
         private String portRange;
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
 
         public String getPortRange() {
             return portRange;
@@ -1693,17 +1603,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
     }
 
-    public static class CloneVolumeCmd extends AgentCommand {
-        private String path;
+    public static class CloneVolumeCmd extends VolumeCommand {
         private String dstVolume;
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
 
         public String getDstVolume() {
             return dstVolume;
@@ -1714,18 +1615,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
     }
 
-    public static class CreateSnapshotCmd extends AgentCommand {
-        private String path;
+    public static class CreateSnapshotCmd extends VolumeCommand {
         private String snapshot;
         private boolean skipOnExisting;
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
 
         public String getSnapshot() {
             return snapshot;
@@ -1744,17 +1636,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
     }
 
-    public static class DeleteVolumeCmd extends AgentCommand {
-        private String path;
+    public static class DeleteVolumeCmd extends VolumeCommand {
         private boolean force;
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
 
         public boolean isForce() {
             return force;
@@ -1765,16 +1648,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
     }
 
-    public static class GetVolumeClientsCmd extends AgentCommand {
-        private String path;
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
+    public static class GetVolumeClientsCmd extends VolumeCommand {
     }
 
     public static class ClientInfo {
@@ -1834,6 +1708,14 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         public void setUnit(String unit) {
             this.unit = unit;
         }
+
+        public long getSizeInBytes() {
+            if (unit != null && unit.toLowerCase().startsWith("m")) {
+                return SizeUnit.MEGABYTE.toByte(size);
+            } else {
+                return size;
+            }
+        }
     }
 
     public static class CreateVolumeCmd extends SizeCmd {
@@ -1867,14 +1749,14 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     public static class GetCapacityCmd extends AgentCommand {
-        private String logicalPool;
+        private List<String> logicalPoolNames;
 
-        public String getLogicalPool() {
-            return logicalPool;
+        public List<String> getLogicalPoolNames() {
+            return logicalPoolNames;
         }
 
-        public void setLogicalPool(String logicalPool) {
-            this.logicalPool = logicalPool;
+        public void setLogicalPoolNames(List<String> logicalPoolNames) {
+            this.logicalPoolNames = logicalPoolNames;
         }
     }
 
@@ -1941,9 +1823,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static class GetFactsCmd extends AgentCommand {
     }
 
-    public static class CheckHostStorageConnectionCmd extends AgentCommand {
+    public static class CheckHostStorageConnectionCmd extends VolumeCommand {
         public String hostUuid;
-        private String path;
 
         public String getHostUuid() {
             return hostUuid;
@@ -1952,17 +1833,51 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         public void setHostUuid(String hostUuid) {
             this.hostUuid = hostUuid;
         }
+    }
 
-        public String getPath() {
-            return path;
-        }
+    public static class CheckHostStorageConnectionRsp extends AgentResponse {
+    }
+
+    public static abstract class VolumeCommand extends AgentCommand {
+        protected String path;
 
         public void setPath(String path) {
             this.path = path;
         }
+
+        public String getPath() {
+            return path;
+        }
     }
 
-    public static class CheckHostStorageConnectionRsp extends AgentResponse {
+    public static abstract class VolumeResponse extends AgentResponse {
+        protected String installPath;
+        protected long size;
+        protected long actualSize;
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
+        }
     }
 
     public static class UpdateHostDependencyCmd extends AgentCommand {

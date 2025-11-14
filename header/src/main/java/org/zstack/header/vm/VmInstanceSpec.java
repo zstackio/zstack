@@ -122,6 +122,7 @@ public class VmInstanceSpec implements Serializable {
 
     public static class ImageSpec implements Serializable {
         private ImageInventory inventory;
+        // FIXME: not for multi space primary storage
         private boolean needDownload = true;
         private ImageBackupStorageRefInventory selectedBackupStorage;
 
@@ -786,6 +787,13 @@ public class VmInstanceSpec implements Serializable {
 
     public void setRootVolumeSystemTags(List<String> rootVolumeSystemTags) {
         this.rootVolumeSystemTags = rootVolumeSystemTags;
+    }
+
+    public void addRootVolumeSystemTag(String rootVolumeSystemTag) {
+        if (this.rootVolumeSystemTags == null) {
+            this.rootVolumeSystemTags = new ArrayList<>();
+        }
+        this.rootVolumeSystemTags.add(rootVolumeSystemTag);
     }
 
     public List<String> getDataVolumeSystemTags() {

@@ -956,6 +956,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
+                            // TODO: replace ReleasePrimaryStorageSpaceMsg
                             IncreasePrimaryStorageCapacityMsg msg = new IncreasePrimaryStorageCapacityMsg();
                             msg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
                             msg.setDiskSize(self.getSize());
@@ -1276,6 +1277,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
+                            // TODO: replace ReleasePrimaryStorageSpaceMsg
                             IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
                             imsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
                             imsg.setDiskSize(self.getSize());

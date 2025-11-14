@@ -7,25 +7,40 @@ import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.utils.VersionComparator;
 import org.zstack.utils.data.SizeUnit;
 
+import java.util.function.Function;
+
 /**
  * @author Xingwei Yu
  * @date 2024/4/9 17:50
  */
 public class ZbsHelper {
-    public static void configUrl(String psUuid) {
-        String psUrl = ZbsConstants.ZBS_CBD_PREFIX_SCHEME + psUuid;
-        if (!psUrl.equals(Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.url).eq(PrimaryStorageVO_.uuid, psUuid).findValue())) {
-            SQL.New(PrimaryStorageVO.class).set(PrimaryStorageVO_.url, psUrl).eq(PrimaryStorageVO_.uuid, psUuid).update();
-        }
+    // cbdPath: cbd:physical_pool/logical_pool/volume_id
+    public static String convertCbdPathToZbsPath(String cbdPath) {
+        return cbdPath.replaceFirst(".+?/", "zbs://");
+    }
+
+    public static String convertZbsPathToCbdPath(String zbsPath, Function<String, String> physicalPoolGetter) {
+        String logicalPool = getPoolFromVolumePath(zbsPath);
+        String physicalPool = physicalPoolGetter.apply(logicalPool);
+        return zbsPath.replaceFirst("zbs://", String.format("cbd:%s/", physicalPool));
     }
 
     public static String buildHeartbeatVolumePath(String logicalPool) {
-        return String.format("cbd:%s_physical/%s/%s", logicalPool, logicalPool, ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME);
+        return String.format("zbs://%s/%s", logicalPool, ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME);
     }
 
-    public static String buildVolumePath(String physicalPool, String logicalPool, String volId) {
+    public static String buildPoolPath(String logicalPool) {
+        return String.format("zbs://%s", logicalPool);
+    }
+
+    public static String buildVolumePath(String logicalPool, String volId) {
         String base = volId.replace("-", "");
-        return String.format(ZbsConstants.ZBS_CBD_LUN_PATH_FORMAT, physicalPool, logicalPool, base);
+        return String.format("zbs://%s/%s", logicalPool, base);
+    }
+
+    public static String getPoolFromVolumePath(String path) {
+        String[] parts = path.replace("zbs://", "").split("/");
+        return parts[0];
     }
 
     public static String getVolumeFromSnapshotPath(String path) {
