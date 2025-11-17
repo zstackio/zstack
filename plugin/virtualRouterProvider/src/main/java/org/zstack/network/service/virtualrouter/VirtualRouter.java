@@ -141,7 +141,7 @@ public class VirtualRouter extends ApplianceVmBase {
     }
 
     @Override
-    protected List<Flow> createAfterConnectNewCreatedVirtualRouterFlows() {
+    protected List<Flow> createAfterConnectNewCreatedFlows() {
         List<Flow> flows = new ArrayList<>();
         flows.add(new TrackVirtualRouterVmFlow());
         return flows;
