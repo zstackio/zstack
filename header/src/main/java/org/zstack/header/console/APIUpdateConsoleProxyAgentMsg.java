@@ -16,14 +16,14 @@ public class APIUpdateConsoleProxyAgentMsg extends APIMessage implements Console
     private String uuid;
     @APIParam
     private String consoleProxyOverriddenIp;
-    @APIParam(required = false)
-    private int consoleProxyPort;
+    @APIParam(required = false, numberRange={1, 65535})
+    private Integer consoleProxyPort;
 
-    public int getConsoleProxyPort() {
+    public Integer getConsoleProxyPort() {
         return consoleProxyPort;
     }
 
-    public void setConsoleProxyPort(int consoleProxyPort) {
+    public void setConsoleProxyPort(Integer consoleProxyPort) {
         this.consoleProxyPort = consoleProxyPort;
     }
 

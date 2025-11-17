@@ -62,7 +62,7 @@ doc {
 					enclosedIn "updateConsoleProxyAgent"
 					desc ""
 					location "body"
-					type "int"
+					type "Integer"
 					optional true
 					since "3.11.0"
 				}
