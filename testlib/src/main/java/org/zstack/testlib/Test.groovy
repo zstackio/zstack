@@ -1010,7 +1010,7 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         try {
             int startIndex = "API failure: ".length()
             int endIndex = message.indexOf(". Expression: ")
-            code = JSONObjectUtil.toObject(message.substring(startIndex, endIndex), ErrorCode)
+            code = ZSClient.fromJson(message.substring(startIndex, endIndex), ErrorCode)
         } catch (JsonSyntaxException | IndexOutOfBoundsException ignored) {
             throw new Exception("unexpected API failure", error)
         }
@@ -1032,8 +1032,8 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
      */
     static ErrorCode extractFromSDKError(ErrorCode sdkError) {
         assert sdkError.code == "sdk.1000"
-        def errorCodeJson = JsonParser.parseString(sdkError.details).getAsJsonObject().get("error")
-        return JSONObjectUtil.rehashObject(errorCodeJson, ErrorCode.class)
+        def errorCodeJson = JsonParser.parseString(sdkError.details).getAsJsonObject().get("error").toString()
+        return ZSClient.fromJson(errorCodeJson, ErrorCode.class)
     }
 
     protected void configProperty() {
