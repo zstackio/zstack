@@ -771,7 +771,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             }
             if (ipVersion == IPv6Constants.IPv6) {
                 List<String> ipv6List = Stream.of(ipArray).filter(ip -> ip.contains(SecurityGroupConstant.RANGE_SPLIT)).collect(Collectors.toList());
-                if (ipv6List.size() > 0) {
+                if (!ipv6List.isEmpty()) {
                     throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s], ip range cannot be used when specifying multiple ipv6 addresses", ips));
                 }
             }
@@ -786,6 +786,11 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             if (ip.contains(SecurityGroupConstant.CIDR_SPLIT)) {
                 if (!NetworkUtils.isCidr(ip, ipVersion)) {
                     throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid cidr[%s], ipVersion[%d]", ip, ipVersion));
+                }
+                if (ipVersion == IPv6Constants.IPv4 && NetworkUtils.isFullCidr(ip)) {
+                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "ipv4 cidr can not be 0.0.0.0/0"));
+                } if (ipVersion == IPv6Constants.IPv6 && IPv6NetworkUtils.isFullCidr(ip)) {
+                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "ipv6 cidr can not be ::/0"));
                 }
                 continue;
             }

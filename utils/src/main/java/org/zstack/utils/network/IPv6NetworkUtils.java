@@ -462,4 +462,8 @@ public class IPv6NetworkUtils {
 
         return e.compareTo(s);
     }
+
+    public static boolean isFullCidr(String cidr) {
+        return cidr.equals("::/0");
+    }
 }
