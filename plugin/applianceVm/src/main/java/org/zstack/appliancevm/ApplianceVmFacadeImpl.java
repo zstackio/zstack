@@ -622,6 +622,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         }
     }
 
+    @Override
     public void detachVirtualRouterFromHaGroup(String vmUuid, String haGroupUuid) {
         for (ApplianceVmHaExtensionPoint ext : pluginRgty.getExtensionList(ApplianceVmHaExtensionPoint.class)) {
             ext.detachVirtualRouterFromHaGroup(vmUuid, haGroupUuid);
