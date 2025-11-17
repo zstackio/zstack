@@ -96,7 +96,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         return flows;
     }
 
-    protected List<Flow> createAfterConnectNewCreatedVirtualRouterFlows() {
+    protected List<Flow> createAfterConnectNewCreatedFlows() {
         return new ArrayList<>();
     }
 
@@ -796,8 +796,8 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         return chain;
     }
 
-    private FlowChain addAfterConnectNewCreatedVirtualRouterFlows(FlowChain chain) {
-        for (Flow flow : createAfterConnectNewCreatedVirtualRouterFlows()) {
+    private FlowChain addAfterConnectNewCreatedFlows(FlowChain chain) {
+        for (Flow flow : createAfterConnectNewCreatedFlows()) {
             chain.then(flow);
         }
 
@@ -836,7 +836,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             }
         });
 
-        addAfterConnectNewCreatedVirtualRouterFlows(chain);
+        addAfterConnectNewCreatedFlows(chain);
 
         boolean noRollbackOnFailure = ApplianceVmGlobalProperty.NO_ROLLBACK_ON_POST_FAILURE;
         chain.noRollback(noRollbackOnFailure);
@@ -960,7 +960,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                     }
                 });
 
-                addAfterConnectNewCreatedVirtualRouterFlows(chain);
+                addAfterConnectNewCreatedFlows(chain);
             }
 
             boolean noRollbackOnFailure = ApplianceVmGlobalProperty.NO_ROLLBACK_ON_POST_FAILURE;

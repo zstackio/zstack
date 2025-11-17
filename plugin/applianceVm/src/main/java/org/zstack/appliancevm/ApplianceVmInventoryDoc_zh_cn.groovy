@@ -44,6 +44,12 @@ doc {
 		since "0.6"
 	}
 	field {
+		name "haStatus"
+		desc ""
+		type "String"
+		since "5.4.2"
+	}
+	field {
 		name "uuid"
 		desc "资源的UUID，唯一标示该资源"
 		type "String"
@@ -110,6 +116,12 @@ doc {
 		since "0.6"
 	}
 	field {
+		name "architecture"
+		desc ""
+		type "String"
+		since "5.4.2"
+	}
+	field {
 		name "defaultL3NetworkUuid"
 		desc ""
 		type "String"
@@ -132,6 +144,12 @@ doc {
 		desc ""
 		type "Long"
 		since "0.6"
+	}
+	field {
+		name "reservedMemorySize"
+		desc ""
+		type "Long"
+		since "5.4.2"
 	}
 	field {
 		name "cpuNum"
@@ -184,5 +202,11 @@ doc {
 		type "List"
 		since "0.6"
 		clz VolumeInventory.class
+	}
+	field {
+		name "guestOsType"
+		desc ""
+		type "String"
+		since "5.4.2"
 	}
 }

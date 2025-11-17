@@ -1,30 +1,31 @@
 package org.zstack.network.l3;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.asyncbatch.While;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
+
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.utils.CollectionUtils;
+
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +36,9 @@ public class NormalIpRangeFactory implements IpRangeFactory {
     protected PluginRegistry pluginRgty;
     @Autowired
     protected L3NetworkManager l3Mgr;
+    @Autowired
+    private CloudBus bus;
+
 
     @Override
     public IpRangeType getType() {
@@ -113,27 +117,25 @@ public class NormalIpRangeFactory implements IpRangeFactory {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                L3NetworkVO l3vo = dbf.findByUuid(iprs.get(0).getL3NetworkUuid(), L3NetworkVO.class);
-                if (!l3vo.enableIpAddressAllocation()) {
+                String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(iprs.get(0).getL3NetworkUuid());
+                if (sdnControllerUuid == null) {
                     trigger.next();
                     return;
                 }
 
-                SdnControllerDhcp sdnDhcp = l3Mgr.getSdnControllerDhcp(l3vo.getUuid());
-                if (sdnDhcp == null) {
-                    trigger.next();
-                    return;
-                }
-
-                sdnDhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(l3vo)), new Completion(trigger) {
+                SdnControllerUpdateDHCPMsg dmsg = new SdnControllerUpdateDHCPMsg();
+                dmsg.setL3NetworkUuid(iprs.get(0).getL3NetworkUuid());
+                dmsg.setIpVersion(iprs.get(0).getIpVersion());
+                dmsg.setSdnControllerUuid(sdnControllerUuid);
+                bus.makeTargetServiceIdByResourceUuid(dmsg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
+                bus.send(dmsg, new CloudBusCallBack(trigger) {
                     @Override
-                    public void success() {
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                        } else {
+                            trigger.next();
+                        }
                     }
                 });
             }

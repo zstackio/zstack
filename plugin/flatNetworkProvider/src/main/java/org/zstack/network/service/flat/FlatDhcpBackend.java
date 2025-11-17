@@ -39,7 +39,11 @@ import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.SdnControllerUpdateDHCPMsg;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.service.*;
+import org.zstack.network.l3.L3NetworkHelper;
+
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.identity.AccountManager;
@@ -363,21 +367,24 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                if (sdnDhcp == null) {
+                String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(l3VO.getUuid());
+                if (sdnControllerUuid == null) {
                     trigger.next();
                     return;
                 }
 
-                sdnDhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(l3VO)),
-                        new Completion(trigger) {
+                SdnControllerUpdateDHCPMsg dmsg = new SdnControllerUpdateDHCPMsg();
+                dmsg.setL3NetworkUuid(l3VO.getUuid());
+                dmsg.setSdnControllerUuid(sdnControllerUuid);
+                bus.makeTargetServiceIdByResourceUuid(dmsg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
+                bus.send(dmsg, new CloudBusCallBack(trigger) {
                     @Override
-                    public void success() {
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                        } else {
+                            trigger.next();
+                        }
                     }
                 });
             }

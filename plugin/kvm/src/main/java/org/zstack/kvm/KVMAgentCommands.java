@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import org.jetbrains.annotations.NotNull;
 import org.zstack.core.upgrade.GrayUpgradeAgent;
 import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.core.validation.ConditionalValidation;
@@ -2309,6 +2310,9 @@ public class KVMAgentCommands {
         @GrayVersion(value = "5.0.0")
         private List<String> oemStrings = new ArrayList<>();
 
+        @GrayVersion(value = "5.4.0")
+        private Long HostMinimumFreeMemorySize;
+
         // TODO: only for test
         @GrayVersion(value = "5.0.0")
         private boolean useColoBinary;
@@ -2887,6 +2891,14 @@ public class KVMAgentCommands {
 
         public void setVmCpuVendorId(String vmCpuVendorId) {
             this.vmCpuVendorId = vmCpuVendorId;
+        }
+
+        public Long getHostMinimumFreeMemorySize() {
+            return HostMinimumFreeMemorySize;
+        }
+
+        public void setHostMinimumFreeMemorySize(Long hostMinimumFreeMemorySize) {
+            HostMinimumFreeMemorySize = hostMinimumFreeMemorySize;
         }
     }
 
@@ -4880,19 +4892,82 @@ public class KVMAgentCommands {
         public Boolean reInstall;
         @GrayVersion(value = "5.4.0")
         public Map<String, String> nicMap = new HashMap<>();
+        @GrayVersion(value = "5.4.0")
+        public Map<String, String> nicVmInstanceUuidMap = new HashMap<>();
     }
 
     public static class OvsAddPortRsp extends AgentResponse {
     }
 
+    public static class OvsSyncPortCmd extends AgentCommand {
+        @GrayVersion(value = "5.4.0")
+        public String vSwitchType;
+        @GrayVersion(value = "5.4.0")
+        public Map<String, String> nicMap = new HashMap<>();
+        @GrayVersion(value = "5.4.0")
+        public String vmUuid;
+    }
+
+    public static class OvsSyncPortRsp extends AgentResponse {
+    }
+
     public static class OvsDelPortCmd extends AgentCommand {
         @GrayVersion(value = "5.4.0")
-        public String vswitchType;
+        public String vSwitchType;
         @GrayVersion(value = "5.4.0")
         public Map<String, String> nicMap = new HashMap<>();
     }
 
     public static class OvsDelPortRsp extends AgentResponse {
+    }
+
+    public static class OvsSetDbConnectionCmd extends AgentCommand {
+        @GrayVersion(value = "5.5.0")
+        public boolean refreshCache;
+        @GrayVersion(value = "5.5.0")
+        public List<String> nodes;
+    }
+
+    public static class OvsSetDbConnectionRsp extends  AgentResponse {
+    }
+
+    public static class OvsCheckPortCmd extends AgentCommand {
+        @GrayVersion(value = "5.4.0")
+        public String vSwitchType;
+        // TODO: only for test
+        @GrayVersion(value = "5.4.0")
+        public String hostUuid;
+    }
+
+    public static class OvsCheckPortRsp extends AgentResponse {
+        //vm uuid to all of its nics in the ovs bridge of the host
+        @GrayVersion(value = "5.4.0")
+        public Map<String, List<String>> vmNicsMap = new HashMap<>();
+        //vnic name to vm uuid map
+        @GrayVersion(value = "5.4.0")
+        public Map<String, String> vnicVmMap = new HashMap<>();
+        @GrayVersion(value = "5.4.0")
+        public Map<String, List<String>> lspRequestedChassisMap = new HashMap<>();
+    }
+
+    public static class OvsSetRequestedChassisCmd extends AgentCommand {
+        @GrayVersion(value = "5.4.0")
+        public String vSwitchType;
+        @GrayVersion(value = "5.4.0")
+        public Map<String, List<String>> lspRequestedChassisMap = new HashMap<>();
+    }
+
+    public static class  OvsSetRequestedChassisRsp extends AgentResponse {}
+
+    public static class OvsSyncVmPortsCmd extends AgentCommand {
+        @GrayVersion(value = "5.4.0")
+        public String vSwitchType;
+        @GrayVersion(value = "5.4.0")
+        public Map<String, String> nicVmInstanceUuidMap = new HashMap<>();
+        @GrayVersion(value = "5.4.0")
+        public Map<String, String> nicNamePciAddressMap = new HashMap<>();
+        @GrayVersion(value = "5.4.0")
+        public Map<String, String> nicNameDriverMap = new HashMap<>();
     }
 
     public static class HardwareMonitorCmd extends KVMAgentCommands.AgentCommand {

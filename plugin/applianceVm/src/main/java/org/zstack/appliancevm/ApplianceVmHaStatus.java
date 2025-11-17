@@ -3,5 +3,6 @@ package org.zstack.appliancevm;
 public enum ApplianceVmHaStatus {
     NoHa,
     Master,
-    Backup
+    Backup,
+    Fault
 }

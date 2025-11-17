@@ -10,4 +10,6 @@ public interface ApplianceVmSubTypeFactory {
     ApplianceVmVO persistApplianceVm(ApplianceVmSpec spec, ApplianceVmVO apvm);
 
     void removeApplianceVm(ApplianceVmSpec spec, ApplianceVmVO apvm);
+
+    default void createApplianceNicSpec(ApplianceVmSpec spec) {}
 }

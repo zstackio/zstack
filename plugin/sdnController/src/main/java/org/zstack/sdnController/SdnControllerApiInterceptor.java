@@ -15,9 +15,6 @@ import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.network.sdncontroller.*;
-import org.zstack.header.vm.APIAttachL3NetworkToVmMsg;
-import org.zstack.header.vm.APIChangeVmNicNetworkMsg;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
@@ -61,8 +58,6 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         ret.add(APIAddVmNicToSecurityGroupMsg.class);
         ret.add(APISetVmNicSecurityGroupMsg.class);
         ret.add(APIAddSecurityGroupRuleMsg.class);
-        ret.add(APIAttachL3NetworkToVmMsg.class);
-        ret.add(APIChangeVmNicNetworkMsg.class);
         ret.add(APIPullSdnControllerTenantMsg.class);
 
         return ret;
@@ -87,8 +82,6 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
             validate((APISetVmNicSecurityGroupMsg) msg);
         } else if (msg instanceof APIAddSecurityGroupRuleMsg) {
             validate((APIAddSecurityGroupRuleMsg) msg);
-        } else if (msg instanceof APIChangeVmNicNetworkMsg) {
-            validate((APIChangeVmNicNetworkMsg) msg);
         } else if (msg instanceof APIPullSdnControllerTenantMsg) {
             validate((APIPullSdnControllerTenantMsg) msg);
         } else if (msg instanceof APIChangeSdnControllerMsg) {
@@ -98,70 +91,6 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         setServiceId(msg);
 
         return msg;
-    }
-
-    private void validate(APIAttachL3NetworkToVmMsg msg) {
-        String sdnControlerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(msg.getL3NetworkUuid());
-        if (sdnControlerUuid == null) {
-            return;
-        }
-
-        SdnControllerVO controllerVO = dbf.findByUuid(sdnControlerUuid, SdnControllerVO.class);
-        if (controllerVO == null) {
-            throw new ApiMessageInterceptionException(argerr("could not attach l3network to vm, " +
-                            "because sdn controller[uuid:%s] is not find", sdnControlerUuid));
-        }
-
-        if (SdnControllerConstant.H3C_VCFC_CONTROLLER.equals(controllerVO.getVendorType()) &&
-                SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V2.equals(controllerVO.getVendorVersion())) {
-            validateH3cTenantStatus(msg.getL3NetworkUuid(), sdnControlerUuid);
-            return;
-        }
-
-        if (SdnControllerConstant.H3C_VCFC_CONTROLLER.equals(controllerVO.getVendorType())) {
-            return;
-        }
-
-        VmInstanceVO vmVo = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
-        boolean found = false;
-        for (SdnControllerHostRefVO ref : controllerVO.getHostRefVOS()) {
-            if (ref.getHostUuid().equals(vmVo.getHostUuid())) {
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            throw new ApiMessageInterceptionException(argerr("could not attach l3network to vm, " +
-                    "because host[uuid:%s] of vm is not attached to sdn controller[uuid:%s]",
-                    vmVo.getHostUuid(), sdnControlerUuid));
-        }
-    }
-
-    private void validate(APIChangeVmNicNetworkMsg msg) {
-        String sdnControlerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(msg.getDestL3NetworkUuid());
-        if (sdnControlerUuid == null) {
-            return;
-        }
-
-        SdnControllerVO controllerVO = dbf.findByUuid(sdnControlerUuid, SdnControllerVO.class);
-        if (controllerVO == null) {
-            throw new ApiMessageInterceptionException(argerr("could not change vmnic to l3network[uuid:%s], " +
-                    "because sdn controller[uuid:%s] is not find", msg.getDestL3NetworkUuid(), sdnControlerUuid));
-        }
-
-        VmInstanceVO vmVo = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
-        boolean found = false;
-        for (SdnControllerHostRefVO ref : controllerVO.getHostRefVOS()) {
-            if (ref.getHostUuid().equals(vmVo.getHostUuid())) {
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            throw new ApiMessageInterceptionException(argerr("could not change vmnic to l3network[uuid:%s], " +
-                            "because host[uuid:%s] of vm is not attached to sdn controller[uuid:%s]",
-                    msg.getDestL3NetworkUuid(), vmVo.getHostUuid(), sdnControlerUuid));
-        }
     }
 
     private void validate(APISetVmNicSecurityGroupMsg msg) {

@@ -50,6 +50,8 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class L2NoVlanNetwork implements L2Network {
@@ -935,14 +937,30 @@ public class L2NoVlanNetwork implements L2Network {
             protected void scripts() {
 
                 String type = Q.New(L2NetworkVO.class).select(L2NetworkVO_.type).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).findValue();
-
+                String sdnControllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID
+                        .getTokenByResourceUuid(msg.getL2NetworkUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
                 if (L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE.equals(type)) {
-                    List<L2NetworkVO> l2s = SQL.New("select l2" +
-                            " from L2NetworkVO l2, L2NetworkClusterRefVO ref" +
-                            " where l2.uuid = ref.l2NetworkUuid" +
-                            " and ref.clusterUuid = :clusterUuid" +
-                            " and type = 'L2NoVlanNetwork'")
-                            .param("clusterUuid", msg.getClusterUuid()).list();
+                    List<L2NetworkVO> l2s;
+                    if (sdnControllerUuid == null) {
+                        l2s = SQL.New("select l2" +
+                                        " from L2NetworkVO l2, L2NetworkClusterRefVO ref" +
+                                        " where l2.uuid = ref.l2NetworkUuid" +
+                                        " and ref.clusterUuid = :clusterUuid" +
+                                        " and type = 'L2NoVlanNetwork'")
+                                .param("clusterUuid", msg.getClusterUuid()).list();
+                    } else {
+                        l2s = SQL.New("select l2" +
+                                        " from L2NetworkVO l2, L2NetworkClusterRefVO ref, SystemTagVO tag" +
+                                        " where l2.uuid = ref.l2NetworkUuid" +
+                                        " and ref.clusterUuid = :clusterUuid" +
+                                        " and l2.type = 'L2NoVlanNetwork'" +
+                                        " and tag.resourceUuid=l2.uuid " +
+                                        " and tag.resourceType='L2NetworkVO' " +
+                                        " and tag.tag=:tag")
+                                .param("tag", L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.instantiateTag(
+                                        map(e(L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN, sdnControllerUuid))))
+                                .param("clusterUuid", msg.getClusterUuid()).list();
+                    }
 
                     if (l2s.isEmpty()) {
                         return;
@@ -956,11 +974,26 @@ public class L2NoVlanNetwork implements L2Network {
                         }
                     }
                 } else if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(type)) {
-                    List<L2VlanNetworkVO> l2s = SQL.New("select l2" +
-                            " from L2VlanNetworkVO l2, L2NetworkClusterRefVO ref" +
-                            " where l2.uuid = ref.l2NetworkUuid" +
-                            " and ref.clusterUuid = :clusterUuid")
-                            .param("clusterUuid", msg.getClusterUuid()).list();
+                    List<L2VlanNetworkVO> l2s;
+                    if (sdnControllerUuid == null) {
+                        l2s = SQL.New("select l2" +
+                                        " from L2VlanNetworkVO l2, L2NetworkClusterRefVO ref" +
+                                        " where l2.uuid = ref.l2NetworkUuid" +
+                                        " and ref.clusterUuid = :clusterUuid")
+                                .param("clusterUuid", msg.getClusterUuid()).list();
+                    } else {
+                        l2s = SQL.New("select l2" +
+                                        " from L2VlanNetworkVO l2, L2NetworkClusterRefVO ref, SystemTagVO tag" +
+                                        " where l2.uuid = ref.l2NetworkUuid" +
+                                        " and ref.clusterUuid = :clusterUuid" +
+                                        " and tag.resourceUuid=l2.uuid " +
+                                        " and tag.resourceType='L2NetworkVO' " +
+                                        " and tag.tag=:tag")
+                                .param("tag", L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.instantiateTag(
+                                        map(e(L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN, sdnControllerUuid))))
+                                .param("clusterUuid", msg.getClusterUuid()).list();
+                    }
+
                     if (l2s.isEmpty()) {
                         return;
                     }
