@@ -84,7 +84,7 @@ public class While<T> {
 
             @Override
             public void addError(ErrorCode error) {
-                errors.getCauses().add(error);
+                errors.add(error);
             }
 
             @Override
@@ -154,7 +154,7 @@ public class While<T> {
 
             @Override
             public void addError(ErrorCode error) {
-                errors.getCauses().add(error);
+                errors.add(error);
             }
 
             @Override

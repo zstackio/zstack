@@ -2,7 +2,6 @@ package org.zstack.test.integration.core
 
 import org.zstack.core.Platform
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.header.errorcode.ErrorCodeList
 import org.zstack.header.storage.primary.PrimaryStorageErrors
 import org.zstack.header.vm.VmErrors
 import org.zstack.testlib.EnvSpec
@@ -88,7 +87,7 @@ class RegexElaborationCase extends SubCase {
     }
 
     void testElaboration7() {
-        ErrorCode errorCodes = new ErrorCodeList()
+        ErrorCode errorCodes = new ErrorCode()
         List<ErrorCode> causes = Collections.synchronizedList(new ArrayList<>())
 
         def errCode1 = Platform.operr("operation error, because:%s", ".*can not find vg .* and create vg with forceWipw=.*") as ErrorCode

@@ -57,10 +57,6 @@ public class ZSClient {
                 .toFormatter(Locale.ENGLISH);
     }
 
-    /**
-     * Deserializing ErrorCode using Gson will lose the information of "ErrorCodeList.causes".
-     * We need to distinguish whether this data structure is an ErrorCode or an ErrorCodeList before deserialization.
-     */
     static class ErrorCodeDeserializer implements JsonDeserializer<ErrorCode> {
         @Override
         public ErrorCode deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext context) throws JsonParseException {
@@ -69,20 +65,16 @@ public class ZSClient {
             }
             JsonObject object = jsonElement.getAsJsonObject();
 
+            ErrorCode wrapper = new ErrorCode();
+            final ArrayList<ErrorCode> list = new ArrayList<>();
+
             final JsonElement causes = object.get("causes");
             boolean hasCauses = causes != null && causes.isJsonArray();
-
-            ErrorCode wrapper;
+            wrapper.setCauses(list);
             if (hasCauses) {
-                final ErrorCodeList wrappers = new ErrorCodeList();
-                List<ErrorCode> list = new ArrayList<>();
                 for (JsonElement element : causes.getAsJsonArray()) {
                     list.add(context.deserialize(element, ErrorCode.class));
                 }
-                wrappers.setCauses(list);
-                wrapper = wrappers;
-            } else {
-                wrapper = new ErrorCode();
             }
 
             JsonElement item = object.get("code");

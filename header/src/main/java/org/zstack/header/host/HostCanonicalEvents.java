@@ -521,7 +521,7 @@ public class HostCanonicalEvents {
 
     public static class HostHardwareChangedData {
         public String hostUuid;
-        public ErrorCodeList reason;
+        public ErrorCode reason;
 
         public String getHostUuid() {
             return hostUuid;
@@ -531,11 +531,11 @@ public class HostCanonicalEvents {
             this.hostUuid = hostUuid;
         }
 
-        public ErrorCodeList getReason() {
+        public ErrorCode getReason() {
             return reason;
         }
 
-        public void setReason(ErrorCodeList reason) {
+        public void setReason(ErrorCode reason) {
             this.reason = reason;
         }
     }

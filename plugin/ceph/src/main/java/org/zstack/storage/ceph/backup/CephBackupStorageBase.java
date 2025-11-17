@@ -1261,8 +1261,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
             void connect(final FlowTrigger trigger) {
                 if (!it.hasNext()) {
-                    if (errorCodes.getCauses().size() == mons.size()) {
-                        trigger.fail(operr(errorCodes, "unable to connect to the ceph backup storage[uuid:%s], failed to connect all ceph monitors.",
+                    if (errorCodes.size() == mons.size()) {
+                        trigger.fail(multiErr(errorCodes, "unable to connect to the ceph backup storage[uuid:%s], failed to connect all ceph monitors.",
                                         self.getUuid()));
                     } else {
                         // reload because mon status changed
@@ -1281,7 +1281,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        errorCodes.getCauses().add(errorCode);
+                        errorCodes.add(errorCode);
 
                         if (newAdded) {
                             // the mon fails to connect, remove it

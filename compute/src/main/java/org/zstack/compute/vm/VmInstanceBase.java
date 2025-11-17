@@ -5846,11 +5846,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                     completion.success();
                     return;
                 }
-                final ErrorCodeList list = new ErrorCodeList();
-                list.getCauses().addAll(casedReply.getIgnoredErrors());
-                completion.fail(Platform.operr(list,
+                completion.fail(Platform.operr(
                         "Failed to update vm[uuid=%s] on hypervisor: The modification of some properties failed",
-                        self.getUuid()));
+                        self.getUuid())
+                        .withCause(casedReply.getIgnoredErrors()));
             }
         });
     }
@@ -5995,11 +5994,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                             trigger.next();
                             return;
                         }
-                        final ErrorCodeList list = new ErrorCodeList();
-                        list.getCauses().addAll(casedReply.getIgnoredErrors());
-                        trigger.fail(Platform.operr(list,
+                        trigger.fail(Platform.operr(
                                 "failed to update vm[uuid=%s] on hypervisor: The modification of some properties failed",
-                                self.getUuid()));
+                                self.getUuid())
+                                .withCause(casedReply.getIgnoredErrors()));
                     }
                 });
             }
@@ -7302,8 +7300,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                     .run(new WhileDoneCompletion(trigger) {
                         @Override
                         public void done(ErrorCodeList errorCodeList) {
-                            if (!errorCodeList.getCauses().isEmpty()) {
-                                trigger.fail(errorCodeList);
+                            if (errorCodeList.hasError()) {
+                                trigger.fail(multiErr(errorCodeList));
                                 return;
                             }
                             trigger.next();

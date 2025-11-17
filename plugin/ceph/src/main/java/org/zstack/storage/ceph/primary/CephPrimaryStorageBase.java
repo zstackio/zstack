@@ -3490,7 +3490,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         private void doCall() {
             if (!it.hasNext()) {
-                callback.fail(operr(errorCodes, "all monitors cannot execute http call[%s]", path)
+                callback.fail(multiErr(errorCodes, "all monitors cannot execute http call[%s]", path)
                 );
 
                 return;
@@ -3516,7 +3516,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             && !errorCode.isError(SysErrors.TIMEOUT)) {
                         logger.warn(String.format("mon[%s] failed to execute http call[%s], error is: %s",
                                 base.getSelf().getHostname(), path, JSONObjectUtil.toJsonString(errorCode)));
-                        errorCodes.getCauses().add(errorCode);
+                        errorCodes.add(errorCode);
                         doCall();
                         return;
                     }
@@ -3553,12 +3553,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             void connect(final FlowTrigger trigger) {
                 if (!it.hasNext()) {
-                    if (errorCodes.getCauses().size() == mons.size()) {
-                        if (errorCodes.getCauses().isEmpty()) {
+                    if (errorCodes.size() == mons.size()) {
+                        if (errorCodes.hasError()) {
                             trigger.fail(operr("unable to connect to the ceph primary storage[uuid:%s]," +
                                     " failed to connect all ceph monitors.", self.getUuid()));
                         } else {
-                            trigger.fail(operr(errorCodes, "unable to connect to the ceph primary storage[uuid:%s]," +
+                            trigger.fail(multiErr(errorCodes, "unable to connect to the ceph primary storage[uuid:%s]," +
                                             " failed to connect all ceph monitors.",
                                     self.getUuid()));
                         }
@@ -3590,7 +3590,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        errorCodes.getCauses().add(errorCode);
+                        errorCodes.add(errorCode);
 
                         if (newAdded) {
                             // the mon fails to connect, remove it

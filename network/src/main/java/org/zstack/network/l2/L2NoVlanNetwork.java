@@ -667,8 +667,8 @@ public class L2NoVlanNetwork implements L2Network {
         }, hosts.size()).run((new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (!errorCodeList.getCauses().isEmpty()) {
-                    completion.fail(errorCodeList);
+                if (errorCodeList.hasError()) {
+                    completion.fail(multiErr(errorCodeList));
                     return;
                 }
                 completion.success();

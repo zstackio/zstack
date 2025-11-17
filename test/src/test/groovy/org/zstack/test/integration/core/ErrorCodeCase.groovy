@@ -2,7 +2,6 @@ package org.zstack.test.integration.core
 
 import org.zstack.sdk.ApiResult
 import org.zstack.sdk.ErrorCode
-import org.zstack.sdk.ErrorCodeList
 import org.zstack.testlib.SubCase
 
 class ErrorCodeCase extends SubCase {
@@ -61,7 +60,7 @@ class ErrorCodeCase extends SubCase {
         def result = api.getResult(Result.class)
         def errorCode = result.error
 
-        assert errorCode instanceof ErrorCodeList
+        assert errorCode instanceof ErrorCode
         assert errorCode.causes != null
         assert errorCode.causes.size() == 1
         assert errorCode.causes[0] instanceof ErrorCode
@@ -104,7 +103,7 @@ class ErrorCodeCase extends SubCase {
         result = api.getResult(Result.class)
         errorCode = result.error
 
-        assert !(errorCode instanceof ErrorCodeList)
+        assert errorCode instanceof ErrorCode
         assert errorCode.code == "SYS.1000"
         assert errorCode.details == "on purpose"
     }

@@ -1,7 +1,6 @@
 package org.zstack.storage.addon.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -25,6 +24,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.LinkedHashMap;
 
+import static org.zstack.core.Platform.multiErr;
 import static org.zstack.core.Platform.operr;
 
 public class ExternalPrimaryStorageManagerImpl extends AbstractService {
@@ -122,7 +122,7 @@ public class ExternalPrimaryStorageManagerImpl extends AbstractService {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (event.getInventory() == null) {
-                    event.setError(operr(errorCodeList, "cannot connect any external storage"));
+                    event.setError(multiErr(errorCodeList, "cannot connect any external storage"));
                 }
 
                 bus.publish(event);

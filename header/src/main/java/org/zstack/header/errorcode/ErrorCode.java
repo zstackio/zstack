@@ -140,6 +140,11 @@ public class ErrorCode implements Serializable, Cloneable {
         return this;
     }
 
+    public ErrorCode withCause(ErrorCodeList list) {
+        this.causes.addAll(list.getCauses());
+        return this;
+    }
+
     public ErrorCode withCause(Collection<ErrorCode> causes) {
         this.causes.addAll(causes);
         return this;

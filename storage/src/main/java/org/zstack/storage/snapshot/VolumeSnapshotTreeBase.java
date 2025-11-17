@@ -72,6 +72,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.multiErr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.e;
@@ -679,7 +680,7 @@ public class VolumeSnapshotTreeBase {
                             }
                         }
                         if (errors.getCauses().size() > 0) {
-                            trigger.fail(errors);
+                            trigger.fail(multiErr(errors));
                         } else {
                             trigger.next();
                         }

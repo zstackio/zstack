@@ -2,7 +2,6 @@ package org.zstack.core.errorcode;
 
 import org.zstack.core.errorcode.schema.Error;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.DebugUtils;
@@ -187,7 +186,7 @@ public class ErrorFacadeImpl implements ErrorFacade {
                         " file[%s] and file[%s] both define it", codeId, info.path, path));
             }
 
-            ErrorCodeList errorCode = new ErrorCodeList();
+            ErrorCode errorCode = new ErrorCode();
             errorCode.setCode(codeId);
             errorCode.setDescription(code.getDescription());
             errorCode.setElaboration(code.getElaboration());

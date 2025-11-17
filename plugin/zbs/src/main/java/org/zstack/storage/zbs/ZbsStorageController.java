@@ -57,6 +57,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.multiErr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.storage.zbs.ZbsHelper.*;
 
@@ -278,12 +279,12 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
             void connect(final FlowTrigger trigger) {
                 if (!it.hasNext()) {
-                    if (errorCodes.getCauses().size() == mdsList.size()) {
-                        if (errorCodes.getCauses().isEmpty()) {
+                    if (errorCodes.size() == mdsList.size()) {
+                        if (errorCodes.isEmpty()) {
                             trigger.fail(operr("unable to connect to the ZBS primary storage[uuid:%s]," +
                                     " failed to connect all MDS", self.getUuid()));
                         } else {
-                            trigger.fail(operr(errorCodes, "unable to connect to the ZBS primary storage[uuid:%s]," +
+                            trigger.fail(multiErr(errorCodes, "unable to connect to the ZBS primary storage[uuid:%s]," +
                                             " failed to connect all MDS",
                                     self.getUuid()));
                         }
@@ -308,7 +309,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        errorCodes.getCauses().add(errorCode);
+                        errorCodes.add(errorCode);
                         connect(trigger);
                     }
                 });
@@ -1165,7 +1166,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         private T doSyncCall() {
             if (!it.hasNext()) {
-                throw new OperationFailureException(operr(errorCodes, "all MDS cannot execute http call[%s]", path));
+                throw new OperationFailureException(multiErr(errorCodes, "all MDS cannot execute http call[%s]", path));
             }
 
             ZbsPrimaryStorageMdsBase base = it.next();
@@ -1175,11 +1176,11 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             if (!ret.isSuccess()) {
                 logger.warn(String.format("failed to execute http call[%s] on MDS[%s], error is: %s",
                         path, base.getSelf().getAddr(), JSONObjectUtil.toJsonString(ret.getError())));
-                errorCodes.getCauses().add(operr(ret.getError()));
+                errorCodes.add(operr(ret.getError()));
                 if (tryNext) {
                     return doSyncCall();
                 } else {
-                    throw new OperationFailureException(operr(errorCodes, "all MDS cannot execute http call[%s]", path));
+                    throw new OperationFailureException(multiErr(errorCodes, "all MDS cannot execute http call[%s]", path));
                 }
             }
 
@@ -1188,7 +1189,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         private void doCall() {
             if (!it.hasNext()) {
-                callback.fail(operr(errorCodes, "all MDS cannot execute http call[%s]", path));
+                callback.fail(multiErr(errorCodes, "all MDS cannot execute http call[%s]", path));
                 return;
             }
 

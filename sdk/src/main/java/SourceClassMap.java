@@ -147,7 +147,6 @@ public class SourceClassMap {
 			put("org.zstack.header.core.trash.TrashCleanupResult", "org.zstack.sdk.TrashCleanupResult");
 			put("org.zstack.header.core.webhooks.WebhookInventory", "org.zstack.sdk.WebhookInventory");
 			put("org.zstack.header.errorcode.ErrorCode", "org.zstack.sdk.ErrorCode");
-			put("org.zstack.header.errorcode.ErrorCodeList", "org.zstack.sdk.ErrorCodeList");
 			put("org.zstack.header.flowMeter.FlowCollectorInventory", "org.zstack.sdk.FlowCollectorInventory");
 			put("org.zstack.header.flowMeter.FlowCounter", "org.zstack.sdk.FlowCounter");
 			put("org.zstack.header.flowMeter.FlowMeterInventory", "org.zstack.sdk.FlowMeterInventory");
@@ -790,7 +789,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.EmailMediaInventory", "org.zstack.monitoring.media.EmailMediaInventory");
 			put("org.zstack.sdk.EmailTriggerActionInventory", "org.zstack.monitoring.actions.EmailTriggerActionInventory");
 			put("org.zstack.sdk.ErrorCode", "org.zstack.header.errorcode.ErrorCode");
-			put("org.zstack.sdk.ErrorCodeList", "org.zstack.header.errorcode.ErrorCodeList");
 			put("org.zstack.sdk.EthernetVfPciDeviceInventory", "org.zstack.header.sriov.EthernetVfPciDeviceInventory");
 			put("org.zstack.sdk.EthernetVfStatus", "org.zstack.header.sriov.EthernetVfStatus");
 			put("org.zstack.sdk.EventLogInventory", "org.zstack.core.eventlog.EventLogInventory");
