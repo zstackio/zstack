@@ -40,6 +40,7 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.IsManagementNodeReadyMsg;
 import org.zstack.header.managementnode.IsManagementNodeReadyReply;
@@ -417,6 +418,10 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             final ManagementNodeManagerImpl self = this;
             FlowChain bootstrap = FlowChainBuilder.newSimpleFlowChain();
             bootstrap.setName("management-node-bootstrap");
+            bootstrap.preCheck(data -> {
+                return Platform.IS_RUNNING ? null : new ErrorCode(SysErrors.INTERNAL.toString(),
+                        "the management node is not running for some reason while starting");
+            });
             bootstrap.then(new Flow() {
                 String __name__ = "bootstrap-cloudbus";
 
@@ -596,7 +601,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             lock.unlock();
         }
 
-        if (!ret.success) {
+        if (!ret.success || !Platform.IS_RUNNING) {
             logger.warn(String.format("management node[%s] failed to start for some reason", Platform.getUuid()));
             stopped = true;
 
