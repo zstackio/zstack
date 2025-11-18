@@ -14,6 +14,7 @@ public class HostCanonicalEvents {
     public static final String HOST_CHECK_INITIALIZED_FAILED = "/host/check/initialized/failed";
     public static final String HOST_PHYSICAL_NIC_STATUS_UP = "/host/physicalNic/status/up";
     public static final String HOST_PHYSICAL_NIC_STATUS_DOWN = "/host/physicalNic/status/down";
+    public static final String HOST_MULTIPATH_CONFIG_CHANGED = "/host/multipathConfig/changed";
 
     public static class HostDisconnectedData {
         public String hostUuid;
@@ -163,6 +164,29 @@ public class HostCanonicalEvents {
 
         public void setInterfaceStatus(String interfaceStatus) {
             this.interfaceStatus = interfaceStatus;
+        }
+    }
+
+
+    @NeedJsonSchema
+    public static class MultipathConfigChangedData {
+        private String hostUuid;
+        private String details;
+
+        public String getDetails() {
+            return details;
+        }
+
+        public void setDetails(String details) {
+            this.details = details;
+        }
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
         }
     }
 }
