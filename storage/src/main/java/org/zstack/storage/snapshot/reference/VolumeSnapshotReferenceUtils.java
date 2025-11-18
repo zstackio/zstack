@@ -34,8 +34,9 @@ import static org.zstack.core.Platform.operr;
 public class VolumeSnapshotReferenceUtils {
     private static final CLogger logger = Utils.getLogger(VolumeSnapshotReferenceUtils.class);
 
-    private static Function<String, String> getResourceLocateHostUuidGetter;
+    private static Function<String, String> getResourceLocateHostUuidGetter = resourceUuid -> null;
 
+    // FIXME: replace it with location url
     public static void setGetResourceLocateHostUuidGetter(Function<String, String> getter) {
         VolumeSnapshotReferenceUtils.getResourceLocateHostUuidGetter = getter;
     }
@@ -240,6 +241,7 @@ public class VolumeSnapshotReferenceUtils {
                 VolumeVO vol = databaseFacade.getEntityManager().find(VolumeVO.class, baseSnapshot.getVolumeUuid(), LockModeType.PESSIMISTIC_WRITE);
                 VolumeSnapshotReferenceTreeVO tree = Q.New(VolumeSnapshotReferenceTreeVO.class)
                         .eq(VolumeSnapshotReferenceTreeVO_.rootVolumeUuid, baseSnapshot.getVolumeUuid())
+                        .eq(VolumeSnapshotReferenceTreeVO_.primaryStorageUuid, baseSnapshot.getPrimaryStorageUuid())
                         .find();
                 if (tree != null) {
                     return tree;
@@ -257,13 +259,20 @@ public class VolumeSnapshotReferenceUtils {
     }
 
     private static VolumeSnapshotReferenceTreeVO getOrBuildChainSnapshotRefTree(VolumeSnapshotVO baseSnapshot, String baseImageUuid) {
+        String hostUuid = getResourceLocateHostUuidGetter.call(baseSnapshot.getVolumeUuid());
         return new SQLBatchWithReturn<VolumeSnapshotReferenceTreeVO>() {
             @Override
             protected VolumeSnapshotReferenceTreeVO scripts() {
                 databaseFacade.getEntityManager().find(VolumeSnapshotTreeVO.class, baseSnapshot.getTreeUuid(), LockModeType.PESSIMISTIC_WRITE);
-                VolumeSnapshotReferenceTreeVO tree = Q.New(VolumeSnapshotReferenceTreeVO.class)
+                Q q = Q.New(VolumeSnapshotReferenceTreeVO.class)
                         .eq(VolumeSnapshotReferenceTreeVO_.rootVolumeSnapshotTreeUuid, baseSnapshot.getTreeUuid())
-                        .find();
+                        .eq(VolumeSnapshotReferenceTreeVO_.primaryStorageUuid, baseSnapshot.getPrimaryStorageUuid());
+
+                if (hostUuid != null) {
+                    q.eq(VolumeSnapshotReferenceTreeVO_.hostUuid, hostUuid);
+                }
+
+                VolumeSnapshotReferenceTreeVO tree = q.find();
                 if (tree != null) {
                     return tree;
                 }
@@ -279,7 +288,7 @@ public class VolumeSnapshotReferenceUtils {
                 tree.setRootVolumeSnapshotUuid(t.get(0, String.class));
                 tree.setRootInstallUrl(t.get(1, String.class));
                 tree.setPrimaryStorageUuid(baseSnapshot.getPrimaryStorageUuid());
-                tree.setHostUuid(getResourceLocateHostUuidGetter.call(baseSnapshot.getVolumeUuid()));
+                tree.setHostUuid(hostUuid);
                 return persist(tree);
             }
         }.execute();
