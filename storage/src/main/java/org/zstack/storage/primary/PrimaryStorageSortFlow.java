@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class PrimaryStorageSortFlow extends NoRollbackFlow {
-    private static CLogger logger = Utils.getLogger(PrimaryStorageSortFlow.class);
+    private static final CLogger logger = Utils.getLogger(PrimaryStorageSortFlow.class);
 
     @Autowired
     protected PrimaryStoragePriorityGetter priorityGetter;

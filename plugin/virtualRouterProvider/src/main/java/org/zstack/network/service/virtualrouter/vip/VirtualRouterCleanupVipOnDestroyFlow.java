@@ -33,7 +33,7 @@ public class VirtualRouterCleanupVipOnDestroyFlow extends NoRollbackFlow {
     @Autowired
     protected VipConfigProxy vipConfigProxy;
 
-    private static CLogger logger = Utils.getLogger(VirtualRouterCleanupVipOnDestroyFlow.class);
+    private static final CLogger logger = Utils.getLogger(VirtualRouterCleanupVipOnDestroyFlow.class);
 
     @Override
     public void run(final FlowTrigger trigger, Map data) {

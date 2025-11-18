@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
-    private static CLogger logger = Utils.getLogger(VirtualRouterSyncPortForwardingRulesOnStartFlow.class);
+    private static final CLogger logger = Utils.getLogger(VirtualRouterSyncPortForwardingRulesOnStartFlow.class);
     
     @Autowired
     private DatabaseFacade dbf;

@@ -27,13 +27,7 @@ public class VmReleaseResourceFlow implements Flow {
     @Autowired
     private PluginRegistry pluginRgty;
     
-    private static List<VmReleaseResourceExtensionPoint> extensions = null;
-
-    public VmReleaseResourceFlow() {
-        if (extensions == null) {
-            extensions = pluginRgty.getExtensionList(VmReleaseResourceExtensionPoint.class);
-        }
-    }
+    private final List<VmReleaseResourceExtensionPoint> extensions = pluginRgty.getExtensionList(VmReleaseResourceExtensionPoint.class);
 
 
     private void fireExtensions(final Iterator<VmReleaseResourceExtensionPoint> it, final VmInstanceSpec spec, final Map<String, Object> ctx, final FlowTrigger chain) {
