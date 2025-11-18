@@ -26,6 +26,7 @@ public class HostCanonicalEvents {
     public static final String HOST_PROCESS_PHYSICAL_MEMORY_USAGE_ABNORMAL = "/host/process/physicalMemory/usage/abnormal";
     public static final String HOST_PING_SKIP = "/host/ping/skip";
     public static final String HOST_PING_CANCEL_SKIP = "/host/ping/cancel/skip";
+    public static final String HOST_MULTIPATH_CONFIG_CHANGED = "/host/multipathConfig/changed";
 
 
     @NeedJsonSchema
@@ -401,6 +402,28 @@ public class HostCanonicalEvents {
 
         public void setInterfaceStatus(String interfaceStatus) {
             this.interfaceStatus = interfaceStatus;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class MultipathConfigChangedData {
+        private String hostUuid;
+        private String details;
+
+        public String getDetails() {
+            return details;
+        }
+
+        public void setDetails(String details) {
+            this.details = details;
+        }
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
         }
     }
 
