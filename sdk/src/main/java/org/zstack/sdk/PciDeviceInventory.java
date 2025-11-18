@@ -185,6 +185,14 @@ public class PciDeviceInventory  {
         return this.rev;
     }
 
+    public java.lang.String dependentDevices;
+    public void setDependentDevices(java.lang.String dependentDevices) {
+        this.dependentDevices = dependentDevices;
+    }
+    public java.lang.String getDependentDevices() {
+        return this.dependentDevices;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
