@@ -56,7 +56,7 @@ public class UpdateZceXClusterConfigAction extends AbstractAction {
     public java.lang.String username = "admin";
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String password = "password";
+    public java.lang.String password;
 
     @Param(required = false)
     public java.util.List systemTags;
