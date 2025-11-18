@@ -40,6 +40,9 @@ public class RequestLicenseCapacityAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String licenseType;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String resourceInfo;
+
     @Param(required = false)
     public java.util.List systemTags;
 
