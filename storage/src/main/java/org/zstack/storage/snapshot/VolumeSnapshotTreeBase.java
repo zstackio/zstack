@@ -60,7 +60,6 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -384,6 +383,7 @@ public class VolumeSnapshotTreeBase {
     chain.then(new ShareFlow() {
         boolean ancestorOfLatest;
         long requiredSize;
+        List<VolumeSnapshotInventory> memorySnapshotsOfDescendants = new ArrayList<>();
 
         @Override
         public void setup() {
@@ -647,7 +647,13 @@ public class VolumeSnapshotTreeBase {
 
             @Override
             public void run(final FlowTrigger trigger, Map data) {
-                final List<VolumeSnapshotPrimaryStorageDeletionMsg> pmsgs = transformAndRemoveNull(currentLeaf.getDescendants(), arg -> {
+                List<VolumeSnapshotInventory> snapshotsToDelete = new ArrayList<>(currentLeaf.getDescendants());
+                memorySnapshotsOfDescendants = getMemorySnapshotsOfDescendants();
+                snapshotsToDelete.addAll(memorySnapshotsOfDescendants);
+                if (Objects.equals(currentLeaf.getInventory().getVolumeType(), VolumeType.Root.toString())) {
+                    snapshotsToDelete.addAll(getMemorySnapshotsOfDescendants());
+                }
+                final List<VolumeSnapshotPrimaryStorageDeletionMsg> pmsgs = transformAndRemoveNull(snapshotsToDelete, arg -> {
                     if (arg.getPrimaryStorageUuid() == null) {
                         return null;
                     }
@@ -686,6 +692,31 @@ public class VolumeSnapshotTreeBase {
                         }
                     }
                 });
+            }
+
+            private List<VolumeSnapshotInventory> getMemorySnapshotsOfDescendants() {
+                List<String> groupUuids = currentLeaf.getDescendants().stream()
+                        .filter(inv -> !Objects.equals(inv.getUuid(), currentLeaf.getUuid()))
+                        .map(VolumeSnapshotInventory::getGroupUuid).filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+                if (groupUuids.isEmpty()) {
+                    return new ArrayList<>();
+                }
+
+                List<String> memorySnapshotUuids = Q.New(VolumeSnapshotGroupRefVO.class)
+                        .in(VolumeSnapshotGroupRefVO_.volumeSnapshotGroupUuid, groupUuids)
+                        .eq(VolumeSnapshotGroupRefVO_.volumeType, VolumeType.Memory.toString())
+                        .eq(VolumeSnapshotGroupRefVO_.snapshotDeleted, false)
+                        .select(VolumeSnapshotGroupRefVO_.volumeSnapshotUuid).listValues();
+                if (memorySnapshotUuids.isEmpty()) {
+                    return new ArrayList<>();
+                }
+
+                List<VolumeSnapshotVO> memorySnapshots = Q.New(VolumeSnapshotVO.class).in(VolumeSnapshotVO_.uuid, memorySnapshotUuids).list();
+                if (memorySnapshots.isEmpty()) {
+                    return new ArrayList<>();
+                }
+                return VolumeSnapshotInventory.valueOf(memorySnapshots);
             }
         });
     }
@@ -750,9 +781,32 @@ public class VolumeSnapshotTreeBase {
                         }
                     }
 
+                    cleanUpMemorySnapshots();
                     bus.reply(msg, reply);
                     completion.done();
                 }
+            }
+
+            private void cleanUpMemorySnapshots() {
+                if (!Objects.equals(currentLeaf.getInventory().getVolumeType(), VolumeType.Root.toString())) {
+                    logger.debug("skipping cleanup: current snapshot is not a root volume snapshot");
+                    return;
+                }
+                if (memorySnapshotsOfDescendants.isEmpty()) {
+                    logger.debug("no descendant memory snapshots found. cleanup completed");
+                    return;
+                }
+
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        List<String> memorySnapshotUuids = memorySnapshotsOfDescendants.stream().map(VolumeSnapshotInventory::getUuid).collect(Collectors.toList());
+                        List<String> memorySnapshotTreeUuids = memorySnapshotsOfDescendants.stream().map(VolumeSnapshotInventory::getTreeUuid).collect(Collectors.toList());
+                        sql(VolumeSnapshotVO.class).in(VolumeSnapshotVO_.uuid, memorySnapshotUuids).hardDelete();
+                        sql(VolumeSnapshotTreeVO.class).in(VolumeSnapshotTreeVO_.uuid, memorySnapshotTreeUuids).hardDelete();
+                        logger.debug("success to cleanup descendant memory snapshots");
+                    }
+                }.execute();
             }
         });
     }
