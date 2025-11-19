@@ -1,5 +1,7 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.log.MaskSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
 
@@ -7,7 +9,9 @@ import java.util.Collections;
 import java.util.List;
 
 @RestResponse(allTo = "inventories")
+@MaskSensitiveInfo
 public class APIQueryPrimaryStorageReply extends APIQueryReply {
+    @NoLogging(behavior = NoLogging.Behavior.Auto)
     private List<PrimaryStorageInventory> inventories;
 
     public List<PrimaryStorageInventory> getInventories() {

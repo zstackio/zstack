@@ -6,16 +6,19 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.log.MaskSensitiveInfo;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RESTApiFacade;
 import org.zstack.header.rest.RestAPIResponse;
@@ -33,6 +36,7 @@ import javax.persistence.Query;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade, CloudBusEventListener, Component {
     private static final CLogger logger = Utils.getLogger(RESTApiFacadeImpl.class);
@@ -42,6 +46,10 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
     private List<String> processingRequests = Collections.synchronizedList(new ArrayList<String>(100));
     private Future<Void> restAPIVOCleanTask = null;
     private final static int restResultMaxLength = initMaxRestResultLength();
+
+    private static final Set<String> maskSensitiveInfoClassNames = Platform.getReflections()
+            .getTypesAnnotatedWith(MaskSensitiveInfo.class).stream()
+            .map(Class::getSimpleName).collect(Collectors.toSet());
 
     @Autowired
     private ResourceDestinationMaker destMaker;
@@ -174,6 +182,11 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
         MessageReply reply = bus.call(msg);
         rsp.setFinishedDate(new Date());
         rsp.setState(RestAPIState.Done.toString());
+
+        if (CoreGlobalProperty.MASK_SENSITIVE_INFO || maskSensitiveInfoClassNames.contains(reply.getClass().getSimpleName())) {
+            reply = (MessageReply) LogSafeGson.desensitize(reply);
+        }
+
         rsp.setResult(RESTApiDecoder.dump(reply));
         return rsp;
     }
@@ -271,7 +284,7 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
         return basePkgNames;
     }
 
-    public void refreshIntervalClean() {
+    public synchronized void refreshIntervalClean() {
         if (restAPIVOCleanTask != null){
             restAPIVOCleanTask.cancel(true);
         }
