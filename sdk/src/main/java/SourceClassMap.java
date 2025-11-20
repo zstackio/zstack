@@ -560,9 +560,12 @@ public class SourceClassMap {
 			put("org.zstack.network.securitygroup.VmNicSecurityPolicyInventory", "org.zstack.sdk.VmNicSecurityPolicyInventory");
 			put("org.zstack.network.service.eip.EipInventory", "org.zstack.sdk.EipInventory");
 			put("org.zstack.network.service.flat.IpStatisticData", "org.zstack.sdk.IpStatisticData");
+			put("org.zstack.network.service.header.nfvinstgroup.NfvInstClusterStatus", "org.zstack.sdk.NfvInstClusterStatus");
 			put("org.zstack.network.service.header.nfvinstgroup.NfvInstGroupConfigTaskInventory", "org.zstack.sdk.NfvInstGroupConfigTaskInventory");
 			put("org.zstack.network.service.header.nfvinstgroup.NfvInstGroupConstants$FuncType", "org.zstack.sdk.FuncType");
 			put("org.zstack.network.service.header.nfvinstgroup.NfvInstGroupConstants$InstType", "org.zstack.sdk.InstType");
+			put("org.zstack.network.service.header.nfvinstgroup.NfvInstGroupOperationMode", "org.zstack.sdk.NfvInstGroupOperationMode");
+			put("org.zstack.network.service.header.nfvinstgroup.NfvInstGroupStatus", "org.zstack.sdk.NfvInstGroupStatus");
 			put("org.zstack.network.service.header.nfvinstgroup.NfvInstInventory", "org.zstack.sdk.NfvInstInventory");
 			put("org.zstack.network.service.header.nfvinstgroup.NfvInstOfferingInventory", "org.zstack.sdk.NfvInstOfferingInventory");
 			put("org.zstack.network.service.lb.APIChangeAccessControlListServerGroupEvent$LoadBalancerListerAcl", "org.zstack.sdk.LoadBalancerListerAcl");
@@ -1255,11 +1258,14 @@ public class SourceClassMap {
 			put("org.zstack.sdk.NetworkRouterFlowMeterRefInventory", "org.zstack.header.flowMeter.NetworkRouterFlowMeterRefInventory");
 			put("org.zstack.sdk.NetworkServiceL3NetworkRefInventory", "org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.sdk.NetworkServiceProviderInventory", "org.zstack.header.network.service.NetworkServiceProviderInventory");
+			put("org.zstack.sdk.NfvInstClusterStatus", "org.zstack.network.service.header.nfvinstgroup.NfvInstClusterStatus");
 			put("org.zstack.sdk.NfvInstGroupConfigTaskInventory", "org.zstack.network.service.header.nfvinstgroup.NfvInstGroupConfigTaskInventory");
 			put("org.zstack.sdk.NfvInstGroupInventory", "org.zstack.network.service.nfvinstgroup.NfvInstGroupInventory");
 			put("org.zstack.sdk.NfvInstGroupL3NetworkRefInventory", "org.zstack.network.service.nfvinstgroup.NfvInstGroupL3NetworkRefInventory");
 			put("org.zstack.sdk.NfvInstGroupMonitorIpInventory", "org.zstack.network.service.nfvinstgroup.NfvInstGroupMonitorIpInventory");
 			put("org.zstack.sdk.NfvInstGroupNetworkServiceRefInventory", "org.zstack.network.service.nfvinstgroup.NfvInstGroupNetworkServiceRefInventory");
+			put("org.zstack.sdk.NfvInstGroupOperationMode", "org.zstack.network.service.header.nfvinstgroup.NfvInstGroupOperationMode");
+			put("org.zstack.sdk.NfvInstGroupStatus", "org.zstack.network.service.header.nfvinstgroup.NfvInstGroupStatus");
 			put("org.zstack.sdk.NfvInstInventory", "org.zstack.network.service.header.nfvinstgroup.NfvInstInventory");
 			put("org.zstack.sdk.NfvInstOfferingInventory", "org.zstack.network.service.header.nfvinstgroup.NfvInstOfferingInventory");
 			put("org.zstack.sdk.NginxRedirectRule", "org.zstack.ai.NginxRedirectRule");

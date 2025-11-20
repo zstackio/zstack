@@ -2,6 +2,8 @@ package org.zstack.sdk;
 
 import org.zstack.sdk.InstType;
 import org.zstack.sdk.FuncType;
+import org.zstack.sdk.NfvInstGroupStatus;
+import org.zstack.sdk.NfvInstGroupOperationMode;
 
 public class NfvInstGroupInventory  {
 
@@ -77,6 +79,30 @@ public class NfvInstGroupInventory  {
         return this.baseOsDistro;
     }
 
+    public NfvInstGroupStatus status;
+    public void setStatus(NfvInstGroupStatus status) {
+        this.status = status;
+    }
+    public NfvInstGroupStatus getStatus() {
+        return this.status;
+    }
+
+    public java.lang.String statusDetail;
+    public void setStatusDetail(java.lang.String statusDetail) {
+        this.statusDetail = statusDetail;
+    }
+    public java.lang.String getStatusDetail() {
+        return this.statusDetail;
+    }
+
+    public NfvInstGroupOperationMode operationMode;
+    public void setOperationMode(NfvInstGroupOperationMode operationMode) {
+        this.operationMode = operationMode;
+    }
+    public NfvInstGroupOperationMode getOperationMode() {
+        return this.operationMode;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
@@ -131,6 +157,38 @@ public class NfvInstGroupInventory  {
     }
     public java.util.List getL3Networks() {
         return this.l3Networks;
+    }
+
+    public java.lang.String vipUuid;
+    public void setVipUuid(java.lang.String vipUuid) {
+        this.vipUuid = vipUuid;
+    }
+    public java.lang.String getVipUuid() {
+        return this.vipUuid;
+    }
+
+    public java.lang.String ipv6VipUuid;
+    public void setIpv6VipUuid(java.lang.String ipv6VipUuid) {
+        this.ipv6VipUuid = ipv6VipUuid;
+    }
+    public java.lang.String getIpv6VipUuid() {
+        return this.ipv6VipUuid;
+    }
+
+    public java.lang.String primaryStorageUuid;
+    public void setPrimaryStorageUuid(java.lang.String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
+    }
+    public java.lang.String getPrimaryStorageUuid() {
+        return this.primaryStorageUuid;
+    }
+
+    public java.lang.String clusterUuid;
+    public void setClusterUuid(java.lang.String clusterUuid) {
+        this.clusterUuid = clusterUuid;
+    }
+    public java.lang.String getClusterUuid() {
+        return this.clusterUuid;
     }
 
 }
