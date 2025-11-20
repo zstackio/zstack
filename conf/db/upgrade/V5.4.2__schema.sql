@@ -80,10 +80,16 @@ CREATE TABLE IF NOT EXISTS `zstack`.`NfvInstGroupVO` (
     `status` VARCHAR(32) DEFAULT 'INITIALIZING',
     `statusDetail` VARCHAR(255) DEFAULT NULL,
     `operationMode` VARCHAR(32) DEFAULT 'Normal',
+    `vipUuid` VARCHAR(32) DEFAULT NULL,
+    `ipv6VipUuid` VARCHAR(32) DEFAULT NULL,
+    `primaryStorageUuid` VARCHAR(32) DEFAULT NULL,
+    `clusterUuid` VARCHAR(32) DEFAULT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
     PRIMARY KEY (`uuid`),
     CONSTRAINT `fkNfvInstGroupVONfvInstOfferingVO` FOREIGN KEY (`nfvInstOfferingUuid`) REFERENCES `zstack`.`NfvInstOfferingVO` (uuid) ON DELETE SET NULL,
+    CONSTRAINT `fkNfvInstGroupVOPrimaryStorageEO` FOREIGN KEY (`primaryStorageUuid`) REFERENCES `zstack`.`PrimaryStorageEO` (uuid) ON DELETE SET NULL,
+    CONSTRAINT `fkNfvInstGroupVOClusterEO` FOREIGN KEY (`clusterUuid`) REFERENCES `zstack`.`ClusterEO` (uuid) ON DELETE SET NULL,
     KEY `idx_nfv_inst_group_status_mode` (`status`, `operationMode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -154,3 +160,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`NfvInstGroupConfigTaskVO` (
     PRIMARY KEY (`id`),
     CONSTRAINT fkNfvInstGroupConfigTaskVONfvInstGroupVO FOREIGN KEY (nfvInstGroupUuid) REFERENCES NfvInstGroupVO (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL ADD_COLUMN('OvnControllerVmInstanceVO', 'nbClusterStatus', 'VARCHAR(32)', 1, 'Unknown');
+CALL ADD_COLUMN('OvnControllerVmInstanceVO', 'sbClusterStatus', 'VARCHAR(32)', 1, 'Unknown');
