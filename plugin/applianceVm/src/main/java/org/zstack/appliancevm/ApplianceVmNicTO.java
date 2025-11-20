@@ -24,6 +24,7 @@ public class ApplianceVmNicTO {
     private Integer prefixLength;
     private String gateway6;
     private String addressMode;
+    private String bondMode;
 
     public ApplianceVmNicTO(VmNicInventory inv) {
         for (UsedIpInventory uip : inv.getUsedIps()) {
@@ -177,5 +178,13 @@ public class ApplianceVmNicTO {
 
     public void setAddressMode(String addressMode) {
         this.addressMode = addressMode;
+    }
+
+    public String getBondMode() {
+        return bondMode;
+    }
+
+    public void setBondMode(String bondMode) {
+        this.bondMode = bondMode;
     }
 }

@@ -196,6 +196,7 @@ public class VirtualRouterCommands {
 		private String gateway6;
 		private String addressMode;
 		private String state;
+		private String bondMode;
 		
 		public String getIp() {
 			return ip;
@@ -314,6 +315,14 @@ public class VirtualRouterCommands {
 
 		public void setState(String state) {
 			this.state = state;
+		}
+
+		public String getBondMode() {
+			return bondMode;
+		}
+
+		public void setBondMode(String bondMode) {
+			this.bondMode = bondMode;
 		}
 	}
 	
