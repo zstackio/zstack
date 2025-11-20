@@ -40,15 +40,12 @@ import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.header.vm.hooks.VmInstanceAfterCreateHook;
 import org.zstack.header.vm.hooks.VmInstanceAfterDestroyHook;
-import org.zstack.header.vm.hooks.VmInstanceBeforeCreateHook;
 import org.zstack.header.vm.hooks.VmInstanceBeforeDestroyHook;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.zsha2.ZSha2Helper;
-import org.zstack.utils.zsha2.ZSha2Info;
 
 import javax.persistence.Query;
 import java.util.*;
@@ -88,6 +85,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     private FlowChainBuilder createApplianceVmWorkFlowBuilder;
     private Map<String, ApplianceVmBootstrapFlowFactory> bootstrapInfoFlowFactories = new HashMap<String, ApplianceVmBootstrapFlowFactory>();
     private Map<String, L2NetworkGetVniExtensionPoint> l2NetworkGetVniExtensionPointMap = new HashMap<>();
+    private Map<ApplianceVmType, ApvmCascadeFilterExtensionPoint> apvmCascadeFilterExtensionPointMap = new HashMap<>();
 
     private String OWNER = String.format("ApplianceVm.%s", Platform.getManagementServerId());
 
@@ -223,6 +221,18 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
             l2NetworkGetVniExtensionPointMap.put(ext.getL2NetworkVniType(), ext);
             logger.debug(String.format("add new l2NetworkGetVniExtensionPoint, %s: %s", ext.getL2NetworkVniType(), ext.getClass().getCanonicalName()));
+        }
+        
+        for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
+            ApplianceVmType type = ext.getApplianceVmType();
+            ApvmCascadeFilterExtensionPoint old = apvmCascadeFilterExtensionPointMap.get(type);
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("two extensions[%s, %s] declare ApvmCascadeFilterExtensionPoint for appliance vm type[%s]", old.getClass().getName(), ext.getClass().getName(), type));
+            }
+
+            apvmCascadeFilterExtensionPointMap.put(type, ext);
+            logger.debug(String.format("add new apvmCascadeFilterExtensionPoint, %s: %s", type, ext.getClass().getCanonicalName()));
+
         }
     }
 
@@ -626,5 +636,9 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         for (ApplianceVmHaExtensionPoint ext : pluginRgty.getExtensionList(ApplianceVmHaExtensionPoint.class)) {
             ext.detachVirtualRouterFromHaGroup(vmUuid, haGroupUuid);
         }
+    }
+    
+    public ApvmCascadeFilterExtensionPoint getApvmCascadeFilterExtensionPoint(ApplianceVmType type) {
+        return apvmCascadeFilterExtensionPointMap.get(type);
     }
 }

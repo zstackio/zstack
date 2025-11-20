@@ -74,6 +74,8 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
     private PluginRegistry pluginRgty;
     @Autowired
     protected ThreadFacade thdf;
+    @Autowired
+    private ApplianceVmFacade apvmFacade;
 
     private static String NAME = ApplianceVmVO.class.getSimpleName();
 
@@ -287,10 +289,22 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                 .map(VmInstanceVO::getUuid).collect(Collectors.toList())).list();
 
         if (!applianceVmVOS.isEmpty()) {
-            for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
-                applianceVmVOS = ext.filterApplianceVmCascade(applianceVmVOS, action, action.getParentIssuer(), l3uuids,
-                        new ArrayList<>(), new ArrayList<>());
+            List<ApplianceVmVO> toMigrateVms = new ArrayList<>();
+            Map<String, List<ApplianceVmVO>> apvmsByType = applianceVmVOS.stream()
+                    .collect(Collectors.groupingBy(ApplianceVmVO::getApplianceVmType));
+            
+            for (Map.Entry<String, List<ApplianceVmVO>> entry : apvmsByType.entrySet()) {
+                ApplianceVmType vmType = ApplianceVmType.valueOf(entry.getKey());
+                List<ApplianceVmVO> vmsOfType = entry.getValue();
+                
+                ApvmCascadeFilterExtensionPoint ext = apvmFacade.getApvmCascadeFilterExtensionPoint(vmType);
+                if (ext != null) {
+                    vmsOfType = ext.filterApplianceVmCascade(vmsOfType, action, action.getParentIssuer(), l3uuids,
+                            new ArrayList<>(), new ArrayList<>());
+                }
+                toMigrateVms.addAll(vmsOfType);
             }
+            applianceVmVOS = toMigrateVms;
         }
 
         if (applianceVmVOS.isEmpty()) {
@@ -788,12 +802,32 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             q.setParameter("l3Uuids", l3uuids);
             List<ApplianceVmVO> apvms = q.getResultList();
             if (!apvms.isEmpty()) {
-                for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
-                    apvms = ext.filterApplianceVmCascade(apvms, action, action.getParentIssuer(), l3uuids,
-                            toDeleteNics, toDeleteIps);
+                List<ApplianceVmVO> toDeleteVms = new ArrayList<>();
+                List<VmNicInventory> vmNics = new ArrayList<>();
+                List<UsedIpInventory> ips = new ArrayList<>();
+                Map<String, List<ApplianceVmVO>> apvmsByType = apvms.stream()
+                        .collect(Collectors.groupingBy(ApplianceVmVO::getApplianceVmType));
+                
+                for (Map.Entry<String, List<ApplianceVmVO>> entry : apvmsByType.entrySet()) {
+                    ApplianceVmType vmType = ApplianceVmType.valueOf(entry.getKey());
+                    List<ApplianceVmVO> vmsOfType = entry.getValue();
+                    
+                    ApvmCascadeFilterExtensionPoint ext = apvmFacade.getApvmCascadeFilterExtensionPoint(vmType);
+                    if (ext != null) {
+                        vmsOfType = ext.filterApplianceVmCascade(vmsOfType, action, action.getParentIssuer(), l3uuids,
+                                vmNics, ips);
+                        if (!vmNics.isEmpty()) {
+                            toDeleteNics.addAll(vmNics);
+                        }
+                        if (!ips.isEmpty()) {
+                            toDeleteIps.addAll(ips);
+                        }
+                    }
+                    toDeleteVms.addAll(vmsOfType);
                 }
-                if (!apvms.isEmpty()) {
-                    ret = ApplianceVmInventory.valueOf1(apvms);
+                
+                if (!toDeleteVms.isEmpty()) {
+                    ret = ApplianceVmInventory.valueOf1(toDeleteVms);
                 }
             }
         } else if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer())) {
@@ -857,13 +891,32 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                     }
                 }
             }
-            for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
-                vmvos = ext.filterApplianceVmCascade(vmvos, action, action.getParentIssuer(), ipruuids,
-                        toDeleteNics, toDeleteIps);
+            
+            List<ApplianceVmVO> toDeleteVms = new ArrayList<>();
+            Map<String, List<ApplianceVmVO>> vmvosByType = vmvos.stream()
+                    .collect(Collectors.groupingBy(ApplianceVmVO::getApplianceVmType));
+            
+            for (Map.Entry<String, List<ApplianceVmVO>> entry : vmvosByType.entrySet()) {
+                ApplianceVmType vmType = ApplianceVmType.valueOf(entry.getKey());
+                List<ApplianceVmVO> vmsOfType = entry.getValue();
+                List<VmNicInventory> vmNics = new ArrayList<>();
+                List<UsedIpInventory> ips = new ArrayList<>();
+                ApvmCascadeFilterExtensionPoint ext = apvmFacade.getApvmCascadeFilterExtensionPoint(vmType);
+                if (ext != null) {
+                    vmsOfType = ext.filterApplianceVmCascade(vmsOfType, action, action.getParentIssuer(), ipruuids,
+                            vmNics, ips);
+                    if (!vmNics.isEmpty()) {
+                        toDeleteNics.addAll(vmNics);
+                    }
+                    if (!ips.isEmpty()) {
+                        toDeleteIps.addAll(ips);
+                    }
+                }
+                toDeleteVms.addAll(vmsOfType);
             }
 
-            if (!vmvos.isEmpty()) {
-                ret = ApplianceVmInventory.valueOf1(vmvos);
+            if (!toDeleteVms.isEmpty()) {
+                ret = ApplianceVmInventory.valueOf1(toDeleteVms);
             }
         }  else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
             final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {

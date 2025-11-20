@@ -2033,7 +2033,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }.execute();
     }
 
-    private List<ApplianceVmVO> applianceVmsToBeDeleted(List<ApplianceVmVO> applianceVmVOS, List<String> deletedUuids) {
+    public List<ApplianceVmVO> applianceVmsToBeDeleted(List<ApplianceVmVO> applianceVmVOS, List<String> deletedUuids) {
         List<ApplianceVmVO> vos = new ArrayList<>();
         for (ApplianceVmVO vo : applianceVmVOS) {
             VirtualRouterVmVO vo_dbf = dbf.findByUuid(vo.getUuid(), VirtualRouterVmVO.class);
@@ -2057,7 +2057,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         return vos;
     }
 
-    List<VmNicInventory> applianceVmsAdditionalPublicNic(List<ApplianceVmVO> applianceVmVOS, List<String> parentIssuerUuids) {
+    public List<VmNicInventory> applianceVmsAdditionalPublicNic(List<ApplianceVmVO> applianceVmVOS, List<String> parentIssuerUuids) {
         List<VmNicInventory> toDeleteNics = new ArrayList<>();
         for (ApplianceVmVO vo : applianceVmVOS) {
             VirtualRouterVmVO vr_dbf = dbf.findByUuid(vo.getUuid(), VirtualRouterVmVO.class);
@@ -2132,7 +2132,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         });
     }
 
-    List<VmNicVO> applianceVmsToDeleteNicByIpRanges(List<ApplianceVmVO> applianceVmVOS, List<String> iprUuids) {
+    public List<VmNicVO> applianceVmsToDeleteNicByIpRanges(List<ApplianceVmVO> applianceVmVOS, List<String> iprUuids) {
         List<VmNicVO> toDeleteNics = new ArrayList<>();
         for (ApplianceVmVO vo : applianceVmVOS) {
             for (VmNicVO nic : vo.getVmNics()) {
@@ -2159,7 +2159,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         return toDeleteNics;
     }
 
-    private List<ApplianceVmVO> applianceVmsToBeDeletedByIpRanges(List<ApplianceVmVO> applianceVmVOS, List<String> iprUuids) {
+    public List<ApplianceVmVO> applianceVmsToBeDeletedByIpRanges(List<ApplianceVmVO> applianceVmVOS, List<String> iprUuids) {
         List<ApplianceVmVO> toDeleted = new ArrayList<>();
         List<String> l3Uuids = Q.New(IpRangeVO.class).in(IpRangeVO_.uuid, iprUuids).select(IpRangeVO_.l3NetworkUuid).listValues();
         for (ApplianceVmVO vos : applianceVmVOS) {
@@ -2213,6 +2213,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         } else {
             return applianceVmVOS;
         }
+    }
+
+    @Override
+    public ApplianceVmType getApplianceVmType() {
+        return ApplianceVmType.valueOf(VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE);
     }
 
     private void reconenctVirtualRouter(String vrUUid, boolean statusChange) {

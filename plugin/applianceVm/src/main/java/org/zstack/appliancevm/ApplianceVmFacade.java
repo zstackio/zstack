@@ -43,4 +43,6 @@ public interface ApplianceVmFacade {
     void attachApplianceVmToHaGroup(String vmUuid, String haGroupUuid);
     void dettachVmInstanceFromAffinityGroup(String vmUuid);
     void detachVirtualRouterFromHaGroup(String vmUuid, String haGroupUuid);
+    
+    ApvmCascadeFilterExtensionPoint getApvmCascadeFilterExtensionPoint(ApplianceVmType applianceVmType);
 }
