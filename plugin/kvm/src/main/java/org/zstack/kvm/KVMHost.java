@@ -2289,18 +2289,17 @@ public class KVMHost extends HostBase implements Host {
                 }));
     }
 
-    private SshResult runShell(String script) {
-        Ssh ssh = new Ssh();
-        ssh.setHostname(self.getManagementIp());
-        ssh.setPort(getSelf().getPort());
-        ssh.setUsername(getSelf().getUsername());
-        ssh.setPassword(getSelf().getPassword());
-        ssh.shell(script);
-        return ssh.runAndClose();
+    private Ssh buildSsh() {
+        final KVMHostVO self = getSelf();
+        return new Ssh()
+                .setHostname(self.getManagementIp())
+                .setPort(self.getPort())
+                .setUsername(self.getUsername())
+                .setPassword(self.getPassword());
     }
 
     private void handle(KvmRunShellMsg msg) {
-        SshResult result = runShell(msg.getScript());
+        SshResult result = buildSsh().shell(msg.getScript()).runAndClose();
 
         KvmRunShellReply reply = new KvmRunShellReply();
         if (result.isSshFailure()) {
@@ -5492,9 +5491,7 @@ public class KVMHost extends HostBase implements Host {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         try {
-                            Ssh ssh = new Ssh().setUsername(getSelf().getUsername())
-                                    .setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
-                                    .setHostname(getSelf().getManagementIp());
+                            Ssh ssh = buildSsh();
                             ssh.command(String.format("grep -i ^uuid %s | sed 's/uuid://g'", hostTakeOverFlagPath));
                             SshResult hostRet = ssh.run();
                             if (hostRet.isSshFailure() || hostRet.getReturnCode() != 0) {
@@ -5793,11 +5790,7 @@ public class KVMHost extends HostBase implements Host {
                         }
 
                         try {
-                            new Ssh()
-                                    .setUsername(getSelf().getUsername())
-                                    .setPassword(getSelf().getPassword())
-                                    .setHostname(getSelf().getManagementIp())
-                                    .setPort(getSelf().getPort())
+                            buildSsh()
                                     .sudoCommand(command)
                                     .runErrorByExceptionAndClose();
                         } catch (SshException ex) {
@@ -5968,7 +5961,7 @@ public class KVMHost extends HostBase implements Host {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         String script = "which iptables > /dev/null && iptables -C FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 && iptables -D FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 || true";
-                        runShell(script);
+                        buildSsh().shell(script).runAndClose();
                         trigger.next();
                     }
                 });
