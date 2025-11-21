@@ -157,4 +157,12 @@ public class PciDeviceSpecInventory  {
         return this.lastOpDate;
     }
 
+    public java.lang.Integer maxAvailableDevicesPerHost;
+    public void setMaxAvailableDevicesPerHost(java.lang.Integer maxAvailableDevicesPerHost) {
+        this.maxAvailableDevicesPerHost = maxAvailableDevicesPerHost;
+    }
+    public java.lang.Integer getMaxAvailableDevicesPerHost() {
+        return this.maxAvailableDevicesPerHost;
+    }
+
 }
