@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
 import org.zstack.header.core.FutureCompletion;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
@@ -232,6 +233,9 @@ public class FileVerification {
             }
         });
         completion.await(TimeUnit.MINUTES.toMillis(5));
+        if (!completion.isSuccess()) {
+            throw new OperationFailureException(completion.getErrorCode());
+        }
     }
 }
 
