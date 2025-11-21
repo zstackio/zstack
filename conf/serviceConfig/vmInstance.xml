@@ -118,6 +118,9 @@
         <name>org.zstack.header.vm.APISetVmConsolePasswordMsg</name>
     </message>
     <message>
+        <name>org.zstack.header.vm.APIUpdateConsolePasswordMsg</name>
+    </message>
+    <message>
         <name>org.zstack.header.vm.APIGetVmConsoleAddressMsg</name>
     </message>
     <message>

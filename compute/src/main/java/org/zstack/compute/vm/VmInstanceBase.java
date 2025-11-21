@@ -3277,6 +3277,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmBootVolumeMsg) msg);
         } else if (msg instanceof APISetVmConsolePasswordMsg) {
             handle((APISetVmConsolePasswordMsg) msg);
+        } else if (msg instanceof APIUpdateConsolePasswordMsg) {
+            handle((APIUpdateConsolePasswordMsg) msg);
         } else if (msg instanceof APISetVmSoundTypeMsg) {
             handle((APISetVmSoundTypeMsg) msg);
         } else if (msg instanceof APISetVmQxlMemoryMsg) {
@@ -4195,6 +4197,115 @@ public class VmInstanceBase extends AbstractVmInstance {
                 bus.publish(evt);
             }
         }).start();
+    }
+
+    private void handle(APIUpdateConsolePasswordMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public String getName() {
+                return String.format("update-and-apply-console-password-for-vm-%s", msg.getVmInstanceUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                final APIUpdateConsolePasswordEvent evt = new APIUpdateConsolePasswordEvent(msg.getId());
+
+                refreshVO();
+
+                ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                if (error != null) {
+                    throw new OperationFailureException(error);
+                }
+
+                if (self.getHostUuid() == null) {
+                    throw new OperationFailureException(operr(
+                    "cannot update console password of vm[uuid:%s], the vm is not running on any host",
+                        self.getUuid()
+                ));
+                }
+
+
+                FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
+                fchain.setName(getName());
+
+                fchain.then(new Flow() {
+                    String __name__ = "persist-new-console-password-in-db";
+                    private String oldPassword;
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        oldPassword = Optional.ofNullable(VmSystemTags.CONSOLE_PASSWORD.getTag(self.getUuid()))
+                                .map(tag -> VmSystemTags.CONSOLE_PASSWORD.getTokenByTag(tag, VmSystemTags.CONSOLE_PASSWORD_TOKEN))
+                                .orElse(null);
+
+                        SystemTagCreator creator = VmSystemTags.CONSOLE_PASSWORD.newSystemTagCreator(self.getUuid());
+                        creator.setTagByTokens(map(e(VmSystemTags.CONSOLE_PASSWORD_TOKEN, msg.getPassword())));
+                        creator.recreate = true;
+                        creator.create();
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (oldPassword == null) {
+                            VmSystemTags.CONSOLE_PASSWORD.delete(self.getUuid());
+                        } else {
+                            SystemTagCreator creator = VmSystemTags.CONSOLE_PASSWORD.newSystemTagCreator(self.getUuid());
+                            creator.setTagByTokens(map(e(VmSystemTags.CONSOLE_PASSWORD_TOKEN, oldPassword)));
+                            creator.recreate = true;
+                            creator.create();
+                        }
+                        trigger.rollback();
+                    }
+                });
+
+                fchain.then(new NoRollbackFlow() {
+                    String __name__ = "apply-new-console-password-on-hypervisor";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        UpdateVmConsolePasswordOnHypervisorMsg umsg = new UpdateVmConsolePasswordOnHypervisorMsg();
+                        umsg.setVmInstanceUuid(self.getUuid());
+                        umsg.setHostUuid(self.getHostUuid());
+                        umsg.setPassword(msg.getPassword());
+
+                        bus.makeTargetServiceIdByResourceUuid(umsg, HostConstant.SERVICE_ID, self.getHostUuid());
+
+                        bus.send(umsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                } else {
+                                    trigger.next();
+                                }
+                            }
+                        });
+                    }
+                });
+
+                fchain.done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        evt.setInventory(getSelfInventory());
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                }).error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setError(errCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                }).start();
+            }
+        });
     }
 
     private void handle(APISetVmSoundTypeMsg msg) {

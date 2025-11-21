@@ -704,6 +704,8 @@ public class KVMHost extends HostBase implements Host {
             handle((TakeVmConsoleScreenshotMsg) msg);
         } else if (msg instanceof RestartKvmAgentMsg) {
             handle((RestartKvmAgentMsg) msg);
+        } else if (msg instanceof UpdateVmConsolePasswordOnHypervisorMsg) {
+            handle((UpdateVmConsolePasswordOnHypervisorMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -6890,6 +6892,71 @@ public class KVMHost extends HostBase implements Host {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
                 completion.done();
+            }
+        });
+    }
+
+    private void handle(UpdateVmConsolePasswordOnHypervisorMsg msg) {
+        final UpdateVmConsolePasswordOnHypervisorReply reply = new UpdateVmConsolePasswordOnHypervisorReply();
+
+        thdf.singleFlightSubmit(new SingleFlightTask(msg)
+                .setSyncSignature(String.format("update-vm-%s-console-password-on-host-%s", msg.getVmInstanceUuid(), msg.getHostUuid()))
+                .run(completion -> {
+                    doUpdateVmConsolePasswordOnHypervisor(
+                            msg.getVmInstanceUuid(),
+                            msg.getHostUuid(),
+                            msg.getPassword(),
+                            new ReturnValueCompletion<UpdateVmConsolePasswordOnHypervisorReply>(completion) {
+                                @Override
+                                public void success(UpdateVmConsolePasswordOnHypervisorReply returnValue) {
+                                    completion.success(returnValue);
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    completion.fail(errorCode);
+                                }
+                            });
+                })
+                .done(result -> {
+                    if (result.isSuccess()) {
+                        bus.reply(msg, reply);
+                    } else {
+                        reply.setError(result.getErrorCode());
+                        bus.reply(msg, reply);
+                    }
+                })
+        );
+    }
+
+    private void doUpdateVmConsolePasswordOnHypervisor(String vmUuid, String hostUuid, String password,
+                                                       ReturnValueCompletion<UpdateVmConsolePasswordOnHypervisorReply> completion) {
+        SetVmConsolePasswordLiveCmd cmd = new SetVmConsolePasswordLiveCmd();
+        cmd.setVmUuid(vmUuid);
+        cmd.setPassword(password);
+
+        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+        kmsg.setCommand(cmd);
+        kmsg.setHostUuid(hostUuid);
+        kmsg.setPath(KVMConstant.UPDATE_VM_CONSOLE_PASSWORD_PATH);
+        kmsg.setNoStatusCheck(true);
+
+        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(kmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply r = reply.castReply();
+                AgentResponse rsp = r.toResponse(AgentResponse.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(operr(rsp.getError()));
+                } else {
+                    completion.success(new UpdateVmConsolePasswordOnHypervisorReply());
+                }
             }
         });
     }
