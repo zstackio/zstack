@@ -28,6 +28,14 @@ public class LicenseAuthorizedCapacityInventory  {
         return this.resourceUuid;
     }
 
+    public java.lang.String resourceInfo;
+    public void setResourceInfo(java.lang.String resourceInfo) {
+        this.resourceInfo = resourceInfo;
+    }
+    public java.lang.String getResourceInfo() {
+        return this.resourceInfo;
+    }
+
     public java.lang.String quotaType;
     public void setQuotaType(java.lang.String quotaType) {
         this.quotaType = quotaType;

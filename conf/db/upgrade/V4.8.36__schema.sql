@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizedCapacityVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
     `nodeUuid` char(32) NOT NULL,
     `resourceUuid` char(32) DEFAULT NULL,
+    `resourceInfo` text DEFAULT NULL,
     `quotaType` varchar(64) NOT NULL,
     `quota` bigint unsigned DEFAULT 0,
     `licenseType` varchar(64) NOT NULL,
