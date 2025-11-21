@@ -62,7 +62,7 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
                 GetVncPortResponse rsp = kreply.toResponse(GetVncPortResponse.class);
                 if (!rsp.isSuccess()) {
                     complete.fail(operr("failed to get VNC port from VM[%s]", vm.getUuid())
-                            .withOpaque("command.error", rsp.getError()));
+                            .withOpaque("response.error", rsp.getError()));
                     return;
                 }
 

@@ -15012,16 +15012,15 @@
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
-    "raw": "unable to connect to KVM[ip:%s, username:%s, sshPort:%d ] to do DNS check, please check if username/password is wrong; %s",
-    "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort:{2} ] to do DNS check, please check if username/password is wrong; {3}",
-    "zh_CN": "无法连接物理机[ip:{0}, 用户名:{1}, ssh端口:{2} ]做DNS检查，请检查用户名密码是否正确；{3}",
+    "raw": "unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check DNS",
+    "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort:{2}] to do DNS check, please check if username/password is wrong",
+    "zh_CN": "无法连接物理机[ip:{0}, 用户名:{1}, ssh端口:{2}]做DNS检查，请检查用户名密码是否正确",
     "arguments": [
       "self.getManagementIp()",
       "getSelf().getUsername()",
-      "getSelf().getPort()",
-      "result.getExitErrorMessage()"
+      "getSelf().getPort()"
     ],
-    "line": 1860,
+    "line": 2306,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
