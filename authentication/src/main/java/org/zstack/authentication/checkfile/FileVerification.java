@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
+import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
@@ -21,6 +22,9 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
+
+import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class FileVerification {
@@ -189,6 +193,7 @@ public class FileVerification {
     }
 
     public void addHostFile(boolean addNew){
+        final FutureCompletion completion = new FutureCompletion(null);
         AddHostFileCmd cmd = new AddHostFileCmd();
         cmd.setUuid(uuid);
         cmd.setPath(path);
@@ -202,11 +207,12 @@ public class FileVerification {
         }
         
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, node);
-        bus.send(msg, new CloudBusCallBack(null) {
+        bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    throw new CloudRuntimeException(String.format("failed to add file [%s.%s] to checkList.", node, path));
+                    completion.fail(operr(String.format("failed to add file [%s.%s] to checkList.", node, path)));
+                    return;
                 }
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 addHostFileRsp rsp = r.toResponse(addHostFileRsp.class);
@@ -221,10 +227,11 @@ public class FileVerification {
                     fvf.allFile.get(uuid).setDigest(digest);
                     SQL.New(FileVerificationVO.class).eq(FileVerificationVO_.uuid, uuid).set(FileVerificationVO_.digest, digest).update();
                 }
+                completion.success();
             }
         });
+        completion.await(TimeUnit.MINUTES.toMillis(1));
     }
-
 }
 
 
