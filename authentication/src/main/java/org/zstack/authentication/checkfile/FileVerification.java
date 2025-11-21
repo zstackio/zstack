@@ -216,8 +216,9 @@ public class FileVerification {
                 }
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 addHostFileRsp rsp = r.toResponse(addHostFileRsp.class);
-                if (! rsp.backup){
-                    logger.debug(String.format("failed to backup file [%s.%s]", node, path));
+                if (!rsp.backup) {
+                    completion.fail(operr(String.format("failed to backup file [%s.%s]", node, path)));
+                    return;
                 }
                 digest = rsp.digest;
                 if(addNew){
