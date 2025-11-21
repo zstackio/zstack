@@ -55,3 +55,41 @@ CALL fixUsedIpGatewayAndNetmask();
 
 -- Drop the procedure after use
 DROP PROCEDURE IF EXISTS fixUsedIpGatewayAndNetmask;
+
+
+-- Update ModelServiceVO framework values
+DROP PROCEDURE IF EXISTS updateModelServiceFramework;
+
+DELIMITER $$
+
+CREATE PROCEDURE updateModelServiceFramework()
+BEGIN
+    DECLARE v_table_exists INT DEFAULT 0;
+
+    -- Check if ModelServiceVO table and framework column exist
+    SELECT COUNT(*) INTO v_table_exists
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'ModelServiceVO'
+      AND COLUMN_NAME = 'framework';
+
+    IF v_table_exists > 0 THEN
+        -- Update llama.cpp to LlamaCpp
+        UPDATE ModelServiceVO
+        SET framework = 'LlamaCpp'
+        WHERE framework = 'llama.cpp';
+
+        -- Update sentence_transformers to SentenceTransformers
+        UPDATE ModelServiceVO
+        SET framework = 'SentenceTransformers'
+        WHERE framework = 'sentence_transformers';
+    END IF;
+END$$
+
+DELIMITER ;
+
+-- Execute the procedure
+CALL updateModelServiceFramework();
+
+-- Drop the procedure after use
+DROP PROCEDURE IF EXISTS updateModelServiceFramework;
