@@ -230,7 +230,7 @@ public class FileVerification {
                 completion.success();
             }
         });
-        completion.await(TimeUnit.MINUTES.toMillis(1));
+        completion.await(TimeUnit.MINUTES.toMillis(5));
     }
 }
 
