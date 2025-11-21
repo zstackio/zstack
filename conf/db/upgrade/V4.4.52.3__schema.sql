@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ResourceResponsibleVO` (
 
 CREATE TABLE IF NOT EXISTS `zstack`.`FileVerificationRecordsVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-    `fileVerificationUuid` varchar(32) NOT NULL UNIQUE,
+    `fileVerificationUuid` varchar(32) NOT NULL,
     `path` varchar(256) NOT NULL,
     `node` varchar(32) NOT NULL,
     `currentDigest` varchar(32) DEFAULT NULL,
