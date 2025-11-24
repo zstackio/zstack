@@ -1,8 +1,19 @@
 package org.zstack.utils;
 
+import org.zstack.utils.opaque.OpaqueScripts;
+
+import java.util.Map;
+
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_BASH_CMD;
+import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_BASH_CODE;
+import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_BASH_ERROR;
+import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_BASH_OUTPUT;
+
 /**
  */
-public class ShellResult {
+public class ShellResult implements OpaqueScripts {
     private int retCode;
     private String stderr;
     private String stdout;
@@ -39,6 +50,17 @@ public class ShellResult {
         sb.append(String.format("\nstderr: %s", stderr));
         sb.append(String.format("\nstdout: %s", stdout));
         return sb.toString();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> opaqueScripts() {
+        return map(
+            e(OPAQUE_KEY_BASH_CMD, command),
+            e(OPAQUE_KEY_BASH_CODE, retCode),
+            e(OPAQUE_KEY_BASH_OUTPUT, stdout),
+            e(OPAQUE_KEY_BASH_ERROR, stderr)
+        );
     }
 
     public void raiseExceptionIfFail() {

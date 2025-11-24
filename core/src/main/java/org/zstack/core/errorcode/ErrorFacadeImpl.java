@@ -8,6 +8,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.opaque.OpaqueScripts;
 import org.zstack.utils.path.PathUtil;
 
 import javax.xml.bind.JAXBContext;
@@ -109,7 +110,7 @@ public class ErrorFacadeImpl implements ErrorFacade {
 
     @Override
     public ErrorCode throwableToInternalError(Throwable t) {
-        return instantiateErrorCode(SysErrors.INTERNAL.toString(), t.getMessage());
+        return throwableToError(t, SysErrors.INTERNAL);
     }
 
     @Override
@@ -119,7 +120,7 @@ public class ErrorFacadeImpl implements ErrorFacade {
 
     @Override
     public ErrorCode throwableToTimeoutError(Throwable t) {
-        return instantiateErrorCode(SysErrors.TIMEOUT.toString(), t.getMessage());
+        return throwableToError(t, SysErrors.TIMEOUT);
     }
 
     @Override
@@ -159,7 +160,7 @@ public class ErrorFacadeImpl implements ErrorFacade {
 
     @Override
     public ErrorCode throwableToOperationError(Throwable t) {
-        return instantiateErrorCode(SysErrors.OPERATION_ERROR, t.getMessage());
+        return throwableToError(t, SysErrors.OPERATION_ERROR);
     }
 
     @Override
@@ -169,7 +170,15 @@ public class ErrorFacadeImpl implements ErrorFacade {
 
     @Override
     public ErrorCode throwableToInvalidArgumentError(Throwable t) {
-        return instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR, t.getMessage());
+        return throwableToError(t, SysErrors.INVALID_ARGUMENT_ERROR);
+    }
+
+    private ErrorCode throwableToError(Throwable t, Enum<?> errCode) {
+        ErrorCode error = instantiateErrorCode(errCode, t.getMessage());
+        if (t instanceof OpaqueScripts) {
+            error.withOpaque((OpaqueScripts) t);
+        }
+        return error;
     }
 
     private class ErrorCodeInfo {

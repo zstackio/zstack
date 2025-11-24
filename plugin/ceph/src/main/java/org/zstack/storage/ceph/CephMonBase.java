@@ -10,13 +10,19 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
+import org.zstack.utils.opaque.OpaqueScripts;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshException;
 import org.zstack.utils.ssh.SshResult;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_RESPONSE_ERROR;
 
 /**
  * Created by frank on 7/27/2015.
@@ -66,14 +72,14 @@ public abstract class CephMonBase {
             throw new OperationFailureException(operr("The problem may be caused by an incorrect user name or password or SSH port or unstable network environment"));
         }
 
-        if(ret.getReturnCode() != 0){
+        if (ret.getReturnCode() != 0) {
             ret.setSshFailure(true);
-            throw new SshException(ret.getStderr());
+            throw new SshException("failed to check health to ceph mon").withResult(ret);
         }
 
         String stdOut = ret.getStdout();
-        if(stdOut.contains("HEALTH_ERROR")) {
-            throw new SshException(stdOut);
+        if (stdOut.contains("HEALTH_ERROR")) {
+            throw new SshException("ceph health error").withResult(ret);
         }
     }
 
@@ -111,7 +117,7 @@ public abstract class CephMonBase {
         }
     }
 
-    public static class AgentResponse {
+    public static class AgentResponse implements OpaqueScripts {
         private String error;
         @Deprecated
         private boolean success = true;
@@ -138,7 +144,18 @@ public abstract class CephMonBase {
             if (success) {
                 return null;
             }
-            return operr("operation error, because:%s", error);
+            return operr(OPAQUE_KEY_RESPONSE_ERROR).withOpaque(this);
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Map<String, Object> opaqueScripts() {
+            if (!success) {
+                return map(
+                    e(OPAQUE_KEY_RESPONSE_ERROR, error)
+                );
+            }
+            return Collections.emptyMap();
         }
     }
 
