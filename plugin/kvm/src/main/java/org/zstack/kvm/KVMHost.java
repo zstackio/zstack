@@ -755,12 +755,14 @@ public class KVMHost extends HostBase implements Host {
                     @Override
                     public void run(MessageReply reply) {
                         if (!reply.isSuccess()) {
-                            ureply.setError(operr("fail to update nqn of host[uuid:%s], because %s", msg.getHostUuid(), reply.getError()));
+                            ureply.setError(operr("fail to update nqn of host[uuid:%s]", msg.getHostUuid())
+                                    .withCause(reply.getError()));
                         } else {
                             KVMHostAsyncHttpCallReply r = reply.castReply();
                             UpdateHostNqnRsp rsp = r.toResponse(UpdateHostNqnRsp.class);
                             if (!rsp.isSuccess()) {
-                                ureply.setError(operr("fail to update nqn of host[uuid:%s], because %s", msg.getHostUuid(), rsp.getError()));
+                                ureply.setError(operr("fail to update nqn of host[uuid:%s]", msg.getHostUuid())
+                                        .withOpaque("response.error", rsp.getError()));
                             } else {
                                 SQL.New(HostVO.class).eq(HostVO_.uuid, msg.getHostUuid())
                                         .set(HostVO_.nqn, msg.getNqn())
@@ -849,7 +851,8 @@ public class KVMHost extends HostBase implements Host {
             public void success(UpdateVmCpuQuotaRsp rsp) {
                 if (!rsp.isSuccess()) {
                     reply.setSuccess(false);
-                    reply.setError(operr("Failed to update the quota configuration item in the virtual machine XML. Due to %s", rsp.getError()));
+                    reply.setError(operr("Failed to update the quota configuration item in the virtual machine XML")
+                            .withOpaque("response.error", rsp.getError()));
                 }
                 bus.reply(msg, reply);
             }
@@ -923,7 +926,8 @@ public class KVMHost extends HostBase implements Host {
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 GetVmUptimeRsp rsp = r.toResponse(GetVmUptimeRsp.class);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr(rsp.getError()));
+                    completion.fail(operr("failed to get VM uptime")
+                            .withOpaque("response.error", rsp.getError()));
                 } else {
                     completion.success(r.toResponse(GetVmUptimeRsp.class));
                 }
@@ -980,7 +984,8 @@ public class KVMHost extends HostBase implements Host {
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 TakeVmConsoleScreenshotRsp rsp = r.toResponse(TakeVmConsoleScreenshotRsp.class);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr(rsp.getError()));
+                    completion.fail(operr("failed to take VM console screenshot")
+                            .withOpaque("response.error", rsp.getError()));
                 } else {
                     completion.success(r.toResponse(TakeVmConsoleScreenshotRsp.class));
                 }
@@ -1043,7 +1048,9 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void success(BlockCommitResponse ret) {
                                 if (!ret.isSuccess()) {
-                                    ErrorCode err = operr("operation error, because:%s", ret.getError());
+                                    ErrorCode err = operr("failed to do block commit")
+                                            .withOpaque("response.error", ret.getError())
+                                            .withOpaque("volume.uuid", msg.getVolume().getUuid());
                                     extEmitter.failedToCommitVolume((KVMHostInventory) getSelfInventory(), msg, cmd, ret, err);
                                     trigger.fail(err);
                                     return;
@@ -1155,7 +1162,9 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void success(BlockPullResponse ret) {
                                 if (!ret.isSuccess()) {
-                                    ErrorCode err = operr("operation error, because:%s", ret.getError());
+                                    ErrorCode err = operr("failed to do block pull")
+                                            .withOpaque("response.error", ret.getError())
+                                            .withOpaque("volume.uuid", msg.getVolume().getUuid());
                                     extEmitter.failedToPullVolume((KVMHostInventory) getSelfInventory(), msg, cmd, ret, err);
                                     trigger.fail(err);
                                     return;
@@ -1263,7 +1272,8 @@ public class KVMHost extends HostBase implements Host {
         try (Response r = hb.callWithException()) {
             // 1. webssh maybe is not running
             if (!r.isSuccessful()) {
-                reply.setError(inerr("webssh server is unreachable for %s", r.message()));
+                reply.setError(inerr("webssh server is unreachable")
+                        .withOpaque("response.error", r.message()));
                 reply.setSuccess(false);
                 bus.reply(msg, reply);
                 return;
@@ -2289,25 +2299,24 @@ public class KVMHost extends HostBase implements Host {
                 }));
     }
 
-    private SshResult runShell(String script) {
-        Ssh ssh = new Ssh();
-        ssh.setHostname(self.getManagementIp());
-        ssh.setPort(getSelf().getPort());
-        ssh.setUsername(getSelf().getUsername());
-        ssh.setPassword(getSelf().getPassword());
-        ssh.shell(script);
-        return ssh.runAndClose();
+    private Ssh buildSsh() {
+        final KVMHostVO self = getSelf();
+        return new Ssh()
+                .setHostname(self.getManagementIp())
+                .setPort(self.getPort())
+                .setUsername(self.getUsername())
+                .setPassword(self.getPassword());
     }
 
     private void handle(KvmRunShellMsg msg) {
-        SshResult result = runShell(msg.getScript());
+        SshResult result = buildSsh().shell(msg.getScript()).runAndClose();
 
         KvmRunShellReply reply = new KvmRunShellReply();
         if (result.isSshFailure()) {
-            reply.setError(operr("unable to connect to KVM[ip:%s, username:%s, sshPort:%d ] to do DNS check," +
-                            " please check if username/password is wrong; %s",
-                    self.getManagementIp(), getSelf().getUsername(),
-                    getSelf().getPort(), result.getExitErrorMessage()));
+            reply.setError(operr(
+                    "unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check DNS",
+                    self.getManagementIp(), getSelf().getUsername(), getSelf().getPort())
+                    .withOpaque("exception", result.getExitErrorMessage()));
         } else {
             reply.setStdout(result.getStdout());
             reply.setStderr(result.getStderr());
@@ -5492,9 +5501,7 @@ public class KVMHost extends HostBase implements Host {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         try {
-                            Ssh ssh = new Ssh().setUsername(getSelf().getUsername())
-                                    .setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
-                                    .setHostname(getSelf().getManagementIp());
+                            Ssh ssh = buildSsh();
                             ssh.command(String.format("grep -i ^uuid %s | sed 's/uuid://g'", hostTakeOverFlagPath));
                             SshResult hostRet = ssh.run();
                             if (hostRet.isSshFailure() || hostRet.getReturnCode() != 0) {
@@ -5793,11 +5800,7 @@ public class KVMHost extends HostBase implements Host {
                         }
 
                         try {
-                            new Ssh()
-                                    .setUsername(getSelf().getUsername())
-                                    .setPassword(getSelf().getPassword())
-                                    .setHostname(getSelf().getManagementIp())
-                                    .setPort(getSelf().getPort())
+                            buildSsh()
                                     .sudoCommand(command)
                                     .runErrorByExceptionAndClose();
                         } catch (SshException ex) {
@@ -5968,7 +5971,7 @@ public class KVMHost extends HostBase implements Host {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         String script = "which iptables > /dev/null && iptables -C FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 && iptables -D FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 || true";
-                        runShell(script);
+                        buildSsh().shell(script).runAndClose();
                         trigger.next();
                     }
                 });
