@@ -14,6 +14,7 @@ import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
 import org.zstack.core.timeout.TimeHelper;
 import org.zstack.header.core.*;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.image.*;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
@@ -112,6 +113,7 @@ import static org.zstack.kvm.KVMHostFactory.allGuestOsCharacter;
 import static org.zstack.kvm.KvmHostUpdateOsExtensionPoint.UPDATE_OS_RSP;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_EXCEPTION;
 
 public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
@@ -5505,27 +5507,30 @@ public class KVMHost extends HostBase implements Host {
                             ssh.command(String.format("grep -i ^uuid %s | sed 's/uuid://g'", hostTakeOverFlagPath));
                             SshResult hostRet = ssh.run();
                             if (hostRet.isSshFailure() || hostRet.getReturnCode() != 0) {
-                                trigger.fail(operr("unable to Check whether the host is taken over,  because %s", hostRet.getExitErrorMessage()));
+                                trigger.fail(operr("unable to check whether the host is taken over")
+                                        .withOpaque(OPAQUE_KEY_EXCEPTION, hostRet.getExitErrorMessage()));
                                 return;
                             }
                             String hostOutput = hostRet.getStdout().replaceAll("\r|\n","");
-                            logger.debug(String.format("Uuid in the host take over flag file is %s ", hostOutput));
-                            if (hostOutput.contains("No such file or directory")) {
+                            String hostErrorOutput = hostRet.getStderr().replaceAll("\r|\n","");
+                            logger.debug(String.format("Uuid in the host take over flag file is %s", hostOutput));
+                            if (hostErrorOutput.contains("No such file or directory")) {
                                 trigger.next();
                                 return;
                             }
 
                             ssh.command(String.format("date +%%s -r %s", hostTakeOverFlagPath));
                             SshResult timeRet = ssh.run();
-                            logger.debug(String.format("Timestamp of the flag is %s ", timeRet.getStdout()));
+                            logger.trace(String.format("the last modified timestamp (seconds) of takeover file: %s", timeRet.getStdout()));
                             if (timeRet.isSshFailure() || timeRet.getReturnCode() != 0) {
-                                trigger.fail(operr("Unable to get the timestamp of the flag,  because %s", timeRet.getExitErrorMessage()));
+                                trigger.fail(operr("unable to get the host takeover information")
+                                        .withOpaque(OPAQUE_KEY_EXCEPTION, timeRet.getExitErrorMessage()));
                                 return;
                             }
                             String timestampOutput = timeRet.getStdout().replaceAll("\r|\n","");
 
                             long diff = (new Date().getTime() / 1000) - Long.parseLong(timestampOutput);
-                            logger.debug(String.format("hostOutput is %s ,The time difference is %d(s) ", hostOutput, diff));
+                            logger.trace(String.format("hostOutput is %s, The time difference is %d(s) ", hostOutput, diff));
 
                             if (diff < HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)) {
                                 trigger.fail(operr("the host[ip:%s] has been taken over, because the takeover flag[HostUuid:%s] already exists and utime[%d] has not exceeded host ping interval[%d]",
@@ -5551,18 +5556,15 @@ public class KVMHost extends HostBase implements Host {
                 flow(new NoRollbackFlow() {
                     String __name__ = "check-host-cpu-arch";
 
-                    private Object getHostCpuArchitectureBySsh() {
-                        SshShell sshShell = new SshShell();
-                        sshShell.setHostname(getSelf().getManagementIp());
-                        sshShell.setUsername(getSelf().getUsername());
-                        sshShell.setPassword(getSelf().getPassword());
-                        sshShell.setPort(getSelf().getPort());
-                        SshResult ret = sshShell.runCommand("uname -m");
+                    private ErrorableValue<String> getHostCpuArchitectureBySsh() {
+                        final SshResult ret = buildSsh().command("uname -m").run();
 
                         if (ret.isSshFailure() || ret.getReturnCode() != 0) {
-                            return operr("unable to get host cpu architecture, please check if username/password is wrong; %s", ret.getExitErrorMessage());
+                            return ErrorableValue.ofErrorCode(operr(
+                                    "unable to get host cpu architecture, please check if username/password is wrong")
+                                    .withOpaque(OPAQUE_KEY_EXCEPTION, ret.getExitErrorMessage()));
                         }
-                        return ret.getStdout().trim();
+                        return ErrorableValue.of(ret.getStdout().trim());
                     }
 
                     @Override
@@ -5574,12 +5576,12 @@ public class KVMHost extends HostBase implements Host {
                             hostArchitecture = cluster.getArchitecture() == null ?
                                     CpuArchitecture.x86_64.name() : cluster.getArchitecture();
                         } else {
-                            final Object ret = getHostCpuArchitectureBySsh();
-                            if (ret instanceof ErrorCode) {
-                                trigger.fail((ErrorCode) ret);
+                            final ErrorableValue<String> ret = getHostCpuArchitectureBySsh();
+                            if (!ret.isSuccess()) {
+                                trigger.fail(ret.error);
                                 return;
                             }
-                            hostArchitecture = ret.toString();
+                            hostArchitecture = ret.result;
                         }
 
                         HostVO host = dbf.findByUuid(getSelf().getUuid(), HostVO.class);
