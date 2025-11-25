@@ -131,7 +131,12 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                 deployClient(context, extPss, new WhileDoneCompletion(trigger) {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
-                        trigger.next();
+                        if (errorCodeList.getCauses().isEmpty()) {
+                            trigger.next();
+                        } else {
+                            // todo rollback
+                            trigger.fail(errorCodeList.getCauses().get(0));
+                        }
                     }
                 });
             }

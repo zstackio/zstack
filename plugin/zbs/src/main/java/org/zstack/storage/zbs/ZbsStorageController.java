@@ -9,10 +9,12 @@ import org.zstack.cbd.kvm.CbdHeartbeatVolumeTO;
 import org.zstack.cbd.kvm.CbdVolumeTo;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -99,6 +101,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String ROLLBACK_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/rollback";
     public static final String CHECK_HOST_STORAGE_CONNECTION_PATH = "/zbs/primarystorage/check/host/connection";
     public static final String GET_VOLUME_CLIENTS_PATH = "/zbs/primarystorage/volume/clients";
+    public static final String UPDATE_HOST_DEPENDENCY_PATH = "/zbs/primarystorage/host/updatedependency";
 
     private static final StorageCapabilities capabilities = new StorageCapabilities();
 
@@ -187,28 +190,92 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void deployClient(HostInventory h, Completion comp) {
-        KVMHostVO host = org.zstack.core.db.Q.New(KVMHostVO.class).eq(KVMHostVO_.uuid, h.getUuid()).find();
-        if (host == null) {
-            comp.fail(operr("cannot found kvm host[uuid:%s], unable to deploy client", h.getUuid()));
-            return;
-        }
-
-        DeployClientCmd cmd = new DeployClientCmd();
-        cmd.setIp(h.getManagementIp());
-        cmd.setPort(host.getPort());
-        cmd.setUsername(host.getUsername());
-        cmd.setPassword(host.getPassword());
-        httpCall(DEPLOY_CLIENT_PATH, cmd, DeployClientRsp.class, new ReturnValueCompletion<DeployClientRsp>(comp) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("deploy-zbs-client-on-host-%s", h.getUuid()));
+        chain.then(new ShareFlow() {
             @Override
-            public void success(DeployClientRsp returnValue) {
-                comp.success();
-            }
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "deploy-client";
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                comp.fail(errorCode);
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        KVMHostVO host = Q.New(KVMHostVO.class).eq(KVMHostVO_.uuid, h.getUuid()).find();
+                        if (host == null) {
+                            trigger.fail(operr("cannot found kvm host[uuid:%s], unable to deploy client", h.getUuid()));
+                            return;
+                        }
+
+                        DeployClientCmd cmd = new DeployClientCmd();
+                        cmd.setIp(h.getManagementIp());
+                        cmd.setPort(host.getPort());
+                        cmd.setUsername(host.getUsername());
+                        cmd.setPassword(host.getPassword());
+                        httpCall(DEPLOY_CLIENT_PATH, cmd, DeployClientRsp.class, new ReturnValueCompletion<DeployClientRsp>(trigger) {
+                            @Override
+                            public void success(DeployClientRsp returnValue) {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "update-host-client-dependency";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        UpdateHostDependencyCmd cmd = new UpdateHostDependencyCmd();
+                        cmd.updatePackages = "libcbd";
+                        cmd.zstackRepo = AnsibleGlobalProperty.ZSTACK_REPO;
+
+                        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                        msg.setCommand(cmd);
+                        msg.setHostUuid(h.getUuid());
+                        msg.setPath(UPDATE_HOST_DEPENDENCY_PATH);
+                        msg.setNoStatusCheck(true);
+                        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+                        bus.send(msg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                                UpdateHostDependencyRsp rsp = hreply.toResponse(UpdateHostDependencyRsp.class);
+                                if (!rsp.isSuccess()) {
+                                    trigger.fail(operr(rsp.getError()));
+                                    return;
+                                }
+
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(comp) {
+                    @Override
+                    public void handle(Map data) {
+                        comp.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(comp) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        comp.fail(errCode);
+                    }
+                });
             }
-        });
+        }).start();
     }
 
     @Override
@@ -357,7 +424,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 flow(new NoRollbackFlow() {
                     String __name__ = "deploy-client";
 
-                    List<PrimaryStorageClusterRefVO> refs = org.zstack.core.db.Q.New(PrimaryStorageClusterRefVO.class)
+                    List<PrimaryStorageClusterRefVO> refs = Q.New(PrimaryStorageClusterRefVO.class)
                             .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, self.getUuid())
                             .list();
 
@@ -372,12 +439,12 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                                 .map(PrimaryStorageClusterRefVO::getClusterUuid)
                                 .collect(Collectors.toList());
 
-                        List<HostVO> hosts = org.zstack.core.db.Q.New(HostVO.class)
+                        List<HostVO> hosts = Q.New(HostVO.class)
                                 .in(HostAO_.clusterUuid, clusterUuids)
                                 .list();
 
                         new While<>(hosts).each((h, comp) -> {
-                            KVMHostVO host = org.zstack.core.db.Q.New(KVMHostVO.class).eq(KVMHostVO_.uuid, h.getUuid()).find();
+                            KVMHostVO host = Q.New(KVMHostVO.class).eq(KVMHostVO_.uuid, h.getUuid()).find();
                             if (host == null) {
                                 comp.addError(operr("cannot found kvm host[uuid:%s], unable to deploy client", h.getUuid()));
                                 comp.allDone();
@@ -1895,6 +1962,14 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     public static class CheckHostStorageConnectionRsp extends AgentResponse {
+    }
+
+    public static class UpdateHostDependencyCmd extends AgentCommand {
+        public String updatePackages;
+        public String zstackRepo;
+    }
+
+    public static class UpdateHostDependencyRsp extends AgentResponse {
     }
 
     public static class AgentResponse extends ZbsMdsBase.AgentResponse {
