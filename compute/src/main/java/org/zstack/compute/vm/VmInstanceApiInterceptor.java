@@ -9,6 +9,8 @@ import org.zstack.core.Platform;
 import org.zstack.compute.VmNicUtils;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigVO;
+import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -137,6 +139,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIUpdateVmInstanceMsg) msg);
         } else if (msg instanceof APISetVmConsolePasswordMsg) {
             validate((APISetVmConsolePasswordMsg) msg);
+        } else if (msg instanceof APIUpdateConsolePasswordMsg) {
+            validate((APIUpdateConsolePasswordMsg) msg);
         } else if (msg instanceof APIChangeInstanceOfferingMsg) {
             validate((APIChangeInstanceOfferingMsg) msg);
         } else if (msg instanceof APIMigrateVmMsg) {
@@ -1530,6 +1534,23 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         String pwd = msg.getConsolePassword();
         if (pwd.startsWith("password")){
             throw new ApiMessageInterceptionException(argerr("The console password cannot start with 'password' which may trigger a VNC security issue"));
+        }
+    }
+
+    private void validate(APIUpdateConsolePasswordMsg msg) {
+        VmInstanceVO vm = dbf.findByUuid(msg.getUuid(), VmInstanceVO.class);
+        if (vm.getState() != VmInstanceState.Running) {
+            throw new ApiMessageInterceptionException(operr(
+                    "Cannot update console password for VM[uuid:%s] because it is not in 'Running' state. Current state is '%s'.",
+                    vm.getUuid(), vm.getState()
+            ));
+        }
+        boolean hasPassword = VmSystemTags.CONSOLE_PASSWORD.hasTag(vm.getUuid());
+        if (!hasPassword) {
+            throw new ApiMessageInterceptionException(operr(
+                    "Cannot update the console password for VM[uuid:%s] because no console password is currently set. ",
+                    vm.getUuid()
+            ));
         }
     }
 

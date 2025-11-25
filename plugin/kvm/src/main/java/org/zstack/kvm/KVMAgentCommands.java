@@ -992,6 +992,17 @@ public class KVMAgentCommands {
     public static class CreateBridgeResponse extends AgentResponse {
     }
 
+    public static class SetVmConsolePasswordLiveCmd extends AgentCommand implements Serializable {
+        private String vmUuid;
+        @NoLogging
+        private String password;
+
+        public String getVmUuid() { return vmUuid; }
+        public void setVmUuid(String vmUuid) { this.vmUuid = vmUuid; }
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
+    }
+
     public static class UpdateL2NetworkCmd extends AgentCommand {
         private String physicalInterfaceName;
         private String bridgeName;
