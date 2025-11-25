@@ -163,3 +163,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`NfvInstGroupConfigTaskVO` (
 
 CALL ADD_COLUMN('OvnControllerVmInstanceVO', 'nbClusterStatus', 'VARCHAR(32)', 1, 'Unknown');
 CALL ADD_COLUMN('OvnControllerVmInstanceVO', 'sbClusterStatus', 'VARCHAR(32)', 1, 'Unknown');
+
+ALTER TABLE OvnControllerVmOfferingVO DROP FOREIGN KEY fkOvnControllerVmOfferingVOL3NetworkEO;
+CALL DROP_COLUMN('OvnControllerVmOfferingVO', 'managementNetworkUuid');
+CALL DROP_COLUMN('OvnControllerVmOfferingVO', 'imageUuid');
+CALL DROP_COLUMN('OvnControllerVmOfferingVO', 'zoneUuid');
