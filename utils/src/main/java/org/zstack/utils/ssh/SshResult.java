@@ -17,7 +17,7 @@ public class SshResult implements OpaqueScripts, Serializable {
 	private String stdout;
 	private String stderr;
 	private String exitErrorMessage;
-	private String commandToExecute;
+	private String desensitizeCmd;
     private boolean isSshFailure;
 
     public void raiseExceptionIfFailed(int retCode) {
@@ -29,7 +29,7 @@ public class SshResult implements OpaqueScripts, Serializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("\nssh command failed");
-        sb.append(String.format("\ncommand: %s", commandToExecute));
+        sb.append(String.format("\ncommand: %s", desensitizeCmd));
         sb.append(String.format("\nreturn code: %s", returnCode));
         sb.append(String.format("\nstdout: %s", stdout));
         sb.append(String.format("\nstderr: %s", stderr));
@@ -74,18 +74,18 @@ public class SshResult implements OpaqueScripts, Serializable {
 	public void setExitErrorMessage(String exitErrorMessage) {
 		this.exitErrorMessage = exitErrorMessage;
 	}
-	public String getCommandToExecute() {
-		return commandToExecute;
+	public String getDesensitizeCmd() {
+		return desensitizeCmd;
 	}
-	public void setCommandToExecute(String commandToExecute) {
-		this.commandToExecute = commandToExecute;
+	public void setDesensitizeCmd(String desensitizeCmd) {
+		this.desensitizeCmd = desensitizeCmd;
 	}
 
     @Override
     @SuppressWarnings("unchecked")
     public Map<String, Object> opaqueScripts() {
         return map(
-            e(OPAQUE_KEY_SSH_CMD, commandToExecute),
+            e(OPAQUE_KEY_SSH_CMD, desensitizeCmd),
             e(OPAQUE_KEY_SSH_CODE, returnCode),
             e(OPAQUE_KEY_SSH_OUTPUT, stdout),
             e(OPAQUE_KEY_SSH_ERROR, stderr)

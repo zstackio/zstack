@@ -13,13 +13,11 @@ public class CloudInvalidParameterException extends CloudRuntimeException implem
     private static final long serialVersionUID = SerialVersionUID.CloudInvalidParameterException;
 
     public final String parameterName;
-    public final String parameterValue;
     public final String extensionMessage;
 
     public CloudInvalidParameterException(String parameterName, String value, String msg) {
         super(new StringBuilder("[Invalid Parameter: ").append(parameterName).append(" has value ").append(value).append("]: ").append(msg).toString());
         this.parameterName = parameterName;
-        this.parameterValue = value;
         this.extensionMessage = msg;
     }
 

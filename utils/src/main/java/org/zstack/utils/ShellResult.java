@@ -17,7 +17,7 @@ public class ShellResult implements OpaqueScripts {
     private int retCode;
     private String stderr;
     private String stdout;
-    private String command;
+    private String desensitizeCmd;
 
     public int getRetCode() {
         return retCode;
@@ -45,7 +45,7 @@ public class ShellResult implements OpaqueScripts {
 
     public String getExecutionLog() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("\nshell command[%s]", command));
+        sb.append(String.format("\nshell command[%s]", desensitizeCmd));
         sb.append(String.format("\nret code: %s", retCode));
         sb.append(String.format("\nstderr: %s", stderr));
         sb.append(String.format("\nstdout: %s", stdout));
@@ -56,7 +56,7 @@ public class ShellResult implements OpaqueScripts {
     @SuppressWarnings("unchecked")
     public Map<String, Object> opaqueScripts() {
         return map(
-            e(OPAQUE_KEY_BASH_CMD, command),
+            e(OPAQUE_KEY_BASH_CMD, desensitizeCmd),
             e(OPAQUE_KEY_BASH_CODE, retCode),
             e(OPAQUE_KEY_BASH_OUTPUT, stdout),
             e(OPAQUE_KEY_BASH_ERROR, stderr)
@@ -74,7 +74,7 @@ public class ShellResult implements OpaqueScripts {
             }
 
             StringBuilder sb = new StringBuilder();
-            sb.append(String.format("\nshell command[%s] failed", command));
+            sb.append(String.format("\nshell command[%s] failed", desensitizeCmd));
             sb.append(String.format("\nret code: %s", retCode));
             sb.append(String.format("\nstderr: %s", stderr));
             sb.append(String.format("\nstdout: %s", stdout));
@@ -82,12 +82,12 @@ public class ShellResult implements OpaqueScripts {
         }
     }
 
-    public String getCommand() {
-        return command;
+    public String getDesensitizeCmd() {
+        return desensitizeCmd;
     }
 
-    public void setCommand(String command) {
-        this.command = command;
+    public void setDesensitizeCmd(String desensitizeCmd) {
+        this.desensitizeCmd = desensitizeCmd;
     }
 
     public boolean isReturnCode(int code) {
