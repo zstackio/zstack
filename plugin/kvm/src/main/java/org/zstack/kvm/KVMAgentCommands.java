@@ -16,10 +16,15 @@ import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.network.securitygroup.RuleTO;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.VmNicSecurityTO;
+import org.zstack.utils.opaque.OpaqueScripts;
 
 import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_RESPONSE_ERROR;
 
 public class KVMAgentCommands {
     public enum BootDev {
@@ -38,7 +43,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class AgentResponse implements ConditionalValidation {
+    public static class AgentResponse implements ConditionalValidation, OpaqueScripts {
         private boolean success = true;
         private String error;
 
@@ -62,6 +67,17 @@ public class KVMAgentCommands {
         @Override
         public boolean needValidation() {
             return success;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Map<String, Object> opaqueScripts() {
+            if (!success) {
+                return map(
+                    e(OPAQUE_KEY_RESPONSE_ERROR, error)
+                );
+            }
+            return Collections.emptyMap();
         }
     }
 

@@ -245,7 +245,7 @@ public class ShellUtils {
                 stdoutConsumer.join(TimeUnit.SECONDS.toMillis(30));
 
                 ShellResult ret = new ShellResult();
-                ret.setCommand(command);
+                ret.setDesensitizeCmd(command);
                 ret.setRetCode(process.exitValue());
                 if (stderrLog == LOG_TO_STRING) {
                     ret.setStderr(stderr.toString());

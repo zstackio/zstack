@@ -244,7 +244,7 @@ public class Ssh {
            public SshResult run() {
                SshResult ret = new SshResult();
                String cmdWithoutPassword = removeSensitiveInfoFromCmd(getCommand());
-               ret.setCommandToExecute(cmdWithoutPassword);
+               ret.setDesensitizeCmd(cmdWithoutPassword);
 
                try {
                    ChannelExec channel = null;
@@ -320,7 +320,7 @@ public class Ssh {
             public SshResult run() {
                 SshResult ret = new SshResult();
                 String cmd = getCommand();
-                ret.setCommandToExecute(cmd);
+                ret.setDesensitizeCmd(cmd);
 
                 try {
                     ChannelSftp channel = null;

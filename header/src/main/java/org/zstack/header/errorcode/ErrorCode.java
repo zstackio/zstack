@@ -4,6 +4,8 @@ import org.apache.commons.collections.CollectionUtils;
 import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.opaque.OpaqueCollection;
+import org.zstack.utils.opaque.OpaqueScripts;
 import org.zstack.utils.string.ErrorCodeElaboration;
 
 import java.io.Serializable;
@@ -15,7 +17,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class ErrorCode implements Serializable, Cloneable {
+import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_ERROR_LOCATION;
+import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_EXCEPTION;
+
+public class ErrorCode implements Serializable, Cloneable, OpaqueCollection {
     private String code;
     private String description;
     private String details;
@@ -33,8 +38,6 @@ public class ErrorCode implements Serializable, Cloneable {
     @NoJsonSchema
     private LinkedHashMap<String, Object> opaque;
 
-    public static final String OPAQUE_KEY_LOCATION = "error.location";
-
     public LinkedHashMap getOpaque() {
         return opaque;
     }
@@ -43,6 +46,7 @@ public class ErrorCode implements Serializable, Cloneable {
         this.opaque = opaque;
     }
 
+    @Override
     public ErrorCode withOpaque(String key, Object value) {
         if (opaque == null) {
             opaque = new LinkedHashMap<>();
@@ -51,6 +55,22 @@ public class ErrorCode implements Serializable, Cloneable {
         return this;
     }
 
+    @Override
+    public ErrorCode withOpaque(OpaqueScripts scripts) {
+        OpaqueCollection.super.withOpaque(scripts);
+        return this;
+    }
+
+    public ErrorCode withException(Throwable e) {
+        if (e instanceof OpaqueScripts) {
+            withOpaque((OpaqueScripts) e);
+        } else {
+            withOpaque(OPAQUE_KEY_EXCEPTION, e.getCause());
+        }
+        return this;
+    }
+
+    @Override
     public Object getFromOpaque(String key) {
         return opaque == null ? null : opaque.get(key);
     }
@@ -290,10 +310,10 @@ public class ErrorCode implements Serializable, Cloneable {
     }
 
     public String getLocation() {
-        return (String) getFromOpaque(OPAQUE_KEY_LOCATION);
+        return (String) getFromOpaque(OPAQUE_KEY_ERROR_LOCATION);
     }
 
     public void setLocation(String location) {
-        withOpaque(OPAQUE_KEY_LOCATION, location);
+        withOpaque(OPAQUE_KEY_ERROR_LOCATION, location);
     }
 }

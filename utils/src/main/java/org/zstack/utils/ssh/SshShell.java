@@ -63,7 +63,7 @@ public class SshShell {
 
             ShellResult ret = ShellUtils.runAndReturn(ssh, withSudo);
             SshResult sret = new SshResult();
-            sret.setCommandToExecute(cmd);
+            sret.setDesensitizeCmd(Ssh.removeSensitiveInfoFromCmd(cmd));
             sret.setReturnCode(ret.getRetCode());
             sret.setStderr(ret.getStderr());
             sret.setStdout(ret.getStdout());
@@ -126,7 +126,7 @@ public class SshShell {
 
             ShellResult ret = ShellUtils.runAndReturn(ssh);
             SshResult sret = new SshResult();
-            sret.setCommandToExecute(script);
+            sret.setDesensitizeCmd(Ssh.removeSensitiveInfoFromCmd(script));
             sret.setReturnCode(ret.getRetCode());
             sret.setStderr(ret.getStderr());
             sret.setStdout(ret.getStdout());

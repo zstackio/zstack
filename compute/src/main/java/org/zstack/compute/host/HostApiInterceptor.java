@@ -18,16 +18,10 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.APIMessage;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
-import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
-import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
-
-import java.util.Set;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -89,7 +83,7 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             ret = ShellUtils.runAndReturn(String.format("docker exec %s systemctl is-active webssh", ZOPS_CONTAINER_NAME));
         } else {
             ret = new ShellResult();
-            ret.setCommand(String.format("docker exec %s systemctl is-active webssh", ZOPS_CONTAINER_NAME));
+            ret.setDesensitizeCmd(String.format("docker exec %s systemctl is-active webssh", ZOPS_CONTAINER_NAME));
             ret.setRetCode(0);
         }
         if (!ret.isReturnCode(0)) {
