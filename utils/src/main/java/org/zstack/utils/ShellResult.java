@@ -43,15 +43,6 @@ public class ShellResult implements OpaqueScripts {
         this.stdout = stdout;
     }
 
-    public String getExecutionLog() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("\nshell command[%s]", desensitizeCmd));
-        sb.append(String.format("\nret code: %s", retCode));
-        sb.append(String.format("\nstderr: %s", stderr));
-        sb.append(String.format("\nstdout: %s", stdout));
-        return sb.toString();
-    }
-
     @Override
     @SuppressWarnings("unchecked")
     public Map<String, Object> opaqueScripts() {
@@ -64,10 +55,10 @@ public class ShellResult implements OpaqueScripts {
     }
 
     public void raiseExceptionIfFail() {
-        raiseExceptionIfFail(0);
+        raiseExceptionIfNotMatch(0);
     }
 
-    public void raiseExceptionIfFail(int expectedRetCode) {
+    public void raiseExceptionIfNotMatch(int expectedRetCode) {
         if (retCode != expectedRetCode) {
             if (stderr != null && stderr.contains("Account expired")) {
                 throw new ShellUtils.ShellException(String.format("local account '%s' has expired", System.getProperty("user.name")));
