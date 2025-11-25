@@ -553,7 +553,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public String allocateSpace(AllocateSpaceSpec aspec) {
-        if (config == null) {
+        if (config == null || addonInfo == null) {
             reloadDbInfo();
         }
 
