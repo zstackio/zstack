@@ -59,18 +59,16 @@ public class ShellResult implements OpaqueScripts {
     }
 
     public void raiseExceptionIfNotMatch(int expectedRetCode) {
-        if (retCode != expectedRetCode) {
-            if (stderr != null && stderr.contains("Account expired")) {
-                throw new ShellUtils.ShellException(String.format("local account '%s' has expired", System.getProperty("user.name")));
-            }
-
-            StringBuilder sb = new StringBuilder();
-            sb.append(String.format("\nshell command[%s] failed", desensitizeCmd));
-            sb.append(String.format("\nret code: %s", retCode));
-            sb.append(String.format("\nstderr: %s", stderr));
-            sb.append(String.format("\nstdout: %s", stdout));
-            throw new ShellUtils.ShellException(sb.toString());
+        if (retCode == expectedRetCode) {
+            return;
         }
+
+        if (stderr != null && stderr.contains("Account expired")) {
+            throw new ShellUtils.ShellException(
+                    String.format("local account '%s' has expired", System.getProperty("user.name")))
+                    .withResult(this);
+        }
+        throw new ShellUtils.ShellException("failed to execute shell command").withResult(this);
     }
 
     public String getDesensitizeCmd() {
