@@ -93,3 +93,6 @@ CALL updateModelServiceFramework();
 
 -- Drop the procedure after use
 DROP PROCEDURE IF EXISTS updateModelServiceFramework;
+
+UPDATE ModelVO SET architectureType = 'xtts-v2' WHERE uuid = '39280569b4e0490fb581f6ab98e76400';
+UPDATE ModelVO SET architectureType = 'sdxl-turbo' WHERE uuid = '6a720c01935f4f9ea09f81bde722ee42';
