@@ -663,8 +663,7 @@ public abstract class HostBase extends AbstractHost {
             public void run(MessageReply reply) {
                 APIReconnectHostEvent evt = new APIReconnectHostEvent(msg.getId());
                 if (!reply.isSuccess()) {
-                    evt.setError(err(HostErrors.UNABLE_TO_RECONNECT_HOST, reply.getError(), reply.getError().getDetails()));
-                    logger.debug(String.format("failed to reconnect host[uuid:%s] because %s", self.getUuid(), reply.getError()));
+                    evt.setError(reply.getError());
                 } else {
                     self = dbf.reload(self);
                     evt.setInventory((getSelfInventory()));
@@ -1144,12 +1143,10 @@ public abstract class HostBase extends AbstractHost {
                     @Override
                     public void run(MessageReply reply) {
                         ReconnectHostReply r = new ReconnectHostReply();
-                        if (reply.isSuccess()) {
-                            logger.debug(String.format("Successfully reconnect host[uuid:%s]", self.getUuid()));
-                        } else {
-                            r.setError(err(HostErrors.UNABLE_TO_RECONNECT_HOST, reply.getError(), reply.getError().getDetails()));
-                            logger.debug(String.format("Failed to reconnect host[uuid:%s] because %s",
-                                    self.getUuid(), reply.getError()));
+                        if (!reply.isSuccess()) {
+                            r.setError(err(HostErrors.UNABLE_TO_RECONNECT_HOST, "failed to connect host")
+                                    .withCause(reply.getError())
+                                    .withOpaque("host.uuid", self.getUuid()));
                         }
                         bus.reply(msg, r);
                     }
@@ -1406,7 +1403,7 @@ public abstract class HostBase extends AbstractHost {
                         });
 
                         flow(new NoRollbackFlow() {
-                            String __name__ = "connect-host";
+                            String __name__ = "call-host-connect-hooks";
 
                             @Override
                             public void run(final FlowTrigger trigger, Map data) {

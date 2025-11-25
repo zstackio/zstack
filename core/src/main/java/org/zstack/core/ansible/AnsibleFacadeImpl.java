@@ -40,6 +40,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_EXCEPTION;
 
 /**
  */
@@ -269,13 +270,15 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                     }
 
                     if (output.contains("skipping: no hosts matched")) {
-                        throw new OperationFailureException(operr(output));
+                        throw new OperationFailureException(operr("failed to run ansible: failed to find target host")
+                                .withOpaque(OPAQUE_KEY_EXCEPTION, output));
                     }
 
                 } catch (ShellException se) {
                     String errMsg = hidePassword(se.getMessage());
                     logger.warn(errMsg, se);
-                    throw new OperationFailureException(operr(errMsg));
+                    throw new OperationFailureException(operr("shell exception occurred")
+                            .withOpaque(OPAQUE_KEY_EXCEPTION, errMsg));
                 }
 
                 completion.success();
