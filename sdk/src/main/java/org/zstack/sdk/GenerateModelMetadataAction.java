@@ -12,7 +12,7 @@ public class GenerateModelMetadataAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeployModelServiceResult value;
+        public org.zstack.sdk.GenerateModelMetadataResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -63,8 +63,8 @@ public class GenerateModelMetadataAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeployModelServiceResult value = res.getResult(org.zstack.sdk.DeployModelServiceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeployModelServiceResult() : value; 
+        org.zstack.sdk.GenerateModelMetadataResult value = res.getResult(org.zstack.sdk.GenerateModelMetadataResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GenerateModelMetadataResult() : value; 
 
         return ret;
     }

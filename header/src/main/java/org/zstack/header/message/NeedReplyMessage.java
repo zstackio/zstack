@@ -24,6 +24,11 @@ public abstract class NeedReplyMessage extends Message {
         return systemTags;
     }
 
+    public String getSystemTag(Predicate<String> isMatch) {
+        return systemTags == null ? null :
+                systemTags.stream().filter(isMatch).findFirst().orElse(null);
+    }
+
     public void setSystemTags(List<String> systemTags) {
         this.systemTags = systemTags;
     }

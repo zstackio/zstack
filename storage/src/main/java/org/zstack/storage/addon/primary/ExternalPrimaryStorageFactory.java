@@ -1,6 +1,8 @@
 package org.zstack.storage.addon.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -40,6 +42,7 @@ import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.header.volume.block.BlockVolumeVO;
 import org.zstack.storage.addon.backup.ExternalBackupStorageFactory;
 import org.zstack.storage.primary.PrimaryStorageFeatureAllocatorExtensionPoint;
@@ -58,7 +61,8 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
         VmAttachVolumeExtensionPoint, VmDetachVolumeExtensionPoint, BeforeTakeLiveSnapshotsOnVolumes,
         CreateTemplateFromVolumeSnapshotExtensionPoint, MarkRootVolumeAsSnapshotExtension, VmInstanceMigrateExtensionPoint,
-        ManagementNodeChangeListener, PrimaryStorageFeatureAllocatorExtensionPoint, HostResizeVolumeExtensionPoint {
+        ManagementNodeChangeListener, PrimaryStorageFeatureAllocatorExtensionPoint, HostResizeVolumeExtensionPoint,
+        RecalculatePrimaryStorageCapacityExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ExternalBackupStorageFactory.class);
 
     public static PrimaryStorageType type = new PrimaryStorageType(PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE);
@@ -164,38 +168,87 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         return false;
     }
 
+    private String getRequiredUrl(ExternalPrimaryStorageSpaceCapacityHelper helper, AllocatePrimaryStorageSpaceMsg msg) {
+        if (msg.getRequiredInstallUri() != null) {
+            String url = msg.getRequiredInstallUri();
+            if (!url.startsWith("volume://")) {
+                return url;
+            }
+
+            String volUuid = url.substring("volume://".length());
+            String volumePath = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volUuid).select(VolumeVO_.installPath).findValue();
+            if (volumePath == null) {
+                throw new OperationFailureException(
+                        Platform.operr("cannot find volume[uuid:%s] install path", volUuid)
+                );
+            }
+
+            return helper.getLocationSpaceUrl(volumePath);
+        }
+
+        String requiredSystag = msg.getSystemTag(ExternalPrimaryStorageSystemTags.REQUIRED_INSTALL_URL::isMatch);
+        if (requiredSystag != null) {
+            return ExternalPrimaryStorageSystemTags.REQUIRED_INSTALL_URL.getTokenByTag(requiredSystag,
+                    ExternalPrimaryStorageSystemTags.REQUIRED_INSTALL_URL_TOKEN);
+        }
+
+        return null;
+    }
+
     @Override
-    public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
+    public String allocateSpaceDryRun(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
         PrimaryStorageControllerSvc controller = controllers.get(psInv.getUuid());
         if (controller == null) {
             return psInv.getUrl();
         }
 
-        AllocateSpaceSpec aspec = new AllocateSpaceSpec();
-        aspec.setDryRun(true);
-        aspec.setSize(msg.getSize());
-        aspec.setRequiredUrl(msg.getRequiredInstallUri());
-        return controller.allocateSpace(aspec);
+        ExternalPrimaryStorageSpaceCapacityHelper helper = new ExternalPrimaryStorageSpaceCapacityHelper(psInv.getUuid(), controller.getIdentity());
+        String requiredUrl = getRequiredUrl(helper, msg);
+
+        // TODO: remove it
+        if (!controller.reportCapabilities().isSupportMultiSpace()) {
+            AllocateSpaceSpec aspec = new AllocateSpaceSpec();
+            aspec.setDryRun(true);
+            aspec.setSize(msg.getSize());
+            aspec.setRequiredUrl(requiredUrl);
+            return controller.allocateSpace(aspec);
+        }
+
+        if (requiredUrl != null) {
+            if (msg.isForce() || helper.checkVirtualSizeByRatio(requiredUrl, msg.getSize())) {
+                return requiredUrl;
+            } else {
+                return null;
+            }
+        }
+
+        // return max available capacity space
+        return helper.findMostSuitableSpace(msg.getSize(), Comparator.comparingLong(ExternalPrimaryStorageSpaceVO::getAvailableCapacity).reversed());
     }
 
     @Override
+    @Transactional(propagation = Propagation.MANDATORY)
     public long reserveCapacity(AllocatePrimaryStorageSpaceMsg msg, String allocatedInstallUrl, long size, String psUuid) {
         PrimaryStorageControllerSvc controller = controllers.get(psUuid);
-        if (controller == null) {
+        if (controller == null || !controller.reportCapabilities().isSupportMultiSpace()) {
             return size;
         }
 
-        AllocateSpaceSpec aspec = new AllocateSpaceSpec();
-        aspec.setDryRun(false);
-        aspec.setSize(msg.getSize());
-        aspec.setRequiredUrl(msg.getRequiredInstallUri());
-        controller.allocateSpace(aspec);
+        ExternalPrimaryStorageSpaceCapacityHelper helper = new ExternalPrimaryStorageSpaceCapacityHelper(psUuid, controller.getIdentity());
+        helper.reserveAvailableCapacity(allocatedInstallUrl, size);
         return size;
     }
 
     @Override
+    @Transactional(propagation = Propagation.MANDATORY)
     public void releaseCapacity(String allocatedInstallUrl, long size, String psUuid) {
+        PrimaryStorageControllerSvc controller = controllers.get(psUuid);
+        if (controller == null || !controller.reportCapabilities().isSupportMultiSpace()) {
+            return;
+        }
 
+        ExternalPrimaryStorageSpaceCapacityHelper helper = new ExternalPrimaryStorageSpaceCapacityHelper(psUuid, controller.getIdentity());
+        helper.releaseAvailableCapacity(allocatedInstallUrl, size);
     }
 
     @Override
@@ -1001,4 +1054,21 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         struct.setSize(controller.alignSize(struct.getSize()));
         return struct;
     }
+
+    @Override
+    public String getPrimaryStorageTypeForRecalculateCapacityExtensionPoint() {
+        return type.toString();
+    }
+
+    @Override
+    public void afterRecalculatePrimaryStorageCapacity(RecalculatePrimaryStorageCapacityStruct struct) {
+        PrimaryStorageControllerSvc controller = controllers.get(struct.getPrimaryStorageUuid());
+        if (controller == null || !controller.reportCapabilities().isSupportMultiSpace()) {
+            return;
+        }
+        new ExternalPrimaryStorageSpaceCapacityHelper(struct.getPrimaryStorageUuid(), controller.getIdentity()).recalculateAvailableCapacity();
+    }
+
+    @Override
+    public void beforeRecalculatePrimaryStorageCapacity(RecalculatePrimaryStorageCapacityStruct struct) {}
 }

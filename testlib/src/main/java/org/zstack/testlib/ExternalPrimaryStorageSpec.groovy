@@ -1,9 +1,8 @@
 package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
-import org.zstack.cbd.LogicalPoolInfo
+import org.zstack.storage.zbs.LogicalPoolInfo
 import org.zstack.cbd.kvm.KvmCbdCommands
-import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
@@ -117,12 +116,30 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 logicalPoolInfo.setRawUsedSize(968884224);
                 logicalPoolInfo.setPhysicalPoolName("pool1");
                 logicalPoolInfo.setCapacity(579933831168);
-                logicalPoolInfo.setLogicalPoolName(cmd.logicalPool);
+                logicalPoolInfo.setLogicalPoolName(cmd.logicalPoolNames[0]);
                 logicalPoolInfo.setUserPolicy("eyJwb2xpY3kiIDogMX0=");
                 logicalPoolInfo.setAllocatedSize(3221225472);
 
                 List<LogicalPoolInfo> logicalPoolInfos = new ArrayList<>()
                 logicalPoolInfos.add(logicalPoolInfo)
+
+                logicalPoolInfos.add(new LogicalPoolInfo(
+                    physicalPoolID: 2,
+                    logicalPoolID: 2,
+                    logicalPoolName: "lpool2",
+                    physicalPoolName: "pool2",
+                    capacity: 579933831168,
+                    usedSize: 123456789,
+                    allocatedSize: 987654321,
+                    quota: 0,
+                    createTime: 1735875794,
+                    type: 0,
+                    rawWalUsedSize: 0,
+                    allocateStatus: 0,
+                    rawUsedSize: 123456789,
+                    redundanceAndPlaceMentPolicy: redundanceAndPlaceMentPolicy,
+                    userPolicy: "eyJwb2xpY3kiIDogMX0="
+                ))
 
                 def rsp = new ZbsStorageController.GetCapacityRsp()
                 rsp.setLogicalPoolInfos(logicalPoolInfos)
@@ -136,7 +153,7 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
 
                 def rsp = new ZbsStorageController.CreateVolumeRsp()
-                rsp.setSize(actualSize)
+                rsp.setSize(cmd.getSizeInBytes())
                 rsp.setActualSize(actualSize)
                 rsp.setInstallPath(String.format("cbd:pool1/%s/%s", cmd.logicalPool, cmd.volume))
 

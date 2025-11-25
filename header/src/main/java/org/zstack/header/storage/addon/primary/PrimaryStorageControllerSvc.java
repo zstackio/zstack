@@ -1,5 +1,6 @@
 package org.zstack.header.storage.addon.primary;
 
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.HostInventory;
@@ -17,11 +18,14 @@ public interface PrimaryStorageControllerSvc {
     void connect(String config, String url, ReturnValueCompletion<LinkedHashMap> comp);
     void ping(Completion completion);
 
+    void getCapacity(List<String> requiredUrls, ReturnValueCompletion<StorageCapacity> comp);
     void reportCapacity(ReturnValueCompletion<StorageCapacity> comp);
     void reportHealthy(ReturnValueCompletion<StorageHealthy> comp);
     void reportNodeHealthy(HostInventory host, ReturnValueCompletion<NodeHealthy> comp);
     StorageCapabilities reportCapabilities();
 
+    // TODO: remove this method in future
+    @Deprecated
     String allocateSpace(AllocateSpaceSpec aspec);
 
     void createVolume(CreateVolumeSpec v, ReturnValueCompletion<VolumeStats>comp);
@@ -48,7 +52,7 @@ public interface PrimaryStorageControllerSvc {
     void expungeSnapshot(String installPath, Completion comp);
     void revertVolumeSnapshot(String snapshotInstallPath, ReturnValueCompletion<VolumeStats> comp);
 
-    void validateConfig(String config);
+    String validateConfig(String config) throws ApiMessageInterceptionException;
 
     void setTrashExpireTime(int timeInSeconds, Completion completion);
     void onFirstAdditionConfigure(Completion completion);

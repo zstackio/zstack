@@ -181,8 +181,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         }
         boolean needReconnect = false;
         if (msg.getConfig() != null) {
-            controller.validateConfig(msg.getConfig());
-            externalVO.setConfig(msg.getConfig());
+            String config = controller.validateConfig(msg.getConfig());
+            externalVO.setConfig(config);
             needReconnect = true;
         }
         externalVO = dbf.updateAndRefresh(externalVO);
@@ -1427,6 +1427,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         AllocateSpaceSpec aspec = new AllocateSpaceSpec();
         aspec.setSize(msg.getImage().getSize());
         aspec.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume);
+        aspec.setRequiredUrl(msg.getAllocatedInstallUrl());
 
         String installPath = controller.allocateSpace(aspec);
         reply.setInstallPath(installPath);
@@ -1565,6 +1566,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         trashVolume(msg.getVolume().getInstallPath(), msg.getVolume().getProtocol(), force, new Completion(msg) {
             @Override
             public void success() {
+                ExternalPrimaryStorageSpaceCapacityHelper helper = new ExternalPrimaryStorageSpaceCapacityHelper(self.getUuid(), controller.getIdentity());
+                helper.releaseAvailableCapWithRatio(msg.getVolume().getInstallPath(), msg.getVolume().getSize());
                 bus.reply(msg, reply);
             }
 
@@ -1772,6 +1775,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         controller.deleteSnapshot(msg.getSnapshot().getPrimaryStorageInstallPath(), new Completion(msg) {
             @Override
             public void success() {
+                ExternalPrimaryStorageSpaceCapacityHelper helper = new ExternalPrimaryStorageSpaceCapacityHelper(self.getUuid(), controller.getIdentity());
+                helper.releaseAvailableCapacity(msg.getSnapshot().getPrimaryStorageInstallPath(), msg.getSnapshot().getSize());
                 bus.reply(msg, reply);
             }
 
@@ -1932,15 +1937,19 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void connectHook(ConnectParam param, Completion completion) {
-        controller.validateConfig(externalVO.getConfig());
-        controller.connect(externalVO.getConfig(), self.getUrl(), new ReturnValueCompletion<LinkedHashMap>(completion) {
+        String config = controller.validateConfig(externalVO.getConfig());
+        controller.connect(config, self.getUrl(), new ReturnValueCompletion<LinkedHashMap>(completion) {
             @Override
             public void success(LinkedHashMap addonInfo) {
                 if (param.isNewAdded()) {
                     controller.onFirstAdditionConfigure(new NopeCompletion());
                 }
+
                 SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
                         .set(ExternalPrimaryStorageVO_.addonInfo, JSONObjectUtil.toJsonString(addonInfo))
+                        .set(ExternalPrimaryStorageVO_.config, config)
+                        .set(ExternalPrimaryStorageVO_.url, StringUtils.isEmpty(self.getUrl()) ?
+                                externalVO.getIdentity() + "://" + self.getUuid() : self.getUrl())
                         .update();
                 controller.setTrashExpireTime(PrimaryStorageGlobalConfig.TRASH_EXPIRATION_TIME.value(Integer.class), new NopeCompletion());
                 pingHook(completion);
@@ -1999,6 +2008,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                                         return cap;
                                     });
+
+                                    new ExternalPrimaryStorageSpaceCapacityHelper(externalVO).updateStorageSpace(capacity);
                                     trigger.next();
                                 } else {
                                     trigger.fail(operr("storage is not healthy:%s", capacity.getHealthy().toString()));

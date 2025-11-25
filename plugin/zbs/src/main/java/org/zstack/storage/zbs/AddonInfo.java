@@ -1,4 +1,6 @@
-package org.zstack.cbd;
+package org.zstack.storage.zbs;
+
+import org.zstack.cbd.MdsInfo;
 
 import java.util.ArrayList;
 import java.util.List;
