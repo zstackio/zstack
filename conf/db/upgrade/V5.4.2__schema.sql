@@ -77,19 +77,22 @@ CREATE TABLE IF NOT EXISTS `zstack`.`NfvInstGroupVO` (
     `configVersion` int unsigned DEFAULT 0,
     `netOsDistro` VARCHAR(128) DEFAULT NULL,
     `baseOsDistro` VARCHAR(128) DEFAULT NULL,
-    `status` VARCHAR(32) DEFAULT 'INITIALIZING',
+    `status` VARCHAR(32) DEFAULT 'Initializing',
     `statusDetail` VARCHAR(255) DEFAULT NULL,
     `operationMode` VARCHAR(32) DEFAULT 'Normal',
     `vipUuid` VARCHAR(32) DEFAULT NULL,
     `ipv6VipUuid` VARCHAR(32) DEFAULT NULL,
     `primaryStorageUuid` VARCHAR(32) DEFAULT NULL,
+    `primaryStoragePoolUuid` VARCHAR(32) DEFAULT NULL,
     `clusterUuid` VARCHAR(32) DEFAULT NULL,
+    `zoneUuid` VARCHAR(32) DEFAULT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
     PRIMARY KEY (`uuid`),
     CONSTRAINT `fkNfvInstGroupVONfvInstOfferingVO` FOREIGN KEY (`nfvInstOfferingUuid`) REFERENCES `zstack`.`NfvInstOfferingVO` (uuid) ON DELETE SET NULL,
     CONSTRAINT `fkNfvInstGroupVOPrimaryStorageEO` FOREIGN KEY (`primaryStorageUuid`) REFERENCES `zstack`.`PrimaryStorageEO` (uuid) ON DELETE SET NULL,
     CONSTRAINT `fkNfvInstGroupVOClusterEO` FOREIGN KEY (`clusterUuid`) REFERENCES `zstack`.`ClusterEO` (uuid) ON DELETE SET NULL,
+    CONSTRAINT `fkNfvInstGroupVOZoneEO` FOREIGN KEY (`zoneUuid`) REFERENCES `zstack`.`ZoneEO` (uuid) ON DELETE SET NULL,
     KEY `idx_nfv_inst_group_status_mode` (`status`, `operationMode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
