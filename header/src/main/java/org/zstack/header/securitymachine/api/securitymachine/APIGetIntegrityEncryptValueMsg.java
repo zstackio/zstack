@@ -1,5 +1,6 @@
 package org.zstack.header.securitymachine.api.securitymachine;
 import org.springframework.http.HttpMethod;
+import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
@@ -10,6 +11,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetIntegrityEncryptValueEvent.class,
         parameterName = "params"
 )
+@SuppressCredentialCheck
 public class APIGetIntegrityEncryptValueMsg extends APIMessage {
     @APIParam
     private String text;
