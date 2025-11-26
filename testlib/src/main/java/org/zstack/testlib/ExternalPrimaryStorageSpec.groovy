@@ -71,6 +71,13 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
+            simulator(ZbsStorageController.UPDATE_HOST_DEPENDENCY_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def rsp = new ZbsStorageController.UpdateHostDependencyRsp()
+                rsp.success = true
+
+                return rsp
+            }
+
             simulator(ZbsStorageController.GET_FACTS_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 ZbsStorageController.GetFactsCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.GetFactsCmd.class)
                 ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
