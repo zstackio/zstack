@@ -3,6 +3,7 @@ package org.zstack.utils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.opaque.OpaqueScripts;
 import org.zstack.utils.path.PathUtil;
 
 import java.io.*;
@@ -14,10 +15,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_EXCEPTION;
+
 public class ShellUtils {
     private static final CLogger logger = Utils.getSafeLogger(ShellUtils.class);
 
-    public static class ShellException extends RuntimeException {
+    public static class ShellException extends RuntimeException implements OpaqueScripts {
+        private ShellResult result;
+
         public ShellException(String msg, Throwable t) {
             super(msg, t);
         }
@@ -28,6 +35,24 @@ public class ShellUtils {
 
         public ShellException(Throwable t) {
             super(t);
+        }
+
+        public ShellResult getResult() {
+            return result;
+        }
+
+        public ShellException withResult(ShellResult result) {
+            this.result = result;
+            return this;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Map<String, Object> opaqueScripts() {
+            if (result != null) {
+                return result.opaqueScripts();
+            }
+            return map(e(OPAQUE_KEY_EXCEPTION, getMessage()));
         }
     }
 
@@ -260,11 +285,8 @@ public class ShellUtils {
 
                 return ret;
             } catch (Exception e) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("Shell command failed:\n");
-                sb.append(command);
                 Thread.currentThread().interrupt();
-                throw new ShellException(sb.toString(), e);
+                throw new ShellException("shell command inner exception: " + command, e);
             } finally {
                 if (process != null) {
                     process.destroy();

@@ -10983,12 +10983,10 @@
     "fileName": "src/main/java/org/zstack/externalbackup/zbox/ZBoxBackupBase.java"
   },
   {
-    "raw": "fail to backup database: %s",
-    "en_US": "fail to backup database: {0}",
-    "zh_CN": "无法备份数据库：{0}",
-    "arguments": [
-      "result.getExecutionLog()"
-    ],
+    "raw": "fail to backup database",
+    "en_US": "fail to backup database",
+    "zh_CN": "无法备份数据库",
+    "arguments": [],
     "line": 741,
     "fileName": "src/main/java/org/zstack/externalbackup/zbox/ZBoxBackupBase.java"
   },

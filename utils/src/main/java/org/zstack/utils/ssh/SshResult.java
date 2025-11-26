@@ -20,7 +20,7 @@ public class SshResult implements OpaqueScripts, Serializable {
 	private String desensitizeCmd;
     private boolean isSshFailure;
 
-    public void raiseExceptionIfFailed(int retCode) {
+    public void raiseExceptionIfNotMatch(int retCode) {
         if (retCode != returnCode) {
             throw new SshException(toString()).withResult(this);
         }
@@ -47,7 +47,7 @@ public class SshResult implements OpaqueScripts, Serializable {
     }
 
     public void raiseExceptionIfFailed() {
-        raiseExceptionIfFailed(0);
+        raiseExceptionIfNotMatch(0);
     }
 
     public int getReturnCode() {
