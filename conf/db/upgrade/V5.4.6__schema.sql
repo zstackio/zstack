@@ -55,3 +55,5 @@ CALL fixUsedIpGatewayAndNetmask();
 
 -- Drop the procedure after use
 DROP PROCEDURE IF EXISTS fixUsedIpGatewayAndNetmask;
+
+ALTER TABLE LicenseAuthorizedCapacityVO ADD COLUMN `resourceInfo` text DEFAULT NULL;
