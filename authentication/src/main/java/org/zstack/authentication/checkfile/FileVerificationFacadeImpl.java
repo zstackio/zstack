@@ -13,9 +13,8 @@ import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
@@ -45,6 +44,7 @@ import static org.zstack.authentication.checkfile.FileVerification.NODE_MANAGEME
 
 import static org.zstack.core.Platform.argerr;
 import static java.nio.file.StandardCopyOption.*;
+import static org.zstack.core.Platform.operr;
 
 public class FileVerificationFacadeImpl extends AbstractService implements FileVerificationFacade, Component, ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(FileVerificationFacadeImpl.class);
@@ -194,7 +194,7 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
                     checkHostFiles(node, filesGroupByNode.get(node));
                 }
             }catch (Exception e){
-                throw new CloudRuntimeException(e);
+                logger.warn(String.format("File check failed! node[%s]", node), e);
             }
         }).run(new WhileDoneCompletion(null) {
             @Override
@@ -233,7 +233,7 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
             Object fileDigest = clazz.getMethod(methodName, InputStream.class).invoke(clazz.newInstance(), fis);
             return fileDigest.toString();
         }catch (Exception e){
-            throw new CloudRuntimeException(e);
+            throw new OperationFailureException(ErrorCode.fromString(e.getMessage()));
         }
 
     }
@@ -247,7 +247,12 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
                 continue;
             }
             if (PathUtil.exists(fv.getPath())) {
-                needRestore = !getLocalFileDigest(fv.toFile()).equals(fv.getDigest());
+                try {
+                    needRestore = !getLocalFileDigest(fv.toFile()).equals(fv.getDigest());
+                } catch (Exception e) {
+                    logger.warn(String.format("The file[%s.%s] getLocalFileDigest failed. exception: %s", fv.getNode(), fv.getPath(), e));
+                    continue;
+                }
             } else {
                 needRestore = true;
             }
@@ -258,7 +263,7 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
                 } catch (Exception e) {
                     logger.warn(String.format("The file[%s.%s] was modified and restore failed. exception: %s", fv.getNode(), fv.getPath(), e));
                     sendChanged(fv.getNode(), fv.getPath(), fv.getCategory(), FileRestoreState.False.toString(), fv.getUuid());
-                    return;
+                    continue;
                 }
                 logger.info(String.format("The file[%s.%s] was modified but successfully restored.", fv.getNode(), fv.getPath()));
                 sendChanged(fv.getNode(), fv.getPath(), fv.getCategory(), FileRestoreState.True.toString(), fv.getUuid());
@@ -278,7 +283,7 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    throw new CloudRuntimeException(String.format("failed to check host[%s] files.", node));
+                    throw new OperationFailureException(operr("failed to check host[%s] files.", node));
                 }
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 CheckHostFileRsp rsp = r.toResponse(CheckHostFileRsp.class);
@@ -309,7 +314,7 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
             allFile.put(fv.getUuid(), fv);
             dbf.persist(fv.toVO());
         } catch (Exception e) {
-            throw new CloudRuntimeException(e);
+            throw new OperationFailureException(ErrorCode.fromString(e.getMessage()));
         }
     }
 
@@ -405,7 +410,7 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
         FileVerificationVO fvo = Q.New(FileVerificationVO.class).eq(FileVerificationVO_.node, node).eq(FileVerificationVO_.path, path).find();
         if (fvo == null) {
             if (!fv.isFileExists()) {
-                throw new CloudRuntimeException(String.format("No such file [%s] on node: %s", path, node));
+                throw new OperationFailureException(operr("No such file [%s] on node: %s", path, node));
             }
             logger.info(String.format("Will add [%s.%s] to CheckList.", node, path));
             if (NODE_MANAGEMENT_NODE.equals(node)) {
@@ -424,7 +429,7 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
         APIRemoveVerificationFileEvent evt = new APIRemoveVerificationFileEvent(msg.getId());
         String uuid = msg.getUuid();
         if(allFile.get(uuid) == null){
-            throw new CloudRuntimeException(String.format("Cannot found %s from CheckList", uuid));
+            throw new OperationFailureException(operr("Cannot found %s from CheckList", uuid));
         }
         SQL.New(FileVerificationVO.class).eq(FileVerificationVO_.uuid, uuid).set(FileVerificationVO_.state, FileVerificationState.Disabled.toString()).update();
         allFile.get(uuid).setState(FileVerificationState.Disabled.toString());
@@ -438,12 +443,12 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
         String uuid = msg.getUuid();
         FileVerification fv = allFile.get(uuid);
         if(fv == null){
-            throw new CloudRuntimeException(String.format("Cannot found %s from CheckList", uuid));
+            throw new OperationFailureException(operr("Cannot found %s from CheckList", uuid));
         }
         try {
             recoverFileToCheckList(fv);
         }catch (IOException e){
-            throw new CloudRuntimeException(e);
+            throw new OperationFailureException(ErrorCode.fromString(e.getMessage()));
         }
         SQL.New(FileVerificationVO.class).eq(FileVerificationVO_.uuid, uuid).set(FileVerificationVO_.state, FileVerificationState.Enabled.toString()).update();
         allFile.get(uuid).setState(FileVerificationState.Enabled.toString());
