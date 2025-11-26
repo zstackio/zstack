@@ -348,6 +348,7 @@ public class VolumeSnapshotTree {
 
     private SnapshotLeaf root;
     private String volumeUuid;
+    private String uuid;
 
     public static VolumeSnapshotTree fromInventories(List<VolumeSnapshotInventory> invs) {
         VolumeSnapshotTree tree = new VolumeSnapshotTree();
@@ -377,6 +378,7 @@ public class VolumeSnapshotTree {
             }
 
             tree.volumeUuid = inv.getVolumeUuid();
+            tree.uuid = inv.getTreeUuid();
         }
 
         DebugUtils.Assert(tree.root != null, "why tree root is null???");
@@ -403,6 +405,14 @@ public class VolumeSnapshotTree {
         this.volumeUuid = volumeUuid;
     }
 
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     private SnapshotLeaf findSnapshot(final List<SnapshotLeaf> leafs, final Function<Boolean, VolumeSnapshotInventory> func) {
         for (SnapshotLeaf leaf : leafs) {
             SnapshotLeaf ret = findSnapshot(leaf.children, func);
@@ -423,5 +433,13 @@ public class VolumeSnapshotTree {
             return root;
         }
         return findSnapshot(root.children, func);
+    }
+
+    public SnapshotLeaf findSnapshot(String snapshotUuid) {
+        if (snapshotUuid == null) {
+            return null;
+        }
+
+        return findSnapshot(arg -> arg.getUuid().equals(snapshotUuid));
     }
 }
