@@ -50,6 +50,12 @@ public class UpdateModelServiceAction extends AbstractAction {
     public java.lang.String startCommand;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String containerCommand;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String containerArgs;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String pythonVersion;
 
     @Param(required = false, validValues = {"Endpoint","FineTune","App","ModelEval"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

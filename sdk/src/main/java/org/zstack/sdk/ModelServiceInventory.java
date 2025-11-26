@@ -148,6 +148,22 @@ public class ModelServiceInventory  {
         return this.startCommand;
     }
 
+    public java.lang.String containerCommand;
+    public void setContainerCommand(java.lang.String containerCommand) {
+        this.containerCommand = containerCommand;
+    }
+    public java.lang.String getContainerCommand() {
+        return this.containerCommand;
+    }
+
+    public java.lang.String containerArgs;
+    public void setContainerArgs(java.lang.String containerArgs) {
+        this.containerArgs = containerArgs;
+    }
+    public java.lang.String getContainerArgs() {
+        return this.containerArgs;
+    }
+
     public boolean supportDistributed;
     public void setSupportDistributed(boolean supportDistributed) {
         this.supportDistributed = supportDistributed;
