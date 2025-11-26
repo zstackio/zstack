@@ -5511,14 +5511,16 @@ public class KVMHost extends HostBase implements Host {
                                         .withOpaque(OPAQUE_KEY_EXCEPTION, hostRet.getExitErrorMessage()));
                                 return;
                             }
+
+                            // NOTE: the error log will write to stdout by Ssh component, not in stderr.
                             String hostOutput = hostRet.getStdout().replaceAll("\r|\n","");
-                            String hostErrorOutput = hostRet.getStderr().replaceAll("\r|\n","");
-                            logger.debug(String.format("Uuid in the host take over flag file is %s", hostOutput));
-                            if (hostErrorOutput.contains("No such file or directory")) {
+                            if (hostOutput.contains("No such file or directory")) {
+                                logger.trace("this host has not been taken over, skip checking take over file");
                                 trigger.next();
                                 return;
                             }
 
+                            logger.debug(String.format("Uuid in the host take over flag file is %s", hostOutput));
                             ssh.command(String.format("date +%%s -r %s", hostTakeOverFlagPath));
                             SshResult timeRet = ssh.run();
                             logger.trace(String.format("the last modified timestamp (seconds) of takeover file: %s", timeRet.getStdout()));
