@@ -504,6 +504,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             reply.setTrashId(trashId);
             reply.setResourceUuid(inv.getResourceUuid());
         }
+        reply.setRelatedTrashPaths(trash.findTrashInstallPath(msg.getInstallPath(), self.getUuid()));
         bus.reply(msg, reply);
     }
 
