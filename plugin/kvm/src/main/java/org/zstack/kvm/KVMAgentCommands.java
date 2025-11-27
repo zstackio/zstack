@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import org.jetbrains.annotations.NotNull;
 import org.zstack.core.upgrade.GrayUpgradeAgent;
 import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.core.validation.ConditionalValidation;
@@ -4862,6 +4863,14 @@ public class KVMAgentCommands {
 
     public static class OvsDelPortRsp extends AgentResponse {
     }
+
+    public static class OvsSetDbConnectionCmd extends AgentCommand {
+        public List<String> nodes;
+    }
+
+    public static class OvsSetDbConnectionRsp extends  AgentResponse {
+    }
+
 
     public static class HardwareMonitorCmd extends KVMAgentCommands.AgentCommand {
     }

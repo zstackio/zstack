@@ -42,6 +42,7 @@ public interface KVMConstant {
     String KVM_STOP_OVS_SERVICE_PATH = "/network/ovn/stop";
     String KVM_OVS_ADD_PORT_PATH = "/network/ovn/addport";
     String KVM_OVS_DEL_PORT_PATH = "/network/ovn/delport";
+    String KVM_OVS_SET_DB_CONNECTION_PATH = "/network/ovn/controller/setConnection";
     String KVM_ATTACH_ISO_PATH = "/vm/iso/attach";
     String KVM_DETACH_ISO_PATH = "/vm/iso/detach";
     String KVM_SYNC_VM_DEVICEINFO_PATH = "/sync/vm/deviceinfo";
