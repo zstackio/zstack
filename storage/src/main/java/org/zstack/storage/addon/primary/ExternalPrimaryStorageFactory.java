@@ -59,6 +59,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         CreateTemplateFromVolumeSnapshotExtensionPoint, MarkRootVolumeAsSnapshotExtension, VmInstanceMigrateExtensionPoint,
         ManagementNodeChangeListener, PrimaryStorageFeatureAllocatorExtensionPoint, HostResizeVolumeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ExternalBackupStorageFactory.class);
+
     public static PrimaryStorageType type = new PrimaryStorageType(PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE);
 
     protected static Map<String, PrimaryStorageControllerSvc> controllers = new HashMap<>();

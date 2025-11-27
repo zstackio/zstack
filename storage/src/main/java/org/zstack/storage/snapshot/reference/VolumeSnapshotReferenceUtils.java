@@ -527,7 +527,15 @@ public class VolumeSnapshotReferenceUtils {
 
     private static void deleteSnapshotRefLeafInTree(VolumeSnapshotReferenceTreeVO tree, VolumeSnapshotReferenceVO ref) {
         boolean referenceRedirected = !ref.getDirectSnapshotUuid().equals(ref.getVolumeSnapshotUuid());
-        if (referenceRedirected || !Q.New(VolumeVO.class).eq(VolumeVO_.uuid, ref.getVolumeUuid()).isExists()) {
+        boolean backingVolumeDeletedInDb = SQL.New("select vol.uuid from VolumeVO vol, VolumeSnapshotReferenceTreeVO tree" +
+                        " where vol.uuid = :volUuid" +
+                        " and tree.uuid = :treeUuid" +
+                        " and vol.primaryStorageUuid = tree.primaryStorageUuid", String.class)
+                .param("volUuid", ref.getVolumeUuid())
+                .param("treeUuid", ref.getTreeUuid())
+                .find() == null;
+
+        if (referenceRedirected || backingVolumeDeletedInDb) {
             if (tree == null) {
                 tree = Q.New(VolumeSnapshotReferenceTreeVO.class).eq(VolumeSnapshotReferenceTreeVO_.uuid, ref.getTreeUuid()).find();
             }
