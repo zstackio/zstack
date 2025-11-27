@@ -40,6 +40,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_BASH_CMD;
 import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_EXCEPTION;
 
 /**
@@ -275,13 +276,18 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                     }
 
                 } catch (ShellException se) {
-                    String errMsg = hidePassword(se.getMessage());
-                    logger.warn(errMsg, se);
-                    throw new OperationFailureException(operr("shell exception occurred")
-                            .withOpaque(OPAQUE_KEY_EXCEPTION, errMsg));
+                    logger.warn("failed to run ansible", se);
+                    throw new OperationFailureException(buildErrorCode(se));
                 }
 
                 completion.success();
+            }
+            private ErrorCode buildErrorCode(ShellException exception) {
+                ErrorCode error = operr("failed to run ansible").withOpaque(exception);
+                if (error.getFromOpaque(OPAQUE_KEY_BASH_CMD) != null) {
+                    error.withOpaque(OPAQUE_KEY_BASH_CMD, hidePassword((String) error.getFromOpaque(OPAQUE_KEY_BASH_CMD)));
+                }
+                return error;
             }
 
             private String hidePassword(String message) {
