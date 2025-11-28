@@ -34,14 +34,8 @@ public class GetIntegrityEncryptValueAction extends AbstractAction {
     @Param(required = false)
     public java.util.List userTags;
 
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
+    @NonAPIParam
+    public boolean isSuppressCredentialCheck = true;
 
     @Param(required = false)
     public String requestIp;
@@ -92,7 +86,7 @@ public class GetIntegrityEncryptValueAction extends AbstractAction {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/integrity/encrypt/value/get";
-        info.needSession = true;
+        info.needSession = false;
         info.needPoll = true;
         info.parameterName = "params";
         return info;
