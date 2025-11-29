@@ -172,6 +172,22 @@ public class ModelService  {
         return this.serviceBootUptime;
     }
 
+    public java.lang.String serviceLivez;
+    public void setServiceLivez(java.lang.String serviceLivez) {
+        this.serviceLivez = serviceLivez;
+    }
+    public java.lang.String getServiceLivez() {
+        return this.serviceLivez;
+    }
+
+    public java.lang.String serviceReadyz;
+    public void setServiceReadyz(java.lang.String serviceReadyz) {
+        this.serviceReadyz = serviceReadyz;
+    }
+    public java.lang.String getServiceReadyz() {
+        return this.serviceReadyz;
+    }
+
     public java.lang.String rootDiskOfferingUuid;
     public void setRootDiskOfferingUuid(java.lang.String rootDiskOfferingUuid) {
         this.rootDiskOfferingUuid = rootDiskOfferingUuid;
