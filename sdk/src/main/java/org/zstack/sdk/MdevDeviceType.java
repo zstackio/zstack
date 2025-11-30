@@ -6,4 +6,5 @@ public enum MdevDeviceType {
 	GPU_Processing_Accelerators,
 	GPU_Co_Processor,
 	GPU_3D_Controller,
+	GPU_Communication_Controller,
 }
