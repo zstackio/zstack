@@ -36,4 +36,20 @@ public class NfvInstInventory extends org.zstack.sdk.ApplianceVmInventory {
         return this.baseOsDistro;
     }
 
+    public java.lang.String clusterStatus;
+    public void setClusterStatus(java.lang.String clusterStatus) {
+        this.clusterStatus = clusterStatus;
+    }
+    public java.lang.String getClusterStatus() {
+        return this.clusterStatus;
+    }
+
+    public java.lang.String statusDetail;
+    public void setStatusDetail(java.lang.String statusDetail) {
+        this.statusDetail = statusDetail;
+    }
+    public java.lang.String getStatusDetail() {
+        return this.statusDetail;
+    }
+
 }

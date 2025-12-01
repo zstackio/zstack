@@ -183,12 +183,28 @@ public class NfvInstGroupInventory  {
         return this.primaryStorageUuid;
     }
 
+    public java.lang.String primaryStoragePoolUuid;
+    public void setPrimaryStoragePoolUuid(java.lang.String primaryStoragePoolUuid) {
+        this.primaryStoragePoolUuid = primaryStoragePoolUuid;
+    }
+    public java.lang.String getPrimaryStoragePoolUuid() {
+        return this.primaryStoragePoolUuid;
+    }
+
     public java.lang.String clusterUuid;
     public void setClusterUuid(java.lang.String clusterUuid) {
         this.clusterUuid = clusterUuid;
     }
     public java.lang.String getClusterUuid() {
         return this.clusterUuid;
+    }
+
+    public java.lang.String zoneUuid;
+    public void setZoneUuid(java.lang.String zoneUuid) {
+        this.zoneUuid = zoneUuid;
+    }
+    public java.lang.String getZoneUuid() {
+        return this.zoneUuid;
     }
 
 }

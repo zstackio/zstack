@@ -7,4 +7,6 @@ public enum NfvInstClusterStatus {
 	Joining,
 	Leaving,
 	Unknown,
+	Available,
+	Unavailable,
 }
