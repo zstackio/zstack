@@ -95,4 +95,6 @@ public class CoreGlobalProperty {
     public static int REST_API_RESULT_MAX_LENGTH;
     @GlobalProperty(name = "pending.queue.minimum.threshold", defaultValue = "50")
     public static int PENDING_QUEUE_MINIMUM_THRESHOLD;
+    @GlobalProperty(name = "OEM_NAME", defaultValue = "zstack")
+    public static String OEM_NAME;
 }
