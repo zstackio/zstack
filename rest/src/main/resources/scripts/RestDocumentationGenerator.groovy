@@ -832,6 +832,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
                     && md.globalConfig.valueRange == "{true, false}")
             if (validatorString != null || !useBooleanValidator) {
                 logger.info("valueRange of ${mdPath} is not latest")
+                logger.info("valueRange = ${md.globalConfig.valueRange} validatorString = ${validatorString}")
                 flag = false
             }
         }

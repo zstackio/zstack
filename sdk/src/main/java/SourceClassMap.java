@@ -445,6 +445,9 @@ public class SourceClassMap {
 			put("org.zstack.header.zwatch.AuditDataV2", "org.zstack.sdk.AuditDataV2");
 			put("org.zstack.hybrid.account.HybridAccountInventory", "org.zstack.sdk.HybridAccountInventory");
 			put("org.zstack.hybrid.core.HybridType", "org.zstack.sdk.HybridType");
+			put("org.zstack.hygon.HygonDeviceInventory", "org.zstack.sdk.HygonDeviceInventory");
+			put("org.zstack.hygon.HygonDeviceState", "org.zstack.sdk.HygonDeviceState");
+			put("org.zstack.hygon.HygonDeviceType", "org.zstack.sdk.HygonDeviceType");
 			put("org.zstack.iam2.api.APIGetIAM2VirtualIDAPIPermissionMsg$APIPermissionStruct", "org.zstack.sdk.iam2.api.APIPermissionStruct");
 			put("org.zstack.iam2.api.APIGetIAM2VirtualIDAPIPermissionReply$Permission", "org.zstack.sdk.iam2.api.Permission");
 			put("org.zstack.iam2.api.Attribute", "org.zstack.sdk.iam2.api.Attribute");
@@ -1103,6 +1106,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HybridEipAddressInventory", "org.zstack.header.hybrid.network.eip.HybridEipAddressInventory");
 			put("org.zstack.sdk.HybridEipStatus", "org.zstack.header.hybrid.network.eip.HybridEipStatus");
 			put("org.zstack.sdk.HybridType", "org.zstack.hybrid.core.HybridType");
+			put("org.zstack.sdk.HygonDeviceInventory", "org.zstack.hygon.HygonDeviceInventory");
+			put("org.zstack.sdk.HygonDeviceState", "org.zstack.hygon.HygonDeviceState");
+			put("org.zstack.sdk.HygonDeviceType", "org.zstack.hygon.HygonDeviceType");
 			put("org.zstack.sdk.HypervisorVersionState", "org.zstack.kvm.hypervisor.datatype.HypervisorVersionState");
 			put("org.zstack.sdk.IPsecConnectionInventory", "org.zstack.ipsec.IPsecConnectionInventory");
 			put("org.zstack.sdk.IPsecL3NetworkRefInventory", "org.zstack.ipsec.IPsecL3NetworkRefInventory");

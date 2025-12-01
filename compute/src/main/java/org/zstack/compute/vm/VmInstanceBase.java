@@ -7257,6 +7257,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                 getTokenByResourceUuid(self.getUuid(), VmSystemTags.CONSOLE_PASSWORD_TOKEN));
         spec.setUsbRedirect(Boolean.parseBoolean(VmSystemTags.USB_REDIRECT.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USB_REDIRECT_TOKEN)));
         spec.setEnableSecurityElement(Boolean.parseBoolean(VmSystemTags.SECURITY_ELEMENT_ENABLE.getTokenByResourceUuid(self.getUuid(), VmSystemTags.SECURITY_ELEMENT_ENABLE_TOKEN)));
+        String hygonToken = VmSystemTags.HYGON_SECURITY_ELEMENT_ENABLE.getTokenByResourceUuid(self.getUuid(), VmSystemTags.HYGON_SECURITY_ELEMENT_ENABLE_TOKEN);
+        if (StringUtils.isNotBlank(hygonToken) && "true".equalsIgnoreCase(hygonToken)) {
+            spec.setEnableHygonSecurityElement(Boolean.TRUE);
+        }
         if (struct.getStrategy() == VmCreationStrategy.CreateStopped || struct.getStrategy() == VmCreationStrategy.CreatedPaused) {
             spec.setCreatePaused(true);
         }
@@ -7741,12 +7745,17 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         spec.setCurrentVmOperation(operation);
+        
         selectBootOrder(spec);
         spec.setConsolePassword(VmSystemTags.CONSOLE_PASSWORD.
                 getTokenByResourceUuid(self.getUuid(), VmSystemTags.CONSOLE_PASSWORD_TOKEN));
         spec.setVDIMonitorNumber(VmSystemTags.VDI_MONITOR_NUMBER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.VDI_MONITOR_NUMBER_TOKEN));
         spec.setUsbRedirect(Boolean.parseBoolean(VmSystemTags.USB_REDIRECT.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USB_REDIRECT_TOKEN)));
         spec.setEnableSecurityElement(Boolean.parseBoolean(VmSystemTags.SECURITY_ELEMENT_ENABLE.getTokenByResourceUuid(self.getUuid(), VmSystemTags.SECURITY_ELEMENT_ENABLE_TOKEN)));
+        String hygonToken = VmSystemTags.HYGON_SECURITY_ELEMENT_ENABLE.getTokenByResourceUuid(self.getUuid(), VmSystemTags.HYGON_SECURITY_ELEMENT_ENABLE_TOKEN);
+        if (StringUtils.isNotBlank(hygonToken) && "true".equalsIgnoreCase(hygonToken)) {
+            spec.setEnableHygonSecurityElement(Boolean.TRUE);
+        }
 
         for (BuildVmSpecExtensionPoint ext : pluginRgty.getExtensionList(BuildVmSpecExtensionPoint.class)) {
             ext.afterBuildVmSpec(spec);

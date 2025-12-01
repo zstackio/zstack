@@ -4524,6 +4524,9 @@ public class KVMHost extends HostBase implements Host {
         cmd.setConsolePassword(spec.getConsolePassword());
         cmd.setUsbRedirect(spec.isUsbRedirect());
         cmd.setEnableSecurityElement(spec.isEnableSecurityElement());
+        if (spec.isEnableHygonSecurityElement() != null) {
+            cmd.setEnableHygonSecurityElement(spec.isEnableHygonSecurityElement());
+        }
         cmd.setVDIMonitorNumber(Integer.valueOf(spec.getVDIMonitorNumber()));
         cmd.setVmPortOff(rcf.getResourceConfigValue(VmGlobalConfig.VM_PORT_OFF, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setConsoleMode("vnc");
