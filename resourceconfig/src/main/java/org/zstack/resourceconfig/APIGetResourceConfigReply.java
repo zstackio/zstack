@@ -3,9 +3,9 @@ package org.zstack.resourceconfig;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.APIReply;
+import org.zstack.header.message.DocUtils;
 import org.zstack.header.rest.RestResponse;
 
-import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
 
@@ -42,8 +42,8 @@ public class APIGetResourceConfigReply extends APIReply {
         hostConfig.setResourceType(HostVO.class.getSimpleName());
         hostConfig.setResourceUuid(uuid(HostVO.class));
         hostConfig.setUuid(uuid(ResourceConfigVO.class));
-        hostConfig.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
-        hostConfig.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        hostConfig.setCreateDate(DocUtils.timestamp());
+        hostConfig.setLastOpDate(DocUtils.timestamp());
         hostConfig.setValue("5");
 
         ResourceConfigInventory clusterConfig = new ResourceConfigInventory();
@@ -52,8 +52,8 @@ public class APIGetResourceConfigReply extends APIReply {
         clusterConfig.setResourceType(ClusterVO.class.getSimpleName());
         clusterConfig.setResourceUuid(uuid(ClusterVO.class));
         clusterConfig.setUuid(uuid(ResourceConfigInventory.class)); // hostConfig.uuid and this uuid must be different
-        clusterConfig.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
-        clusterConfig.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        clusterConfig.setCreateDate(DocUtils.timestamp());
+        clusterConfig.setLastOpDate(DocUtils.timestamp());
         clusterConfig.setValue("10");
 
         reply.effectiveConfigs = Arrays.asList(hostConfig, clusterConfig);

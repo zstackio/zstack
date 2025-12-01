@@ -1,11 +1,11 @@
 package org.zstack.header.vo;
 
+import org.zstack.header.message.DocUtils;
 import org.zstack.header.search.Inventory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Created by xing5 on 2017/5/1.
@@ -58,7 +58,7 @@ public class ResourceInventory {
 
     public static ResourceInventory __example__() {
         ResourceInventory resource = new ResourceInventory();
-        resource.setUuid(UUID.randomUUID().toString().replace("-", ""));
+        resource.setUuid(DocUtils.createFixedUuid(ResourceVO.class));
         resource.setResourceName("vm1");
         resource.setResourceType("VmInstanceVO");
         return resource;
