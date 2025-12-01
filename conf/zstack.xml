@@ -120,4 +120,5 @@
     <import resource="springConfigXml/HostNetworkManager.xml"/>
     <import resource="springConfigXml/upgrade.xml"/>
     <import resource="springConfigXml/plugin.xml"/>
+    <import resource="springConfigXml/HygonDeviceManager.xml"/>
 </beans>

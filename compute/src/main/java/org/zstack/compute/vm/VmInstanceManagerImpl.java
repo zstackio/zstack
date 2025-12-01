@@ -2078,24 +2078,36 @@ public class VmInstanceManagerImpl extends AbstractService implements
         VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.installValidator(validator);
     }
 
-    private void installSeDeviceValidator() {
-        VmSystemTags.SECURITY_ELEMENT_ENABLE.installValidator(new SystemTagValidator() {
+    private void installBooleanTagValidator(PatternedSystemTag tag, String tokenName, String tagDescription) {
+        tag.installValidator(new SystemTagValidator() {
             @Override
             public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
-                String SecurityElementEnableTokenByTag = null;
-                if (VmSystemTags.SECURITY_ELEMENT_ENABLE.isMatch(systemTag)) {
-                    SecurityElementEnableTokenByTag = VmSystemTags.SECURITY_ELEMENT_ENABLE.getTokenByTag(systemTag, VmSystemTags.SECURITY_ELEMENT_ENABLE_TOKEN);
+                String tokenValue = null;
+                if (tag.isMatch(systemTag)) {
+                    tokenValue = tag.getTokenByTag(systemTag, tokenName);
                 } else {
-                    throw new OperationFailureException(argerr("invalid securityElementEnable[%s], %s is not securityElementEnable tag", systemTag, SecurityElementEnableTokenByTag));
+                    throw new OperationFailureException(argerr("invalid %s tag[%s]", tagDescription, systemTag));
                 }
-                if (!isBoolean(SecurityElementEnableTokenByTag)) {
-                    throw new OperationFailureException(argerr("invalid securityElementEnable[%s], %s is not boolean class", systemTag, SecurityElementEnableTokenByTag));
+                if (!isBoolean(tokenValue)) {
+                    throw new OperationFailureException(argerr("invalid %s[%s], value [%s] is not boolean", tagDescription, systemTag, tokenValue));
                 }
             }
             private boolean isBoolean(String param) {
                 return "true".equalsIgnoreCase(param) || "false".equalsIgnoreCase(param);
             }
         });
+    }
+
+    private void installSeDeviceValidator() {
+        installBooleanTagValidator(VmSystemTags.SECURITY_ELEMENT_ENABLE,
+                VmSystemTags.SECURITY_ELEMENT_ENABLE_TOKEN,
+                "securityElementEnable");
+    }
+
+    private void installHygonSeDeviceValidator() {
+        installBooleanTagValidator(VmSystemTags.HYGON_SECURITY_ELEMENT_ENABLE,
+                VmSystemTags.HYGON_SECURITY_ELEMENT_ENABLE_TOKEN,
+                "hygonSecurityElementEnable");
     }
 
     private void installSystemTagValidator() {
@@ -2107,6 +2119,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         installUsbRedirectValidator();
         installL3NetworkSecurityGroupValidator();
         installSeDeviceValidator();
+        installHygonSeDeviceValidator();
         new StaticIpOperator().installStaticIpValidator();
     }
     private void installUsbRedirectValidator() {

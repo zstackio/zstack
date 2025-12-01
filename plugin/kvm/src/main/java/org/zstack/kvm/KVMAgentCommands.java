@@ -2317,6 +2317,9 @@ public class KVMAgentCommands {
         @GrayVersion(value = "5.0.0")
         private Boolean qemu64BitPciMmioSetup;
 
+        @GrayVersion(value = "5.5.0")
+        private Boolean enableHygonSecurityElement;
+
         public Boolean getQemu64BitPciMmioSetup() {
             return qemu64BitPciMmioSetup;
         }
@@ -2520,6 +2523,15 @@ public class KVMAgentCommands {
         public void setEnableSecurityElement(boolean enableSecurityElement) {
             this.enableSecurityElement = enableSecurityElement;
         }
+
+        public Boolean isEnableHygonSecurityElement() {
+            return enableHygonSecurityElement;
+        }
+
+        public void setEnableHygonSecurityElement(Boolean enableHygonSecurityElement) {
+            this.enableHygonSecurityElement = enableHygonSecurityElement;
+        }
+
         public boolean isUseNuma() {
             return useNuma;
         }
