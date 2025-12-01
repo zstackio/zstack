@@ -2572,7 +2572,12 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             LoadBalancerStruct struct = new LoadBalancerStruct();
             LoadBalancerVO lb = dbf.findByUuid(e.getKey(), LoadBalancerVO.class);
             struct.setLb(LoadBalancerInventory.valueOf(lb));
-            struct.setVip(VipInventory.valueOf(dbf.findByUuid(lb.getVipUuid(), VipVO.class)));
+            if (lb.getVipUuid() != null) {
+                struct.setVip(VipInventory.valueOf(dbf.findByUuid(lb.getVipUuid(), VipVO.class)));
+            }
+            if (lb.getIpv6VipUuid() != null) {
+                struct.setIpv6Vip(VipInventory.valueOf(dbf.findByUuid(lb.getIpv6VipUuid(), VipVO.class)));
+            }
 
             struct.setListenerServerGroupMap(new HashMap<>());
             List<String> serverGroupUuids = new ArrayList<>();
