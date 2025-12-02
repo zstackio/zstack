@@ -235,7 +235,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             @Override
             public void success(CreateVolumeRsp returnValue) {
                 CbdHeartbeatVolumeTO to = new CbdHeartbeatVolumeTO();
-                to.setInstallPath(returnValue.installPath);
+                String zbsPath = returnValue.installPath;
+                to.setInstallPath(ZbsHelper.convertZbsPathToCbdPath(zbsPath, it -> getPhysicalPoolName(it)));
                 to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
                 to.setCoveringPaths(config.getPoolNames());
                 comp.success(to);
@@ -259,8 +260,11 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             reloadDbInfo();
         }
 
+        String zbsPath = buildHeartbeatVolumePath(config.getLogicalPoolName());
+        String cbdPath = ZbsHelper.convertZbsPathToCbdPath(zbsPath, this::getPhysicalPoolName);
+
         CbdHeartbeatVolumeTO to = new CbdHeartbeatVolumeTO();
-        to.setInstallPath(buildHeartbeatVolumePath(config.getLogicalPoolName()));
+        to.setInstallPath(cbdPath);
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
         to.setCoveringPaths(config.getPoolNames());
 
