@@ -100,3 +100,5 @@ UPDATE ModelVO SET architectureType = 'sdxl-turbo' WHERE uuid = '6a720c01935f4f9
 CALL ADD_COLUMN('ModelServiceVO', 'containerArgs', 'TEXT', 1, NULL);
 CALL ADD_COLUMN('ModelServiceVO', 'containerCommand', 'TEXT', 1, NULL);
 
+CALL ADD_COLUMN('GpuDeviceVO', 'isolated', 'TINYINT(1)', 1, NULL);
+CALL ADD_COLUMN('GpuDeviceSpecVO', 'isolated', 'TINYINT(1)', 1, NULL);
