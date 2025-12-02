@@ -8,11 +8,9 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
-import org.zstack.core.progress.ProgressReportService;
+import org.zstack.core.progress.ActionProgressService;
 import org.zstack.header.Constants;
-import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.JobResultError;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.longjob.*;
@@ -122,7 +120,7 @@ public class LongJobUtils {
 
                 if (jobCompleted(job)) {
                     setExecuteTimeIfNeed(job);
-                    cleanProgress(job);
+                    ActionProgressService.markEventPublished(job.getApiId());
                 }
 
                 if (originState != newState) {
@@ -166,12 +164,6 @@ public class LongJobUtils {
             job.setExecuteTime(Long.max(time, 1));
             logger.info(String.format("longjob [uuid:%s] set execute time:%d.", job.getUuid(), time));
         }
-    }
-
-    @ExceptionSafe
-    private static void cleanProgress(LongJobVO job) {
-        ProgressReportService progRpt = Platform.getComponentLoader().getComponent(ProgressReportService.class);
-        progRpt.cleanTaskProgress(job.getApiId());
     }
 
     public static String errorCodeToJobResult(ErrorCode errorCode) {

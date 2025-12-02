@@ -14,6 +14,7 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.DatabaseFacadeImpl
 import org.zstack.core.db.SQL
 import org.zstack.core.eventlog.EventLogVO
+import org.zstack.core.progress.ActionProgressService
 import org.zstack.core.retry.Retry
 import org.zstack.core.retry.RetryCondition
 import org.zstack.header.core.WhileCompletion
@@ -877,8 +878,13 @@ class EnvSpec extends ApiHelper implements Node  {
 
             SQL.New(EventLogVO.class).hardDelete()
             SQL.New(VmSchedHistoryVO).hardDelete()
-            SQL.New(TaskProgressVO.class).hardDelete()
             SQL.New(SessionVO.class).hardDelete()
+
+            try {
+                def progressService = Platform.getComponentLoader().getComponent(ActionProgressService.class)
+                progressService.clearCache()
+            } catch (Exception ignored) {}
+            SQL.New(TaskProgressVO.class).hardDelete()
 
             if (GLOBAL_DELETE_HOOK != null) {
                 GLOBAL_DELETE_HOOK()

@@ -34,7 +34,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateNicFlow implements Flow {
@@ -60,9 +59,12 @@ public class VmAllocateNicFlow implements Flow {
     protected ResourceConfigFacade rcf;
 
     @Override
-    public void run(final FlowTrigger trigger, final Map data) {
-        taskProgress("create nics");
+    public String name() {
+        return "create-nics";
+    }
 
+    @Override
+    public void run(final FlowTrigger trigger, final Map data) {
         Boolean allowDuplicatedMac = (Boolean) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedMac.toString());
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         List<VmNicSpec> l3Networks = spec.getL3Networks();

@@ -64,10 +64,6 @@ public class LdapSyncTaskResult extends SyncTaskResult {
         return this;
     }
 
-    public float progress() {
-        return totalCount == 0 ? 0f : 100f * completeCount / totalCount;
-    }
-
     public String getStage() {
         return stage;
     }

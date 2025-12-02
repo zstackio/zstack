@@ -1,61 +1,109 @@
 package org.zstack.header.core.progress;
 
+import org.apache.logging.log4j.ThreadContext;
+import org.zstack.header.message.DocUtils;
+import org.zstack.header.vm.VmInstanceEO;
 import org.zstack.utils.gson.JSONObjectUtil;
 
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.Map;
 
-/**
- * Created by xing5 on 2017/3/20.
- */
+import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME;
+
 public class TaskProgressInventory {
-    private String taskUuid;
-    private String taskName;
-    private String parentUuid;
-    private String type;
+    private String apiId;
     private String content;
-    private LinkedHashMap opaque;
+    private Map<String, Object> opaque;
+    private long createTime;
+    private long lastOpTime;
+    private long currentStep;
+    private long totalStep;
+
+    // for compatibility
+    @Deprecated
+    private String taskUuid;
+    @Deprecated
+    private String taskName;
+    @Deprecated
+    private String parentUuid;
+    @Deprecated
+    private String type = "Progress";
+    @Deprecated
     private Long time;
-    private List<TaskProgressInventory> subTasks;
+    @Deprecated
     private String arguments;
 
-    public TaskProgressInventory() {
+    @SuppressWarnings("unchecked")
+    public static TaskProgressInventory valueOf(TaskProgressVO vo) {
+        TaskProgressInventory inv = new TaskProgressInventory();
+        inv.setApiId(vo.getApiId());
+        inv.setContent(vo.getContent());
+        inv.setOpaque(JSONObjectUtil.rehashObject(vo.getOpaque() == null ? "{}" : vo.getOpaque(), Map.class));
+        inv.setCreateTime(vo.getCreateTime());
+        inv.setLastOpTime(vo.getLastOpTime());
+        inv.setCurrentStep(vo.getCurrentStep());
+        inv.setTotalStep(vo.getTotalStep());
+
+        inv.setTaskUuid(String.format("%032d", vo.getId()));
+        String taskName = ThreadContext.get(THREAD_CONTEXT_TASK_NAME);
+        inv.setTaskName(taskName == null ? vo.getContent() : taskName);
+        inv.setTime(inv.lastOpTime);
+        return inv;
     }
 
-    public TaskProgressInventory(TaskProgressVO vo) {
-        taskUuid = vo.getTaskUuid();
-        parentUuid = vo.getParentUuid();
-        type = vo.getType().toString();
-        if (vo.getOpaque() != null) {
-            opaque = JSONObjectUtil.toObject(vo.getOpaque(), LinkedHashMap.class);
-        }
-        taskName = vo.getTaskName();
-        time = vo.getTime();
-        arguments = vo.getArguments();
+    public String getApiId() {
+        return apiId;
     }
 
-    public String getArguments() {
-        return arguments;
+    public void setApiId(String apiId) {
+        this.apiId = apiId;
     }
 
-    public void setArguments(String arguments) {
-        this.arguments = arguments;
+    public String getContent() {
+        return content;
     }
 
-    public String getTaskName() {
-        return taskName;
+    public void setContent(String content) {
+        this.content = content;
     }
 
-    public void setTaskName(String taskName) {
-        this.taskName = taskName;
+    public Map<String, Object> getOpaque() {
+        return opaque;
     }
 
-    public List<TaskProgressInventory> getSubTasks() {
-        return subTasks;
+    public void setOpaque(Map<String, Object> opaque) {
+        this.opaque = opaque;
     }
 
-    public void setSubTasks(List<TaskProgressInventory> subTasks) {
-        this.subTasks = subTasks;
+    public long getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(long createTime) {
+        this.createTime = createTime;
+    }
+
+    public long getLastOpTime() {
+        return lastOpTime;
+    }
+
+    public void setLastOpTime(long lastOpTime) {
+        this.lastOpTime = lastOpTime;
+    }
+
+    public long getCurrentStep() {
+        return currentStep;
+    }
+
+    public void setCurrentStep(long currentStep) {
+        this.currentStep = currentStep;
+    }
+
+    public long getTotalStep() {
+        return totalStep;
+    }
+
+    public void setTotalStep(long totalStep) {
+        this.totalStep = totalStep;
     }
 
     public String getTaskUuid() {
@@ -64,6 +112,14 @@ public class TaskProgressInventory {
 
     public void setTaskUuid(String taskUuid) {
         this.taskUuid = taskUuid;
+    }
+
+    public String getTaskName() {
+        return taskName;
+    }
+
+    public void setTaskName(String taskName) {
+        this.taskName = taskName;
     }
 
     public String getParentUuid() {
@@ -82,27 +138,31 @@ public class TaskProgressInventory {
         this.type = type;
     }
 
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public LinkedHashMap getOpaque() {
-        return opaque;
-    }
-
-    public void setOpaque(LinkedHashMap opaque) {
-        this.opaque = opaque;
-    }
-
     public Long getTime() {
         return time;
     }
 
     public void setTime(Long time) {
         this.time = time;
+    }
+
+    public String getArguments() {
+        return arguments;
+    }
+
+    public void setArguments(String arguments) {
+        this.arguments = arguments;
+    }
+
+    public static TaskProgressInventory __example__() {
+        TaskProgressInventory inv = new TaskProgressInventory();
+        inv.setApiId(DocUtils.createFixedUuid(VmInstanceEO.class));
+        inv.setContent("instantiate-volume-d6c9714e779b46c799309e0ec51f831b-local-primary-storage-131fe6aecc6841358b5163eb0ad3677a: instantiate-volume-on-host");
+        inv.setOpaque(null);
+        inv.setCreateTime(DocUtils.date);
+        inv.setLastOpTime(DocUtils.date);
+        inv.setCurrentStep(0);
+        inv.setTotalStep(1);
+        return inv;
     }
 }

@@ -97,7 +97,6 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.compute.vm.VmSystemTags.MACHINE_TYPE_TOKEN;
 import static org.zstack.core.Platform.*;
-import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
 import static org.zstack.network.service.virtualrouter.VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.GUEST_NIC_MASK;
 import static org.zstack.network.service.virtualrouter.vyos.VyosConstants.VYOS_ROUTER_PROVIDER_TYPE;
@@ -1189,7 +1188,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         msg.setApplianceVmType(struct.getApplianceVmType());
         msg.setApplianceVmAgentPort(struct.getApplianceVmAgentPort());
 
-        createSubTaskProgress("create a virtual router vm");
         bus.makeTargetServiceIdByResourceUuid(msg, VirtualRouterConstant.SERVICE_ID, l3Nw.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override

@@ -25,7 +25,6 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -71,7 +70,6 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.multiErr;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
@@ -1349,11 +1347,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         DebugUtils.Assert(backupStorageInstallPath != null, "backupStorageInstallPath cannot be null");
                     }
 
-                    taskProgress("Download the image[%s] to the image cache", image.getName());
-
                     FlowChain fchain = FlowChainBuilder.newShareFlowChain();
                     fchain.setName(String.format("download-image-%s-to-local-storage-%s-cache-host-%s",
                             image.getUuid(), self.getUuid(), hostUuid));
+                    fchain.enableProgressReport();
                     fchain.then(new ShareFlow() {
                         String psUuid;
                         long actualSize = image.getActualSize();
@@ -3370,14 +3367,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 .find();
         final CreateTemplateFromVolumeOnPrimaryStorageReply reply = new CreateTemplateFromVolumeOnPrimaryStorageReply();
 
-        final TaskProgressRange parentStage = getTaskStage();
-        final TaskProgressRange PREPARATION_STAGE = new TaskProgressRange(0, 10);
-        final TaskProgressRange CREATE_TEMPORARY_TEMPLATE_STAGE = new TaskProgressRange(10, 30);
-        final TaskProgressRange TEMPLATE_UPLOAD_STAGE = new TaskProgressRange(30, 90);
-        final TaskProgressRange DELETE_TEMPORARY_TEMPLATE_STAGE = new TaskProgressRange(90, 99);
-
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-image-%s-from-volume-%s", msg.getImageInventory().getUuid(), msg.getVolumeInventory().getUuid()));
+        chain.enableProgressReport();
         chain.then(new ShareFlow() {
             String temporaryTemplatePath = makeTemplateFromVolumeInWorkspacePath(msg.getImageInventory().getUuid());
             String backupStorageInstallPath;
@@ -3392,10 +3384,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        TaskProgressRange stage = markTaskStage(parentStage, PREPARATION_STAGE);
                         reserveCapacityOnHost(ref.getHostUuid(), requiredSize, ref.getPrimaryStorageUuid());
                         success = true;
-                        reportProgress(stage.getEnd().toString());
                         trigger.next();
                     }
 
@@ -3413,8 +3403,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        TaskProgressRange stage = markTaskStage(parentStage, CREATE_TEMPORARY_TEMPLATE_STAGE);
-
                         CreateTemplateFromVolumeCmd cmd = new CreateTemplateFromVolumeCmd();
                         cmd.setInstallPath(temporaryTemplatePath);
                         cmd.setVolumePath(msg.getVolumeInventory().getInstallPath());
@@ -3425,7 +3413,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     @Override
                                     public void success(CreateTemplateFromVolumeRsp rsp) {
                                         reply.setActualSize(rsp.getActualSize());
-                                        reportProgress(stage.getEnd().toString());
                                         trigger.next();
                                     }
 
@@ -3458,8 +3445,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        TaskProgressRange stage = markTaskStage(parentStage, TEMPLATE_UPLOAD_STAGE);
-
                         BackupStorageAskInstallPathMsg bmsg = new BackupStorageAskInstallPathMsg();
                         bmsg.setBackupStorageUuid(msg.getBackupStorageUuid());
                         bmsg.setImageMediaType(msg.getImageInventory().getMediaType());
@@ -3478,7 +3463,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             @Override
                             public void success(String installPath) {
                                 backupStorageInstallPath = installPath;
-                                reportProgress(stage.getEnd().toString());
                                 trigger.next();
                             }
 
@@ -3495,11 +3479,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        TaskProgressRange stage = markTaskStage(parentStage, DELETE_TEMPORARY_TEMPLATE_STAGE);
                         deleteBits(temporaryTemplatePath, ref.getHostUuid(), new Completion(trigger) {
                             @Override
                             public void success() {
-                                reportProgress(stage.getEnd().toString());
                                 trigger.next();
                             }
 

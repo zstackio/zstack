@@ -42,7 +42,6 @@ import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
-import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -107,7 +106,6 @@ import java.util.stream.Collectors;
 
 import static org.zstack.compute.host.HostSystemTags.*;
 import static org.zstack.core.Platform.*;
-import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.header.host.GetVirtualizerInfoReply.VmVirtualizerInfo;
 import static org.zstack.kvm.KVMHostFactory.allGuestOsCharacter;
 import static org.zstack.kvm.KvmHostUpdateOsExtensionPoint.UPDATE_OS_RSP;
@@ -3076,9 +3074,6 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void migrateVm(final MigrateStruct s, final Completion completion) {
-        final TaskProgressRange parentStage = getTaskStage();
-        final TaskProgressRange MIGRATE_VM_STAGE = new TaskProgressRange(0, 90);
-
         final String dstHostMigrateIp, dstHostMnIp, dstHostUuid;
         final String vmUuid;
         final StorageMigrationPolicy storageMigrationPolicy;
@@ -3106,6 +3101,7 @@ public class KVMHost extends HostBase implements Host {
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("migrate-vm-%s-on-kvm-host-%s", vmUuid, self.getUuid()));
+        chain.enableProgressReport();
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
@@ -3145,8 +3141,6 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        TaskProgressRange stage = markTaskStage(parentStage, MIGRATE_VM_STAGE);
-
                         boolean autoConverage = rcf.getResourceConfigValue(KVMGlobalConfig.MIGRATE_AUTO_CONVERGE, vmUuid, Boolean.class);
                         if (!autoConverage) {
                             autoConverage = s.strategy != null && s.strategy.equals("auto-converge");
@@ -3206,7 +3200,6 @@ public class KVMHost extends HostBase implements Host {
                                             vmUuid, srcHostUuid, srcHostMigrateIp, dstHostMigrateIp);
                                     logger.debug(info);
 
-                                    reportProgress(stage.getEnd().toString());
                                     trigger.next();
                                 }
                             }
@@ -3297,7 +3290,6 @@ public class KVMHost extends HostBase implements Host {
                         String info = String.format("successfully migrated vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s]",
                                 vmUuid, srcHostUuid, srcHostMigrateIp, dstHostMigrateIp);
                         logger.debug(info);
-                        reportProgress(parentStage.getEnd().toString());
                         completion.success();
                     }
                 });

@@ -28,6 +28,7 @@ public class GetTaskProgressAction extends AbstractAction {
     @Param(required = false)
     public java.lang.String apiId;
 
+    @Deprecated
     @Param(required = false)
     public boolean all = false;
 

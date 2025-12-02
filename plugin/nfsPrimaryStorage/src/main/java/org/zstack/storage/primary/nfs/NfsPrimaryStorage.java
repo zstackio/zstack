@@ -22,7 +22,6 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -67,7 +66,6 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
@@ -1062,13 +1060,9 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         final PrimaryStorageInventory pinv = getSelfInventory();
         final ImageInventory image = msg.getImageInventory();
 
-        final TaskProgressRange parentStage = getTaskStage();
-        final TaskProgressRange CREATE_TEMPORARY_TEMPLATE_STAGE = new TaskProgressRange(0, 30);
-        final TaskProgressRange TEMPLATE_UPLOAD_STAGE = new TaskProgressRange(30, 100);
-
-
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-template-from-volume-%s-on-nfs-primary-storage-%s", volume.getUuid(), self.getUuid()));
+        chain.enableProgressReport();
         chain.then(new ShareFlow() {
             String templatePrimaryStorageInstallPath;
             String templateBackupStorageInstallPath;
@@ -1079,15 +1073,17 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     NfsPrimaryStorageBackend bkd = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(volume.getFormat(), self.getUuid()));
 
                     @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        TaskProgressRange stage = markTaskStage(parentStage, CREATE_TEMPORARY_TEMPLATE_STAGE);
+                    public String name() {
+                        return "create-template-from-the-specific-volume";
+                    }
 
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
                         bkd.createTemplateFromVolume(pinv, volume, image, new ReturnValueCompletion<NfsPrimaryStorageBackend.BitsInfo>(trigger) {
                             @Override
                             public void success(NfsPrimaryStorageBackend.BitsInfo info) {
                                 reply.setActualSize(info.getActualSize());
                                 templatePrimaryStorageInstallPath = info.getInstallPath();
-                                reportProgress(stage.getEnd().toString());
                                 trigger.next();
                             }
 
@@ -1110,9 +1106,12 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
                 flow(new NoRollbackFlow() {
                     @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        TaskProgressRange stage = markTaskStage(parentStage, TEMPLATE_UPLOAD_STAGE);
+                    public String name() {
+                        return "upload-template";
+                    }
 
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
                         NfsPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(
                                 BackupStorageType.valueOf(bsinv.getType()),
                                 nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(volume.getFormat(), self.getUuid())
@@ -1124,7 +1123,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                         mediator.uploadBits(msg.getImageInventory().getUuid(), pinv, bsinv, templateBackupStorageInstallPath, templatePrimaryStorageInstallPath, new ReturnValueCompletion<String>(trigger) {
                             @Override
                             public void success(String installPath) {
-                                reportProgress(stage.getEnd().toString());
                                 templateBackupStorageInstallPath = installPath;
                                 trigger.next();
                             }

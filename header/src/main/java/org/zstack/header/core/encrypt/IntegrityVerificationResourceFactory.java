@@ -2,7 +2,6 @@ package org.zstack.header.core.encrypt;
 
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.progress.TaskProgressRange;
 
 import java.util.List;
 import java.util.Map;
@@ -14,7 +13,7 @@ import java.util.Map;
 public interface IntegrityVerificationResourceFactory {
     String getResourceType();
 
-    void doIntegrityVerification(Integer integrityDataRangeInDays, TaskProgressRange taskProgressRange, Completion completion);
+    void doIntegrityVerification(Integer integrityDataRangeInDays, Completion completion);
 
     void doCheckBatchResourceIntegrity(final List<String> resourceUuids, ReturnValueCompletion<Map<String, Boolean>> returnValueCompletion);
 
