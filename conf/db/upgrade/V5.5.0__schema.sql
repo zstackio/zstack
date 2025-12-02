@@ -15,9 +15,10 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ExternalPrimaryStorageSpaceVO`
     CONSTRAINT `fkExternalPrimaryStorageSpaceVOPrimaryStorageEO` FOREIGN KEY (`primaryStorageUuid`) REFERENCES `zstack`.`PrimaryStorageEO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-DELIMITER $$
 
 DROP PROCEDURE IF EXISTS UpdateVolumeInstallPathForZbs;
+
+DELIMITER $$
 CREATE PROCEDURE UpdateVolumeInstallPathForZbs()
 BEGIN
     DECLARE done INT DEFAULT FALSE;
