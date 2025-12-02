@@ -46,6 +46,7 @@ import org.zstack.ldap.header.LdapAccountSourceSpec;
 import org.zstack.ldap.message.CreateLdapAccountSourceMsg;
 import org.zstack.ldap.message.UpdateLdapAccountSourceMsg;
 import org.zstack.ldap.message.UpdateLdapAccountSourceReply;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -208,6 +209,10 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         spec.setLdapServerUuid(msg.getLdapServerUuid());
         spec.setFilter(msg.getLdapFilter());
         spec.setCount(msg.getLimit());
+        spec.setSearchAllAttributes(msg.isSearchAllAttributes());
+        if (!CollectionUtils.isEmpty(msg.getReturningAttributes())) {
+            spec.setReturningAttributes(msg.getReturningAttributes().toArray(new String[0]));
+        }
         reply.setInventories(createDriver().searchLdapEntry(spec));
 
         bus.reply(msg, reply);

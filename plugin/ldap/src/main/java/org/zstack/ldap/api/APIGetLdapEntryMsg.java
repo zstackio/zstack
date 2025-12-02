@@ -6,6 +6,8 @@ import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.ldap.entity.LdapServerVO;
 
+import java.util.List;
+
 /**
  * Created by lining on 2017/11/03.
  */
@@ -24,6 +26,12 @@ public class APIGetLdapEntryMsg extends APISyncCallMessage {
 
     @APIParam(resourceType = LdapServerVO.class, required = false)
     private String ldapServerUuid;
+
+    @APIParam(required = false)
+    private boolean searchAllAttributes;
+
+    @APIParam(required = false)
+    private List<String> returningAttributes;
 
     public String getLdapFilter() {
         return ldapFilter;
@@ -53,5 +61,21 @@ public class APIGetLdapEntryMsg extends APISyncCallMessage {
 
     public void setLdapServerUuid(String ldapServerUuid) {
         this.ldapServerUuid = ldapServerUuid;
+    }
+
+    public boolean isSearchAllAttributes() {
+        return searchAllAttributes;
+    }
+
+    public void setSearchAllAttributes(boolean searchAllAttributes) {
+        this.searchAllAttributes = searchAllAttributes;
+    }
+
+    public List<String> getReturningAttributes() {
+        return returningAttributes;
+    }
+
+    public void setReturningAttributes(List<String> returningAttributes) {
+        this.returningAttributes = returningAttributes;
     }
 }
