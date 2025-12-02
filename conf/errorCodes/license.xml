@@ -77,6 +77,21 @@
     </code>
 
     <code>
+        <id>3005</id>
+        <description>The remote license has expired</description>
+    </code>
+
+    <code>
+        <id>3006</id>
+        <description>The remote license expires earlier than the local license</description>
+    </code>
+
+    <code>
+        <id>3007</id>
+        <description>The remote license available capacity is lower than the local license</description>
+    </code>
+
+    <code>
         <id>3100</id>
         <description>License server generic error</description>
     </code>
