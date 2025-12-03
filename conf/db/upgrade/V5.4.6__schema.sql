@@ -100,5 +100,11 @@ UPDATE ModelVO SET architectureType = 'sdxl-turbo' WHERE uuid = '6a720c01935f4f9
 CALL ADD_COLUMN('ModelServiceVO', 'containerArgs', 'TEXT', 1, NULL);
 CALL ADD_COLUMN('ModelServiceVO', 'containerCommand', 'TEXT', 1, NULL);
 
+-- Upgrade gpuVendor field in ModelServiceGpuVendorVO
+Update ModelServiceGpuVendorVO set gpuVendor = 'Huawei' where gpuVendor = 'HUAWEI';
+Update ModelServiceGpuVendorVO set gpuVendor = 'Haiguang' where gpuVendor = 'HAIGUANG';
+Update ModelServiceGpuVendorVO set gpuVendor = 'TianShu' where gpuVendor = 'TIANSHU';
+Update ModelServiceGpuVendorVO set gpuVendor = 'Intel' where gpuVendor = 'INTEL';
+
 CALL ADD_COLUMN('GpuDeviceVO', 'isolated', 'TINYINT(1)', 1, NULL);
 CALL ADD_COLUMN('GpuDeviceSpecVO', 'isolated', 'TINYINT(1)', 1, NULL);
