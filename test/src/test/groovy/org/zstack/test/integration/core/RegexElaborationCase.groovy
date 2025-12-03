@@ -1,6 +1,7 @@
 package org.zstack.test.integration.core
 
 import org.zstack.core.Platform
+import org.zstack.core.CoreGlobalProperty
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.errorcode.ErrorCodeList
 import org.zstack.header.storage.primary.PrimaryStorageErrors
@@ -81,7 +82,8 @@ class RegexElaborationCase extends SubCase {
     }
 
     void testElaboration6() {
-        def err = Platform.operr("shell command[sudo PYTHONPATH=/usr/local/zstack/ansible/files/zstacklib timeout 1800 python /usr/local/zstack/ansible/kvm.py -i /usr/local/zstack/ansible/hosts --private-key /usr/local/zstack/apache-tomcat-7.0.35/webapps/zstack/WEB-INF/classes/ansible/rsaKeys/id_rsa -e '{\"chrony_servers\":\"\",\"trusted_host\":\"\",\"remote_port\":\"22\",\"update_packages\":\"false\",\"zstack_root\":\"/var/lib/zstack\",\"remote_user\":\"root\",\"hostname\":\"10-0-121-175.zstack.org\",\"pkg_kvmagent\":\"kvmagent-3.2.0.tar.gz\",\"post_url\":\"http://172.20.11.235:8080/zstack/kvm/ansiblelog/%s\\n\",\"remote_pass\":\"******\",\"host\":\"172.20.11.235\",\"pip_url\":\"http://172.20.11.235:8080/zstack/static/pypi/simple\",\"zstack_repo\":\"\\\"zstack-mn,qemu-kvm-ev-mn\\\"\",\"yum_server\":\"172.20.11.235:8080\",\"pkg_zstacklib\":\"zstacklib-3.2.0.tar.gz\"}'] failed\n ret code: 1", Platform.uuid)
+        def oemName = CoreGlobalProperty.OEM_NAME
+        def err = Platform.operr("shell command[sudo PYTHONPATH=/usr/local/zstack/ansible/files/zstacklib timeout 1800 python /usr/local/zstack/ansible/kvm.py -i /usr/local/zstack/ansible/hosts --private-key /usr/local/zstack/apache-tomcat-7.0.35/webapps/${oemName}/WEB-INF/classes/ansible/rsaKeys/id_rsa -e '{\"chrony_servers\":\"\",\"trusted_host\":\"\",\"remote_port\":\"22\",\"update_packages\":\"false\",\"zstack_root\":\"/var/lib/zstack\",\"remote_user\":\"root\",\"hostname\":\"10-0-121-175.zstack.org\",\"pkg_kvmagent\":\"kvmagent-3.2.0.tar.gz\",\"post_url\":\"http://172.20.11.235:8080/${oemName}/kvm/ansiblelog/%s\\n\",\"remote_pass\":\"******\",\"host\":\"172.20.11.235\",\"pip_url\":\"http://172.20.11.235:8080/${oemName}/static/pypi/simple\",\"zstack_repo\":\"\\\"zstack-mn,qemu-kvm-ev-mn\\\"\",\"yum_server\":\"172.20.11.235:8080\",\"pkg_zstacklib\":\"zstacklib-3.2.0.tar.gz\"}'] failed\n ret code: 1", Platform.uuid)
         assert err.elaboration != null
         assert err.messages.method == ElaborationSearchMethod.regex
         assert err.messages.message_cn == "pip 安装失败。可能因为 pip 安装文件不完整，或者 pip 版本不正确。"
