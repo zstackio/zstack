@@ -83,6 +83,7 @@ import org.zstack.utils.network.NicIpAddressInfo;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
+import org.zstack.utils.opaque.OpaqueConstants;
 
 import javax.persistence.PersistenceException;
 import javax.persistence.Tuple;
@@ -8873,8 +8874,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    ErrorCode err = operr("update vm[%s] priority to [%s] failed,because %s",
-                            self.getUuid(), msg.getPriority(), reply.getError());
+                    ErrorCode err = operr("update vm[%s] priority to [%s] failed",
+                            self.getUuid(), msg.getPriority())
+                            .withCause(reply.getError());
                     completion.fail(err);
                     return;
                 }

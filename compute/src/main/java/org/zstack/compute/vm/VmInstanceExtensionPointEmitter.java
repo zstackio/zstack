@@ -12,13 +12,11 @@ import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
@@ -68,8 +66,9 @@ public class VmInstanceExtensionPointEmitter implements Component {
             try {
                 String err = ext.preStartNewCreatedVm(inv);
                 if (err != null) {
-                    return operr("VmInstanceStartNewCreatedVmExtensionPoint[%s] refuses to create vm[uuid:%s] because %s",
-                            ext.getClass().getName(), inv.getUuid(), err);
+                    return operr("VmInstanceStartNewCreatedVmExtensionPoint[%s] refuses to create vm[uuid:%s]",
+                            ext.getClass().getSimpleName(), inv.getUuid())
+                            .withException(err);
                 }
             } catch (Exception e) {
                 logger.warn(String.format("Unhandled exception while calling %s", ext.getClass().getName()), e);
@@ -79,30 +78,15 @@ public class VmInstanceExtensionPointEmitter implements Component {
     }
 
     public void beforeStartNewCreatedVm(final VmInstanceInventory inv) {
-        CollectionUtils.safeForEach(startNewCreatedVmExtensions, new ForEachFunction<VmInstanceStartNewCreatedVmExtensionPoint>() {
-            @Override
-            public void run(VmInstanceStartNewCreatedVmExtensionPoint arg) {
-                arg.beforeStartNewCreatedVm(inv);
-            }
-        });
+        CollectionUtils.safeForEach(startNewCreatedVmExtensions, arg -> arg.beforeStartNewCreatedVm(inv));
     }
 
     public void afterStartNewCreatedVm(final VmInstanceInventory inv) {
-        CollectionUtils.forEach(startNewCreatedVmExtensions, new ForEachFunction<VmInstanceStartNewCreatedVmExtensionPoint>() {
-            @Override
-            public void run(VmInstanceStartNewCreatedVmExtensionPoint arg) {
-                arg.afterStartNewCreatedVm(inv);
-            }
-        });
+        CollectionUtils.forEach(startNewCreatedVmExtensions, arg -> arg.afterStartNewCreatedVm(inv));
     }
 
     public void failedToStartNewCreatedVm(final VmInstanceInventory inv, final ErrorCode reason) {
-        CollectionUtils.forEach(startNewCreatedVmExtensions, new ForEachFunction<VmInstanceStartNewCreatedVmExtensionPoint>() {
-            @Override
-            public void run(VmInstanceStartNewCreatedVmExtensionPoint arg) {
-                arg.failedToStartNewCreatedVm(inv, reason);
-            }
-        });
+        CollectionUtils.forEach(startNewCreatedVmExtensions, arg -> arg.failedToStartNewCreatedVm(inv, reason));
     }
 
     public void beforeVmStop(VmInstanceInventory inv, Completion completion) {
@@ -144,41 +128,27 @@ public class VmInstanceExtensionPointEmitter implements Component {
             try {
                 String err = ext.preStopVm(inv);
                 if (err != null) {
-                    return errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, String.format("VmInstanceStopVmExtensionPoint[%s] refuses to stop vm[uuid:%s] because %s",
-                            ext.getClass().getName(), inv.getUuid(), err));
+                    return operr("VmInstanceStopVmExtensionPoint[%s] refuses to stop vm[uuid:%s]",
+                            ext.getClass().getSimpleName(), inv.getUuid())
+                            .withException(err);
                 }
             } catch (Exception e) {
-                logger.warn(String.format("Unhandled exception while calling %s", ext.getClass().getName()), e);
+                logger.warn(String.format("Unhandled exception while calling %s", ext.getClass().getSimpleName()), e);
             }
         }
         return null;
     }
 
     public void beforeStopVm(final VmInstanceInventory inv) {
-        CollectionUtils.forEach(stopVmExtensions, new ForEachFunction<VmInstanceStopExtensionPoint>() {
-            @Override
-            public void run(VmInstanceStopExtensionPoint arg) {
-                arg.beforeStopVm(inv);
-            }
-        });
+        CollectionUtils.forEach(stopVmExtensions, arg -> arg.beforeStopVm(inv));
     }
 
     public void afterStopVm(final VmInstanceInventory inv) {
-        CollectionUtils.forEach(stopVmExtensions, new ForEachFunction<VmInstanceStopExtensionPoint>() {
-            @Override
-            public void run(VmInstanceStopExtensionPoint arg) {
-                arg.afterStopVm(inv);
-            }
-        });
+        CollectionUtils.forEach(stopVmExtensions, arg -> arg.afterStopVm(inv));
     }
 
     public void failedToStopVm(final VmInstanceInventory inv, final ErrorCode reason) {
-        CollectionUtils.forEach(stopVmExtensions, new ForEachFunction<VmInstanceStopExtensionPoint>() {
-            @Override
-            public void run(VmInstanceStopExtensionPoint arg) {
-                arg.failedToStopVm(inv, reason);
-            }
-        });
+        CollectionUtils.forEach(stopVmExtensions, arg -> arg.failedToStopVm(inv, reason));
     }
 
     public ErrorCode preRebootVm(final VmInstanceInventory inv) {
@@ -186,41 +156,27 @@ public class VmInstanceExtensionPointEmitter implements Component {
             try {
                 String err = ext.preRebootVm(inv);
                 if (err != null) {
-                    return operr("VmInstanceRebootExtensionPoint[%s] refuses to reboot vm[uuid:%s] because %s", ext.getClass().getName(),
-                            inv.getUuid(), err);
+                    return operr("VmInstanceRebootExtensionPoint[%s] refuses to reboot vm[uuid:%s]",
+                            ext.getClass().getSimpleName(), inv.getUuid())
+                            .withException(err);
                 }
             } catch (Exception e) {
-                logger.warn(String.format("Unhandled exception while calling %s", ext.getClass().getName()), e);
+                logger.warn(String.format("Unhandled exception while calling %s", ext.getClass().getSimpleName()), e);
             }
         }
         return null;
     }
 
     public void beforeRebootVm(final VmInstanceInventory inv) {
-        CollectionUtils.safeForEach(rebootVmExtensions, new ForEachFunction<VmInstanceRebootExtensionPoint>() {
-            @Override
-            public void run(VmInstanceRebootExtensionPoint arg) {
-                arg.beforeRebootVm(inv);
-            }
-        });
+        CollectionUtils.safeForEach(rebootVmExtensions, arg -> arg.beforeRebootVm(inv));
     }
 
     public void afterRebootVm(final VmInstanceInventory inv) {
-        CollectionUtils.safeForEach(rebootVmExtensions, new ForEachFunction<VmInstanceRebootExtensionPoint>() {
-            @Override
-            public void run(VmInstanceRebootExtensionPoint arg) {
-                arg.afterRebootVm(inv);
-            }
-        });
+        CollectionUtils.safeForEach(rebootVmExtensions, arg -> arg.afterRebootVm(inv));
     }
 
     public void failedToRebootVm(final VmInstanceInventory inv, final ErrorCode reason) {
-        CollectionUtils.safeForEach(rebootVmExtensions, new ForEachFunction<VmInstanceRebootExtensionPoint>() {
-            @Override
-            public void run(VmInstanceRebootExtensionPoint arg) {
-                arg.failedToRebootVm(inv, reason);
-            }
-        });
+        CollectionUtils.safeForEach(rebootVmExtensions, arg -> arg.failedToRebootVm(inv, reason));
     }
 
     public ErrorCode preDestroyVm(VmInstanceInventory inv) {
@@ -228,49 +184,31 @@ public class VmInstanceExtensionPointEmitter implements Component {
             try {
                 String err = ext.preDestroyVm(inv);
                 if (err != null) {
-                    return operr("VmInstanceDestroyVmExtensionPoint[%s] refuses to destroy vm[uuid:%s] because %s", ext.getClass().getName(), inv.getUuid(), err);
+                    return operr("VmInstanceDestroyVmExtensionPoint[%s] refuses to destroy vm[uuid:%s]",
+                            ext.getClass().getSimpleName(), inv.getUuid())
+                            .withException(err);
                 }
             } catch (Exception e) {
-                logger.warn(String.format("Unhandled exception while calling %s", ext.getClass().getName()), e);
+                logger.warn(String.format("Unhandled exception while calling %s", ext.getClass().getSimpleName()), e);
             }
         }
         return null;
     }
 
     public void beforeDestroyVm(final VmInstanceInventory inv) {
-        CollectionUtils.safeForEach(destroyVmExtensions, new ForEachFunction<VmInstanceDestroyExtensionPoint>() {
-            @Override
-            public void run(VmInstanceDestroyExtensionPoint arg) {
-                arg.beforeDestroyVm(inv);
-            }
-        });
+        CollectionUtils.safeForEach(destroyVmExtensions, arg -> arg.beforeDestroyVm(inv));
     }
 
     public void afterDestroyVm(final VmInstanceInventory inv) {
-        CollectionUtils.safeForEach(destroyVmExtensions, new ForEachFunction<VmInstanceDestroyExtensionPoint>() {
-            @Override
-            public void run(VmInstanceDestroyExtensionPoint arg) {
-                arg.afterDestroyVm(inv);
-            }
-        });
+        CollectionUtils.safeForEach(destroyVmExtensions, arg -> arg.afterDestroyVm(inv));
     }
 
     public void failedToDestroyVm(final VmInstanceInventory inv, final ErrorCode reason) {
-        CollectionUtils.safeForEach(destroyVmExtensions, new ForEachFunction<VmInstanceDestroyExtensionPoint>() {
-            @Override
-            public void run(VmInstanceDestroyExtensionPoint arg) {
-                arg.failedToDestroyVm(inv, reason);
-            }
-        });
+        CollectionUtils.safeForEach(destroyVmExtensions, arg -> arg.failedToDestroyVm(inv, reason));
     }
 
     public void afterResumeVm(VmInstanceInventory inv) {
-        CollectionUtils.safeForEach(VmInstanceResumeExtensionPoints, new ForEachFunction<VmInstanceResumeExtensionPoint>() {
-            @Override
-            public void run(VmInstanceResumeExtensionPoint arg) {
-                arg.afterResumeVm(inv);
-            }
-        });
+        CollectionUtils.safeForEach(VmInstanceResumeExtensionPoints, arg -> arg.afterResumeVm(inv));
     }
 
     public ErrorCode preStartVm(VmInstanceInventory inv) {
@@ -278,11 +216,12 @@ public class VmInstanceExtensionPointEmitter implements Component {
             try {
                 String err = ext.preStartVm(inv);
                 if (err != null) {
-                    return operr("VmInstanceStartExtensionPoint[%s] refuses to start vm[uuid:%s] because %s", ext.getClass().getName(),
-                            inv.getUuid(), err);
+                    return operr("VmInstanceStartExtensionPoint[%s] refuses to start vm[uuid:%s]",
+                            ext.getClass().getSimpleName(), inv.getUuid())
+                            .withException(err);
                 }
             } catch (Exception e) {
-                logger.error(String.format("Unhandled exception while calling %s", ext.getClass().getName()), e);
+                logger.error(String.format("Unhandled exception while calling %s", ext.getClass().getSimpleName()), e);
                 throw e;
             }
         }
@@ -290,30 +229,15 @@ public class VmInstanceExtensionPointEmitter implements Component {
     }
 
     public void beforeStartVm(final VmInstanceInventory inv) {
-        CollectionUtils.safeForEach(startVmExtensions, new ForEachFunction<VmInstanceStartExtensionPoint>() {
-            @Override
-            public void run(VmInstanceStartExtensionPoint arg) {
-                arg.beforeStartVm(inv);
-            }
-        });
+        CollectionUtils.safeForEach(startVmExtensions, arg -> arg.beforeStartVm(inv));
     }
 
     public void afterStartVm(final VmInstanceInventory inv) {
-        CollectionUtils.safeForEach(startVmExtensions, new ForEachFunction<VmInstanceStartExtensionPoint>() {
-            @Override
-            public void run(VmInstanceStartExtensionPoint arg) {
-                arg.afterStartVm(inv);
-            }
-        });
+        CollectionUtils.safeForEach(startVmExtensions, arg -> arg.afterStartVm(inv));
     }
 
     public void failedToStartVm(final VmInstanceInventory inv, final ErrorCode reason) {
-        CollectionUtils.safeForEach(startVmExtensions, new ForEachFunction<VmInstanceStartExtensionPoint>() {
-            @Override
-            public void run(VmInstanceStartExtensionPoint arg) {
-                arg.failedToStartVm(inv, reason);
-            }
-        });
+        CollectionUtils.safeForEach(startVmExtensions, arg -> arg.failedToStartVm(inv, reason));
     }
 
     public void preMigrateVm(final VmInstanceInventory inv, final String dstHostUuid, Completion completion) {
@@ -421,30 +345,15 @@ public class VmInstanceExtensionPointEmitter implements Component {
     }
 
     public void beforeAttachVolume(final VmInstanceInventory vm, final VolumeInventory volume, Map data) {
-        CollectionUtils.safeForEach(attachVolumeExtensions, new ForEachFunction<VmAttachVolumeExtensionPoint>() {
-            @Override
-            public void run(VmAttachVolumeExtensionPoint arg) {
-                arg.beforeAttachVolume(vm, volume, data);
-            }
-        });
+        CollectionUtils.safeForEach(attachVolumeExtensions, arg -> arg.beforeAttachVolume(vm, volume, data));
     }
 
     public void afterAttachVolume(final VmInstanceInventory vm, final VolumeInventory volume) {
-        CollectionUtils.safeForEach(attachVolumeExtensions, new ForEachFunction<VmAttachVolumeExtensionPoint>() {
-            @Override
-            public void run(VmAttachVolumeExtensionPoint arg) {
-                arg.afterAttachVolume(vm, volume);
-            }
-        });
+        CollectionUtils.safeForEach(attachVolumeExtensions, arg -> arg.afterAttachVolume(vm, volume));
     }
 
     public void failedToAttachVolume(final VmInstanceInventory vm, final VolumeInventory volume, final ErrorCode errorCode, Map data) {
-        CollectionUtils.safeForEach(attachVolumeExtensions, new ForEachFunction<VmAttachVolumeExtensionPoint>() {
-            @Override
-            public void run(VmAttachVolumeExtensionPoint arg) {
-                arg.failedToAttachVolume(vm, volume, errorCode, data);
-            }
-        });
+        CollectionUtils.safeForEach(attachVolumeExtensions, arg -> arg.failedToAttachVolume(vm, volume, errorCode, data));
     }
 
     public void afterInstantiateVolume(VmInstanceInventory inv, VolumeInventory volume, NoErrorCompletion completion) {
@@ -491,12 +400,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
     }
 
     public void beforeDetachVolume(final VmInstanceInventory vm, final VolumeInventory volume) {
-        CollectionUtils.safeForEach(detachVolumeExtensions, new ForEachFunction<VmDetachVolumeExtensionPoint>() {
-            @Override
-            public void run(VmDetachVolumeExtensionPoint arg) {
-                arg.beforeDetachVolume(vm, volume);
-            }
-        });
+        CollectionUtils.safeForEach(detachVolumeExtensions, arg -> arg.beforeDetachVolume(vm, volume));
     }
 
     public void afterDetachVolume(final VmInstanceInventory vm, final VolumeInventory volume, final Completion completion) {
@@ -505,29 +409,24 @@ public class VmInstanceExtensionPointEmitter implements Component {
             return;
         }
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        CollectionUtils.safeForEach(detachVolumeExtensions, new ForEachFunction<VmDetachVolumeExtensionPoint>() {
+        CollectionUtils.safeForEach(detachVolumeExtensions, arg -> chain.then(new NoRollbackFlow() {
             @Override
-            public void run(VmDetachVolumeExtensionPoint arg) {
-                chain.then(new NoRollbackFlow() {
+            public void run(FlowTrigger trigger, Map data) {
+                arg.afterDetachVolume(vm, volume, new Completion(trigger) {
                     @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        arg.afterDetachVolume(vm, volume, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.next();
-                            }
+                    public void success() {
+                        trigger.next();
+                    }
 
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                logger.debug(String.format("found a error when calling afterDetachVolume[volumeUuid:%s] extension point" +
-                                        ":%s, ignore it", volume.getUuid(), errorCode.getDetails()));
-                                trigger.next();
-                            }
-                        });
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.debug(String.format("found a error when calling afterDetachVolume[volumeUuid:%s] extension point" +
+                                ":%s, ignore it", volume.getUuid(), errorCode.getDetails()));
+                        trigger.next();
                     }
                 });
             }
-        });
+        }));
 
         chain.done(new FlowDoneHandler(completion) {
             @Override
@@ -543,21 +442,11 @@ public class VmInstanceExtensionPointEmitter implements Component {
     }
 
     public void failedToDetachVolume(final VmInstanceInventory vm, final VolumeInventory volume, final ErrorCode errorCode) {
-        CollectionUtils.safeForEach(detachVolumeExtensions, new ForEachFunction<VmDetachVolumeExtensionPoint>() {
-            @Override
-            public void run(VmDetachVolumeExtensionPoint arg) {
-                arg.failedToDetachVolume(vm, volume, errorCode);
-            }
-        });
+        CollectionUtils.safeForEach(detachVolumeExtensions, arg -> arg.failedToDetachVolume(vm, volume, errorCode));
     }
 
     public void getVmCapabilities(final VmInstanceInventory vm, final VmCapabilities capabilities) {
-        CollectionUtils.safeForEach(capabilitiesExtensionPoints, new ForEachFunction<VmCapabilitiesExtensionPoint>() {
-            @Override
-            public void run(VmCapabilitiesExtensionPoint arg) {
-                arg.checkVmCapability(vm, capabilities);
-            }
-        });
+        CollectionUtils.safeForEach(capabilitiesExtensionPoints, arg -> arg.checkVmCapability(vm, capabilities));
     }
 
     public void cleanUpAfterVmFailedToStart(final VmInstanceInventory vm, VmOperation op) {

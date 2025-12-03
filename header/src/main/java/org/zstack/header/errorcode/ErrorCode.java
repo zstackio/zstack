@@ -61,6 +61,10 @@ public class ErrorCode implements Serializable, Cloneable, OpaqueCollection {
         return this;
     }
 
+    public ErrorCode withException(String reason) {
+        return withOpaque(OPAQUE_KEY_EXCEPTION, reason);
+    }
+
     public ErrorCode withException(Throwable e) {
         if (e instanceof OpaqueScripts) {
             withOpaque((OpaqueScripts) e);
@@ -315,5 +319,9 @@ public class ErrorCode implements Serializable, Cloneable, OpaqueCollection {
 
     public void setLocation(String location) {
         withOpaque(OPAQUE_KEY_ERROR_LOCATION, location);
+    }
+
+    public OperationFailureException toException() {
+        return new OperationFailureException(this);
     }
 }

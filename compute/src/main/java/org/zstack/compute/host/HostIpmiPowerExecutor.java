@@ -183,28 +183,27 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
 
     public static Pair<HostPowerStatus, ErrorCode> getPowerStatusWithErrorCode(HostIpmiVO ipmi) {
         if (mockedPowerStatus != null) {
-            return new Pair(mockedPowerStatus, null);
+            return new Pair<>(mockedPowerStatus, null);
         }
 
         if (isIpmiUnConfigured(ipmi)) {
-            return new Pair(HostPowerStatus.UN_CONFIGURED,
+            return new Pair<>(HostPowerStatus.UN_CONFIGURED,
                     operr("ipmi information is not complete."));
         }
 
         ShellResult rst = IPMIToolCaller.fromHostIpmiVo(ipmi).status();
         if (rst.getRetCode() == 0) {
             if (rst.getStdout().trim().equals("Chassis Power is on")) {
-                return new Pair(HostPowerStatus.POWER_ON, null);
+                return new Pair<>(HostPowerStatus.POWER_ON, null);
             } else if (rst.getStdout().trim().equals("Chassis Power is off")) {
-                return new Pair(HostPowerStatus.POWER_OFF, null);
+                return new Pair<>(HostPowerStatus.POWER_OFF, null);
             } else {
-                return new Pair(HostPowerStatus.POWER_UNKNOWN, operr("host[%s] got unexpected return value", ipmi.getUuid()));
+                return new Pair<>(HostPowerStatus.POWER_UNKNOWN, operr("host[%s] got unexpected return value", ipmi.getUuid()));
             }
         } else {
-            return new Pair(HostPowerStatus.POWER_UNKNOWN, operr("host[%s] can not connect ipmi[%s], because:%s",
-                    ipmi.getUuid(),
-                    ipmi.getIpmiAddress(),
-                    rst.getStderr()));
+            return new Pair<>(HostPowerStatus.POWER_UNKNOWN, operr("host[%s] can not connect ipmi[%s]",
+                    ipmi.getUuid(), ipmi.getIpmiAddress())
+                    .withException(rst.getStderr()));
         }
     }
 
@@ -219,9 +218,9 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
         if (rst.getRetCode() == 0) {
             return null;
         } else {
-            return operr("host ipmi[%s] is not reachable.because %s",
-                    ipmi.getIpmiAddress(),
-                    rst.getStderr());
+            return operr("host ipmi[%s] is not reachable",
+                    ipmi.getIpmiAddress())
+                    .withException(rst.getStderr());
         }
     }
 

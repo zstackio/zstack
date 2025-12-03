@@ -93,7 +93,6 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.*;
-import static org.zstack.utils.CollectionUtils.merge;
 
 public class VmInstanceManagerImpl extends AbstractService implements
         VmInstanceManager,
@@ -1238,9 +1237,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         instantiateTagsForCreateMessage(msg, cmsg, finalVo);
                         errorCodes = extEmitterHandleSystemTag(msg, cmsg, finalVo);
                         if (!errorCodes.isEmpty()) {
-                            trigger.fail(operr("handle system tag fail when creating vm because [%s]",
-                                    StringUtils.join(errorCodes.stream().map(ErrorCode::getDescription).collect(Collectors.toList()),
-                                            ", ")));
+                            trigger.fail(multiErr(errorCodes, "handle system tag fail when creating vm"));
                             return;
                         }
                         trigger.next();
@@ -1263,9 +1260,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     public void run(FlowTrigger trigger, Map data) {
                         errorCodes = extEmitterHandleSshKeyPair(msg, cmsg, finalVo);
                         if (!errorCodes.isEmpty()) {
-                            trigger.fail(operr("handle sshkeypair fail when creating vm because [%s]",
-                                    StringUtils.join(errorCodes.stream().map(ErrorCode::getDetails).collect(Collectors.toList()),
-                                            ", ")));
+                            trigger.fail(multiErr(errorCodes, "handle sshkeypair fail when creating vm"));
                             return;
                         }
                         trigger.next();
