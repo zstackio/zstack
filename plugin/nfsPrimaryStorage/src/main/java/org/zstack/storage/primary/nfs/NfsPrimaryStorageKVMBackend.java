@@ -672,6 +672,10 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.setVolumeUuid(sp.getVolumeUuid());
         cmd.setAccountUuid(accounUuid);
         cmd.setHypervisorType(KVMConstant.KVM_HYPERVISOR_TYPE);
+        Long volumeSize = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volumeUuid).select(VolumeVO_.size).findValue();
+        if (volumeSize != null && volumeSize != 0) {
+            cmd.setVirtualSize(volumeSize);
+        }
 
         new KvmCommandSender(host.getUuid()).send(cmd, CREATE_VOLUME_WITH_BACKING_PATH, wrapper -> {
             CreateVolumeWithBackingRsp rsp = wrapper.getResponse(CreateVolumeWithBackingRsp.class);

@@ -317,6 +317,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public String templatePathInCache;
         public String installPath;
         public String volumeUuid;
+        public long virtualSize;
     }
 
     public static class CreateVolumeWithBackingRsp extends AgentResponse {
@@ -2204,6 +2205,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cmd.volumeUuid = volumeUuid;
         cmd.installPath = installPath;
         cmd.templatePathInCache = sp.getPrimaryStorageInstallPath();
+
+        Long volumeSize = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volumeUuid).select(VolumeVO_.size).findValue();
+        if (volumeSize != null && volumeSize != 0) {
+            cmd.virtualSize = volumeSize;
+        }
         httpCall(CREATE_VOLUME_WITH_BACKING_PATH, hostUuid, cmd, CreateVolumeWithBackingRsp.class, new ReturnValueCompletion<CreateVolumeWithBackingRsp>(completion) {
             @Override
             public void success(CreateVolumeWithBackingRsp rsp) {

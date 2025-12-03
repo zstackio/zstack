@@ -279,8 +279,10 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
         CreateVolumeSpec spec = new CreateVolumeSpec();
         spec.setUuid(msg.getVolumeUuid());
-        spec.setSize(msg.getSnapshot().getSize());
         spec.setName(buildVolumeName(msg.getVolumeUuid()));
+
+        Long volumeSize = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).select(VolumeVO_.size).findValue();
+        spec.setSize(volumeSize != null && volumeSize != 0 ? volumeSize : msg.getSnapshot().getSize());
         ReturnValueCompletion<VolumeStats> completion = new ReturnValueCompletion<VolumeStats>(msg) {
             @Override
             public void success(VolumeStats stats) {
