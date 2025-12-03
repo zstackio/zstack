@@ -66,6 +66,24 @@ doc {
 					optional true
 					since "4.3.0"
 				}
+				column {
+					name "searchAllAttributes"
+					enclosedIn ""
+					desc "是否列出所有查询到的属性，默认 false"
+					location "query"
+					type "boolean"
+					optional true
+					since "4.10.28"
+				}
+				column {
+					name "returningAttributes"
+					enclosedIn ""
+					desc "指定补充返回的属性列表。当 searchAllAttributes 为 true 时，本属性无效"
+					location "query"
+					type "List"
+					optional true
+					since "4.10.28"
+				}
 			}
 		}
 
