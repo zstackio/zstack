@@ -130,6 +130,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     @Override
     public void activate(BaseVolumeInfo v, HostInventory h, boolean shareable, ReturnValueCompletion<ActiveVolumeTO> comp) {
         if (VolumeProtocol.CBD.toString().equals(v.getProtocol())) {
+
             comp.success(new CbdVolumeTo());
             return;
         }
@@ -155,7 +156,11 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public String getActivePath(BaseVolumeInfo v, HostInventory h, boolean shareable) {
-        return null;
+        if (VolumeProtocol.CBD.toString().equals(v.getProtocol())) {
+            return convertZbsPathToCbdPath(v.getInstallPath(), this::getPhysicalPoolName);
+        } else {
+            throw new OperationFailureException(operr("not supported protocol[%s] for active", v.getProtocol()));
+        }
     }
 
     @Override
@@ -236,7 +241,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             public void success(CreateVolumeRsp returnValue) {
                 CbdHeartbeatVolumeTO to = new CbdHeartbeatVolumeTO();
                 String zbsPath = returnValue.installPath;
-                to.setInstallPath(ZbsHelper.convertZbsPathToCbdPath(zbsPath, it -> getPhysicalPoolName(it)));
+                to.setInstallPath(ZbsHelper.convertZbsPathToCbdPath(zbsPath, ZbsStorageController.this::getPhysicalPoolName));
                 to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
                 to.setCoveringPaths(config.getPoolNames());
                 comp.success(to);
@@ -1055,7 +1060,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             throw new ApiMessageInterceptionException(argerr("invalid pool name[%s]", current.getLogicalPoolName()));
         }
 
-        if (current.getMdsUrls().isEmpty()) {
+        if (CollectionUtils.isEmpty(current.getPools())) {
             throw new ApiMessageInterceptionException(argerr("ensure at least one MDS is configured"));
         }
 
@@ -1221,6 +1226,10 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         }
 
         private void prepareCmd() {
+            if (cmd instanceof VolumeCommand) {
+                String cbdPath = convertZbsPathToCbdPath(((VolumeCommand) cmd).getPath(), ZbsStorageController.this::getPhysicalPoolName);
+                ((VolumeCommand) cmd).setPath(cbdPath);
+            }
             cmd.setUuid(self.getUuid());
         }
 
