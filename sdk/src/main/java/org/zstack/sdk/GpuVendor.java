@@ -1,11 +1,11 @@
 package org.zstack.sdk;
 
 public enum GpuVendor {
-	INTEL,
+	Intel,
 	AMD,
 	NVIDIA,
-	HAIGUANG,
-	HUAWEI,
-	TIANSHU,
-	OTHER,
+	Haiguang,
+	Huawei,
+	TianShu,
+	Other,
 }
