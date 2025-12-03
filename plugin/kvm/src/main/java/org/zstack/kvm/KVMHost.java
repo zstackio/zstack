@@ -3224,51 +3224,6 @@ public class KVMHost extends HostBase implements Host {
                 });
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = "reapply-vf-mac-filter-on-dst-host";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        List<VmNicVO> vfNics = nics.stream()
-                                .filter(nic -> VmNicType.valueOf(nic.getType()).isUseSRIOV())
-                                .collect(Collectors.toList());
-                        if (vfNics.isEmpty()) {
-                            trigger.next();
-                            return;
-                        }
-
-                        UpdateNicCmd cmd = new UpdateNicCmd();
-                        cmd.setVmInstanceUuid(vmUuid);
-                        cmd.setNics(VmNicInventory.valueOf(vfNics).stream()
-                                .map(KVMHost.this::completeNicInfo)
-                                .collect(Collectors.toList()));
-                        cmd.setAccountUuid(accountMgr.getOwnerAccountUuidOfResource(vmUuid));
-
-//                        KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
-//                        for (KVMPreUpdateNicExtensionPoint ext : pluginRgty.getExtensionList(KVMPreUpdateNicExtensionPoint.class)) {
-//                            ext.preUpdateNic(inv, cmd);
-//                        }
-
-                        String url = UriComponentsBuilder.fromHttpUrl(updateNicPath).host(dstHostMnIp).build().toString();
-                        new Http<>(url, cmd, AttachNicResponse.class).call(dstHostUuid, new ReturnValueCompletion<AttachNicResponse>(trigger) {
-                            @Override
-                            public void success(AttachNicResponse ret) {
-                                if (!ret.isSuccess()) {
-                                    trigger.fail(operr("failed to reapply vf nic mac filter for vm[uuid:%s] on kvm host[uuid:%s, ip:%s], because %s",
-                                            vmUuid, dstHostUuid, dstHostMnIp, ret.getError()));
-                                    return;
-                                }
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
                     String __name__ = "harden-vm-console-on-dst-host";
 
                     @Override
