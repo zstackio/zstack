@@ -463,6 +463,22 @@ class KVMSimulator implements Simulator {
             return new KVMAgentCommands.AgentResponse()
         }
 
+        spec.simulator(KVMConstant.KVM_OVS_CHECK_LOCAL_PORT_PATH) {
+            return new KVMAgentCommands.OvsCheckPortRsp()
+        }
+
+        spec.simulator(KVMConstant.KVM_OVS_SYNC_PORT_PATH) {
+            return new KVMAgentCommands.OvsSyncPortRsp()
+        }
+
+        spec.simulator(KVMConstant.KVM_OVS_SET_REQUESTED_CHASSIS_PATH) {
+            return new KVMAgentCommands.OvsSetRequestedChassisRsp()
+        }
+
+        spec.simulator(KVMConstant.KVM_OVS_SET_DB_CONNECTION_PATH) {
+            return new KVMAgentCommands.OvsSetDbConnectionRsp()
+        }
+
         spec.simulator(KVMConstant.KVM_SYNC_VM_DEVICEINFO_PATH) { HttpEntity<String> e ->
             SyncVmDeviceInfoCmd cmd = JSONObjectUtil.toObject(e.body, SyncVmDeviceInfoCmd.class)
             def rsp = new SyncVmDeviceInfoResponse()
