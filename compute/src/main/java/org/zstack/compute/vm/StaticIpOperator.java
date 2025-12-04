@@ -357,7 +357,9 @@ public class StaticIpOperator {
         CheckIpAvailabilityResult result = nw.checkIpAvailability(struct);
 
         if (!result.isAvailable()) {
-            throw new ApiMessageInterceptionException(argerr("IP[%s] is not available on the L3 network[uuid:%s] because: %s", ip, l3.getUuid(), result.getReason()));
+            throw new ApiMessageInterceptionException(argerr("IP[%s] is not available on the L3 network[uuid:%s]",
+                    ip, l3.getUuid())
+                    .withException(result.getReason()));
         }
     }
 
