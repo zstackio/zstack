@@ -318,8 +318,7 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
         validateSystemTagInApiMessage(msg);
     }
 
-    public void validateSystemTagInApiMessage(APIMessage msg) {
-        Map<String, NicIpAddressInfo> staticIps = getNicNetworkInfoBySystemTag(msg.getSystemTags());
+    public List<String> fillUpStaticIpInfoToVmNics(Map<String, NicIpAddressInfo> staticIps) {
         List<String> newSystags = new ArrayList<>();
         for (Map.Entry<String, NicIpAddressInfo> e : staticIps.entrySet()) {
             String l3Uuid = e.getKey();
@@ -350,7 +349,7 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                         ));
                     } else if (!nicIp.ipv4Netmask.equals(ipRangeVO.getNetmask())) {
                         throw new ApiMessageInterceptionException(operr("netmask error, expect: %s, got: %s",
-                                    ipRangeVO.getNetmask(), nicIp.ipv4Netmask));
+                                ipRangeVO.getNetmask(), nicIp.ipv4Netmask));
                     }
 
                     if (StringUtils.isEmpty(nicIp.ipv4Gateway)) {
@@ -397,10 +396,16 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                     }
                 }
             }
+        }
 
-            if (!newSystags.isEmpty()) {
-                msg.getSystemTags().addAll(newSystags);
-            }
+        return newSystags;
+    }
+
+    public void validateSystemTagInApiMessage(APIMessage msg) {
+        Map<String, NicIpAddressInfo> staticIps = getNicNetworkInfoBySystemTag(msg.getSystemTags());
+        List<String> newSystags = fillUpStaticIpInfoToVmNics(staticIps);
+        if (!newSystags.isEmpty()) {
+            msg.getSystemTags().addAll(newSystags);
         }
     }
 
