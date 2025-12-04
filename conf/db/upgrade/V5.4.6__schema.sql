@@ -212,3 +212,116 @@ CALL fix_missing_architecture_records();
 -- Add new gpu constraint fields
 CALL ADD_COLUMN('ModelVO', 'recommendedGpuNum', 'VARCHAR(256)', 1, NULL);
 CALL ADD_COLUMN('ModelVO', 'gpuConstraintDescription', 'VARCHAR(512)', 1, NULL);
+
+DELIMITER $$
+
+CREATE PROCEDURE update_system_model_service_templates()
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE model_name VARCHAR(255);
+    DECLARE gpu_vendor_name VARCHAR(32);
+    DECLARE py_version VARCHAR(255);
+    DECLARE cuda_version VARCHAR(255);
+    DECLARE cann_version VARCHAR(255);
+    DECLARE fw_version VARCHAR(255);
+    DECLARE service_uuid VARCHAR(32);
+
+    DECLARE templates_cursor CURSOR FOR
+        SELECT name, vendor, pythonVersion, cudaVersion, cannVersion, frameworkVersion FROM system_models_templates_to_update;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    CREATE TEMPORARY TABLE IF NOT EXISTS system_models_templates_to_update (
+        name VARCHAR(255),
+        vendor VARCHAR(32),
+        pythonVersion VARCHAR(255),
+        cudaVersion VARCHAR(255),
+        cannVersion VARCHAR(255),
+        frameworkVersion VARCHAR(255)
+    );
+
+    INSERT INTO system_models_templates_to_update (name, vendor, pythonVersion, cudaVersion, cannVersion, frameworkVersion) VALUES
+     ('vLLM-0.7.2', 'NVIDIA', '3.10', '12.5', NULL, '0.7.2'),
+     ('vLLM-0.8.5', 'NVIDIA', '3.10', '12.5', NULL, '0.8.5'),
+     ('vLLM-0.9.2', 'NVIDIA', '3.10', '12.5', NULL, '0.9.2'),
+     ('vLLM-0.11.0', 'NVIDIA', '3.10', '12.5', NULL, '0.11.0'),
+     ('SGLang-0.4.9.post1', 'NVIDIA', '3.10', '12.5', NULL, '0.4.9.post1'),
+     ('SGLang-0.5.2', 'NVIDIA', '3.10', '12.5', NULL, '0.5.2'),
+     ('SGLang-0.5.4', 'NVIDIA', '3.10', '12.5', NULL, '0.5.4'),
+     ('Transformers-4.48.3', 'NVIDIA', '3.10', '12.5', NULL, '4.48.3'),
+     ('Transformers-4.57.1', 'NVIDIA', '3.10', '12.5', NULL, '4.57.1'),
+     ('Transformers-4.56.2', 'NVIDIA', '3.10', '12.5', NULL, '4.56.2'),
+     ('sentence_transformers-3.1.1', 'NVIDIA', '3.10', '12.5', NULL, '3.1.1'),
+     ('Diffusers-0.30.0', 'NVIDIA', '3.10', '12.5', NULL, '0.30.0'),
+     ('Diffusers-0.35.1', 'NVIDIA', '3.10', '12.5', NULL, '0.35.1'),
+     ('MindIE-2.0.RC1-910B', 'Huawei', '3.9', NULL, '8.0', '2.0.RC1'),
+     ('MindIE-2.1.RC1-910B', 'Huawei', '3.9', NULL, '8.0', '2.1.RC1'),
+     ('MindIE-2.1.RC2-910B', 'Huawei', '3.9', NULL, '8.0', '2.1.RC2'),
+     ('MindIE-1.0.0-310P', 'Huawei', '3.9', NULL, '7.0', '1.0.0'),
+     ('vLLM-Ascend-0.11.0.rc0', 'Huawei', '3.9', NULL, '8.0', '0.11.0.rc0'),
+     ('vLLM-0.5.0-HYGON-Z100L', 'Haiguang', '3.10', NULL, NULL, '0.5.0'),
+     ('vLLM-0.8.5-HYGON-K100-AI', 'Haiguang', '3.10', NULL, NULL, '0.8.5'),
+     ('vLLM-0.9.2-HYGON-K100-AI', 'Haiguang', '3.10', NULL, NULL, '0.9.2'),
+     ('vLLM-0.7.2-HYGON-K100-AI', 'Haiguang', '3.10', NULL, NULL, '0.7.2'),
+     ('MinerU2.5-2509', 'NVIDIA', '3.10', '12.5', NULL, '2.5');
+
+    OPEN templates_cursor;
+    update_template_loop: LOOP
+        FETCH templates_cursor INTO model_name, gpu_vendor_name, py_version, cuda_version, cann_version, fw_version;
+        IF done THEN
+            LEAVE update_template_loop;
+        END IF;
+
+        SELECT COUNT(*) INTO @cnt FROM `zstack`.`ModelServiceVO` WHERE name = model_name AND system = 1;
+        IF @cnt > 0 THEN
+            SELECT uuid INTO service_uuid FROM `zstack`.`ModelServiceVO` WHERE name = model_name AND system = 1 LIMIT 1;
+        ELSE
+            SET service_uuid = NULL;
+        END IF;
+
+        IF service_uuid IS NOT NULL THEN
+            SELECT COUNT(*) INTO @tmpl_cnt FROM `zstack`.`ModelServiceTemplateVO` WHERE `modelServiceUuid` = service_uuid;
+            IF @tmpl_cnt > 0 THEN
+                UPDATE `zstack`.`ModelServiceTemplateVO` SET
+                    `pythonVersionSemver` = py_version,
+                    `cudaVersion` = cuda_version,
+                    `cannVersion` = cann_version,
+                    `frameworkVersionSemver` = fw_version,
+                    `gpuVendor` = gpu_vendor_name
+                WHERE `modelServiceUuid` = service_uuid;
+                SELECT CONCAT('INFO: Updated ModelServiceTemplateVO for service_uuid=', service_uuid, ', updated_rows=', ROW_COUNT()) AS msg;
+            ELSE
+                INSERT INTO `zstack`.`ModelServiceTemplateVO` (`uuid`, `modelServiceUuid`, `pythonVersionSemver`, `cudaVersion`, `cannVersion`, `frameworkVersionSemver`, `gpuVendor`)
+                VALUES (REPLACE(UUID(),'-',''), service_uuid, py_version, cuda_version, cann_version, fw_version, gpu_vendor_name);
+                SELECT CONCAT('INFO: Inserted ModelServiceTemplateVO for service_uuid=', service_uuid, ', inserted_rows=', ROW_COUNT()) AS msg;
+            END IF;
+
+            -- Ensure ModelServiceGpuVendorVO record exists with the corresponding gpuVendor for this modelServiceUuid
+            SELECT COUNT(*) INTO @gv_cnt FROM `zstack`.`ModelServiceGpuVendorVO`
+                WHERE `modelServiceUuid` = service_uuid AND `gpuVendor` = gpu_vendor_name;
+            IF @gv_cnt = 0 THEN
+                INSERT INTO `zstack`.`ModelServiceGpuVendorVO` (`modelServiceUuid`, `gpuVendor`)
+                VALUES (service_uuid, gpu_vendor_name);
+                SELECT CONCAT('INFO: Inserted ModelServiceGpuVendorVO for service_uuid=', service_uuid, ', gpuVendor=', gpu_vendor_name) AS msg;
+            ELSE
+                SELECT CONCAT('INFO: ModelServiceGpuVendorVO exists for service_uuid=', service_uuid, ', gpuVendor=', gpu_vendor_name) AS msg;
+            END IF;
+        ELSE
+            SELECT CONCAT('WARN: Service not found for model=', model_name, ', skipping template and gpuVendor update.') AS msg;
+        END IF;
+
+        SET service_uuid = NULL;
+    END LOOP;
+    CLOSE templates_cursor;
+
+    DROP TEMPORARY TABLE IF EXISTS system_models_templates_to_update;
+END $$
+DELIMITER ;
+
+CALL update_system_model_service_templates();
+DROP PROCEDURE IF EXISTS update_system_model_service_templates;
+
+Update ModelServiceTemplateVO set gpuVendor = 'Huawei' where gpuVendor = 'HUAWEI';
+Update ModelServiceTemplateVO set gpuVendor = 'Haiguang' where gpuVendor = 'HAIGUANG';
+Update ModelServiceTemplateVO set gpuVendor = 'TianShu' where gpuVendor = 'TIANSHU';
+Update ModelServiceTemplateVO set gpuVendor = 'Intel' where gpuVendor = 'INTEL';
