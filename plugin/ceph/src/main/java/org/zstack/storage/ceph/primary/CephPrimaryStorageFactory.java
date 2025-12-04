@@ -785,6 +785,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                     dbf.update(vo);
 
                     struct.getVolumeSnapshotStruct().setCurrent(treply.getInventory());
+                    ((List<VolumeSnapshotInventory>) flowData.get(VolumeSnapshotConstant.INTEGRITY_VOLUME_SNAPSHOTS)).add(treply.getInventory());
                     whileCompletion.done();
                 }
             });
