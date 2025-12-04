@@ -10,6 +10,7 @@ public class QemuKvmVersion {
 
     private static final ComparableVersion supportMirrorBitmapVersion = new ComparableVersion("4.2.0-627");
     private static final ComparableVersion supportBackgroundBackupVersion = new ComparableVersion("6.2.0");
+    private static final ComparableVersion originQemuVersion = new ComparableVersion("8.2.0");
 
     public QemuKvmVersion(String version) {
         this.version = Arrays.stream(version.split("-")).
@@ -23,5 +24,9 @@ public class QemuKvmVersion {
 
     public boolean supportBackgroundBackup() {
         return new ComparableVersion(version).compareTo(supportBackgroundBackupVersion) >= 0;
+    }
+
+    public boolean isOriginalQemu() {
+        return new ComparableVersion(version).compareTo(originQemuVersion) >= 0;
     }
 }
