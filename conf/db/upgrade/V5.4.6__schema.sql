@@ -108,3 +108,103 @@ Update ModelServiceGpuVendorVO set gpuVendor = 'Intel' where gpuVendor = 'INTEL'
 
 CALL ADD_COLUMN('GpuDeviceVO', 'isolated', 'TINYINT(1)', 1, NULL);
 CALL ADD_COLUMN('GpuDeviceSpecVO', 'isolated', 'TINYINT(1)', 1, NULL);
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS fix_missing_architecture_records$$
+
+CREATE PROCEDURE fix_missing_architecture_records()
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE v_model_service_uuid VARCHAR(32);
+    DECLARE v_architecture VARCHAR(32);
+    DECLARE v_exists INT;
+
+    -- Cursor to find all model services that have templates but missing architecture records
+    DECLARE service_cursor CURSOR FOR
+        SELECT DISTINCT mst.modelServiceUuid, mst.cpuArchitecture
+        FROM ModelServiceTemplateVO mst
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM ModelServiceCpuArchitectureVO msca
+            WHERE msca.modelServiceUuid = mst.modelServiceUuid
+            AND msca.architecture = mst.cpuArchitecture
+        )
+        ORDER BY mst.modelServiceUuid, mst.cpuArchitecture;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    -- Start transaction
+    START TRANSACTION;
+
+    -- Create a temporary table to store statistics
+    CREATE TEMPORARY TABLE IF NOT EXISTS fix_stats (
+            total_services INT DEFAULT 0,
+            total_records_added INT DEFAULT 0
+        );
+
+    INSERT INTO fix_stats VALUES (0, 0);
+
+    -- Open cursor and process each missing architecture record
+    OPEN service_cursor;
+
+    read_loop: LOOP
+        FETCH service_cursor INTO v_model_service_uuid, v_architecture;
+
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        -- Double check if the record doesn't exist (to avoid duplicates)
+        SELECT COUNT(*) INTO v_exists
+        FROM ModelServiceCpuArchitectureVO
+        WHERE modelServiceUuid = v_model_service_uuid
+          AND architecture = v_architecture;
+
+        IF v_exists = 0 THEN
+            -- Insert the missing architecture record
+            INSERT INTO ModelServiceCpuArchitectureVO (modelServiceUuid, architecture, lastOpDate, createDate)
+            VALUES (
+                v_model_service_uuid,
+                v_architecture,
+                CURRENT_TIMESTAMP(3),
+                CURRENT_TIMESTAMP(3)
+            );
+
+            -- Update statistics
+            UPDATE fix_stats SET total_records_added = total_records_added + 1;
+
+            -- Log the fix
+            SELECT CONCAT('Fixed: Added architecture record [', v_architecture, '] for model service [', v_model_service_uuid, ']') AS log_message;
+        END IF;
+
+    END LOOP;
+
+    CLOSE service_cursor;
+
+    -- Count total affected services
+    UPDATE fix_stats SET total_services = (
+        SELECT COUNT(DISTINCT modelServiceUuid)
+        FROM ModelServiceCpuArchitectureVO
+        WHERE createDate >= (SELECT MIN(createDate) FROM (SELECT createDate FROM ModelServiceCpuArchitectureVO ORDER BY createDate DESC LIMIT 1000) AS recent)
+    );
+
+    -- Display summary
+    SELECT
+        total_records_added AS 'Total Architecture Records Added',
+        (SELECT COUNT(DISTINCT modelServiceUuid) FROM ModelServiceTemplateVO) AS 'Total Model Services with Templates',
+        (SELECT COUNT(DISTINCT modelServiceUuid) FROM ModelServiceCpuArchitectureVO) AS 'Total Model Services with Architecture Records'
+    FROM fix_stats;
+
+    -- Cleanup
+    DROP TEMPORARY TABLE IF EXISTS fix_stats;
+
+        -- Commit transaction
+    COMMIT;
+
+    SELECT 'Fix completed successfully!' AS status;
+END$$
+
+DELIMITER ;
+
+CALL fix_missing_architecture_records();
