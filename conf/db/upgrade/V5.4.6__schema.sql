@@ -208,3 +208,7 @@ END$$
 DELIMITER ;
 
 CALL fix_missing_architecture_records();
+
+-- Add new gpu constraint fields
+CALL ADD_COLUMN('ModelVO', 'recommendedGpuNum', 'VARCHAR(256)', 1, NULL);
+CALL ADD_COLUMN('ModelVO', 'gpuConstraintDescription', 'VARCHAR(512)', 1, NULL);
