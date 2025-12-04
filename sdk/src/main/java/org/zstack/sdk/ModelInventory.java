@@ -116,6 +116,22 @@ public class ModelInventory  {
         return this.minGpuMemory;
     }
 
+    public java.util.List recommendedGpuNum;
+    public void setRecommendedGpuNum(java.util.List recommendedGpuNum) {
+        this.recommendedGpuNum = recommendedGpuNum;
+    }
+    public java.util.List getRecommendedGpuNum() {
+        return this.recommendedGpuNum;
+    }
+
+    public java.lang.String gpuConstraintDescription;
+    public void setGpuConstraintDescription(java.lang.String gpuConstraintDescription) {
+        this.gpuConstraintDescription = gpuConstraintDescription;
+    }
+    public java.lang.String getGpuConstraintDescription() {
+        return this.gpuConstraintDescription;
+    }
+
     public java.lang.String versionSemver;
     public void setVersionSemver(java.lang.String versionSemver) {
         this.versionSemver = versionSemver;

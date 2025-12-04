@@ -61,6 +61,12 @@ public class AddModelAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List modelServiceUuids;
 
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String recommendedGpuNum;
+
+    @Param(required = false, maxLength = 512, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String gpuConstraintDescription;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
