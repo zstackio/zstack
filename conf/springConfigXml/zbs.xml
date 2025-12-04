@@ -21,7 +21,6 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.storage.addon.primary.ExternalPrimaryStorageSvcBuilder" />
             <zstack:extension interface="org.zstack.header.storage.addon.primary.BackupStorageSelector" />
-            <zstack:extension interface="org.zstack.header.storage.snapshot.VolumeSnapshotAfterDeleteExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

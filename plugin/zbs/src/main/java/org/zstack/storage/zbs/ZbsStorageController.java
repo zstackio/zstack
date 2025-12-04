@@ -109,9 +109,10 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         VolumeSnapshotCapability scap = new VolumeSnapshotCapability();
         scap.setSupport(true);
         scap.setArrangementType(VolumeSnapshotCapability.VolumeSnapshotArrangementType.INDIVIDUAL);
+        scap.setPlacementType(VolumeSnapshotCapability.VolumeSnapshotPlacementType.INTERNAL);
         scap.setSupportCreateOnHypervisor(false);
         scap.setSupportLazyDelete(false);
-        scap.setVolumePathFromInnerSnapshotRegex("^[^@]+");
+        scap.setVolumePathFromInternalSnapshotRegex("^[^@]+");
         capabilities.setSnapshotCapability(scap);
         capabilities.setSupportShareableVolume(true);
         capabilities.setSupportCloneFromVolume(false);
