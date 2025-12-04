@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.StringDSL.StringWrapper;
@@ -20,6 +19,8 @@ import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.StringDSL.ln;
+import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_BASH_ERROR;
+import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_BASH_OUTPUT;
 
 /**
  * Created by frank on 12/6/2015.
@@ -104,8 +105,10 @@ public class SshFolderMd5Checker implements AnsibleChecker {
         String srcScript = script.format(srcFolder);
         ShellResult srcRes = ShellUtils.runAndReturn(srcScript, false);
         if (!srcRes.isReturnCode(0)) {
-            throw new OperationFailureException(operr("cannot check md5sum of files in the folder[%s].\nstdout:%s\nstderr:%s", srcFolder,
-                            srcRes.getStdout(), srcRes.getStderr()));
+            throw operr("cannot check md5sum of files in the folder[%s]", srcFolder)
+                    .withOpaque(OPAQUE_KEY_BASH_OUTPUT, srcRes.getStdout())
+                    .withOpaque(OPAQUE_KEY_BASH_ERROR, srcRes.getStderr())
+                    .toException();
         }
 
         String dstScript = script.format(dstFolder, Ssh.shellQuote(password));
@@ -119,12 +122,14 @@ public class SshFolderMd5Checker implements AnsibleChecker {
             // dst folder doesn't existing
             return true;
         } else if (dstRes.getReturnCode() != 0) {
-            throw new OperationFailureException(operr("cannot check md5sum of files in the folder[%s] on the host[ip:%s].\nstdout:%s\nstderr:%s",
-                            dstFolder, hostname, dstRes.getStdout(), dstRes.getStderr()));
+            throw operr("cannot check md5sum of files in the folder[%s] on the host[ip:%s]", dstFolder, hostname)
+                    .withOpaque(OPAQUE_KEY_BASH_OUTPUT, dstRes.getStdout())
+                    .withOpaque(OPAQUE_KEY_BASH_ERROR, dstRes.getStderr())
+                    .toException();
         }
 
-        Map<String, String> srcMd5sum = new HashMap<String, String>();
-        Map<String, String> dstMd5sum = new HashMap<String, String>();
+        Map<String, String> srcMd5sum = new HashMap<>();
+        Map<String, String> dstMd5sum = new HashMap<>();
 
         for (String s : srcRes.getStdout().split("\n")) {
             if (StringUtils.isBlank(s)) {

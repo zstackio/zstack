@@ -105,7 +105,7 @@ public class ElaborationManagerImpl extends AbstractService {
                                     PathUtil.scanFolder(files, folder.getAbsolutePath());
                                 }
                             } catch (Exception e) {
-                                trigger.fail(operr("Unable to scan folder: %s", e.getMessage()));
+                                trigger.fail(operr("unable to scan folder").withException(e.getMessage()));
                                 return;
                             }
                             if (files.isEmpty()) {

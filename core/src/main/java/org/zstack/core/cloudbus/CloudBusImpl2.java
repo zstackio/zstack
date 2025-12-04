@@ -682,7 +682,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 Message msgInstance = (Message) msgClass.newInstance();
                 msgInstance.setHeaders(headers);
                 msgInstance.setId((String) msg.get("id"));
-                replyErrorByMessageType(msgInstance, argerr("message is not in corrected JSON mediaType, %s", errMsg));
+                replyErrorByMessageType(msgInstance, argerr("message is not in correct JSON mediaType").withException(errMsg));
             } catch (Exception e) {
                 logger.warn(String.format("unable to handle JsonSyntaxException of message: %s", msgStr), e);
             }
