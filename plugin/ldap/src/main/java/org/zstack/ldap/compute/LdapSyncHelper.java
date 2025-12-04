@@ -1,5 +1,6 @@
 package org.zstack.ldap.compute;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -378,6 +379,9 @@ public class LdapSyncHelper {
     private String[] buildReturnAttribute() {
         Set<String> attributeSet = new HashSet<>(Arrays.asList(LdapConstant.QUERY_LDAP_ENTRY_MUST_RETURN_ATTRIBUTES));
         attributeSet.add(findGlobalUuidKey());
+        if (StringUtils.isNotEmpty(taskSpec.getUsernameProperty())) {
+            attributeSet.add(taskSpec.getUsernameProperty());
+        }
         return attributeSet.toArray(new String[0]);
     }
 
