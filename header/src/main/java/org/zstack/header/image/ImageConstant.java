@@ -8,6 +8,7 @@ public interface ImageConstant {
         RootVolumeTemplate,
         DataVolumeTemplate,
         ISO,
+        Kernel,
     }
 
     String ACTION_CATEGORY = "image";

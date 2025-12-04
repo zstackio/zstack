@@ -2146,6 +2146,13 @@ public class KVMAgentCommands {
         private boolean cpuHypervisorFeature = true;
         @GrayVersion(value = "5.0.0")
         private List<String> oemStrings = new ArrayList<>();
+        @GrayVersion(value = "4.8.30")
+        private String imageUuid;
+        @GrayVersion(value = "4.8.30")
+        @NoLogging
+        private String psUrl;
+        @GrayVersion(value = "4.8.30")
+        private String guestOsType;
 
         // TODO: only for test
         @GrayVersion(value = "5.0.0")
@@ -2284,6 +2291,14 @@ public class KVMAgentCommands {
 
         public void setApplianceVm(boolean applianceVm) {
             isApplianceVm = applianceVm;
+        }
+
+        public String getGuestOsType() {
+            return guestOsType;
+        }
+
+        public void setGuestOsType(String guestOsType) {
+            this.guestOsType = guestOsType;
         }
 
         public String getSystemSerialNumber() {
@@ -2541,6 +2556,22 @@ public class KVMAgentCommands {
 
         public void setMemBalloon(VirtualDeviceInfo memBalloon) {
             this.memBalloon = memBalloon;
+        }
+
+        public String getImageUuid() {
+            return imageUuid;
+        }
+
+        public void setImageUuid(String imageUuid) {
+            this.imageUuid = imageUuid;
+        }
+
+        public String getPsUrl() {
+            return psUrl;
+        }
+
+        public void setPsUrl(String psUrl) {
+            this.psUrl = psUrl;
         }
 
         public List<VolumeTO> getDataVolumes() {

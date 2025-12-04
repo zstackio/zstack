@@ -31,7 +31,7 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, AddI
     @APIParam(maxLength = 1024)
     @NoLogging(type = NoLogging.Type.Uri)
     private String url;
-    @APIParam(required = false, validValues = {"RootVolumeTemplate", "ISO", "DataVolumeTemplate"})
+    @APIParam(required = false, validValues = {"RootVolumeTemplate", "ISO", "DataVolumeTemplate", "Kernel"})
     private String mediaType;
     @APIParam(maxLength = 255, required = false)
     private String guestOsType;
@@ -40,7 +40,7 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, AddI
     private boolean system;
     @APIParam(required = false)
     private String format;
-    @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
+    @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio", "Embedded"})
     private String platform;
     @APIParam(nonempty = true, resourceType = BackupStorageVO.class, noOwnerCheck = true)
     private List<String> backupStorageUuids;
