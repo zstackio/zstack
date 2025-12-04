@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
-import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
@@ -28,8 +27,6 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
     private HostCapacityOverProvisioningManager ratioMgr;
     @Autowired
     private HostCpuOverProvisioningManager cpuRatioMgr;
-    @Autowired
-    private PluginRegistry pluginRgty;
 
     private boolean memoryCheck(long vmMemSize, long oldMemory, HostVO hvo) {
         if (HostAllocatorGlobalConfig.HOST_ALLOCATOR_MAX_MEMORY.value(Boolean.class)) {
@@ -40,6 +37,7 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
 
         return ratioMgr.calculateHostAvailableMemoryByRatio(hvo.getUuid(), hvo.getCapacity().getAvailableMemory()) >= vmMemSize;
     }
+
 
     private List<HostVO> allocate(List<HostVO> vos, long cpu, long memory, long oldMemory) {
         return vos.parallelStream()
