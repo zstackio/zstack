@@ -1331,6 +1331,7 @@ public class VirtualRouter extends ApplianceVmBase {
             info.setGateway(nicInventory.getGateway());
             info.setMac(nicInventory.getMac());
             info.setNetmask(nicInventory.getNetmask());
+            fillNicBondMode(nicInventory, info);
             cmd.setNics(Arrays.asList(info));
 
             VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();
