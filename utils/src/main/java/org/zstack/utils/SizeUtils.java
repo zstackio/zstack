@@ -29,10 +29,6 @@ public class SizeUtils {
     private static final String B_SUFFIX = "B";
     private static final String b_SUFFIX = "b";
 
-    public static boolean isPositive(Number i){
-        return NumberUtils.isPositive(i);
-    }
-
     /**
      * <p>Check string is a valid size string with 2 characters size units</p>
      * <p>Valid size units list below:

@@ -96,6 +96,7 @@ class KVMSimulator implements Simulator {
                 rsp.usedMemory = 0
                 rsp.cpuSpeed = 1
                 rsp.cpuSockets = 2
+                rsp.cpuCoreNum = 4
             } else {
                 rsp.usedCpu = kspec.usedCpu
                 rsp.cpuNum = kspec.totalCpu
@@ -103,6 +104,7 @@ class KVMSimulator implements Simulator {
                 rsp.usedMemory = kspec.usedMem
                 rsp.cpuSpeed = 1
                 rsp.cpuSockets = kspec.cpuSockets
+                rsp.cpuCoreNum = kspec.cpuCores
             }
 
             return rsp

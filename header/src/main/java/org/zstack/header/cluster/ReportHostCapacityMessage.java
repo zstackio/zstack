@@ -1,6 +1,5 @@
 package org.zstack.header.cluster;
 
-import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedReplyMessage;
 
 public class ReportHostCapacityMessage extends NeedReplyMessage {
@@ -10,6 +9,7 @@ public class ReportHostCapacityMessage extends NeedReplyMessage {
     private String hostUuid;
     private int cpuNum;
     private int cpuSockets;
+    private int cpuCoreNum;
 
     public int getCpuSockets() {
         return cpuSockets;
@@ -17,6 +17,14 @@ public class ReportHostCapacityMessage extends NeedReplyMessage {
 
     public void setCpuSockets(int cpuSockets) {
         this.cpuSockets = cpuSockets;
+    }
+
+    public int getCpuCoreNum() {
+        return cpuCoreNum;
+    }
+
+    public void setCpuCoreNum(int cpuCoreNum) {
+        this.cpuCoreNum = cpuCoreNum;
     }
 
     public int getCpuNum() {

@@ -1,8 +1,8 @@
 package org.zstack.header.allocator;
 
 import org.zstack.header.search.Inventory;
+import org.zstack.utils.CollectionUtils;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -15,6 +15,7 @@ public class HostCapacityInventory {
     private Long totalCpu;
     private Integer cpuNum;
     private Integer cpuSockets;
+    private Integer cpuCoreNum;
     private Long availableMemory;
     private Long availableCpu;
     private Long totalPhysicalMemory;
@@ -31,15 +32,12 @@ public class HostCapacityInventory {
         inv.setTotalPhysicalMemory(vo.getTotalPhysicalMemory());
         inv.setCpuNum(vo.getCpuNum());
         inv.setCpuSockets(vo.getCpuSockets());
+        inv.setCpuCoreNum(vo.getCpuCoreNum());
         return inv;
     }
 
     public static List<HostCapacityInventory> valueOf(Collection<HostCapacityVO> vos) {
-        List<HostCapacityInventory> invs = new ArrayList<HostCapacityInventory>();
-        for (HostCapacityVO vo : vos) {
-            invs.add(valueOf(vo));
-        }
-        return invs;
+        return CollectionUtils.transform(vos, HostCapacityInventory::valueOf);
     }
 
     public Integer getCpuSockets() {
@@ -48,6 +46,14 @@ public class HostCapacityInventory {
 
     public void setCpuSockets(Integer cpuSockets) {
         this.cpuSockets = cpuSockets;
+    }
+
+    public Integer getCpuCoreNum() {
+        return cpuCoreNum;
+    }
+
+    public void setCpuCoreNum(Integer cpuCoreNum) {
+        this.cpuCoreNum = cpuCoreNum;
     }
 
     public Integer getCpuNum() {
