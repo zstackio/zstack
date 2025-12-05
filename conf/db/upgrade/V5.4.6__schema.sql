@@ -329,3 +329,25 @@ Update ModelServiceTemplateVO set gpuVendor = 'Intel' where gpuVendor = 'INTEL';
 CALL ADD_COLUMN('GpuDeviceVO', 'gpuStatus', 'varchar(16)', 1, NULL);
 
 UPDATE `zstack`.`GpuDeviceVO` SET `gpuStatus`='nominal' WHERE `gpuStatus` IS NULL;
+
+-- Add supportMetrics column to ModelServiceInstanceGroupVO
+DROP PROCEDURE IF EXISTS addModelServiceInstanceGroupSupportMetricsColumn;
+DELIMITER $$
+CREATE PROCEDURE addModelServiceInstanceGroupSupportMetricsColumn()
+BEGIN
+    DECLARE columnExists BOOLEAN DEFAULT FALSE;
+
+    SELECT COUNT(*) INTO columnExists
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'ModelServiceInstanceGroupVO'
+    AND COLUMN_NAME = 'supportMetrics'
+    AND TABLE_SCHEMA = 'zstack';
+
+    IF columnExists = FALSE THEN
+        ALTER TABLE `zstack`.`ModelServiceInstanceGroupVO` ADD COLUMN `supportMetrics` TEXT DEFAULT NULL;
+    END IF;
+END $$
+DELIMITER ;
+
+CALL addModelServiceInstanceGroupSupportMetricsColumn();
+DROP PROCEDURE IF EXISTS addModelServiceInstanceGroupSupportMetricsColumn;

@@ -108,4 +108,12 @@ public class ModelServiceInstanceGroupInventory  {
         return this.yaml;
     }
 
+    public java.util.List supportMetrics;
+    public void setSupportMetrics(java.util.List supportMetrics) {
+        this.supportMetrics = supportMetrics;
+    }
+    public java.util.List getSupportMetrics() {
+        return this.supportMetrics;
+    }
+
 }
