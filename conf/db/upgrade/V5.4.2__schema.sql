@@ -167,7 +167,96 @@ CREATE TABLE IF NOT EXISTS `zstack`.`NfvInstGroupConfigTaskVO` (
 CALL ADD_COLUMN('OvnControllerVmInstanceVO', 'nbClusterStatus', 'VARCHAR(32)', 1, 'Unknown');
 CALL ADD_COLUMN('OvnControllerVmInstanceVO', 'sbClusterStatus', 'VARCHAR(32)', 1, 'Unknown');
 
+-- ========================================
+-- Upgrade OvnControllerVmOfferingVO hierarchy
+-- ========================================
+-- Step 1: Create NfvInstOfferingVO records for existing OvnControllerVmOfferingVO
+-- This must be done BEFORE dropping columns to preserve data
+INSERT INTO NfvInstOfferingVO (uuid, managementNetworkUuid, imageUuid, zoneUuid)
+SELECT
+    ovo.uuid,
+    ovo.managementNetworkUuid,
+    ovo.imageUuid,
+    ovo.zoneUuid
+FROM OvnControllerVmOfferingVO ovo
+WHERE NOT EXISTS (
+    SELECT 1 FROM NfvInstOfferingVO nivo WHERE nivo.uuid = ovo.uuid
+);
+
+-- Step 2: Now safe to drop columns from OvnControllerVmOfferingVO
 ALTER TABLE OvnControllerVmOfferingVO DROP FOREIGN KEY fkOvnControllerVmOfferingVOL3NetworkEO;
 CALL DROP_COLUMN('OvnControllerVmOfferingVO', 'managementNetworkUuid');
 CALL DROP_COLUMN('OvnControllerVmOfferingVO', 'imageUuid');
 CALL DROP_COLUMN('OvnControllerVmOfferingVO', 'zoneUuid');
+
+-- ========================================
+-- Upgrade OvnControllerVmInstanceVO hierarchy
+-- ========================================
+-- Step 3: For each OvnControllerVmInstanceVO, create NfvInstGroupVO and NfvInstVO
+-- Create groups for each OVN controller instance
+INSERT INTO NfvInstGroupVO (
+    uuid,
+    name,
+    description,
+    nfvInstOfferingUuid,
+    instType,
+    funcType,
+    configVersion,
+    netOsDistro,
+    baseOsDistro,
+    status,
+    operationMode,
+    vipUuid,
+    primaryStorageUuid,
+    clusterUuid,
+    zoneUuid,
+    createDate,
+    lastOpDate
+)
+SELECT
+    ovn.uuid,                                                            -- group uuid: ovn.uuid
+   (CONCAT('OVN-Controller-Group-', vm.name), 255),                      -- group name
+    CONCAT('Auto-created group for OVN controller ', vm.name), -- description
+    ovn_off.uuid,                                       -- nfvInstOfferingUuid
+    'KVM',                                                       -- instType
+    'OVN_SDN_CONTROLLER',                                       -- funcType
+    0,                                                      -- configVersion
+    'euler',                                                  -- netOsDistro
+    'euler',                                         -- baseOsDistro
+    'Initializing',                                        -- status
+    'Normal',                                       -- operationMode
+    NULL,                                                  -- vipUuid (will be set later if needed)
+    vm.rootVolumeUuid,                                     -- primaryStorageUuid (from root volume)
+    vm.clusterUuid,                                        -- clusterUuid
+    vm.zoneUuid,                                           -- zoneUuid
+    vm.createDate,                                         -- createDate
+    vm.lastOpDate                                          -- lastOpDate
+FROM OvnControllerVmInstanceVO ovn
+INNER JOIN VmInstanceVO vm ON ovn.uuid = vm.uuid
+LEFT JOIN OvnControllerVmOfferingVO ovn_off ON vm.instanceOfferingUuid = ovn_off.uuid
+WHERE NOT EXISTS (
+    SELECT 1 FROM NfvInstGroupVO nfv_grp WHERE nfv_grp.uuid = ovn.uuid
+);
+
+-- Step 4: Create NfvInstVO records for each OvnControllerVmInstanceVO
+INSERT INTO NfvInstVO (
+    uuid,
+    nfvInstGroupUuid,
+    configVersion,
+    netOsDistro,
+    baseOsDistro,
+    clusterStatus,
+    statusDetail
+)
+SELECT
+    ovn.uuid,
+    ovn.uuid,                        -- link to the group we just created
+    0,                                                     -- configVersion
+    'euler',                                                    -- netOsDistro (empty string, required field)
+    'euler',                                                    -- baseOsDistro (empty string, required field)
+    'Unknown',                                             -- clusterStatus
+    NULL                                                   -- statusDetail
+FROM OvnControllerVmInstanceVO ovn
+WHERE NOT EXISTS (
+    SELECT 1 FROM NfvInstVO nfv WHERE nfv.uuid = ovn.uuid
+);
