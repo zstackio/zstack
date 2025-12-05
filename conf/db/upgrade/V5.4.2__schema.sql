@@ -215,7 +215,7 @@ INSERT INTO NfvInstGroupVO (
 )
 SELECT
     ovn.uuid,                                                            -- group uuid: ovn.uuid
-   (CONCAT('OVN-Controller-Group-', vm.name), 255),                      -- group name
+    LEFT(CONCAT('OVN-Controller-Group-', vm.name), 255),                      -- group name
     CONCAT('Auto-created group for OVN controller ', vm.name), -- description
     ovn_off.uuid,                                       -- nfvInstOfferingUuid
     'KVM',                                                       -- instType
