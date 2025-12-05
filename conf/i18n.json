@@ -34103,9 +34103,9 @@
     "fileName": "src/main/java/org/zstack/usbDevice/UsbDeviceApiInterceptor.java"
   },
   {
-    "raw": "cannot migrate vm[uuid:%s] because there are pci devices attached",
-    "en_US": "cannot migrate vm[uuid:{0}] because there are pci devices attached",
-    "zh_CN": "云主机[uuid:{0}]加载了pci设备无法迁移",
+    "raw": "cannot migrate vm[uuid:%s] because there are usb devices attached",
+    "en_US": "cannot migrate vm[uuid:{0}] because there are usb devices attached",
+    "zh_CN": "云主机[uuid:{0}]加载了usb设备无法迁移",
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
