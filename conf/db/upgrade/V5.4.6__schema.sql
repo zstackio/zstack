@@ -325,3 +325,7 @@ Update ModelServiceTemplateVO set gpuVendor = 'Huawei' where gpuVendor = 'HUAWEI
 Update ModelServiceTemplateVO set gpuVendor = 'Haiguang' where gpuVendor = 'HAIGUANG';
 Update ModelServiceTemplateVO set gpuVendor = 'TianShu' where gpuVendor = 'TIANSHU';
 Update ModelServiceTemplateVO set gpuVendor = 'Intel' where gpuVendor = 'INTEL';
+
+CALL ADD_COLUMN('GpuDeviceVO', 'gpuStatus', 'varchar(16)', 1, NULL);
+
+UPDATE `zstack`.`GpuDeviceVO` SET `gpuStatus`='nominal' WHERE `gpuStatus` IS NULL;
