@@ -17,6 +17,7 @@ public final class OpaqueConstants {
     public static final String OPAQUE_KEY_SSH_OUTPUT = "ssh.output";
     public static final String OPAQUE_KEY_SSH_ERROR = "ssh.error";
 
+    public static final String OPAQUE_KEY_RESPONSE_OUTPUT = "response.output";
     public static final String OPAQUE_KEY_RESPONSE_ERROR = "response.error";
 
     public static final String OPAQUE_KEY_PARAMETER_NAME = "parameter.name";

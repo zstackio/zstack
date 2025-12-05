@@ -14,7 +14,6 @@ import org.zstack.core.db.SQLBatch;
 import org.zstack.header.Component;
 import org.zstack.header.core.encrypt.*;
 import org.zstack.header.errorcode.ErrorableValue;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
@@ -216,7 +215,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                                 ErrorableValue<String> encrypt = encrypt(decryptedString, key);
                                 if (encrypt.error != null) {
                                     logger.error(String.format("Encryption error : %s", encrypt.error));
-                                    throw new OperationFailureException(operr("Encryption error : %s", encrypt.error));
+                                    throw operr("encryption error").withCause(encrypt.error).toException();
                                 }
 
                                 String sql = String.format("update %s set %s = :encrypted where uuid = :uuid", className, field.getName());

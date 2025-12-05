@@ -539,10 +539,10 @@ public class RESTFacadeImpl extends AbstractRESTFacade {
                                 http2.getPath(),
                                 exception.getStatusCode(), exception.getResponseBodyAsString());
                     } else if (e instanceof ResourceAccessException) {
-                        return operr("failed to %s to %s, IO Error: %s",
+                        return operr("failed to %s to %s: IO Error",
                                 http2.getMethod().toString().toLowerCase(),
-                                http2.getPath(),
-                                e.getMessage());
+                                http2.getPath())
+                                .withException(e);
                     }
                     return null;
                 });
