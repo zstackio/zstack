@@ -214,17 +214,17 @@ INSERT INTO NfvInstGroupVO (
     lastOpDate
 )
 SELECT
-    ovn.uuid,                                                   -- group uuid: ovn.uuid
-    CONCAT('OVN-Controller-Group-', vm.name),              -- group name
+    ovn.uuid,                                                            -- group uuid: ovn.uuid
+   (CONCAT('OVN-Controller-Group-', vm.name), 255),                      -- group name
     CONCAT('Auto-created group for OVN controller ', vm.name), -- description
-    ovn_off.uuid,                                          -- nfvInstOfferingUuid
-    'KVM',                                                 -- instType
-    'OVN_SDN_CONTROLLER',                                  -- funcType
-    0,                                                     -- configVersion
+    ovn_off.uuid,                                       -- nfvInstOfferingUuid
+    'KVM',                                                       -- instType
+    'OVN_SDN_CONTROLLER',                                       -- funcType
+    0,                                                      -- configVersion
     'euler',                                                  -- netOsDistro
-    'euler',                                                  -- baseOsDistro
+    'euler',                                         -- baseOsDistro
     'Initializing',                                        -- status
-    'Normal',                                              -- operationMode
+    'Normal',                                       -- operationMode
     NULL,                                                  -- vipUuid (will be set later if needed)
     vm.rootVolumeUuid,                                     -- primaryStorageUuid (from root volume)
     vm.clusterUuid,                                        -- clusterUuid
@@ -235,7 +235,7 @@ FROM OvnControllerVmInstanceVO ovn
 INNER JOIN VmInstanceVO vm ON ovn.uuid = vm.uuid
 LEFT JOIN OvnControllerVmOfferingVO ovn_off ON vm.instanceOfferingUuid = ovn_off.uuid
 WHERE NOT EXISTS (
-    SELECT 1 FROM NfvInstGroupVO nfv_grp WHERE nfv_grp.uuid = CONCAT('nfv-group-', ovn.uuid)
+    SELECT 1 FROM NfvInstGroupVO nfv_grp WHERE nfv_grp.uuid = ovn.uuid
 );
 
 -- Step 4: Create NfvInstVO records for each OvnControllerVmInstanceVO
