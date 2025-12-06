@@ -99,6 +99,10 @@ public class VmSystemTags {
     public static String SECURITY_ELEMENT_ENABLE_TOKEN = "securityElementEnable";
     public static PatternedSystemTag SECURITY_ELEMENT_ENABLE = new PatternedSystemTag(String.format("securityElementEnable::{%s}", SECURITY_ELEMENT_ENABLE_TOKEN),VmInstanceVO.class);
 
+    // set hygonSecurityElementEnable::true to enable hygon se redirect
+    public static String HYGON_SECURITY_ELEMENT_ENABLE_TOKEN = "hygonSecurityElementEnable";
+    public static PatternedSystemTag HYGON_SECURITY_ELEMENT_ENABLE = new PatternedSystemTag(String.format("hygonSecurityElementEnable::{%s}", HYGON_SECURITY_ELEMENT_ENABLE_TOKEN),VmInstanceVO.class);
+
     // set rdpEnable::true to enable RDP tag
     public static String RDP_ENABLE_TOKEN = "RDPEnable";
     public static PatternedSystemTag RDP_ENABLE = new PatternedSystemTag(String.format("RDPEnable::{%s}",RDP_ENABLE_TOKEN),VmInstanceVO.class);

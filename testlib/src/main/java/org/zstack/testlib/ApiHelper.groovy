@@ -19997,6 +19997,33 @@ abstract class ApiHelper {
     }
 
 
+    def generateHygonMdevDevices(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GenerateHygonMdevDevicesAction.class) Closure c) {
+        def a = new org.zstack.sdk.GenerateHygonMdevDevicesAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def generateMdevDevices(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GenerateMdevDevicesAction.class) Closure c) {
         def a = new org.zstack.sdk.GenerateMdevDevicesAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -31239,6 +31266,35 @@ abstract class ApiHelper {
     }
 
 
+    def queryHygonDevice(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryHygonDeviceAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryHygonDeviceAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def queryIAM2LdapBinding(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryIAM2LdapBindingAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryIAM2LdapBindingAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -41417,6 +41473,33 @@ abstract class ApiHelper {
 
     def unexportNbdVolumes(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UnexportNbdVolumesAction.class) Closure c) {
         def a = new org.zstack.sdk.UnexportNbdVolumesAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def ungenerateHygonMdevDevices(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UngenerateHygonMdevDevicesAction.class) Closure c) {
+        def a = new org.zstack.sdk.UngenerateHygonMdevDevicesAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
