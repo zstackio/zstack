@@ -165,7 +165,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
         }
 
         rmsg.setRequiredHostUuid(spec.getDestHost().getUuid());
-        rmsg.setSize(spec.getRootDiskAllocateSize());
+        rmsg.setSize(spec.getRootDisk().getSize() > 0 ? spec.getRootDisk().getSize() : spec.getRootDiskAllocateSize());
         if (spec.getRootDiskOffering() != null) {
             rmsg.setDiskOfferingUuid(spec.getRootDiskOffering().getUuid());
         }

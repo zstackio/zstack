@@ -261,7 +261,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
         rmsg.setRequiredPrimaryStorageUuid(localStorageUuid);
         rmsg.setPossiblePrimaryStorageTypes(primaryStorageTypes);
         rmsg.setRequiredHostUuid(spec.getDestHost().getUuid());
-        rmsg.setSize(spec.getRootDiskAllocateSize());
+        rmsg.setSize(spec.getRootDisk().getSize() > 0 ? spec.getRootDisk().getSize() : spec.getRootDiskAllocateSize());
         if (spec.getRootDiskOffering() != null) {
             rmsg.setDiskOfferingUuid(spec.getRootDiskOffering().getUuid());
         }
