@@ -6987,7 +6987,7 @@
   {
     "raw": "can not find backup storage, unable to commit volume snapshot[psUuid:%s] as image, destination required PS uuid:%s",
     "en_US": "can not find backup storage, unable to commit volume snapshot[psUuid:{0}] as image, destination required PS uuid:{1}",
-    "zh_CN": "找不到备份存储，无法将卷快照[PSuuid：{0}]作为镜像提交，目标需要PS uuid：{1}",
+    "zh_CN": "找不到镜像存储，无法将卷快照[PSuuid：{0}]作为镜像提交，目标需要PS uuid：{1}",
     "arguments": [
       "vol.getPrimaryStorageUuid()",
       "requiredPsUuid"
