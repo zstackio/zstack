@@ -328,7 +328,7 @@ Update ModelServiceTemplateVO set gpuVendor = 'Intel' where gpuVendor = 'INTEL';
 
 CALL ADD_COLUMN('GpuDeviceVO', 'gpuStatus', 'varchar(16)', 1, NULL);
 
-UPDATE `zstack`.`GpuDeviceVO` SET `gpuStatus`='nominal' WHERE `gpuStatus` IS NULL;
+UPDATE `zstack`.`GpuDeviceVO` SET `gpuStatus`='NOMINAL' WHERE `gpuStatus` IS NULL;
 
 -- Add supportMetrics column to ModelServiceInstanceGroupVO
 DROP PROCEDURE IF EXISTS addModelServiceInstanceGroupSupportMetricsColumn;
