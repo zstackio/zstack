@@ -809,6 +809,7 @@ public class KVMAgentCommands {
         private long totalMemory;
         private long usedMemory;
         private int cpuSockets;
+        private int cpuCoreNum;
 
         public int getCpuSockets() {
             return cpuSockets;
@@ -816,6 +817,14 @@ public class KVMAgentCommands {
 
         public void setCpuSockets(int cpuSockets) {
             this.cpuSockets = cpuSockets;
+        }
+
+        public int getCpuCoreNum() {
+            return cpuCoreNum;
+        }
+
+        public void setCpuCoreNum(int cpuCoreNum) {
+            this.cpuCoreNum = cpuCoreNum;
         }
 
         public long getCpuNum() {
