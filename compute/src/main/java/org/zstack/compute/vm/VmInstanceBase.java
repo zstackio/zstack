@@ -625,7 +625,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    completion.fail(operr("failed to check state of the vm[uuid:%s] on the host[uuid:%s], %s", vmInv.getUuid(), vmInv.getHostUuid(), reply.getError()));
+                    completion.fail(operr("failed to check state of the vm[uuid:%s] on the host[uuid:%s]", vmInv.getUuid(), vmInv.getHostUuid())
+                            .withCause(reply.getError()));
                     return;
                 }
 
@@ -3378,8 +3379,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
-                                    trigger.fail(operr("failed to update the cache vmInstance[uuid:%s] of templated vmInstance[uuid:%s], %s",
-                                            cache.getCacheVmInstanceUuid(), templatedVmInstance.getUuid(), reply.getError()));
+                                    trigger.fail(operr("failed to update the cache vmInstance[uuid:%s] of templated vmInstance[uuid:%s]",
+                                            cache.getCacheVmInstanceUuid(), templatedVmInstance.getUuid())
+                                            .withCause(reply.getError()));
                                     return;
                                 }
                                 trigger.next();
@@ -3451,8 +3453,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
-                                    trigger.fail(operr("failed to delete the cache vmInstance[uuid:%s] of templated vmInstance[uuid:%s], %s",
-                                            cache.getCacheVmInstanceUuid(), msg.getUuid(), reply.getError()));
+                                    trigger.fail(operr("failed to delete the cache vmInstance[uuid:%s] of templated vmInstance[uuid:%s]",
+                                            cache.getCacheVmInstanceUuid(), msg.getUuid())
+                                            .withCause(reply.getError()));
                                     return;
                                 }
 
@@ -3546,8 +3549,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
-                                    trigger.fail(operr("failed to delete the cache vmInstance[uuid:%s] of templated vmInstance[uuid:%s], %s",
-                                            cache.getCacheVmInstanceUuid(), templatedVmInstanceUuid, reply.getError()));
+                                    trigger.fail(operr("failed to delete the cache vmInstance[uuid:%s] of templated vmInstance[uuid:%s]",
+                                            cache.getCacheVmInstanceUuid(), templatedVmInstanceUuid)
+                                            .withCause(reply.getError()));
                                     return;
                                 }
                                 dbf.remove(cache);

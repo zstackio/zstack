@@ -46,6 +46,7 @@ import org.zstack.utils.network.NicIpAddressInfo;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -1201,26 +1202,23 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         map.put("templateUuid", diskAO.getTemplateUuid() != null);
         map.put("diskOfferingUuid", diskAO.getDiskOfferingUuid() != null);
         map.put("sourceUuid", diskAO.getSourceUuid() != null);
-        int count = 0;
-        StringBuilder errorMsg = new StringBuilder();
-        for (Map.Entry<String, Boolean> entry : map.entrySet()) {
-            if (entry.getValue()) {
-                count++;
-                errorMsg.append(entry.getKey()).append(", ");
-            }
+        List<String> invalidProperties = map.entrySet().stream()
+                .filter(entry -> entry.getValue() == Boolean.TRUE)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+
+        if (invalidProperties.size() == 1) {
+            return;
+        } else if (invalidProperties.size() > 1) {
+            String invalidPropertiesText = String.join(", ", invalidProperties);
+            throw new ApiMessageInterceptionException(operr("cannot set the following properties at the same time: %s", invalidPropertiesText));
         }
 
-        if (count > 1) {
-            throw new ApiMessageInterceptionException(operr("Cannot set the following properties at the same time: %s", errorMsg));
+        StringJoiner properties = new StringJoiner(", ");
+        for (String key : map.keySet()) {
+            properties.add(key);
         }
-
-        if (count == 0) {
-            StringJoiner properties = new StringJoiner(", ");
-            for (String key : map.keySet()) {
-                properties.add(key);
-            }
-            throw new ApiMessageInterceptionException(operr("Need to set one of the following properties, and can only be one of them: %s", properties));
-        }
+        throw new ApiMessageInterceptionException(operr("Need to set one of the following properties, and can only be one of them: %s", properties));
     }
 
     private void validate(APICreateVmInstanceFromVolumeMsg msg) {
