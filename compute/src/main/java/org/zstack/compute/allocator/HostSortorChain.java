@@ -195,7 +195,11 @@ public class HostSortorChain implements HostSortorStrategy {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (selectedHost.get() == null) {
-                    completion.fail(errorCodeList);
+                    if (!errorCodeList.getCauses().isEmpty()) {
+                        completion.fail(errorCodeList.getCauses().get(0));
+                    } else {
+                        completion.fail(operr("failed to reserve host capacity for all candidate hosts"));
+                    }
                     return;
                 }
                 completion.success(selectedHost.get());
