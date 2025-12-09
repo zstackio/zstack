@@ -1927,8 +1927,10 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                     }
 
                                     CephBackupStorageMonVO monVO = base.getSelf();
-                                    monVO.setMonAddr(rsp.monAddr == null ? monVO.getHostname() : rsp.monAddr);
-                                    dbf.update(monVO);
+                                    SQL.New(CephBackupStorageMonVO.class)
+                                            .eq(CephBackupStorageMonVO_.uuid, monVO.getUuid())
+                                            .set(CephBackupStorageMonVO_.monAddr, rsp.monAddr == null ? monVO.getHostname() : rsp.monAddr)
+                                            .update();
 
                                     latch.ack();
                                 }
