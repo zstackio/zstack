@@ -132,8 +132,8 @@ public class HostSortorChain implements HostSortorStrategy {
                         } catch (UnableToReserveHostCapacityException e) {
                             logger.debug(String.format("[Host Allocation]: %s on host[uuid:%s]. try next one",
                                     e.getMessage(), host.getUuid()), e);
-                            trigger.fail(operr(
-                                    "[Host Allocation]: %s on host[uuid:%s]. try next one. %s", e.getMessage(), host.getUuid(), e.getMessage()));
+                            trigger.fail(operr("failed to reserve capacity in host[uuid=%s]", host.getUuid())
+                                    .withException(e));
                         }
                     }
 
