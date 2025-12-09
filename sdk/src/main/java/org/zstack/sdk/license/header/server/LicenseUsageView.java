@@ -36,4 +36,12 @@ public class LicenseUsageView  {
         return this.available;
     }
 
+    public java.util.List usageDetails;
+    public void setUsageDetails(java.util.List usageDetails) {
+        this.usageDetails = usageDetails;
+    }
+    public java.util.List getUsageDetails() {
+        return this.usageDetails;
+    }
+
 }
