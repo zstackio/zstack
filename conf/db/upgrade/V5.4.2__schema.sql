@@ -223,11 +223,13 @@ BEGIN
         END IF;
     END IF;
     
-    -- d. Check if OvnControllerVmInstanceVO records have corresponding NfvInstGroupVO
+    -- d. Check if NfvInstGroupVO created for OvnControllerVmInstanceVO
     IF already_upgraded = 0 THEN
         SELECT COUNT(*) INTO instance_in_nfv_group_count
         FROM OvnControllerVmInstanceVO ovi
-        INNER JOIN NfvInstGroupVO nig ON ovi.uuid = nig.uuid;
+        INNER JOIN NfvInstVO niv ON ovi.uuid = niv.uuid
+        INNER JOIN NfvInstGroupVO nig ON niv.nfvInstGroupUuid = nig.uuid
+        WHERE nig.funcType = 'OVN_SDN_CONTROLLER';
         
         IF instance_in_nfv_group_count > 0 THEN
             SET already_upgraded = 1;
@@ -272,6 +274,44 @@ BEGIN
         -- ========================================
         -- Step 3: Create NfvInstGroupVO for each OvnControllerVmInstanceVO
         -- ========================================
+        
+        -- First, create a temporary table to store the mapping between instance UUID and generated group UUID
+        CREATE TEMPORARY TABLE IF NOT EXISTS temp_ovn_inst_group_mapping (
+            inst_uuid VARCHAR(32) NOT NULL PRIMARY KEY,
+            group_uuid VARCHAR(32) NOT NULL,
+            group_name VARCHAR(255) NOT NULL
+        );
+        
+        -- Generate random UUIDs for each OVN instance and store the mapping
+        INSERT INTO temp_ovn_inst_group_mapping (inst_uuid, group_uuid, group_name)
+        SELECT 
+            ovn.uuid AS inst_uuid,
+            REPLACE(UUID(), '-', '') AS group_uuid,
+            LEFT(CONCAT('OVN-Controller-Group-', vm.name), 255) AS group_name
+        FROM OvnControllerVmInstanceVO ovn
+        INNER JOIN VmInstanceVO vm ON ovn.uuid = vm.uuid
+        WHERE NOT EXISTS (
+            SELECT 1 FROM NfvInstGroupVO nfv_grp WHERE nfv_grp.uuid = ovn.uuid
+        );
+        
+        -- Insert ResourceVO records for each NfvInstGroup
+        INSERT INTO ResourceVO (
+            uuid,
+            resourceName,
+            resourceType,
+            concreteResourceType
+        )
+        SELECT 
+            mapping.group_uuid AS uuid,
+            mapping.group_name AS resourceName,
+            'NfvInstGroupVO' AS resourceType,
+            'org.zstack.network.service.nfvinstgroup.NfvInstGroupVO' AS concreteResourceType
+        FROM temp_ovn_inst_group_mapping mapping
+        WHERE NOT EXISTS (
+            SELECT 1 FROM ResourceVO res WHERE res.uuid = mapping.group_uuid
+        );
+        
+        -- Insert NfvInstGroupVO records
         INSERT INTO NfvInstGroupVO (
             uuid,
             name,
@@ -292,8 +332,8 @@ BEGIN
             lastOpDate
         )
         SELECT 
-            ovn.uuid AS group_uuid,                            -- group uuid: use OVN instance uuid
-            LEFT(CONCAT('OVN-Controller-Group-', vm.name), 255) AS name,  -- group name (limit to 255 chars)
+            mapping.group_uuid AS group_uuid,                  -- group uuid: randomly generated
+            mapping.group_name AS name,                        -- group name (limit to 255 chars)
             CONCAT('Auto-created group for OVN controller ', vm.name) AS description,
             ovn_off.uuid AS offering_uuid,                     -- nfvInstOfferingUuid
             'KVM' AS inst_type,                                -- instType
@@ -309,12 +349,13 @@ BEGIN
             vm.zoneUuid AS zone_uuid,                          -- zoneUuid
             vm.createDate AS create_date,                      -- createDate
             vm.lastOpDate AS last_op_date                      -- lastOpDate
-        FROM OvnControllerVmInstanceVO ovn
+        FROM temp_ovn_inst_group_mapping mapping
+        INNER JOIN OvnControllerVmInstanceVO ovn ON mapping.inst_uuid = ovn.uuid
         INNER JOIN VmInstanceVO vm ON ovn.uuid = vm.uuid
         LEFT JOIN VolumeVO vol ON vm.rootVolumeUuid = vol.uuid
         LEFT JOIN OvnControllerVmOfferingVO ovn_off ON vm.instanceOfferingUuid = ovn_off.uuid
         WHERE NOT EXISTS (
-            SELECT 1 FROM NfvInstGroupVO nfv_grp WHERE nfv_grp.uuid = ovn.uuid
+            SELECT 1 FROM NfvInstGroupVO nfv_grp WHERE nfv_grp.uuid = mapping.group_uuid
         );
         
         -- ========================================
@@ -331,16 +372,20 @@ BEGIN
         )
         SELECT 
             ovn.uuid AS inst_uuid,
-            ovn.uuid AS group_uuid,                            -- link to the group we just created (same uuid)
+            mapping.group_uuid AS group_uuid,                  -- link to the group we created (using mapping)
             0 AS config_version,                               -- configVersion
             'euler' AS net_os_distro,                          -- netOsDistro (required field)
             'euler' AS base_os_distro,                         -- baseOsDistro (required field)
             'Unknown' AS cluster_status,                       -- clusterStatus
             NULL AS status_detail                              -- statusDetail
         FROM OvnControllerVmInstanceVO ovn
+        INNER JOIN temp_ovn_inst_group_mapping mapping ON ovn.uuid = mapping.inst_uuid
         WHERE NOT EXISTS (
             SELECT 1 FROM NfvInstVO nfv WHERE nfv.uuid = ovn.uuid
         );
+        
+        -- Clean up temporary table
+        DROP TEMPORARY TABLE IF EXISTS temp_ovn_inst_group_mapping;
         
         SELECT 'OVN Controller to NFV Instance migration completed successfully' AS message;
     END IF;
