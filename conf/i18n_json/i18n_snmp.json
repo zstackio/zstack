@@ -1,0 +1,96 @@
+[
+  {
+    "raw": "Failed to create SNMP agent, because snmp agent already created.",
+    "en_US": "Failed to create SNMP agent, because snmp agent already created.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 42,
+    "fileName": "src/main/java/org/zstack/snmp/SnmpApiInterceptor.java"
+  },
+  {
+    "raw": "Failed to stop SNMP agent, please create a snmp agent first.",
+    "en_US": "Failed to stop SNMP agent, please create a snmp agent first.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 51,
+    "fileName": "src/main/java/org/zstack/snmp/SnmpApiInterceptor.java"
+  },
+  {
+    "raw": "Failed to update SNMP agent, please create a snmp agent first.",
+    "en_US": "Failed to update SNMP agent, please create a snmp agent first.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 58,
+    "fileName": "src/main/java/org/zstack/snmp/SnmpApiInterceptor.java"
+  },
+  {
+    "raw": "Failed to start SNMP agent, please create a snmp agent first.",
+    "en_US": "Failed to start SNMP agent, please create a snmp agent first.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 66,
+    "fileName": "src/main/java/org/zstack/snmp/SnmpApiInterceptor.java"
+  },
+  {
+    "raw": "can\u0027t get SnmpAgentImpl instance, due to no SnmpAgentVO exist.",
+    "en_US": "can\u0027t get SnmpAgentImpl instance, due to no SnmpAgentVO exist.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 66,
+    "fileName": "src/main/java/org/zstack/snmp/agent/SnmpAgentInstance.java"
+  },
+  {
+    "raw": "more than one SnmpAgentVO exist.",
+    "en_US": "more than one SnmpAgentVO exist.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 69,
+    "fileName": "src/main/java/org/zstack/snmp/agent/SnmpAgentInstance.java"
+  },
+  {
+    "raw": "failed to start snmp agent[%s] on port %s, due to %s",
+    "en_US": "failed to start snmp agent[{0}] on port {1}, due to {2}",
+    "zh_CN": "",
+    "arguments": [
+      "getSelf().getUuid()",
+      "getSelf().getPort()",
+      "e.getMessage()"
+    ],
+    "line": 159,
+    "fileName": "src/main/java/org/zstack/snmp/agent/SnmpAgentInstance.java"
+  },
+  {
+    "raw": "snmp[uuid:%s] has not been created",
+    "en_US": "snmp[uuid:{0}] has not been created",
+    "zh_CN": "",
+    "arguments": [
+      "vo.getUuid()"
+    ],
+    "line": 215,
+    "fileName": "src/main/java/org/zstack/snmp/agent/SnmpAgentInstance.java"
+  },
+  {
+    "raw": "failed to change snmp agent port from %s to %s, duet to %s",
+    "en_US": "failed to change snmp agent port from {0} to {1}, duet to {2}",
+    "zh_CN": "",
+    "arguments": [
+      "originalCopy.getPort()",
+      "getSelf().getPort()",
+      "e.getMessage()"
+    ],
+    "line": 340,
+    "fileName": "src/main/java/org/zstack/snmp/agent/SnmpAgentInstance.java"
+  },
+  {
+    "raw": "failed to close snmp agent session[%s] on port %s, due to %s",
+    "en_US": "failed to close snmp agent session[{0}] on port {1}, due to {2}",
+    "zh_CN": "",
+    "arguments": [
+      "getSelf().getUuid()",
+      "getSelf().getPort()",
+      "e.getMessage()"
+    ],
+    "line": 427,
+    "fileName": "src/main/java/org/zstack/snmp/agent/SnmpAgentInstance.java"
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "raw": "Aliyun account[uuid:%s] not exists",
+    "en_US": "Aliyun account[uuid:{0}] not exists",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getAccessKeyUuid()"
+    ],
+    "line": 44,
+    "fileName": "src/main/java/org/zstack/sns/platform/aliyunsms/SNSAliyunSmsApiInterceptor.java"
+  },
+  {
+    "raw": "invalid phone number[%s], sms number is like +86-18654321234",
+    "en_US": "invalid phone number[{0}], sms number is like +86-18654321234",
+    "zh_CN": "",
+    "arguments": [
+      "number"
+    ],
+    "line": 53,
+    "fileName": "src/main/java/org/zstack/sns/platform/aliyunsms/SNSAliyunSmsApiInterceptor.java"
+  },
+  {
+    "raw": "Aliyun sms event text template not found.",
+    "en_US": "Aliyun sms event text template not found.",
+    "zh_CN": "",
+    "arguments": [
+      "SysErrors.RESOURCE_NOT_FOUND"
+    ],
+    "line": 83,
+    "fileName": "src/main/java/org/zstack/sns/platform/aliyunsms/SNSAliyunSmsEndpoint.java"
+  }
+]

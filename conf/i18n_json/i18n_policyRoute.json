@@ -1,0 +1,199 @@
+[
+  {
+    "raw": "default route network can not be changed when system policy route is enabled",
+    "en_US": "default route network can not be changed when system policy route is enabled",
+    "zh_CN": "启用系统策略路由时，无法更改默认路由网络",
+    "arguments": [],
+    "line": 93,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "l3[%s] already attached a policy route ruleSet",
+    "en_US": "l3[{0}] already attached a policy route ruleSet",
+    "zh_CN": "L3[{0}]已附加策略路由规则集",
+    "arguments": [
+      "msg.getL3Uuid()"
+    ],
+    "line": 132,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "there is no master router of router [uuid:%s]",
+    "en_US": "there is no master router of router [uuid:{0}]",
+    "zh_CN": "路由器[uuid:{0}]的高可用组没有主路由器",
+    "arguments": [
+      "vRouteUuid"
+    ],
+    "line": 139,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "VRouter[%s] already has a ruleSet named %s",
+    "en_US": "VRouter[{0}] already has a ruleSet named {1}",
+    "zh_CN": "VRouter[{0}]已具有名为{1}的规则集",
+    "arguments": [
+      "msg.getvRouterUuid()",
+      "msg.getName()"
+    ],
+    "line": 192,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "DestinationCidr must be in cidr format but found [%s]",
+    "en_US": "DestinationCidr must be in cidr format but found [{0}]",
+    "zh_CN": "DestinationCIDR必须为CIDR格式，但找到[{0}]",
+    "arguments": [
+      "msg.getDestinationCidr()"
+    ],
+    "line": 198,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "NextHopIp must be in ipv4 format but found [%s]",
+    "en_US": "NextHopIp must be in ipv4 format but found [{0}]",
+    "zh_CN": "NextHopIP必须为IPv4格式，但找到[{0}]",
+    "arguments": [
+      "msg.getNextHopIp()"
+    ],
+    "line": 202,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "operation failure, ip format only supports ipv4/iprange/cidr, but find %s",
+    "en_US": "operation failure, ip format only supports ipv4/iprange/cidr, but find {0}",
+    "zh_CN": "操作失败，IP格式仅支持IPv4/IPRange/CIDR，但找到{0}",
+    "arguments": [
+      "ip"
+    ],
+    "line": 237,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "illegal protocol type %s",
+    "en_US": "illegal protocol type {0}",
+    "zh_CN": "非法的协议类型{0}",
+    "arguments": [
+      "protocol"
+    ],
+    "line": 245,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "RuleSet[%s] already has a rule with rule number %s.",
+    "en_US": "RuleSet[{0}] already has a rule with rule number {1}.",
+    "zh_CN": "规则集[{0}]已具有规则编号为{1}的规则。",
+    "arguments": [
+      "msg.getRuleSetUuid()",
+      "msg.getRuleNumber()"
+    ],
+    "line": 254,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "only tcp or udp protocol can use port",
+    "en_US": "only tcp or udp protocol can use port",
+    "zh_CN": "只有TCP或UDP协议可以使用端口",
+    "arguments": [],
+    "line": 272,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "can not find related vRouter",
+    "en_US": "can not find related vRouter",
+    "zh_CN": "找不到相关的VRouter",
+    "arguments": [],
+    "line": 278,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "can not update system policy route set",
+    "en_US": "can not update system policy route set",
+    "zh_CN": "无法更新系统策略路由集",
+    "arguments": [],
+    "line": 283,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "can not update system policy route table",
+    "en_US": "can not update system policy route table",
+    "zh_CN": "无法更新系统策略路由表",
+    "arguments": [],
+    "line": 288,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "VRouter[%s] already has a policy route table [%s]",
+    "en_US": "VRouter[{0}] already has a policy route table [{1}]",
+    "zh_CN": "VRouter[{0}]已具有策略路由表[{1}]",
+    "arguments": [
+      "msg.getvRouterUuid()",
+      "msg.getNumber()"
+    ],
+    "line": 310,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "ruleSet[%s] is still attached to nic",
+    "en_US": "ruleSet[{0}] is still attached to nic",
+    "zh_CN": "规则集[{0}]仍连接到NIC",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 360,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "can not delete system policy route set",
+    "en_US": "can not delete system policy route set",
+    "zh_CN": "无法删除系统策略路由集",
+    "arguments": [],
+    "line": 371,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "can not find related virtual router",
+    "en_US": "can not find related virtual router",
+    "zh_CN": "找不到相关的虚拟路由器",
+    "arguments": [],
+    "line": 382,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "can not delete system policy route table",
+    "en_US": "can not delete system policy route table",
+    "zh_CN": "无法删除系统策略路由表",
+    "arguments": [],
+    "line": 387,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
+  },
+  {
+    "raw": "virtual router[uuid:%s] can not find",
+    "en_US": "virtual router[uuid:{0}] can not find",
+    "zh_CN": "云路由[uuid:{0}]未找到",
+    "arguments": [
+      "vrouterVmUuid"
+    ],
+    "line": 959,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteManagerImpl.java"
+  },
+  {
+    "raw": "can not find service factory for virtual router type[%s]",
+    "en_US": "can not find service factory for virtual router type[{0}]",
+    "zh_CN": "未找到云路由类型为[{0}]的服务工厂",
+    "arguments": [
+      "vo.getApplianceVmType()"
+    ],
+    "line": 964,
+    "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteManagerImpl.java"
+  },
+  {
+    "raw": "operation error, because:%s",
+    "en_US": "operation error, because:{0}",
+    "zh_CN": "操作错误，因为{0}",
+    "arguments": [
+      "rsp.getError()"
+    ],
+    "line": 117,
+    "fileName": "src/main/java/org/zstack/policyRoute/vyos/VyosPolicyRouteBackend.java"
+  }
+]

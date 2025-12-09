@@ -1,0 +1,356 @@
+[
+  {
+    "raw": "failed to create bridge[%s] for l2Network[uuid:%s, type:%s] on kvm host[uuid:%s], because %s",
+    "en_US": "failed to create bridge[{0}] for l2Network[uuid:{1}, type:{2}] on kvm host[uuid:{3}], because {4}",
+    "zh_CN": "在主机[uuid:{3}]上为二层网络[uuid:{1}, type:{2}]创建网桥[{0}]失败，原因: {4}",
+    "arguments": [
+      "cmd.getBridgeName()",
+      "l2Network.getUuid()",
+      "l2Network.getType()",
+      "hostUuid",
+      "rsp.getError()"
+    ],
+    "line": 80,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/KVMRealizeL2NoVlanLinuxBridgeBackend.java"
+  },
+  {
+    "raw": "failed to check bridge[%s] for l2NoVlanNetwork[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
+    "en_US": "failed to check bridge[{0}] for l2NoVlanNetwork[uuid:{1}, name:{2}] on kvm host[uuid: {3}], {4}",
+    "zh_CN": "在二层网络[uuid:{1}中检查网桥[{0}]失败，名字为[{2}]在主机t[uuid: {3}]上, {4}",
+    "arguments": [
+      "cmd.getBridgeName()",
+      "l2Network.getUuid()",
+      "l2Network.getName()",
+      "hostUuid",
+      "rsp.getError()"
+    ],
+    "line": 142,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/KVMRealizeL2NoVlanLinuxBridgeBackend.java"
+  },
+  {
+    "raw": "failed to update bridge[%s] for l2Network[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
+    "en_US": "failed to update bridge[{0}] for l2Network[uuid:{1}, name:{2}] on kvm host[uuid: {3}], {4}",
+    "zh_CN": "",
+    "arguments": [
+      "cmd.getBridgeName()",
+      "newL2Network.getUuid()",
+      "newL2Network.getName()",
+      "hostUuid",
+      "rsp.getError()"
+    ],
+    "line": 189,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/KVMRealizeL2NoVlanLinuxBridgeBackend.java"
+  },
+  {
+    "raw": "failed to delete bridge[%s] for l2Network[uuid:%s, type:%s] on kvm host[uuid:%s], because %s",
+    "en_US": "failed to delete bridge[{0}] for l2Network[uuid:{1}, type:{2}] on kvm host[uuid:{3}], because {4}",
+    "zh_CN": "无法在KVM主机[uuid：{3}]上删除二层网络[uuid：{1}，类型：{2}]的网桥[{0}]，因为{4}",
+    "arguments": [
+      "cmd.getBridgeName()",
+      "l2Network.getUuid()",
+      "l2Network.getType()",
+      "hostUuid",
+      "rsp.getError()"
+    ],
+    "line": 248,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/KVMRealizeL2NoVlanLinuxBridgeBackend.java"
+  },
+  {
+    "raw": "bonding[%s] is not found on host[uuid:%s] for virtual switch[uuid:%s]",
+    "en_US": "bonding[{0}] is not found on host[uuid:{1}] for virtual switch[uuid:{2}]",
+    "zh_CN": "",
+    "arguments": [
+      "ug.getInterfaceName()",
+      "hostUuid",
+      "newL2Network.getUuid()"
+    ],
+    "line": 55,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/KVMRealizeL2VirtualSwitchLinuxBridgeBackend.java"
+  },
+  {
+    "raw": "failed to update vlan bridge for virtual switch[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
+    "en_US": "failed to update vlan bridge for virtual switch[uuid:{0}, name:{1}] on kvm host[uuid:{2}], {3}",
+    "zh_CN": "",
+    "arguments": [
+      "newL2Network.getUuid()",
+      "newL2Network.getName()",
+      "hostUuid",
+      "rsp.getError()"
+    ],
+    "line": 113,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/KVMRealizeL2VirtualSwitchLinuxBridgeBackend.java"
+  },
+  {
+    "raw": "The uplink bonding[%s] is not found on host[uuid:%s] for virtual switch[uuid:%s]",
+    "en_US": "The uplink bonding[{0}] is not found on host[uuid:{1}] for virtual switch[uuid:{2}]",
+    "zh_CN": "",
+    "arguments": [
+      "ug.getInterfaceName()",
+      "msg.getHostUuid()",
+      "msg.getUuid()"
+    ],
+    "line": 894,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/L2VirtualSwitchNetwork.java"
+  },
+  {
+    "raw": "interface[uuid:%s] is not found on host[uuid:%s] for virtual switch[uuid:%s]",
+    "en_US": "interface[uuid:{0}] is not found on host[uuid:{1}] for virtual switch[uuid:{2}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getSlaveUuids().get(0)",
+      "msg.getHostUuid()",
+      "msg.getUuid()"
+    ],
+    "line": 1055,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/L2VirtualSwitchNetwork.java"
+  },
+  {
+    "raw": "could not delete l2 network[uuid:%s] with default port group",
+    "en_US": "could not delete l2 network[uuid:{0}] with default port group",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 191,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "could not delete default host kernel interface[uuid:%s]",
+    "en_US": "could not delete default host kernel interface[uuid:{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 338,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "invalid CIDR: %s",
+    "en_US": "invalid CIDR: {0}",
+    "zh_CN": "无效CIDR: {0}",
+    "arguments": [
+      "msg.getCidr()"
+    ],
+    "line": 350,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "the index of virtual switch in zone[%s] exceeds the maximum[%s]",
+    "en_US": "the index of virtual switch in zone[{0}] exceeds the maximum[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getZoneUuid()",
+      "VirtualSwitchConstant.MAX_VIRTUAL_SWITCH_INDEX"
+    ],
+    "line": 359,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "need to input one system tag like: [%s]",
+    "en_US": "need to input one system tag like: [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "VirtualSwitchSystemTags.UPLINK_BONDING.getTagFormat()"
+    ],
+    "line": 367,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "only one systemTag for uplink bonding is allowed",
+    "en_US": "only one systemTag for uplink bonding is allowed",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 386,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "wrong xmit hash policy in system tag[%s]",
+    "en_US": "wrong xmit hash policy in system tag[{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "systemTag"
+    ],
+    "line": 400,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "wrong bonding mode in system tag[%s]",
+    "en_US": "wrong bonding mode in system tag[{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "systemTag"
+    ],
+    "line": 403,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "wrong system tag[%s], should be like: [%s]",
+    "en_US": "wrong system tag[{0}], should be like: [{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "systemTag",
+      "VirtualSwitchSystemTags.UPLINK_BONDING.getTagFormat()"
+    ],
+    "line": 408,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "could not attach L2Network to KVM cluster, because the l2Network[uuid:%s] is default vSwitch",
+    "en_US": "could not attach L2Network to KVM cluster, because the l2Network[uuid:{0}] is default vSwitch",
+    "zh_CN": "",
+    "arguments": [
+      "vo.getUuid()"
+    ],
+    "line": 448,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "could not detach L2Network from KVM cluster, because the l2Network[uuid:%s] is default vSwitch",
+    "en_US": "could not detach L2Network from KVM cluster, because the l2Network[uuid:{0}] is default vSwitch",
+    "zh_CN": "",
+    "arguments": [
+      "vo.getUuid()"
+    ],
+    "line": 521,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "could not detach L2Network from host, because the l2Network[uuid:%s] is default vSwitch",
+    "en_US": "could not detach L2Network from host, because the l2Network[uuid:{0}] is default vSwitch",
+    "zh_CN": "",
+    "arguments": [
+      "vo.getUuid()"
+    ],
+    "line": 533,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "could not create l3 network on virtual switch[uuid:%s]",
+    "en_US": "could not create l3 network on virtual switch[uuid:{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getL2NetworkUuid()"
+    ],
+    "line": 555,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "vlan[%s] for port group is invalid",
+    "en_US": "vlan[{0}] for port group is invalid",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVirtualNetworkId()"
+    ],
+    "line": 567,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "could not update vlan for port group with default port group",
+    "en_US": "could not update vlan for port group with default port group",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 572,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "virtual switch[uuid:%s] has not attached to host[uuid:%s]",
+    "en_US": "virtual switch[uuid:{0}] has not attached to host[uuid:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()",
+      "msg.getHostUuid()"
+    ],
+    "line": 640,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "require one of slaveUuids and slaveNames",
+    "en_US": "require one of slaveUuids and slaveNames",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 645,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "need input at least one slave",
+    "en_US": "need input at least one slave",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 651,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "virtual switch[uuid:%s] has not created uplink bonding config yet",
+    "en_US": "virtual switch[uuid:{0}] has not created uplink bonding config yet",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 653,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "invalid bonding type[%s]",
+    "en_US": "invalid bonding type[{0}]",
+    "zh_CN": "绑定类型[{0}]无效",
+    "arguments": [
+      "msg.getType()"
+    ],
+    "line": 687,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "could not delete bonding[uuid:%s], because it is in use by virtual switch[uuid:%s]",
+    "en_US": "could not delete bonding[uuid:{0}], because it is in use by virtual switch[uuid:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "bondingVO.getUuid()",
+      "vSwitchUuid"
+    ],
+    "line": 724,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
+  },
+  {
+    "raw": "failed to create hostKernelInterface[name:%s] on the host[uuid:%s], %s",
+    "en_US": "failed to create hostKernelInterface[name:{0}] on the host[uuid:{1}], {2}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getName()",
+      "msg.getHostUuid()",
+      "rsp.getError()"
+    ],
+    "line": 394,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchManagerImpl.java"
+  },
+  {
+    "raw": "failed to delete hostKernelInterface[uuid:%s] on the host[uuid:%s], %s",
+    "en_US": "failed to delete hostKernelInterface[uuid:{0}] on the host[uuid:{1}], {2}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()",
+      "hostUuid",
+      "rsp.getError()"
+    ],
+    "line": 856,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchManagerImpl.java"
+  },
+  {
+    "raw": "failed to refresh host kernel interface on host[uuid:%s], %s",
+    "en_US": "failed to refresh host kernel interface on host[uuid:{0}], {1}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getHostUuid()",
+      "rsp.getError()"
+    ],
+    "line": 1022,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchManagerImpl.java"
+  },
+  {
+    "raw": "failed to get the host interface for the managementIp[%s]",
+    "en_US": "failed to get the host interface for the managementIp[{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "host.getManagementIp()"
+    ],
+    "line": 1160,
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchManagerImpl.java"
+  }
+]

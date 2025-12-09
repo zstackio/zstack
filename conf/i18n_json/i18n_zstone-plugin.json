@@ -1,0 +1,106 @@
+[
+  {
+    "raw": "field[hosts] must not be null or empty",
+    "en_US": "field[hosts] must not be null or empty",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 46,
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneApiInterceptor.java"
+  },
+  {
+    "raw": "at least 2 hosts are required for ZStone initialization",
+    "en_US": "at least 2 hosts are required for ZStone initialization",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 51,
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneApiInterceptor.java"
+  },
+  {
+    "raw": "field[uuid] in hosts must not be null or empty",
+    "en_US": "field[uuid] in hosts must not be null or empty",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 58,
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneApiInterceptor.java"
+  },
+  {
+    "raw": "duplicated host uuid(s) found: %s",
+    "en_US": "duplicated host uuid(s) found: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "dups"
+    ],
+    "line": 65,
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneApiInterceptor.java"
+  },
+  {
+    "raw": "field[uuid] of message[APIUpdateZStoneHostConfigMsg].hosts are invalid: %s",
+    "en_US": "field[uuid] of message[APIUpdateZStoneHostConfigMsg].hosts are invalid: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "hostUuidList"
+    ],
+    "line": 87,
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneApiInterceptor.java"
+  },
+  {
+    "raw": "field[publicIp] of message[APIUpdateZStoneHostConfigMsg].hosts is mandatory, can not be null",
+    "en_US": "field[publicIp] of message[APIUpdateZStoneHostConfigMsg].hosts is mandatory, can not be null",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 93,
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneApiInterceptor.java"
+  },
+  {
+    "raw": "invalid package status. only Installed, InitializeFailed or Initialized packages can be initialized",
+    "en_US": "invalid package status. only Installed, InitializeFailed or Initialized packages can be initialized",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 110,
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneApiInterceptor.java"
+  },
+  {
+    "raw": "config parameter cannot be null or empty",
+    "en_US": "config parameter cannot be null or empty",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 1161,
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
+  },
+  {
+    "raw": "failed to install distributed storage",
+    "en_US": "failed to install distributed storage",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 1209,
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
+  },
+  {
+    "raw": "cleanup.sh not found: %s. the cleanup.sh has been manually deleted.",
+    "en_US": "cleanup.sh not found: {0}. the cleanup.sh has been manually deleted.",
+    "zh_CN": "",
+    "arguments": [
+      "installPath"
+    ],
+    "line": 1246,
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
+  },
+  {
+    "raw": "install config not found for software package: %s",
+    "en_US": "install config not found for software package: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "softwarePackageVO.getUuid()"
+    ],
+    "line": 1258,
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
+  },
+  {
+    "raw": "failed to cleanup env",
+    "en_US": "failed to cleanup env",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 1282,
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
+  }
+]

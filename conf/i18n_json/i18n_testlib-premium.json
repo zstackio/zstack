@@ -1,0 +1,42 @@
+[
+  {
+    "raw": "encrypt data[%s] or algType[%s] is null",
+    "en_US": "encrypt data[{0}] or algType[{1}] is null",
+    "zh_CN": "",
+    "arguments": [
+      "data",
+      "algType"
+    ],
+    "line": 111,
+    "fileName": "src/main/java/org/zstack/testlib/premium/crypto/EncryptDriverSimulator.java"
+  },
+  {
+    "raw": "illegal argument %s",
+    "en_US": "illegal argument {0}",
+    "zh_CN": "",
+    "arguments": [
+      "algType"
+    ],
+    "line": 123,
+    "fileName": "src/main/java/org/zstack/testlib/premium/crypto/EncryptDriverSimulator.java"
+  },
+  {
+    "raw": "failed to decrypt data",
+    "en_US": "failed to decrypt data",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 136,
+    "fileName": "src/main/java/org/zstack/testlib/premium/crypto/EncryptDriverSimulator.java"
+  },
+  {
+    "raw": "failed to parse MS envelope: %s, %s",
+    "en_US": "failed to parse MS envelope: {0}, {1}",
+    "zh_CN": "",
+    "arguments": [
+      "e.getMessage()",
+      "cipherText"
+    ],
+    "line": 399,
+    "fileName": "src/main/java/org/zstack/testlib/premium/crypto/SecurityMachineSimulator.java"
+  }
+]

@@ -1,0 +1,13 @@
+[
+  {
+    "raw": "AccountGroup[uuid:%s, name:%s] has been deleted",
+    "en_US": "AccountGroup[uuid:{0}, name:{1}] has been deleted",
+    "zh_CN": "",
+    "arguments": [
+      "vo.getUuid()",
+      "vo.getName()"
+    ],
+    "line": 103,
+    "fileName": "src/main/java/org/zstack/iam1/compute/accounts/AccountGroupBase.java"
+  }
+]

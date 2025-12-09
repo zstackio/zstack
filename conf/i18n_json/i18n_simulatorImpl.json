@@ -1,0 +1,18 @@
+[
+  {
+    "raw": "set to disconnected",
+    "en_US": "set to disconnected",
+    "zh_CN": "设置为断开连接",
+    "arguments": [],
+    "line": 92,
+    "fileName": "src/main/java/org/zstack/simulator/SimulatorHost.java"
+  },
+  {
+    "raw": "on purpose",
+    "en_US": "on purpose",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 41,
+    "fileName": "src/main/java/org/zstack/simulator/SimulatorSecurityGroupBackend.java"
+  }
+]
