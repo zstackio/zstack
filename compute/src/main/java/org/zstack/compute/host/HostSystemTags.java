@@ -109,4 +109,8 @@ public class HostSystemTags {
 
     public static String DEPLOY_MODE_TOKEN = "deployMode";
     public static PatternedSystemTag DEPLOY_MODE = new PatternedSystemTag(String.format("deployMode::{%s}", DEPLOY_MODE_TOKEN), HostVO.class);
+
+    // set hygonSecurityElementEnable::true to enable hygon se redirect
+    public static String HYGON_SECURITY_ELEMENT_ENABLE_TOKEN = "hygonSecurityElementEnable";
+    public static PatternedSystemTag HYGON_SECURITY_ELEMENT_ENABLE = new PatternedSystemTag(String.format("hygonSecurityElementEnable::{%s}", HYGON_SECURITY_ELEMENT_ENABLE_TOKEN), HostVO.class);
 }

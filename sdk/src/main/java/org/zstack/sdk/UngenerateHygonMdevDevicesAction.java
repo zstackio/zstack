@@ -26,7 +26,7 @@ public class UngenerateHygonMdevDevicesAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hygonDeviceUuid;
+    public java.lang.String hostUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -91,7 +91,7 @@ public class UngenerateHygonMdevDevicesAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/hygon-devices/{hygonDeviceUuid}/actions";
+        info.path = "/hygon-devices/{hostUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "ungenerateHygonMdevDevices";
