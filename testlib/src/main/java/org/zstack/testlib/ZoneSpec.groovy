@@ -139,6 +139,15 @@ class ZoneSpec extends Spec {
         return spec
     }
 
+    VipSpec vip(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = VipSpec.class) Closure c) {
+        def spec = new VipSpec(envSpec)
+        c.delegate = spec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        addChild(spec)
+        return spec
+    }
+
     EipSpec eip(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = EipSpec.class) Closure c) {
         def spec = new EipSpec(envSpec)
         c.delegate = spec
