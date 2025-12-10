@@ -65,4 +65,7 @@ public class KVMSystemTags {
 
 
     public static SystemTag FORCE_DEPLOYMENT_ONCE = new SystemTag("force::deployment::once", HostVO.class);
+
+    public static final String KVM_PTP_TOKEN = "ptp";
+    public static PatternedSystemTag KVM_PTP = new PatternedSystemTag(String.format("kvm::ptp::{%s}", KVM_PTP_TOKEN), HostVO.class);
 }

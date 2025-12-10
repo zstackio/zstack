@@ -507,6 +507,8 @@ public class KVMAgentCommands {
         @GrayVersion(value = "5.0.0")
         private VirtualizerInfoTO virtualizerInfo;
 
+        private boolean kvmPtp;
+
         public String getOsDistribution() {
             return osDistribution;
         }
@@ -750,6 +752,14 @@ public class KVMAgentCommands {
 
         public void setLibvirtPackageVersion(String libvirtPackageVersion) {
             this.libvirtPackageVersion = libvirtPackageVersion;
+        }
+
+        public boolean isKvmPtp() {
+            return kvmPtp;
+        }
+
+        public void setKvmPtp(boolean kvmPtp) {
+            this.kvmPtp = kvmPtp;
         }
     }
 
