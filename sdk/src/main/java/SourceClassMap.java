@@ -504,6 +504,7 @@ public class SourceClassMap {
 			put("org.zstack.license.header.server.LicenseAuthorizedCapacityServerUsageView", "org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityServerUsageView");
 			put("org.zstack.license.header.server.LicenseAuthorizedCapacityUsageDetailView", "org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityUsageDetailView");
 			put("org.zstack.license.header.server.LicenseAuthorizedNodeInventory", "org.zstack.sdk.license.header.server.LicenseAuthorizedNodeInventory");
+			put("org.zstack.license.header.server.LicenseUsageDetailView", "org.zstack.sdk.license.header.server.LicenseUsageDetailView");
 			put("org.zstack.license.header.server.LicenseUsageView", "org.zstack.sdk.license.header.server.LicenseUsageView");
 			put("org.zstack.license.header.server.TotalLicenseAuthorizedCapacityView", "org.zstack.sdk.license.header.server.TotalLicenseAuthorizedCapacityView");
 			put("org.zstack.log.server.LogCategory", "org.zstack.sdk.LogCategory");
@@ -1622,6 +1623,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityServerUsageView", "org.zstack.license.header.server.LicenseAuthorizedCapacityServerUsageView");
 			put("org.zstack.sdk.license.header.server.LicenseAuthorizedCapacityUsageDetailView", "org.zstack.license.header.server.LicenseAuthorizedCapacityUsageDetailView");
 			put("org.zstack.sdk.license.header.server.LicenseAuthorizedNodeInventory", "org.zstack.license.header.server.LicenseAuthorizedNodeInventory");
+			put("org.zstack.sdk.license.header.server.LicenseUsageDetailView", "org.zstack.license.header.server.LicenseUsageDetailView");
 			put("org.zstack.sdk.license.header.server.LicenseUsageView", "org.zstack.license.header.server.LicenseUsageView");
 			put("org.zstack.sdk.license.header.server.TotalLicenseAuthorizedCapacityView", "org.zstack.license.header.server.TotalLicenseAuthorizedCapacityView");
 			put("org.zstack.sdk.sns.SNSAliyunSmsEndpointInventory", "org.zstack.sns.SNSAliyunSmsEndpointInventory");
