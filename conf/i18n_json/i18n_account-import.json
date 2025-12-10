@@ -1,0 +1,50 @@
+[
+  {
+    "raw": "unable to support third party account source of type[%s]",
+    "en_US": "unable to support third party account source of type[{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "type"
+    ],
+    "line": 78,
+    "fileName": "src/main/java/org/zstack/identity/imports/AccountImportsManager.java"
+  },
+  {
+    "raw": "third party user[credentials\u003d%s] has already binding to other account",
+    "en_US": "third party user[credentials\u003d{0}] has already binding to other account",
+    "zh_CN": "",
+    "arguments": [
+      "credentials"
+    ],
+    "line": 221,
+    "fileName": "src/main/java/org/zstack/identity/imports/source/AbstractAccountSourceBase.java"
+  },
+  {
+    "raw": "invalid account spec: accountUuid is null",
+    "en_US": "invalid account spec: accountUuid is null",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 278,
+    "fileName": "src/main/java/org/zstack/identity/imports/source/AbstractAccountSourceBase.java"
+  },
+  {
+    "raw": "invalid account spec: failed to find account[uuid\u003d%s]",
+    "en_US": "invalid account spec: failed to find account[uuid\u003d{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "accountSpec.getAccountUuid()"
+    ],
+    "line": 284,
+    "fileName": "src/main/java/org/zstack/identity/imports/source/AbstractAccountSourceBase.java"
+  },
+  {
+    "raw": "account[uuid\u003d%s] has already binding other third party source",
+    "en_US": "account[uuid\u003d{0}] has already binding other third party source",
+    "zh_CN": "",
+    "arguments": [
+      "accountUuid"
+    ],
+    "line": 310,
+    "fileName": "src/main/java/org/zstack/identity/imports/source/AbstractAccountSourceBase.java"
+  }
+]

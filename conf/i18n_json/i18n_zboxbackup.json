@@ -1,0 +1,72 @@
+[
+  {
+    "raw": "please insert zbox to management node.",
+    "en_US": "please insert zbox to management node.",
+    "zh_CN": "请将ZBOX插入管理节点。",
+    "arguments": [],
+    "line": 48,
+    "fileName": "src/main/java/org/zstack/externalbackup/zbox/BackupDatabaseFlow.java"
+  },
+  {
+    "raw": "some volume[uuids:%s] recover failed. you can trigger it again by reconnect it.",
+    "en_US": "some volume[uuids:{0}] recover failed. you can trigger it again by reconnect it.",
+    "zh_CN": "某些卷[uuid：{0}]恢复失败。您可以通过重新连接来再次触发它。",
+    "arguments": [
+      "volumeUuids"
+    ],
+    "line": 142,
+    "fileName": "src/main/java/org/zstack/externalbackup/zbox/HostZBoxBackupRecoverGC.java"
+  },
+  {
+    "raw": "there is another external backup[uuid: %s] recovering",
+    "en_US": "there is another external backup[uuid: {0}] recovering",
+    "zh_CN": "另一个外部备份[uuid：{0}]正在恢复",
+    "arguments": [
+      "externalBackupUuid"
+    ],
+    "line": 34,
+    "fileName": "src/main/java/org/zstack/externalbackup/zbox/ZBoxBackupApiInterceptor.java"
+  },
+  {
+    "raw": "both hostUuids and backupStorageUuids are empty. you must specify one or both of them.",
+    "en_US": "both hostUuids and backupStorageUuids are empty. you must specify one or both of them.",
+    "zh_CN": "Hostuuid和BackupStorageuuid均为空。您必须指定其中一个或两个。",
+    "arguments": [],
+    "line": 38,
+    "fileName": "src/main/java/org/zstack/externalbackup/zbox/ZBoxBackupApiInterceptor.java"
+  },
+  {
+    "raw": "cannot find recover.conf under zbox backup install dir.",
+    "en_US": "cannot find recover.conf under zbox backup install dir.",
+    "zh_CN": "在ZBOX备份安装目录下找不到recover.conf。",
+    "arguments": [],
+    "line": 219,
+    "fileName": "src/main/java/org/zstack/externalbackup/zbox/ZBoxBackupBase.java"
+  },
+  {
+    "raw": "zbox should be inserted to a host first.",
+    "en_US": "zbox should be inserted to a host first.",
+    "zh_CN": "应首先将ZBox插入主机。",
+    "arguments": [],
+    "line": 591,
+    "fileName": "src/main/java/org/zstack/externalbackup/zbox/ZBoxBackupBase.java"
+  },
+  {
+    "raw": "fail to backup database",
+    "en_US": "fail to backup database",
+    "zh_CN": "无法备份数据库",
+    "arguments": [],
+    "line": 741,
+    "fileName": "src/main/java/org/zstack/externalbackup/zbox/ZBoxBackupBase.java"
+  },
+  {
+    "raw": "%s",
+    "en_US": "{0}",
+    "zh_CN": "{0}",
+    "arguments": [
+      "rsp.getError()"
+    ],
+    "line": 468,
+    "fileName": "src/main/java/org/zstack/externalbackup/zbox/kvm/ZBoxBackupKvmBackend.java"
+  }
+]

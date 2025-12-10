@@ -1,0 +1,133 @@
+[
+  {
+    "raw": "All the networks should be in the virtual router[%s]",
+    "en_US": "All the networks should be in the virtual router[{0}]",
+    "zh_CN": "所有网络都应位于虚拟路由器[{0}]中",
+    "arguments": [
+      "msg.getvRouterUuid()"
+    ],
+    "line": 54,
+    "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
+  },
+  {
+    "raw": "The network[%s] have been added into the flow meter[%s]",
+    "en_US": "The network[{0}] have been added into the flow meter[{1}]",
+    "zh_CN": "网络[{0}]已添加到流量计[{1}]中",
+    "arguments": [
+      "vo.getL3NetworkUuid()",
+      "vo.getFlowMeterUuid()"
+    ],
+    "line": 62,
+    "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
+  },
+  {
+    "raw": "The virtual router have been added into other flow meter",
+    "en_US": "The virtual router have been added into other flow meter",
+    "zh_CN": "已将虚拟路由器添加到其他流量计中",
+    "arguments": [],
+    "line": 70,
+    "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
+  },
+  {
+    "raw": "invalid type parameter is %s and should be in %s",
+    "en_US": "invalid type parameter is {0} and should be in {1}",
+    "zh_CN": "无效的类型参数为{0}，应位于{1}中",
+    "arguments": [
+      "msg.getVersion()",
+      "FlowMeterConstants.TYPE.NetFlow.toString()"
+    ],
+    "line": 76,
+    "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
+  },
+  {
+    "raw": "Collector duplicate with %s",
+    "en_US": "Collector duplicate with {0}",
+    "zh_CN": "收集器与{0}重复",
+    "arguments": [
+      "collector.getUuid()"
+    ],
+    "line": 134,
+    "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
+  },
+  {
+    "raw": "no specify parameter",
+    "en_US": "no specify parameter",
+    "zh_CN": "没有指定参数",
+    "arguments": [],
+    "line": 141,
+    "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
+  },
+  {
+    "raw": "[%s] is not formatted as IP address",
+    "en_US": "[{0}] is not formatted as IP address",
+    "zh_CN": "[{0}]的格式不是IP地址",
+    "arguments": [
+      "msg.getServer()"
+    ],
+    "line": 145,
+    "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
+  },
+  {
+    "raw": "Flow collector[%s] doesn\u0027t exist",
+    "en_US": "Flow collector[{0}] doesn\u0027t exist",
+    "zh_CN": "流收集器[{0}]不存在",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 150,
+    "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
+  },
+  {
+    "raw": "FlowMeter[%s] doesn\u0027t exist",
+    "en_US": "FlowMeter[{0}] doesn\u0027t exist",
+    "zh_CN": "流量计[{0}]不存在",
+    "arguments": [
+      "collectorVO.getFlowMeterUuid()"
+    ],
+    "line": 155,
+    "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
+  },
+  {
+    "raw": "FlowMeter[%s] IPv6 doesn\u0027t support version[%s]",
+    "en_US": "FlowMeter[{0}] IPv6 doesn\u0027t support version[{1}]",
+    "zh_CN": "流量计[{0}]IPv6不支持版本[{1}]",
+    "arguments": [
+      "collectorVO.getFlowMeterUuid()",
+      "vo.getVersion().toString()"
+    ],
+    "line": 159,
+    "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
+  },
+  {
+    "raw": "Collector [%s %d] duplicate with %s",
+    "en_US": "Collector [{0} {1}] duplicate with {2}",
+    "zh_CN": "收集器[{0}{1}]与{2}重复",
+    "arguments": [
+      "server",
+      "port",
+      "collector.getUuid()"
+    ],
+    "line": 174,
+    "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
+  },
+  {
+    "raw": "operation error, because:%s",
+    "en_US": "operation error, because:{0}",
+    "zh_CN": "操作错误，因为{0}",
+    "arguments": [
+      "rsp.getError()"
+    ],
+    "line": 377,
+    "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterBackend.java"
+  },
+  {
+    "raw": "%s must be a number",
+    "en_US": "{0} must be a number",
+    "zh_CN": "{0}必须是一个数字",
+    "arguments": [
+      "FlowMeterSystemTags.FLOW_EXPIRE_INTERVAL_TOKEN"
+    ],
+    "line": 157,
+    "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterManagerImpl.java"
+  }
+]

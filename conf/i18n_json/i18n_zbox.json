@@ -1,0 +1,65 @@
+[
+  {
+    "raw": "zbox[name:%s] status is not Ready, current status is %s",
+    "en_US": "zbox[name:{0}] status is not Ready, current status is {1}",
+    "zh_CN": "ZBox[名称：{0}]状态未就绪，当前状态为{1}",
+    "arguments": [
+      "zbox.getName()",
+      "zbox.getStatus()"
+    ],
+    "line": 72,
+    "fileName": "src/main/java/org/zstack/zbox/ZBoxApiInterceptor.java"
+  },
+  {
+    "raw": "zbox[uuid:%s] is still in use, cannot eject it",
+    "en_US": "zbox[uuid:{0}] is still in use, cannot eject it",
+    "zh_CN": "ZBox[uuid：{0}]仍在使用，无法将其弹出",
+    "arguments": [
+      "msg.getZBoxUuid()"
+    ],
+    "line": 122,
+    "fileName": "src/main/java/org/zstack/zbox/ZBoxBase.java"
+  },
+  {
+    "raw": "zbox[uuid:%s] is not Ready, cannot sync capacity.",
+    "en_US": "zbox[uuid:{0}] is not Ready, cannot sync capacity.",
+    "zh_CN": "ZBox[uuid：{0}]未就绪，无法同步容量。",
+    "arguments": [
+      "msg.getZBoxUuid()"
+    ],
+    "line": 151,
+    "fileName": "src/main/java/org/zstack/zbox/ZBoxBase.java"
+  },
+  {
+    "raw": "only file on zbox[mountPath:%s] can be deleted. but pass [%s]",
+    "en_US": "only file on zbox[mountPath:{0}] can be deleted. but pass [{1}]",
+    "zh_CN": "只能删除ZBox[mountPath：{0}]上的文件。但传递[{1}]",
+    "arguments": [
+      "self.getMountPath()",
+      "msg.getInstallPath()"
+    ],
+    "line": 219,
+    "fileName": "src/main/java/org/zstack/zbox/ZBoxBase.java"
+  },
+  {
+    "raw": "zbox[name:%s] state is not Ready, current state is %s",
+    "en_US": "zbox[name:{0}] state is not Ready, current state is {1}",
+    "zh_CN": "ZBox[名称：{0}]状态未就绪，当前状态为{1}",
+    "arguments": [
+      "self.getName()",
+      "self.getStatus()"
+    ],
+    "line": 285,
+    "fileName": "src/main/java/org/zstack/zbox/ZBoxBase.java"
+  },
+  {
+    "raw": "zbox[uuid: %s] seems like removed",
+    "en_US": "zbox[uuid: {0}] seems like removed",
+    "zh_CN": "ZBox[uuid：{0}]似乎已删除",
+    "arguments": [
+      "zbox.getUuid()"
+    ],
+    "line": 57,
+    "fileName": "src/main/java/org/zstack/zbox/ZBoxFactory.java"
+  }
+]

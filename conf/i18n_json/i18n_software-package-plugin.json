@@ -1,0 +1,132 @@
+[
+  {
+    "raw": "shell command failed",
+    "en_US": "shell command failed",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 42,
+    "fileName": "src/main/java/org/zstack/softwarePackage/ShellCommandUtils.java"
+  },
+  {
+    "raw": "path cannot be null or empty",
+    "en_US": "path cannot be null or empty",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 72,
+    "fileName": "src/main/java/org/zstack/softwarePackage/ShellCommandUtils.java"
+  },
+  {
+    "raw": "invalid path: %s, %s",
+    "en_US": "invalid path: {0}, {1}",
+    "zh_CN": "",
+    "arguments": [
+      "path",
+      "unzipPath"
+    ],
+    "line": 82,
+    "fileName": "src/main/java/org/zstack/softwarePackage/ShellCommandUtils.java"
+  },
+  {
+    "raw": "invalid path: %s",
+    "en_US": "invalid path: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "path"
+    ],
+    "line": 89,
+    "fileName": "src/main/java/org/zstack/softwarePackage/ShellCommandUtils.java"
+  },
+  {
+    "raw": "filesystem stat failed",
+    "en_US": "filesystem stat failed",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 96,
+    "fileName": "src/main/java/org/zstack/softwarePackage/ShellCommandUtils.java"
+  },
+  {
+    "raw": "invalid df output",
+    "en_US": "invalid df output",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 101,
+    "fileName": "src/main/java/org/zstack/softwarePackage/ShellCommandUtils.java"
+  },
+  {
+    "raw": "invalid number format",
+    "en_US": "invalid number format",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 108,
+    "fileName": "src/main/java/org/zstack/softwarePackage/ShellCommandUtils.java"
+  },
+  {
+    "raw": "software package [%s] cannot be installed in current state [%s]. Allowed states: %s or %s.",
+    "en_US": "software package [{0}] cannot be installed in current state [{1}]. Allowed states: {2} or {3}.",
+    "zh_CN": "",
+    "arguments": [
+      "softwarePackageVO.getName()",
+      "softwarePackageVO.getStatus()",
+      "Uploaded.toString()",
+      "InstallFailed.toString()"
+    ],
+    "line": 77,
+    "fileName": "src/main/java/org/zstack/softwarePackage/SoftwarePackageApiInterceptor.java"
+  },
+  {
+    "raw": "software package [%s] cannot be uninstalled in current state [%s]. Allowed states: %s.",
+    "en_US": "software package [{0}] cannot be uninstalled in current state [{1}]. Allowed states: {2}.",
+    "zh_CN": "",
+    "arguments": [
+      "softwarePackageVO.getName()",
+      "softwarePackageVO.getStatus()",
+      "allowedStatus"
+    ],
+    "line": 94,
+    "fileName": "src/main/java/org/zstack/softwarePackage/SoftwarePackageApiInterceptor.java"
+  },
+  {
+    "raw": "no extension point found for software package type: %s",
+    "en_US": "no extension point found for software package type: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "softwarePackageVO.getType()"
+    ],
+    "line": 563,
+    "fileName": "src/main/java/org/zstack/softwarePackage/SoftwarePackagePackageManagerImpl.java"
+  },
+  {
+    "raw": "software package [uuid:%s] not found",
+    "en_US": "software package [uuid:{0}] not found",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getResourceUuid()"
+    ],
+    "line": 209,
+    "fileName": "src/main/java/org/zstack/softwarePackage/UploadSoftwarePackageLongJob.java"
+  },
+  {
+    "raw": "not support",
+    "en_US": "not support",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 229,
+    "fileName": "src/main/java/org/zstack/softwarePackage/UploadSoftwarePackageLongJob.java"
+  },
+  {
+    "raw": "failed to get software package type",
+    "en_US": "failed to get software package type",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 92,
+    "fileName": "src/main/java/org/zstack/softwarePackage/UploadSoftwarePackageTracker.java"
+  },
+  {
+    "raw": "upload software package session expired",
+    "en_US": "upload software package session expired",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 143,
+    "fileName": "src/main/java/org/zstack/softwarePackage/UploadSoftwarePackageTracker.java"
+  }
+]

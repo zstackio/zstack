@@ -1,0 +1,67 @@
+[
+  {
+    "raw": "you can only update token name",
+    "en_US": "you can only update token name",
+    "zh_CN": "您只能更新令牌名称",
+    "arguments": [],
+    "line": 85,
+    "fileName": "src/main/java/org/zstack/tag2/Tag2ApiInterceptor.java"
+  },
+  {
+    "raw": "cannot update simple tag pattern format",
+    "en_US": "cannot update simple tag pattern format",
+    "zh_CN": "无法更新简单标记模式格式",
+    "arguments": [],
+    "line": 87,
+    "fileName": "src/main/java/org/zstack/tag2/Tag2ApiInterceptor.java"
+  },
+  {
+    "raw": "simple tag pattern has no tokens",
+    "en_US": "simple tag pattern has no tokens",
+    "zh_CN": "简单标记模式没有标记",
+    "arguments": [],
+    "line": 97,
+    "fileName": "src/main/java/org/zstack/tag2/Tag2ApiInterceptor.java"
+  },
+  {
+    "raw": "illegal tag uuids %s, tag type must be simple,",
+    "en_US": "illegal tag uuids {0}, tag type must be simple,",
+    "zh_CN": "标记uuid{0}非法，标记类型必须简单。",
+    "arguments": [
+      "sub"
+    ],
+    "line": 122,
+    "fileName": "src/main/java/org/zstack/tag2/Tag2ApiInterceptor.java"
+  },
+  {
+    "raw": "Invalid color specification[%s], must like #FF00FF",
+    "en_US": "Invalid color specification[{0}], must like #FF00FF",
+    "zh_CN": "颜色规范[{0}]无效，必须类似于#FF00FF",
+    "arguments": [
+      "color"
+    ],
+    "line": 133,
+    "fileName": "src/main/java/org/zstack/tag2/Tag2ApiInterceptor.java"
+  },
+  {
+    "raw": "all tokens %s must be specify",
+    "en_US": "all tokens {0} must be specify",
+    "zh_CN": "必须指定所有令牌{0}",
+    "arguments": [
+      "formatTokens"
+    ],
+    "line": 151,
+    "fileName": "src/main/java/org/zstack/tag2/Tag2ApiInterceptor.java"
+  },
+  {
+    "raw": "resource[uuids:%s] is not owned by account[uuid:%s]",
+    "en_US": "resource[uuids:{0}] is not owned by account[uuid:{1}]",
+    "zh_CN": "资源[uuid：{0}]不归帐户[uuid：{1}]所有",
+    "arguments": [
+      "invalidUuids",
+      "expectAccountUuid"
+    ],
+    "line": 164,
+    "fileName": "src/main/java/org/zstack/tag2/Tag2ApiInterceptor.java"
+  }
+]

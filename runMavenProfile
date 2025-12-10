@@ -175,7 +175,9 @@ errorcode() {
 }
 
 i18njson() {
-  ./build/zsi18n -s . -j conf/i18n.json
+  MY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  cd premium/i18n-tools
+  mvn test -Dtest=I18nJsonBuilderTest -Dsrc=$MY_DIR/ -Ddst=$MY_DIR/conf/i18n_json/
 }
 
 i18n() {

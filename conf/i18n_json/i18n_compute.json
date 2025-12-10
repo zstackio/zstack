@@ -12,7 +12,7 @@
   {
     "raw": "No host with %s found",
     "en_US": "No host with {0} found",
-    "zh_CN": "",
+    "zh_CN": "找不到具有 {0} 的主机",
     "arguments": [
       "args"
     ],
@@ -686,7 +686,7 @@
   {
     "raw": "no backup storage attached to the zone[uuid:%s] contains the ISO[uuid:%s]",
     "en_US": "no backup storage attached to the zone[uuid:{0}] contains the ISO[uuid:{1}]",
-    "zh_CN": "没有满足以下条件的的镜像服务器: 存储着 ISO {1}, 并且绑定到数据中心 {0}",
+    "zh_CN": "在数据中心 {0} 中找不到存放 ISO 镜像 {1} 的镜像存储",
     "arguments": [
       "zoneUuid",
       "isoImageUuid"
@@ -1185,7 +1185,7 @@
   {
     "raw": "unable to change to L3 network. The L3 network[uuid:%s] are belonged to l2 network[uuid:%s] that have not been attached to any cluster",
     "en_US": "unable to change to L3 network. The L3 network[uuid:{0}] are belonged to l2 network[uuid:{1}] that have not been attached to any cluster",
-    "zh_CN": "",
+    "zh_CN": "无法更改为分布式端口组。分布式端口组[uuid:{0}]属于不同的二层网络[uuids:{1}]",
     "arguments": [
       "msg.getL3NetworkUuid()",
       "l3NetworkVO.getL2NetworkUuid()"
@@ -1778,7 +1778,7 @@
   {
     "raw": "VmInstanceStartNewCreatedVmExtensionPoint[%s] refuses to create vm[uuid:%s]",
     "en_US": "VmInstanceStartNewCreatedVmExtensionPoint[{0}] refuses to create vm[uuid:{1}]",
-    "zh_CN": "VmInstanceStartNewCreatedVmExtensionPoint[{0}] 拒绝创建虚拟机[uuid:{1}]",
+    "zh_CN": "VmInstanceStartNewCreatedVmExtensionPoint[{0}] 拒绝创建虚拟机 [uuid:{1}]",
     "arguments": [
       "ext.getClass().getSimpleName()",
       "inv.getUuid()"
@@ -1789,7 +1789,7 @@
   {
     "raw": "VmInstanceStopVmExtensionPoint[%s] refuses to stop vm[uuid:%s]",
     "en_US": "VmInstanceStopVmExtensionPoint[{0}] refuses to stop vm[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "VmInstanceStartNewCreatedVmExtensionPoint[{0}] 拒绝停止虚拟机 [uuid:{1}]",
     "arguments": [
       "ext.getClass().getSimpleName()",
       "inv.getUuid()"

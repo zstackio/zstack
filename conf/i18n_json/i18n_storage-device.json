@@ -1,0 +1,305 @@
+[
+  {
+    "raw": "scsi lun[uuid: %s] and [uuid: %s] does not has a common host",
+    "en_US": "scsi lun[uuid: {0}] and [uuid: {1}] does not has a common host",
+    "zh_CN": "",
+    "arguments": [
+      "firstScsiLunVO.getUuid()",
+      "scsiLunVO.getUuid()"
+    ],
+    "line": 62,
+    "fileName": "src/main/java/org/zstack/storage/device/ScsiLunAllocatorFactory.java"
+  },
+  {
+    "raw": "scsi lun[uuid: %s] is in disabled state",
+    "en_US": "scsi lun[uuid: {0}] is in disabled state",
+    "zh_CN": "",
+    "arguments": [
+      "scsiLunVO.getUuid()"
+    ],
+    "line": 67,
+    "fileName": "src/main/java/org/zstack/storage/device/ScsiLunAllocatorFactory.java"
+  },
+  {
+    "raw": "the specific SCSI lun required",
+    "en_US": "the specific SCSI lun required",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 73,
+    "fileName": "src/main/java/org/zstack/storage/device/ScsiLunAllocatorFactory.java"
+  },
+  {
+    "raw": "do not support migration of vm[uuid:%s] with shared block",
+    "en_US": "do not support migration of vm[uuid:{0}] with shared block",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVmInstanceUuid()"
+    ],
+    "line": 99,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "NVMe server[ip: %s, port: %s, transport: %s] already exists",
+    "en_US": "NVMe server[ip: {0}, port: {1}, transport: {2}] already exists",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getIp()",
+      "msg.getPort()",
+      "msg.getTransport()"
+    ],
+    "line": 112,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "NVMe server ip: %s is not valid",
+    "en_US": "NVMe server ip: {0} is not valid",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getIp()"
+    ],
+    "line": 117,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "NVMe server[uuid: %s] already attached to cluster[uuid: %s]",
+    "en_US": "NVMe server[uuid: {0}] already attached to cluster[uuid: {1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()",
+      "msg.getClusterUuid()"
+    ],
+    "line": 126,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "iSCSI server[ip: %s, port: %s] already exists",
+    "en_US": "iSCSI server[ip: {0}, port: {1}] already exists",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getIp()",
+      "msg.getPort()"
+    ],
+    "line": 155,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "iSCSI server ip: %s is not valid",
+    "en_US": "iSCSI server ip: {0} is not valid",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getIp()"
+    ],
+    "line": 160,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "iSCSI server[uuid: %s] already attached to cluster[uuid: %s]",
+    "en_US": "iSCSI server[uuid: {0}] already attached to cluster[uuid: {1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()",
+      "msg.getClusterUuid()"
+    ],
+    "line": 169,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "iSCSI server[uuid: %s] not attached to cluster[uuid: %s]",
+    "en_US": "iSCSI server[uuid: {0}] not attached to cluster[uuid: {1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()",
+      "msg.getClusterUuid()"
+    ],
+    "line": 179,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "iSCSI server[uuid: %s] still attached to cluster[uuid: %s]",
+    "en_US": "iSCSI server[uuid: {0}] still attached to cluster[uuid: {1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()",
+      "clusterUuid"
+    ],
+    "line": 190,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "scsi lun[wwid: %s] has been attached to vm instance %s",
+    "en_US": "scsi lun[wwid: {0}] has been attached to vm instance {1}",
+    "zh_CN": "",
+    "arguments": [
+      "scsiLunVO.getWwid()",
+      "refVO.getVmInstanceUuid()"
+    ],
+    "line": 219,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "scisLun[uuids:%s] are not attach to the cluster of host[uuid:%s]",
+    "en_US": "scisLun[uuids:{0}] are not attach to the cluster of host[uuid:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "lunUuids.toString()",
+      "msg.getHostUuid()"
+    ],
+    "line": 247,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "please umount all block devices of the vm[%s] and try again",
+    "en_US": "please umount all block devices of the vm[{0}] and try again",
+    "zh_CN": "",
+    "arguments": [
+      "VmInstanceUuid"
+    ],
+    "line": 269,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "hba scan is error: %s",
+    "en_US": "hba scan is error: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "rsp.getError()"
+    ],
+    "line": 242,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceKvmBackend.java"
+  },
+  {
+    "raw": "%s",
+    "en_US": "{0}",
+    "zh_CN": "",
+    "arguments": [
+      "rsp.getError()"
+    ],
+    "line": 739,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceKvmBackend.java"
+  },
+  {
+    "raw": "scsi lun[wwid:%s] has been attached into the vm[%s]",
+    "en_US": "scsi lun[wwid:{0}] has been attached into the vm[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "lunVO.getWwid()",
+      "msg.getVmInstanceUuid()"
+    ],
+    "line": 2009,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
+  },
+  {
+    "raw": "vm instance[%s] state[%s] not in allowed state[%s] for operation",
+    "en_US": "vm instance[{0}] state[{1}] not in allowed state[{2}] for operation",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVmInstanceUuid()",
+      "vmInstanceVO.getState()",
+      "allowedVmOperationStates"
+    ],
+    "line": 2084,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
+  },
+  {
+    "raw": "vm instance[%s] host[uuid: %s] not attached scsi lun[uuid: %s]",
+    "en_US": "vm instance[{0}] host[uuid: {1}] not attached scsi lun[uuid: {2}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVmInstanceUuid()",
+      "hostVO.getUuid()",
+      "msg.getUuid()"
+    ],
+    "line": 2093,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
+  },
+  {
+    "raw": "different nvme targets were found on host[%s] and host[%s]",
+    "en_US": "different nvme targets were found on host[{0}] and host[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "hostVO.getUuid()",
+      "context.checkerHostUuid"
+    ],
+    "line": 2505,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
+  },
+  {
+    "raw": "SCSI LUN[%s] is attached to VM [%s]",
+    "en_US": "SCSI LUN[{0}] is attached to VM [{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()",
+      "vmUuids"
+    ],
+    "line": 2743,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
+  },
+  {
+    "raw": "SCSI LUN[%s] record not found on host [%s]",
+    "en_US": "SCSI LUN[{0}] record not found on host [{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()",
+      "msg.getHostUuid()"
+    ],
+    "line": 2753,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
+  },
+  {
+    "raw": "unexpected hypervisor type[%s] for host [%s]",
+    "en_US": "unexpected hypervisor type[{0}] for host [{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "hvType",
+      "msg.getHostUuid()"
+    ],
+    "line": 2765,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
+  },
+  {
+    "raw": "specified scsi lun[wwid: %s] not exists or disabled",
+    "en_US": "specified scsi lun[wwid: {0}] not exists or disabled",
+    "zh_CN": "",
+    "arguments": [
+      "refVO.getScsiLunUuid()"
+    ],
+    "line": 3686,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
+  },
+  {
+    "raw": "scsi[%s] lun[wwid:%s] has been attached into the vm[%s]",
+    "en_US": "scsi[{0}] lun[wwid:{1}] has been attached into the vm[{2}]",
+    "zh_CN": "",
+    "arguments": [
+      "resourceUuid",
+      "lunVO.getWwid()",
+      "vmInstanceUuid"
+    ],
+    "line": 3743,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
+  },
+  {
+    "raw": "vm instance[%s] state [%s] not in allowed state[%s] for operation",
+    "en_US": "vm instance[{0}] state [{1}] not in allowed state[{2}] for operation",
+    "zh_CN": "",
+    "arguments": [
+      "vmInstanceVO.getUuid()",
+      "vmInstanceVO.getState()",
+      "allowedVmOperationStates"
+    ],
+    "line": 3750,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
+  },
+  {
+    "raw": "vm instance[uuid: %s] host[uuid: %s] not attached scsi lun[uuid: %s]",
+    "en_US": "vm instance[uuid: {0}] host[uuid: {1}] not attached scsi lun[uuid: {2}]",
+    "zh_CN": "",
+    "arguments": [
+      "vmInstanceVO.getUuid()",
+      "vmInstanceVO.getHostUuid()",
+      "resourceUuid"
+    ],
+    "line": 3759,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
+  }
+]

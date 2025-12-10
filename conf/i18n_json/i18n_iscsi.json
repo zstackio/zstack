@@ -1,0 +1,12 @@
+[
+  {
+    "raw": "operation error, because:%s",
+    "en_US": "operation error, because:{0}",
+    "zh_CN": "操作错误，因为{0}",
+    "arguments": [
+      "rsp.error"
+    ],
+    "line": 371,
+    "fileName": "src/main/java/org/zstack/iscsi/kvm/KvmIscsiNodeServer.java"
+  }
+]

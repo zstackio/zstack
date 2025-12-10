@@ -1,0 +1,925 @@
+[
+  {
+    "raw": "there has been a kvm host having management ip[%s]",
+    "en_US": "there has been a kvm host having management ip[{0}]",
+    "zh_CN": "已经存在一个拥有管理节点IP[{0}]的主机",
+    "arguments": [
+      "msg.getManagementIp()"
+    ],
+    "line": 46,
+    "fileName": "src/main/java/org/zstack/kvm/KVMApiInterceptor.java"
+  },
+  {
+    "raw": "cannot create vlan-device on %s because it\u0027s too long",
+    "en_US": "cannot create vlan-device on {0} because it\u0027s too long",
+    "zh_CN": "无法在{0}上创建VLAN设备，因为它太长",
+    "arguments": [
+      "l2.getPhysicalInterface()"
+    ],
+    "line": 64,
+    "fileName": "src/main/java/org/zstack/kvm/KVMApiInterceptor.java"
+  },
+  {
+    "raw": "failed to get VNC port from VM[%s]",
+    "en_US": "failed to get VNC port from VM[{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "vm.getUuid()"
+    ],
+    "line": 64,
+    "fileName": "src/main/java/org/zstack/kvm/KVMConsoleHypervisorBackend.java"
+  },
+  {
+    "raw": "unexpected VNC port number[%d] for VM [uuid:%s]",
+    "en_US": "unexpected VNC port number[{0}] for VM [uuid:{1}]",
+    "zh_CN": "VM[uuid：{1}]的意外VNC端口号[{0}]",
+    "arguments": [
+      "rsp.getPort()",
+      "vm.getUuid()"
+    ],
+    "line": 70,
+    "fileName": "src/main/java/org/zstack/kvm/KVMConsoleHypervisorBackend.java"
+  },
+  {
+    "raw": "host[uuid:%s] has been deleted",
+    "en_US": "host[uuid:{0}] has been deleted",
+    "zh_CN": "主机[uuid:{0}]已经被删除了",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "line": 523,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "fail to update nqn of host[uuid:%s]",
+    "en_US": "fail to update nqn of host[uuid:{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getHostUuid()"
+    ],
+    "line": 758,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "fail to update hostname of host[uuid:%s]",
+    "en_US": "fail to update hostname of host[uuid:{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getHostUuid()"
+    ],
+    "line": 821,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "Failed to update the quota configuration item in the virtual machine XML",
+    "en_US": "Failed to update the quota configuration item in the virtual machine XML",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 854,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to get VM uptime",
+    "en_US": "failed to get VM uptime",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 929,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to take VM console screenshot",
+    "en_US": "failed to take VM console screenshot",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 987,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to do block commit",
+    "en_US": "failed to do block commit",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 1051,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to do block pull",
+    "en_US": "failed to do block pull",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 1165,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "ssh connect to host[%s] username[%s] on port[%s] failed, because %s",
+    "en_US": "ssh connect to host[{0}] username[{1}] on port[{2}] failed, because {3}",
+    "zh_CN": "",
+    "arguments": [
+      "host.getUuid()",
+      "host.getUsername()",
+      "host.getPort()",
+      "webSsh.status"
+    ],
+    "line": 1285,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "check host capacity failed, because:%s",
+    "en_US": "check host capacity failed, because:{0}",
+    "zh_CN": "检查物理机容量失败，原因：{0}",
+    "arguments": [
+      "reply.getError()"
+    ],
+    "line": 1777,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "The host[uuid:%s]\u0027s available memory capacity[%s] is lower than the reserved capacity[%s]",
+    "en_US": "The host[uuid:{0}]\u0027s available memory capacity[{1}] is lower than the reserved capacity[{2}]",
+    "zh_CN": "物理机[uuid:{0}]的可用内存[{1}]少于保留内存[{2}]",
+    "arguments": [
+      "msg.getHostUuid()",
+      "rsp.getTotalMemory()",
+      "reservedSize"
+    ],
+    "line": 1788,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to register colo heartbeat for vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
+    "en_US": "unable to register colo heartbeat for vm[uuid:{0}] on kvm host [uuid:{1}, ip:{2}], because {3}",
+    "zh_CN": "无法为KVM物理机[uuid：{1}，IP：{2}]上的VM[uuid：{0}]注册COLO检测信号，因为{3}",
+    "arguments": [
+      "msg.getVmInstanceUuid()",
+      "self.getUuid()",
+      "self.getManagementIp()",
+      "ret.getError()"
+    ],
+    "line": 1843,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to start colo sync vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
+    "en_US": "unable to start colo sync vm[uuid:{0}] on kvm host [uuid:{1}, ip:{2}], because {3}",
+    "zh_CN": "无法在KVM物理机[uuid：{1}，IP：{2}]上启动Colo Sync VM[uuid：{0}]，原因是{3}",
+    "arguments": [
+      "msg.getVmInstanceUuid()",
+      "self.getUuid()",
+      "self.getManagementIp()",
+      "ret.getError()"
+    ],
+    "line": 1901,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to config secondary vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
+    "en_US": "unable to config secondary vm[uuid:{0}] on kvm host [uuid:{1}, ip:{2}], because {3}",
+    "zh_CN": "无法在KVM物理机[uuid：{1}，IP：{2}]上配置辅助云主机[uuid：{0}]，原因是{3}",
+    "arguments": [
+      "msg.getVmInstanceUuid()",
+      "self.getUuid()",
+      "self.getManagementIp()",
+      "ret.getError()"
+    ],
+    "line": 1956,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to config primary vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
+    "en_US": "unable to config primary vm[uuid:{0}] on kvm host [uuid:{1}, ip:{2}], because {3}",
+    "zh_CN": "无法在KVM物理机[uuid：{1}，IP：{2}]上配置主VM[uuid：{0}]，原因是{3}",
+    "arguments": [
+      "msg.getVmInstanceUuid()",
+      "self.getUuid()",
+      "self.getManagementIp()",
+      "ret.getError()"
+    ],
+    "line": 1988,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to get first boot dev of vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
+    "en_US": "unable to get first boot dev of vm[uuid:{0}] on kvm host [uuid:{1}, ip:{2}], because {3}",
+    "zh_CN": "无法获取KVM物理机[uuid：{1}，IP：{2}]上的VM[uuid：{0}]的第一个引导设备，因为{3}",
+    "arguments": [
+      "msg.getVmInstanceUuid()",
+      "self.getUuid()",
+      "self.getManagementIp()",
+      "ret.getError()"
+    ],
+    "line": 2029,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to get vm[uuid:%s] device address, because:%s",
+    "en_US": "failed to get vm[uuid:{0}] device address, because:{1}",
+    "zh_CN": "无法获取VM[uuid：{0}]设备地址，因为：{1}",
+    "arguments": [
+      "msg.getVmInstanceUuid()",
+      "rsp.getError()"
+    ],
+    "line": 2078,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to get host[uuid:%s] virtualizer info, because:%s",
+    "en_US": "failed to get host[uuid:{0}] virtualizer info, because:{1}",
+    "zh_CN": "无法获取物理机[uuid：{0}]虚拟化程序信息，因为：{1}",
+    "arguments": [
+      "msg.getHostUuid()",
+      "rsp.getError()"
+    ],
+    "line": 2133,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to increase vm cpu, error details: %s",
+    "en_US": "failed to increase vm cpu, error details: {0}",
+    "zh_CN": "无法增加VM CPU，错误详细信息：{0}",
+    "arguments": [
+      "ret.getError()"
+    ],
+    "line": 2215,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check DNS",
+    "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort:{2}] to do DNS check, please check if username/password is wrong",
+    "zh_CN": "无法连接主机 [ip:{0}, 用户名:{1}, ssh端口:{2}] 做 DNS 检查，请检查用户名密码是否正确",
+    "arguments": [
+      "self.getManagementIp()",
+      "getSelf().getUsername()",
+      "getSelf().getPort()"
+    ],
+    "line": 2316,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "the host[uuid:%s, status:%s] is not Connected",
+    "en_US": "the host[uuid:{0}, status:{1}] is not Connected",
+    "zh_CN": "物理机[uuid:{0}, 状态:{1}]不是Connected状态",
+    "arguments": [
+      "self.getUuid()",
+      "self.getStatus()"
+    ],
+    "line": 2398,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "vm[uuid:%s] is not Running or Stopped, current state[%s]",
+    "en_US": "vm[uuid:{0}] is not Running or Stopped, current state[{1}]",
+    "zh_CN": "云主机[uuid:{0}]未处在Running或Stopped状态, 现在状态为[{1}]",
+    "arguments": [
+      "msg.getVmUuid()",
+      "vmState"
+    ],
+    "line": 2979,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to detach data volume[uuid:%s, installPath:%s] from vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+    "en_US": "failed to detach data volume[uuid:{0}, installPath:{1}] from vm[uuid:{2}, name:{3}] on kvm host[uuid:{4}, ip:{5}], because {6}",
+    "zh_CN": "无法在KVM物理机[uuid:{4}, ip:{5}]上为云主机[uuid:{2}, name:{3}]卸载云盘[uuid:{0}, installPath:{1}]，因为: {6}",
+    "arguments": [
+      "vol.getUuid()",
+      "vol.getInstallPath()",
+      "vm.getUuid()",
+      "vm.getName()",
+      "getSelf().getUuid()",
+      "getSelf().getManagementIp()",
+      "ret.getError()"
+    ],
+    "line": 3560,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to destroy vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+    "en_US": "failed to destroy vm[uuid:{0} name:{1}] on kvm host[uuid:{2}, ip:{3}], because {4}",
+    "zh_CN": "无法在物理机[uuid:{2}, ip:{3}]上删除云主机[uuid:{0} name:{1}]，原因: {4}",
+    "arguments": [
+      "vminv.getUuid()",
+      "vminv.getName()",
+      "self.getUuid()",
+      "self.getManagementIp()",
+      "e.getMessage()"
+    ],
+    "line": 3718,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to stop vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+    "en_US": "failed to stop vm[uuid:{0} name:{1}] on kvm host[uuid:{2}, ip:{3}], because {4}",
+    "zh_CN": "在物理机[uuid:{2}, ip:{3}]上停止云主机[uuid:{0} 名称:{1}]失败，因为:{4}",
+    "arguments": [
+      "vminv.getUuid()",
+      "vminv.getName()",
+      "self.getUuid()",
+      "self.getManagementIp()",
+      "e.getMessage()"
+    ],
+    "line": 3852,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "host[uuid:%s] capacity is not enough to offer cpu[%s], memory[%s bytes]",
+    "en_US": "host[uuid:{0}] capacity is not enough to offer cpu[{1}], memory[{2} bytes]",
+    "zh_CN": "物理机[uuid:{0}]无法提供CPU: [{1}]，内存: [{2} bytes]",
+    "arguments": [
+      "vm.getUuid()",
+      "cpuChangeTo - oldCpuNum",
+      "alignedMemory.get() - oldMemorySize"
+    ],
+    "line": 4035,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "Host[%s] update spice channel config faild, because %s",
+    "en_US": "Host[{0}] update spice channel config faild, because {1}",
+    "zh_CN": "物理机[{0}]更新SPICE通道配置失败，原因是{1}",
+    "arguments": [
+      "msg.getHostUuid()",
+      "ret.getError()"
+    ],
+    "line": 4143,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "when the vm platform is Other, the number of dataVolumes and cdroms cannot exceed 3, currently %s",
+    "en_US": "when the vm platform is Other, the number of dataVolumes and cdroms cannot exceed 3, currently {0}",
+    "zh_CN": "当VM平台为OTHER时，DataVolumes和CDROM的数量不能超过3个，目前为{0}",
+    "arguments": [
+      "total"
+    ],
+    "line": 4273,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to check physical network interfaces[names : %s] on kvm host[uuid:%s, ip:%s]",
+    "en_US": "failed to check physical network interfaces[names : {0}] on kvm host[uuid:{1}, ip:{2}]",
+    "zh_CN": "无法检查KVM物理机[uuid：{1}，IP：{2}]上的物理网络接口[名称：{0}]",
+    "arguments": [
+      "msg.getPhysicalInterface()",
+      "context.getInventory().getUuid()",
+      "context.getInventory().getManagementIp()"
+    ],
+    "line": 4788,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
+    "en_US": "unable to connect to kvm host[uuid:{0}, ip:{1}, url:{2}], because {3}",
+    "zh_CN": "连接物理机[uuid:{0}, ip:{1}，url:{2}]失败，因为:{3}",
+    "arguments": [
+      "self.getUuid()",
+      "self.getManagementIp()",
+      "connectPath",
+      "rsp.getError()"
+    ],
+    "line": 5106,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "the host[%s] ssh port[%s] not open after %s seconds, connect timeout",
+    "en_US": "the host[{0}] ssh port[{1}] not open after {2} seconds, connect timeout",
+    "zh_CN": "物理机[{0}]SSH端口[{1}]在{2}秒后未打开，连接超时",
+    "arguments": [
+      "getSelf().getManagementIp()",
+      "getSelf().getPort()",
+      "TimeUnit.MILLISECONDS.toSeconds(sshTimeout)"
+    ],
+    "line": 5295,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to connect to KVM[ip:%s, username:%s, sshPort: %d, ] to do DNS check, please check if username/password is wrong; %s",
+    "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort: {2}, ] to do DNS check, please check if username/password is wrong; {3}",
+    "zh_CN": "无法连接物理机[ip:{0}, 用户名:{1}, ssh端口:{2} ]做DNS检查，请检查用户名密码是否正确；{3}",
+    "arguments": [
+      "self.getManagementIp()",
+      "getSelf().getUsername()",
+      "getSelf().getPort()",
+      "ret.getExitErrorMessage()"
+    ],
+    "line": 5412,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to ping all DNS/IP in %s; please check /etc/resolv.conf to make sure your host is able to reach public internet",
+    "en_US": "failed to ping all DNS/IP in {0}; please check /etc/resolv.conf to make sure your host is able to reach public internet",
+    "zh_CN": "在{0}中的所有DNS/IP都ping失败了，请检查 /etc/resolv.conf 来确保你的物理机能连接到公网",
+    "arguments": [
+      "checkList"
+    ],
+    "line": 5414,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to check whether the host is taken over",
+    "en_US": "unable to check whether the host is taken over",
+    "zh_CN": "无法检查主机是否已被接管",
+    "arguments": [],
+    "line": 5502,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to get the host takeover information",
+    "en_US": "unable to get the host takeover information",
+    "zh_CN": "无法读取主机的接管信息",
+    "arguments": [],
+    "line": 5520,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "the host[ip:%s] has been taken over, because the takeover flag[HostUuid:%s] already exists and utime[%d] has not exceeded host ping interval[%d]",
+    "en_US": "the host[ip:{0}] has been taken over, because the takeover flag[HostUuid:{1}] already exists and utime[{2}] has not exceeded host ping interval[{3}]",
+    "zh_CN": "物理机[IP：{0}]已被接管，因为接管标志[HOSTuuid：{1}]已存在，并且UTIME[{2}]未超过物理机ping间隔[{3}]",
+    "arguments": [
+      "self.getManagementIp()",
+      "hostOutput",
+      "diff",
+      "HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)"
+    ],
+    "line": 5530,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "the host[ip:%s] has been taken over, because flag[HostUuid:%s] exists in the database",
+    "en_US": "the host[ip:{0}] has been taken over, because flag[HostUuid:{1}] exists in the database",
+    "zh_CN": "物理机[IP：{0}]已被接管，因为数据库中存在标志[HOSTuuid：{1}]",
+    "arguments": [
+      "self.getManagementIp()",
+      "lastHostInv.getUuid()"
+    ],
+    "line": 5539,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to get host cpu architecture, please check if username/password is wrong",
+    "en_US": "unable to get host cpu architecture, please check if username/password is wrong",
+    "zh_CN": "无法获取主机 CPU 架构，请检查用户名和密码是否正确",
+    "arguments": [],
+    "line": 5557,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "host cpu architecture[%s] is not matched the cluster[%s]",
+    "en_US": "host cpu architecture[{0}] is not matched the cluster[{1}]",
+    "zh_CN": "物理机CPU体系结构[{0}]与集群[{1}]不匹配",
+    "arguments": [
+      "hostArchitecture",
+      "cluster.getArchitecture()"
+    ],
+    "line": 5586,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "host [uuid:%s] cannot be added to cluster [uuid:%s] because qemu/libvirt version does not match",
+    "en_US": "host [uuid:{0}] cannot be added to cluster [uuid:{1}] because qemu/libvirt version does not match",
+    "zh_CN": "物理机[uuid:{0}]不能添加到集群[uuid:{1}]中，因为qemu/libvirt不匹配",
+    "arguments": [
+      "self.getUuid()",
+      "self.getClusterUuid()"
+    ],
+    "line": 5929,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
+    "en_US": "host [uuid:{0}] cannot be added to cluster [uuid:{1}] because cpu model name does not match",
+    "zh_CN": "物理机[uuid:{0}]无法被添加到集群[uuid:{1}]因为cpu型号不一致",
+    "arguments": [
+      "self.getUuid()",
+      "self.getClusterUuid()"
+    ],
+    "line": 5949,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "cannot find either \u0027vmx\u0027 or \u0027svm\u0027 in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting",
+    "en_US": "cannot find either \u0027vmx\u0027 or \u0027svm\u0027 in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting",
+    "zh_CN": "不能发现以下任意一个  \u0027vmx\u0027 or \u0027svm\u0027 在路径 /proc/cpuinfo 里, 请检查你是否在你的BIOS设置里开启了virtualization选项",
+    "arguments": [],
+    "line": 6010,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "host[uuid:%s]\u0027s %s changed, old:%s, new:%s",
+    "en_US": "host[uuid:{0}]\u0027s {1} changed, old:{2}, new:{3}",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "systemTag.getTagFormat()",
+      "oldValue",
+      "newValue"
+    ],
+    "line": 6059,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "host[%s] not shutdown in %d seconds",
+    "en_US": "host[{0}] not shutdown in {1} seconds",
+    "zh_CN": "物理机[{0}]未在{1}秒内关闭",
+    "arguments": [
+      "msg.getHostUuid()",
+      "ctimeout"
+    ],
+    "line": 6274,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "host is in the premaintenance state, cannot update os",
+    "en_US": "host is in the premaintenance state, cannot update os",
+    "zh_CN": "物理机正处于预维护状态，不能升级操作系统",
+    "arguments": [],
+    "line": 6429,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "host is not in the connected status, cannot update os",
+    "en_US": "host is not in the connected status, cannot update os",
+    "zh_CN": "物理机当前并不是已连接状态，不能升级操作系统",
+    "arguments": [],
+    "line": 6431,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "%s",
+    "en_US": "{0}",
+    "zh_CN": "{0}",
+    "arguments": [
+      "ret.getError()"
+    ],
+    "line": 6502,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to attach volume to host, because:%s",
+    "en_US": "failed to attach volume to host, because:{0}",
+    "zh_CN": "无法将卷附加到物理机，因为：{0}",
+    "arguments": [
+      "rsp.getError()"
+    ],
+    "line": 6737,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to detach volume from host, because:%s",
+    "en_US": "failed to detach volume from host, because:{0}",
+    "zh_CN": "无法从物理机分离卷，因为：{0}",
+    "arguments": [
+      "rsp.getError()"
+    ],
+    "line": 6798,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "vm[%s] failed to fstrim, because:%s",
+    "en_US": "vm[{0}] failed to fstrim, because:{1}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVmUuid()",
+      "rsp.getError()"
+    ],
+    "line": 6864,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to get block devices, because:%s",
+    "en_US": "failed to get block devices, because:{0}",
+    "zh_CN": "",
+    "arguments": [
+      "rsp.getError()"
+    ],
+    "line": 6932,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to upload file, because:%s",
+    "en_US": "failed to upload file, because:{0}",
+    "zh_CN": "",
+    "arguments": [
+      "rsp.getError()"
+    ],
+    "line": 6977,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to parse upload URL [%s]: %s",
+    "en_US": "failed to parse upload URL [{0}]: {1}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUrl()",
+      "e.getMessage()"
+    ],
+    "line": 7010,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "upload URL [%s] is missing a protocol prefix",
+    "en_US": "upload URL [{0}] is missing a protocol prefix",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUrl()"
+    ],
+    "line": 7016,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to download file, because:%s",
+    "en_US": "failed to download file, because:{0}",
+    "zh_CN": "",
+    "arguments": [
+      "rsp.getError()"
+    ],
+    "line": 7027,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to query download progress for task[%s] on host[uuid:%s], because: %s",
+    "en_US": "failed to query download progress for task[{0}] on host[uuid:{1}], because: {2}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getTaskUuid()",
+      "self.getUuid()",
+      "resp.getError()"
+    ],
+    "line": 7056,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "kvm properties mismatch detected from host[uuid:%s]",
+    "en_US": "kvm properties mismatch detected from host[uuid:{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "srcHostUuid"
+    ],
+    "line": 190,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHostAllocatorFilterExtensionPoint.java"
+  },
+  {
+    "raw": "cluster[uuid:%s] hypervisorType is not %s",
+    "en_US": "cluster[uuid:{0}] hypervisorType is not {1}",
+    "zh_CN": "集群[uuid：{0}]管理程序类型不是{1}",
+    "arguments": [
+      "msg.getClusterUuid()",
+      "KVMConstant.KVM_HYPERVISOR_TYPE"
+    ],
+    "line": 151,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
+  },
+  {
+    "raw": "fail to load host info from file. because\\n%s",
+    "en_US": "fail to load host info from file. because\\n{0}",
+    "zh_CN": "无法从文件加载物理机信息。因为\\n{0}",
+    "arguments": [
+      "e.getMessage()"
+    ],
+    "line": 170,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
+  },
+  {
+    "raw": "the operation system[%s] of host[name:%s, ip:%s] is invalid",
+    "en_US": "the operation system[{0}] of host[name:{1}, ip:{2}] is invalid",
+    "zh_CN": "物理机[名称：{1}，IP：{2}]的操作系统[{0}]无效",
+    "arguments": [
+      "os",
+      "vo.getName()",
+      "vo.getManagementIp()"
+    ],
+    "line": 301,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
+  },
+  {
+    "raw": "cluster[uuid:%s] already has host with os version[%s], but new added host[name:%s ip:%s] has different host os version[%s]",
+    "en_US": "cluster[uuid:{0}] already has host with os version[{1}], but new added host[name:{2} ip:{3}] has different host os version[{4}]",
+    "zh_CN": "集群[uuid：{0}]已具有操作系统版本为[{1}]的物理机，但新添加的物理机[名称：{2}IP：{3}]具有不同的物理机操作系统版本[{4}]",
+    "arguments": [
+      "vo.getClusterUuid()",
+      "otherOs",
+      "vo.getName()",
+      "vo.getManagementIp()",
+      "os"
+    ],
+    "line": 327,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
+  },
+  {
+    "raw": "vm[uuid:%s] crashes due to kernel error",
+    "en_US": "vm[uuid:{0}] crashes due to kernel error",
+    "zh_CN": "VM[uuid：{0}]因内核错误而崩溃",
+    "arguments": [
+      "cmd.vmUuid"
+    ],
+    "line": 569,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
+  },
+  {
+    "raw": "host[uuid: %s] memory ecc triggered, detail: %s",
+    "en_US": "host[uuid: {0}] memory ecc triggered, detail: {1}",
+    "zh_CN": "物理机[uuid：{0}]内存ECC已触发，详细信息：{1}",
+    "arguments": [
+      "cmd.host",
+      "cmd.detail"
+    ],
+    "line": 669,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
+  },
+  {
+    "raw": "there are still hosts not have the same cpu model, details: %s",
+    "en_US": "there are still hosts not have the same cpu model, details: {0}",
+    "zh_CN": "仍存在host有不同的cpu模型，详细信息：{0}",
+    "arguments": [
+      "str.toString()"
+    ],
+    "line": 702,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
+  },
+  {
+    "raw": "%s must be a number",
+    "en_US": "{0} must be a number",
+    "zh_CN": "{0}必须是一个数字",
+    "arguments": [
+      "KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN"
+    ],
+    "line": 712,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
+  },
+  {
+    "raw": "pci bridge need a value greater than 0 and lower than 32",
+    "en_US": "pci bridge need a value greater than 0 and lower than 32",
+    "zh_CN": "PCI桥需要大于0且小于32的值",
+    "arguments": [
+      "KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN"
+    ],
+    "line": 716,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
+  },
+  {
+    "raw": "vm do not support having both SCSI and Virtio-SCSI bus type volumes simultaneously.",
+    "en_US": "vm do not support having both SCSI and Virtio-SCSI bus type volumes simultaneously.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 792,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
+  },
+  {
+    "raw": "host[uuid:%s] does not have cpu model information, you can reconnect the host to fix it",
+    "en_US": "host[uuid:{0}] does not have cpu model information, you can reconnect the host to fix it",
+    "zh_CN": "物理机[uuid:{0}]无cpu模型信息，你可以尝试重连来解决这个问题",
+    "arguments": [
+      "hostUuid"
+    ],
+    "line": 1071,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
+  },
+  {
+    "raw": "failed to create bridge[%s] for l2Network[uuid:%s, type:%s] on kvm host[uuid:%s], because %s",
+    "en_US": "failed to create bridge[{0}] for l2Network[uuid:{1}, type:{2}] on kvm host[uuid:{3}], because {4}",
+    "zh_CN": "在物理机[uuid:{3}]上为二层网络[uuid:{1}, type:{2}]创建网桥[{0}]失败，原因: {4}",
+    "arguments": [
+      "cmd.getBridgeName()",
+      "l2Network.getUuid()",
+      "l2Network.getType()",
+      "hostUuid",
+      "rsp.getError()"
+    ],
+    "line": 71,
+    "fileName": "src/main/java/org/zstack/kvm/KVMRealizeL2NoVlanNetworkBackend.java"
+  },
+  {
+    "raw": "failed to check bridge[%s] for l2NoVlanNetwork[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
+    "en_US": "failed to check bridge[{0}] for l2NoVlanNetwork[uuid:{1}, name:{2}] on kvm host[uuid: {3}], {4}",
+    "zh_CN": "在二层网络[uuid:{1}中检查网桥[{0}]失败，名字为[{2}]在物理机t[uuid: {3}]上, {4}",
+    "arguments": [
+      "cmd.getBridgeName()",
+      "l2Network.getUuid()",
+      "l2Network.getName()",
+      "hostUuid",
+      "rsp.getError()"
+    ],
+    "line": 130,
+    "fileName": "src/main/java/org/zstack/kvm/KVMRealizeL2NoVlanNetworkBackend.java"
+  },
+  {
+    "raw": "failed to delete bridge[%s] for l2Network[uuid:%s, type:%s] on kvm host[uuid:%s], because %s",
+    "en_US": "failed to delete bridge[{0}] for l2Network[uuid:{1}, type:{2}] on kvm host[uuid:{3}], because {4}",
+    "zh_CN": "无法在KVM物理机[uuid：{3}]上删除二层网络[uuid：{1}，类型：{2}]的网桥[{0}]，因为{4}",
+    "arguments": [
+      "cmd.getBridgeName()",
+      "l2Network.getUuid()",
+      "l2Network.getType()",
+      "hostUuid",
+      "rsp.getError()"
+    ],
+    "line": 206,
+    "fileName": "src/main/java/org/zstack/kvm/KVMRealizeL2NoVlanNetworkBackend.java"
+  },
+  {
+    "raw": "failed to create bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
+    "en_US": "failed to create bridge[{0}] for l2Network[uuid:{1}, type:{2}, vlan:{3}] on kvm host[uuid:{4}], because {5}",
+    "zh_CN": "创建二层网络[uuid:{1}中的网桥[{0}]失败 , 类型为: {2}, vlan:{3}] 在物理机[uuid:{4}]上, 原因:  {5}",
+    "arguments": [
+      "cmd.getBridgeName()",
+      "l2Network.getUuid()",
+      "l2Network.getType()",
+      "l2vlan.getVlan()",
+      "hostUuid",
+      "rsp.getError()"
+    ],
+    "line": 77,
+    "fileName": "src/main/java/org/zstack/kvm/KVMRealizeL2VlanNetworkBackend.java"
+  },
+  {
+    "raw": "failed to check bridge[%s] for l2VlanNetwork[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
+    "en_US": "failed to check bridge[{0}] for l2VlanNetwork[uuid:{1}, name:{2}] on kvm host[uuid:{3}], {4}",
+    "zh_CN": "检查在物理机[uuid:{3}]上二层网络[uuid:{1}, name:{2}]中的网桥[{0}]失败, {4}",
+    "arguments": [
+      "cmd.getBridgeName()",
+      "l2vlan.getUuid()",
+      "l2vlan.getName()",
+      "hostUuid",
+      "rsp.getError()"
+    ],
+    "line": 137,
+    "fileName": "src/main/java/org/zstack/kvm/KVMRealizeL2VlanNetworkBackend.java"
+  },
+  {
+    "raw": "failed to delete bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
+    "en_US": "failed to delete bridge[{0}] for l2Network[uuid:{1}, type:{2}, vlan:{3}] on kvm host[uuid:{4}], because {5}",
+    "zh_CN": "无法在KVM物理机[uuid：{4}]上删除二层网络[uuid：{1}，类型：{2}，VLAN：{3}]的网桥[{0}]，因为{5}",
+    "arguments": [
+      "cmd.getBridgeName()",
+      "l2Network.getUuid()",
+      "l2Network.getType()",
+      "l2vlan.getVlan()",
+      "hostUuid",
+      "rsp.getError()"
+    ],
+    "line": 229,
+    "fileName": "src/main/java/org/zstack/kvm/KVMRealizeL2VlanNetworkBackend.java"
+  },
+  {
+    "raw": "failed to apply rules of security group rules to kvm host[uuid:%s], because %s",
+    "en_US": "failed to apply rules of security group rules to kvm host[uuid:{0}], because {1}",
+    "zh_CN": "不能应用安全组规则在物理机t[uuid:{0}]上, 因为 {1}",
+    "arguments": [
+      "hto.getHostUuid()",
+      "rsp.getError()"
+    ],
+    "line": 108,
+    "fileName": "src/main/java/org/zstack/kvm/KVMSecurityGroupBackend.java"
+  },
+  {
+    "raw": "failed to check default rules of security group on kvm host[uuid:%s], because %s",
+    "en_US": "failed to check default rules of security group on kvm host[uuid:{0}], because {1}",
+    "zh_CN": "在host[uuid:{0}]上检查默认安全组规则失败",
+    "arguments": [
+      "hostUuid",
+      "rsp.getError()"
+    ],
+    "line": 151,
+    "fileName": "src/main/java/org/zstack/kvm/KVMSecurityGroupBackend.java"
+  },
+  {
+    "raw": "operation error, because:%s",
+    "en_US": "operation error, because:{0}",
+    "zh_CN": "操作错误，因为{0}",
+    "arguments": [
+      "rsp.getError()"
+    ],
+    "line": 213,
+    "fileName": "src/main/java/org/zstack/kvm/KVMSecurityGroupBackend.java"
+  },
+  {
+    "raw": "cannot get vmUuid from msg %s",
+    "en_US": "cannot get vmUuid from msg {0}",
+    "zh_CN": "无法从消息{0}获取VMuuid",
+    "arguments": [
+      "msg.getMessageName()"
+    ],
+    "line": 95,
+    "fileName": "src/main/java/org/zstack/kvm/KvmVmSyncPingTask.java"
+  },
+  {
+    "raw": "unable to do vm sync on host[uuid:%s, ip:%s] because %s",
+    "en_US": "unable to do vm sync on host[uuid:{0}, ip:{1}] because {2}",
+    "zh_CN": "不能在物理机[uuid:{0}, ip:{1}]上执行云主机状态同步操作，因为{2}",
+    "arguments": [
+      "host.getUuid()",
+      "host.getManagementIp()",
+      "ret.getError()"
+    ],
+    "line": 262,
+    "fileName": "src/main/java/org/zstack/kvm/KvmVmSyncPingTask.java"
+  },
+  {
+    "raw": "The vm[%s] state is in shutdown for a long time, check whether the vm is normal",
+    "en_US": "The vm[{0}] state is in shutdown for a long time, check whether the vm is normal",
+    "zh_CN": "云主机[{0}]长时间处于关闭状态，请检查云主机是否正常",
+    "arguments": [
+      "vmUuid"
+    ],
+    "line": 291,
+    "fileName": "src/main/java/org/zstack/kvm/KvmVmSyncPingTask.java"
+  }
+]

@@ -1,0 +1,172 @@
+[
+  {
+    "raw": "field[adminToken] of message[APIAddZceXMsg] is mandatory when ZSphere and ZCE-X management node is not on the same host",
+    "en_US": "field[adminToken] of message[APIAddZceXMsg] is mandatory when ZSphere and ZCE-X management node is not on the same host",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 70,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXApiInterceptor.java"
+  },
+  {
+    "raw": "the url[%s] is not an absolute path starting with \u0027/\u0027",
+    "en_US": "the url[{0}] is not an absolute path starting with \u0027/\u0027",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUrl()"
+    ],
+    "line": 79,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXApiInterceptor.java"
+  },
+  {
+    "raw": "field[managementIp] and field[uuid] can not be null on the same time",
+    "en_US": "field[managementIp] and field[uuid] can not be null on the same time",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 84,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXApiInterceptor.java"
+  },
+  {
+    "raw": "field[managementIp] and field[uuid] can not be set on the same time",
+    "en_US": "field[managementIp] and field[uuid] can not be set on the same time",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 88,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXApiInterceptor.java"
+  },
+  {
+    "raw": "field[otherManagementIp] of message[APIAddZceXMsg] is invalid: ZceXVO.managementIp and otherManagementIp must be different",
+    "en_US": "field[otherManagementIp] of message[APIAddZceXMsg] is invalid: ZceXVO.managementIp and otherManagementIp must be different",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 112,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXApiInterceptor.java"
+  },
+  {
+    "raw": "field[otherStorageIp] of message[APIAddZceXMsg] is invalid: ZceXVO.managementIp, otherManagementIp and otherStorageIp must be different",
+    "en_US": "field[otherStorageIp] of message[APIAddZceXMsg] is invalid: ZceXVO.managementIp, otherManagementIp and otherStorageIp must be different",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 121,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXApiInterceptor.java"
+  },
+  {
+    "raw": "invalid package status. only Installed, InitializeFailed or Initialized packages can be initialized",
+    "en_US": "invalid package status. only Installed, InitializeFailed or Initialized packages can be initialized",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 136,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXApiInterceptor.java"
+  },
+  {
+    "raw": "cannot find management node by managementIp %s",
+    "en_US": "cannot find management node by managementIp {0}",
+    "zh_CN": "",
+    "arguments": [
+      "context.managementIp"
+    ],
+    "line": 965,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
+  },
+  {
+    "raw": "SSH passwordless setup failed: %s",
+    "en_US": "SSH passwordless setup failed: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "e.getMessage()"
+    ],
+    "line": 1031,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
+  },
+  {
+    "raw": "failed to install distributed storage",
+    "en_US": "failed to install distributed storage",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 1366,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
+  },
+  {
+    "raw": "cannot find management node %s",
+    "en_US": "cannot find management node {0}",
+    "zh_CN": "",
+    "arguments": [
+      "softwarePackageVO.getManagementNodeUuid()"
+    ],
+    "line": 1396,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
+  },
+  {
+    "raw": "cleanup.sh not found: %s. the cleanup.sh has been manually deleted.",
+    "en_US": "cleanup.sh not found: {0}. the cleanup.sh has been manually deleted.",
+    "zh_CN": "",
+    "arguments": [
+      "installPath"
+    ],
+    "line": 1411,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
+  },
+  {
+    "raw": "init config not found for software package: %s",
+    "en_US": "init config not found for software package: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "softwarePackageVO.getUuid()"
+    ],
+    "line": 1429,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
+  },
+  {
+    "raw": "failed to check if management node is also compute node, node: %s",
+    "en_US": "failed to check if management node is also compute node, node: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "managementNodeUuid"
+    ],
+    "line": 1472,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
+  },
+  {
+    "raw": "management node[uuid:%s] must be a compute node",
+    "en_US": "management node[uuid:{0}] must be a compute node",
+    "zh_CN": "",
+    "arguments": [
+      "managementNodeUuid"
+    ],
+    "line": 1478,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
+  },
+  {
+    "raw": "failed to retrieve host uuid [management uuid:%s]",
+    "en_US": "failed to retrieve host uuid [management uuid:{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "managementNodeUuid"
+    ],
+    "line": 1484,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
+  },
+  {
+    "raw": "failed to generate conf",
+    "en_US": "failed to generate conf",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 1513,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
+  },
+  {
+    "raw": "failed to cleanup env",
+    "en_US": "failed to cleanup env",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 1521,
+    "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
+  },
+  {
+    "raw": "ZCE-X Storage",
+    "en_US": "ZCE-X Storage",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 265,
+    "fileName": "src/main/java/org/zstack/zcex/compute/ZceXAlertManager.java"
+  }
+]

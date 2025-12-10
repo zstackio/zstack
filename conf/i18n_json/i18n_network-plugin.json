@@ -1,0 +1,22 @@
+[
+  {
+    "raw": "apply gratuitous arp error, because:%s",
+    "en_US": "apply gratuitous arp error, because:{0}",
+    "zh_CN": "",
+    "arguments": [
+      "rsp.getError()"
+    ],
+    "line": 288,
+    "fileName": "src/main/java/org/zstack/network/plugin/FlatGratuitousARPBackend.java"
+  },
+  {
+    "raw": "release gratuitous arp error, because:%s",
+    "en_US": "release gratuitous arp error, because:{0}",
+    "zh_CN": "",
+    "arguments": [
+      "rsp.getError()"
+    ],
+    "line": 332,
+    "fileName": "src/main/java/org/zstack/network/plugin/FlatGratuitousARPBackend.java"
+  }
+]

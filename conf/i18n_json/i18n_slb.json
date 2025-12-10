@@ -1,0 +1,110 @@
+[
+  {
+    "raw": "could not create slb group because invalid front l3 network type %s",
+    "en_US": "could not create slb group because invalid front l3 network type {0}",
+    "zh_CN": "无法创建SLB组，因为前端三层网络类型{0}无效",
+    "arguments": [
+      "frontL3.getCategory()"
+    ],
+    "line": 115,
+    "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
+  },
+  {
+    "raw": "could not create slb group, because front network doesn\u0027t support ipv6 yet",
+    "en_US": "could not create slb group, because front network doesn\u0027t support ipv6 yet",
+    "zh_CN": "无法创建SLB组，因为前端网络尚不支持IPv6",
+    "arguments": [],
+    "line": 134,
+    "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
+  },
+  {
+    "raw": "could not create slb group, because backend network doesn\u0027t support ipv6 yet",
+    "en_US": "could not create slb group, because backend network doesn\u0027t support ipv6 yet",
+    "zh_CN": "无法创建SLB组，因为后端网络尚不支持IPv6",
+    "arguments": [],
+    "line": 156,
+    "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
+  },
+  {
+    "raw": "could not create slb group because invalid deploy type %s",
+    "en_US": "could not create slb group because invalid deploy type {0}",
+    "zh_CN": "无法创建SLB组，因为部署类型{0}无效",
+    "arguments": [
+      "msg.getDeployType()"
+    ],
+    "line": 275,
+    "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
+  },
+  {
+    "raw": "could not create slb group because invalid backend type %s",
+    "en_US": "could not create slb group because invalid backend type {0}",
+    "zh_CN": "无法创建SLB组，因为后端类型{0}无效",
+    "arguments": [
+      "msg.getBackendType()"
+    ],
+    "line": 284,
+    "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
+  },
+  {
+    "raw": "can not detach front end l3 network [uuid:%s] from SLB instance",
+    "en_US": "can not detach front end l3 network [uuid:{0}] from SLB instance",
+    "zh_CN": "无法从SLB实例分离前端三层网络[uuid：{0}]",
+    "arguments": [
+      "frontL3Uuid",
+      "slbVO.getUuid()"
+    ],
+    "line": 401,
+    "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
+  },
+  {
+    "raw": "can not detach management l3 network [uuid:%s] from SLB instance",
+    "en_US": "can not detach management l3 network [uuid:{0}] from SLB instance",
+    "zh_CN": "无法从SLB实例分离管理三层网络[uuid：{0}]",
+    "arguments": [
+      "slbVO.getManagementNetworkUuid()",
+      "slbVO.getUuid()"
+    ],
+    "line": 406,
+    "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
+  },
+  {
+    "raw": "can not create load balancer because invalid slb group [uuid:%s]",
+    "en_US": "can not create load balancer because invalid slb group [uuid:{0}]",
+    "zh_CN": "无法创建负载平衡器，因为SLB组[uuid：{0}]无效",
+    "arguments": [
+      "slbGroupUuid"
+    ],
+    "line": 459,
+    "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
+  },
+  {
+    "raw": "could not add backend server vmnic to serverGroup[uuid:%s],because vmnic uuid is null",
+    "en_US": "could not add backend server vmnic to serverGroup[uuid:{0}],because vmnic uuid is null",
+    "zh_CN": "无法将后端服务器vmnic添加到ServerGroup[uuid：{0}]，因为vmnic uuid为空",
+    "arguments": [
+      "msg.getServerGroupUuid()"
+    ],
+    "line": 478,
+    "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
+  },
+  {
+    "raw": "failed to create vip%s on virtual router[uuid:%s], because %s",
+    "en_US": "failed to create vip{0} on virtual router[uuid:{1}], because {2}",
+    "zh_CN": "未能在云路由[uuid:{1}]上创建VIP{0}，因为{2}",
+    "arguments": [
+      "tos",
+      "vr.getUuid()",
+      "ret.getError()"
+    ],
+    "line": 145,
+    "fileName": "src/main/java/org/zstack/network/service/slb/SlbVmSyncVipFlow.java"
+  },
+  {
+    "raw": "can not find slb vm instance",
+    "en_US": "can not find slb vm instance",
+    "zh_CN": "找不到SLB虚拟机实例",
+    "arguments": [],
+    "line": 38,
+    "fileName": "src/main/java/org/zstack/network/service/slb/SlbVyosBackend.java"
+  }
+]

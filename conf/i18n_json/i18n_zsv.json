@@ -1,0 +1,122 @@
+[
+  {
+    "raw": "cannot delete disaster recovery license",
+    "en_US": "cannot delete disaster recovery license",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 39,
+    "fileName": "src/main/java/org/zstack/zsv/ZsvApiInterceptor.java"
+  },
+  {
+    "raw": "invalid ip format [%s]",
+    "en_US": "invalid ip format [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "ip"
+    ],
+    "line": 70,
+    "fileName": "src/main/java/org/zstack/zsv/ZsvApiInterceptor.java"
+  },
+  {
+    "raw": "volume %s still have snapshot group on vm %s, cannot attach to other vm",
+    "en_US": "volume {0} still have snapshot group on vm {1}, cannot attach to other vm",
+    "zh_CN": "卷{0}在云主机{1}上仍具有快照组，无法连接到其他云主机",
+    "arguments": [
+      "volume.getUuid()",
+      "volume.getLastVmInstanceUuid()"
+    ],
+    "line": 285,
+    "fileName": "src/main/java/org/zstack/zsv/ZsvManagerImpl.java"
+  },
+  {
+    "raw": "volume %s still have snapshot group, cannot delete it",
+    "en_US": "volume {0} still have snapshot group, cannot delete it",
+    "zh_CN": "卷{0}仍具有快照组，无法将其删除",
+    "arguments": [
+      "volume.getUuid()"
+    ],
+    "line": 334,
+    "fileName": "src/main/java/org/zstack/zsv/ZsvManagerImpl.java"
+  },
+  {
+    "raw": "detach sharable volume or lun device before operating snapshot group",
+    "en_US": "detach sharable volume or lun device before operating snapshot group",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 384,
+    "fileName": "src/main/java/org/zstack/zsv/ZsvManagerImpl.java"
+  },
+  {
+    "raw": "failed to find ZSV additional license info: %s",
+    "en_US": "failed to find ZSV additional license info: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "JSONObjectUtil.toJsonString(addition)"
+    ],
+    "line": 46,
+    "fileName": "src/main/java/org/zstack/zsv/license/ZsvLicenseFactory.java"
+  },
+  {
+    "raw": "Failed to check SSH keys on host[%s:%d]",
+    "en_US": "Failed to check SSH keys on host[{0}:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "host.getIp()",
+      "host.getPort()"
+    ],
+    "line": 95,
+    "fileName": "src/main/java/org/zstack/zsv/storage/SSHPasswordlessConfigurator.java"
+  },
+  {
+    "raw": "SSH keys are incomplete on host[%s:%d].",
+    "en_US": "SSH keys are incomplete on host[{0}:{1}].",
+    "zh_CN": "",
+    "arguments": [
+      "host.getIp()",
+      "host.getPort()"
+    ],
+    "line": 102,
+    "fileName": "src/main/java/org/zstack/zsv/storage/SSHPasswordlessConfigurator.java"
+  },
+  {
+    "raw": "Failed to generate SSH keys on host[%s:%d]",
+    "en_US": "Failed to generate SSH keys on host[{0}:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "host.getIp()",
+      "host.getPort()"
+    ],
+    "line": 115,
+    "fileName": "src/main/java/org/zstack/zsv/storage/SSHPasswordlessConfigurator.java"
+  },
+  {
+    "raw": "failed to check if management node is also compute node, node: %s",
+    "en_US": "failed to check if management node is also compute node, node: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "managementNodeUuid"
+    ],
+    "line": 181,
+    "fileName": "src/main/java/org/zstack/zsv/storage/ZsvStorageManager.java"
+  },
+  {
+    "raw": "management node[uuid:%s] must be a compute node",
+    "en_US": "management node[uuid:{0}] must be a compute node",
+    "zh_CN": "",
+    "arguments": [
+      "managementNodeUuid"
+    ],
+    "line": 188,
+    "fileName": "src/main/java/org/zstack/zsv/storage/ZsvStorageManager.java"
+  },
+  {
+    "raw": "failed to retrieve host uuid [management uuid:%s]",
+    "en_US": "failed to retrieve host uuid [management uuid:{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "managementNodeUuid"
+    ],
+    "line": 195,
+    "fileName": "src/main/java/org/zstack/zsv/storage/ZsvStorageManager.java"
+  }
+]

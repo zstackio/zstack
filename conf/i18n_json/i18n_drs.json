@@ -1,0 +1,135 @@
+[
+  {
+    "raw": "Host CPU usage is %f%%, exceeding %f%%",
+    "en_US": "Host CPU usage is {0}%%, exceeding {1}%%",
+    "zh_CN": "",
+    "arguments": [
+      "hostNode.getUsedCPUPercent()",
+      "cpuUsedPercentThreshold"
+    ],
+    "line": 756,
+    "fileName": "src/main/java/org/zstack/drs/DRSBase.java"
+  },
+  {
+    "raw": "Host memory usage is %f%%, exceeding %f%%",
+    "en_US": "Host memory usage is {0}%%, exceeding {1}%%",
+    "zh_CN": "",
+    "arguments": [
+      "hostNode.getUsedMemoryPercent()",
+      "memUsedPercentThreshold"
+    ],
+    "line": 763,
+    "fileName": "src/main/java/org/zstack/drs/DRSBase.java"
+  },
+  {
+    "raw": "thresholds can not be empty",
+    "en_US": "thresholds can not be empty",
+    "zh_CN": "阈值不能为空",
+    "arguments": [],
+    "line": 62,
+    "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
+  },
+  {
+    "raw": "illegal thresholdName[%s]",
+    "en_US": "illegal thresholdName[{0}]",
+    "zh_CN": "阈值名称[{0}]非法",
+    "arguments": [
+      "threshold.getThresholdName()"
+    ],
+    "line": 71,
+    "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
+  },
+  {
+    "raw": "illegal threshold operator[%s]",
+    "en_US": "illegal threshold operator[{0}]",
+    "zh_CN": "阈值运算符[{0}]非法",
+    "arguments": [
+      "threshold.getOperator()"
+    ],
+    "line": 75,
+    "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
+  },
+  {
+    "raw": "thresholdValue can not be empty",
+    "en_US": "thresholdValue can not be empty",
+    "zh_CN": "阈值不能为空",
+    "arguments": [],
+    "line": 79,
+    "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
+  },
+  {
+    "raw": "illegal thresholdValue, valid range: (0, 100]",
+    "en_US": "illegal thresholdValue, valid range: (0, 100]",
+    "zh_CN": "阈值非法，有效范围：（[0，100]",
+    "arguments": [],
+    "line": 84,
+    "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
+  },
+  {
+    "raw": "The DRS[%s] automation level is not manual",
+    "en_US": "The DRS[{0}] automation level is not manual",
+    "zh_CN": "DRS[{0}]自动化级别不是手动的",
+    "arguments": [
+      "adviceVO.getDrsUuid()"
+    ],
+    "line": 118,
+    "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
+  },
+  {
+    "raw": "advice[uuid:%s] has expired as the scheduling policy has been modified",
+    "en_US": "advice[uuid:{0}] has expired as the scheduling policy has been modified",
+    "zh_CN": "建议[uuid:{0}]已过期,因为调度策略已经发生了变更",
+    "arguments": [
+      "msg.getAdviceUuid()"
+    ],
+    "line": 132,
+    "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
+  },
+  {
+    "raw": "Successfully executed, no repeated executions allowed",
+    "en_US": "Successfully executed, no repeated executions allowed",
+    "zh_CN": "执行成功，不允许重复执行",
+    "arguments": [],
+    "line": 141,
+    "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
+  },
+  {
+    "raw": "The vm[%s] has been deleted",
+    "en_US": "The vm[{0}] has been deleted",
+    "zh_CN": "虚拟机[{0}]已删除",
+    "arguments": [
+      "adviceVO.getVmUuid()"
+    ],
+    "line": 148,
+    "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
+  },
+  {
+    "raw": "The vm[%s] state is not running",
+    "en_US": "The vm[{0}] state is not running",
+    "zh_CN": "VM[{0}]状态未运行",
+    "arguments": [
+      "adviceVO.getVmUuid()"
+    ],
+    "line": 151,
+    "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
+  },
+  {
+    "raw": "The vm[%s] is no longer on the source host[%s]",
+    "en_US": "The vm[{0}] is no longer on the source host[{1}]",
+    "zh_CN": "VM[{0}]不再位于源主机[{1}]上",
+    "arguments": [
+      "adviceVO.getVmUuid()",
+      "adviceVO.getVmSourceHostUuid()"
+    ],
+    "line": 154,
+    "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
+  },
+  {
+    "raw": "hostUuids is empty",
+    "en_US": "hostUuids is empty",
+    "zh_CN": "HOSTuuidS为空",
+    "arguments": [],
+    "line": 318,
+    "fileName": "src/main/java/org/zstack/drs/DRSManagerImpl.java"
+  }
+]

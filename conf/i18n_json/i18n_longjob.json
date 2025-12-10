@@ -1,0 +1,62 @@
+[
+  {
+    "raw": "%s is not an API",
+    "en_US": "{0} is not an API",
+    "zh_CN": "{0}不是一个API",
+    "arguments": [
+      "msg.getJobName()"
+    ],
+    "line": 90,
+    "fileName": "src/main/java/org/zstack/longjob/LongJobApiInterceptor.java"
+  },
+  {
+    "raw": "cannot cancel longjob that is succeeded",
+    "en_US": "cannot cancel longjob that is succeeded",
+    "zh_CN": "不能取消已经成功的longjob",
+    "arguments": [],
+    "line": 152,
+    "fileName": "src/main/java/org/zstack/longjob/LongJobApiInterceptor.java"
+  },
+  {
+    "raw": "cannot cancel longjob that is failed",
+    "en_US": "cannot cancel longjob that is failed",
+    "zh_CN": "不能取消已经失败的longjob",
+    "arguments": [],
+    "line": 155,
+    "fileName": "src/main/java/org/zstack/longjob/LongJobApiInterceptor.java"
+  },
+  {
+    "raw": "delete longjob only when it\u0027s succeeded, canceled, or failed",
+    "en_US": "delete longjob only when it\u0027s succeeded, canceled, or failed",
+    "zh_CN": "只能删除已经成功、取消、失败的longjob",
+    "arguments": [],
+    "line": 166,
+    "fileName": "src/main/java/org/zstack/longjob/LongJobApiInterceptor.java"
+  },
+  {
+    "raw": "rerun longjob only when it\u0027s succeeded, canceled, or failed",
+    "en_US": "rerun longjob only when it\u0027s succeeded, canceled, or failed",
+    "zh_CN": "仅在成功、取消或失败时重新运行LongJob",
+    "arguments": [],
+    "line": 177,
+    "fileName": "src/main/java/org/zstack/longjob/LongJobApiInterceptor.java"
+  },
+  {
+    "raw": "can only resume longjob that is Suspended",
+    "en_US": "can only resume longjob that is Suspended",
+    "zh_CN": "只能恢复挂起的LongJob",
+    "arguments": [],
+    "line": 206,
+    "fileName": "src/main/java/org/zstack/longjob/LongJobApiInterceptor.java"
+  },
+  {
+    "raw": "%s has no corresponding longjob",
+    "en_US": "{0} has no corresponding longjob",
+    "zh_CN": "{0}没有与之对应的longjob",
+    "arguments": [
+      "jobName"
+    ],
+    "line": 39,
+    "fileName": "src/main/java/org/zstack/longjob/LongJobFactoryImpl.java"
+  }
+]

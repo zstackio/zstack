@@ -1,0 +1,93 @@
+[
+  {
+    "raw": "no resource type[%s] found in tag system",
+    "en_US": "no resource type[{0}] found in tag system",
+    "zh_CN": "标签系统中不存在[{0}]资源类型",
+    "arguments": [
+      "msg.getResourceType()"
+    ],
+    "line": 80,
+    "fileName": "src/main/java/org/zstack/tag/TagApiInterceptor.java"
+  },
+  {
+    "raw": "tag[uuid:%s] is an inherent system tag, can not be removed",
+    "en_US": "tag[uuid:{0}] is an inherent system tag, can not be removed",
+    "zh_CN": "固有系统标签[uuid:{0}]禁止移除",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 103,
+    "fileName": "src/main/java/org/zstack/tag/TagApiInterceptor.java"
+  },
+  {
+    "raw": "The argument :\u0027resourceType\u0027 doesn\u0027t match uuid",
+    "en_US": "The argument :\u0027resourceType\u0027 doesn\u0027t match uuid",
+    "zh_CN": "参数: 资源类型（resourceType）与uuid不匹配",
+    "arguments": [],
+    "line": 129,
+    "fileName": "src/main/java/org/zstack/tag/TagApiInterceptor.java"
+  },
+  {
+    "raw": "Duplicated Tag[tag:%s, type:%s, resourceType:%s, resourceUuid:%s]",
+    "en_US": "Duplicated Tag[tag:{0}, type:{1}, resourceType:{2}, resourceUuid:{3}]",
+    "zh_CN": "标签[tag:{0}, type:{1}, resourceType:{2}, resourceUuid:{3}]重复",
+    "arguments": [
+      "tag",
+      "type",
+      "resourceType",
+      "resourceUuid"
+    ],
+    "line": 235,
+    "fileName": "src/main/java/org/zstack/tag/TagManagerImpl.java"
+  },
+  {
+    "raw": "failed to create resource config",
+    "en_US": "failed to create resource config",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 275,
+    "fileName": "src/main/java/org/zstack/tag/TagManagerImpl.java"
+  },
+  {
+    "raw": "no system tag matches[%s] for resourceType[%s]",
+    "en_US": "no system tag matches[{0}] for resourceType[{1}]",
+    "zh_CN": "没有系统标签[{0}]与资源类型[{1}]匹配",
+    "arguments": [
+      "tag",
+      "resourceType"
+    ],
+    "line": 805,
+    "fileName": "src/main/java/org/zstack/tag/TagManagerImpl.java"
+  },
+  {
+    "raw": "validate system tag [%s] for resourceType[%s] failed",
+    "en_US": "validate system tag [{0}] for resourceType[{1}] failed",
+    "zh_CN": "验证ResourceType[{1}]的系统标记[{0}]失败",
+    "arguments": [
+      "tag",
+      "resourceType"
+    ],
+    "line": 813,
+    "fileName": "src/main/java/org/zstack/tag/TagManagerImpl.java"
+  },
+  {
+    "raw": "no system tag matches %s",
+    "en_US": "no system tag matches {0}",
+    "zh_CN": "没有找到匹配{0}的系统标签",
+    "arguments": [
+      "tag"
+    ],
+    "line": 976,
+    "fileName": "src/main/java/org/zstack/tag/TagManagerImpl.java"
+  },
+  {
+    "raw": "tag[%s] is only for admin",
+    "en_US": "tag[{0}] is only for admin",
+    "zh_CN": "标记[{0}]仅适用于管理员",
+    "arguments": [
+      "tag"
+    ],
+    "line": 1010,
+    "fileName": "src/main/java/org/zstack/tag/TagManagerImpl.java"
+  }
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "raw": "Account[uuid:%s] Not Found!!!",
+    "en_US": "Account[uuid:{0}] Not Found!!!",
+    "zh_CN": "未找到帐户[uuid：{0}]！",
+    "arguments": [
+      "vo.getAccountUuid()"
+    ],
+    "line": 446,
+    "fileName": "src/main/java/org/zstack/ldap/LdapManagerImpl.java"
+  },
+  {
+    "raw": "not support",
+    "en_US": "not support",
+    "zh_CN": "不是支持",
+    "arguments": [],
+    "line": 81,
+    "fileName": "src/main/java/org/zstack/ldap/compute/LdapSyncLongJob.java"
+  },
+  {
+    "raw": "query ldap entry fail, %s",
+    "en_US": "query ldap entry fail, {0}",
+    "zh_CN": "查询LDAP条目失败，{0}",
+    "arguments": [
+      "e.toString()"
+    ],
+    "line": 63,
+    "fileName": "src/main/java/org/zstack/ldap/driver/LdapEntryContextMapper.java"
+  }
+]

@@ -1,0 +1,54 @@
+[
+  {
+    "raw": "resources has inconsistent resourceTypes. Details: %s",
+    "en_US": "resources has inconsistent resourceTypes. Details: {0}",
+    "zh_CN": "资源具有不一致的资源类型。详细信息：{0}",
+    "arguments": [
+      "typeByResourceUuids.toString()"
+    ],
+    "line": 294,
+    "fileName": "src/main/java/org/zstack/resourceconfig/ResourceConfig.java"
+  },
+  {
+    "raw": "cannot find resource[uuid: %s]",
+    "en_US": "cannot find resource[uuid: {0}]",
+    "zh_CN": "找不到资源[uuid：{0}]",
+    "arguments": [
+      "resourceUuid"
+    ],
+    "line": 453,
+    "fileName": "src/main/java/org/zstack/resourceconfig/ResourceConfig.java"
+  },
+  {
+    "raw": "no global config[category:%s, name:%s] found",
+    "en_US": "no global config[category:{0}, name:{1}] found",
+    "zh_CN": "找不到全局配置[类别：{0}，名称：{1}]",
+    "arguments": [
+      "msg.getCategory()",
+      "identity"
+    ],
+    "line": 79,
+    "fileName": "src/main/java/org/zstack/resourceconfig/ResourceConfigApiInterceptor.java"
+  },
+  {
+    "raw": "global config[category:%s, name:%s] cannot bind resource",
+    "en_US": "global config[category:{0}, name:{1}] cannot bind resource",
+    "zh_CN": "全局配置[类别：{0}，名称：{1}]无法绑定资源",
+    "arguments": [
+      "msg.getCategory()",
+      "identity"
+    ],
+    "line": 85,
+    "fileName": "src/main/java/org/zstack/resourceconfig/ResourceConfigApiInterceptor.java"
+  },
+  {
+    "raw": "account has no access to the resource[uuid: %s]",
+    "en_US": "account has no access to the resource[uuid: {0}]",
+    "zh_CN": "账号没有访问资源[uuid:{0}]的权限",
+    "arguments": [
+      "msg.getResourceUuid()"
+    ],
+    "line": 114,
+    "fileName": "src/main/java/org/zstack/resourceconfig/ResourceConfigApiInterceptor.java"
+  }
+]
