@@ -35,4 +35,8 @@
     <message>
         <name>org.zstack.header.securitymachine.api.securitymachine.APIGetIntegrityEncryptValueMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.securitymachine.api.APIGetPreAuthenticationConfigMsg</name>
+    </message>
 </service>

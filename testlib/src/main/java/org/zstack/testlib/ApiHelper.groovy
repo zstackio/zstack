@@ -18379,7 +18379,7 @@ abstract class ApiHelper {
 
     def getIntegrityEncryptValue(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetIntegrityEncryptValueAction.class) Closure c) {
         def a = new org.zstack.sdk.GetIntegrityEncryptValueAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
@@ -19460,6 +19460,33 @@ abstract class ApiHelper {
     def getPortForwardingAttachableVmNics(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetPortForwardingAttachableVmNicsAction.class) Closure c) {
         def a = new org.zstack.sdk.GetPortForwardingAttachableVmNicsAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getPreAuthenticationConfig(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetPreAuthenticationConfigAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetPreAuthenticationConfigAction()
+        
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
