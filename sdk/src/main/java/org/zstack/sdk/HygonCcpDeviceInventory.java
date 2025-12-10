@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import org.zstack.sdk.HygonDeviceType;
 import org.zstack.sdk.HygonDeviceState;
 
-public class HygonDeviceInventory  {
+public class HygonCcpDeviceInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
