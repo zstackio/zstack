@@ -2,12 +2,13 @@ package org.zstack.expon;
 
 import org.zstack.expon.sdk.cluster.TianshuClusterModule;
 import org.zstack.expon.sdk.pool.FailureDomainModule;
+import org.zstack.header.storage.addon.primary.AddonInfo;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ExponAddonInfo {
+public class ExponAddonInfo implements AddonInfo {
     private List<TianshuCluster> clusters = new ArrayList<>();
 
     private List<Pool> pools = new ArrayList<>();

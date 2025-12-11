@@ -9,7 +9,7 @@ public interface ExternalPrimaryStorageSvcBuilder {
 
     PrimaryStorageNodeSvc buildNodeSvc(ExternalPrimaryStorageVO vo);
 
-    void discover(String url, String config, ReturnValueCompletion<LinkedHashMap> completion);
+    void discover(String url, String config, ReturnValueCompletion<AddonInfo> completion);
 
     String getIdentity();
 }

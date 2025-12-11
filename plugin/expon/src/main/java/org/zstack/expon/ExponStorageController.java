@@ -839,7 +839,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     @Override
-    public void connect(String config, String url, ReturnValueCompletion<LinkedHashMap> comp) {
+    public void connect(String config, String url, ReturnValueCompletion<AddonInfo> comp) {
         apiHelper.login();
         ExponAddonInfo info = new ExponAddonInfo();
 
@@ -870,12 +870,22 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
             });
         }
         addonInfo = info;
-        comp.success(JSONObjectUtil.rehashObject(addonInfo, LinkedHashMap.class));
+        comp.success(addonInfo);
     }
 
     @Override
-    public void ping(Completion completion) {
-        completion.success();
+    public void ping(ReturnValueCompletion<PingResult> completion) {
+        completion.success(new PingResult(addonInfo));
+    }
+
+    @Override
+    public void syncAddonInfo(String addonInfo) {
+        this.addonInfo = StringUtils.isEmpty(addonInfo) ? new ExponAddonInfo() : JSONObjectUtil.toObject(addonInfo, ExponAddonInfo.class);
+    }
+
+    @Override
+    public void syncConfig(String config) {
+        this.config = StringUtils.isEmpty(config) ? new ExponConfig() : JSONObjectUtil.toObject(config, ExponConfig.class);
     }
 
     private void reloadDbInfo() {
