@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
@@ -86,6 +87,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Autowired
     private ResourceDestinationMaker destMaker;
+
+    @Autowired
+    private EventFacade evtf;
 
     public ExternalPrimaryStorage(PrimaryStorageVO self, PrimaryStorageControllerSvc controller, PrimaryStorageNodeSvc node) {
         super(self);
@@ -1994,9 +1998,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void connectHook(ConnectParam param, Completion completion) {
         String config = controller.validateConfig(externalVO.getConfig());
-        controller.connect(config, self.getUrl(), new ReturnValueCompletion<LinkedHashMap>(completion) {
+        controller.connect(config, self.getUrl(), new ReturnValueCompletion<AddonInfo>(completion) {
             @Override
-            public void success(LinkedHashMap addonInfo) {
+            public void success(AddonInfo addonInfo) {
                 if (param.isNewAdded()) {
                     controller.onFirstAdditionConfigure(new NopeCompletion());
                 }
@@ -2007,6 +2011,19 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         .set(ExternalPrimaryStorageVO_.url, StringUtils.isEmpty(self.getUrl()) ?
                                 externalVO.getIdentity() + "://" + self.getUuid() : self.getUrl())
                         .update();
+
+                if (addonInfo != null && addonInfo.changed(externalVO.getAddonInfo())) {
+                    String newAddonInfo = addonInfo.serialize();
+                    SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
+                            .set(ExternalPrimaryStorageVO_.addonInfo, newAddonInfo)
+                            .update();
+                    externalVO.setAddonInfo(newAddonInfo);
+                    // fire event when addonInfo changed
+                    ExternalPrimaryStorageCanonicalEvent.AddonInfoChangedData evtData = new org.zstack.storage.addon.primary.ExternalPrimaryStorageCanonicalEvent.AddonInfoChangedData();
+                    evtData.setUuid(self.getUuid());
+                    evtData.setAddonInfo(newAddonInfo);
+                    evtf.fire(ExternalPrimaryStorageCanonicalEvent.ADDON_INFO_CHANGED_PATH, evtData);
+                }
                 controller.setTrashExpireTime(PrimaryStorageGlobalConfig.TRASH_EXPIRATION_TIME.value(Integer.class), new NopeCompletion());
                 pingHook(completion);
             }
@@ -2030,10 +2047,32 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        controller.ping(new Completion(trigger) {
+                        controller.ping(new ReturnValueCompletion<PingResult>(trigger) {
                             @Override
-                            public void success() {
+                            public void success(PingResult ret) {
+                                if (ret.getAddonInfo() != null && ret.getAddonInfo().changed(externalVO.getAddonInfo())) {
+                                    updateAddonInfo(ret.getAddonInfo());
+                                }
+
+                                if (!ret.isSuccess()) {
+                                    trigger.fail(operr("ping external primary storage[%s] failed, %s", self.getUuid(), ret.getError()));
+                                    return;
+                                }
+
                                 trigger.next();
+                            }
+
+                            private void updateAddonInfo(AddonInfo newAddonInfo) {
+                                String newAddonInfoStr = newAddonInfo.serialize();
+                                externalVO.setAddonInfo(newAddonInfoStr);
+                                SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
+                                        .set(ExternalPrimaryStorageVO_.addonInfo, newAddonInfoStr)
+                                        .update();
+
+                                ExternalPrimaryStorageCanonicalEvent.AddonInfoChangedData evtData = new ExternalPrimaryStorageCanonicalEvent.AddonInfoChangedData();
+                                evtData.setUuid(self.getUuid());
+                                evtData.setAddonInfo(newAddonInfoStr);
+                                evtf.fire(ExternalPrimaryStorageCanonicalEvent.ADDON_INFO_CHANGED_PATH, evtData);
                             }
 
                             @Override

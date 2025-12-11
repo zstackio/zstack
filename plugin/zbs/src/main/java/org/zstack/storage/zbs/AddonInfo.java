@@ -1,5 +1,7 @@
 package org.zstack.storage.zbs;
 
+import org.zstack.utils.gson.JSONObjectUtil;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,7 +9,7 @@ import java.util.List;
  * @author Xingwei Yu
  * @date 2024/4/1 18:12
  */
-public class AddonInfo {
+public class AddonInfo implements org.zstack.header.storage.addon.primary.AddonInfo {
     private ClusterInfo clusterInfo;
     private List<MdsInfo> mdsInfos = new ArrayList<>();
     private List<LogicalPoolInfo> logicalPoolInfos = new ArrayList<>();
@@ -38,5 +40,10 @@ public class AddonInfo {
 
     public void addLogicalPoolInfo(LogicalPoolInfo logicalPoolInfo) {
         this.logicalPoolInfos.add(logicalPoolInfo);
+    }
+
+    @Override
+    public boolean changed(String infoJson) {
+        return !JSONObjectUtil.toJsonString(this).equals(infoJson);
     }
 }
