@@ -10,6 +10,7 @@ import org.zstack.core.db.SQLBatch;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.AsyncTimer;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.timeout.TimeHelper;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -22,6 +23,9 @@ import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 import javax.persistence.Tuple;
 import java.util.*;
@@ -36,6 +40,17 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     private Map<String, Tracker> trackers = new ConcurrentHashMap<>();
     private static boolean alwaysStartRightNow = false;
 
+    static class BusyHostItem {
+        long toleranceDeadline;
+    }
+
+    /**
+     * original name: skippedPingHostDeadline
+     * see ZSV-8178
+     */
+    private static final Cache<String, BusyHostItem> busyHosts =
+            CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).build();
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -48,6 +63,8 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     private PluginRegistry pluginRgty;
     @Autowired
     protected EventFacade evtf;
+    @Autowired
+    protected TimeHelper timeHelper;
 
     private static Map<String, HostReconnectTaskFactory> hostReconnectTaskFactories = new HashMap<>();
 
@@ -120,6 +137,13 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
             if (state == HostState.PreMaintenance || state == HostState.Maintenance) {
                 logger.debug(String.format("host[uuid:%s] is in state of %s, not tracking it this time", uuid, state));
+                continueToRunThisTimer();
+                return;
+            }
+
+            final BusyHostItem busyHostItem = busyHosts.getIfPresent(uuid);
+            if (busyHostItem != null && timeHelper.getCurrentTimeMillis() <= busyHostItem.toleranceDeadline) {
+                logger.debug(String.format("skip tracking host[uuid:%s] this time, deadline %s", uuid, busyHostItem.toleranceDeadline));
                 continueToRunThisTimer();
                 return;
             }
@@ -341,6 +365,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     public boolean start() {
         populateExtensions();
         onHostStatusChange();
+        registerHostStatusEvents();
 
         HostGlobalConfig.PING_HOST_INTERVAL.installUpdateExtension((oldConfig, newConfig) -> {
             logger.debug(String.format("%s change from %s to %s, restart host trackers",
@@ -382,6 +407,24 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
                         HostStatus.Connecting.toString().equals(d.getOldStatus())) {
                     hostDisconnectCount.computeIfAbsent(d.getHostUuid(), key -> new AtomicInteger(0)).addAndGet(1);
                 }
+            }
+        });
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void registerHostStatusEvents() {
+        evtf.on(HostCanonicalEvents.HOST_STATUS_BUSY, new EventCallback<HostCanonicalEvents.HostPingSkipData>() {
+            @Override
+            protected void run(Map tokens, HostCanonicalEvents.HostPingSkipData data) {
+                BusyHostItem item = new BusyHostItem();
+                item.toleranceDeadline = data.getBusyUntil();
+                busyHosts.put(data.getHostUuid(), item);
+            }
+        });
+        evtf.on(HostCanonicalEvents.HOST_STATUS_RESUME_FROM_BUSY, new EventCallback<HostCanonicalEvents.HostPingSkipData>() {
+            @Override
+            protected void run(Map tokens, HostCanonicalEvents.HostPingSkipData data) {
+                busyHosts.invalidate(data.getHostUuid());
             }
         });
     }
