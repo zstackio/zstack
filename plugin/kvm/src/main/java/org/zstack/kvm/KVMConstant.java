@@ -132,6 +132,9 @@ public interface KVMConstant {
     String HOST_PHYSICAL_MEMORY_ECC_ERROR_ALARM_EVENT = "/host/physical/memory/ecc/error/alarm";
     String HOST_PHYSICAL_GPU_REMOVE_ALARM_EVENT = "/host/physical/gpu/remove/alarm";
     String HOST_STORAGEDEVICE_HBA_STATE_EVENT = "/storagedevice/hba/state/alarm";
+    String HOST_PROCESS_PHYSICAL_MEMORY_USAGE_ALARM_PATH = "/host/process/physicalMemory/usage/alarm";
+    String HOST_KVMAGENT_STATUS_PATH = "/host/kvmagent/status";
+
     String KVM_AGENT_OWNER = "kvm";
 
     String ALI_REPO = "ali";
@@ -172,6 +175,9 @@ public interface KVMConstant {
     String SLOT_NUMBER = "slot_number";
     String DRIVE_STATE = "drive_state";
     String TARGET_ID = "target_id";
+
+    String KVM_AGENT_STATUS_BUSY = "busy";
+    String KVM_AGENT_STATUS_AVAILABLE = "available";
 
     public static final String L2_PROVIDER_TYPE_LINUX_BRIDGE = "LinuxBridge";
     public static final String L2_PROVIDER_TYPE_OVS_DPDK = "OvsDpdk";

@@ -143,4 +143,20 @@ public class KVMGlobalConfig {
     @GlobalConfigDef(defaultValue = "false", description = "restart kvm host libvirtd service or not")
     @BindResourceConfig({HostVO.class, ClusterVO.class})
     public static GlobalConfig RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE = new GlobalConfig(CATEGORY, "reconnect.host.restart.libvirtd.service");
+
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigDef(
+            defaultValue = "2147483648",
+            description = "The threshold for the physical memory usage of the kvmagent process, exceeding which an alarm will be triggered.",
+            type = Long.class
+    )
+    public static GlobalConfig KVMAGENT_PHYSICAL_MEMORY_USAGE_ALARM_THRESHOLD = new GlobalConfig(CATEGORY, "kvmagent.physicalmemory.usage.alarm.threshold");
+
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigDef(
+            defaultValue = "10737418240",
+            description = "The hard limit for the physical memory usage of the kvmagent process, exceeding this value will trigger a kvmagent restart.",
+            type = Long.class
+    )
+    public static GlobalConfig KVMAGENT_PHYSICAL_MEMORY_USAGE_HARD_LIMIT = new GlobalConfig(CATEGORY, "kvmagent.physicalmemory.usage.hardlimit");
 }
