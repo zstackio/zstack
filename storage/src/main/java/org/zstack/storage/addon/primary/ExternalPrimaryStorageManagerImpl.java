@@ -83,11 +83,11 @@ public class ExternalPrimaryStorageManagerImpl extends AbstractService {
 
         if (msg.getIdentity() != null) {
             ExternalPrimaryStorageSvcBuilder builder = pluginRgty.getExtensionFromMap(msg.getIdentity(), ExternalPrimaryStorageSvcBuilder.class);
-            builder.discover(msg.getUrl(), msg.getConfig(), new ReturnValueCompletion<LinkedHashMap>(msg) {
+            builder.discover(msg.getUrl(), msg.getConfig(), new ReturnValueCompletion<AddonInfo>(msg) {
                 @Override
-                public void success(LinkedHashMap addonInfo) {
+                public void success(AddonInfo addonInfo) {
                     inventory.setIdentity(msg.getIdentity());
-                    inventory.setAddonInfo(addonInfo);
+                    inventory.setAddonInfo(JSONObjectUtil.rehashObject(addonInfo, LinkedHashMap.class));
                     event.setInventory(inventory);
                     bus.publish(event);
                 }
@@ -102,11 +102,11 @@ public class ExternalPrimaryStorageManagerImpl extends AbstractService {
         }
 
         new While<>(pluginRgty.getExtensionList(ExternalPrimaryStorageSvcBuilder.class)).each((builder, comp) -> {
-            builder.discover(msg.getUrl(), msg.getConfig(), new ReturnValueCompletion<LinkedHashMap>(comp) {
+            builder.discover(msg.getUrl(), msg.getConfig(), new ReturnValueCompletion<AddonInfo>(comp) {
                 @Override
-                public void success(LinkedHashMap addonInfo) {
+                public void success(AddonInfo addonInfo) {
                     inventory.setIdentity(builder.getIdentity());
-                    inventory.setAddonInfo(addonInfo);
+                    inventory.setAddonInfo(JSONObjectUtil.rehashObject(addonInfo, LinkedHashMap.class));
                     event.setInventory(inventory);
                     comp.allDone();
                 }

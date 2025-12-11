@@ -1,5 +1,6 @@
 package org.zstack.xinfini;
 
+import org.zstack.header.storage.addon.primary.AddonInfo;
 import org.zstack.xinfini.sdk.node.NodeModule;
 import org.zstack.xinfini.sdk.pool.BsPolicyModule;
 import org.zstack.xinfini.sdk.pool.PoolCapacity;
@@ -9,7 +10,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
-public class XInfiniAddonInfo {
+public class XInfiniAddonInfo implements AddonInfo {
     private List<Node> nodes;
 
     private List<Pool> pools = new ArrayList<>();
@@ -72,6 +73,7 @@ public class XInfiniAddonInfo {
         private int id;
         private String ip;
         private String state;
+        private NodeStatus status;
 
         public String getIp() {
             return ip;
@@ -97,6 +99,14 @@ public class XInfiniAddonInfo {
             this.state = state;
         }
 
+        public NodeStatus getStatus() {
+            return status;
+        }
+
+        public void setStatus(NodeStatus status) {
+            this.status = status;
+        }
+
         public static Node valueOf(NodeModule nodeModule) {
             Node node = new Node();
             node.setIp(nodeModule.getSpec().getAdminIp());
@@ -104,6 +114,7 @@ public class XInfiniAddonInfo {
             node.setState(nodeModule.getMetadata().getState().getState());
             return node;
         }
+
     }
 
     public static class Pool {

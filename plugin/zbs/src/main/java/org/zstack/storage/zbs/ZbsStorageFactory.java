@@ -7,26 +7,15 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.Q;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.externalStorage.primary.ExternalStorageFencerType;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.storage.addon.primary.*;
-import org.zstack.header.storage.primary.DeleteVolumeBitsOnPrimaryStorageMsg;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
-import org.zstack.header.storage.snapshot.VolumeSnapshotAfterDeleteExtensionPoint;
-import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.zstack.storage.zbs.ZbsHelper.*;
 
 import static org.zstack.core.Platform.operr;
 
@@ -51,7 +40,7 @@ public class ZbsStorageFactory implements ExternalPrimaryStorageSvcBuilder, Back
     }
 
     @Override
-    public void discover(String url, String config, ReturnValueCompletion<LinkedHashMap> completion) {
+    public void discover(String url, String config, ReturnValueCompletion<org.zstack.header.storage.addon.primary.AddonInfo> completion) {
         completion.fail(operr("zbs not support discover yet"));
     }
 

@@ -36,7 +36,7 @@ public class XInfiniStorageFactory implements ExternalPrimaryStorageSvcBuilder, 
     }
 
     @Override
-    public void discover(String url, String config, ReturnValueCompletion<LinkedHashMap> completion) {
+    public void discover(String url, String config, ReturnValueCompletion<AddonInfo> completion) {
         // xinfini must set config
         if (StringUtils.isEmpty(config)) {
             completion.fail(operr("empty config, cannot discover xinfini"));

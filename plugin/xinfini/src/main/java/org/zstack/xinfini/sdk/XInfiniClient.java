@@ -6,15 +6,12 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.springframework.http.HttpMethod;
 import org.zstack.core.Platform;
 import org.zstack.externalStorage.sdk.ExternalStorageApiClient;
-import org.zstack.externalStorage.sdk.ExternalStorageParam;
 import org.zstack.header.rest.DefaultSSLVerifier;
 import org.zstack.header.xinfini.XInfiniConstants;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.xinfini.NodeStatus;
 import org.zstack.xinfini.XInfiniConfig;
-import org.zstack.xinfini.sdk.volume.FlattenVolumeRequest;
 
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
@@ -139,12 +136,7 @@ public class XInfiniClient extends ExternalStorageApiClient {
             if (withNode != null) {
                 node = withNode;
             } else {
-                node = config.xInfiniConfig
-                        .getNodes()
-                        .stream()
-                        .filter(it -> it.getStatus() == NodeStatus.Connected)
-                        .findAny()
-                        .orElseThrow(() -> new XInfiniApiException("No connected node found"));
+                node = config.connectedNodeProvider.get();
             }
 
             try {
