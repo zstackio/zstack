@@ -17,6 +17,7 @@ import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.network.sdncontroller.*;
 import org.zstack.header.vm.APIAttachL3NetworkToVmMsg;
 import org.zstack.header.vm.APIChangeVmNicNetworkMsg;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
@@ -125,7 +126,11 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         VmInstanceVO vmVo = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
         boolean found = false;
         for (SdnControllerHostRefVO ref : controllerVO.getHostRefVOS()) {
-            if (ref.getHostUuid().equals(vmVo.getHostUuid())) {
+            String currentHostUuid = vmVo.getHostUuid();
+            if (VmInstanceState.Stopped.equals(vmVo.getState())) {
+                currentHostUuid = vmVo.getLastHostUuid();
+            }
+            if (ref.getHostUuid().equals(currentHostUuid)) {
                 found = true;
                 break;
             }
