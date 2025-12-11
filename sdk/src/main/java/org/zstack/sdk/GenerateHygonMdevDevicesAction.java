@@ -28,6 +28,9 @@ public class GenerateHygonMdevDevicesAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String hostUuid;
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,1024L}, noTrim = false)
+    public java.lang.Integer maxQemuNum;
+
     @Param(required = false)
     public java.util.List systemTags;
 
