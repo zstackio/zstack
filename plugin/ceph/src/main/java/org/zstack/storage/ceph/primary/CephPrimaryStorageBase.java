@@ -2514,7 +2514,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     if (cache != null) {
                         final CheckIsBitsExistingCmd cmd = new CheckIsBitsExistingCmd();
-                        cmd.setInstallPath(ImageCacheUtil.getImageCachePath(cache.toInventory()));
+                        cmd.setInstallPath(ImageCacheUtil.getImageCachePath(cache.getInstallUrl()));
                         httpCall(CHECK_BITS_PATH, cmd, CheckIsBitsExistingRsp.class, new ReturnValueCompletion<CheckIsBitsExistingRsp>(chain) {
                             @Override
                             public void success(CheckIsBitsExistingRsp returnValue) {

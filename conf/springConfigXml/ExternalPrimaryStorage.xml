@@ -45,6 +45,13 @@
         </zstack:plugin>
     </bean>
 
+
+    <bean id="ExternalPrimaryStorageAllocator" class="org.zstack.externalStorage.primary.ExternalPrimaryStorageAllocator">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.MarshalVmOperationFlowExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="ExternalPrimaryStorageKvmFactory" class="org.zstack.externalStorage.primary.kvm.ExternalPrimaryStorageKvmFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />

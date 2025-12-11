@@ -98,7 +98,7 @@ public class ExternalPrimaryStorageSpaceCapacityHelper {
                 spaceVO = new ExternalPrimaryStorageSpaceVO();
                 spaceVO.setUuid(Platform.getUuidFromBytes((primaryStorageUuid + locationUrl).getBytes()));
                 spaceVO.setPrimaryStorageUuid(primaryStorageUuid);
-                spaceVO.setLocationUrl(locationUrl);
+                spaceVO.setLocationUrl(locationUrl.replaceAll("/$", ""));
                 spaceVO.setTotalPhysicalCapacity(capacity.total);
                 spaceVO.setAvailablePhysicalCapacity(capacity.available);
                 spaceVO.setTotalCapacity(capacity.total);

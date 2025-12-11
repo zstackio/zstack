@@ -119,6 +119,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         capabilities.setSnapshotCapability(scap);
         capabilities.setSupportShareableVolume(true);
         capabilities.setSupportCloneFromVolume(false);
+        capabilities.setSupportCloneFromAnotherSpace(false);
         capabilities.setSupportStorageQos(false);
         capabilities.setSupportLiveExpandVolume(false);
         capabilities.setSupportMultiSpace(true);

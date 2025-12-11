@@ -11,6 +11,7 @@ public class StorageCapabilities {
 
     private boolean supportMultiSpace;
     private boolean supportCloneFromVolume;
+    private boolean supportCloneFromAnotherSpace;
     private boolean supportStorageQos;
     private boolean supportLiveExpandVolume;
     private boolean supportShareableVolume;
@@ -65,6 +66,14 @@ public class StorageCapabilities {
 
     public void setSupportCloneFromVolume(boolean supportCloneFromVolume) {
         this.supportCloneFromVolume = supportCloneFromVolume;
+    }
+
+    public boolean isSupportCloneFromAnotherSpace() {
+        return supportCloneFromAnotherSpace;
+    }
+
+    public void setSupportCloneFromAnotherSpace(boolean supportCloneFromAnotherSpace) {
+        this.supportCloneFromAnotherSpace = supportCloneFromAnotherSpace;
     }
 
     public List<String> getSupportedImageFormats() {
