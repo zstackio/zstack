@@ -6069,6 +6069,10 @@ public class KVMHost extends HostBase implements Host {
                     recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);
                 }
 
+                if (ret.isKvmPtp()){
+                    createTagWithoutNonValue(KVMSystemTags.KVM_PTP, KVMSystemTags.KVM_PTP_TOKEN, HostKvmPTPStatusType.Active.toString(), true);
+                }
+
                 List<String> libvirtCapabilities = ret.getLibvirtCapabilities();
                 if (libvirtCapabilities != null) {
                     createTagWithoutNonValue(KVMSystemTags.LIBVIRT_CAPABILITIES, KVMSystemTags.LIBVIRT_CAPABILITIES_TOKEN, StringUtils.join(libvirtCapabilities, ","), true);
