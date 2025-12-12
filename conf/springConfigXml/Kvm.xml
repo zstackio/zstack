@@ -236,4 +236,11 @@
             <zstack:extension interface="org.zstack.core.config.GlobalConfigInitExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="KvmAgentMemoryMonitoringHacks" class="org.zstack.kvm.hack.KvmAgentMemoryMonitoringHacks">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.kvm.KvmPingCommandExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
 </beans>
