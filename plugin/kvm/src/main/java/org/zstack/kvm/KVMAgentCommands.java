@@ -4890,6 +4890,7 @@ public class KVMAgentCommands {
     }
 
     public static class OvsSetDbConnectionCmd extends AgentCommand {
+        public boolean refreshCache;
         public List<String> nodes;
     }
 
