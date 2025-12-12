@@ -135,4 +135,16 @@ doc {
 		type "String"
 		since "4.7.13"
 	}
+	field {
+		name "lastAttachDate"
+		desc ""
+		type "Timestamp"
+		since "5.4.2"
+	}
+	field {
+		name "protocol"
+		desc ""
+		type "String"
+		since "5.4.2"
+	}
 }

@@ -50,6 +50,12 @@ doc {
 		since "4.7.13"
 	}
 	field {
+		name "protocol"
+		desc ""
+		type "String"
+		since "5.5.0"
+	}
+	field {
 		name "createDate"
 		desc "创建时间"
 		type "Timestamp"
