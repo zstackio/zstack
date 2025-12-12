@@ -35,7 +35,6 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
-import org.zstack.core.timeout.TimeHelper;
 import org.zstack.core.upgrade.UpgradeChecker;
 import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -48,7 +47,6 @@ import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
-import org.zstack.header.core.*;
 import org.zstack.header.core.progress.ChainInfo;
 import org.zstack.header.core.progress.TaskInfo;
 import org.zstack.header.core.progress.TaskProgressRange;
@@ -74,8 +72,6 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.DeviceAddress;
-import org.zstack.header.vm.devices.VirtualDeviceInfo;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.KVMAgentCommands.*;
@@ -5787,6 +5783,7 @@ public class KVMHost extends HostBase implements Host {
                         String postUrl = ub.build().toString();
 
                         deployArguments.setPostUrl(postUrl);
+                        deployArguments.setOEMName(CoreGlobalProperty.OEM_NAME);
                         runner.setDeployArguments(deployArguments);
                         runner.run(new ReturnValueCompletion<Boolean>(trigger) {
                             @Override
