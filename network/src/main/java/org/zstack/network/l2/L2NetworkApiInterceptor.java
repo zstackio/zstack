@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -141,6 +143,8 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("cannot change vlan for l2Network[uuid:%s]" +
                     " because this l2Network is isolated", l2.getUuid()));
         }
+        String sdnControllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID
+                .getTokenByResourceUuid(msg.getL2NetworkUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
         if (msg.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
             if (msg.getVlan() == null) {
                 throw new ApiMessageInterceptionException(argerr("vlan is required for " +
@@ -151,15 +155,33 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             }
             List<String> attachedClusters = l2.getAttachedClusterRefs().stream()
                     .map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toList());
-            List<L2NetworkVO> l2s = SQL.New("select l2" +
-                            " from L2NetworkVO l2, L2NetworkClusterRefVO ref" +
-                            " where l2.virtualNetworkId = :virtualNetworkId" +
-                            " and l2.physicalInterface = :physicalInterface" +
-                            " and ref.clusterUuid in (:clusterUuids)" +
-                            " and l2.type = 'L2VlanNetwork'")
-                    .param("virtualNetworkId", msg.getVlan())
-                    .param("physicalInterface", l2.getPhysicalInterface())
-                    .param("clusterUuids", attachedClusters).list();
+            List<L2NetworkVO> l2s;
+            if (sdnControllerUuid == null) {
+                l2s = SQL.New("select l2" +
+                                " from L2NetworkVO l2, L2NetworkClusterRefVO ref" +
+                                " where l2.virtualNetworkId = :virtualNetworkId" +
+                                " and l2.physicalInterface = :physicalInterface" +
+                                " and ref.clusterUuid in (:clusterUuids)" +
+                                " and l2.type = 'L2VlanNetwork'")
+                        .param("virtualNetworkId", msg.getVlan())
+                        .param("physicalInterface", l2.getPhysicalInterface())
+                        .param("clusterUuids", attachedClusters).list();
+            } else {
+                l2s = SQL.New("select l2" +
+                                " from L2NetworkVO l2, L2NetworkClusterRefVO ref, SystemTagVO tag" +
+                                " where l2.virtualNetworkId = :virtualNetworkId" +
+                                " and l2.physicalInterface = :physicalInterface" +
+                                " and ref.clusterUuid in (:clusterUuids)" +
+                                " and l2.type = 'L2VlanNetwork'" +
+                                " and tag.resourceUuid=l2.uuid " +
+                                " and tag.resourceType='L2NetworkVO' " +
+                                " and tag.tag=:tag")
+                        .param("virtualNetworkId", msg.getVlan())
+                        .param("physicalInterface", l2.getPhysicalInterface())
+                        .param("tag", L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.instantiateTag(
+                                map(e(L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN, sdnControllerUuid))))
+                        .param("clusterUuids", attachedClusters).list();
+            }
             l2s = l2s.stream().filter(l -> !l.getUuid().equals(msg.getUuid())).collect(Collectors.toList());
             if (!l2s.isEmpty()) {
                 throw new ApiMessageInterceptionException(argerr("There has been a l2Network attached to cluster with virtual network id[%s] and physical interface[%s]. Failed to change L2 network[uuid:%s]",
@@ -172,14 +194,31 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             }
             List<String> attachedClusters = l2.getAttachedClusterRefs().stream()
                     .map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toList());
-            List<L2NetworkVO> l2s = SQL.New("select l2" +
-                            " from L2NetworkVO l2, L2NetworkClusterRefVO ref" +
-                            " where l2.uuid = ref.l2NetworkUuid" +
-                            " and l2.physicalInterface = :physicalInterface" +
-                            " and ref.clusterUuid in (:clusterUuids)" +
-                            " and type = 'L2NoVlanNetwork'")
-                    .param("physicalInterface", l2.getPhysicalInterface())
-                    .param("clusterUuids", attachedClusters).list();
+            List<L2NetworkVO> l2s;
+            if (sdnControllerUuid != null) {
+                l2s = SQL.New("select l2" +
+                                " from L2NetworkVO l2, L2NetworkClusterRefVO ref, SystemTagVO tag" +
+                                " where l2.uuid = ref.l2NetworkUuid" +
+                                " and l2.physicalInterface = :physicalInterface" +
+                                " and ref.clusterUuid in (:clusterUuids)" +
+                                " and l2.type = 'L2NoVlanNetwork'" +
+                                " and tag.resourceUuid=l2.uuid " +
+                                " and tag.resourceType='L2NetworkVO' " +
+                                " and tag.tag=:tag")
+                        .param("physicalInterface", l2.getPhysicalInterface())
+                        .param("tag", L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.instantiateTag(
+                                map(e(L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN, sdnControllerUuid))))
+                        .param("clusterUuids", attachedClusters).list();
+            } else {
+                l2s = SQL.New("select l2" +
+                                " from L2NetworkVO l2, L2NetworkClusterRefVO ref" +
+                                " where l2.uuid = ref.l2NetworkUuid" +
+                                " and l2.physicalInterface = :physicalInterface" +
+                                " and ref.clusterUuid in (:clusterUuids)" +
+                                " and l2.type = 'L2NoVlanNetwork'")
+                        .param("physicalInterface", l2.getPhysicalInterface())
+                        .param("clusterUuids", attachedClusters).list();
+            }
             l2s = l2s.stream().filter(l -> !l.getUuid().equals(msg.getUuid())).collect(Collectors.toList());
             if (!l2s.isEmpty()) {
                 throw new ApiMessageInterceptionException(argerr("There has been a l2Network attached to cluster that has physical interface[%s]. Failed to change l2Network[uuid:%s]",
