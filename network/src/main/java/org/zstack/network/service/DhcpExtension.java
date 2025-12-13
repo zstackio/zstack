@@ -2,8 +2,11 @@ package org.zstack.network.service;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
+
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.Component;
@@ -12,11 +15,16 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
+import org.zstack.header.message.MessageReply;
+
 import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkGlobalConfig;
+import org.zstack.network.l3.L3NetworkHelper;
+
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -43,6 +51,9 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
     private PluginRegistry pluginRgty;
     @Autowired
     private L3NetworkManager l3Mgr;
+    @Autowired
+    private CloudBus bus;
+
 
     private final Map<NetworkServiceProviderType, NetworkServiceDhcpBackend> dhcpBackends = new HashMap<NetworkServiceProviderType, NetworkServiceDhcpBackend>();
 
@@ -395,15 +406,22 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
     @Override
     public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, Completion completion) {
-        SdnControllerDhcp sdnDhcp = l3Mgr.getSdnControllerDhcp(l3VO.getUuid());
-        if (sdnDhcp != null) {
-            List<IpRangeInventory> normalIpRange = IpRangeHelper.getNormalIpRanges(l3VO);
-            if (normalIpRange.isEmpty()) {
-                completion.success();
-                return;
-            }
-
-            sdnDhcp.allocateDhcpAndEnableDhcp(l3VO, systemTags, completion);
+        String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(l3VO.getUuid());
+        if (sdnControllerUuid != null) {
+            SdnControllerEnableDHCPMsg msg = new SdnControllerEnableDHCPMsg();
+            msg.setL3NetworkUuid(l3VO.getUuid());
+            msg.setSdnControllerUuid(sdnControllerUuid);
+            bus.makeTargetServiceIdByResourceUuid(msg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
+            bus.send(msg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        completion.fail(reply.getError());
+                    } else {
+                        completion.success();
+                    }
+                }
+            });
             return;
         }
 
@@ -418,15 +436,22 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
     @Override
     public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
-        SdnControllerDhcp sdnDhcp = l3Mgr.getSdnControllerDhcp(l3VO.getUuid());
-        if (sdnDhcp != null) {
-            List<IpRangeInventory> normalIpRange = IpRangeHelper.getNormalIpRanges(l3VO);
-            if (normalIpRange.isEmpty()) {
-                completion.success();
-                return;
-            }
-
-            sdnDhcp.disableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(l3VO)), IPv6Constants.DUAL_STACK, completion);
+        String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(l3VO.getUuid());
+        if (sdnControllerUuid != null) {
+            SdnControllerDisableDHCPMsg msg = new SdnControllerDisableDHCPMsg();
+            msg.setL3NetworkUuid(l3VO.getUuid());
+            msg.setSdnControllerUuid(sdnControllerUuid);
+            bus.makeTargetServiceIdByResourceUuid(msg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
+            bus.send(msg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        completion.fail(reply.getError());
+                    } else {
+                        completion.success();
+                    }
+                }
+            });
             return;
         }
 

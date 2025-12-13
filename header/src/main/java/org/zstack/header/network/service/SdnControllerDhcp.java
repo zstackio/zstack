@@ -24,14 +24,14 @@ public interface SdnControllerDhcp {
 
     /**
      * 启用指定 L3 网络的 DHCP 服务
-     * @param l3_min L3 网络索引
-     * @param l3_max L3 网络索引
+     * @param l3Min L3 网络索引
+     * @param l3Max L3 网络索引
      * @param invs L3 网络清单列表
      * @param sync 是否同步操作
      * @param completion 操作完成后的回调
      * */
 
-    void enableDhcp(long l3Min, long l3Max, List<L3NetworkInventory> invs, boolean sync, Completion completion);
+    void enableDhcp(long l3Min, long l3Max, List<L3NetworkInventory> invs, Integer ipversion, boolean sync, Completion completion);
 
     /**
      * 启用指定 L3 网络的 DHCP 服务
@@ -39,7 +39,7 @@ public interface SdnControllerDhcp {
      * @param completion 操作完成后的回调
      * */
 
-    void enableDhcp(List<L3NetworkInventory> invs, Completion completion);
+    void enableDhcp(List<L3NetworkInventory> invs, Integer ipversion, Completion completion);
 
     /**
      * 禁用指定 L3 网络的 DHCP 服务
@@ -48,5 +48,5 @@ public interface SdnControllerDhcp {
      * @param completion 操作完成后的回调
      * */
 
-    void disableDhcp(List<L3NetworkInventory> invs, int ipversion, Completion completion);
+    void disableDhcp(List<L3NetworkInventory> invs, Integer ipversion, Completion completion);
 }

@@ -15,6 +15,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.network.sdncontroller.*;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
@@ -221,6 +222,12 @@ public class H3cVcfcSdnController implements SdnController, SdnControllerL2 {
     public void handleMessage(SdnControllerMessage msg) {
         if (msg instanceof SdnControllerPingMsg) {
             handle((SdnControllerPingMsg)msg);
+        } else if (msg instanceof SdnControllerEnableDHCPMsg) {
+            handle((SdnControllerEnableDHCPMsg) msg);
+        } else if (msg instanceof SdnControllerDisableDHCPMsg) {
+            handle((SdnControllerDisableDHCPMsg) msg);
+        } else if (msg instanceof SdnControllerUpdateDHCPMsg) {
+            handle((SdnControllerUpdateDHCPMsg) msg);
         } else {
             bus.dealWithUnknownMessage((Message) msg);
         }
@@ -497,6 +504,21 @@ public class H3cVcfcSdnController implements SdnController, SdnControllerL2 {
         } catch (Exception e) {
             completion.fail(operr("Could not authenticate with SDN controller [ip:%s] because %s", self.getIp(), e.getMessage()));
         }
+    }
+
+    void handle(SdnControllerEnableDHCPMsg msg) {
+        SdnControllerEnableDHCPReply reply = new SdnControllerEnableDHCPReply();
+        bus.reply(msg, reply);
+    }
+
+    void handle(SdnControllerDisableDHCPMsg msg) {
+        SdnControllerDisableDHCPReply reply = new SdnControllerDisableDHCPReply();
+        bus.reply(msg, reply);
+    }
+
+    void handle(SdnControllerUpdateDHCPMsg msg) {
+        SdnControllerUpdateDHCPReply reply = new SdnControllerUpdateDHCPReply();
+        bus.reply(msg, reply);
     }
 
     void handle(SdnControllerPingMsg msg) {
