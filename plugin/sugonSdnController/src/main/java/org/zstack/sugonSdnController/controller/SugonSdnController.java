@@ -56,7 +56,30 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
 
     @Override
     public void handleMessage(SdnControllerMessage msg) {
-        bus.dealWithUnknownMessage((Message) msg);
+        if (msg instanceof SdnControllerEnableDHCPMsg) {
+            handMessage((SdnControllerEnableDHCPMsg) msg);
+        } else if (msg instanceof SdnControllerDisableDHCPMsg) {
+            handMessage((SdnControllerDisableDHCPMsg) msg);
+        } else if (msg instanceof SdnControllerUpdateDHCPMsg) {
+            handMessage((SdnControllerUpdateDHCPMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage((Message) msg);
+        }
+    }
+
+    void handMessage(SdnControllerEnableDHCPMsg msg) {
+        SdnControllerEnableDHCPReply reply = new SdnControllerEnableDHCPReply();
+        bus.reply(msg, reply);
+    }
+
+    void handMessage(SdnControllerDisableDHCPMsg msg) {
+        SdnControllerDisableDHCPReply reply = new SdnControllerDisableDHCPReply();
+        bus.reply(msg, reply);
+    }
+
+    void handMessage(SdnControllerUpdateDHCPMsg msg) {
+        SdnControllerUpdateDHCPReply reply = new SdnControllerUpdateDHCPReply();
+        bus.reply(msg, reply);
     }
 
     @Override
