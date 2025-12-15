@@ -1061,7 +1061,11 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             throw new ApiMessageInterceptionException(argerr("invalid pool name[%s]", current.getLogicalPoolName()));
         }
 
-        if (CollectionUtils.isEmpty(current.getPools())) {
+        if (CollectionUtils.isEmpty(current.getPoolNames())) {
+            throw new ApiMessageInterceptionException(argerr("ensure at least one pool is configured"));
+        }
+
+        if (CollectionUtils.isEmpty(current.getMdsUrls())) {
             throw new ApiMessageInterceptionException(argerr("ensure at least one MDS is configured"));
         }
 
