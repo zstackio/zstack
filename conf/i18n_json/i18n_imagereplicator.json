@@ -6,7 +6,6 @@
     "arguments": [
       "targetBsUuid"
     ],
-    "line": 366,
     "fileName": "src/main/java/org/zstack/imagereplicator/ImageReplicatorImpl.java"
   },
   {
@@ -17,7 +16,6 @@
       "String.join(\",\", msg.getBackupStorageUuids())",
       "msg.getReplicationGroupUuid()"
     ],
-    "line": 30,
     "fileName": "src/main/java/org/zstack/imagereplicator/ReplicationGroupApiInterceptor.java"
   },
   {
@@ -27,7 +25,6 @@
     "arguments": [
       "bsUuid"
     ],
-    "line": 41,
     "fileName": "src/main/java/org/zstack/imagereplicator/ReplicationGroupApiInterceptor.java"
   },
   {
@@ -37,7 +34,6 @@
     "arguments": [
       "bsUuid"
     ],
-    "line": 51,
     "fileName": "src/main/java/org/zstack/imagereplicator/ReplicationGroupApiInterceptor.java"
   }
 ]

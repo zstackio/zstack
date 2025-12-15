@@ -4,8 +4,21 @@
     "en_US": "wrong password",
     "zh_CN": "密码错误",
     "arguments": [],
-    "line": 55,
     "fileName": "src/main/java/org/zstack/identity/AccountInterceptor.java"
+  },
+  {
+    "raw": "failed to login: account is disabled",
+    "en_US": "failed to login: account is disabled",
+    "zh_CN": "无法登录: 账号被禁用",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/identity/AccountLoginBackend.java"
+  },
+  {
+    "raw": "wrong account name or password",
+    "en_US": "wrong account name or password",
+    "zh_CN": "错误的账号名称或密码",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/identity/AccountLoginBackend.java"
   },
   {
     "raw": "cannot find the resource[uuid:%s]; wrong resourceUuid or the resource is admin resource",
@@ -14,7 +27,15 @@
     "arguments": [
       "resourceUuid"
     ],
-    "line": 169,
+    "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
+  },
+  {
+    "raw": "unable to find account[uuid\u003d%s]",
+    "en_US": "unable to find account[uuid\u003d{0}]",
+    "zh_CN": "无法找到账号 {0}",
+    "arguments": [
+      "msg.getAccountUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -24,7 +45,6 @@
     "arguments": [
       "accountUuid"
     ],
-    "line": 882,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -34,7 +54,6 @@
     "arguments": [
       "msg.getName()"
     ],
-    "line": 991,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -42,7 +61,6 @@
     "en_US": "account cannot delete itself",
     "zh_CN": "账户不能删除自己",
     "arguments": [],
-    "line": 998,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -50,7 +68,6 @@
     "en_US": "cannot delete builtin admin account.",
     "zh_CN": "无法删除内置管理员帐户。",
     "arguments": [],
-    "line": 1004,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -58,7 +75,6 @@
     "en_US": "Only admin can delete account.",
     "zh_CN": "只有admin能删除账户",
     "arguments": [],
-    "line": 1010,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -66,7 +82,6 @@
     "en_US": "all is set to false, accountUuids cannot be null or empty",
     "zh_CN": "all参数被设为false时，账户uuid不能为空",
     "arguments": [],
-    "line": 1018,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -74,7 +89,6 @@
     "en_US": "toPublic is set to false, accountUuids cannot be null or empty",
     "zh_CN": "toPublic参数被设为false时，账户uuid不能为空",
     "arguments": [],
-    "line": 1026,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -84,7 +98,6 @@
     "arguments": [
       "msg.getName()"
     ],
-    "line": 1039,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -94,7 +107,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 1050,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -102,7 +114,6 @@
     "en_US": "the name of admin account cannot be updated",
     "zh_CN": "不能更改管理员账户名称",
     "arguments": [],
-    "line": 1055,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -110,7 +121,6 @@
     "en_US": "the state of admin account cannot be updated",
     "zh_CN": "",
     "arguments": [],
-    "line": 1061,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -118,7 +128,6 @@
     "en_US": "only admin account can update it\u0027s password",
     "zh_CN": "只有管理员帐户才能更新其密码",
     "arguments": [],
-    "line": 1067,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -130,7 +139,6 @@
       "account.getName()",
       "msg.getUuid()"
     ],
-    "line": 1074,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -141,7 +149,6 @@
       "msg.getName()",
       "msg.getIdentityUuid()"
     ],
-    "line": 1085,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -152,7 +159,6 @@
       "quota.getIdentityUuid()",
       "quota.getIdentityType()"
     ],
-    "line": 1092,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -164,7 +170,6 @@
       "quota.getIdentityUuid()",
       "updatedValue"
     ],
-    "line": 32,
     "fileName": "src/main/java/org/zstack/identity/AccountQuotaUpdateChecker.java"
   },
   {
@@ -177,8 +182,16 @@
       "used",
       "updatedValue"
     ],
-    "line": 54,
     "fileName": "src/main/java/org/zstack/identity/AccountQuotaUpdateChecker.java"
+  },
+  {
+    "raw": "%s",
+    "en_US": "{0}",
+    "zh_CN": "{0}",
+    "arguments": [
+      "o.toString()"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/AuthorizationManager.java"
   },
   {
     "raw": "the operations[%s] is denied",
@@ -187,8 +200,48 @@
     "arguments": [
       "deniedApis"
     ],
-    "line": 63,
     "fileName": "src/main/java/org/zstack/identity/DefaultAuthorizationBackend.java"
+  },
+  {
+    "raw": "quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]. Please contact the administrator.",
+    "en_US": "quota exceeding. The account[uuid: {0}] exceeds a quota[name: {1}, value: {2}]. Please contact the administrator.",
+    "zh_CN": "",
+    "arguments": [
+      "currentAccountUuid",
+      "quotaName",
+      "quotaValue"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/QuotaUtil.java"
+  },
+  {
+    "raw": "Login sessions hit limit of max allowed concurrent login sessions",
+    "en_US": "Login sessions hit limit of max allowed concurrent login sessions",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/identity/Session.java"
+  },
+  {
+    "raw": "Session expired",
+    "en_US": "Session expired",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/identity/Session.java"
+  },
+  {
+    "raw": "session of message[%s] is null",
+    "en_US": "session of message[{0}] is null",
+    "zh_CN": "",
+    "arguments": [
+      "message.getMessageName()"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/SessionAPIRequestChecker.java"
+  },
+  {
+    "raw": "session uuid is null",
+    "en_US": "session uuid is null",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/identity/SessionAPIRequestChecker.java"
   },
   {
     "raw": "unsupported login type %s",
@@ -197,15 +250,41 @@
     "arguments": [
       "loginType"
     ],
-    "line": 46,
     "fileName": "src/main/java/org/zstack/identity/login/LoginManagerImpl.java"
+  },
+  {
+    "raw": "operation[API:%s] is denied: admin-only API",
+    "en_US": "operation[API:{0}] is denied: admin-only API",
+    "zh_CN": "操作[API:{0}]被拒绝，该操作仅限管理员使用，当前账户无法执行此操作。",
+    "arguments": [
+      "apiClass.getName()"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/rbac/RBACAPIRequestChecker.java"
+  },
+  {
+    "raw": "operation[API:%s] is denied: no permission for expended api %s",
+    "en_US": "operation[API:{0}] is denied: no permission for expended api {1}",
+    "zh_CN": "操作[API:{0}]被拒绝，您没有[API:{1}]的权限，请联系管理员处理",
+    "arguments": [
+      "baseApiClass.getName()",
+      "apiClass.getSimpleName()"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/rbac/RBACAPIRequestChecker.java"
+  },
+  {
+    "raw": "operation[API:%s] is denied: no permission",
+    "en_US": "operation[API:{0}] is denied: no permission",
+    "zh_CN": "操作[API:{0}]被拒绝，您没有相应的角色权限，请联系管理员处理",
+    "arguments": [
+      "apiClass.getName()"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/rbac/RBACAPIRequestChecker.java"
   },
   {
     "raw": "cannot update a system or predefined role",
     "en_US": "cannot update a system or predefined role",
     "zh_CN": "无法更新系统角色或预定义角色",
     "arguments": [],
-    "line": 63,
     "fileName": "src/main/java/org/zstack/identity/rbac/RBACApiInterceptor.java"
   },
   {
@@ -213,7 +292,15 @@
     "en_US": "cannot delete a system or predefined role",
     "zh_CN": "无法删除系统角色或预定义角色",
     "arguments": [],
-    "line": 73,
+    "fileName": "src/main/java/org/zstack/identity/rbac/RBACApiInterceptor.java"
+  },
+  {
+    "raw": "failed to delete role[uuid:%s]: some accounts attached this role",
+    "en_US": "failed to delete role[uuid:{0}]: some accounts attached this role",
+    "zh_CN": "无法删除角色[uuid:{0}]: 它正绑定其它账户。请解绑角色和账户后重试",
+    "arguments": [
+      "msg.getRoleUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/identity/rbac/RBACApiInterceptor.java"
   },
   {
@@ -223,7 +310,64 @@
     "arguments": [
       "policy"
     ],
-    "line": 100,
     "fileName": "src/main/java/org/zstack/identity/rbac/RBACApiInterceptor.java"
+  },
+  {
+    "raw": "invalid role policy resource: resource[uuid:%s] is not found",
+    "en_US": "invalid role policy resource: resource[uuid:{0}] is not found",
+    "zh_CN": "",
+    "arguments": [
+      "resourceMap.keySet()"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/rbac/RBACApiInterceptor.java"
+  },
+  {
+    "raw": "invalid role policy actions: %s",
+    "en_US": "invalid role policy actions: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "action"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/rbac/RBACManagerImpl.java"
+  },
+  {
+    "raw": "Operations on other accounts are not permitted",
+    "en_US": "Operations on other accounts are not permitted",
+    "zh_CN": "不允许对其他账户进行操作",
+    "arguments": [
+      "parameterName"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/rbac/RBACResourceRequestChecker.java"
+  },
+  {
+    "raw": "account[uuid:%s] has no permission to set system tag with resource[uuid:%s, type:%s]",
+    "en_US": "account[uuid:{0}] has no permission to set system tag with resource[uuid:{1}, type:{2}]",
+    "zh_CN": "账户[uuid:{0}]没有权限为资源 {2}[uuid:{1}] 设置标签。请确保您是这些资源的拥有者后再进行操作",
+    "arguments": [
+      "message.getSession().getAccountUuid()",
+      "uuid",
+      "type"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/rbac/RBACResourceRequestChecker.java"
+  },
+  {
+    "raw": "account[uuid:%s] has no access to resources with allow-sharing scope: %s",
+    "en_US": "account[uuid:{0}] has no access to resources with allow-sharing scope: {1}",
+    "zh_CN": "账户[uuid:{0}]没有权限访问以下共享资源: {1}。请确保您已被共享这些资源后再进行操作",
+    "arguments": [
+      "accountUuid",
+      "String.join(\"\\n\\t\", texts)"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/rbac/RBACResourceRequestChecker.java"
+  },
+  {
+    "raw": "account[uuid:%s] has no access to resources with owner-only scope: %s",
+    "en_US": "account[uuid:{0}] has no access to resources with owner-only scope: {1}",
+    "zh_CN": "账户[uuid:{0}]没有权限访问以下资源: {1}。请确保您是这些资源的拥有者后再进行操作",
+    "arguments": [
+      "accountUuid",
+      "String.join(\",\", texts)"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/rbac/RBACResourceRequestChecker.java"
   }
 ]

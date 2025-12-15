@@ -4,7 +4,6 @@
     "en_US": "tf sdn controller already exists.",
     "zh_CN": "",
     "arguments": [],
-    "line": 50,
     "fileName": "src/main/java/org/zstack/sugonSdnController/controller/SugonSdnController.java"
   },
   {
@@ -12,7 +11,6 @@
     "en_US": "get default admin account from zstack db failed",
     "zh_CN": "",
     "arguments": [],
-    "line": 55,
     "fileName": "src/main/java/org/zstack/sugonSdnController/controller/SugonSdnController.java"
   },
   {
@@ -20,7 +18,6 @@
     "en_US": "get default domain on tf controller failed",
     "zh_CN": "",
     "arguments": [],
-    "line": 62,
     "fileName": "src/main/java/org/zstack/sugonSdnController/controller/SugonSdnController.java"
   },
   {
@@ -28,7 +25,6 @@
     "en_US": "create tf project for zstack admin on tf controller failed",
     "zh_CN": "",
     "arguments": [],
-    "line": 77,
     "fileName": "src/main/java/org/zstack/sugonSdnController/controller/SugonSdnController.java"
   },
   {
@@ -38,7 +34,6 @@
     "arguments": [
       "accountUuid"
     ],
-    "line": 139,
     "fileName": "src/main/java/org/zstack/sugonSdnController/controller/SugonSdnController.java"
   },
   {
@@ -48,7 +43,6 @@
     "arguments": [
       "name"
     ],
-    "line": 155,
     "fileName": "src/main/java/org/zstack/sugonSdnController/controller/SugonSdnController.java"
   },
   {
@@ -58,7 +52,6 @@
     "arguments": [
       "uuid"
     ],
-    "line": 172,
     "fileName": "src/main/java/org/zstack/sugonSdnController/controller/SugonSdnController.java"
   },
   {
@@ -68,7 +61,6 @@
     "arguments": [
       "name"
     ],
-    "line": 180,
     "fileName": "src/main/java/org/zstack/sugonSdnController/controller/SugonSdnController.java"
   },
   {
@@ -78,7 +70,6 @@
     "arguments": [
       "uuid"
     ],
-    "line": 199,
     "fileName": "src/main/java/org/zstack/sugonSdnController/controller/SugonSdnController.java"
   },
   {
@@ -89,7 +80,6 @@
       "l3NetworkVO.getName()",
       "status.getMsg()"
     ],
-    "line": 313,
     "fileName": "src/main/java/org/zstack/sugonSdnController/controller/SugonSdnController.java"
   },
   {
@@ -100,7 +90,6 @@
       "l3NetworkVO.getName()",
       "status.getMsg()"
     ],
-    "line": 361,
     "fileName": "src/main/java/org/zstack/sugonSdnController/controller/SugonSdnController.java"
   },
   {
@@ -111,7 +100,6 @@
       "l3NetworkVO.getName()",
       "status.getMsg()"
     ],
-    "line": 445,
     "fileName": "src/main/java/org/zstack/sugonSdnController/controller/SugonSdnController.java"
   },
   {
@@ -122,7 +110,6 @@
       "l3NetworkVO.getName()",
       "status.getMsg()"
     ],
-    "line": 489,
     "fileName": "src/main/java/org/zstack/sugonSdnController/controller/SugonSdnController.java"
   },
   {
@@ -133,7 +120,6 @@
       "l3NetworkVO.getName()",
       "status.getMsg()"
     ],
-    "line": 542,
     "fileName": "src/main/java/org/zstack/sugonSdnController/controller/SugonSdnController.java"
   },
   {
@@ -144,7 +130,6 @@
       "l3NetworkVO.getName()",
       "status.getMsg()"
     ],
-    "line": 599,
     "fileName": "src/main/java/org/zstack/sugonSdnController/controller/SugonSdnController.java"
   },
   {
@@ -155,8 +140,14 @@
       "l3NetworkVO.getName()",
       "status.getMsg()"
     ],
-    "line": 644,
     "fileName": "src/main/java/org/zstack/sugonSdnController/controller/SugonSdnController.java"
+  },
+  {
+    "raw": "L3 Network is missing",
+    "en_US": "L3 Network is missing",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/sugonSdnController/network/TfL3Network.java"
   },
   {
     "raw": "notifySugonSdn: failed to notify sugon sdn to %s vrouter for vm [uuid:%s], on the destination host[uuid:%s]",
@@ -167,7 +158,6 @@
       "inv.getUuid()",
       "destHostUuid"
     ],
-    "line": 159,
     "fileName": "src/main/java/org/zstack/sugonSdnController/network/TfMigrateVmBackend.java"
   },
   {
@@ -180,7 +170,6 @@
       "destHostUuid",
       "rsp.getError()"
     ],
-    "line": 168,
     "fileName": "src/main/java/org/zstack/sugonSdnController/network/TfMigrateVmBackend.java"
   },
   {
@@ -190,7 +179,6 @@
     "arguments": [
       "struct.getHostUuid()"
     ],
-    "line": 268,
     "fileName": "src/main/java/org/zstack/sugonSdnController/userdata/TfUserdataBackend.java"
   },
   {
@@ -200,7 +188,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 533,
     "fileName": "src/main/java/org/zstack/sugonSdnController/userdata/TfUserdataBackend.java"
   }
 ]

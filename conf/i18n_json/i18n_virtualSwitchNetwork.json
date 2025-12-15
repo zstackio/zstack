@@ -10,7 +10,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 80,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/KVMRealizeL2NoVlanLinuxBridgeBackend.java"
   },
   {
@@ -24,7 +23,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 142,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/KVMRealizeL2NoVlanLinuxBridgeBackend.java"
   },
   {
@@ -38,7 +36,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 189,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/KVMRealizeL2NoVlanLinuxBridgeBackend.java"
   },
   {
@@ -52,7 +49,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 248,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/KVMRealizeL2NoVlanLinuxBridgeBackend.java"
   },
   {
@@ -64,7 +60,6 @@
       "hostUuid",
       "newL2Network.getUuid()"
     ],
-    "line": 55,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/KVMRealizeL2VirtualSwitchLinuxBridgeBackend.java"
   },
   {
@@ -77,7 +72,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 113,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/KVMRealizeL2VirtualSwitchLinuxBridgeBackend.java"
   },
   {
@@ -89,7 +83,6 @@
       "msg.getHostUuid()",
       "msg.getUuid()"
     ],
-    "line": 894,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/L2VirtualSwitchNetwork.java"
   },
   {
@@ -101,8 +94,18 @@
       "msg.getHostUuid()",
       "msg.getUuid()"
     ],
-    "line": 1055,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/L2VirtualSwitchNetwork.java"
+  },
+  {
+    "raw": "unable to create l2network[name:%s, type:%s], %s",
+    "en_US": "unable to create l2network[name:{0}, type:{1}], {2}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getName()",
+      "msg.getType()",
+      "e.getMessage()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/PortGroupFactory.java"
   },
   {
     "raw": "could not delete l2 network[uuid:%s] with default port group",
@@ -111,7 +114,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 191,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -121,7 +123,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 338,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -131,7 +132,6 @@
     "arguments": [
       "msg.getCidr()"
     ],
-    "line": 350,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -142,7 +142,6 @@
       "msg.getZoneUuid()",
       "VirtualSwitchConstant.MAX_VIRTUAL_SWITCH_INDEX"
     ],
-    "line": 359,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -152,7 +151,6 @@
     "arguments": [
       "VirtualSwitchSystemTags.UPLINK_BONDING.getTagFormat()"
     ],
-    "line": 367,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -160,7 +158,6 @@
     "en_US": "only one systemTag for uplink bonding is allowed",
     "zh_CN": "",
     "arguments": [],
-    "line": 386,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -170,7 +167,6 @@
     "arguments": [
       "systemTag"
     ],
-    "line": 400,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -180,7 +176,6 @@
     "arguments": [
       "systemTag"
     ],
-    "line": 403,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -191,7 +186,6 @@
       "systemTag",
       "VirtualSwitchSystemTags.UPLINK_BONDING.getTagFormat()"
     ],
-    "line": 408,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -201,7 +195,6 @@
     "arguments": [
       "vo.getUuid()"
     ],
-    "line": 448,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -211,7 +204,6 @@
     "arguments": [
       "vo.getUuid()"
     ],
-    "line": 521,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -221,7 +213,6 @@
     "arguments": [
       "vo.getUuid()"
     ],
-    "line": 533,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -231,7 +222,6 @@
     "arguments": [
       "msg.getL2NetworkUuid()"
     ],
-    "line": 555,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -241,7 +231,6 @@
     "arguments": [
       "msg.getVirtualNetworkId()"
     ],
-    "line": 567,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -249,7 +238,6 @@
     "en_US": "could not update vlan for port group with default port group",
     "zh_CN": "",
     "arguments": [],
-    "line": 572,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -260,7 +248,6 @@
       "msg.getUuid()",
       "msg.getHostUuid()"
     ],
-    "line": 640,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -268,7 +255,6 @@
     "en_US": "require one of slaveUuids and slaveNames",
     "zh_CN": "",
     "arguments": [],
-    "line": 645,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -276,7 +262,6 @@
     "en_US": "need input at least one slave",
     "zh_CN": "",
     "arguments": [],
-    "line": 651,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -284,7 +269,6 @@
     "en_US": "virtual switch[uuid:{0}] has not created uplink bonding config yet",
     "zh_CN": "",
     "arguments": [],
-    "line": 653,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -294,7 +278,6 @@
     "arguments": [
       "msg.getType()"
     ],
-    "line": 687,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -305,7 +288,6 @@
       "bondingVO.getUuid()",
       "vSwitchUuid"
     ],
-    "line": 724,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchApiInterceptor.java"
   },
   {
@@ -317,7 +299,6 @@
       "msg.getHostUuid()",
       "rsp.getError()"
     ],
-    "line": 394,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchManagerImpl.java"
   },
   {
@@ -329,7 +310,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 856,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchManagerImpl.java"
   },
   {
@@ -340,7 +320,6 @@
       "msg.getHostUuid()",
       "rsp.getError()"
     ],
-    "line": 1022,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchManagerImpl.java"
   },
   {
@@ -350,7 +329,6 @@
     "arguments": [
       "host.getManagementIp()"
     ],
-    "line": 1160,
     "fileName": "src/main/java/org/zstack/network/l2/virtualSwitch/VirtualSwitchManagerImpl.java"
   }
 ]

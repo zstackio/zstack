@@ -6,7 +6,6 @@
     "arguments": [
       "msg.getResourceUuid()"
     ],
-    "line": 70,
     "fileName": "src/main/java/org/zstack/core/CoreManagerImpl.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "invFile"
     ],
-    "line": 108,
     "fileName": "src/main/java/org/zstack/core/ansible/AnsibleFacadeImpl.java"
   },
   {
@@ -24,7 +22,6 @@
     "en_US": "failed to run ansible: failed to find target host",
     "zh_CN": "",
     "arguments": [],
-    "line": 274,
     "fileName": "src/main/java/org/zstack/core/ansible/AnsibleFacadeImpl.java"
   },
   {
@@ -32,7 +29,6 @@
     "en_US": "failed to run ansible",
     "zh_CN": "",
     "arguments": [],
-    "line": 286,
     "fileName": "src/main/java/org/zstack/core/ansible/AnsibleFacadeImpl.java"
   },
   {
@@ -40,7 +36,6 @@
     "en_US": "User name or password or port number may be problematic",
     "zh_CN": "用户名、密码或者端口可能是错误的",
     "arguments": [],
-    "line": 410,
     "fileName": "src/main/java/org/zstack/core/ansible/AnsibleRunner.java"
   },
   {
@@ -50,7 +45,6 @@
     "arguments": [
       "srcFolder"
     ],
-    "line": 108,
     "fileName": "src/main/java/org/zstack/core/ansible/SshFolderMd5Checker.java"
   },
   {
@@ -61,15 +55,71 @@
       "dstFolder",
       "hostname"
     ],
-    "line": 125,
     "fileName": "src/main/java/org/zstack/core/ansible/SshFolderMd5Checker.java"
+  },
+  {
+    "raw": "unable to deliver the message; the destination service[%s] is dead; please use rabbitmqctl to check if the queue is existing and if any consumers on that queue",
+    "en_US": "unable to deliver the message; the destination service[{0}] is dead; please use rabbitmqctl to check if the queue is existing and if any consumers on that queue",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getServiceId()"
+    ],
+    "fileName": "src/main/java/org/zstack/core/cloudbus/CloudBusImpl2.java"
+  },
+  {
+    "raw": "management node[uuid:%s] is no ready",
+    "en_US": "management node[uuid:{0}] is no ready",
+    "zh_CN": "",
+    "arguments": [
+      "Platform.getManagementServerId()"
+    ],
+    "fileName": "src/main/java/org/zstack/core/cloudbus/CloudBusImpl2.java"
+  },
+  {
+    "raw": "No route found for the reply[%s], the service[id:%s] waiting for this reply may have been quit. %s",
+    "en_US": "No route found for the reply[{0}], the service[id:{1}] waiting for this reply may have been quit. {2}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getClass().getName()",
+      "msg.getServiceId()",
+      "wire.dumpMessage(msg)"
+    ],
+    "fileName": "src/main/java/org/zstack/core/cloudbus/CloudBusImpl2.java"
+  },
+  {
+    "raw": "No route found for the message[%s], the service[id:%s] may not be running. Checking Spring xml to make sure you have loaded it. Message dump:\\n %s",
+    "en_US": "No route found for the message[{0}], the service[id:{1}] may not be running. Checking Spring xml to make sure you have loaded it. Message dump:\\n {2}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getClass().getName()",
+      "msg.getServiceId()",
+      "wire.dumpMessage(msg)"
+    ],
+    "fileName": "src/main/java/org/zstack/core/cloudbus/CloudBusImpl2.java"
+  },
+  {
+    "raw": "the message becomes a dead letter; the possible reason is the service[%s] it sends to has been dead",
+    "en_US": "the message becomes a dead letter; the possible reason is the service[{0}] it sends to has been dead",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getServiceId()"
+    ],
+    "fileName": "src/main/java/org/zstack/core/cloudbus/CloudBusImpl2.java"
   },
   {
     "raw": "message is not in correct JSON mediaType",
     "en_US": "message is not in correct JSON mediaType",
     "zh_CN": "",
     "arguments": [],
-    "line": 685,
+    "fileName": "src/main/java/org/zstack/core/cloudbus/CloudBusImpl2.java"
+  },
+  {
+    "raw": "management node[uuid:%s] is unavailable",
+    "en_US": "management node[uuid:{0}] is unavailable",
+    "zh_CN": "",
+    "arguments": [
+      "mgmtNodeId"
+    ],
     "fileName": "src/main/java/org/zstack/core/cloudbus/CloudBusImpl2.java"
   },
   {
@@ -80,7 +130,6 @@
       "rsp.getStatusCode()",
       "rsp.getBody()"
     ],
-    "line": 615,
     "fileName": "src/main/java/org/zstack/core/cloudbus/CloudBusImpl3.java"
   },
   {
@@ -90,7 +139,6 @@
     "arguments": [
       "EventFacade.WEBHOOK_TYPE"
     ],
-    "line": 69,
     "fileName": "src/main/java/org/zstack/core/cloudbus/EventFacadeImpl.java"
   },
   {
@@ -98,7 +146,6 @@
     "en_US": "do not allow skip verification",
     "zh_CN": "不允许跳过验证",
     "arguments": [],
-    "line": 430,
     "fileName": "src/main/java/org/zstack/core/config/GlobalConfig.java"
   },
   {
@@ -109,7 +156,6 @@
       "msg.getCategory()",
       "msg.getName()"
     ],
-    "line": 116,
     "fileName": "src/main/java/org/zstack/core/config/GlobalConfigFacadeImpl.java"
   },
   {
@@ -117,7 +163,6 @@
     "en_US": "taskInfo was not found",
     "zh_CN": "未找到TaskInfo",
     "arguments": [],
-    "line": 93,
     "fileName": "src/main/java/org/zstack/core/debug/DebugManagerImpl.java"
   },
   {
@@ -125,7 +170,6 @@
     "en_US": "encryption error",
     "zh_CN": "",
     "arguments": [],
-    "line": 218,
     "fileName": "src/main/java/org/zstack/core/encrypt/EncryptFacadeImpl.java"
   },
   {
@@ -133,7 +177,6 @@
     "en_US": "non file or jsoncontent input",
     "zh_CN": "非文件或JSON内容输入",
     "arguments": [],
-    "line": 71,
     "fileName": "src/main/java/org/zstack/core/errorcode/ElaborationManagerImpl.java"
   },
   {
@@ -141,7 +184,6 @@
     "en_US": "file or jsoncontent cannot both nonempty",
     "zh_CN": "文件或JSONContent不能同时为非空",
     "arguments": [],
-    "line": 76,
     "fileName": "src/main/java/org/zstack/core/errorcode/ElaborationManagerImpl.java"
   },
   {
@@ -149,7 +191,6 @@
     "en_US": "unable to scan folder",
     "zh_CN": "",
     "arguments": [],
-    "line": 108,
     "fileName": "src/main/java/org/zstack/core/errorcode/ElaborationManagerImpl.java"
   },
   {
@@ -159,7 +200,6 @@
     "arguments": [
       "filename"
     ],
-    "line": 112,
     "fileName": "src/main/java/org/zstack/core/errorcode/ElaborationManagerImpl.java"
   },
   {
@@ -167,7 +207,6 @@
     "en_US": "elaboration code must be number!",
     "zh_CN": "精化代码必须为数字！",
     "arguments": [],
-    "line": 249,
     "fileName": "src/main/java/org/zstack/core/errorcode/ElaborationManagerImpl.java"
   },
   {
@@ -178,7 +217,6 @@
       "returnValue.get(0).getContent()",
       "returnValue.get(0).getReason()"
     ],
-    "line": 318,
     "fileName": "src/main/java/org/zstack/core/errorcode/ElaborationManagerImpl.java"
   },
   {
@@ -186,7 +224,6 @@
     "en_US": "input args \u0027regex\u0027 or \u0027category\u0027 must be set",
     "zh_CN": "必须设置输入参数“ regex ”或“ category ”",
     "arguments": [],
-    "line": 415,
     "fileName": "src/main/java/org/zstack/core/errorcode/ElaborationManagerImpl.java"
   },
   {
@@ -196,7 +233,6 @@
     "arguments": [
       "service.getName()"
     ],
-    "line": 32,
     "fileName": "src/main/java/org/zstack/core/externalservice/ExternalServiceManagerImpl.java"
   },
   {
@@ -206,7 +242,6 @@
     "arguments": [
       "msg.getName()"
     ],
-    "line": 93,
     "fileName": "src/main/java/org/zstack/core/externalservice/ExternalServiceManagerImpl.java"
   },
   {
@@ -216,7 +251,6 @@
     "arguments": [
       "msg.getName()"
     ],
-    "line": 99,
     "fileName": "src/main/java/org/zstack/core/externalservice/ExternalServiceManagerImpl.java"
   },
   {
@@ -226,7 +260,6 @@
     "arguments": [
       "msg.getName()"
     ],
-    "line": 105,
     "fileName": "src/main/java/org/zstack/core/externalservice/ExternalServiceManagerImpl.java"
   },
   {
@@ -237,8 +270,18 @@
       "vo.getUuid()",
       "vo.getName()"
     ],
-    "line": 315,
     "fileName": "src/main/java/org/zstack/core/gc/GarbageCollectorManagerImpl.java"
+  },
+  {
+    "raw": "management node[id:%s] becomes unavailable, job[name:%s, id:%s] is not restartable",
+    "en_US": "management node[id:{0}] becomes unavailable, job[name:{1}, id:{2}] is not restartable",
+    "zh_CN": "",
+    "arguments": [
+      "mgmtId",
+      "e.getName()",
+      "e.getId()"
+    ],
+    "fileName": "src/main/java/org/zstack/core/job/JobQueueFacadeImpl2.java"
   },
   {
     "raw": "unknown product plugin name: %s",
@@ -247,7 +290,6 @@
     "arguments": [
       "pluginDriver.name()"
     ],
-    "line": 138,
     "fileName": "src/main/java/org/zstack/core/plugin/PluginManager.java"
   },
   {
@@ -257,8 +299,14 @@
     "arguments": [
       "msg.getApiId()"
     ],
-    "line": 38,
     "fileName": "src/main/java/org/zstack/core/progress/ProgressApiInterceptor.java"
+  },
+  {
+    "raw": "http timeout",
+    "en_US": "http timeout",
+    "zh_CN": "HTTP 超时",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/core/rest/AsyncResponseFetcher.java"
   },
   {
     "raw": "failed to %s to %s: IO Error",
@@ -268,7 +316,6 @@
       "http2.getMethod().toString().toLowerCase()",
       "http2.getPath()"
     ],
-    "line": 542,
     "fileName": "src/main/java/org/zstack/core/rest/RESTFacadeImpl.java"
   },
   {
@@ -281,7 +328,6 @@
       "rsp.getStatusCode()",
       "rsp.getBody()"
     ],
-    "line": 625,
     "fileName": "src/main/java/org/zstack/core/rest/RESTFacadeImpl.java"
   },
   {
@@ -292,7 +338,6 @@
       "url",
       "finalTimeout"
     ],
-    "line": 659,
     "fileName": "src/main/java/org/zstack/core/rest/RESTFacadeImpl.java"
   },
   {
@@ -304,7 +349,6 @@
       "times",
       "interval"
     ],
-    "line": 115,
     "fileName": "src/main/java/org/zstack/core/retry/Retry.java"
   },
   {
@@ -316,7 +360,6 @@
       "targetIp",
       "retry"
     ],
-    "line": 297,
     "fileName": "src/main/java/org/zstack/core/salt/SaltRunner.java"
   },
   {
@@ -326,8 +369,14 @@
     "arguments": [
       "targetIp"
     ],
-    "line": 84,
     "fileName": "src/main/java/org/zstack/core/salt/SaltSetupMinionJob.java"
+  },
+  {
+    "raw": "task failed due to cancelled",
+    "en_US": "task failed due to cancelled",
+    "zh_CN": "任务被取消了",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/core/thread/DispatchQueueImpl.java"
   },
   {
     "raw": "api timeout cannot be set smaller than %s",
@@ -336,7 +385,6 @@
     "arguments": [
       "ApiTimeoutGlobalProperty.MINIMAL_TIMEOUT"
     ],
-    "line": 76,
     "fileName": "src/main/java/org/zstack/core/timeout/ApiTimeoutManagerImpl.java"
   },
   {
@@ -346,7 +394,6 @@
     "arguments": [
       "url"
     ],
-    "line": 28,
     "fileName": "src/main/java/org/zstack/core/webhook/WebhookApiInterceptor.java"
   }
 ]

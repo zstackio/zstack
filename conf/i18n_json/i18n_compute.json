@@ -6,7 +6,6 @@
     "arguments": [
       "vm.getUuid()"
     ],
-    "line": 38,
     "fileName": "src/main/java/org/zstack/compute/allocator/AttachedVolumePrimaryStorageAllocatorFlow.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "args"
     ],
-    "line": 98,
     "fileName": "src/main/java/org/zstack/compute/allocator/DesignatedHostAllocatorProducer.java"
   },
   {
@@ -24,25 +22,43 @@
     "en_US": "either volumeUuid or volumeSnapshotUuid must be set",
     "zh_CN": "硬盘 UUID 或快照 UUID 需要被设置",
     "arguments": [],
-    "line": 56,
     "fileName": "src/main/java/org/zstack/compute/allocator/HostAllocatorApiInterceptor.java"
   },
   {
     "raw": "zoneUuids, clusterUuids, hostUuids must at least have one be none-empty list, or all is set to true",
     "en_US": "zoneUuids, clusterUuids, hostUuids must at least have one be none-empty list, or all is set to true",
-    "zh_CN": "数据中心 UUID、集群 UUID、主机 UUID 至少有一项不为空，或者 'all' 字段设置为 true",
+    "zh_CN": "数据中心 UUID、集群 UUID、主机 UUID 至少有一项不为空，或者 \u0027all\u0027 字段设置为 true",
     "arguments": [],
-    "line": 75,
     "fileName": "src/main/java/org/zstack/compute/allocator/HostAllocatorApiInterceptor.java"
   },
   {
-    "raw": "failed to reserve capacity in host[uuid=%s]  // for host allocation",
-    "en_US": "failed to reserve capacity in host[uuid={0}]",
-    "zh_CN": "主机 {0} 预留资源失败",
+    "raw": "host allocation flow doesn\u0027t indicate any details",
+    "en_US": "host allocation flow doesn\u0027t indicate any details",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/compute/allocator/HostAllocatorChain.java"
+  },
+  {
+    "raw": "no available hosts found",
+    "en_US": "no available hosts found",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/compute/allocator/HostAllocatorChain.java"
+  },
+  {
+    "raw": "[Host Allocation] no host meet the requirements",
+    "en_US": "[Host Allocation] no host meet the requirements",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/compute/allocator/HostAllocatorChain.java"
+  },
+  {
+    "raw": "failed to reserve capacity in host[uuid\u003d%s]",
+    "en_US": "failed to reserve capacity in host[uuid\u003d{0}]",
+    "zh_CN": "",
     "arguments": [
       "host.getUuid()"
     ],
-    "line": 135,
     "fileName": "src/main/java/org/zstack/compute/allocator/HostSortorChain.java"
   },
   {
@@ -53,7 +69,16 @@
       "spec.getImage().getUuid()",
       "spec.getImage().getName()"
     ],
-    "line": 100,
+    "fileName": "src/main/java/org/zstack/compute/allocator/ImageBackupStorageAllocatorFlow.java"
+  },
+  {
+    "raw": "all backup storage that image[uuid:%s] is on can not satisfy conditions[status \u003d %s]",
+    "en_US": "all backup storage that image[uuid:{0}] is on can not satisfy conditions[status \u003d {1}]",
+    "zh_CN": "",
+    "arguments": [
+      "spec.getImage().getUuid()",
+      "BackupStorageStatus.Connected.toString()"
+    ],
     "fileName": "src/main/java/org/zstack/compute/allocator/ImageBackupStorageAllocatorFlow.java"
   },
   {
@@ -63,7 +88,6 @@
     "arguments": [
       "entry.getKey()"
     ],
-    "line": 104,
     "fileName": "src/main/java/org/zstack/compute/allocator/ResourceBindingAllocatorFlow.java"
   },
   {
@@ -71,7 +95,6 @@
     "en_US": "if cluster type is baremetal, then hypervisorType must be baremetal too, or vice versa",
     "zh_CN": "如果集群类型为裸金属，则 hypervisorType 也必须为裸金属，反之亦然",
     "arguments": [],
-    "line": 55,
     "fileName": "src/main/java/org/zstack/compute/cluster/ClusterApiInterceptor.java"
   },
   {
@@ -79,7 +102,6 @@
     "en_US": "only kvm hosts\u0027 operating system can be updated, for now",
     "zh_CN": "目前只支持升级 KVM 主机操作系统",
     "arguments": [],
-    "line": 71,
     "fileName": "src/main/java/org/zstack/compute/cluster/ClusterApiInterceptor.java"
   },
   {
@@ -89,7 +111,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 82,
     "fileName": "src/main/java/org/zstack/compute/cluster/ClusterApiInterceptor.java"
   },
   {
@@ -99,7 +120,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 94,
     "fileName": "src/main/java/org/zstack/compute/cluster/ClusterApiInterceptor.java"
   },
   {
@@ -107,7 +127,6 @@
     "en_US": "webssh server is not running.",
     "zh_CN": "WebSSH 服务器未运行",
     "arguments": [],
-    "line": 90,
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
   },
   {
@@ -117,7 +136,6 @@
     "arguments": [
       "msg.getManagementIp()"
     ],
-    "line": 107,
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
   },
   {
@@ -127,7 +145,6 @@
     "arguments": [
       "msg.getManagementIp()"
     ],
-    "line": 114,
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
   },
   {
@@ -138,7 +155,6 @@
       "msg.getHostUuid()",
       "hostStatus"
     ],
-    "line": 124,
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
   },
   {
@@ -146,7 +162,6 @@
     "en_US": "path cannot be empty",
     "zh_CN": "",
     "arguments": [],
-    "line": 176,
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
   },
   {
@@ -154,7 +169,6 @@
     "en_US": "path must be an absolute path (start with \u0027/\u0027)\\\"",
     "zh_CN": "",
     "arguments": [],
-    "line": 180,
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
   },
   {
@@ -162,7 +176,6 @@
     "en_US": "invalid path traversal detected",
     "zh_CN": "",
     "arguments": [],
-    "line": 184,
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
   },
   {
@@ -170,7 +183,6 @@
     "en_US": "mountPoint cannot be empty",
     "zh_CN": "",
     "arguments": [],
-    "line": 190,
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
   },
   {
@@ -178,7 +190,6 @@
     "en_US": "mount point must be an absolute path (start with \u0027/\u0027)",
     "zh_CN": "",
     "arguments": [],
-    "line": 194,
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
   },
   {
@@ -186,7 +197,6 @@
     "en_US": "path traversal detected in mount point",
     "zh_CN": "",
     "arguments": [],
-    "line": 198,
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
   },
   {
@@ -194,8 +204,18 @@
     "en_US": "mountPoint should not end with \u0027/\u0027 except root directory",
     "zh_CN": "",
     "arguments": [],
-    "line": 218,
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
+  },
+  {
+    "raw": "host[uuid:%s, name:%s] is in status[%s], cannot perform required operation",
+    "en_US": "host[uuid:{0}, name:{1}] is in status[{2}], cannot perform required operation",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "self.getName()",
+      "self.getStatus()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
   },
   {
     "raw": "host[uuid:%s, name:%s] is in state[%s], cannot perform required operation",
@@ -206,7 +226,6 @@
       "self.getName()",
       "self.getState()"
     ],
-    "line": 157,
     "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
   },
   {
@@ -216,7 +235,6 @@
     "arguments": [
       "host.getName()"
     ],
-    "line": 500,
     "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
   },
   {
@@ -229,7 +247,6 @@
       "self.getName()",
       "self.getManagementIp()"
     ],
-    "line": 524,
     "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
   },
   {
@@ -237,7 +254,13 @@
     "en_US": "host is connecting, ping failed",
     "zh_CN": "主机正在连接, 不能进行 ping 操作",
     "arguments": [],
-    "line": 953,
+    "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
+  },
+  {
+    "raw": "failed to connect host",
+    "en_US": "failed to connect host",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
   },
   {
@@ -247,7 +270,6 @@
     "arguments": [
       "host.getUuid()"
     ],
-    "line": 62,
     "fileName": "src/main/java/org/zstack/compute/host/HostIpmiPowerExecutor.java"
   },
   {
@@ -257,7 +279,6 @@
     "arguments": [
       "host.getUuid()"
     ],
-    "line": 78,
     "fileName": "src/main/java/org/zstack/compute/host/HostIpmiPowerExecutor.java"
   },
   {
@@ -267,7 +288,6 @@
     "arguments": [
       "host.getUuid()"
     ],
-    "line": 120,
     "fileName": "src/main/java/org/zstack/compute/host/HostIpmiPowerExecutor.java"
   },
   {
@@ -277,7 +297,6 @@
     "arguments": [
       "host.getUuid()"
     ],
-    "line": 130,
     "fileName": "src/main/java/org/zstack/compute/host/HostIpmiPowerExecutor.java"
   },
   {
@@ -287,7 +306,6 @@
     "arguments": [
       "host.getUuid()"
     ],
-    "line": 160,
     "fileName": "src/main/java/org/zstack/compute/host/HostIpmiPowerExecutor.java"
   },
   {
@@ -297,7 +315,6 @@
     "arguments": [
       "host.getUuid()"
     ],
-    "line": 170,
     "fileName": "src/main/java/org/zstack/compute/host/HostIpmiPowerExecutor.java"
   },
   {
@@ -305,7 +322,6 @@
     "en_US": "ipmi information is not complete.",
     "zh_CN": "IPMI 信息不完整",
     "arguments": [],
-    "line": 191,
     "fileName": "src/main/java/org/zstack/compute/host/HostIpmiPowerExecutor.java"
   },
   {
@@ -315,7 +331,6 @@
     "arguments": [
       "ipmi.getUuid()"
     ],
-    "line": 201,
     "fileName": "src/main/java/org/zstack/compute/host/HostIpmiPowerExecutor.java"
   },
   {
@@ -326,7 +341,6 @@
       "ipmi.getUuid()",
       "ipmi.getIpmiAddress()"
     ],
-    "line": 204,
     "fileName": "src/main/java/org/zstack/compute/host/HostIpmiPowerExecutor.java"
   },
   {
@@ -336,8 +350,16 @@
     "arguments": [
       "ipmi.getIpmiAddress()"
     ],
-    "line": 221,
     "fileName": "src/main/java/org/zstack/compute/host/HostIpmiPowerExecutor.java"
+  },
+  {
+    "raw": "cannot find host[uuid:%s], it may have been deleted",
+    "en_US": "cannot find host[uuid:{0}], it may have been deleted",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getHostUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/host/HostManagerImpl.java"
   },
   {
     "raw": "cluster[uuid:%s] is not existing",
@@ -346,7 +368,6 @@
     "arguments": [
       "msg.getClusterUuid()"
     ],
-    "line": 284,
     "fileName": "src/main/java/org/zstack/compute/host/HostManagerImpl.java"
   },
   {
@@ -357,7 +378,6 @@
       "vo.getName()",
       "vo.getManagementIp()"
     ],
-    "line": 378,
     "fileName": "src/main/java/org/zstack/compute/host/HostManagerImpl.java"
   },
   {
@@ -371,7 +391,6 @@
       "vo.getManagementIp()",
       "arch"
     ],
-    "line": 393,
     "fileName": "src/main/java/org/zstack/compute/host/HostManagerImpl.java"
   },
   {
@@ -382,7 +401,6 @@
       "msg.getMountPoint()",
       "mountPointCheck.getStdout().trim()"
     ],
-    "line": 547,
     "fileName": "src/main/java/org/zstack/compute/host/HostManagerImpl.java"
   },
   {
@@ -393,7 +411,6 @@
       "msg.getPath()",
       "devicePathCheck.getStdout().trim()"
     ],
-    "line": 555,
     "fileName": "src/main/java/org/zstack/compute/host/HostManagerImpl.java"
   },
   {
@@ -403,7 +420,6 @@
     "arguments": [
       "msg.getPath()"
     ],
-    "line": 569,
     "fileName": "src/main/java/org/zstack/compute/host/HostManagerImpl.java"
   },
   {
@@ -413,7 +429,6 @@
     "arguments": [
       "msg.getCancellationApiId()"
     ],
-    "line": 685,
     "fileName": "src/main/java/org/zstack/compute/host/HostManagerImpl.java"
   },
   {
@@ -423,8 +438,18 @@
     "arguments": [
       "d.getPrimaryStorageUuid()"
     ],
-    "line": 903,
     "fileName": "src/main/java/org/zstack/compute/host/HostManagerImpl.java"
+  },
+  {
+    "raw": "current vm instance state[%s] doesn\u0027t allow to proceed message[%s], allowed states are %s",
+    "en_US": "current vm instance state[{0}] doesn\u0027t allow to proceed message[{1}], allowed states are {2}",
+    "zh_CN": "",
+    "arguments": [
+      "currentState",
+      "msg.getMessageName()",
+      "checker.getStatesForOperation(msg.getMessageName())"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/AbstractVmInstance.java"
   },
   {
     "raw": "the host[uuid:%s] is not connected",
@@ -433,7 +458,6 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 50,
     "fileName": "src/main/java/org/zstack/compute/vm/DeleteVmGC.java"
   },
   {
@@ -444,7 +468,6 @@
       "vmUuid",
       "isoUuid"
     ],
-    "line": 40,
     "fileName": "src/main/java/org/zstack/compute/vm/IsoOperator.java"
   },
   {
@@ -454,7 +477,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 48,
     "fileName": "src/main/java/org/zstack/compute/vm/IsoOperator.java"
   },
   {
@@ -464,7 +486,6 @@
     "arguments": [
       "mac"
     ],
-    "line": 77,
     "fileName": "src/main/java/org/zstack/compute/vm/MacOperator.java"
   },
   {
@@ -474,7 +495,6 @@
     "arguments": [
       "mac"
     ],
-    "line": 87,
     "fileName": "src/main/java/org/zstack/compute/vm/MacOperator.java"
   },
   {
@@ -482,7 +502,6 @@
     "en_US": "Disallowed address",
     "zh_CN": "不被允许的 MAC 地址",
     "arguments": [],
-    "line": 90,
     "fileName": "src/main/java/org/zstack/compute/vm/MacOperator.java"
   },
   {
@@ -492,7 +511,6 @@
     "arguments": [
       "mac"
     ],
-    "line": 93,
     "fileName": "src/main/java/org/zstack/compute/vm/MacOperator.java"
   },
   {
@@ -502,7 +520,6 @@
     "arguments": [
       "ip"
     ],
-    "line": 106,
     "fileName": "src/main/java/org/zstack/compute/vm/StaticIpOperator.java"
   },
   {
@@ -513,7 +530,6 @@
       "ip",
       "l3.getUuid()"
     ],
-    "line": 360,
     "fileName": "src/main/java/org/zstack/compute/vm/StaticIpOperator.java"
   },
   {
@@ -523,7 +539,6 @@
     "arguments": [
       "info.ipv4Netmask"
     ],
-    "line": 423,
     "fileName": "src/main/java/org/zstack/compute/vm/StaticIpOperator.java"
   },
   {
@@ -533,7 +548,6 @@
     "arguments": [
       "info.ipv4Gateway"
     ],
-    "line": 429,
     "fileName": "src/main/java/org/zstack/compute/vm/StaticIpOperator.java"
   },
   {
@@ -541,7 +555,6 @@
     "en_US": "netmask must be set",
     "zh_CN": "",
     "arguments": [],
-    "line": 455,
     "fileName": "src/main/java/org/zstack/compute/vm/StaticIpOperator.java"
   },
   {
@@ -549,8 +562,14 @@
     "en_US": "ipv6 prefix length must be set",
     "zh_CN": "",
     "arguments": [],
-    "line": 489,
     "fileName": "src/main/java/org/zstack/compute/vm/StaticIpOperator.java"
+  },
+  {
+    "raw": "unable to find an available mac address after re-try 5 times, too many collisions",
+    "en_US": "unable to find an available mac address after re-try 5 times, too many collisions",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/compute/vm/TfVmNicFactory.java"
   },
   {
     "raw": "vm[uuid:%s] cdRom deviceId repetition",
@@ -559,7 +578,6 @@
     "arguments": [
       "spec.getVmInventory().getUuid()"
     ],
-    "line": 58,
     "fileName": "src/main/java/org/zstack/compute/vm/VmAllocateCdRomFlow.java"
   },
   {
@@ -570,7 +588,6 @@
       "imageUuid",
       "cachedPsUuids"
     ],
-    "line": 72,
     "fileName": "src/main/java/org/zstack/compute/vm/VmAllocateHostAndPrimaryStorageFlow.java"
   },
   {
@@ -580,8 +597,16 @@
     "arguments": [
       "nw.getUuid()"
     ],
-    "line": 118,
     "fileName": "src/main/java/org/zstack/compute/vm/VmAllocateNicFlow.java"
+  },
+  {
+    "raw": "failed to allocate root volume to the primary storage[%s]",
+    "en_US": "failed to allocate root volume to the primary storage[{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "disk.getPrimaryStorageUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmAllocatePrimaryStorageFlow.java"
   },
   {
     "raw": " Can not find the vm\u0027s host, please start the vm[%s], then mount the disk",
@@ -590,7 +615,6 @@
     "arguments": [
       "spec.getVmInventory().getUuid()"
     ],
-    "line": 45,
     "fileName": "src/main/java/org/zstack/compute/vm/VmAllocatePrimaryStorageForAttachingDiskFlow.java"
   },
   {
@@ -601,7 +625,6 @@
       "vmUuid",
       "hostUuid"
     ],
-    "line": 58,
     "fileName": "src/main/java/org/zstack/compute/vm/VmDestroyOnHypervisorFlow.java"
   },
   {
@@ -609,7 +632,6 @@
     "en_US": "hostname is empty",
     "zh_CN": "",
     "arguments": [],
-    "line": 52,
     "fileName": "src/main/java/org/zstack/compute/vm/VmHostnameUtils.java"
   },
   {
@@ -619,7 +641,6 @@
     "arguments": [
       "netBiosName"
     ],
-    "line": 59,
     "fileName": "src/main/java/org/zstack/compute/vm/VmHostnameUtils.java"
   },
   {
@@ -629,7 +650,6 @@
     "arguments": [
       "netBiosName"
     ],
-    "line": 64,
     "fileName": "src/main/java/org/zstack/compute/vm/VmHostnameUtils.java"
   },
   {
@@ -639,7 +659,6 @@
     "arguments": [
       "hostname"
     ],
-    "line": 70,
     "fileName": "src/main/java/org/zstack/compute/vm/VmHostnameUtils.java"
   },
   {
@@ -649,7 +668,6 @@
     "arguments": [
       "hostname"
     ],
-    "line": 76,
     "fileName": "src/main/java/org/zstack/compute/vm/VmHostnameUtils.java"
   },
   {
@@ -659,7 +677,6 @@
     "arguments": [
       "domain"
     ],
-    "line": 89,
     "fileName": "src/main/java/org/zstack/compute/vm/VmHostnameUtils.java"
   },
   {
@@ -670,7 +687,6 @@
       "label",
       "domain"
     ],
-    "line": 97,
     "fileName": "src/main/java/org/zstack/compute/vm/VmHostnameUtils.java"
   },
   {
@@ -680,7 +696,6 @@
     "arguments": [
       "label"
     ],
-    "line": 103,
     "fileName": "src/main/java/org/zstack/compute/vm/VmHostnameUtils.java"
   },
   {
@@ -691,7 +706,6 @@
       "zoneUuid",
       "isoImageUuid"
     ],
-    "line": 131,
     "fileName": "src/main/java/org/zstack/compute/vm/VmImageSelectBackupStorageFlow.java"
   },
   {
@@ -701,7 +715,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 207,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -711,7 +724,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 215,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -721,7 +733,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 223,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -729,7 +740,6 @@
     "en_US": "either l3NetworkUuids or backupStorageUuid must be set",
     "zh_CN": "必须设置分布式端口组或镜像服务器",
     "arguments": [],
-    "line": 230,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -740,7 +750,6 @@
       "nicVO.getL3NetworkUuid()",
       "msg.getDestL3NetworkUuid()"
     ],
-    "line": 249,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -751,7 +760,6 @@
       "msg.getVmInstanceUuid()",
       "state"
     ],
-    "line": 280,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -761,7 +769,6 @@
     "arguments": [
       "msg.getDestL3NetworkUuid()"
     ],
-    "line": 286,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -772,7 +779,6 @@
       "msg.getDestL3NetworkUuid()",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 304,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -783,7 +789,6 @@
       "msg.getDestL3NetworkUuid()",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 309,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -793,7 +798,6 @@
     "arguments": [
       "l3NetworkVO.getUuid()"
     ],
-    "line": 315,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -803,7 +807,6 @@
     "arguments": [
       "l3NetworkVO.getUuid()"
     ],
-    "line": 318,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -814,7 +817,6 @@
       "image.getName()",
       "image.getUuid()"
     ],
-    "line": 382,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -825,7 +827,6 @@
       "msg.getVmInstanceUuid()",
       "vo.getState().toString()"
     ],
-    "line": 392,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -835,7 +836,6 @@
     "arguments": [
       "vo.getPlatform()"
     ],
-    "line": 400,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -845,7 +845,6 @@
     "arguments": [
       "msg.getDriverType()"
     ],
-    "line": 406,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -853,7 +852,6 @@
     "en_US": "vm nic driver type can be updated only when the vm is stopped",
     "zh_CN": "只能在虚拟机停止状态下更新网卡驱动类型",
     "arguments": [],
-    "line": 411,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -861,7 +859,6 @@
     "en_US": "rootDiskSize is needed when image media type is ISO",
     "zh_CN": "当镜像类型是ISO时需要设置硬盘大小",
     "arguments": [],
-    "line": 420,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -872,7 +869,6 @@
       "msg.getVmInstanceUuid()",
       "msg.getHostUuid()"
     ],
-    "line": 432,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -882,7 +878,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 438,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -890,7 +885,6 @@
     "en_US": "the VM cannot do online cpu/memory update because of disabling Instance Offering Online Modification. Please stop the VM then do the cpu/memory update again",
     "zh_CN": "虚拟机无法执行在线升级CPU/内存，因为未启用计算规格在线修改。请关闭该虚拟机再尝试",
     "arguments": [],
-    "line": 454,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -900,7 +894,6 @@
     "arguments": [
       "vo.getUuid()"
     ],
-    "line": 470,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -911,7 +904,6 @@
       "msg.getReservedMemorySize()",
       "memorySize"
     ],
-    "line": 487,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -919,7 +911,6 @@
     "en_US": "the VM cannot do cpu hot plug because of disabling cpu hot plug. Please stop the VM then do the cpu hot plug again",
     "zh_CN": "虚拟机无法执行在线添加CPU，因为未启用CPU热插拔。请关闭该虚拟机再尝试",
     "arguments": [],
-    "line": 504,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -927,7 +918,6 @@
     "en_US": "the VM cannot do memory hot plug because of disabling memory hot plug. Please stop the VM then do the memory hot plug again",
     "zh_CN": "虚拟机无法执行在线添加内存，因为未启用内存热插拔。请关闭该虚拟机再尝试",
     "arguments": [],
-    "line": 510,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -939,7 +929,6 @@
       "vo.getState()",
       "StringUtils.join(list(VmInstanceState.Running, VmInstanceState.Stopped), \",\")"
     ],
-    "line": 517,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -949,7 +938,6 @@
     "arguments": [
       "vo.getUuid()"
     ],
-    "line": 527,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -959,7 +947,6 @@
     "arguments": [
       "vo.getUuid()"
     ],
-    "line": 533,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -967,7 +954,6 @@
     "en_US": "could not set ip address, due to no ip address is specified",
     "zh_CN": "无法设置IP地址，因为未指定IP地址",
     "arguments": [],
-    "line": 556,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -975,7 +961,6 @@
     "en_US": "ipv4 address cannot be empty when l3 is IPAM enabled",
     "zh_CN": "",
     "arguments": [],
-    "line": 561,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -983,7 +968,6 @@
     "en_US": "ipv6 address cannot be empty when l3 is IPAM enabled",
     "zh_CN": "",
     "arguments": [],
-    "line": 563,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -993,7 +977,6 @@
     "arguments": [
       "msg.getIpv6Prefix()"
     ],
-    "line": 576,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1004,7 +987,6 @@
       "msg.getVmInstanceUuid()",
       "msg.getL3NetworkUuid()"
     ],
-    "line": 596,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1015,7 +997,6 @@
       "dns",
       "msg.getIpVersion()"
     ],
-    "line": 629,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1023,7 +1004,6 @@
     "en_US": "size of dns list should not exceed 3",
     "zh_CN": "DNS列表的大小不能超过3",
     "arguments": [],
-    "line": 634,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1031,7 +1011,6 @@
     "en_US": "vmNicUuid should be set for Windows vm",
     "zh_CN": "Windows虚拟机的网卡UUID应被设置",
     "arguments": [],
-    "line": 652,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1039,7 +1018,6 @@
     "en_US": "ip version should be set for Windows vm",
     "zh_CN": "Windows虚拟机的ip版本应被设置",
     "arguments": [],
-    "line": 655,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1050,7 +1028,6 @@
       "vmNicUuid",
       "vmInstanceUuid"
     ],
-    "line": 661,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1058,7 +1035,6 @@
     "en_US": "vmNicUuid should not be set for non-Windows vm",
     "zh_CN": "非Windows虚拟机的网卡UUID不应被设置",
     "arguments": [],
-    "line": 666,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1066,7 +1042,6 @@
     "en_US": "ip version should not be set for non-Windows vm",
     "zh_CN": "非Windows虚拟机的ip版本不应被设置",
     "arguments": [],
-    "line": 669,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1077,7 +1052,6 @@
       "o",
       "msg.getBootOrder()"
     ],
-    "line": 680,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1085,7 +1059,6 @@
     "en_US": "boot volume cannot be shareable.",
     "zh_CN": "启动卷无法共享。",
     "arguments": [],
-    "line": 703,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1096,7 +1069,6 @@
       "msg.getVolumeUuid()",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 707,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1106,7 +1078,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 712,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1117,7 +1088,6 @@
       "msg.getVmInstanceUuid()",
       "msg.getIsoUuid()"
     ],
-    "line": 720,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1127,7 +1097,6 @@
     "arguments": [
       "type"
     ],
-    "line": 725,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1137,7 +1106,6 @@
     "arguments": [
       "cdRomUuid"
     ],
-    "line": 740,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1148,7 +1116,6 @@
       "msg.getVmInstanceUuid()",
       "cdRomUuid"
     ],
-    "line": 744,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1158,7 +1125,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 762,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1169,7 +1135,6 @@
       "msg.getVmInstanceUuid()",
       "state"
     ],
-    "line": 794,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1179,7 +1144,6 @@
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
-    "line": 800,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1190,7 +1154,6 @@
       "msg.getL3NetworkUuid()",
       "l3NetworkVO.getL2NetworkUuid()"
     ],
-    "line": 807,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1201,7 +1164,6 @@
       "msg.getL3NetworkUuid()",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 818,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1212,7 +1174,6 @@
       "msg.getL3NetworkUuid()",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 823,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1222,7 +1183,6 @@
     "arguments": [
       "l3NetworkVO.getUuid()"
     ],
-    "line": 829,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1232,7 +1192,6 @@
     "arguments": [
       "l3NetworkVO.getUuid()"
     ],
-    "line": 832,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1243,7 +1202,6 @@
       "msg.getVmInstanceUuid()",
       "state"
     ],
-    "line": 912,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1253,7 +1211,6 @@
     "arguments": [
       "vmNicVO.getVmInstanceUuid()"
     ],
-    "line": 919,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1264,7 +1221,6 @@
       "vmNicVO.getL3NetworkUuid()",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 930,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1275,7 +1231,6 @@
       "vmNicVO.getL3NetworkUuid()",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 935,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1285,7 +1240,6 @@
     "arguments": [
       "l3NetworkVO.getUuid()"
     ],
-    "line": 944,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1295,7 +1249,6 @@
     "arguments": [
       "l3NetworkVO.getUuid()"
     ],
-    "line": 947,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1305,7 +1258,6 @@
     "arguments": [
       "l3NetworkVO.getL2NetworkUuid()"
     ],
-    "line": 954,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1315,7 +1267,6 @@
     "arguments": [
       "nicVO.getMac()"
     ],
-    "line": 965,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1326,7 +1277,6 @@
       "msg.getVmNicUuid()",
       "nicVO.getType()"
     ],
-    "line": 970,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1337,7 +1287,6 @@
       "vmUuid",
       "state"
     ],
-    "line": 987,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1348,7 +1297,6 @@
       "msg.getVmInstanceUuid()",
       "state"
     ],
-    "line": 1002,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1356,7 +1304,6 @@
     "en_US": "image mediaType is ISO but missing root disk settings",
     "zh_CN": "镜像媒体类型为ISO，但缺少根磁盘设置",
     "arguments": [],
-    "line": 1010,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1364,7 +1311,6 @@
     "en_US": "Unexpected root disk settings",
     "zh_CN": "意外的根磁盘设置",
     "arguments": [],
-    "line": 1014,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1375,7 +1321,6 @@
       "msg.getPrimaryStorageUuidForRootVolume()",
       "primaryStorageUuidForDataVolume"
     ],
-    "line": 1035,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1383,7 +1328,6 @@
     "en_US": "Unexpected data disk settings. dataDiskSizes need to be greater than 0",
     "zh_CN": "意外的数据磁盘设置。数据磁盘大小需要大于0",
     "arguments": [],
-    "line": 1045,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1391,7 +1335,6 @@
     "en_US": "missing root disk",
     "zh_CN": "缺少根磁盘设置",
     "arguments": [],
-    "line": 1059,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1399,7 +1342,6 @@
     "en_US": "virtio tag is not allowed when virtio is false",
     "zh_CN": "当virtio为false时，不允许使用virtio标签",
     "arguments": [],
-    "line": 1079,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1409,7 +1351,6 @@
     "arguments": [
       "msg.getImageUuid()"
     ],
-    "line": 1110,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1419,7 +1360,6 @@
     "arguments": [
       "msg.getImageUuid()"
     ],
-    "line": 1115,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1430,7 +1370,6 @@
       "msg.getImageUuid()",
       "imgFormat"
     ],
-    "line": 1120,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1440,7 +1379,6 @@
     "arguments": [
       "msg.getImageUuid()"
     ],
-    "line": 1125,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1450,7 +1388,6 @@
     "arguments": [
       "msg.getImageUuid()"
     ],
-    "line": 1129,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1460,7 +1397,6 @@
     "arguments": [
       "msg.getImageUuid()"
     ],
-    "line": 1135,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1470,7 +1406,6 @@
     "arguments": [
       "msg.getImageUuid()"
     ],
-    "line": 1141,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1480,7 +1415,6 @@
     "arguments": [
       "diskUuids"
     ],
-    "line": 1173,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1490,16 +1424,15 @@
     "arguments": [
       "msg.getAllocatorStrategy()"
     ],
-    "line": 1182,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
-    "raw": "Cannot set the following properties at the same time",
-    "en_US": "Cannot set the following properties at the same time",
-    "zh_CN": "这些属性无法同时修改",
+    "raw": "cannot set the following properties at the same time: %s",
+    "en_US": "cannot set the following properties at the same time: {0}",
+    "zh_CN": "",
     "arguments": [
+      "invalidPropertiesText"
     ],
-    "line": 1214,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1509,7 +1442,6 @@
     "arguments": [
       "properties"
     ],
-    "line": 1222,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1517,7 +1449,6 @@
     "en_US": "cannot create vm instance from a shareable volume.",
     "zh_CN": "无法从可共享硬盘创建虚拟机实例",
     "arguments": [],
-    "line": 1229,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1525,7 +1456,6 @@
     "en_US": "could not create vm instance from a attached volume.",
     "zh_CN": "无法从加载的卷创建虚拟机实例",
     "arguments": [],
-    "line": 1233,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1535,7 +1465,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 1237,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1543,7 +1472,6 @@
     "en_US": "The console password cannot start with \u0027password\u0027 which may trigger a VNC security issue",
     "zh_CN": "控制台密码不能以password开头，这样可能导致一个VNC安全问题",
     "arguments": [],
-    "line": 1285,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1551,7 +1479,6 @@
     "en_US": "can not call this api because it\u0027s Deprecated",
     "zh_CN": "无法调用此API，因为它已被弃用",
     "arguments": [],
-    "line": 1290,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1561,7 +1488,6 @@
     "arguments": [
       "vmCdRomVO.getUuid()"
     ],
-    "line": 1307,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1572,7 +1498,6 @@
       "msg.getUuid()",
       "state"
     ],
-    "line": 1318,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1583,7 +1508,6 @@
       "vo.getUuid()",
       "vo.getName()"
     ],
-    "line": 278,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1594,7 +1518,6 @@
       "vmInv.getUuid()",
       "vmInv.getHostUuid()"
     ],
-    "line": 628,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1605,7 +1528,6 @@
       "vmInv.getUuid()",
       "vmInv.getHostUuid()"
     ],
-    "line": 635,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1616,7 +1538,6 @@
       "self.getUuid()",
       "l3Uuid"
     ],
-    "line": 1022,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1624,7 +1545,6 @@
     "en_US": "the vm has been deleted",
     "zh_CN": "虚拟机已经被删除了",
     "arguments": [],
-    "line": 1384,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1635,7 +1555,6 @@
       "templatedVmInstance.getUuid()",
       "reply.getError()"
     ],
-    "line": 3347,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1646,7 +1565,6 @@
       "cache.getCacheVmInstanceUuid()",
       "templatedVmInstance.getUuid()"
     ],
-    "line": 3381,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1656,7 +1574,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 3479,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1667,7 +1584,6 @@
       "cache.getCacheVmInstanceUuid()",
       "templatedVmInstanceUuid"
     ],
-    "line": 3549,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1677,7 +1593,15 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 4345,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
+  },
+  {
+    "raw": "no available empty cdrom for VM[uuid:%s]",
+    "en_US": "no available empty cdrom for VM[uuid:{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1687,7 +1611,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 5848,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1697,7 +1620,6 @@
     "arguments": [
       "msg.getName()"
     ],
-    "line": 5879,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1707,7 +1629,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 5996,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1718,7 +1639,6 @@
       "isoUuid",
       "self.getUuid()"
     ],
-    "line": 6107,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1729,7 +1649,6 @@
       "self.getUuid()",
       "self.getState()"
     ],
-    "line": 7052,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1740,7 +1659,15 @@
       "cdRomSpecs.size()",
       "max"
     ],
-    "line": 7797,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
+  },
+  {
+    "raw": "failed to start VM[uuid:%s]",
+    "en_US": "failed to start VM[uuid:{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1750,7 +1677,6 @@
     "arguments": [
       "spec.getVmInventory().getImageUuid()"
     ],
-    "line": 8080,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1761,7 +1687,6 @@
       "msg.getVmInstanceUuid()",
       "max"
     ],
-    "line": 8767,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1772,7 +1697,6 @@
       "self.getUuid()",
       "msg.getPriority()"
     ],
-    "line": 8877,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -1783,7 +1707,6 @@
       "ext.getClass().getSimpleName()",
       "inv.getUuid()"
     ],
-    "line": 69,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceExtensionPointEmitter.java"
   },
   {
@@ -1794,7 +1717,6 @@
       "ext.getClass().getSimpleName()",
       "inv.getUuid()"
     ],
-    "line": 131,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceExtensionPointEmitter.java"
   },
   {
@@ -1805,7 +1727,6 @@
       "ext.getClass().getSimpleName()",
       "inv.getUuid()"
     ],
-    "line": 159,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceExtensionPointEmitter.java"
   },
   {
@@ -1816,7 +1737,6 @@
       "ext.getClass().getSimpleName()",
       "inv.getUuid()"
     ],
-    "line": 187,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceExtensionPointEmitter.java"
   },
   {
@@ -1827,7 +1747,6 @@
       "ext.getClass().getSimpleName()",
       "inv.getUuid()"
     ],
-    "line": 219,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceExtensionPointEmitter.java"
   },
   {
@@ -1837,7 +1756,6 @@
     "arguments": [
       "duplicateMac.get()"
     ],
-    "line": 69,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -1847,7 +1765,6 @@
     "arguments": [
       "duplicateElements.get(0)"
     ],
-    "line": 80,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -1857,7 +1774,6 @@
     "arguments": [
       "l3Uuid"
     ],
-    "line": 91,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -1867,7 +1783,6 @@
     "arguments": [
       "l3Uuid"
     ],
-    "line": 94,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -1878,7 +1793,6 @@
       "msg.getHostUuid()",
       "expectClusterUuid"
     ],
-    "line": 125,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -1888,7 +1802,6 @@
     "arguments": [
       "msg.getHostUuid()"
     ],
-    "line": 135,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -1899,7 +1812,6 @@
       "msg.getHostUuid()",
       "connectionState"
     ],
-    "line": 142,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -1910,7 +1822,6 @@
       "msg.getClusterUuid()",
       "expectZoneUuid"
     ],
-    "line": 159,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -1920,7 +1831,6 @@
     "arguments": [
       "msg.getClusterUuid()"
     ],
-    "line": 169,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -1930,7 +1840,6 @@
     "arguments": [
       "msg.getZoneUuid()"
     ],
-    "line": 183,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -1938,7 +1847,6 @@
     "en_US": "there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null",
     "zh_CN": "在分布式端口组uuid列表中指定了多个分布式端口组，但是默认的分布式端口组的uuid为空",
     "arguments": [],
-    "line": 201,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -1949,7 +1857,6 @@
       "defaultL3Uuid",
       "l3UuidList"
     ],
-    "line": 206,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -1959,7 +1866,6 @@
     "arguments": [
       "l3Uuid"
     ],
-    "line": 249,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -1967,7 +1873,6 @@
     "en_US": "Missing CPU/memory settings",
     "zh_CN": "缺少CPU/内存设置",
     "arguments": [],
-    "line": 259,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -1975,7 +1880,6 @@
     "en_US": "Unexpected CPU/memory settings",
     "zh_CN": "意外的CPU/内存设置",
     "arguments": [],
-    "line": 263,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -1986,7 +1890,6 @@
       "msg.getReservedMemorySize()",
       "msg.getMemorySize()"
     ],
-    "line": 268,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -1996,7 +1899,6 @@
     "arguments": [
       "instanceOfferingUuid"
     ],
-    "line": 280,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -2007,7 +1909,6 @@
       "instanceOfferingUuid",
       "ivo.getType()"
     ],
-    "line": 284,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -2017,7 +1918,6 @@
     "arguments": [
       "cdRomIsoUuid"
     ],
-    "line": 318,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -2025,7 +1925,6 @@
     "en_US": "Do not allow to mount duplicate ISO",
     "zh_CN": "不允许装载重复的ISO",
     "arguments": [],
-    "line": 323,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -2033,7 +1932,6 @@
     "en_US": "could not create vm, because at least one of field (l3NetworkUuids,zoneUuid,clusterUuid,hostUuid) should be set",
     "zh_CN": "无法创建VM，因为至少应设置字段（l3NetworkUuids、zoneUuid、clusterUuid、hostUuid）中的一个",
     "arguments": [],
-    "line": 330,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -2041,7 +1939,6 @@
     "en_US": "l3NetworkUuids cannot be empty when vmNicParams is provided",
     "zh_CN": "提供网卡信息时，分布式端口组UUID列表不能为空",
     "arguments": [],
-    "line": 338,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -2051,7 +1948,6 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 345,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
@@ -2059,7 +1955,6 @@
     "en_US": "Spice certificate does not exist, Please check if spice tls is enabled",
     "zh_CN": "SPICE证书不存在，请检查是否启用了SPICE TLS",
     "arguments": [],
-    "line": 305,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2070,7 +1965,6 @@
       "msg.getImageUuid()",
       "msg.getZoneUuid()"
     ],
-    "line": 528,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2081,7 +1975,6 @@
       "bss.get(0).getUuid()",
       "bss.get(0).getType()"
     ],
-    "line": 600,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2092,7 +1985,6 @@
       "psUuids",
       "zoneUuid"
     ],
-    "line": 621,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2102,7 +1994,6 @@
     "arguments": [
       "psUuids"
     ],
-    "line": 640,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2113,7 +2004,6 @@
       "image.getName()",
       "image.getUuid()"
     ],
-    "line": 713,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2121,7 +2011,6 @@
     "en_US": "CreateVmInstanceMsg cannot be null",
     "zh_CN": "CreateVmInstanceMsg不能为空",
     "arguments": [],
-    "line": 1134,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2131,7 +2020,20 @@
     "arguments": [
       "msg.getName()"
     ],
-    "line": 1147,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
+  },
+  {
+    "raw": "handle system tag fail when creating vm",
+    "en_US": "handle system tag fail when creating vm",
+    "zh_CN": "在创建虚拟机时处理系统标签失败",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
+  },
+  {
+    "raw": "handle sshkeypair fail when creating vm",
+    "en_US": "handle sshkeypair fail when creating vm",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2142,7 +2044,6 @@
       "tuple.get(0, String.class)",
       "tuple.get(1, String.class)"
     ],
-    "line": 1716,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2152,7 +2053,6 @@
     "arguments": [
       "hostnameCount"
     ],
-    "line": 1755,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2163,7 +2063,6 @@
       "o",
       "order"
     ],
-    "line": 1809,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2171,7 +2070,6 @@
     "en_US": "cpuSockets must be an integer",
     "zh_CN": "CPUSockets必须为整数",
     "arguments": [],
-    "line": 1825,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2179,7 +2077,6 @@
     "en_US": "cpuCores must be an integer",
     "zh_CN": "cpucores必须为整数",
     "arguments": [],
-    "line": 1834,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2187,7 +2084,6 @@
     "en_US": "cpuThreads must be an integer",
     "zh_CN": "CPUThreads必须为整数",
     "arguments": [],
-    "line": 1843,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2200,7 +2096,6 @@
       "sysTag",
       "tagUsage"
     ],
-    "line": 1937,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2212,7 +2107,6 @@
       "sysTag",
       "tagUsage"
     ],
-    "line": 1947,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2226,7 +2120,6 @@
       "sysTag",
       "tagUsage"
     ],
-    "line": 1953,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2236,7 +2129,6 @@
     "arguments": [
       "resourceUuid"
     ],
-    "line": 1970,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2244,7 +2136,6 @@
     "en_US": "Shouldn\u0027t be more than one userdata systemTag for one vm.",
     "zh_CN": "在一个虚拟机中不能存在多个userdata的系统标签",
     "arguments": [],
-    "line": 1996,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2254,7 +2145,6 @@
     "arguments": [
       "bootModeCount"
     ],
-    "line": 2035,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2265,7 +2155,6 @@
       "bootMode",
       "systemTag"
     ],
-    "line": 2053,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2275,7 +2164,6 @@
     "arguments": [
       "vmType"
     ],
-    "line": 2089,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2285,7 +2173,6 @@
     "arguments": [
       "type"
     ],
-    "line": 2120,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2296,7 +2183,6 @@
       "systemTag",
       "SecurityElementEnableTokenByTag"
     ],
-    "line": 2180,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2307,7 +2193,6 @@
       "systemTag",
       "SecurityElementEnableTokenByTag"
     ],
-    "line": 2183,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2318,7 +2203,6 @@
       "systemTag",
       "usbRedirectTokenByTag"
     ],
-    "line": 2211,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2329,7 +2213,6 @@
       "systemTag",
       "usbRedirectTokenByTag"
     ],
-    "line": 2214,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2337,7 +2220,6 @@
     "en_US": "rootDiskOfferingUuid cannot be null when image mediaType is ISO",
     "zh_CN": "硬盘规格不能为空在镜像类型为ISO时",
     "arguments": [],
-    "line": 2426,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2345,7 +2227,6 @@
     "en_US": "rootDiskOfferingUuid cannot be null when create vm without image",
     "zh_CN": "在不使用镜像的情况下创建VM时，RootDiskOfferInGuuid不能为空",
     "arguments": [],
-    "line": 2434,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -2355,7 +2236,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 201,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceUtils.java"
   },
   {
@@ -2365,7 +2245,6 @@
     "arguments": [
       "diskAO.getSourceType()"
     ],
-    "line": 416,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstantiateOtherDiskFlow.java"
   },
   {
@@ -2373,7 +2252,6 @@
     "en_US": "duplicate nic params",
     "zh_CN": "复制NIC参数",
     "arguments": [],
-    "line": 83,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2381,7 +2259,6 @@
     "en_US": "could not create multi SR-IOV enabled nics on the same l3 network",
     "zh_CN": "",
     "arguments": [],
-    "line": 88,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2389,7 +2266,6 @@
     "en_US": "l3NetworkUuid of vm nic can not be null",
     "zh_CN": "虚拟机NIC的L3Networkuuid不能为空",
     "arguments": [],
-    "line": 95,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2399,7 +2275,6 @@
     "arguments": [
       "l3Uuids"
     ],
-    "line": 98,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2407,7 +2282,6 @@
     "en_US": "duplicate default nic is set",
     "zh_CN": "",
     "arguments": [],
-    "line": 104,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2417,7 +2291,6 @@
     "arguments": [
       "nic.getOutboundBandwidth()"
     ],
-    "line": 112,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2427,7 +2300,6 @@
     "arguments": [
       "nic.getInboundBandwidth()"
     ],
-    "line": 118,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2437,7 +2309,6 @@
     "arguments": [
       "nic.getMultiQueueNum()"
     ],
-    "line": 124,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2450,7 +2321,6 @@
       "VmNicState.enable.toString()",
       "VmNicState.disable.toString()"
     ],
-    "line": 130,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2460,7 +2330,6 @@
     "arguments": [
       "driverType"
     ],
-    "line": 136,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2470,7 +2339,6 @@
     "arguments": [
       "vmType"
     ],
-    "line": 140,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2480,7 +2348,6 @@
     "arguments": [
       "nic.getVfParentUuid()"
     ],
-    "line": 144,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2490,7 +2357,6 @@
     "arguments": [
       "nic.getIp()"
     ],
-    "line": 154,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2500,7 +2366,6 @@
     "arguments": [
       "ip6"
     ],
-    "line": 164,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2510,7 +2375,6 @@
     "arguments": [
       "nic.getNetmask()"
     ],
-    "line": 173,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2520,7 +2384,6 @@
     "arguments": [
       "nic.getGateway()"
     ],
-    "line": 179,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2532,7 +2395,6 @@
       "IPv6Constants.IPV6_PREFIX_LEN_MIN",
       "IPv6Constants.IPV6_PREFIX_LEN_MAX"
     ],
-    "line": 186,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2542,7 +2404,6 @@
     "arguments": [
       "nic.getIpv6Gateway()"
     ],
-    "line": 193,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2550,7 +2411,6 @@
     "en_US": "netmask must be set when ip is set",
     "zh_CN": "",
     "arguments": [],
-    "line": 204,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2561,7 +2421,6 @@
       "ipRangeVO.getNetmask()",
       "nic.getNetmask()"
     ],
-    "line": 208,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2572,7 +2431,6 @@
       "ipRangeVO.getGateway()",
       "nic.getGateway()"
     ],
-    "line": 212,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2580,7 +2438,6 @@
     "en_US": "ipv6 prefix length must be set when ip6 is set",
     "zh_CN": "",
     "arguments": [],
-    "line": 225,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2591,7 +2448,6 @@
       "ipRangeVO.getPrefixLen()",
       "nic.getIpv6Prefix()"
     ],
-    "line": 229,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2602,7 +2458,6 @@
       "ipRangeVO.getGateway()",
       "nic.getIpv6Gateway()"
     ],
-    "line": 233,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2610,7 +2465,6 @@
     "en_US": "size of dns6 list for Windows vm should not exceed 2",
     "zh_CN": "",
     "arguments": [],
-    "line": 242,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2620,7 +2474,6 @@
     "arguments": [
       "dns"
     ],
-    "line": 247,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2630,7 +2483,6 @@
     "arguments": [
       "nic.getDns6List()"
     ],
-    "line": 252,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2638,7 +2490,6 @@
     "en_US": "size of dns list for Windows vm should not exceed 2",
     "zh_CN": "",
     "arguments": [],
-    "line": 265,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2648,7 +2499,6 @@
     "arguments": [
       "dns"
     ],
-    "line": 270,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2656,7 +2506,6 @@
     "en_US": "dns should be set to the default l3 network",
     "zh_CN": "",
     "arguments": [],
-    "line": 275,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2664,7 +2513,6 @@
     "en_US": "total size of dns list should not exceed 3",
     "zh_CN": "",
     "arguments": [],
-    "line": 279,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2674,7 +2522,6 @@
     "arguments": [
       "dns"
     ],
-    "line": 284,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2684,7 +2531,6 @@
     "arguments": [
       "nic.getDnsList()"
     ],
-    "line": 290,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
   },
   {
@@ -2692,8 +2538,17 @@
     "en_US": "default nic is not set, but multiple nics are specified",
     "zh_CN": "",
     "arguments": [],
-    "line": 297,
     "fileName": "src/main/java/org/zstack/compute/vm/VmNicParamValidator.java"
+  },
+  {
+    "raw": "Incorrect VM State.VM[uuid:%s] current state:%s. ",
+    "en_US": "Incorrect VM State.VM[uuid:{0}] current state:{1}. ",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getResourceUuid()",
+      "vmInstanceVO.getState()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmQuotaOperator.java"
   },
   {
     "raw": "missing parameter, resourceUuid: %s, vmInstanceUuid: %s is requested",
@@ -2703,7 +2558,6 @@
       "resourceUuid",
       "vmInstanceUuid"
     ],
-    "line": 153,
     "fileName": "src/main/java/org/zstack/compute/vm/devices/VmInstanceResourceMetadataManagerImpl.java"
   },
   {
@@ -2711,7 +2565,6 @@
     "en_US": "missing parameter, resourceUuid is requested",
     "zh_CN": "",
     "arguments": [],
-    "line": 172,
     "fileName": "src/main/java/org/zstack/compute/vm/devices/VmInstanceResourceMetadataManagerImpl.java"
   },
   {
@@ -2721,7 +2574,6 @@
     "arguments": [
       "vmInstanceUuid"
     ],
-    "line": 202,
     "fileName": "src/main/java/org/zstack/compute/vm/devices/VmInstanceResourceMetadataManagerImpl.java"
   },
   {
@@ -2731,7 +2583,6 @@
     "arguments": [
       "vmInstanceUuid"
     ],
-    "line": 405,
     "fileName": "src/main/java/org/zstack/compute/vm/devices/VmInstanceResourceMetadataManagerImpl.java"
   },
   {
@@ -2741,7 +2592,15 @@
     "arguments": [
       "resourceUuid"
     ],
-    "line": 409,
     "fileName": "src/main/java/org/zstack/compute/vm/devices/VmInstanceResourceMetadataManagerImpl.java"
+  },
+  {
+    "raw": "unable to find zone[uuid:%s], it may have been deleted",
+    "en_US": "unable to find zone[uuid:{0}], it may have been deleted",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getZoneUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/zone/ZoneManagerImpl.java"
   }
 ]

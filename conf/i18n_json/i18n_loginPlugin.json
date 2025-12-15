@@ -4,7 +4,6 @@
     "en_US": "missing loginPluginName",
     "zh_CN": "缺少LoginPluginName",
     "arguments": [],
-    "line": 54,
     "fileName": "src/main/java/org/zstack/login/plugin/LoginPluginBackend.java"
   },
   {
@@ -14,7 +13,6 @@
     "arguments": [
       "loginContext.getLoginPluginName()"
     ],
-    "line": 59,
     "fileName": "src/main/java/org/zstack/login/plugin/LoginPluginBackend.java"
   },
   {
@@ -24,7 +22,6 @@
     "arguments": [
       "loginContext.getLoginPluginName()"
     ],
-    "line": 64,
     "fileName": "src/main/java/org/zstack/login/plugin/LoginPluginBackend.java"
   }
 ]

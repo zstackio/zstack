@@ -4,7 +4,6 @@
     "en_US": "bandWidth must be a positive number",
     "zh_CN": "带宽必须为正数",
     "arguments": [],
-    "line": 142,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVmBackupJob.java"
   },
   {
@@ -12,7 +11,6 @@
     "en_US": "missing \u0027retentionType\u0027 in job parameters",
     "zh_CN": "parameters中缺少retentionType参数",
     "arguments": [],
-    "line": 194,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVmBackupJob.java"
   },
   {
@@ -20,7 +18,6 @@
     "en_US": "missing \u0027retentionValue\u0027 in job parameters",
     "zh_CN": "parameter中缺少retentionValue参数",
     "arguments": [],
-    "line": 198,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVmBackupJob.java"
   },
   {
@@ -28,7 +25,6 @@
     "en_US": "missing \u0027backupStorageUuids\u0027 in job parameters",
     "zh_CN": "parameter中缺少backupStorageUuids参数",
     "arguments": [],
-    "line": 202,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVmBackupJob.java"
   },
   {
@@ -36,7 +32,6 @@
     "en_US": "job parameter \u0027backupStorageUuids\u0027 is empty",
     "zh_CN": "parameter中backupStorageUuids为空",
     "arguments": [],
-    "line": 206,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVmBackupJob.java"
   },
   {
@@ -46,7 +41,6 @@
     "arguments": [
       "bsUuid"
     ],
-    "line": 211,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVmBackupJob.java"
   },
   {
@@ -54,7 +48,6 @@
     "en_US": "missing \u0027remoteRetentionType\u0027 in job parameters",
     "zh_CN": "作业参数中缺少“ RemoteRetentionType ”",
     "arguments": [],
-    "line": 218,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVmBackupJob.java"
   },
   {
@@ -62,7 +55,6 @@
     "en_US": "missing \u0027remoteRetentionValue\u0027 in job parameters",
     "zh_CN": "作业参数中缺少“ RemoteRetentionValue ”",
     "arguments": [],
-    "line": 220,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVmBackupJob.java"
   },
   {
@@ -70,7 +62,6 @@
     "en_US": "missing job parameters",
     "zh_CN": "缺少parameters参数",
     "arguments": [],
-    "line": 226,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVmBackupJob.java"
   },
   {
@@ -78,7 +69,6 @@
     "en_US": "No available backup storage found, skip this job",
     "zh_CN": "找不到可用的备份存储，请跳过此作业",
     "arguments": [],
-    "line": 560,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVmBackupJob.java"
   },
   {
@@ -88,7 +78,6 @@
     "arguments": [
       "getTargetResourceUuid()"
     ],
-    "line": 630,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVmBackupJob.java"
   },
   {
@@ -99,7 +88,6 @@
       "msg.getDatabaseBackupUuid()",
       "msg.getBackupStorageUuid()"
     ],
-    "line": 93,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupApiInterceptor.java"
   },
   {
@@ -110,7 +98,6 @@
       "msg.getDatabaseBackupUuid()",
       "msg.getBackupStorageUuid()"
     ],
-    "line": 107,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupApiInterceptor.java"
   },
   {
@@ -118,7 +105,6 @@
     "en_US": "do not allow cover database from backup",
     "zh_CN": "不允许从备份中覆盖数据库",
     "arguments": [],
-    "line": 120,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupApiInterceptor.java"
   },
   {
@@ -126,7 +112,6 @@
     "en_US": "installPath and bsUrl are both need",
     "zh_CN": "InstallPath和BSURL都是必需",
     "arguments": [],
-    "line": 124,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupApiInterceptor.java"
   },
   {
@@ -134,7 +119,6 @@
     "en_US": "databaseBackup[uuid:{0}] is not Enabled and Ready",
     "zh_CN": "DatabaseBackup[uuid：{0}]未启用且未就绪",
     "arguments": [],
-    "line": 133,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupApiInterceptor.java"
   },
   {
@@ -144,7 +128,6 @@
     "arguments": [
       "url"
     ],
-    "line": 142,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupApiInterceptor.java"
   },
   {
@@ -154,7 +137,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 80,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupBase.java"
   },
   {
@@ -166,7 +148,6 @@
       "msg.getSrcBackupStorageUuid()",
       "BackupStorageState.Disabled.toString()"
     ],
-    "line": 284,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupBase.java"
   },
   {
@@ -177,7 +158,6 @@
       "msg.getDatabaseBackupUuid()",
       "msg.getSrcBackupStorageUuid()"
     ],
-    "line": 329,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupBase.java"
   },
   {
@@ -185,7 +165,6 @@
     "en_US": "sync task failed.",
     "zh_CN": "同步失败",
     "arguments": [],
-    "line": 471,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupBase.java"
   },
   {
@@ -195,7 +174,6 @@
     "arguments": [
       "reply.getStatus()"
     ],
-    "line": 478,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupBase.java"
   },
   {
@@ -205,7 +183,6 @@
     "arguments": [
       "msg.getDatabaseBackupUuid()"
     ],
-    "line": 93,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
   },
   {
@@ -213,7 +190,6 @@
     "en_US": "backup storage[uuid:{0}] is not enabled and connected",
     "zh_CN": "备份存储[uuid：{0}]未启用和连接",
     "arguments": [],
-    "line": 109,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
   },
   {
@@ -223,7 +199,6 @@
     "arguments": [
       "result.getStderr()"
     ],
-    "line": 608,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
   },
   {
@@ -231,7 +206,6 @@
     "en_US": "cannot get free port to listen",
     "zh_CN": "无法获取空闲端口以进行侦听",
     "arguments": [],
-    "line": 620,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
   },
   {
@@ -242,7 +216,6 @@
       "version",
       "dbVersion"
     ],
-    "line": 651,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
   },
   {
@@ -250,7 +223,6 @@
     "en_US": "cannot ssh peer node via sshkey, please check connection",
     "zh_CN": "无法通过SSHKEY进行SSH对等节点，请检查连接",
     "arguments": [],
-    "line": 26,
     "fileName": "src/main/java/org/zstack/storage/backup/MultiDatabaseRecoverChecker.java"
   },
   {
@@ -258,7 +230,6 @@
     "en_US": "please stop other node first!",
     "zh_CN": "请先停止其他节点！",
     "arguments": [],
-    "line": 19,
     "fileName": "src/main/java/org/zstack/storage/backup/SingleDatabaseRecoverChecker.java"
   },
   {
@@ -270,7 +241,6 @@
       "msgName",
       "checker.getStatesForOperation(msgName)"
     ],
-    "line": 97,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -281,7 +251,6 @@
       "bsType",
       "bsUuid"
     ],
-    "line": 241,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -291,7 +260,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 262,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -301,7 +269,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 266,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -313,7 +280,6 @@
       "VmInstanceState.Running.toString()",
       "VmInstanceState.Paused.toString()"
     ],
-    "line": 272,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -325,7 +291,6 @@
       "VmInstanceState.Running.toString()",
       "VmInstanceState.Paused.toString()"
     ],
-    "line": 275,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -335,7 +300,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 290,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -347,7 +311,6 @@
       "VmInstanceState.Running.toString()",
       "VmInstanceState.Paused.toString()"
     ],
-    "line": 297,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -357,7 +320,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 302,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -367,7 +329,6 @@
     "arguments": [
       "groupUuid"
     ],
-    "line": 315,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -377,7 +338,6 @@
     "arguments": [
       "groupUuid"
     ],
-    "line": 321,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -389,7 +349,6 @@
       "rootVolumeInfo.get(0)",
       "rootVolumeInfo.get(1)"
     ],
-    "line": 325,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -397,7 +356,6 @@
     "en_US": "could not create vm, because at least one of field (l3NetworkUuids,zoneUuid,clusterUuid,hostUuid) should be set",
     "zh_CN": "无法创建VM，因为至少应设置字段（l3NetworkUuids、zoneUuid、clusterUuid、hostUuid）中的一个",
     "arguments": [],
-    "line": 336,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -405,7 +363,6 @@
     "en_US": "instanceOfferingUuid or cpuNum and memorySize must be set",
     "zh_CN": "",
     "arguments": [],
-    "line": 342,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -413,7 +370,6 @@
     "en_US": "cannot specify primary storage which attached different cluster.",
     "zh_CN": "无法指定连接到其他集群的主存储。",
     "arguments": [],
-    "line": 380,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -423,7 +379,6 @@
     "arguments": [
       "msg.getBackupUuid()"
     ],
-    "line": 391,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -434,7 +389,6 @@
       "backupUuid",
       "state"
     ],
-    "line": 418,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -444,7 +398,6 @@
     "arguments": [
       "backupUuid"
     ],
-    "line": 428,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -456,7 +409,6 @@
       "backupUuid",
       "expectVmUuid"
     ],
-    "line": 432,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -466,7 +418,6 @@
     "arguments": [
       "backupUuid"
     ],
-    "line": 442,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -476,7 +427,6 @@
     "arguments": [
       "vmState"
     ],
-    "line": 446,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -484,7 +434,6 @@
     "en_US": "No available backup storage found",
     "zh_CN": "没有可用的镜像服务器",
     "arguments": [],
-    "line": 463,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -494,7 +443,6 @@
     "arguments": [
       "msg.getBackupUuid()"
     ],
-    "line": 566,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -505,7 +453,6 @@
       "msg.getVmInstanceUuid()",
       "msg.getPrimaryStorageUuid()"
     ],
-    "line": 579,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -513,7 +460,6 @@
     "en_US": "Operation not supported on shared volume",
     "zh_CN": "共享云盘不支持该操作",
     "arguments": [],
-    "line": 192,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupKvmBackend.java"
   },
   {
@@ -523,7 +469,6 @@
     "arguments": [
       "volumeVO.getUuid()"
     ],
-    "line": 197,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupKvmBackend.java"
   },
   {
@@ -533,7 +478,6 @@
     "arguments": [
       "msg.getRootVolumeUuid()"
     ],
-    "line": 408,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupKvmBackend.java"
   },
   {
@@ -543,7 +487,6 @@
     "arguments": [
       "returnValue.getError()"
     ],
-    "line": 1604,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupKvmBackend.java"
   },
   {
@@ -553,7 +496,6 @@
     "arguments": [
       "vos.stream().filter( vo -\u003e !succeedUuids.contains(vo.getUuid())).map(VolumeBackupVO::getUuid).collect(Collectors.toList())"
     ],
-    "line": 302,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -564,7 +506,6 @@
       "msg.getImageStoreUuid()",
       "e.getMessage()"
     ],
-    "line": 851,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -576,7 +517,6 @@
       "backupUuid",
       "backupVmUuid"
     ],
-    "line": 888,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -586,7 +526,6 @@
     "arguments": [
       "hypervisorType"
     ],
-    "line": 897,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -597,7 +536,6 @@
       "msg.getBackupStorageUuid()",
       "BackupStorageState.Disabled.toString()"
     ],
-    "line": 914,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -608,7 +546,6 @@
       "struct.getBackupUuid()",
       "struct.getBackupStorageUuid()"
     ],
-    "line": 1179,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -619,7 +556,15 @@
       "backupUuid",
       "srcBackupStorageUuid"
     ],
-    "line": 1778,
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
+  },
+  {
+    "raw": "No volume backups found with group uuid: %s",
+    "en_US": "No volume backups found with group uuid: {0}",
+    "zh_CN": "未找到组uuid为{0}的卷备份",
+    "arguments": [
+      "groupUuid"
+    ],
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -629,7 +574,6 @@
     "arguments": [
       "groupUuid"
     ],
-    "line": 2099,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -639,7 +583,6 @@
     "arguments": [
       "groupUuid"
     ],
-    "line": 2105,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -649,7 +592,6 @@
     "arguments": [
       "groupUuid"
     ],
-    "line": 2118,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -659,7 +601,6 @@
     "arguments": [
       "vo.getUuid()"
     ],
-    "line": 2266,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -670,7 +611,6 @@
       "cidr",
       "fmtCidr"
     ],
-    "line": 2680,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -680,7 +620,6 @@
     "arguments": [
       "degree"
     ],
-    "line": 2707,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -690,7 +629,6 @@
     "arguments": [
       "type"
     ],
-    "line": 2741,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -700,7 +638,6 @@
     "arguments": [
       "url"
     ],
-    "line": 2751,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -710,7 +647,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 505,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupMetadataMaker.java"
   }
 ]

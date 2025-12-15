@@ -4,7 +4,6 @@
     "en_US": "xdragon host not support create vm using an iso image.",
     "zh_CN": "神龙服务器不支持使用ISO镜像创建虚拟机。",
     "arguments": [],
-    "line": 26,
     "fileName": "src/main/java/org/zstack/xdragon/XDragonFilterExtensionPoint.java"
   },
   {
@@ -15,7 +14,6 @@
       "msg.getClusterUuid()",
       "XDragonConstant.HYPERVISOR_TYPE"
     ],
-    "line": 34,
     "fileName": "src/main/java/org/zstack/xdragon/XDragonHostFactory.java"
   }
 ]

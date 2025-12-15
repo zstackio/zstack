@@ -6,7 +6,6 @@
     "arguments": [
       "controller.getIdentity()"
     ],
-    "line": 53,
     "fileName": "src/main/java/org/zstack/storage/addon/backup/ExternalBackupStorage.java"
   },
   {
@@ -17,7 +16,6 @@
       "getSelf().getIdentity()",
       "healthy"
     ],
-    "line": 111,
     "fileName": "src/main/java/org/zstack/storage/addon/backup/ExternalBackupStorage.java"
   },
   {
@@ -27,7 +25,6 @@
     "arguments": [
       "vo.getType()"
     ],
-    "line": 56,
     "fileName": "src/main/java/org/zstack/storage/addon/backup/ExternalBackupStorageFactory.java"
   },
   {
@@ -35,7 +32,6 @@
     "en_US": "can not found block volume, access path only for block volume",
     "zh_CN": "",
     "arguments": [],
-    "line": 157,
     "fileName": "src/main/java/org/zstack/storage/addon/primary/ExternalPrimaryStorage.java"
   },
   {
@@ -45,7 +41,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 463,
     "fileName": "src/main/java/org/zstack/storage/addon/primary/ExternalPrimaryStorage.java"
   },
   {
@@ -53,7 +48,6 @@
     "en_US": "root image and root image cache has been deleted, cannot reimage now",
     "zh_CN": "",
     "arguments": [],
-    "line": 1869,
     "fileName": "src/main/java/org/zstack/storage/addon/primary/ExternalPrimaryStorage.java"
   },
   {
@@ -63,7 +57,6 @@
     "arguments": [
       "capacity.getHealthy().toString()"
     ],
-    "line": 2018,
     "fileName": "src/main/java/org/zstack/storage/addon/primary/ExternalPrimaryStorage.java"
   },
   {
@@ -73,7 +66,6 @@
     "arguments": [
       "identity"
     ],
-    "line": 212,
     "fileName": "src/main/java/org/zstack/storage/addon/primary/ExternalPrimaryStorageFactory.java"
   },
   {
@@ -83,7 +75,13 @@
     "arguments": [
       "msg.getPrimaryStorageUuid()"
     ],
-    "line": 58,
+    "fileName": "src/main/java/org/zstack/storage/addon/primary/ExternalPrimaryStorageManagerImpl.java"
+  },
+  {
+    "raw": "cannot connect any external storage",
+    "en_US": "cannot connect any external storage",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/storage/addon/primary/ExternalPrimaryStorageManagerImpl.java"
   },
   {
@@ -93,7 +91,6 @@
     "arguments": [
       "name"
     ],
-    "line": 65,
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageApiInterceptor.java"
   },
   {
@@ -101,7 +98,6 @@
     "en_US": "zoneUuids, backupStorageUuids must have at least one be none-empty list, or all is set to true",
     "zh_CN": "zoneUuids, backupStorageUuids 至少有一个不为空，或者all被设置为真 ",
     "arguments": [],
-    "line": 88,
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageApiInterceptor.java"
   },
   {
@@ -112,7 +108,6 @@
       "msg.getBackupStorageUuid()",
       "msg.getZoneUuid()"
     ],
-    "line": 118,
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageApiInterceptor.java"
   },
   {
@@ -123,7 +118,6 @@
       "msg.getBackupStorageUuid()",
       "msg.getZoneUuid()"
     ],
-    "line": 127,
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageApiInterceptor.java"
   },
   {
@@ -134,7 +128,6 @@
       "url",
       "e.toString()"
     ],
-    "line": 160,
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageBase.java"
   },
   {
@@ -144,7 +137,6 @@
     "arguments": [
       "url"
     ],
-    "line": 164,
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageBase.java"
   },
   {
@@ -158,7 +150,6 @@
       "size",
       "available"
     ],
-    "line": 179,
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageBase.java"
   },
   {
@@ -169,7 +160,6 @@
       "msg.getClass().getName()",
       "self.getStatus()"
     ],
-    "line": 218,
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageBase.java"
   },
   {
@@ -180,7 +170,6 @@
       "msg.getClass().getName()",
       "self.getState()"
     ],
-    "line": 224,
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageBase.java"
   },
   {
@@ -192,7 +181,6 @@
       "backupStorageUuid",
       "capacityVO.getAvailableCapacity()"
     ],
-    "line": 139,
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageCapacityUpdater.java"
   },
   {
@@ -200,7 +188,6 @@
     "en_US": "capacity reservation on all backup storage failed",
     "zh_CN": "在所有镜像服务器上保留容量失败",
     "arguments": [],
-    "line": 276,
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageManagerImpl.java"
   },
   {
@@ -210,7 +197,6 @@
     "arguments": [
       "backupStorageDataNetworkTags.size()"
     ],
-    "line": 320,
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageManagerImpl.java"
   },
   {
@@ -221,7 +207,6 @@
       "cidr",
       "fmtCidr"
     ],
-    "line": 336,
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageManagerImpl.java"
   },
   {
@@ -232,7 +217,6 @@
       "spec.getRequiredPrimaryStorageUuid()",
       "psTypeName"
     ],
-    "line": 46,
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStoragePrimaryStorageAllocatorFlow.java"
   },
   {
@@ -242,7 +226,6 @@
     "arguments": [
       "spec.getSize()"
     ],
-    "line": 55,
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageReservedCapacityAllocatorFlow.java"
   },
   {
@@ -252,7 +235,6 @@
     "arguments": [
       "type"
     ],
-    "line": 96,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageApiInterceptor.java"
   },
   {
@@ -260,7 +242,6 @@
     "en_US": "zoneUuids, clusterUuids, primaryStorageUuids must have at least one be none-empty list, or all is set to true",
     "zh_CN": "zoneUuids、clusterUuids、primaryStorageUuids中必须至少有一个不为空列表，除非将字段 all 设为 true",
     "arguments": [],
-    "line": 114,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageApiInterceptor.java"
   },
   {
@@ -271,7 +252,6 @@
       "msg.getPrimaryStorageUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 136,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageApiInterceptor.java"
   },
   {
@@ -282,7 +262,6 @@
       "msg.getPrimaryStorageUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 153,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageApiInterceptor.java"
   },
   {
@@ -293,7 +272,6 @@
       "msg.getPrimaryStorageUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 168,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageApiInterceptor.java"
   },
   {
@@ -303,7 +281,6 @@
     "arguments": [
       "url"
     ],
-    "line": 190,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageApiInterceptor.java"
   },
   {
@@ -311,7 +288,6 @@
     "en_US": "\u0027resourceUuid\u0027 and \u0027resourceType\u0027 must be set both or neither!",
     "zh_CN": "“ resourceUuid ”和“ resourceType ”必须同时设置或都不设置！",
     "arguments": [],
-    "line": 225,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageApiInterceptor.java"
   },
   {
@@ -321,7 +297,15 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 243,
+    "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
+  },
+  {
+    "raw": "primary storage[uuid:%s] is not Connected",
+    "en_US": "primary storage[uuid:{0}] is not Connected",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
   },
   {
@@ -333,7 +317,6 @@
       "self.getZoneUuid()",
       "self.getUuid()"
     ],
-    "line": 783,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
   },
   {
@@ -344,7 +327,6 @@
       "volUuid",
       "vmState"
     ],
-    "line": 803,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
   },
   {
@@ -352,7 +334,6 @@
     "en_US": "operation not supported",
     "zh_CN": "不支持的操作",
     "arguments": [],
-    "line": 1027,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
   },
   {
@@ -362,7 +343,6 @@
     "arguments": [
       "volumeUuid"
     ],
-    "line": 1793,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
   },
   {
@@ -372,7 +352,6 @@
     "arguments": [
       "extp.getClass().getName()"
     ],
-    "line": 43,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageFeatureAllocatorFlow.java"
   },
   {
@@ -382,7 +361,6 @@
     "arguments": [
       "spec.getImageUuid()"
     ],
-    "line": 213,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageMainAllocatorFlow.java"
   },
   {
@@ -392,7 +370,6 @@
     "arguments": [
       "ret.error"
     ],
-    "line": 262,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageMainAllocatorFlow.java"
   },
   {
@@ -403,7 +380,6 @@
       "systemTag",
       "uuid"
     ],
-    "line": 123,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageManagerImpl.java"
   },
   {
@@ -413,7 +389,6 @@
     "arguments": [
       "resourceUuid"
     ],
-    "line": 127,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageManagerImpl.java"
   },
   {
@@ -423,7 +398,15 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 161,
+    "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageManagerImpl.java"
+  },
+  {
+    "raw": "Cannot find primary storage[uuid:%s], it may have been deleted",
+    "en_US": "Cannot find primary storage[uuid:{0}], it may have been deleted",
+    "zh_CN": "",
+    "arguments": [
+      "pmsg.getPrimaryStorageUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageManagerImpl.java"
   },
   {
@@ -431,7 +414,6 @@
     "en_US": "please specify the purpose before allocating space",
     "zh_CN": "请在分配空间之前指定用途",
     "arguments": [],
-    "line": 554,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageManagerImpl.java"
   },
   {
@@ -441,7 +423,6 @@
     "arguments": [
       "errs"
     ],
-    "line": 674,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageManagerImpl.java"
   },
   {
@@ -451,7 +432,6 @@
     "arguments": [
       "cidrCount"
     ],
-    "line": 906,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageManagerImpl.java"
   },
   {
@@ -461,7 +441,6 @@
     "arguments": [
       "cidr"
     ],
-    "line": 910,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageManagerImpl.java"
   },
   {
@@ -471,7 +450,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 1279,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageManagerImpl.java"
   },
   {
@@ -482,7 +460,6 @@
       "clusterUuid",
       "msg.getClusterUuid()"
     ],
-    "line": 1328,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageManagerImpl.java"
   },
   {
@@ -493,7 +470,6 @@
       "psUuid",
       "msg.getCandidatePrimaryStorageUuidsForRootVolume()"
     ],
-    "line": 1343,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageManagerImpl.java"
   },
   {
@@ -504,7 +480,6 @@
       "requiredPrimaryStorageUuids",
       "msg.getCandidatePrimaryStorageUuidsForDataVolume()"
     ],
-    "line": 1391,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageManagerImpl.java"
   },
   {
@@ -515,7 +490,6 @@
       "PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value()",
       "spec.getSize()"
     ],
-    "line": 48,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageReservedCapacityAllocatorFlow.java"
   },
   {
@@ -525,7 +499,6 @@
     "arguments": [
       "uuid"
     ],
-    "line": 120,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageTagAllocatorExtension.java"
   },
   {
@@ -535,7 +508,6 @@
     "arguments": [
       "tag"
     ],
-    "line": 155,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageTagAllocatorExtension.java"
   },
   {
@@ -545,7 +517,6 @@
     "arguments": [
       "extp.getClass().getName()"
     ],
-    "line": 80,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageTagAllocatorFlow.java"
   },
   {
@@ -553,7 +524,6 @@
     "en_US": "failed to cancel deletion job. Volume[uuid:{0}] not exists.",
     "zh_CN": "无法取消删除作业。卷[uuid：{0}]不存在。",
     "arguments": [],
-    "line": 98,
     "fileName": "src/main/java/org/zstack/storage/snapshot/DeleteVolumeSnapshotLongJob.java"
   },
   {
@@ -563,7 +533,6 @@
     "arguments": [
       "disabledSnapshotUuids"
     ],
-    "line": 100,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotApiInterceptor.java"
   },
   {
@@ -574,7 +543,6 @@
       "VmInstanceState.Running.toString()",
       "VmInstanceState.Paused.toString()"
     ],
-    "line": 121,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotApiInterceptor.java"
   },
   {
@@ -585,7 +553,6 @@
       "msg.getUuid()",
       "state"
     ],
-    "line": 190,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotApiInterceptor.java"
   },
   {
@@ -595,7 +562,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 195,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotApiInterceptor.java"
   },
   {
@@ -606,7 +572,6 @@
       "msg.getVolumeUuid()",
       "snapshotVO.getVolumeUuid()"
     ],
-    "line": 213,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotApiInterceptor.java"
   },
   {
@@ -616,8 +581,16 @@
     "arguments": [
       "msg.getUuids()"
     ],
-    "line": 217,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotApiInterceptor.java"
+  },
+  {
+    "raw": "cannot find volume snapshot[uuid:%s]",
+    "en_US": "cannot find volume snapshot[uuid:{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getGroupUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotManagerImpl.java"
   },
   {
     "raw": "Unsupported maximum snapshot number (%d) for volume [uuid:%s]",
@@ -627,7 +600,6 @@
       "maxIncrementalSnapshotNum",
       "vo.getVolumeUuid()"
     ],
-    "line": 622,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotManagerImpl.java"
   },
   {
@@ -638,7 +610,6 @@
       "vol.getUuid()",
       "reply.getError()"
     ],
-    "line": 723,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotManagerImpl.java"
   },
   {
@@ -648,7 +619,6 @@
     "arguments": [
       "vol.getPrimaryStorageUuid()"
     ],
-    "line": 1054,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotManagerImpl.java"
   },
   {
@@ -658,7 +628,6 @@
     "arguments": [
       "uuid"
     ],
-    "line": 1151,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotManagerImpl.java"
   },
   {
@@ -668,7 +637,6 @@
     "arguments": [
       "msg.getResourceType()"
     ],
-    "line": 1222,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotManagerImpl.java"
   },
   {
@@ -678,8 +646,20 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 1233,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotManagerImpl.java"
+  },
+  {
+    "raw": "snapshot[uuid:%s, name:%s]\u0027s status[%s] is not allowed for message[%s], allowed status%s",
+    "en_US": "snapshot[uuid:{0}, name:{1}]\u0027s status[{2}] is not allowed for message[{3}], allowed status{4}",
+    "zh_CN": "",
+    "arguments": [
+      "currentRoot.getUuid()",
+      "currentRoot.getName()",
+      "currentRoot.getStatus()",
+      "msg.getClass().getName()",
+      "allowedStatus.getStatesForOperation(msg.getClass().getName())"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotTreeBase.java"
   },
   {
     "raw": "cannot find volume snapshot[uuid:%s, name:%s], it may have been deleted by previous operation",
@@ -689,7 +669,6 @@
       "currentRoot.getUuid()",
       "currentRoot.getName()"
     ],
-    "line": 158,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotTreeBase.java"
   },
   {
@@ -699,7 +678,6 @@
     "arguments": [
       "refVolUuids"
     ],
-    "line": 405,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotTreeBase.java"
   },
   {
@@ -711,7 +689,6 @@
       "failSnapshot.getName()",
       "evt"
     ],
-    "line": 1690,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotTreeBase.java"
   },
   {
@@ -721,8 +698,17 @@
     "arguments": [
       "String.join(\", \", deletedSnapshotInfos)"
     ],
-    "line": 104,
     "fileName": "src/main/java/org/zstack/storage/snapshot/group/VolumeSnapshotGroupChecker.java"
+  },
+  {
+    "raw": "current volume state[%s] doesn\u0027t allow to proceed message[%s]",
+    "en_US": "current volume state[{0}] doesn\u0027t allow to proceed message[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "currentState",
+      "msg.getMessageName()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/AbstractVolume.java"
   },
   {
     "raw": "failed to select backup storage to download iso[uuid\u003d%s]",
@@ -731,7 +717,13 @@
     "arguments": [
       "cdRomSpec.getImageUuid()"
     ],
-    "line": 107,
+    "fileName": "src/main/java/org/zstack/storage/volume/DownloadIsoForVmExtension.java"
+  },
+  {
+    "raw": "unable to download iso to primary storage",
+    "en_US": "unable to download iso to primary storage",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/storage/volume/DownloadIsoForVmExtension.java"
   },
   {
@@ -742,7 +734,6 @@
       "msg.getVolumeUuid()",
       "status"
     ],
-    "line": 190,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -753,7 +744,6 @@
       "msg.getVolumeUuid()",
       "type"
     ],
-    "line": 195,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -763,7 +753,6 @@
     "arguments": [
       "msg.getRootVolumeUuid()"
     ],
-    "line": 215,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -775,7 +764,6 @@
       "VmInstanceState.Running.toString()",
       "VmInstanceState.Paused.toString()"
     ],
-    "line": 219,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -785,7 +773,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 252,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -797,7 +784,6 @@
       "ImageMediaType.DataVolumeTemplate",
       "type"
     ],
-    "line": 270,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -808,7 +794,6 @@
       "img.getUuid()",
       "img.getState()"
     ],
-    "line": 274,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -819,7 +804,6 @@
       "img.getUuid()",
       "img.getStatus()"
     ],
-    "line": 278,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -829,7 +813,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 290,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -841,7 +824,6 @@
       "state",
       "VolumeState.Enabled"
     ],
-    "line": 297,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -854,7 +836,6 @@
       "VolumeStatus.Ready",
       "VolumeStatus.NotInstantiated"
     ],
-    "line": 302,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -864,7 +845,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 309,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -874,7 +854,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 313,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -886,7 +865,6 @@
       "vol.getName()",
       "vol.getType()"
     ],
-    "line": 318,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -897,7 +875,6 @@
       "msg.getVmInstanceUuid()",
       "msg.getVolumeUuid()"
     ],
-    "line": 356,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -905,7 +882,6 @@
     "en_US": "vm do not support having both SCSI and Virtio-SCSI bus type volumes simultaneously.",
     "zh_CN": "",
     "arguments": [],
-    "line": 398,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -916,7 +892,6 @@
       "volumeVO.getUuid()",
       "volumeVO.getName()"
     ],
-    "line": 407,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -926,7 +901,6 @@
     "arguments": [
       "volumeVO.getUuid()"
     ],
-    "line": 411,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -936,7 +910,6 @@
     "arguments": [
       "volumeVO.getUuid()"
     ],
-    "line": 415,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -946,7 +919,6 @@
     "arguments": [
       "volumeVO.getUuid()"
     ],
-    "line": 419,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -958,7 +930,6 @@
       "VolumeStatus.NotInstantiated",
       "volumeVO.getStatus()"
     ],
-    "line": 423,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -969,7 +940,6 @@
       "volumeVO.getUuid()",
       "volumeVO.getFormat()"
     ],
-    "line": 431,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -977,7 +947,6 @@
     "en_US": "Can\u0027t attach volume to VM, no qualified cluster",
     "zh_CN": "不能加载云盘到云主机上，没有可用集群",
     "arguments": [],
-    "line": 457,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -987,7 +956,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 483,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -995,7 +963,6 @@
     "en_US": "unexpected disk size settings",
     "zh_CN": "意外的磁盘大小设置",
     "arguments": [],
-    "line": 492,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -1006,7 +973,6 @@
       "msg.getVolumeUuid()",
       "type"
     ],
-    "line": 513,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -1016,7 +982,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 518,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -1026,7 +991,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 539,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -1038,7 +1002,6 @@
       "msg.getHostUuid()",
       "hostStatus"
     ],
-    "line": 555,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -1046,7 +1009,6 @@
     "en_US": "mount path must be absolute path",
     "zh_CN": "装载路径必须是绝对路径",
     "arguments": [],
-    "line": 560,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -1058,7 +1020,6 @@
       "msg.getHostUuid()",
       "hostUuid"
     ],
-    "line": 577,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -1072,7 +1033,6 @@
       "mountPath",
       "hostUuid"
     ],
-    "line": 581,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -1084,7 +1044,6 @@
       "msg.getHostUuid()",
       "msg.getMountPath()"
     ],
-    "line": 591,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -1094,7 +1053,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 606,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -1104,7 +1062,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 617,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -1112,7 +1069,6 @@
     "en_US": "cannot undo not latest snapshot",
     "zh_CN": "无法撤消不是最新的快照",
     "arguments": [],
-    "line": 627,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -1122,7 +1078,6 @@
     "arguments": [
       "duplicateVolumeUuids.toString()"
     ],
-    "line": 648,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -1132,7 +1087,6 @@
     "arguments": [
       "self.getRootImageUuid()"
     ],
-    "line": 208,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeBase.java"
   },
   {
@@ -1143,7 +1097,6 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 882,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeBase.java"
   },
   {
@@ -1151,7 +1104,6 @@
     "en_US": "volume[uuid{0}] should be attached.",
     "zh_CN": "应附加卷[uuid{0}]。",
     "arguments": [],
-    "line": 1845,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeBase.java"
   },
   {
@@ -1159,7 +1111,6 @@
     "en_US": "only support detached volume, use SetVmBootVolumeMsg instead.",
     "zh_CN": "仅支持分离卷，请改用SetVMBootVolumeMsg。",
     "arguments": [],
-    "line": 1948,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeBase.java"
   },
   {
@@ -1172,7 +1123,6 @@
       "vmDataVolumeUsage",
       "vmUuid"
     ],
-    "line": 3275,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeBase.java"
   },
   {
@@ -1182,7 +1132,6 @@
     "arguments": [
       "msg.getPrimaryStorageUuid()"
     ],
-    "line": 171,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeManagerImpl.java"
   },
   {
@@ -1192,7 +1141,6 @@
     "arguments": [
       "psType"
     ],
-    "line": 175,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeManagerImpl.java"
   },
   {
@@ -1203,7 +1151,6 @@
       "template.getUuid()",
       "template.getName()"
     ],
-    "line": 298,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeManagerImpl.java"
   },
   {
@@ -1214,7 +1161,6 @@
       "template.getUuid()",
       "msg.getPrimaryStorageUuid()"
     ],
-    "line": 314,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeManagerImpl.java"
   },
   {
@@ -1225,7 +1171,6 @@
       "requiredPrimaryStorageUuids",
       "msg.getPrimaryStorageUuid()"
     ],
-    "line": 567,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeManagerImpl.java"
   },
   {
@@ -1233,7 +1178,6 @@
     "en_US": "target volume is expunged during volume creation",
     "zh_CN": "目标卷在卷创建过程中被删除",
     "arguments": [],
-    "line": 897,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeManagerImpl.java"
   },
   {
@@ -1243,7 +1187,6 @@
     "arguments": [
       "VolumeFactory.class.getSimpleName()"
     ],
-    "line": 1177,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeManagerImpl.java"
   }
 ]

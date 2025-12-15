@@ -6,7 +6,6 @@
     "arguments": [
       "l3NetworkVO.getUuid()"
     ],
-    "line": 95,
     "fileName": "src/main/java/org/zstack/appliancevm/ApplianceVmAllocateNicFlow.java"
   },
   {
@@ -18,7 +17,6 @@
       "getSelf().getStatus()",
       "msg.getPath()"
     ],
-    "line": 140,
     "fileName": "src/main/java/org/zstack/appliancevm/ApplianceVmBase.java"
   },
   {
@@ -28,7 +26,6 @@
     "arguments": [
       "ret.getError()"
     ],
-    "line": 372,
     "fileName": "src/main/java/org/zstack/appliancevm/ApplianceVmBase.java"
   },
   {
@@ -38,7 +35,6 @@
     "arguments": [
       "getSelf().getUuid()"
     ],
-    "line": 428,
     "fileName": "src/main/java/org/zstack/appliancevm/ApplianceVmBase.java"
   },
   {
@@ -48,7 +44,6 @@
     "arguments": [
       "getSelf().getUuid()"
     ],
-    "line": 707,
     "fileName": "src/main/java/org/zstack/appliancevm/ApplianceVmBase.java"
   },
   {
@@ -58,7 +53,6 @@
     "arguments": [
       "getSelf().getUuid()"
     ],
-    "line": 717,
     "fileName": "src/main/java/org/zstack/appliancevm/ApplianceVmBase.java"
   },
   {
@@ -68,7 +62,6 @@
     "arguments": [
       "getSelf().getUuid()"
     ],
-    "line": 779,
     "fileName": "src/main/java/org/zstack/appliancevm/ApplianceVmBase.java"
   },
   {
@@ -78,7 +71,15 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 64,
     "fileName": "src/main/java/org/zstack/appliancevm/ApplianceVmKvmBootstrapFlow.java"
+  },
+  {
+    "raw": "the management nic IP[%s] has been occupied by another device in the data center, we can ping it",
+    "en_US": "the management nic IP[{0}] has been occupied by another device in the data center, we can ping it",
+    "zh_CN": "",
+    "arguments": [
+      "mgmtNic.getIp()"
+    ],
+    "fileName": "src/main/java/org/zstack/appliancevm/ApplianceVmManagementIpChecker.java"
   }
 ]

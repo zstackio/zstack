@@ -7,7 +7,6 @@
       "msg.getUuid()",
       "faultToleranceVmGroupUuid"
     ],
-    "line": 170,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -17,7 +16,6 @@
     "arguments": [
       "msg.getFaultToleranceVmUuid()"
     ],
-    "line": 267,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -27,7 +25,6 @@
     "arguments": [
       "msg.getFaultToleranceVmUuid()"
     ],
-    "line": 271,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -39,7 +36,6 @@
       "FaultToleranceStatus.Protected",
       "FaultToleranceStatus.Unknown"
     ],
-    "line": 277,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -49,7 +45,6 @@
     "arguments": [
       "Joiner.on(\",\").join(vmUuids)"
     ],
-    "line": 302,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -59,7 +54,6 @@
     "arguments": [
       "VmHaLevel.FaultTolerance.toString()"
     ],
-    "line": 368,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -69,7 +63,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 424,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -79,7 +72,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 428,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -89,7 +81,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 432,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -99,7 +90,6 @@
     "arguments": [
       "vmInstanceUuid"
     ],
-    "line": 443,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -109,7 +99,6 @@
     "arguments": [
       "vmInstanceUuid"
     ],
-    "line": 447,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -119,7 +108,6 @@
     "arguments": [
       "vmInstanceUuid"
     ],
-    "line": 451,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -129,7 +117,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 467,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -137,7 +124,6 @@
     "en_US": "can not migrate FT primary vm",
     "zh_CN": "无法迁移FT主虚拟机",
     "arguments": [],
-    "line": 473,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -145,7 +131,6 @@
     "en_US": "can not migrate FT secondary vm",
     "zh_CN": "无法迁移FT辅助虚拟机",
     "arguments": [],
-    "line": 477,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -153,7 +138,6 @@
     "en_US": "Missing CPU/memory settings",
     "zh_CN": "缺少CPU/内存设置",
     "arguments": [],
-    "line": 486,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -161,7 +145,6 @@
     "en_US": "Unexpected CPU/memory settings",
     "zh_CN": "意外的CPU/内存设置",
     "arguments": [],
-    "line": 490,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -171,7 +154,6 @@
     "arguments": [
       "instanceOfferingUuid"
     ],
-    "line": 499,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -182,7 +164,6 @@
       "instanceOfferingUuid",
       "ivo.getType()"
     ],
-    "line": 503,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -190,7 +171,6 @@
     "en_US": "Failed to create ft vm, please enable ft in GlobalConfig",
     "zh_CN": "无法创建FT VM，请在GlobalConfig中启用FT",
     "arguments": [],
-    "line": 512,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -198,7 +178,6 @@
     "en_US": "Ft network is not set",
     "zh_CN": "未设置FT网络",
     "arguments": [],
-    "line": 516,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -208,7 +187,6 @@
     "arguments": [
       "duplicateMac.get()"
     ],
-    "line": 529,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -218,7 +196,6 @@
     "arguments": [
       "msg.getImageUuid()"
     ],
-    "line": 540,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -228,7 +205,6 @@
     "arguments": [
       "msg.getImageUuid()"
     ],
-    "line": 545,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -239,7 +215,6 @@
       "msg.getImageUuid()",
       "imgFormat"
     ],
-    "line": 550,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -251,7 +226,6 @@
       "imageFileFmt",
       "ImageConstant.QCOW2_FORMAT_STRING"
     ],
-    "line": 555,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -261,7 +235,6 @@
     "arguments": [
       "msg.getImageUuid()"
     ],
-    "line": 560,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -271,7 +244,6 @@
     "arguments": [
       "diskUuids"
     ],
-    "line": 576,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -281,7 +253,6 @@
     "arguments": [
       "duplicateElements.get(0)"
     ],
-    "line": 585,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -291,7 +262,6 @@
     "arguments": [
       "l3Uuid"
     ],
-    "line": 595,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -301,7 +271,6 @@
     "arguments": [
       "l3Uuid"
     ],
-    "line": 598,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -311,7 +280,6 @@
     "arguments": [
       "msg.getZoneUuid()"
     ],
-    "line": 616,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -321,7 +289,6 @@
     "arguments": [
       "msg.getClusterUuid()"
     ],
-    "line": 626,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -331,7 +298,6 @@
     "arguments": [
       "msg.getHostUuid()"
     ],
-    "line": 637,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -342,7 +308,6 @@
       "msg.getHostUuid()",
       "connectionState"
     ],
-    "line": 642,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -350,7 +315,6 @@
     "en_US": "there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null",
     "zh_CN": "在三层网络uuid列表中指定了多个三层网络，但是默认的三层网络的uuid为空",
     "arguments": [],
-    "line": 647,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -361,7 +325,6 @@
       "msg.getDefaultL3NetworkUuid()",
       "msg.getL3NetworkUuids()"
     ],
-    "line": 651,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
   {
@@ -371,7 +334,6 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 364,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceGroupVmFactory.java"
   },
   {
@@ -381,7 +343,6 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 369,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceGroupVmFactory.java"
   },
   {
@@ -391,7 +352,6 @@
     "arguments": [
       "smsg.getPrimaryVmInstanceUuid()"
     ],
-    "line": 524,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceGroupVmFactory.java"
   },
   {
@@ -399,7 +359,6 @@
     "en_US": "can not start secondary vm, because primary vm is still stopped",
     "zh_CN": "无法启动辅助虚拟机，因为主虚拟机仍处于停止状态",
     "arguments": [],
-    "line": 892,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceGroupVmFactory.java"
   },
   {
@@ -409,7 +368,6 @@
     "arguments": [
       "vm.getUuid()"
     ],
-    "line": 1322,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceGroupVmFactory.java"
   },
   {
@@ -419,7 +377,6 @@
     "arguments": [
       "vm.getUuid()"
     ],
-    "line": 1327,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceGroupVmFactory.java"
   },
   {
@@ -427,7 +384,6 @@
     "en_US": "Current ft vm is in unknown status, can not stop it, please try to fail-over it manually",
     "zh_CN": "当前FT虚拟机处于未知状态，无法停止，请尝试手动故障转移",
     "arguments": [],
-    "line": 546,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceGroupVmInstanceBase.java"
   },
   {
@@ -435,7 +391,6 @@
     "en_US": "an other fault tolerance gc task is running, cancel the new task and wait return",
     "zh_CN": "其他容错GC任务正在运行，请取消新任务并等待返回",
     "arguments": [],
-    "line": 743,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceManagerImpl.java"
   },
   {
@@ -443,7 +398,6 @@
     "en_US": "can not create secondary vm, because primary vm is stopped",
     "zh_CN": "无法创建辅助虚拟机，因为主虚拟机已停止",
     "arguments": [],
-    "line": 829,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceManagerImpl.java"
   },
   {
@@ -451,7 +405,6 @@
     "en_US": "created svm found, report error for this start secondary vm request",
     "zh_CN": "找到已创建的SVM，报告此启动辅助虚拟机请求的错误",
     "arguments": [],
-    "line": 1314,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceManagerImpl.java"
   },
   {
@@ -461,7 +414,6 @@
     "arguments": [
       "vmInstanceUuid"
     ],
-    "line": 1573,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceManagerImpl.java"
   },
   {
@@ -471,7 +423,6 @@
     "arguments": [
       "group.getPrimaryVmInstanceUuid()"
     ],
-    "line": 1589,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceManagerImpl.java"
   },
   {
@@ -479,7 +430,6 @@
     "en_US": "could not failover. Primary vm is unknown but no fault tolerance network address available",
     "zh_CN": "无法进行故障转移。主云主机未知，但没有可用的容错网络地址",
     "arguments": [],
-    "line": 1600,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceManagerImpl.java"
   },
   {
@@ -487,7 +437,6 @@
     "en_US": "could not failover. Secondary vm is unknown but no fault tolerance network address available",
     "zh_CN": "无法进行故障转移。辅助云主机未知，但没有可用的容错网络地址",
     "arguments": [],
-    "line": 1661,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceManagerImpl.java"
   },
   {
@@ -495,7 +444,6 @@
     "en_US": "unexpected exception",
     "zh_CN": "意外异常",
     "arguments": [],
-    "line": 1701,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceManagerImpl.java"
   },
   {
@@ -503,7 +451,6 @@
     "en_US": "can not start secondary vm, because primary vm is stopped",
     "zh_CN": "无法启动辅助云主机，因为主云主机已停止",
     "arguments": [],
-    "line": 2361,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceManagerImpl.java"
   },
   {
@@ -511,7 +458,6 @@
     "en_US": "not fault tolerance vm port found",
     "zh_CN": "未找到容错VM端口",
     "arguments": [],
-    "line": 3114,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceManagerImpl.java"
   },
   {
@@ -522,7 +468,6 @@
       "nicUuid",
       "pvm.getHostUuid()"
     ],
-    "line": 3215,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceManagerImpl.java"
   },
   {
@@ -533,7 +478,6 @@
       "nicUuid",
       "pvm.getHostUuid()"
     ],
-    "line": 3220,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceManagerImpl.java"
   },
   {
@@ -544,7 +488,6 @@
       "zoneUuid",
       "isoImageUuid"
     ],
-    "line": 120,
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceVmImageSelectBackupStorageFlow.java"
   },
   {
@@ -552,7 +495,6 @@
     "en_US": "missing fault tolerance vm group",
     "zh_CN": "缺少容错VM组",
     "arguments": [],
-    "line": 63,
     "fileName": "src/main/java/org/zstack/faulttolerance/ShadowVmCloneTagsFlow.java"
   },
   {
@@ -560,7 +502,6 @@
     "en_US": "fault tolerance vms can not be created on the host primary VM on",
     "zh_CN": "",
     "arguments": [],
-    "line": 46,
     "fileName": "src/main/java/org/zstack/faulttolerance/ShadowVmHostAllocatorFilterExtensionPoint.java"
   }
 ]

@@ -7,7 +7,6 @@
       "msg.getVendorType()",
       "SdnControllerType.getAllTypeNames()"
     ],
-    "line": 75,
     "fileName": "src/main/java/org/zstack/sdnController/SdnControllerApiInterceptor.java"
   },
   {
@@ -17,7 +16,6 @@
     "arguments": [
       "msg.getL2NetworkUuid()"
     ],
-    "line": 102,
     "fileName": "src/main/java/org/zstack/sdnController/h3cVcfc/H3cVcfcApiInterceptor.java"
   },
   {
@@ -28,7 +26,6 @@
       "msg.getStartVni()",
       "msg.getEndVni()"
     ],
-    "line": 117,
     "fileName": "src/main/java/org/zstack/sdnController/h3cVcfc/H3cVcfcApiInterceptor.java"
   },
   {
@@ -39,7 +36,6 @@
       "userVniRange.startVni",
       "userVniRange.endVni"
     ],
-    "line": 132,
     "fileName": "src/main/java/org/zstack/sdnController/h3cVcfc/H3cVcfcApiInterceptor.java"
   },
   {
@@ -47,7 +43,6 @@
     "en_US": "H3C VCFC controller must include systemTags vdsUuid::{{0}}",
     "zh_CN": "H3C VCFC控制器必须包含系统标签VDSuuid：:{{0}}",
     "arguments": [],
-    "line": 178,
     "fileName": "src/main/java/org/zstack/sdnController/h3cVcfc/H3cVcfcApiInterceptor.java"
   },
   {
@@ -57,7 +52,6 @@
     "arguments": [
       "self.getIp()"
     ],
-    "line": 89,
     "fileName": "src/main/java/org/zstack/sdnController/h3cVcfc/H3cVcfcSdnController.java"
   },
   {
@@ -68,7 +62,6 @@
       "self.getIp()",
       "e.getLocalizedMessage()"
     ],
-    "line": 119,
     "fileName": "src/main/java/org/zstack/sdnController/h3cVcfc/H3cVcfcSdnController.java"
   },
   {
@@ -78,7 +71,6 @@
     "arguments": [
       "self.getIp()"
     ],
-    "line": 151,
     "fileName": "src/main/java/org/zstack/sdnController/h3cVcfc/H3cVcfcSdnController.java"
   },
   {
@@ -88,7 +80,6 @@
     "arguments": [
       "self.getIp()"
     ],
-    "line": 157,
     "fileName": "src/main/java/org/zstack/sdnController/h3cVcfc/H3cVcfcSdnController.java"
   },
   {
@@ -98,7 +89,6 @@
     "arguments": [
       "self.getIp()"
     ],
-    "line": 286,
     "fileName": "src/main/java/org/zstack/sdnController/h3cVcfc/H3cVcfcSdnController.java"
   },
   {
@@ -109,7 +99,6 @@
       "self.getIp()",
       "e.getMessage()"
     ],
-    "line": 302,
     "fileName": "src/main/java/org/zstack/sdnController/h3cVcfc/H3cVcfcSdnController.java"
   },
   {
@@ -119,7 +108,6 @@
     "arguments": [
       "self.getIp()"
     ],
-    "line": 380,
     "fileName": "src/main/java/org/zstack/sdnController/h3cVcfc/H3cVcfcSdnController.java"
   },
   {
@@ -130,7 +118,6 @@
       "self.getIp()",
       "e.getMessage()"
     ],
-    "line": 386,
     "fileName": "src/main/java/org/zstack/sdnController/h3cVcfc/H3cVcfcSdnController.java"
   },
   {
@@ -140,7 +127,6 @@
     "arguments": [
       "self.getIp()"
     ],
-    "line": 442,
     "fileName": "src/main/java/org/zstack/sdnController/h3cVcfc/H3cVcfcSdnController.java"
   },
   {
@@ -150,7 +136,6 @@
     "arguments": [
       "self.getIp()"
     ],
-    "line": 463,
     "fileName": "src/main/java/org/zstack/sdnController/h3cVcfc/H3cVcfcSdnController.java"
   },
   {
@@ -161,7 +146,6 @@
       "self.getIp()",
       "e.getMessage()"
     ],
-    "line": 471,
     "fileName": "src/main/java/org/zstack/sdnController/h3cVcfc/H3cVcfcSdnController.java"
   },
   {
@@ -171,7 +155,6 @@
     "arguments": [
       "vxlan.getPoolUuid()"
     ],
-    "line": 102,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkFactory.java"
   },
   {
@@ -182,7 +165,6 @@
       "inv.getUuid()",
       "destHostUuid"
     ],
-    "line": 410,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkFactory.java"
   },
   {
@@ -190,7 +172,6 @@
     "en_US": "hardware vxlan network pool doesn\u0027t support create l3 network",
     "zh_CN": "硬件VXLAN网络池不支持创建三层网络",
     "arguments": [],
-    "line": 116,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkPoolFactory.java"
   },
   {
@@ -198,7 +179,6 @@
     "en_US": "hardware vxlan network pool must configure the physical interface",
     "zh_CN": "硬件VXLAN网络池必须配置物理接口",
     "arguments": [],
-    "line": 122,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkPoolFactory.java"
   },
   {
@@ -206,7 +186,6 @@
     "en_US": "ONLY hardware vxlan network can be created in hardware vxlan pool",
     "zh_CN": "在硬件VXLAN池中只能创建硬件VXLAN网络",
     "arguments": [],
-    "line": 130,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkPoolFactory.java"
   },
   {
@@ -214,7 +193,6 @@
     "en_US": "hardware vxlan network can ONLY be created in hardware vxlan pool",
     "zh_CN": "硬件VXLAN网络只能在硬件VXLAN池中创建",
     "arguments": [],
-    "line": 135,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkPoolFactory.java"
   },
   {
@@ -224,7 +202,6 @@
     "arguments": [
       "msg.getPhysicalInterface()"
     ],
-    "line": 154,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkPoolFactory.java"
   },
   {
@@ -239,7 +216,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 87,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/KVMRealizeHardwareVxlanNetworkBackend.java"
   },
   {
@@ -253,7 +229,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 145,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/KVMRealizeHardwareVxlanNetworkBackend.java"
   },
   {
@@ -266,7 +241,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 65,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/KVMRealizeHardwareVxlanPoolNetworkBackend.java"
   }
 ]

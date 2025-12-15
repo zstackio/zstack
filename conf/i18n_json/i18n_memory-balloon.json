@@ -7,7 +7,6 @@
       "HostNamespace.MemoryUsedInPercent.toString()",
       "hostUuid"
     ],
-    "line": 144,
     "fileName": "src/main/java/org/zstack/memory/MemoryBalloonManagerImpl.java"
   }
 ]

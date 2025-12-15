@@ -6,7 +6,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 122,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -14,7 +13,6 @@
     "en_US": "smtpServer cannot null",
     "zh_CN": "",
     "arguments": [],
-    "line": 127,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -22,7 +20,6 @@
     "en_US": "smtpPort cannot null",
     "zh_CN": "",
     "arguments": [],
-    "line": 130,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -30,7 +27,6 @@
     "en_US": "username cannot null",
     "zh_CN": "",
     "arguments": [],
-    "line": 133,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -38,7 +34,6 @@
     "en_US": "password cannot null",
     "zh_CN": "",
     "arguments": [],
-    "line": 136,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -46,7 +41,6 @@
     "en_US": "platformUuid and endpointUuid cannot be empty together",
     "zh_CN": "",
     "arguments": [],
-    "line": 153,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -54,7 +48,6 @@
     "en_US": "cannot test connection, Because all parameters is null",
     "zh_CN": "",
     "arguments": [],
-    "line": 229,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -65,7 +58,6 @@
       "msg.getSnmpAddress()",
       "msg.getSnmpPort()"
     ],
-    "line": 252,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -75,7 +67,6 @@
     "arguments": [
       "msg.getApplicationEndpointUuid()"
     ],
-    "line": 264,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -86,7 +77,6 @@
       "msg.getEmailAddress()",
       "msg.getApplicationEndpointUuid()"
     ],
-    "line": 277,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -96,7 +86,6 @@
     "arguments": [
       "msg.getPhoneNumber()"
     ],
-    "line": 291,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -106,7 +95,6 @@
     "arguments": [
       "number"
     ],
-    "line": 297,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -116,7 +104,6 @@
     "arguments": [
       "url"
     ],
-    "line": 315,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -126,7 +113,6 @@
     "arguments": [
       "host"
     ],
-    "line": 321,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -136,7 +122,6 @@
     "arguments": [
       "n"
     ],
-    "line": 327,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -144,7 +129,6 @@
     "en_US": "username and password must either absent at all or present with each other",
     "zh_CN": "用户名和密码要么同时为空要么同时不为空",
     "arguments": [],
-    "line": 348,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -152,7 +136,6 @@
     "en_US": "can not create sns email endpoint without any email address",
     "zh_CN": "无法在没有任何电子邮件地址的情况下创建SNS电子邮件端点",
     "arguments": [],
-    "line": 356,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -162,7 +145,6 @@
     "arguments": [
       "errorEmails"
     ],
-    "line": 369,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -172,7 +154,6 @@
     "arguments": [
       "msg.getPhoneNumber()"
     ],
-    "line": 399,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -182,7 +163,6 @@
     "arguments": [
       "msg.getUserId()"
     ],
-    "line": 417,
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
@@ -190,7 +170,6 @@
     "en_US": "the operation is not permitted for the system application platform",
     "zh_CN": "禁止对该应用平台进行当前操作",
     "arguments": [],
-    "line": 120,
     "fileName": "src/main/java/org/zstack/sns/SNSApplicationPlatformBase.java"
   },
   {
@@ -200,7 +179,6 @@
     "arguments": [
       "msg.getTopicUuid()"
     ],
-    "line": 71,
     "fileName": "src/main/java/org/zstack/sns/SNSManagerImpl.java"
   },
   {
@@ -210,7 +188,6 @@
     "arguments": [
       "msg.getEndpointType()"
     ],
-    "line": 99,
     "fileName": "src/main/java/org/zstack/sns/SNSManagerImpl.java"
   },
   {
@@ -220,7 +197,6 @@
     "arguments": [
       "msg.getApplicationPlatformUuid()"
     ],
-    "line": 111,
     "fileName": "src/main/java/org/zstack/sns/SNSManagerImpl.java"
   },
   {
@@ -230,7 +206,6 @@
     "arguments": [
       "msg.getApplicationEndpointUuid()"
     ],
-    "line": 121,
     "fileName": "src/main/java/org/zstack/sns/SNSManagerImpl.java"
   },
   {
@@ -238,7 +213,6 @@
     "en_US": "the topic is not subscribed by any endpoints",
     "zh_CN": "当前主题并未被任何应用终端订阅",
     "arguments": [],
-    "line": 128,
     "fileName": "src/main/java/org/zstack/sns/SNSTopicBase.java"
   },
   {
@@ -246,7 +220,6 @@
     "en_US": "application platform is disabled",
     "zh_CN": "应用平台被不可用",
     "arguments": [],
-    "line": 154,
     "fileName": "src/main/java/org/zstack/sns/SNSTopicBase.java"
   },
   {
@@ -254,7 +227,6 @@
     "en_US": "application endpoint is disabled",
     "zh_CN": "应用接收端被禁用",
     "arguments": [],
-    "line": 224,
     "fileName": "src/main/java/org/zstack/sns/SNSTopicBase.java"
   },
   {
@@ -265,7 +237,6 @@
       "rsp.getStatusCode()",
       "rsp.getBody()"
     ],
-    "line": 254,
     "fileName": "src/main/java/org/zstack/sns/platform/dingtalk/SNSDingTalkEndpoint.java"
   },
   {
@@ -276,7 +247,6 @@
       "smtpServer",
       "smtpPort"
     ],
-    "line": 91,
     "fileName": "src/main/java/org/zstack/sns/platform/email/SNSEmailApplicationPlatform.java"
   },
   {
@@ -286,7 +256,6 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 109,
     "fileName": "src/main/java/org/zstack/sns/platform/email/SNSEmailApplicationPlatform.java"
   },
   {
@@ -294,7 +263,6 @@
     "en_US": "no subject",
     "zh_CN": "没有主题",
     "arguments": [],
-    "line": 182,
     "fileName": "src/main/java/org/zstack/sns/platform/email/SNSEmailApplicationPlatform.java"
   },
   {
@@ -302,7 +270,6 @@
     "en_US": "The problem may be caused by an incorrect user name or password or email permission denied",
     "zh_CN": "导致操作失败的原因可能是不正确的用户名、密码或邮件访问权限不足",
     "arguments": [],
-    "line": 70,
     "fileName": "src/main/java/org/zstack/sns/platform/email/SNSEmailPlatformFactory.java"
   },
   {
@@ -313,7 +280,6 @@
       "smtpServer",
       "smtpPort"
     ],
-    "line": 72,
     "fileName": "src/main/java/org/zstack/sns/platform/email/SNSEmailPlatformFactory.java"
   },
   {
@@ -324,7 +290,6 @@
       "rsp.getStatusCode()",
       "rsp.getBody()"
     ],
-    "line": 265,
     "fileName": "src/main/java/org/zstack/sns/platform/feishu/SNSFeiShuEndpoint.java"
   },
   {
@@ -335,7 +300,6 @@
       "rsp.getStatusCode()",
       "rsp.getBody()"
     ],
-    "line": 161,
     "fileName": "src/main/java/org/zstack/sns/platform/http/SNSHttpEndpoint.java"
   },
   {
@@ -346,7 +310,6 @@
       "rsp.getStatusCode()",
       "rsp.getBody()"
     ],
-    "line": 140,
     "fileName": "src/main/java/org/zstack/sns/platform/microsoftteams/SNSMicrosoftTeamsEndpoint.java"
   },
   {
@@ -354,7 +317,6 @@
     "en_US": "the endpoint is disabled",
     "zh_CN": "通知终端不可用",
     "arguments": [],
-    "line": 110,
     "fileName": "src/main/java/org/zstack/sns/platform/snmp/SNSSnmpApplicationPlatform.java"
   },
   {
@@ -365,7 +327,6 @@
       "rsp.getStatusCode()",
       "rsp.getBody()"
     ],
-    "line": 238,
     "fileName": "src/main/java/org/zstack/sns/platform/wecom/SNSWeComEndpoint.java"
   },
   {
@@ -375,7 +336,6 @@
     "arguments": [
       "endpoint.getType()"
     ],
-    "line": 172,
     "fileName": "src/main/java/org/zstack/sns/system/SNSApiTopicManagerImpl.java"
   },
   {
@@ -383,7 +343,6 @@
     "en_US": "API topic cannot be deleted",
     "zh_CN": "API通知主题无法被删除",
     "arguments": [],
-    "line": 191,
     "fileName": "src/main/java/org/zstack/sns/system/SNSApiTopicManagerImpl.java"
   },
   {
@@ -391,7 +350,6 @@
     "en_US": "system alarm topic cannot be deleted",
     "zh_CN": "系统警报通知主题不能被删除",
     "arguments": [],
-    "line": 78,
     "fileName": "src/main/java/org/zstack/sns/system/SNSSystemAlarmTopicManagerImpl.java"
   }
 ]

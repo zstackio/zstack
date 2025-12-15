@@ -6,7 +6,6 @@
     "arguments": [
       "msg.getExpirePolicy()"
     ],
-    "line": 54,
     "fileName": "src/main/java/org/zstack/daho/core/DahoApiInterceptor.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "msg.getVlan()"
     ],
-    "line": 57,
     "fileName": "src/main/java/org/zstack/daho/core/DahoApiInterceptor.java"
   },
   {
@@ -24,15 +22,27 @@
     "en_US": "parameters [accountUuid] only can be used by admin user!",
     "zh_CN": "参数[accountUuid]必须被admin用户设置",
     "arguments": [],
-    "line": 99,
     "fileName": "src/main/java/org/zstack/daho/core/DahoApiInterceptor.java"
+  },
+  {
+    "raw": "no accountUuid found, please check the login session!",
+    "en_US": "no accountUuid found, please check the login session!",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/daho/core/DahoSdkImpl.java"
+  },
+  {
+    "raw": "no current used key/secret for daho!",
+    "en_US": "no current used key/secret for daho!",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/daho/core/DahoSdkImpl.java"
   },
   {
     "raw": "create daho vll task failed!",
     "en_US": "create daho vll task failed!",
     "zh_CN": "创建daho vll任务失败",
     "arguments": [],
-    "line": 128,
     "fileName": "src/main/java/org/zstack/daho/core/DahoSdkImpl.java"
   },
   {
@@ -42,7 +52,6 @@
     "arguments": [
       "msg.getAccountUuid()"
     ],
-    "line": 169,
     "fileName": "src/main/java/org/zstack/daho/core/DahoSdkImpl.java"
   }
 ]

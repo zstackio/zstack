@@ -6,7 +6,6 @@
     "arguments": [
       "vm.getUuid()"
     ],
-    "line": 152,
     "fileName": "src/main/java/org/zstack/console/AbstractConsoleProxyBackend.java"
   },
   {
@@ -18,7 +17,6 @@
       "consoleAvailableStates",
       "state"
     ],
-    "line": 60,
     "fileName": "src/main/java/org/zstack/console/ConsoleApiInterceptor.java"
   },
   {
@@ -28,7 +26,6 @@
     "arguments": [
       "uri.toString()"
     ],
-    "line": 136,
     "fileName": "src/main/java/org/zstack/console/ConsoleProxyBase.java"
   },
   {
@@ -38,7 +35,6 @@
     "arguments": [
       "ret.getError()"
     ],
-    "line": 201,
     "fileName": "src/main/java/org/zstack/console/ConsoleProxyBase.java"
   },
   {
@@ -48,7 +44,6 @@
     "arguments": [
       "ret.getError()"
     ],
-    "line": 240,
     "fileName": "src/main/java/org/zstack/console/ConsoleProxyBase.java"
   },
   {
@@ -56,7 +51,6 @@
     "en_US": "Ansible private key not found.",
     "zh_CN": "找不到Ansible私钥。",
     "arguments": [],
-    "line": 206,
     "fileName": "src/main/java/org/zstack/console/ManagementServerConsoleProxyBackend.java"
   },
   {
@@ -66,7 +60,6 @@
     "arguments": [
       "uuid"
     ],
-    "line": 410,
     "fileName": "src/main/java/org/zstack/console/ManagementServerConsoleProxyBackend.java"
   },
   {
@@ -76,7 +69,6 @@
     "arguments": [
       "stdout"
     ],
-    "line": 509,
     "fileName": "src/main/java/org/zstack/console/ManagementServerConsoleProxyBackend.java"
   },
   {
@@ -84,7 +76,6 @@
     "en_US": "failed to configure consoleProxyOverriddenIp[code:{0}] or consoleProxyPort[code:{1}]",
     "zh_CN": "无法配置ConsoleProxyOverriddeNip[代码：{0}]或ConsoleProxyPort[代码：{1}]",
     "arguments": [],
-    "line": 568,
     "fileName": "src/main/java/org/zstack/console/ManagementServerConsoleProxyBackend.java"
   },
   {
@@ -92,7 +83,6 @@
     "en_US": "failed to reconnect console proxy",
     "zh_CN": "重连控制台代理失败",
     "arguments": [],
-    "line": 591,
     "fileName": "src/main/java/org/zstack/console/ManagementServerConsoleProxyBackend.java"
   }
 ]

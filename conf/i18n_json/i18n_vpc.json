@@ -6,7 +6,6 @@
     "arguments": [
       "l3NetworkUuid"
     ],
-    "line": 65,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "rcidr"
     ],
-    "line": 74,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -27,7 +25,6 @@
       "rcidr",
       "tempCidr"
     ],
-    "line": 86,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -38,7 +35,6 @@
       "lcidr",
       "tempCidr"
     ],
-    "line": 109,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -46,7 +42,6 @@
     "en_US": "all networks in same IPsecConnection should be same type",
     "zh_CN": "在相同的IPsec连接中的所有连接应该是相同类型",
     "arguments": [],
-    "line": 122,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -56,7 +51,6 @@
     "arguments": [
       "L3NetworkConstant.L3_BASIC_NETWORK_TYPE"
     ],
-    "line": 128,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -66,7 +60,6 @@
     "arguments": [
       "l3Uuid"
     ],
-    "line": 140,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -74,7 +67,6 @@
     "en_US": "all networks in same IPsecConnection must be attached to same VPC router",
     "zh_CN": "在相同的IPsec连接中的所有网络必须绑定在相同的VPC路由",
     "arguments": [],
-    "line": 159,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -84,7 +76,6 @@
     "arguments": [
       "vrUuids.toArray()[0]"
     ],
-    "line": 162,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -94,7 +85,6 @@
     "arguments": [
       "masterUuid"
     ],
-    "line": 172,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -105,7 +95,6 @@
       "msg.getVipUuid()",
       "useForList.toString()"
     ],
-    "line": 209,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -115,7 +104,6 @@
     "arguments": [
       "msg.getPeerAddress()"
     ],
-    "line": 214,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -125,7 +113,6 @@
     "arguments": [
       "msg.getPeerAddress()"
     ],
-    "line": 218,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -133,7 +120,6 @@
     "en_US": "the authKey cannot contain white space and special characters of \u0027\\\"`\\\\",
     "zh_CN": "验证码不能包含空格和以下字符:\u0027\\\"`\\\\",
     "arguments": [],
-    "line": 230,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -143,7 +129,6 @@
     "arguments": [
       "vipVO.getIp()"
     ],
-    "line": 249,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -154,7 +139,6 @@
       "l3NetworkUuid",
       "msg.getIPsecConnectionUuid()"
     ],
-    "line": 269,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -162,7 +146,6 @@
     "en_US": "must include l3 networks in APIAttachL3NetworksToIPsecConnectionMsg",
     "zh_CN": "参数中缺少三层网络的uuid",
     "arguments": [],
-    "line": 281,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -172,7 +155,6 @@
     "arguments": [
       "l3NetworkUuid"
     ],
-    "line": 288,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -183,7 +165,6 @@
       "l3NetworkUuid",
       "msg.getIPsecConnectionUuid()"
     ],
-    "line": 292,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -194,7 +175,6 @@
       "cidr",
       "msg.getIPsecConnectionUuid()"
     ],
-    "line": 302,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -205,7 +185,6 @@
       "cidr",
       "msg.getIPsecConnectionUuid()"
     ],
-    "line": 316,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -215,7 +194,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 324,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -225,7 +203,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 330,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -235,7 +212,6 @@
     "arguments": [
       "msg.getIPsecConnectionUuid()"
     ],
-    "line": 133,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecManagerImpl.java"
   },
   {
@@ -249,7 +225,6 @@
       "Long.toString(cur.getEnd())",
       "msg.getVipUuid()"
     ],
-    "line": 466,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecManagerImpl.java"
   },
   {
@@ -262,7 +237,6 @@
       "uuid",
       "rCidr"
     ],
-    "line": 504,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecManagerImpl.java"
   },
   {
@@ -272,7 +246,6 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 366,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecconnectionBase.java"
   },
   {
@@ -282,7 +255,6 @@
     "arguments": [
       "errorCode.getDescription()"
     ],
-    "line": 69,
     "fileName": "src/main/java/org/zstack/ipsec/vyos/VyosCreateIPsecFlow.java"
   },
   {
@@ -292,7 +264,6 @@
     "arguments": [
       "errorCode.getDescription()"
     ],
-    "line": 55,
     "fileName": "src/main/java/org/zstack/ipsec/vyos/VyosDeleteIPsecFlow.java"
   },
   {
@@ -303,7 +274,6 @@
       "rcidr",
       "cidr"
     ],
-    "line": 178,
     "fileName": "src/main/java/org/zstack/ipsec/vyos/VyosIPsecBackend.java"
   },
   {
@@ -311,7 +281,6 @@
     "en_US": "vyos doesn\u0027t support aes-192 as IkeEncryptionAlgorithm, available options aes-128, aes-256, 3des",
     "zh_CN": "vyos不支持aes-192作为密钥交换加密算法，可用选择为aes-128, aes-256, 3des",
     "arguments": [],
-    "line": 293,
     "fileName": "src/main/java/org/zstack/ipsec/vyos/VyosIPsecBackend.java"
   },
   {
@@ -319,7 +288,6 @@
     "en_US": "vyos doesn\u0027t support aes-192 as PolicyEncryptionAlgorithm, available options aes-128, aes-256, 3des",
     "zh_CN": "vyos不支持aes-192作为加密算法协议，可用选择为aes-128, aes-256, 3des",
     "arguments": [],
-    "line": 299,
     "fileName": "src/main/java/org/zstack/ipsec/vyos/VyosIPsecBackend.java"
   },
   {
@@ -329,7 +297,6 @@
     "arguments": [
       "msg.getIkeDhGroup()"
     ],
-    "line": 305,
     "fileName": "src/main/java/org/zstack/ipsec/vyos/VyosIPsecBackend.java"
   },
   {
@@ -339,7 +306,6 @@
     "arguments": [
       "errorCode.getDescription()"
     ],
-    "line": 675,
     "fileName": "src/main/java/org/zstack/ipsec/vyos/VyosIPsecBackend.java"
   },
   {
@@ -349,7 +315,6 @@
     "arguments": [
       "vrUuid"
     ],
-    "line": 768,
     "fileName": "src/main/java/org/zstack/ipsec/vyos/VyosIPsecBackend.java"
   },
   {
@@ -359,7 +324,6 @@
     "arguments": [
       "errorCode.getDescription()"
     ],
-    "line": 788,
     "fileName": "src/main/java/org/zstack/ipsec/vyos/VyosIPsecBackend.java"
   },
   {
@@ -370,7 +334,6 @@
       "msg.getUuid()",
       "vmInstanceUuid"
     ],
-    "line": 144,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -380,7 +343,6 @@
     "arguments": [
       "msg.getVmNicUuid()"
     ],
-    "line": 151,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -388,7 +350,6 @@
     "en_US": "management network can not be detached",
     "zh_CN": "管理网络无法分离",
     "arguments": [],
-    "line": 206,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -396,7 +357,6 @@
     "en_US": "default route network can not be detached",
     "zh_CN": "无法分离默认路由网络",
     "arguments": [],
-    "line": 210,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -404,7 +364,6 @@
     "en_US": "original public network can not be detached",
     "zh_CN": "原有公网不能脱离",
     "arguments": [],
-    "line": 214,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -414,7 +373,6 @@
     "arguments": [
       "vpc.getUuid()"
     ],
-    "line": 218,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -424,7 +382,6 @@
     "arguments": [
       "vpc.getUuid()"
     ],
-    "line": 226,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -434,7 +391,6 @@
     "arguments": [
       "msg.getVirtualRouterOfferingUuid()"
     ],
-    "line": 285,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -442,7 +398,6 @@
     "en_US": "only vpc l3 network can attach to vpc vrouter",
     "zh_CN": "只有VPC三层网络可以绑定到VPC云路由",
     "arguments": [],
-    "line": 311,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -453,7 +408,13 @@
       "msg.getL3NetworkUuid()",
       "vmNics.get(0).getVmInstanceUuid()"
     ],
-    "line": 319,
+    "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
+  },
+  {
+    "raw": "a vpc can have only one vpc network for the community-source license, please apply an enterprise license",
+    "en_US": "a vpc can have only one vpc network for the community-source license, please apply an enterprise license",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -463,7 +424,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 339,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -473,7 +433,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 356,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -483,7 +442,6 @@
     "arguments": [
       "l3NetworkVO.getUuid()"
     ],
-    "line": 365,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -497,7 +455,6 @@
       "msg.getL3NetworkUuid()",
       "vmInstanceVO.getUuid()"
     ],
-    "line": 389,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -508,7 +465,6 @@
       "gateways",
       "msg.getL3NetworkUuid()"
     ],
-    "line": 410,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -518,7 +474,6 @@
     "arguments": [
       "msg.getDns()"
     ],
-    "line": 476,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -529,7 +484,6 @@
       "msg.getDns()",
       "msg.getUuid()"
     ],
-    "line": 483,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -541,7 +495,6 @@
       "ipRangeVO.getNetworkCidr()",
       "uuid"
     ],
-    "line": 509,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -553,7 +506,6 @@
       "ipRangeVO.getNetworkCidr()",
       "uuid"
     ],
-    "line": 514,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
@@ -563,7 +515,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 555,
     "fileName": "src/main/java/org/zstack/vpc/VpcManagerImpl.java"
   },
   {
@@ -573,7 +524,6 @@
     "arguments": [
       "vrinv.getUuid()"
     ],
-    "line": 593,
     "fileName": "src/main/java/org/zstack/vpc/VpcManagerImpl.java"
   },
   {
@@ -584,7 +534,6 @@
       "msg.getNetworkService()",
       "msg.getUuid()"
     ],
-    "line": 717,
     "fileName": "src/main/java/org/zstack/vpc/VpcManagerImpl.java"
   },
   {
@@ -594,7 +543,6 @@
     "arguments": [
       "vrinv.getUuid()"
     ],
-    "line": 852,
     "fileName": "src/main/java/org/zstack/vpc/VpcManagerImpl.java"
   },
   {
@@ -604,7 +552,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 856,
     "fileName": "src/main/java/org/zstack/vpc/VpcManagerImpl.java"
   },
   {
@@ -615,7 +562,16 @@
       "msg.getNetworkService()",
       "msg.getUuid()"
     ],
-    "line": 931,
+    "fileName": "src/main/java/org/zstack/vpc/VpcManagerImpl.java"
+  },
+  {
+    "raw": "virtual router offering[uuid:%s, name:%s] doesn\u0027t have a public network",
+    "en_US": "virtual router offering[uuid:{0}, name:{1}] doesn\u0027t have a public network",
+    "zh_CN": "",
+    "arguments": [
+      "offering.getUuid()",
+      "offering.getName()"
+    ],
     "fileName": "src/main/java/org/zstack/vpc/VpcManagerImpl.java"
   },
   {
@@ -626,7 +582,6 @@
       "msg.getDns()",
       "msg.getVpcRouterUuid()"
     ],
-    "line": 1592,
     "fileName": "src/main/java/org/zstack/vpc/VpcManagerImpl.java"
   },
   {
@@ -636,7 +591,6 @@
     "arguments": [
       "vpcUuid"
     ],
-    "line": 166,
     "fileName": "src/main/java/org/zstack/vpc/VpcVRouterFactory.java"
   },
   {
@@ -646,7 +600,6 @@
     "arguments": [
       "l3.getUuid()"
     ],
-    "line": 473,
     "fileName": "src/main/java/org/zstack/vpc/VpcVRouterFactory.java"
   },
   {
@@ -658,7 +611,6 @@
       "l3.getUuid()",
       "vm.getUuid()"
     ],
-    "line": 501,
     "fileName": "src/main/java/org/zstack/vpc/VpcVRouterFactory.java"
   },
   {
@@ -668,7 +620,6 @@
     "arguments": [
       "mgmtNicIp"
     ],
-    "line": 133,
     "fileName": "src/main/java/org/zstack/vpc/VpcVyosDeployZsnAgentFlow.java"
   },
   {
@@ -678,7 +629,6 @@
     "arguments": [
       "msg.getVirtualRouterUuid()"
     ],
-    "line": 130,
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
   },
   {
@@ -689,7 +639,6 @@
       "msg.getVirtualRouterUuid()",
       "vo.getKernelVersion()"
     ],
-    "line": 137,
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
   },
   {
@@ -697,7 +646,6 @@
     "en_US": "Could not apply snat with non-default public network, due to multi snat feature is disabled",
     "zh_CN": "无法使用非默认公用网络应用SNAT，因为多SNAT功能已禁用",
     "arguments": [],
-    "line": 144,
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
   },
   {
@@ -707,7 +655,6 @@
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
-    "line": 147,
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
   },
   {
@@ -717,7 +664,6 @@
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
-    "line": 150,
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
   },
   {
@@ -727,7 +673,6 @@
     "arguments": [
       "ip"
     ],
-    "line": 168,
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
   },
   {
@@ -737,7 +682,6 @@
     "arguments": [
       "vpcVo.getUuid()"
     ],
-    "line": 205,
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
   },
   {
@@ -747,7 +691,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 217,
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
   },
   {
@@ -757,7 +700,6 @@
     "arguments": [
       "haUuid"
     ],
-    "line": 235,
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
   },
   {
@@ -768,7 +710,6 @@
       "l3Uuids",
       "offeringL3Uuids"
     ],
-    "line": 266,
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
   },
   {
@@ -778,7 +719,6 @@
     "arguments": [
       "oldHaUuid"
     ],
-    "line": 330,
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
   },
   {
@@ -788,7 +728,6 @@
     "arguments": [
       "haUuid"
     ],
-    "line": 334,
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
   },
   {
@@ -798,7 +737,6 @@
     "arguments": [
       "haUuid"
     ],
-    "line": 339,
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
   },
   {
@@ -808,7 +746,6 @@
     "arguments": [
       "ha.getName()"
     ],
-    "line": 608,
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupManagerImpl.java"
   },
   {
@@ -823,7 +760,6 @@
       "old",
       "status"
     ],
-    "line": 856,
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupManagerImpl.java"
   },
   {
@@ -831,7 +767,6 @@
     "en_US": "ha group uuid nil",
     "zh_CN": "高可用性组uuid无",
     "arguments": [],
-    "line": 699,
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupVpcVrImpl.java"
   },
   {
@@ -841,7 +776,6 @@
     "arguments": [
       "struct.getVmInstanceUuid()"
     ],
-    "line": 85,
     "fileName": "src/main/java/org/zstack/vpc/ha/vpcHaGc/VpcHaGcManagerImpl.java"
   },
   {
@@ -851,7 +785,6 @@
     "arguments": [
       "struct.getVmInstanceUuid()"
     ],
-    "line": 90,
     "fileName": "src/main/java/org/zstack/vpc/ha/vpcHaGc/VpcHaGcManagerImpl.java"
   },
   {
@@ -862,7 +795,6 @@
       "vrUuid",
       "ret.getError()"
     ],
-    "line": 140,
     "fileName": "src/main/java/org/zstack/vpc/ha/vyos/vyosVpcHaRouterBackendManagerImpl.java"
   }
 ]

@@ -8,7 +8,6 @@
       "getSelf().getStatus()",
       "msg.getPath()"
     ],
-    "line": 661,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouter.java"
   },
   {
@@ -19,7 +18,6 @@
       "self.getUuid()",
       "msg.getPath()"
     ],
-    "line": 666,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouter.java"
   },
   {
@@ -34,7 +32,6 @@
       "vr.getManagementNic().getIp()",
       "rsp.getError()"
     ],
-    "line": 995,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouter.java"
   },
   {
@@ -42,7 +39,6 @@
     "en_US": "could not add server ip to load balancer server group, because share lb has no service provider, please add vmnic first",
     "zh_CN": "",
     "arguments": [],
-    "line": 109,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -53,7 +49,6 @@
       "msg.getDefaultRouteL3NetworkUuid()",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 118,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -64,7 +59,6 @@
       "msg.getDefaultRouteL3NetworkUuid()",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 131,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -74,7 +68,6 @@
     "arguments": [
       "msg.getDefaultRouteL3NetworkUuid()"
     ],
-    "line": 136,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -84,7 +77,20 @@
     "arguments": [
       "msg.getDefaultRouteL3NetworkUuid()"
     ],
-    "line": 138,
+    "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
+  },
+  {
+    "raw": "cannot change the default field of a virtual router offering; only admin can do the operation",
+    "en_US": "cannot change the default field of a virtual router offering; only admin can do the operation",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
+  },
+  {
+    "raw": "cannot create a virtual router offering with the default field set; only admin can do the operation",
+    "en_US": "cannot create a virtual router offering with the default field set; only admin can do the operation",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -95,7 +101,6 @@
       "msg.getManagementNetworkUuid()",
       "msg.getZoneUuid()"
     ],
-    "line": 215,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -103,7 +108,6 @@
     "en_US": "can not create virtual router offering, because management network doesn\u0027t support ipv6 yet",
     "zh_CN": "无法创建虚拟路由器产品，因为管理网络尚不支持IPv6",
     "arguments": [],
-    "line": 220,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -114,7 +118,6 @@
       "msg.getManagementNetworkUuid()",
       "msg.getZoneUuid()"
     ],
-    "line": 232,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -126,7 +129,6 @@
       "type",
       "ImageMediaType.RootVolumeTemplate"
     ],
-    "line": 243,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -137,7 +139,6 @@
       "msg.getImageUuid()",
       "format"
     ],
-    "line": 249,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -147,7 +148,6 @@
     "arguments": [
       "msg.getManagementNetworkUuid()"
     ],
-    "line": 258,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -157,7 +157,6 @@
     "arguments": [
       "msg.getPublicNetworkUuid()"
     ],
-    "line": 260,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -168,7 +167,6 @@
       "msg.getManagementNetworkUuid()",
       "msg.getPublicNetworkUuid()"
     ],
-    "line": 267,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -178,7 +176,6 @@
     "arguments": [
       "managementNetworkUuid"
     ],
-    "line": 277,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -189,7 +186,6 @@
       "managementNetworkUuid",
       "gateway"
     ],
-    "line": 298,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -203,7 +199,6 @@
       "iso.getVirtualRouterUuid()",
       "rsp.getError()"
     ],
-    "line": 103,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterKvmBackend.java"
   },
   {
@@ -216,7 +211,6 @@
       "iso.getVirtualRouterUuid()",
       "rsp.getError()"
     ],
-    "line": 136,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterKvmBackend.java"
   },
   {
@@ -224,7 +218,18 @@
     "en_US": "cannot create virtual Router vm while virtual router network overlaps with private network in ip ",
     "zh_CN": "当云路由规格的网络和私有网络IP范围有重叠时，无法创建云路由设备",
     "arguments": [],
-    "line": 289,
+    "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterManagerImpl.java"
+  },
+  {
+    "raw": "L3Network[uuid:%s, name:%s] requires SNAT service, but default virtual router offering[uuid:%s, name:%s] doesn\u0027t have a public network",
+    "en_US": "L3Network[uuid:{0}, name:{1}] requires SNAT service, but default virtual router offering[uuid:{2}, name:{3}] doesn\u0027t have a public network",
+    "zh_CN": "",
+    "arguments": [
+      "l3Network.getUuid()",
+      "l3Network.getName()",
+      "offering.getUuid()",
+      "offering.getName()"
+    ],
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterManagerImpl.java"
   },
   {
@@ -234,7 +239,6 @@
     "arguments": [
       "offeringUuid"
     ],
-    "line": 732,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterManagerImpl.java"
   },
   {
@@ -245,7 +249,16 @@
       "offeringUuid",
       "resourceUuid"
     ],
-    "line": 736,
+    "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterManagerImpl.java"
+  },
+  {
+    "raw": "unable to find a virtual router offering for l3Network[uuid:%s] in zone[uuid:%s], please at least create a default virtual router offering in that zone",
+    "en_US": "unable to find a virtual router offering for l3Network[uuid:{0}] in zone[uuid:{1}], please at least create a default virtual router offering in that zone",
+    "zh_CN": "",
+    "arguments": [
+      "l3Nw.getUuid()",
+      "l3Nw.getZoneUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterManagerImpl.java"
   },
   {
@@ -255,7 +268,6 @@
     "arguments": [
       "struct.getL3Network().getUuid()"
     ],
-    "line": 1235,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterManagerImpl.java"
   },
   {
@@ -265,7 +277,6 @@
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
-    "line": 1519,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterManagerImpl.java"
   },
   {
@@ -275,7 +286,6 @@
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
-    "line": 1523,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterManagerImpl.java"
   },
   {
@@ -286,7 +296,6 @@
       "vrUuid",
       "ret.getError()"
     ],
-    "line": 2460,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterManagerImpl.java"
   },
   {
@@ -296,7 +305,6 @@
     "arguments": [
       "ss[1]"
     ],
-    "line": 2560,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterManagerImpl.java"
   },
   {
@@ -309,7 +317,6 @@
       "rsp.getError()",
       "JSONObjectUtil.toJsonString(info)"
     ],
-    "line": 94,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/dhcp/VirtualRouterDhcpBackend.java"
   },
   {
@@ -317,7 +324,6 @@
     "en_US": "no virtual router is configured for vyos dhcp",
     "zh_CN": "没有为VyOS DHCP配置虚拟路由器",
     "arguments": [],
-    "line": 376,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/dhcp/VirtualRouterDhcpBackend.java"
   },
   {
@@ -329,7 +335,6 @@
       "vr.getManagementNic().getIp()",
       "ret.getError()"
     ],
-    "line": 208,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/dhcp/VirtualRouterSyncDHCPOnStartFlow.java"
   },
   {
@@ -344,7 +349,6 @@
       "l3.getName()",
       "ret.getError()"
     ],
-    "line": 210,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/dns/VirtualRouterDnsBackend.java"
   },
   {
@@ -357,7 +361,6 @@
       "JSONObjectUtil.toJsonString(dns)",
       "ret.getError()"
     ],
-    "line": 127,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/dns/VirtualRouterSyncDnsOnStartFlow.java"
   },
   {
@@ -372,7 +375,6 @@
       "vr.getUuid()",
       "ret.getError()"
     ],
-    "line": 168,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/eip/VirtualRouterEipBackend.java"
   },
   {
@@ -387,7 +389,6 @@
       "vr.getUuid()",
       "ret.getError()"
     ],
-    "line": 318,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/eip/VirtualRouterEipBackend.java"
   },
   {
@@ -398,7 +399,6 @@
       "vr.getUuid()",
       "ret.getError()"
     ],
-    "line": 214,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/eip/VirtualRouterSyncEipOnStartFlow.java"
   },
   {
@@ -406,7 +406,6 @@
     "en_US": "ha group extension point nil",
     "zh_CN": "HA组扩展点Nil",
     "arguments": [],
-    "line": 63,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/ha/VirtualRouterHaBackendImpl.java"
   },
   {
@@ -414,7 +413,6 @@
     "en_US": "vmnic must be specified for share loadbalancer",
     "zh_CN": "必须为Share LoadBalancer指定vmnic",
     "arguments": [],
-    "line": 1325,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/lb/VirtualRouterLoadBalancerBackend.java"
   },
   {
@@ -424,7 +422,6 @@
     "arguments": [
       "struct.getLb().getUuid()"
     ],
-    "line": 1783,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/lb/VirtualRouterLoadBalancerBackend.java"
   },
   {
@@ -434,7 +431,6 @@
     "arguments": [
       "ret.getError()"
     ],
-    "line": 120,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/lifecycle/VirtualRouterDeployAgentFlow.java"
   },
   {
@@ -448,7 +444,6 @@
       "offering.getUuid()",
       "offering.getName()"
     ],
-    "line": 91,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/nat/VirtualRouterSnatBackend.java"
   },
   {
@@ -461,7 +456,6 @@
       "JSONObjectUtil.toJsonString(snatInfo)",
       "ret.getError()"
     ],
-    "line": 144,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/nat/VirtualRouterSyncSNATOnStartFlow.java"
   },
   {
@@ -477,7 +471,6 @@
       "to.getPrivatePortEnd()",
       "ret.getError()"
     ],
-    "line": 85,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/portforwarding/ApplyPortforwardingRuleOnVirtualRouterVmFlow.java"
   },
   {
@@ -488,7 +481,6 @@
       "JSONObjectUtil.toJsonString(to)",
       "ret.getError()"
     ],
-    "line": 82,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/portforwarding/ReleasePortForwardingRuleOnVirtualRouterVmFlow.java"
   },
   {
@@ -499,7 +491,6 @@
       "vrVO.getUuid()",
       "ret.getError()"
     ],
-    "line": 407,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/portforwarding/VirtualRouterPortForwardingBackend.java"
   },
   {
@@ -510,7 +501,6 @@
       "vrVO.getUuid()",
       "ret.getError()"
     ],
-    "line": 483,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/portforwarding/VirtualRouterPortForwardingBackend.java"
   },
   {
@@ -522,7 +512,6 @@
       "vr.getUuid()",
       "ret.getError()"
     ],
-    "line": 207,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/portforwarding/VirtualRouterSyncPortForwardingRulesOnStartFlow.java"
   },
   {
@@ -533,7 +522,6 @@
       "tos",
       "ret.getError()"
     ],
-    "line": 172,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/vip/VirtualRouterVipBaseBackend.java"
   },
   {
@@ -545,7 +533,6 @@
       "vr.getUuid()",
       "ret.getError()"
     ],
-    "line": 216,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/vip/VirtualRouterVipBaseBackend.java"
   },
   {
@@ -556,7 +543,6 @@
       "vrUuid",
       "vrState"
     ],
-    "line": 240,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/vip/VirtualRouterVipBaseBackend.java"
   },
   {
@@ -569,7 +555,6 @@
       "nic.getVmInstanceUuid()",
       "rsp.getError()"
     ],
-    "line": 67,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/vyos/VyosChangePrivateL3FirewallDefaultActionExtensionPoint.java"
   },
   {
@@ -579,7 +564,6 @@
     "arguments": [
       "mgmtNicIp"
     ],
-    "line": 156,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/vyos/VyosConfigSshFlow.java"
   },
   {
@@ -589,8 +573,16 @@
     "arguments": [
       "ret.getError()"
     ],
-    "line": 214,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/vyos/VyosConnectFlow.java"
+  },
+  {
+    "raw": "virtual router deploy agent failed, because %s",
+    "en_US": "virtual router deploy agent failed, because {0}",
+    "zh_CN": "",
+    "arguments": [
+      "errors.get(errors.size() - 1)"
+    ],
+    "fileName": "src/main/java/org/zstack/network/service/virtualrouter/vyos/VyosDeployAgentFlow.java"
   },
   {
     "raw": "unable to start dhcp server on virtual router vm[uuid:%s], because %s",
@@ -600,7 +592,6 @@
       "nic.getVmInstanceUuid()",
       "rsp.getError()"
     ],
-    "line": 246,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/vyos/VyosDhcpBackend.java"
   },
   {
@@ -611,7 +602,6 @@
       "nic.getVmInstanceUuid()",
       "rsp.getError()"
     ],
-    "line": 282,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/vyos/VyosDhcpBackend.java"
   }
 ]

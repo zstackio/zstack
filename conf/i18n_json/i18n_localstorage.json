@@ -6,7 +6,6 @@
     "arguments": [
       "spec.getDiskSize()"
     ],
-    "line": 153,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageAllocatorFactory.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "volume.getUuid()"
     ],
-    "line": 181,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageAllocatorFactory.java"
   },
   {
@@ -26,7 +24,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 88,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -37,7 +34,6 @@
       "msg.getVolumeUuid()",
       "msg.getDestHostUuid()"
     ],
-    "line": 93,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -47,7 +43,6 @@
     "arguments": [
       "msg.getPrimaryStorageUuid()"
     ],
-    "line": 99,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -57,7 +52,6 @@
     "arguments": [
       "ref.getPrimaryStorageUuid()"
     ],
-    "line": 103,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -67,7 +61,17 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 125,
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
+  },
+  {
+    "raw": "The clusterUuid of vm[uuid:%s] cannot be null when migrate the root volume[uuid:%s, name: %s]",
+    "en_US": "The clusterUuid of vm[uuid:{0}] cannot be null when migrate the root volume[uuid:{1}, name: {2}]",
+    "zh_CN": "",
+    "arguments": [
+      "vol.getVmInstanceUuid()",
+      "vol.getUuid()",
+      "vol.getName()"
+    ],
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -79,7 +83,6 @@
       "clusterUuid",
       "vol.getVmInstanceUuid()"
     ],
-    "line": 176,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -89,7 +92,6 @@
     "arguments": [
       "msg.getUrl()"
     ],
-    "line": 190,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -97,8 +99,14 @@
     "en_US": " the url contains an invalid folder[/dev or /proc or /sys]",
     "zh_CN": "URL包含了一个无效的目录[/dev or /proc or /sys]",
     "arguments": [],
-    "line": 193,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
+  },
+  {
+    "raw": "The clusterUuid of vm cannot be null when migrate the vm",
+    "en_US": "The clusterUuid of vm cannot be null when migrate the vm",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
   },
   {
     "raw": "The primary storage[uuid:%s] is disabled cold migrate is not allowed",
@@ -107,7 +115,16 @@
     "arguments": [
       "msg.getPrimaryStorageUuid()"
     ],
-    "line": 267,
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
+  },
+  {
+    "raw": "local primary storage[uuid:%s] doesn\u0027t have the host[uuid:%s]",
+    "en_US": "local primary storage[uuid:{0}] doesn\u0027t have the host[uuid:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "msg.getHostUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
   },
   {
@@ -118,7 +135,6 @@
       "msg.getVolumeUuid()",
       "self.getUuid()"
     ],
-    "line": 2434,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
   },
   {
@@ -126,7 +142,6 @@
     "en_US": "No Host state is Enabled, Please check the availability of the host",
     "zh_CN": "未启用物理机状态，请检查物理机的可用性",
     "arguments": [],
-    "line": 2999,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
   },
   {
@@ -137,7 +152,6 @@
       "hostUuid",
       "self.getUuid()"
     ],
-    "line": 3132,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
   },
   {
@@ -149,7 +163,6 @@
       "resourceType",
       "self.getUuid()"
     ],
-    "line": 3156,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
   },
   {
@@ -162,7 +175,6 @@
       "self.getUuid()",
       "ret"
     ],
-    "line": 3161,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
   },
   {
@@ -172,7 +184,15 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 3204,
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
+  },
+  {
+    "raw": "host(s)[uuids: %s] volume locate is not Connected.",
+    "en_US": "host(s)[uuids: {0}] volume locate is not Connected.",
+    "zh_CN": "",
+    "arguments": [
+      "disconnectHostUuids"
+    ],
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
   },
   {
@@ -184,7 +204,6 @@
       "PrimaryStorageStatus.Connected",
       "clusterUuid"
     ],
-    "line": 97,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageDefaultAllocateCapacityFlow.java"
   },
   {
@@ -196,7 +215,6 @@
       "requiredPrimaryStorageUuidForDataVolume.getType()",
       "LocalStorageConstants.LOCAL_STORAGE_TYPE"
     ],
-    "line": 153,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageDefaultAllocateCapacityFlow.java"
   },
   {
@@ -206,7 +224,6 @@
     "arguments": [
       "spec.getDestHost().getClusterUuid()"
     ],
-    "line": 129,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageDesignatedAllocateCapacityFlow.java"
   },
   {
@@ -216,7 +233,6 @@
     "arguments": [
       "spec.getDestHost().getClusterUuid()"
     ],
-    "line": 135,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageDesignatedAllocateCapacityFlow.java"
   },
   {
@@ -227,7 +243,6 @@
       "hvType",
       "bsType"
     ],
-    "line": 301,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -238,7 +253,6 @@
       "imageUuid",
       "cachedHostUuids"
     ],
-    "line": 410,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -248,7 +262,6 @@
     "arguments": [
       "spec.getVmInventory().getHypervisorType()"
     ],
-    "line": 473,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -256,7 +269,6 @@
     "en_US": "Can\u0027t attach volume to VM, no qualified cluster",
     "zh_CN": "不能加载云盘到云主机上，没有可用集群",
     "arguments": [],
-    "line": 667,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -267,7 +279,17 @@
       "hostUuid",
       "msg.getPrimaryStorageUuid()"
     ],
-    "line": 1056,
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
+  },
+  {
+    "raw": "the local primary storage[uuid:%s] has no hosts with enough disk capacity[%s bytes] required by the disk offering[uuid:%s]",
+    "en_US": "the local primary storage[uuid:{0}] has no hosts with enough disk capacity[{1} bytes] required by the disk offering[uuid:{2}]",
+    "zh_CN": "",
+    "arguments": [
+      "psUuid",
+      "msg.getDiskSize()",
+      "diskOffering"
+    ],
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -275,7 +297,6 @@
     "en_US": "root image has been deleted, cannot reimage now",
     "zh_CN": "系统镜像已经被删除，无法重制云主机",
     "arguments": [],
-    "line": 2101,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageKvmBackend.java"
   },
   {
@@ -287,7 +308,6 @@
       "volume.getVmInstanceUuid()",
       "state"
     ],
-    "line": 2244,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageKvmBackend.java"
   },
   {
@@ -299,7 +319,6 @@
       "msg.getVolume().getInstallPath()",
       "cmd.srcDir"
     ],
-    "line": 3611,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageKvmBackend.java"
   },
   {
@@ -311,7 +330,6 @@
       "hostUuid",
       "errorCode.getCause().getDetails()"
     ],
-    "line": 3679,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageKvmBackend.java"
   },
   {
@@ -323,7 +341,6 @@
       "hostUuid",
       "errorCode.getCause().getDetails()"
     ],
-    "line": 3700,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageKvmBackend.java"
   },
   {
@@ -335,7 +352,6 @@
       "priUuid",
       "reply.getError()"
     ],
-    "line": 114,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageKvmFactory.java"
   },
   {
@@ -349,7 +365,6 @@
       "host.getManagementIp()",
       "errorCode"
     ],
-    "line": 206,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageKvmFactory.java"
   },
   {
@@ -359,7 +374,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 916,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageKvmMigrateVmFlow.java"
   },
   {
@@ -371,7 +385,6 @@
       "p.volume.getName()",
       "dstHostUuid"
     ],
-    "line": 1165,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageKvmMigrateVmFlow.java"
   },
   {
@@ -385,7 +398,6 @@
       "primaryStorageInstallPath",
       "rsp.getError()"
     ],
-    "line": 204,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageKvmSftpBackupStorageMediatorImpl.java"
   },
   {
@@ -399,7 +411,6 @@
       "backupStorageInstallPath",
       "rsp.getError()"
     ],
-    "line": 253,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageKvmSftpBackupStorageMediatorImpl.java"
   },
   {
@@ -410,7 +421,6 @@
       "ref.getHostUuid()",
       "physicalCapacityMgr.getRatio(ref.getPrimaryStorageUuid())"
     ],
-    "line": 176,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageMainAllocatorFlow.java"
   },
   {
@@ -418,7 +428,6 @@
     "en_US": "failed allocate localstorage",
     "zh_CN": "分配localStorage失败",
     "arguments": [],
-    "line": 182,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageMainAllocatorFlow.java"
   },
   {
@@ -429,7 +438,6 @@
       "self.getUuid()",
       "hostUuid"
     ],
-    "line": 116,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageUtils.java"
   },
   {
@@ -439,7 +447,6 @@
     "arguments": [
       "resUuid"
     ],
-    "line": 202,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageUtils.java"
   },
   {
@@ -450,7 +457,6 @@
       "resUuid",
       "uuid"
     ],
-    "line": 205,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageUtils.java"
   }
 ]

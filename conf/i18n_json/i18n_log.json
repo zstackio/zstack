@@ -6,7 +6,6 @@
     "arguments": [
       "struct.getType()"
     ],
-    "line": 254,
     "fileName": "src/main/java/org/zstack/log/LogConfigurationManagerImpl.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "msg.getType()"
     ],
-    "line": 469,
     "fileName": "src/main/java/org/zstack/log/LogConfigurationManagerImpl.java"
   }
 ]

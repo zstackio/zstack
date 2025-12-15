@@ -8,7 +8,6 @@
       "extPs.getName()",
       "returnValue.getHealthy()"
     ],
-    "line": 197,
     "fileName": "src/main/java/org/zstack/externalStorage/primary/kvm/ExternalPrimaryStorageKvmFactory.java"
   },
   {
@@ -20,7 +19,6 @@
       "vol.getInstallPath()",
       "client.getManagerIp()"
     ],
-    "line": 343,
     "fileName": "src/main/java/org/zstack/externalStorage/primary/kvm/ExternalPrimaryStorageKvmFactory.java"
   }
 ]

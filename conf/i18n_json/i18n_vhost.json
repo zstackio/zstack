@@ -4,7 +4,6 @@
     "en_US": "vhostuser disk only support virtio mode, check image platform has virtio driver or not",
     "zh_CN": "",
     "arguments": [],
-    "line": 94,
     "fileName": "src/main/java/org/zstack/vhost/kvm/KvmVhostNodeServer.java"
   },
   {
@@ -12,7 +11,6 @@
     "en_US": "vhostuser disk not support virtio-scsi mode, please turn off virtio-scsi mode",
     "zh_CN": "",
     "arguments": [],
-    "line": 99,
     "fileName": "src/main/java/org/zstack/vhost/kvm/KvmVhostNodeServer.java"
   }
 ]

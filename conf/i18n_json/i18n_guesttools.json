@@ -6,7 +6,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 152,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -14,7 +13,6 @@
     "en_US": "could not change vf nic ha state, because guesttools not running.",
     "zh_CN": "",
     "arguments": [],
-    "line": 169,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -24,7 +22,6 @@
     "arguments": [
       "msg.getVmUuid()"
     ],
-    "line": 192,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -34,7 +31,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 203,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -46,7 +42,6 @@
       "hostname",
       "defaultL3uuid"
     ],
-    "line": 218,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -56,7 +51,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 228,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -67,7 +61,6 @@
       "msg.getVmInstanceUuid()",
       "vm.getType()"
     ],
-    "line": 233,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -77,7 +70,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 242,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -87,7 +79,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 246,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -97,7 +88,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 254,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -107,7 +97,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 261,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -117,7 +106,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 268,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -127,7 +115,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 275,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -137,7 +124,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 298,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -147,7 +133,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 304,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -157,7 +142,6 @@
     "arguments": [
       "invalidSet"
     ],
-    "line": 326,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -167,7 +151,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 334,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -177,7 +160,13 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 339,
+    "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
+  },
+  {
+    "raw": "cannot clone vm with custom specification, because the advanced license is not purchased or expired",
+    "en_US": "cannot clone vm with custom specification, because the advanced license is not purchased or expired",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -187,7 +176,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 381,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -199,7 +187,6 @@
       "toolsState.getVersion()",
       "vmUuid"
     ],
-    "line": 392,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
@@ -209,7 +196,6 @@
     "arguments": [
       "vmVo.getUuid()"
     ],
-    "line": 478,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsManagerImpl.java"
   },
   {
@@ -219,7 +205,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 852,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsManagerImpl.java"
   },
   {
@@ -229,7 +214,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 861,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsManagerImpl.java"
   },
   {
@@ -239,7 +223,16 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 870,
+    "fileName": "src/main/java/org/zstack/guesttools/GuestToolsManagerImpl.java"
+  },
+  {
+    "raw": "no proper guest tools iso found in management node[uuid:%s] for host[uuid:%s]",
+    "en_US": "no proper guest tools iso found in management node[uuid:{0}] for host[uuid:{1}]",
+    "zh_CN": "无法在管理节点[uuid:{0}]上为主机[uuid:{1}]寻找到合适的增强工具 ISO",
+    "arguments": [
+      "Platform.getManagementServerId()",
+      "msg.getHostUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsManagerImpl.java"
   },
   {
@@ -250,7 +243,6 @@
       "vm.getUuid()",
       "vm.getName()"
     ],
-    "line": 3048,
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsManagerImpl.java"
   },
   {
@@ -261,7 +253,6 @@
       "spec.getPlatform()",
       "vmPlatform"
     ],
-    "line": 47,
     "fileName": "src/main/java/org/zstack/guesttools/advanced/VmCustomSpecificationUtils.java"
   },
   {
@@ -271,7 +262,6 @@
     "arguments": [
       "spec.getUuid()"
     ],
-    "line": 58,
     "fileName": "src/main/java/org/zstack/guesttools/advanced/VmCustomSpecificationUtils.java"
   },
   {
@@ -281,7 +271,6 @@
     "arguments": [
       "spec.getPlatform()"
     ],
-    "line": 64,
     "fileName": "src/main/java/org/zstack/guesttools/advanced/VmCustomSpecificationUtils.java"
   },
   {
@@ -291,7 +280,6 @@
     "arguments": [
       "spec.getDomainMode()"
     ],
-    "line": 95,
     "fileName": "src/main/java/org/zstack/guesttools/advanced/VmCustomSpecificationUtils.java"
   },
   {
@@ -301,7 +289,6 @@
     "arguments": [
       "spec.getDomainMode()"
     ],
-    "line": 100,
     "fileName": "src/main/java/org/zstack/guesttools/advanced/VmCustomSpecificationUtils.java"
   },
   {
@@ -309,7 +296,6 @@
     "en_US": "root password is required when generating SID",
     "zh_CN": "",
     "arguments": [],
-    "line": 104,
     "fileName": "src/main/java/org/zstack/guesttools/advanced/VmCustomSpecificationUtils.java"
   },
   {
@@ -317,7 +303,6 @@
     "en_US": "generateSID should be set when joining domain",
     "zh_CN": "",
     "arguments": [],
-    "line": 109,
     "fileName": "src/main/java/org/zstack/guesttools/advanced/VmCustomSpecificationUtils.java"
   },
   {
@@ -325,7 +310,6 @@
     "en_US": "domain username is required",
     "zh_CN": "",
     "arguments": [],
-    "line": 115,
     "fileName": "src/main/java/org/zstack/guesttools/advanced/VmCustomSpecificationUtils.java"
   },
   {
@@ -335,8 +319,17 @@
     "arguments": [
       "spec.getOrganization()"
     ],
-    "line": 128,
     "fileName": "src/main/java/org/zstack/guesttools/advanced/VmCustomSpecificationUtils.java"
+  },
+  {
+    "raw": "failed to get guest tools info from vm[uuid:%s], because:%s",
+    "en_US": "failed to get guest tools info from vm[uuid:{0}], because:{1}",
+    "zh_CN": "无法从虚拟机[uuid:{0}]内部获取增强工具信息 :{1}",
+    "arguments": [
+      "vmUuid",
+      "rsp.getError()"
+    ],
+    "fileName": "src/main/java/org/zstack/guesttools/kvm/GuestToolsOnKvmBackend.java"
   },
   {
     "raw": "%s",
@@ -345,7 +338,24 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 241,
+    "fileName": "src/main/java/org/zstack/guesttools/kvm/GuestToolsOnKvmBackend.java"
+  },
+  {
+    "raw": "failed to download guest tools iso because no kvm host[uuid:%s] found",
+    "en_US": "failed to download guest tools iso because no kvm host[uuid:{0}] found",
+    "zh_CN": "KVM主机[uuid:{0}]不存在，无法为其下载增强工具 ISO",
+    "arguments": [
+      "host.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/guesttools/kvm/GuestToolsOnKvmBackend.java"
+  },
+  {
+    "raw": "no available cdrom device for vm[uuid:%s] to attach guest-tools",
+    "en_US": "no available cdrom device for vm[uuid:{0}] to attach guest-tools",
+    "zh_CN": "",
+    "arguments": [
+      "vm.getUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/guesttools/kvm/GuestToolsOnKvmBackend.java"
   },
   {
@@ -356,7 +366,6 @@
       "vm.getUuid()",
       "rsp.getError()"
     ],
-    "line": 378,
     "fileName": "src/main/java/org/zstack/guesttools/kvm/GuestToolsOnKvmBackend.java"
   },
   {
@@ -367,7 +376,6 @@
       "vm.getUuid()",
       "rsp.getError()"
     ],
-    "line": 430,
     "fileName": "src/main/java/org/zstack/guesttools/kvm/GuestToolsOnKvmBackend.java"
   },
   {
@@ -377,7 +385,6 @@
     "arguments": [
       "errCode"
     ],
-    "line": 204,
     "fileName": "src/main/java/org/zstack/guesttools/pvpanic/PVPanicCrashStrategyManagerImpl.java"
   }
 ]

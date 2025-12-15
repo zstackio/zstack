@@ -8,7 +8,6 @@
       "self.getName()",
       "self.getStatus()"
     ],
-    "line": 235,
     "fileName": "src/main/java/org/zstack/ticket/TicketBase.java"
   },
   {
@@ -18,7 +17,6 @@
     "arguments": [
       "operator.operatorUuid"
     ],
-    "line": 302,
     "fileName": "src/main/java/org/zstack/ticket/TicketBase.java"
   },
   {
@@ -28,7 +26,6 @@
     "arguments": [
       "msg.getAccountSystemType()"
     ],
-    "line": 68,
     "fileName": "src/main/java/org/zstack/ticket/api/TicketApiInterceptor.java"
   },
   {
@@ -36,7 +33,6 @@
     "en_US": "not matched ticket type found",
     "zh_CN": "未找到匹配的票证类型",
     "arguments": [],
-    "line": 74,
     "fileName": "src/main/java/org/zstack/ticket/api/TicketApiInterceptor.java"
   },
   {
@@ -47,7 +43,6 @@
       "msg.getFlowCollectionUuid()",
       "ticketTypeUuid"
     ],
-    "line": 90,
     "fileName": "src/main/java/org/zstack/ticket/api/TicketApiInterceptor.java"
   },
   {
@@ -57,7 +52,6 @@
     "arguments": [
       "msg.getFlowCollectionUuid()"
     ],
-    "line": 97,
     "fileName": "src/main/java/org/zstack/ticket/api/TicketApiInterceptor.java"
   },
   {
@@ -67,7 +61,6 @@
     "arguments": [
       "msg.getFlowCollectionUuid()"
     ],
-    "line": 102,
     "fileName": "src/main/java/org/zstack/ticket/api/TicketApiInterceptor.java"
   },
   {
@@ -77,7 +70,6 @@
     "arguments": [
       "req.apiName"
     ],
-    "line": 110,
     "fileName": "src/main/java/org/zstack/ticket/api/TicketApiInterceptor.java"
   },
   {
@@ -88,7 +80,6 @@
       "clz",
       "e.getMessage()"
     ],
-    "line": 118,
     "fileName": "src/main/java/org/zstack/ticket/api/TicketApiInterceptor.java"
   },
   {
@@ -99,7 +90,6 @@
       "this",
       "event"
     ],
-    "line": 48,
     "fileName": "src/main/java/org/zstack/ticket/entity/TicketStatus.java"
   },
   {
@@ -109,7 +99,6 @@
     "arguments": [
       "request.apiName"
     ],
-    "line": 43,
     "fileName": "src/main/java/org/zstack/ticket/executor/DefaultSingletonRequestExecutor.java"
   },
   {
@@ -119,7 +108,6 @@
     "arguments": [
       "exception.getMessage()"
     ],
-    "line": 70,
     "fileName": "src/main/java/org/zstack/ticket/executor/DefaultSingletonRequestExecutor.java"
   },
   {
@@ -131,7 +119,6 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 44,
     "fileName": "src/main/java/org/zstack/ticket/iam2/IAM2Ticket.java"
   },
   {
@@ -143,7 +130,6 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 49,
     "fileName": "src/main/java/org/zstack/ticket/iam2/IAM2Ticket.java"
   },
   {
@@ -151,7 +137,6 @@
     "en_US": "operation denied because flow collection[uuid:{0}] it not belong the project[uuid:{1}]",
     "zh_CN": "操作无效，因为流程[uuid:{0}]不属于项目[uuid:{1}]",
     "arguments": [],
-    "line": 61,
     "fileName": "src/main/java/org/zstack/ticket/iam2/IAM2Ticket.java"
   },
   {
@@ -163,7 +148,6 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 73,
     "fileName": "src/main/java/org/zstack/ticket/iam2/IAM2Ticket.java"
   },
   {
@@ -171,7 +155,6 @@
     "en_US": "approver is removed from project or deleted, flow collection changed to invalid, reject this ticket",
     "zh_CN": "审批人已经离开项目或者被删除，流程失效，因此驳回当前工单",
     "arguments": [],
-    "line": 194,
     "fileName": "src/main/java/org/zstack/ticket/iam2/IAM2TicketManager.java"
   },
   {
@@ -179,7 +162,6 @@
     "en_US": "name is needed when create a flow",
     "zh_CN": "创建步骤时需要填写名称",
     "arguments": [],
-    "line": 62,
     "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
   },
   {
@@ -187,7 +169,6 @@
     "en_US": "one ticket type can only have one matches flow collection",
     "zh_CN": "一个票证类型只能有一个匹配流集合",
     "arguments": [],
-    "line": 79,
     "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
   },
   {
@@ -195,7 +176,6 @@
     "en_US": "admin or iam2 operation is required as approver of the last flow",
     "zh_CN": "需要管理员或IAM2操作作为最后一个流的批准人",
     "arguments": [],
-    "line": 102,
     "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
   },
   {
@@ -203,7 +183,6 @@
     "en_US": "at least one flow is needed for create flow collection",
     "zh_CN": "创建流程时需要至少一个步骤",
     "arguments": [],
-    "line": 117,
     "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
   },
   {
@@ -214,7 +193,6 @@
       "flow.approverTitle",
       "approveTitles"
     ],
-    "line": 124,
     "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
   },
   {
@@ -222,7 +200,6 @@
     "en_US": "name cannot be null",
     "zh_CN": "名称不能为空",
     "arguments": [],
-    "line": 128,
     "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
   },
   {
@@ -230,7 +207,6 @@
     "en_US": "approverUuid cannot be null",
     "zh_CN": "Approveruuid不能为空",
     "arguments": [],
-    "line": 132,
     "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
   },
   {
@@ -240,7 +216,6 @@
     "arguments": [
       "flow.approverUuid"
     ],
-    "line": 140,
     "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
   },
   {
@@ -251,7 +226,6 @@
       "flow.approverUuid",
       "projectUuid"
     ],
-    "line": 147,
     "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
   }
 ]

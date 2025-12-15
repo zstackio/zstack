@@ -7,7 +7,6 @@
       "attr",
       "inventoryClass.getName()"
     ],
-    "line": 431,
     "fileName": "src/main/java/org/zstack/query/MysqlQueryBuilderImpl3.java"
   },
   {
@@ -19,7 +18,6 @@
       "attr",
       "inventoryClass.getName()"
     ],
-    "line": 436,
     "fileName": "src/main/java/org/zstack/query/MysqlQueryBuilderImpl3.java"
   },
   {
@@ -30,7 +28,6 @@
       "info.jpaMetaClass.getName()",
       "attr"
     ],
-    "line": 447,
     "fileName": "src/main/java/org/zstack/query/MysqlQueryBuilderImpl3.java"
   },
   {
@@ -38,7 +35,6 @@
     "en_US": "filterName must be formatted as [filterType:condition(s)]",
     "zh_CN": "FilterName的格式必须为[filterType：条件]",
     "arguments": [],
-    "line": 519,
     "fileName": "src/main/java/org/zstack/query/QueryFacadeImpl.java"
   },
   {
@@ -48,8 +44,14 @@
     "arguments": [
       "JSONObjectUtil.toJsonString(cond)"
     ],
-    "line": 659,
     "fileName": "src/main/java/org/zstack/query/QueryFacadeImpl.java"
+  },
+  {
+    "raw": "search module disabled",
+    "en_US": "search module disabled",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zql/ZQL.java"
   },
   {
     "raw": "output from [%s] is empty",
@@ -58,7 +60,6 @@
     "arguments": [
       "apiStr"
     ],
-    "line": 140,
     "fileName": "src/main/java/org/zstack/zql/ast/parser/visitors/ValueVisitor.java"
   },
   {
@@ -69,7 +70,6 @@
       "apiName",
       "JSONObjectUtil.toJsonString(ob)"
     ],
-    "line": 159,
     "fileName": "src/main/java/org/zstack/zql/ast/parser/visitors/ValueVisitor.java"
   },
   {
@@ -79,7 +79,6 @@
     "arguments": [
       "node.getDirection()"
     ],
-    "line": 14,
     "fileName": "src/main/java/org/zstack/zql/ast/visitors/OrderByExprVistor.java"
   },
   {
@@ -90,7 +89,6 @@
       "m.simpleInventoryName()",
       "f"
     ],
-    "line": 22,
     "fileName": "src/main/java/org/zstack/zql/ast/visitors/OrderByVisitor.java"
   },
   {
@@ -98,7 +96,6 @@
     "en_US": "the field to sum must be specified",
     "zh_CN": "必须指定要汇总的字段",
     "arguments": [],
-    "line": 31,
     "fileName": "src/main/java/org/zstack/zql/ast/visitors/plugin/SumPlugin.java"
   }
 ]

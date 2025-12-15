@@ -6,7 +6,6 @@
     "arguments": [
       "frontL3.getCategory()"
     ],
-    "line": 115,
     "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
   },
   {
@@ -14,7 +13,6 @@
     "en_US": "could not create slb group, because front network doesn\u0027t support ipv6 yet",
     "zh_CN": "无法创建SLB组，因为前端网络尚不支持IPv6",
     "arguments": [],
-    "line": 134,
     "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
   },
   {
@@ -22,7 +20,6 @@
     "en_US": "could not create slb group, because backend network doesn\u0027t support ipv6 yet",
     "zh_CN": "无法创建SLB组，因为后端网络尚不支持IPv6",
     "arguments": [],
-    "line": 156,
     "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
   },
   {
@@ -32,7 +29,6 @@
     "arguments": [
       "msg.getDeployType()"
     ],
-    "line": 275,
     "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
   },
   {
@@ -42,7 +38,6 @@
     "arguments": [
       "msg.getBackendType()"
     ],
-    "line": 284,
     "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
   },
   {
@@ -53,7 +48,6 @@
       "frontL3Uuid",
       "slbVO.getUuid()"
     ],
-    "line": 401,
     "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
   },
   {
@@ -64,7 +58,6 @@
       "slbVO.getManagementNetworkUuid()",
       "slbVO.getUuid()"
     ],
-    "line": 406,
     "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
   },
   {
@@ -74,7 +67,6 @@
     "arguments": [
       "slbGroupUuid"
     ],
-    "line": 459,
     "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
   },
   {
@@ -84,7 +76,6 @@
     "arguments": [
       "msg.getServerGroupUuid()"
     ],
-    "line": 478,
     "fileName": "src/main/java/org/zstack/network/service/slb/SlbApiInterceptor.java"
   },
   {
@@ -96,7 +87,6 @@
       "vr.getUuid()",
       "ret.getError()"
     ],
-    "line": 145,
     "fileName": "src/main/java/org/zstack/network/service/slb/SlbVmSyncVipFlow.java"
   },
   {
@@ -104,7 +94,6 @@
     "en_US": "can not find slb vm instance",
     "zh_CN": "找不到SLB虚拟机实例",
     "arguments": [],
-    "line": 38,
     "fileName": "src/main/java/org/zstack/network/service/slb/SlbVyosBackend.java"
   }
 ]

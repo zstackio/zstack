@@ -4,7 +4,6 @@
     "en_US": "can not detach system default ruleSet",
     "zh_CN": "无法分离系统默认规则集",
     "arguments": [],
-    "line": 129,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -12,7 +11,6 @@
     "en_US": "only system ruleSet can change action type",
     "zh_CN": "只有系统规则集才能更改操作类型",
     "arguments": [],
-    "line": 142,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -20,7 +18,6 @@
     "en_US": "can not delete system default ruleSet",
     "zh_CN": "无法删除系统默认规则集",
     "arguments": [],
-    "line": 154,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -28,7 +25,6 @@
     "en_US": "can not delete system default rule",
     "zh_CN": "无法删除系统默认规则",
     "arguments": [],
-    "line": 160,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -38,7 +34,6 @@
     "arguments": [
       "vRouteUuid"
     ],
-    "line": 170,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -48,7 +43,6 @@
     "arguments": [
       "msg.getVpcUuid()"
     ],
-    "line": 188,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -59,7 +53,6 @@
       "msg.getName()",
       "msg.getRuleNumber()"
     ],
-    "line": 239,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -70,7 +63,6 @@
       "msg.getRuleSetUuid()",
       "msg.getRuleNumber()"
     ],
-    "line": 338,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -80,7 +72,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 343,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -88,7 +79,6 @@
     "en_US": "only tcp or udp protocol can use port",
     "zh_CN": "只有TCP或UDP协议可以使用端口",
     "arguments": [],
-    "line": 373,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -96,7 +86,6 @@
     "en_US": "only tcp protocol can use tcp flag",
     "zh_CN": "只有TCP协议才能使用TCP标志",
     "arguments": [],
-    "line": 378,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -104,7 +93,6 @@
     "en_US": "only icmp protocol can use icmp type",
     "zh_CN": "只有ICMP协议才能使用ICMP类型",
     "arguments": [],
-    "line": 382,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -114,7 +102,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 407,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -122,7 +109,6 @@
     "en_US": "can not attach the default ruleSet to other nic",
     "zh_CN": "无法将默认规则集附加到其他NIC",
     "arguments": [],
-    "line": 416,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -133,7 +119,6 @@
       "msg.getRuleSetUuid()",
       "msg.getL3Uuid()"
     ],
-    "line": 431,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -143,7 +128,6 @@
     "arguments": [
       "duplicateRuleNumbers"
     ],
-    "line": 450,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -154,7 +138,6 @@
       "msg.getRuleSetUuid()",
       "msg.getRuleNumber()"
     ],
-    "line": 748,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -164,7 +147,6 @@
     "arguments": [
       "msg.getRuleNumber()"
     ],
-    "line": 779,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -174,7 +156,6 @@
     "arguments": [
       "msg.getRuleNumber()"
     ],
-    "line": 785,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -184,7 +165,6 @@
     "arguments": [
       "msg.getRuleNumber()"
     ],
-    "line": 790,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -194,7 +174,6 @@
     "arguments": [
       "msg.getRuleNumber()"
     ],
-    "line": 801,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -204,7 +183,6 @@
     "arguments": [
       "msg.getRuleNumber()"
     ],
-    "line": 824,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -215,7 +193,6 @@
       "msg.getRuleNumber()",
       "error"
     ],
-    "line": 832,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -225,7 +202,6 @@
     "arguments": [
       "vo.getRuleNumber()"
     ],
-    "line": 846,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -235,7 +211,6 @@
     "arguments": [
       "vo.getRuleNumber()"
     ],
-    "line": 853,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -246,7 +221,6 @@
       "vo.getSourceIp()",
       "vo.getRuleNumber()"
     ],
-    "line": 867,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -257,7 +231,6 @@
       "vo.getDestIp()",
       "vo.getRuleNumber()"
     ],
-    "line": 874,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -267,7 +240,6 @@
     "arguments": [
       "vo.getRuleNumber()"
     ],
-    "line": 885,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -278,7 +250,6 @@
       "vo.getDestIp()",
       "vo.getRuleNumber()"
     ],
-    "line": 892,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -286,7 +257,6 @@
     "en_US": "the configuration file has format error",
     "zh_CN": "配置文件有格式错误",
     "arguments": [],
-    "line": 942,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -296,7 +266,6 @@
     "arguments": [
       "errorInfo"
     ],
-    "line": 948,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
@@ -306,7 +275,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 272,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallBackend.java"
   },
   {
@@ -316,7 +284,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 459,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallBackend.java"
   },
   {
@@ -327,7 +294,6 @@
       "l3Uuid",
       "vRouterUuid"
     ],
-    "line": 492,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallBackend.java"
   },
   {
@@ -338,7 +304,6 @@
       "cmd.getRef().getRuleSetInfo().getRules().get(0).getRuleNumber()",
       "rsp.getError()"
     ],
-    "line": 557,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallBackend.java"
   },
   {
@@ -349,7 +314,6 @@
       "vRouterUuid",
       "re.getError().getCause()"
     ],
-    "line": 645,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallBackend.java"
   },
   {
@@ -360,7 +324,6 @@
       "cmd.getRuleSet().getName()",
       "re.getError().getCause()"
     ],
-    "line": 784,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallBackend.java"
   },
   {
@@ -371,7 +334,6 @@
       "vRouterUuid",
       "rsp.getError()"
     ],
-    "line": 851,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallBackend.java"
   },
   {
@@ -382,7 +344,6 @@
       "vRouterUuid",
       "rsp.getError()"
     ],
-    "line": 936,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallBackend.java"
   },
   {
@@ -393,7 +354,6 @@
       "struct.getRuleSetUuid()",
       "re.getError()"
     ],
-    "line": 1032,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallBackend.java"
   },
   {
@@ -401,7 +361,6 @@
     "en_US": "detach ruleSet failed, maybe it has been deleted",
     "zh_CN": "分离规则集失败，它可能已被删除",
     "arguments": [],
-    "line": 1063,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallBackend.java"
   },
   {
@@ -412,7 +371,6 @@
       "struct.getRuleSetUuid()",
       "re.getError().getCause()"
     ],
-    "line": 1129,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallBackend.java"
   },
   {
@@ -422,7 +380,6 @@
     "arguments": [
       "msg.getVpcFirewallUuid()"
     ],
-    "line": 109,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallManagerImpl.java"
   },
   {
@@ -432,7 +389,6 @@
     "arguments": [
       "msg.getRuleSetUuid()"
     ],
-    "line": 125,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallManagerImpl.java"
   },
   {
@@ -442,7 +398,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 301,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallManagerImpl.java"
   },
   {
@@ -454,7 +409,6 @@
       "msg.getL3Uuid()",
       "errorCode.getCause()"
     ],
-    "line": 396,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallRuleSetBase.java"
   },
   {
@@ -465,7 +419,6 @@
       "msg.getL3Uuid()",
       "errorCode.getCause()"
     ],
-    "line": 424,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallRuleSetBase.java"
   },
   {
@@ -478,7 +431,6 @@
       "ref.getL3NetworkUuid()",
       "ref.getPacketsForwardType()"
     ],
-    "line": 475,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallRuleSetBase.java"
   },
   {
@@ -488,7 +440,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 483,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallRuleSetBase.java"
   },
   {
@@ -498,7 +449,6 @@
     "arguments": [
       "firewall.get()"
     ],
-    "line": 515,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallRuleSetBase.java"
   },
   {
@@ -508,7 +458,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 693,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallRuleSetBase.java"
   },
   {
@@ -519,7 +468,6 @@
       "self.getUuid()",
       "refVOs.size()"
     ],
-    "line": 753,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallRuleSetBase.java"
   },
   {
@@ -529,7 +477,6 @@
     "arguments": [
       "firewallUuid"
     ],
-    "line": 947,
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallRuleSetBase.java"
   }
 ]

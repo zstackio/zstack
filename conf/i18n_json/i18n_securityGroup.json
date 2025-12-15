@@ -6,7 +6,124 @@
     "arguments": [
       "msg.getResourceUuid()"
     ],
-    "line": 151,
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid security group rule, because security group[uuid:%s] not found",
+    "en_US": "invalid security group rule, because security group[uuid:{0}] not found",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getSecurityGroupUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid security group rule, because remote security group[uuid:%s] not found",
+    "en_US": "invalid security group rule, because remote security group[uuid:{0}] not found",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getRemoteSecurityGroupUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid security group rule, because startPort and endPort must be -1 when protocol is ALL or ICMP",
+    "en_US": "invalid security group rule, because startPort and endPort must be -1 when protocol is ALL or ICMP",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid security group rule, because invalid endPort[%d], endPort must be greater than or equal to startPort[%d]",
+    "en_US": "invalid security group rule, because invalid endPort[{0}], endPort must be greater than or equal to startPort[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getEndPort()",
+      "msg.getStartPort()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid security group rule, because startPort[%d] must less than 65535 when protocol is[%s]",
+    "en_US": "invalid security group rule, because startPort[{0}] must less than 65535 when protocol is[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getStartPort()",
+      "msg.getProtocol()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "remoteSecurityGroupUuid[%s] and srcIpRange/dstIpRange cannot be set at the same time",
+    "en_US": "remoteSecurityGroupUuid[{0}] and srcIpRange/dstIpRange cannot be set at the same time",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getRemoteSecurityGroupUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "remoteSecurityGroupUuid[%s] and allowedCidr[%s] cannot be set at the same time",
+    "en_US": "remoteSecurityGroupUuid[{0}] and allowedCidr[{1}] cannot be set at the same time",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getRemoteSecurityGroupUuid()",
+      "msg.getAllowedCidr()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "srcIpRange[%s] and dstIpRange[%s] cannot be set at the same time",
+    "en_US": "srcIpRange[{0}] and dstIpRange[{1}] cannot be set at the same time",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getSrcIpRange()",
+      "msg.getDstIpRange()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "srcIpRange cannot be set in Egress rule",
+    "en_US": "srcIpRange cannot be set in Egress rule",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "dstIpRange cannot be set in Ingress rule",
+    "en_US": "dstIpRange cannot be set in Ingress rule",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "dstPortRange cannot be set when rule protocol is ALL or ICMP",
+    "en_US": "dstPortRange cannot be set when rule protocol is ALL or ICMP",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "dstPortRange and startPort/endPort cannot be set at the same time",
+    "en_US": "dstPortRange and startPort/endPort cannot be set at the same time",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "allowCidr and srcIpRange/dstIpRange cannot be set at the same time",
+    "en_US": "allowCidr and srcIpRange/dstIpRange cannot be set at the same time",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "duplicated to rule[uuid:%s] in datebase",
+    "en_US": "duplicated to rule[uuid:{0}] in datebase",
+    "zh_CN": "",
+    "arguments": [
+      "vo.getUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -16,7 +133,6 @@
     "arguments": [
       "msg.getVmNicUuid()"
     ],
-    "line": 302,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -26,7 +142,6 @@
     "arguments": [
       "msg.getVmNicUuid()"
     ],
-    "line": 308,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -36,7 +151,6 @@
     "arguments": [
       "ao.getSecurityGroupUuid()"
     ],
-    "line": 317,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -46,7 +160,6 @@
     "arguments": [
       "priority"
     ],
-    "line": 322,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -58,7 +171,6 @@
       "ao.getSecurityGroupUuid()",
       "priority"
     ],
-    "line": 326,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -68,7 +180,6 @@
     "arguments": [
       "ao.getSecurityGroupUuid()"
     ],
-    "line": 329,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -79,7 +190,6 @@
       "ao.getSecurityGroupUuid()",
       "vmAccountUuid"
     ],
-    "line": 339,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -89,7 +199,6 @@
     "arguments": [
       "priorities[0]"
     ],
-    "line": 349,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -100,7 +209,6 @@
       "priorities[i]",
       "priorities[i + 1]"
     ],
-    "line": 353,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -110,7 +218,6 @@
     "arguments": [
       "priorities[i + 1]"
     ],
-    "line": 400,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -118,7 +225,6 @@
     "en_US": "could no change security group rule state, because ruleUuids is empty",
     "zh_CN": "无法更改安全组规则状态，因为RuleUIds为空",
     "arguments": [],
-    "line": 409,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -128,7 +234,6 @@
     "arguments": [
       "msg.getSecurityGroupUuid()"
     ],
-    "line": 413,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -138,7 +243,6 @@
     "arguments": [
       "r"
     ],
-    "line": 421,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -146,7 +250,6 @@
     "en_US": "could no change security group rule state, because no security group rule state need to change",
     "zh_CN": "无法更改安全组规则状态，因为没有安全组规则需要修改状态",
     "arguments": [],
-    "line": 430,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -154,7 +257,6 @@
     "en_US": "could no change vm nic security policy, because ingress policy and egress policy cannot be both null",
     "zh_CN": "无法更改VM NIC安全策略，因为入口策略和出口策略不能同时为空",
     "arguments": [],
-    "line": 438,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -164,7 +266,6 @@
     "arguments": [
       "msg.getIngressPolicy()"
     ],
-    "line": 441,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -174,7 +275,6 @@
     "arguments": [
       "msg.getEgressPolicy()"
     ],
-    "line": 445,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -184,7 +284,6 @@
     "arguments": [
       "msg.getVmNicUuid()"
     ],
-    "line": 449,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -194,7 +293,6 @@
     "arguments": [
       "msg.getVmNicUuid()"
     ],
-    "line": 454,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -204,7 +302,6 @@
     "arguments": [
       "msg.getType()"
     ],
-    "line": 468,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -214,7 +311,6 @@
     "arguments": [
       "msg.getSecurityGroupUuid()"
     ],
-    "line": 473,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -222,7 +318,6 @@
     "en_US": "could not update security group rule priority, because rules is empty",
     "zh_CN": "无法更新安全组规则优先级，因为规则为空",
     "arguments": [],
-    "line": 477,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -232,7 +327,6 @@
     "arguments": [
       "msg.getSecurityGroupUuid()"
     ],
-    "line": 487,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -242,7 +336,6 @@
     "arguments": [
       "ao.getPriority()"
     ],
-    "line": 492,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -252,7 +345,6 @@
     "arguments": [
       "ao.getPriority()"
     ],
-    "line": 495,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -263,7 +355,6 @@
       "ao.getRuleUuid()",
       "msg.getSecurityGroupUuid()"
     ],
-    "line": 501,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -274,7 +365,6 @@
       "ao.getPriority()",
       "msg.getSecurityGroupUuid()"
     ],
-    "line": 504,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -282,7 +372,6 @@
     "en_US": "could not update security group rule priority, because rule uuid duplicate",
     "zh_CN": "无法更新安全组规则优先级，因为规则uuid重复",
     "arguments": [],
-    "line": 509,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -292,7 +381,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 516,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -302,7 +390,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 522,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -313,7 +400,6 @@
       "msg.getUuid()",
       "SecurityGroupConstant.DEFAULT_RULE_PRIORITY"
     ],
-    "line": 528,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -325,7 +411,6 @@
       "count.intValue()",
       "SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)"
     ],
-    "line": 537,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -336,7 +421,6 @@
       "vo.getType().toString()",
       "count.intValue()"
     ],
-    "line": 540,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -346,7 +430,6 @@
     "arguments": [
       "msg.getState()"
     ],
-    "line": 549,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -356,7 +439,6 @@
     "arguments": [
       "msg.getAction()"
     ],
-    "line": 557,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -366,7 +448,6 @@
     "arguments": [
       "msg.getProtocol()"
     ],
-    "line": 565,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -377,7 +458,6 @@
       "msg.getSrcIpRange()",
       "msg.getRemoteSecurityGroupUuid()"
     ],
-    "line": 587,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -388,7 +468,6 @@
       "msg.getUuid()",
       "msg.getDstIpRange()"
     ],
-    "line": 596,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -399,7 +478,6 @@
       "msg.getUuid()",
       "msg.getSrcIpRange()"
     ],
-    "line": 599,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -410,7 +488,6 @@
       "msg.getDstIpRange()",
       "msg.getRemoteSecurityGroupUuid()"
     ],
-    "line": 602,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -420,7 +497,6 @@
     "arguments": [
       "msg.getRemoteSecurityGroupUuid()"
     ],
-    "line": 611,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -430,7 +506,6 @@
     "arguments": [
       "msg.getRemoteSecurityGroupUuid()"
     ],
-    "line": 614,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -440,7 +515,6 @@
     "arguments": [
       "msg.getProtocol()"
     ],
-    "line": 654,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -450,7 +524,6 @@
     "arguments": [
       "msg.getProtocol()"
     ],
-    "line": 660,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -460,7 +533,6 @@
     "arguments": [
       "msg.getProtocol()"
     ],
-    "line": 668,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -471,7 +543,135 @@
       "JSONObjectUtil.toJsonString(sao)",
       "o.getUuid()"
     ],
-    "line": 699,
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid ports[%s], port range[%s] number[%d] is out of max limit[%d]",
+    "en_US": "invalid ports[{0}], port range[{1}] number[{2}] is out of max limit[{3}]",
+    "zh_CN": "",
+    "arguments": [
+      "ports",
+      "Arrays.toString(tmpPorts)",
+      "tmpPorts.length",
+      "SecurityGroupConstant.PORT_GROUP_NUMBER_LIMIT"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid ports[%s], port duplicate",
+    "en_US": "invalid ports[{0}], port duplicate",
+    "zh_CN": "",
+    "arguments": [
+      "ports"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid ports[%s]",
+    "en_US": "invalid ports[{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "ports"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid port range[%s]",
+    "en_US": "invalid port range[{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "port"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid port[%s]",
+    "en_US": "invalid port[{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "port"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid ips[%s], ip number[%d] is out of max limit[%d]",
+    "en_US": "invalid ips[{0}], ip number[{1}] is out of max limit[{2}]",
+    "zh_CN": "",
+    "arguments": [
+      "ips",
+      "ipArray.length",
+      "SecurityGroupConstant.IP_GROUP_NUMBER_LIMIT"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid ips[%s], ip duplicate",
+    "en_US": "invalid ips[{0}], ip duplicate",
+    "zh_CN": "",
+    "arguments": [
+      "ips"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid ips[%s], ip range cannot be used when specifying multiple ipv6 addresses",
+    "en_US": "invalid ips[{0}], ip range cannot be used when specifying multiple ipv6 addresses",
+    "zh_CN": "",
+    "arguments": [
+      "ips"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid ips[%s]",
+    "en_US": "invalid ips[{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "ips"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid cidr[%s], ipVersion[%d]",
+    "en_US": "invalid cidr[{0}], ipVersion[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "ip",
+      "ipVersion"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "ipv4 cidr can not be 0.0.0.0/0",
+    "en_US": "ipv4 cidr can not be 0.0.0.0/0",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "ipv6 cidr can not be ::/0",
+    "en_US": "ipv6 cidr can not be ::/0",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid ip range[%s]",
+    "en_US": "invalid ip range[{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "ip"
+    ],
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid ip[%s], ipVersion[%d]",
+    "en_US": "invalid ip[{0}], ipVersion[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "ip",
+      "ipVersion"
+    ],
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -482,7 +682,6 @@
       "msg.getSecurityGroupUuid()",
       "msg.getL3NetworkUuid()"
     ],
-    "line": 830,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -490,7 +689,6 @@
     "en_US": "can\u0027t delete rules of different security group",
     "zh_CN": "无法删除不同安全组的规则",
     "arguments": [],
-    "line": 866,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -500,7 +698,6 @@
     "arguments": [
       "vo.getUuid()"
     ],
-    "line": 869,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -511,7 +708,6 @@
       "msg.getSecurityGroupUuid()",
       "msg.getL3NetworkUuid()"
     ],
-    "line": 889,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -522,7 +718,6 @@
       "msg.getL3NetworkUuid()",
       "SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE"
     ],
-    "line": 897,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -533,7 +728,6 @@
       "wrongUuids",
       "securityGroupUuid"
     ],
-    "line": 959,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -543,7 +737,6 @@
     "arguments": [
       "SecurityGroupConstant.ONE_API_RULES_MAX_NUM"
     ],
-    "line": 985,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -553,7 +746,6 @@
     "arguments": [
       "msg.getRemoteSecurityGroupUuids()"
     ],
-    "line": 990,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -563,7 +755,6 @@
     "arguments": [
       "uuid"
     ],
-    "line": 996,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -571,7 +762,6 @@
     "en_US": "could not add security group rule, because the remote security group uuid is conflict",
     "zh_CN": "无法添加安全组规则，因为远端安全组uuid冲突",
     "arguments": [],
-    "line": 1001,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -582,7 +772,6 @@
       "SecurityGroupConstant.DEFAULT_RULE_PRIORITY",
       "SecurityGroupConstant.LOWEST_RULE_PRIORITY"
     ],
-    "line": 1037,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -593,7 +782,6 @@
       "ao.getProtocol()",
       "SecurityGroupRuleProtocolType.getAllProtocol()"
     ],
-    "line": 1045,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -604,7 +792,6 @@
       "ao.getAction()",
       "SecurityGroupRuleAction.getAllAction()"
     ],
-    "line": 1052,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -616,7 +803,6 @@
       "IPv6Constants.IPv4",
       "IPv6Constants.IPv6"
     ],
-    "line": 1060,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -626,7 +812,6 @@
     "arguments": [
       "ao.getSrcIpRange()"
     ],
-    "line": 1070,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -637,7 +822,6 @@
       "ao.getAllowedCidr()",
       "ao.getDstIpRange()"
     ],
-    "line": 1075,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -648,7 +832,6 @@
       "ao.getDstIpRange()",
       "ao.getRemoteSecurityGroupUuid()"
     ],
-    "line": 1082,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -658,7 +841,6 @@
     "arguments": [
       "ao.getDstIpRange()"
     ],
-    "line": 1089,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -669,7 +851,6 @@
       "ao.getAllowedCidr()",
       "ao.getSrcIpRange()"
     ],
-    "line": 1094,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -679,7 +860,6 @@
     "arguments": [
       "ao.getDstPortRange()"
     ],
-    "line": 1118,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -687,7 +867,6 @@
     "en_US": "could not add security group rule, because the protocol type ALL or ICMP cant not set startPort or endPort",
     "zh_CN": "无法添加安全组规则，因为协议类型ALL或ICMP无法设置StartPort或EndPort",
     "arguments": [],
-    "line": 1121,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -698,7 +877,6 @@
       "ao.getEndPort()",
       "ao.getStartPort()"
     ],
-    "line": 1126,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -709,7 +887,6 @@
       "ao.getDstPortRange()",
       "ao.getStartPort()"
     ],
-    "line": 1129,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -717,7 +894,6 @@
     "en_US": "could not add security group rule, because the protocol type TCP/UDP must set dstPortRange",
     "zh_CN": "无法添加安全组规则，因为协议类型TCP/UDP必须设置dstPortRange",
     "arguments": [],
-    "line": 1141,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -728,7 +904,6 @@
       "JSONObjectUtil.toJsonString(newRules.get(i))",
       "JSONObjectUtil.toJsonString(newRules.get(j))"
     ],
-    "line": 1152,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -739,7 +914,6 @@
       "JSONObjectUtil.toJsonString(sao)",
       "vo.getUuid()"
     ],
-    "line": 1176,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -750,7 +924,6 @@
       "SecurityGroupRuleType.Egress",
       "SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)"
     ],
-    "line": 1191,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -762,7 +935,6 @@
       "(egressRuleCount + toCreateEgressRuleCount)",
       "SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)"
     ],
-    "line": 1199,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -773,7 +945,6 @@
       "msg.getPriority()",
       "ingressRuleCount"
     ],
-    "line": 1203,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -784,7 +955,6 @@
       "msg.getPriority()",
       "egressRuleCount"
     ],
-    "line": 1206,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -795,7 +965,6 @@
       "SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE",
       "l3Uuid"
     ],
-    "line": 152,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupManagerImpl.java"
   },
   {
@@ -805,7 +974,15 @@
     "arguments": [
       "ao.getRuleUuid()"
     ],
-    "line": 1044,
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupManagerImpl.java"
+  },
+  {
+    "raw": "cannot find vm nics[uuids:%s]",
+    "en_US": "cannot find vm nics[uuids:{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVmNicUuids()"
+    ],
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupManagerImpl.java"
   },
   {
@@ -816,7 +993,6 @@
       "ref.getVmNicUuid()",
       "msg.getSecurityGroupUuid()"
     ],
-    "line": 1891,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupManagerImpl.java"
   },
   {
@@ -828,7 +1004,6 @@
       "nic.getL3NetworkUuid()",
       "nic.getUuid()"
     ],
-    "line": 1901,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupManagerImpl.java"
   },
   {
@@ -839,7 +1014,6 @@
       "msg.getSecurityGroupUuid()",
       "vmAccountUuid"
     ],
-    "line": 1906,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupManagerImpl.java"
   }
 ]

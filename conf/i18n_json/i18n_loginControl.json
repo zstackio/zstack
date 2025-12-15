@@ -6,8 +6,21 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 40,
     "fileName": "src/main/java/org/zstack/loginControl/LoginControlApiInterceptor.java"
+  },
+  {
+    "raw": "Missing verify code. Get verify code through captcha related API: GetLoginCaptcha",
+    "en_US": "Missing verify code. Get verify code through captcha related API: GetLoginCaptcha",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/loginControl/LoginControlCaptchaOperation.java"
+  },
+  {
+    "raw": "Wrong verify code",
+    "en_US": "Wrong verify code",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/loginControl/LoginControlCaptchaOperation.java"
   },
   {
     "raw": "unrecognized key: %s",
@@ -16,7 +29,6 @@
     "arguments": [
       "key"
     ],
-    "line": 105,
     "fileName": "src/main/java/org/zstack/loginControl/LoginControlManagerImpl.java"
   },
   {
@@ -26,7 +38,6 @@
     "arguments": [
       "opt.get()"
     ],
-    "line": 111,
     "fileName": "src/main/java/org/zstack/loginControl/LoginControlManagerImpl.java"
   },
   {
@@ -34,7 +45,6 @@
     "en_US": "wrong format of password strength config",
     "zh_CN": "密码强度配置的格式错误",
     "arguments": [],
-    "line": 116,
     "fileName": "src/main/java/org/zstack/loginControl/LoginControlManagerImpl.java"
   },
   {
@@ -42,7 +52,31 @@
     "en_US": "minimum can not be larger than maximum",
     "zh_CN": "最小值不能大于最大值",
     "arguments": [],
-    "line": 120,
+    "fileName": "src/main/java/org/zstack/loginControl/LoginControlManagerImpl.java"
+  },
+  {
+    "raw": "The visitor ip[%s] is not an IPv4 address",
+    "en_US": "The visitor ip[{0}] is not an IPv4 address",
+    "zh_CN": "",
+    "arguments": [
+      "srcIp"
+    ],
+    "fileName": "src/main/java/org/zstack/loginControl/LoginControlManagerImpl.java"
+  },
+  {
+    "raw": "Request from [%s] is refused",
+    "en_US": "Request from [{0}] is refused",
+    "zh_CN": "",
+    "arguments": [
+      "srcIp"
+    ],
+    "fileName": "src/main/java/org/zstack/loginControl/LoginControlManagerImpl.java"
+  },
+  {
+    "raw": "AccountType cannot be empty",
+    "en_US": "AccountType cannot be empty",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/loginControl/LoginControlManagerImpl.java"
   },
   {
@@ -53,7 +87,29 @@
       "msg.getResourceName()",
       "msg.getLoginType()"
     ],
-    "line": 289,
+    "fileName": "src/main/java/org/zstack/loginControl/LoginControlManagerImpl.java"
+  },
+  {
+    "raw": "this user is locked, remaining time: %s seconds",
+    "en_US": "this user is locked, remaining time: {0} seconds",
+    "zh_CN": "",
+    "arguments": [
+      "TimeUnit.MILLISECONDS.toSeconds(timestamp.getTime() - System.currentTimeMillis())"
+    ],
+    "fileName": "src/main/java/org/zstack/loginControl/LoginControlManagerImpl.java"
+  },
+  {
+    "raw": "Need to change password",
+    "en_US": "Need to change password",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/loginControl/LoginControlManagerImpl.java"
+  },
+  {
+    "raw": "Password repeated, please use another one",
+    "en_US": "Password repeated, please use another one",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/loginControl/LoginControlManagerImpl.java"
   }
 ]

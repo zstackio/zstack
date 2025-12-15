@@ -6,7 +6,6 @@
     "arguments": [
       "msg.getvRouterUuid()"
     ],
-    "line": 54,
     "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
   },
   {
@@ -17,7 +16,6 @@
       "vo.getL3NetworkUuid()",
       "vo.getFlowMeterUuid()"
     ],
-    "line": 62,
     "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
   },
   {
@@ -25,7 +23,6 @@
     "en_US": "The virtual router have been added into other flow meter",
     "zh_CN": "已将虚拟路由器添加到其他流量计中",
     "arguments": [],
-    "line": 70,
     "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
   },
   {
@@ -36,7 +33,6 @@
       "msg.getVersion()",
       "FlowMeterConstants.TYPE.NetFlow.toString()"
     ],
-    "line": 76,
     "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
   },
   {
@@ -46,7 +42,6 @@
     "arguments": [
       "collector.getUuid()"
     ],
-    "line": 134,
     "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
   },
   {
@@ -54,7 +49,6 @@
     "en_US": "no specify parameter",
     "zh_CN": "没有指定参数",
     "arguments": [],
-    "line": 141,
     "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
   },
   {
@@ -64,7 +58,6 @@
     "arguments": [
       "msg.getServer()"
     ],
-    "line": 145,
     "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
   },
   {
@@ -74,7 +67,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 150,
     "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
   },
   {
@@ -84,7 +76,6 @@
     "arguments": [
       "collectorVO.getFlowMeterUuid()"
     ],
-    "line": 155,
     "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
   },
   {
@@ -95,7 +86,6 @@
       "collectorVO.getFlowMeterUuid()",
       "vo.getVersion().toString()"
     ],
-    "line": 159,
     "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
   },
   {
@@ -107,7 +97,6 @@
       "port",
       "collector.getUuid()"
     ],
-    "line": 174,
     "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterApiInterceptor.java"
   },
   {
@@ -117,7 +106,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 377,
     "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterBackend.java"
   },
   {
@@ -127,7 +115,6 @@
     "arguments": [
       "FlowMeterSystemTags.FLOW_EXPIRE_INTERVAL_TOKEN"
     ],
-    "line": 157,
     "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterManagerImpl.java"
   }
 ]

@@ -4,8 +4,21 @@
     "en_US": "crond is not running",
     "zh_CN": "crond任务未在运行",
     "arguments": [],
-    "line": 81,
     "fileName": "src/main/java/org/zstack/externalservice/cronjob/CronJobImpl.java"
+  },
+  {
+    "raw": "error on remote node",
+    "en_US": "error on remote node",
+    "zh_CN": "错误发生在远端的节点上",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/externalservice/vops/VOpsClientRestHttp.java"
+  },
+  {
+    "raw": "client http timeout",
+    "en_US": "client http timeout",
+    "zh_CN": "客户端 HTTP 超时",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/externalservice/vops/VOpsClientRestHttp.java"
   },
   {
     "raw": "non support method: %s",
@@ -14,7 +27,6 @@
     "arguments": [
       "method"
     ],
-    "line": 122,
     "fileName": "src/main/java/org/zstack/premium/externalservice/grafana/api/GrafanaAPI.java"
   },
   {
@@ -25,7 +37,6 @@
       "statusCode",
       "response.getStatusLine().getReasonPhrase()"
     ],
-    "line": 134,
     "fileName": "src/main/java/org/zstack/premium/externalservice/grafana/api/GrafanaAPI.java"
   },
   {
@@ -35,7 +46,6 @@
     "arguments": [
       "r.getStderr()"
     ],
-    "line": 24,
     "fileName": "src/main/java/org/zstack/premium/externalservice/grafana/api/GrafanaDB.java"
   },
   {
@@ -45,7 +55,6 @@
     "arguments": [
       "GrafanaDB.folderTitle"
     ],
-    "line": 34,
     "fileName": "src/main/java/org/zstack/premium/externalservice/grafana/api/GrafanaDashboard.java"
   },
   {
@@ -57,7 +66,6 @@
       "dst.getAbsolutePath()",
       "rst.getStderr()"
     ],
-    "line": 84,
     "fileName": "src/main/java/org/zstack/premium/externalservice/loki/LokiFactory.java"
   },
   {
@@ -65,7 +73,6 @@
     "en_US": "ssh failed",
     "zh_CN": "SSH失败",
     "arguments": [],
-    "line": 103,
     "fileName": "src/main/java/org/zstack/premium/externalservice/loki/PromtailFactory.java"
   },
   {
@@ -76,7 +83,6 @@
       "v.getClass().getSimpleName()",
       "k"
     ],
-    "line": 124,
     "fileName": "src/main/java/org/zstack/premium/externalservice/prometheus/MultiNodePrometheus.java"
   },
   {
@@ -84,7 +90,6 @@
     "en_US": "failed to HTTP call all prometheus instances",
     "zh_CN": "无法对所有Prometheus实例进行HTTP调用",
     "arguments": [],
-    "line": 153,
     "fileName": "src/main/java/org/zstack/premium/externalservice/prometheus/MultiNodePrometheus.java"
   }
 ]

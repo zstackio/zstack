@@ -4,7 +4,6 @@
     "en_US": "cannot delete disaster recovery license",
     "zh_CN": "",
     "arguments": [],
-    "line": 39,
     "fileName": "src/main/java/org/zstack/zsv/ZsvApiInterceptor.java"
   },
   {
@@ -14,7 +13,6 @@
     "arguments": [
       "ip"
     ],
-    "line": 70,
     "fileName": "src/main/java/org/zstack/zsv/ZsvApiInterceptor.java"
   },
   {
@@ -25,7 +23,6 @@
       "volume.getUuid()",
       "volume.getLastVmInstanceUuid()"
     ],
-    "line": 285,
     "fileName": "src/main/java/org/zstack/zsv/ZsvManagerImpl.java"
   },
   {
@@ -35,7 +32,6 @@
     "arguments": [
       "volume.getUuid()"
     ],
-    "line": 334,
     "fileName": "src/main/java/org/zstack/zsv/ZsvManagerImpl.java"
   },
   {
@@ -43,7 +39,6 @@
     "en_US": "detach sharable volume or lun device before operating snapshot group",
     "zh_CN": "",
     "arguments": [],
-    "line": 384,
     "fileName": "src/main/java/org/zstack/zsv/ZsvManagerImpl.java"
   },
   {
@@ -53,7 +48,6 @@
     "arguments": [
       "JSONObjectUtil.toJsonString(addition)"
     ],
-    "line": 46,
     "fileName": "src/main/java/org/zstack/zsv/license/ZsvLicenseFactory.java"
   },
   {
@@ -64,7 +58,6 @@
       "host.getIp()",
       "host.getPort()"
     ],
-    "line": 95,
     "fileName": "src/main/java/org/zstack/zsv/storage/SSHPasswordlessConfigurator.java"
   },
   {
@@ -75,7 +68,6 @@
       "host.getIp()",
       "host.getPort()"
     ],
-    "line": 102,
     "fileName": "src/main/java/org/zstack/zsv/storage/SSHPasswordlessConfigurator.java"
   },
   {
@@ -86,7 +78,6 @@
       "host.getIp()",
       "host.getPort()"
     ],
-    "line": 115,
     "fileName": "src/main/java/org/zstack/zsv/storage/SSHPasswordlessConfigurator.java"
   },
   {
@@ -96,7 +87,6 @@
     "arguments": [
       "managementNodeUuid"
     ],
-    "line": 181,
     "fileName": "src/main/java/org/zstack/zsv/storage/ZsvStorageManager.java"
   },
   {
@@ -106,7 +96,6 @@
     "arguments": [
       "managementNodeUuid"
     ],
-    "line": 188,
     "fileName": "src/main/java/org/zstack/zsv/storage/ZsvStorageManager.java"
   },
   {
@@ -116,7 +105,13 @@
     "arguments": [
       "managementNodeUuid"
     ],
-    "line": 195,
+    "fileName": "src/main/java/org/zstack/zsv/storage/ZsvStorageManager.java"
+  },
+  {
+    "raw": "failed to check if management node is also compute node",
+    "en_US": "failed to check if management node is also compute node",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/zsv/storage/ZsvStorageManager.java"
   }
 ]

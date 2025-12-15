@@ -6,7 +6,6 @@
     "arguments": [
       "loginContext.getUsername()"
     ],
-    "line": 52,
     "fileName": "src/main/java/org/zstack/iam2/IAM2LoginBackend.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "oldSession.getUserUuid()"
     ],
-    "line": 343,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
@@ -26,7 +24,6 @@
     "arguments": [
       "results.size()"
     ],
-    "line": 994,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
@@ -36,7 +33,6 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 1011,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
@@ -44,7 +40,6 @@
     "en_US": "name cannot be empty. ",
     "zh_CN": "名称不能为空",
     "arguments": [],
-    "line": 1022,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
@@ -52,7 +47,6 @@
     "en_US": "username cannot be empty. ",
     "zh_CN": "用户名不能为空",
     "arguments": [],
-    "line": 1026,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
@@ -62,7 +56,6 @@
     "arguments": [
       "cmsg.username.length()"
     ],
-    "line": 1028,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
@@ -72,7 +65,6 @@
     "arguments": [
       "cmsg.getUsername()"
     ],
-    "line": 1030,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
@@ -80,7 +72,6 @@
     "en_US": "password cannot be empty. ",
     "zh_CN": "密码不能为空",
     "arguments": [],
-    "line": 1034,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
@@ -90,7 +81,6 @@
     "arguments": [
       "cmsg.password.length()"
     ],
-    "line": 1036,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
@@ -98,7 +88,6 @@
     "en_US": "email format does not match. ",
     "zh_CN": "邮箱格式错误",
     "arguments": [],
-    "line": 1044,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
@@ -108,7 +97,6 @@
     "arguments": [
       "noMatchNames"
     ],
-    "line": 1100,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
@@ -118,7 +106,6 @@
     "arguments": [
       "repeatNames"
     ],
-    "line": 1108,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
@@ -128,7 +115,6 @@
     "arguments": [
       "repeatNames"
     ],
-    "line": 1116,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
@@ -138,7 +124,6 @@
     "arguments": [
       "noMatchName"
     ],
-    "line": 1146,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
@@ -146,7 +131,6 @@
     "en_US": "fail to build VirtualID info from file. ",
     "zh_CN": "不能解析文件内容",
     "arguments": [],
-    "line": 1340,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
@@ -157,7 +141,6 @@
       "resourceUuid",
       "projectUuid"
     ],
-    "line": 1469,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
@@ -168,7 +151,6 @@
       "puuid",
       "self.getUuid()"
     ],
-    "line": 688,
     "fileName": "src/main/java/org/zstack/iam2/IAM2OrganizationBase.java"
   },
   {
@@ -181,7 +163,6 @@
       "self.getState()",
       "msg.getClass()"
     ],
-    "line": 130,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ProjectBase.java"
   },
   {
@@ -189,7 +170,6 @@
     "en_US": "can not parse the cron expression",
     "zh_CN": "无法分析Cron表达式",
     "arguments": [],
-    "line": 910,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ProjectBase.java"
   },
   {
@@ -199,7 +179,6 @@
     "arguments": [
       "loginContext.getUsername()"
     ],
-    "line": 43,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ProjectLoginBackend.java"
   },
   {
@@ -210,7 +189,6 @@
       "puuid",
       "loginContext.getUsername()"
     ],
-    "line": 51,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ProjectLoginBackend.java"
   },
   {
@@ -220,7 +198,6 @@
     "arguments": [
       "loginContext.getOperatorSession().getUserUuid()"
     ],
-    "line": 57,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ProjectLoginBackend.java"
   },
   {
@@ -230,7 +207,6 @@
     "arguments": [
       "vid.getName()"
     ],
-    "line": 62,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ProjectLoginBackend.java"
   },
   {
@@ -241,7 +217,6 @@
       "vid.getName()",
       "loginContext.getUsername()"
     ],
-    "line": 72,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ProjectLoginBackend.java"
   },
   {
@@ -254,7 +229,6 @@
       "updatedValue",
       "organizationUuid"
     ],
-    "line": 75,
     "fileName": "src/main/java/org/zstack/iam2/IAM2QuotaUpdateChecker.java"
   },
   {
@@ -262,7 +236,6 @@
     "en_US": "only admin and the virtual ID itself can do the update",
     "zh_CN": "只有admin和virtual ID本身可以执行更新操作",
     "arguments": [],
-    "line": 650,
     "fileName": "src/main/java/org/zstack/iam2/IAM2VirtualIDBase.java"
   },
   {
@@ -272,7 +245,6 @@
     "arguments": [
       "msg.getVirtualIDUuid()"
     ],
-    "line": 654,
     "fileName": "src/main/java/org/zstack/iam2/IAM2VirtualIDBase.java"
   },
   {
@@ -282,7 +254,6 @@
     "arguments": [
       "attr.getValue()"
     ],
-    "line": 50,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -292,7 +263,6 @@
     "arguments": [
       "attr.getName()"
     ],
-    "line": 54,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -303,7 +273,6 @@
       "attr.getName()",
       "attr.getValue()"
     ],
-    "line": 57,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -316,7 +285,6 @@
       "projectUsed",
       "msg.getValue()"
     ],
-    "line": 173,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -326,7 +294,6 @@
     "arguments": [
       "msg.getLoginExpired()"
     ],
-    "line": 186,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -336,7 +303,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 192,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -346,7 +312,6 @@
     "arguments": [
       "msg.getName()"
     ],
-    "line": 201,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -354,7 +319,6 @@
     "en_US": "admin is a reserved name, please use another name",
     "zh_CN": "admin是保留名称，请使用其他名称",
     "arguments": [],
-    "line": 265,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -364,7 +328,6 @@
     "arguments": [
       "msg.getName()"
     ],
-    "line": 273,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -374,7 +337,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 281,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -384,7 +346,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 289,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -394,7 +355,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 297,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -404,7 +364,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 305,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -412,7 +371,6 @@
     "en_US": "retire policy must be deleted before pull the project out of Retired state",
     "zh_CN": "在将项目从已停用状态拉出之前，必须删除停用策略",
     "arguments": [],
-    "line": 325,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -422,7 +380,6 @@
     "arguments": [
       "state"
     ],
-    "line": 337,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -432,7 +389,6 @@
     "arguments": [
       "name"
     ],
-    "line": 347,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -442,7 +398,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 371,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -452,7 +407,6 @@
     "arguments": [
       "msg.getName()"
     ],
-    "line": 400,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -462,7 +416,6 @@
     "arguments": [
       "msg.getName()"
     ],
-    "line": 418,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -472,7 +425,6 @@
     "arguments": [
       "msg.getName()"
     ],
-    "line": 426,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -482,7 +434,6 @@
     "arguments": [
       "msg.getOrganizationUuid()"
     ],
-    "line": 432,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -493,7 +444,6 @@
       "refVO.getProjectUuid()",
       "refVO.getOrganizationUuid()"
     ],
-    "line": 515,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -503,7 +453,6 @@
     "arguments": [
       "msg.getProjectUuid()"
     ],
-    "line": 557,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -513,7 +462,6 @@
     "arguments": [
       "uuids"
     ],
-    "line": 568,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -524,7 +472,6 @@
       "msg.getVirtualIDUuid()",
       "msg.getProjectUuid()"
     ],
-    "line": 582,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -534,7 +481,6 @@
     "arguments": [
       "IAM2RolePolicyStatementHelper.PROJECT_ADMIN_ROLE_NAME"
     ],
-    "line": 652,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -544,7 +490,6 @@
     "arguments": [
       "staleVirtualIDs"
     ],
-    "line": 679,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
@@ -552,7 +497,6 @@
     "en_US": "attribute[name:{0}] is a system attribute that cannot be updated",
     "zh_CN": "属性[名称：{0}]是一个系统属性，无法被更新",
     "arguments": [],
-    "line": 69,
     "fileName": "src/main/java/org/zstack/iam2/attribute/SystemAttributes.java"
   },
   {
@@ -562,7 +506,6 @@
     "arguments": [
       "inv.getValue()"
     ],
-    "line": 38,
     "fileName": "src/main/java/org/zstack/iam2/attribute/organization/OrganizationSupervisor.java"
   },
   {
@@ -573,7 +516,6 @@
       "inv.getValue()",
       "((IAM2OrganizationAttributeInventory) inv).getOrganizationUuid()"
     ],
-    "line": 45,
     "fileName": "src/main/java/org/zstack/iam2/attribute/organization/OrganizationSupervisor.java"
   },
   {
@@ -583,7 +525,6 @@
     "arguments": [
       "oinv.getOrganizationUuid()"
     ],
-    "line": 50,
     "fileName": "src/main/java/org/zstack/iam2/attribute/organization/OrganizationSupervisor.java"
   },
   {
@@ -594,7 +535,6 @@
       "pinv.getUuid()",
       "pinv.getName()"
     ],
-    "line": 58,
     "fileName": "src/main/java/org/zstack/iam2/attribute/project/LoginExpired.java"
   },
   {
@@ -605,7 +545,6 @@
       "projectUuid",
       "ProjectState.Enabled.toString()"
     ],
-    "line": 109,
     "fileName": "src/main/java/org/zstack/iam2/attribute/project/LoginExpired.java"
   },
   {
@@ -616,7 +555,6 @@
       "pinv.getUuid()",
       "pinv.getName()"
     ],
-    "line": 65,
     "fileName": "src/main/java/org/zstack/iam2/attribute/project/Retire.java"
   },
   {
@@ -624,7 +562,6 @@
     "en_US": "invalid value, no \u0027at\u0027, \u0027after\u0027 or \u0027exceed\u0027 found",
     "zh_CN": "无效的值，找不到关键字no \u0027at\u0027, \u0027after\u0027 or \u0027exceed\u0027",
     "arguments": [],
-    "line": 53,
     "fileName": "src/main/java/org/zstack/iam2/attribute/project/RetirePolicy.java"
   },
   {
@@ -634,7 +571,6 @@
     "arguments": [
       "value"
     ],
-    "line": 58,
     "fileName": "src/main/java/org/zstack/iam2/attribute/project/RetirePolicy.java"
   },
   {
@@ -645,7 +581,6 @@
       "ss[0]",
       "Arrays.asList(Means.values()).toString()"
     ],
-    "line": 64,
     "fileName": "src/main/java/org/zstack/iam2/attribute/project/RetirePolicy.java"
   },
   {
@@ -655,7 +590,6 @@
     "arguments": [
       "policyValue"
     ],
-    "line": 78,
     "fileName": "src/main/java/org/zstack/iam2/attribute/project/RetirePolicy.java"
   },
   {
@@ -665,7 +599,6 @@
     "arguments": [
       "policyValue"
     ],
-    "line": 87,
     "fileName": "src/main/java/org/zstack/iam2/attribute/project/RetirePolicy.java"
   },
   {
@@ -676,7 +609,6 @@
       "policyValue",
       "Double.MAX_VALUE"
     ],
-    "line": 94,
     "fileName": "src/main/java/org/zstack/iam2/attribute/project/RetirePolicy.java"
   },
   {
@@ -686,7 +618,6 @@
     "arguments": [
       "policyValue"
     ],
-    "line": 100,
     "fileName": "src/main/java/org/zstack/iam2/attribute/project/RetirePolicy.java"
   },
   {
@@ -697,7 +628,6 @@
       "policyValue",
       "dateFormat.format(new Timestamp(System.currentTimeMillis()))"
     ],
-    "line": 107,
     "fileName": "src/main/java/org/zstack/iam2/attribute/project/RetirePolicy.java"
   },
   {
@@ -707,7 +637,6 @@
     "arguments": [
       "idinv.getVirtualIDUuid()"
     ],
-    "line": 35,
     "fileName": "src/main/java/org/zstack/iam2/attribute/virtualid/IAM2ProjectOperator.java"
   },
   {
@@ -717,7 +646,6 @@
     "arguments": [
       "inv.getValue()"
     ],
-    "line": 36,
     "fileName": "src/main/java/org/zstack/iam2/attribute/virtualid/PlatformAdminZoneRelation.java"
   },
   {
@@ -727,7 +655,6 @@
     "arguments": [
       "inv.getValue()"
     ],
-    "line": 71,
     "fileName": "src/main/java/org/zstack/iam2/attribute/virtualid/ProjectAdmin.java"
   },
   {
@@ -737,7 +664,6 @@
     "arguments": [
       "inv.getValue()"
     ],
-    "line": 83,
     "fileName": "src/main/java/org/zstack/iam2/attribute/virtualid/ProjectAdmin.java"
   },
   {
@@ -747,7 +673,6 @@
     "arguments": [
       "deniedApis"
     ],
-    "line": 133,
     "fileName": "src/main/java/org/zstack/iam2/rbac/IAM2AuthorizationBackend.java"
   },
   {
@@ -755,7 +680,6 @@
     "en_US": "since the project starts the force securityGroup, systemtag is required for VM operation",
     "zh_CN": "由于项目启动了Force SecurityGroup，因此VM操作需要SystemTag",
     "arguments": [],
-    "line": 107,
     "fileName": "src/main/java/org/zstack/iam2/rbac/IAM2OperationTargetAPIRequestChecker.java"
   },
   {
@@ -765,7 +689,6 @@
     "arguments": [
       "session.getAccountUuid()"
     ],
-    "line": 28,
     "fileName": "src/main/java/org/zstack/iam2/rbac/IAM2SessionAPIRequestChecker.java"
   },
   {
@@ -775,7 +698,6 @@
     "arguments": [
       "projectUuid"
     ],
-    "line": 37,
     "fileName": "src/main/java/org/zstack/iam2/rbac/IAM2SessionAPIRequestChecker.java"
   }
 ]

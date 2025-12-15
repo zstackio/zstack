@@ -9,7 +9,6 @@
       "res.getStderr()",
       "res.getExecutionLog()"
     ],
-    "line": 58,
     "fileName": "src/main/java/org/zstack/zops/AbstractHostBackend.java"
   },
   {
@@ -21,7 +20,6 @@
       "hostname",
       "res.getStderr()"
     ],
-    "line": 92,
     "fileName": "src/main/java/org/zstack/zops/AbstractHostBackend.java"
   },
   {
@@ -33,7 +31,6 @@
       "hostname",
       "ex.getMessage()"
     ],
-    "line": 98,
     "fileName": "src/main/java/org/zstack/zops/AbstractHostBackend.java"
   },
   {
@@ -44,7 +41,6 @@
       "hostname",
       "res.getStderr()"
     ],
-    "line": 108,
     "fileName": "src/main/java/org/zstack/zops/AbstractHostBackend.java"
   },
   {
@@ -54,7 +50,6 @@
     "arguments": [
       "res.getStderr()"
     ],
-    "line": 129,
     "fileName": "src/main/java/org/zstack/zops/AbstractHostBackend.java"
   },
   {
@@ -65,7 +60,6 @@
       "hostname",
       "ex.getMessage()"
     ],
-    "line": 182,
     "fileName": "src/main/java/org/zstack/zops/AbstractHostBackend.java"
   },
   {
@@ -77,7 +71,6 @@
       "res.getStderr()",
       "res.getExecutionLog()"
     ],
-    "line": 193,
     "fileName": "src/main/java/org/zstack/zops/AbstractHostBackend.java"
   },
   {
@@ -89,7 +82,6 @@
       "hostname",
       "hostname"
     ],
-    "line": 41,
     "fileName": "src/main/java/org/zstack/zops/ExternalHostBackend.java"
   },
   {
@@ -100,7 +92,6 @@
       "hostname",
       "res.getStderr()"
     ],
-    "line": 133,
     "fileName": "src/main/java/org/zstack/zops/ManagementNodeBackend.java"
   },
   {
@@ -112,7 +103,6 @@
       "hostname",
       "res.getStderr()"
     ],
-    "line": 145,
     "fileName": "src/main/java/org/zstack/zops/ManagementNodeBackend.java"
   },
   {
@@ -122,7 +112,6 @@
     "arguments": [
       "sourceHostname"
     ],
-    "line": 39,
     "fileName": "src/main/java/org/zstack/zops/ZOpsApiInterceptor.java"
   },
   {
@@ -130,7 +119,6 @@
     "en_US": "internal and external chrony servers cannot be null at the same time",
     "zh_CN": "",
     "arguments": [],
-    "line": 46,
     "fileName": "src/main/java/org/zstack/zops/ZOpsApiInterceptor.java"
   },
   {
@@ -140,7 +128,6 @@
     "arguments": [
       "targetHostname"
     ],
-    "line": 58,
     "fileName": "src/main/java/org/zstack/zops/ZOpsApiInterceptor.java"
   },
   {
@@ -150,7 +137,6 @@
     "arguments": [
       "chronyServer"
     ],
-    "line": 215,
     "fileName": "src/main/java/org/zstack/zops/ZOpsManagerImpl.java"
   },
   {
@@ -161,7 +147,6 @@
       "networkReachablePair.getTargetHostname()",
       "networkReachablePair.getSourceHostname()"
     ],
-    "line": 269,
     "fileName": "src/main/java/org/zstack/zops/ZOpsManagerImpl.java"
   },
   {
@@ -169,7 +154,6 @@
     "en_US": "ZStone not support update chrony server online yet!",
     "zh_CN": "",
     "arguments": [],
-    "line": 617,
     "fileName": "src/main/java/org/zstack/zops/ZOpsManagerImpl.java"
   },
   {
@@ -179,7 +163,6 @@
     "arguments": [
       "info.getDetail()"
     ],
-    "line": 635,
     "fileName": "src/main/java/org/zstack/zops/ZOpsManagerImpl.java"
   }
 ]

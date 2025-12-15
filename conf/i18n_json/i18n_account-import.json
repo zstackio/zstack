@@ -6,7 +6,6 @@
     "arguments": [
       "type"
     ],
-    "line": 78,
     "fileName": "src/main/java/org/zstack/identity/imports/AccountImportsManager.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "credentials"
     ],
-    "line": 221,
     "fileName": "src/main/java/org/zstack/identity/imports/source/AbstractAccountSourceBase.java"
   },
   {
@@ -24,7 +22,6 @@
     "en_US": "invalid account spec: accountUuid is null",
     "zh_CN": "",
     "arguments": [],
-    "line": 278,
     "fileName": "src/main/java/org/zstack/identity/imports/source/AbstractAccountSourceBase.java"
   },
   {
@@ -34,7 +31,6 @@
     "arguments": [
       "accountSpec.getAccountUuid()"
     ],
-    "line": 284,
     "fileName": "src/main/java/org/zstack/identity/imports/source/AbstractAccountSourceBase.java"
   },
   {
@@ -44,7 +40,6 @@
     "arguments": [
       "accountUuid"
     ],
-    "line": 310,
     "fileName": "src/main/java/org/zstack/identity/imports/source/AbstractAccountSourceBase.java"
   }
 ]

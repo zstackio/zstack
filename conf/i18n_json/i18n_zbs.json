@@ -6,7 +6,6 @@
     "arguments": [
       "self.getAddr()"
     ],
-    "line": 54,
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsMdsBase.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "self.getAddr()"
     ],
-    "line": 65,
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsMdsBase.java"
   },
   {
@@ -26,7 +24,6 @@
     "arguments": [
       "error"
     ],
-    "line": 142,
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsMdsBase.java"
   },
   {
@@ -36,7 +33,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 329,
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsPrimaryStorageMdsBase.java"
   },
   {
@@ -46,7 +42,6 @@
     "arguments": [
       "v.getProtocol()"
     ],
-    "line": 130,
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsStorageController.java"
   },
   {
@@ -56,7 +51,6 @@
     "arguments": [
       "protocol"
     ],
-    "line": 180,
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsStorageController.java"
   },
   {
@@ -66,7 +60,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 295,
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsStorageController.java"
   },
   {
@@ -76,7 +69,6 @@
     "arguments": [
       "h.getUuid()"
     ],
-    "line": 383,
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsStorageController.java"
   },
   {
@@ -86,7 +78,6 @@
     "arguments": [
       "notConnectedIps"
     ],
-    "line": 474,
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsStorageController.java"
   },
   {
@@ -96,7 +87,6 @@
     "arguments": [
       "aspec.getSize()"
     ],
-    "line": 564,
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsStorageController.java"
   },
   {
@@ -106,7 +96,6 @@
     "arguments": [
       "protocol.name()"
     ],
-    "line": 886,
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsStorageController.java"
   },
   {
@@ -116,7 +105,6 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 914,
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsStorageController.java"
   },
   {
@@ -124,7 +112,6 @@
     "en_US": "ensure at least one MDS is configured",
     "zh_CN": "",
     "arguments": [],
-    "line": 997,
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsStorageController.java"
   },
   {
@@ -134,7 +121,6 @@
     "arguments": [
       "duplicateMdsInfos.stream().map(MdsInfo::getAddr).distinct().collect(Collectors.joining(\", \"))"
     ],
-    "line": 1004,
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsStorageController.java"
   },
   {
@@ -145,7 +131,6 @@
       "mdsAddr",
       "self.getUuid()"
     ],
-    "line": 1137,
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsStorageController.java"
   },
   {
@@ -155,7 +140,15 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 1156,
+    "fileName": "src/main/java/org/zstack/storage/zbs/ZbsStorageController.java"
+  },
+  {
+    "raw": "all MDS cannot execute http call[%s]",
+    "en_US": "all MDS cannot execute http call[{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "path"
+    ],
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsStorageController.java"
   }
 ]

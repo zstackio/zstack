@@ -6,7 +6,6 @@
     "arguments": [
       "typeByResourceUuids.toString()"
     ],
-    "line": 294,
     "fileName": "src/main/java/org/zstack/resourceconfig/ResourceConfig.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "resourceUuid"
     ],
-    "line": 453,
     "fileName": "src/main/java/org/zstack/resourceconfig/ResourceConfig.java"
   },
   {
@@ -27,7 +25,6 @@
       "msg.getCategory()",
       "identity"
     ],
-    "line": 79,
     "fileName": "src/main/java/org/zstack/resourceconfig/ResourceConfigApiInterceptor.java"
   },
   {
@@ -38,7 +35,6 @@
       "msg.getCategory()",
       "identity"
     ],
-    "line": 85,
     "fileName": "src/main/java/org/zstack/resourceconfig/ResourceConfigApiInterceptor.java"
   },
   {
@@ -48,7 +44,6 @@
     "arguments": [
       "msg.getResourceUuid()"
     ],
-    "line": 114,
     "fileName": "src/main/java/org/zstack/resourceconfig/ResourceConfigApiInterceptor.java"
   }
 ]

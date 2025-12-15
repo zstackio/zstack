@@ -6,7 +6,6 @@
     "arguments": [
       "clusterUuid"
     ],
-    "line": 460,
     "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
   },
   {
@@ -17,7 +16,6 @@
       "vol.getVmInstanceUuid()",
       "state"
     ],
-    "line": 1366,
     "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
   },
   {
@@ -29,7 +27,6 @@
       "volume.getVmInstanceUuid()",
       "state"
     ],
-    "line": 1571,
     "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
   },
   {
@@ -39,7 +36,6 @@
     "arguments": [
       "backupStorageUuid"
     ],
-    "line": 2076,
     "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
   },
   {
@@ -49,7 +45,6 @@
     "arguments": [
       "ret.firstAccessHostUuids"
     ],
-    "line": 2138,
     "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
   },
   {
@@ -59,7 +54,6 @@
     "arguments": [
       "rsp.error"
     ],
-    "line": 2198,
     "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
   },
   {
@@ -70,7 +64,6 @@
       "msg.getHostUuid()",
       "msg.getPrimaryStorageUuid()"
     ],
-    "line": 2326,
     "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
   },
   {
@@ -82,7 +75,6 @@
       "msg.getVolume().getInstallPath()",
       "cmd.srcDir"
     ],
-    "line": 2369,
     "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
   },
   {
@@ -90,7 +82,6 @@
     "en_US": "not supported operation",
     "zh_CN": "不支持的操作",
     "arguments": [],
-    "line": 608,
     "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageBase.java"
   },
   {
@@ -101,7 +92,15 @@
       "psUuid",
       "imageFormat"
     ],
-    "line": 1131,
+    "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageBase.java"
+  },
+  {
+    "raw": "host where vm[uuid:%s] locate is not Connected.",
+    "en_US": "host where vm[uuid:{0}] locate is not Connected.",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVmInstanceUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageBase.java"
   },
   {
@@ -111,7 +110,6 @@
     "arguments": [
       "pri.getUuid()"
     ],
-    "line": 308,
     "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageFactory.java"
   },
   {
@@ -121,7 +119,6 @@
     "arguments": [
       "pri.getUuid()"
     ],
-    "line": 328,
     "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageFactory.java"
   },
   {
@@ -129,7 +126,6 @@
     "en_US": " the url contains an invalid folder[/dev or /proc or /sys]",
     "zh_CN": "URL包含了一个无效的目录[/dev or /proc or /sys]",
     "arguments": [],
-    "line": 25,
     "fileName": "src/main/java/org/zstack/storage/primary/smp/SharedMountPointApiInterceptor.java"
   }
 ]

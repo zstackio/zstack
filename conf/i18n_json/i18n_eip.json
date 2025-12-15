@@ -6,7 +6,6 @@
     "arguments": [
       "msg.getVmNicUuid()"
     ],
-    "line": 87,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -14,7 +13,6 @@
     "en_US": "either eipUuid or vipUuid must be set",
     "zh_CN": "eipUuid或vipUuid必须有一个被指定",
     "arguments": [],
-    "line": 93,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -24,7 +22,6 @@
     "arguments": [
       "msg.getEipUuid()"
     ],
-    "line": 99,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -35,7 +32,6 @@
       "guestIpUuid",
       "vmNicUuid"
     ],
-    "line": 137,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -46,7 +42,6 @@
       "msg.getEipUuid()",
       "vmNicUuid"
     ],
-    "line": 148,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -58,7 +53,6 @@
       "EipState.Enabled",
       "state"
     ],
-    "line": 154,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -69,7 +63,6 @@
       "msg.getVmNicUuid()",
       "msg.getEipUuid()"
     ],
-    "line": 184,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -80,7 +73,6 @@
       "msg.getEipUuid()",
       "msg.getVmNicUuid()"
     ],
-    "line": 203,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -90,7 +82,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 216,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -101,7 +92,6 @@
       "vipIp.getIpVersion()",
       "guestIp.getIpVersion()"
     ],
-    "line": 237,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -113,7 +103,6 @@
       "guestRange.getStartIp()",
       "guestRange.getEndIp()"
     ],
-    "line": 246,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -124,7 +113,6 @@
       "msg.getVipUuid()",
       "useForList.toString()"
     ],
-    "line": 278,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -132,7 +120,6 @@
     "en_US": "eip can not be created on system vip",
     "zh_CN": "无法在系统VIP上创建EIP",
     "arguments": [],
-    "line": 283,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -144,7 +131,6 @@
       "VipState.Enabled",
       "vip.getState()"
     ],
-    "line": 287,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -155,7 +141,6 @@
       "msg.getVmNicUuid()",
       "msg.getVipUuid()"
     ],
-    "line": 295,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -165,7 +150,6 @@
     "arguments": [
       "state.toString()"
     ],
-    "line": 324,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -175,7 +159,6 @@
     "arguments": [
       "vmNicUuid"
     ],
-    "line": 338,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -186,7 +169,6 @@
       "eip.getGuestIp()",
       "nicIps"
     ],
-    "line": 1311,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipManagerImpl.java"
   },
   {
@@ -196,7 +178,6 @@
     "arguments": [
       "struct.getEip().getUuid()"
     ],
-    "line": 1458,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipManagerImpl.java"
   }
 ]

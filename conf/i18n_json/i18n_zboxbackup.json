@@ -4,7 +4,6 @@
     "en_US": "please insert zbox to management node.",
     "zh_CN": "请将ZBOX插入管理节点。",
     "arguments": [],
-    "line": 48,
     "fileName": "src/main/java/org/zstack/externalbackup/zbox/BackupDatabaseFlow.java"
   },
   {
@@ -14,7 +13,6 @@
     "arguments": [
       "volumeUuids"
     ],
-    "line": 142,
     "fileName": "src/main/java/org/zstack/externalbackup/zbox/HostZBoxBackupRecoverGC.java"
   },
   {
@@ -24,7 +22,6 @@
     "arguments": [
       "externalBackupUuid"
     ],
-    "line": 34,
     "fileName": "src/main/java/org/zstack/externalbackup/zbox/ZBoxBackupApiInterceptor.java"
   },
   {
@@ -32,7 +29,6 @@
     "en_US": "both hostUuids and backupStorageUuids are empty. you must specify one or both of them.",
     "zh_CN": "Hostuuid和BackupStorageuuid均为空。您必须指定其中一个或两个。",
     "arguments": [],
-    "line": 38,
     "fileName": "src/main/java/org/zstack/externalbackup/zbox/ZBoxBackupApiInterceptor.java"
   },
   {
@@ -40,7 +36,6 @@
     "en_US": "cannot find recover.conf under zbox backup install dir.",
     "zh_CN": "在ZBOX备份安装目录下找不到recover.conf。",
     "arguments": [],
-    "line": 219,
     "fileName": "src/main/java/org/zstack/externalbackup/zbox/ZBoxBackupBase.java"
   },
   {
@@ -48,7 +43,6 @@
     "en_US": "zbox should be inserted to a host first.",
     "zh_CN": "应首先将ZBox插入主机。",
     "arguments": [],
-    "line": 591,
     "fileName": "src/main/java/org/zstack/externalbackup/zbox/ZBoxBackupBase.java"
   },
   {
@@ -56,7 +50,6 @@
     "en_US": "fail to backup database",
     "zh_CN": "无法备份数据库",
     "arguments": [],
-    "line": 741,
     "fileName": "src/main/java/org/zstack/externalbackup/zbox/ZBoxBackupBase.java"
   },
   {
@@ -66,7 +59,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 468,
     "fileName": "src/main/java/org/zstack/externalbackup/zbox/kvm/ZBoxBackupKvmBackend.java"
   }
 ]

@@ -7,7 +7,6 @@
       "rsp.getRetCode()",
       "rsp.getMessage()"
     ],
-    "line": 161,
     "fileName": "src/main/java/org/zstack/expon/ExponApiHelper.java"
   },
   {
@@ -17,7 +16,6 @@
     "arguments": [
       "name"
     ],
-    "line": 341,
     "fileName": "src/main/java/org/zstack/expon/ExponApiHelper.java"
   },
   {
@@ -27,7 +25,6 @@
     "arguments": [
       "v.getProtocol()"
     ],
-    "line": 468,
     "fileName": "src/main/java/org/zstack/expon/ExponStorageController.java"
   },
   {
@@ -37,7 +34,6 @@
     "arguments": [
       "protocol"
     ],
-    "line": 543,
     "fileName": "src/main/java/org/zstack/expon/ExponStorageController.java"
   },
   {
@@ -47,7 +43,6 @@
     "arguments": [
       "protocol"
     ],
-    "line": 580,
     "fileName": "src/main/java/org/zstack/expon/ExponStorageController.java"
   },
   {
@@ -55,7 +50,6 @@
     "en_US": "no pool found",
     "zh_CN": "",
     "arguments": [],
-    "line": 842,
     "fileName": "src/main/java/org/zstack/expon/ExponStorageController.java"
   },
   {
@@ -65,7 +59,6 @@
     "arguments": [
       "v.getSize()"
     ],
-    "line": 1015,
     "fileName": "src/main/java/org/zstack/expon/ExponStorageController.java"
   },
   {
@@ -75,7 +68,6 @@
     "arguments": [
       "protocol.name()"
     ],
-    "line": 1217,
     "fileName": "src/main/java/org/zstack/expon/ExponStorageController.java"
   }
 ]

@@ -6,7 +6,6 @@
     "arguments": [
       "rsp.error"
     ],
-    "line": 371,
     "fileName": "src/main/java/org/zstack/iscsi/kvm/KvmIscsiNodeServer.java"
   }
 ]

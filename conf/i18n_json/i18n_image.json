@@ -4,7 +4,6 @@
     "en_US": "Failed because management node restarted.",
     "zh_CN": "失败，因为管理节点已重新启动。",
     "arguments": [],
-    "line": 201,
     "fileName": "src/main/java/org/zstack/image/AddImageLongJob.java"
   },
   {
@@ -12,7 +11,6 @@
     "en_US": "The aarch64 architecture does not support legacy.",
     "zh_CN": "AARCH64体系结构不支持旧版。",
     "arguments": [],
-    "line": 101,
     "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
   },
   {
@@ -23,7 +21,6 @@
       "vol.getUuid()",
       "vol.getStatus()"
     ],
-    "line": 108,
     "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
   },
   {
@@ -34,7 +31,6 @@
       "vol.getUuid()",
       "vol.getState()"
     ],
-    "line": 112,
     "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
   },
   {
@@ -45,7 +41,6 @@
       "vsvo.getUuid()",
       "vsvo.getStatus()"
     ],
-    "line": 119,
     "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
   },
   {
@@ -56,7 +51,6 @@
       "vsvo.getUuid()",
       "vsvo.getState()"
     ],
-    "line": 123,
     "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
   },
   {
@@ -64,7 +58,6 @@
     "en_US": "ISO cannot be used as system image",
     "zh_CN": "ISO不能被作为一个系统标签",
     "arguments": [],
-    "line": 142,
     "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
   },
   {
@@ -74,7 +67,6 @@
     "arguments": [
       "msg.getFormat()"
     ],
-    "line": 148,
     "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
   },
   {
@@ -84,7 +76,6 @@
     "arguments": [
       "msg.getType()"
     ],
-    "line": 152,
     "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
   },
   {
@@ -96,7 +87,6 @@
       "BackupStorageStatus.Connected",
       "BackupStorageState.Enabled"
     ],
-    "line": 169,
     "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
   },
   {
@@ -104,7 +94,6 @@
     "en_US": "url must starts with \u0027file:///\u0027, \u0027http://\u0027, \u0027https://\u0027， \u0027ftp://\u0027, \u0027sftp://\u0027 or \u0027/\u0027",
     "zh_CN": "url必须以下列格式开头\u0027file:///\u0027, \u0027http://\u0027, \u0027https://\u0027， \u0027ftp://\u0027, \u0027sftp://\u0027 or \u0027/\u0027",
     "arguments": [],
-    "line": 180,
     "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
   },
   {
@@ -114,7 +103,6 @@
     "arguments": [
       "path"
     ],
-    "line": 191,
     "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
   },
   {
@@ -125,7 +113,6 @@
       "path",
       "blackList.value()"
     ],
-    "line": 214,
     "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
   },
   {
@@ -133,7 +120,6 @@
     "en_US": "all images on this server cannot be used",
     "zh_CN": "无法使用此服务器上的所有镜像",
     "arguments": [],
-    "line": 223,
     "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
   },
   {
@@ -143,7 +129,6 @@
     "arguments": [
       "whiteList.value()"
     ],
-    "line": 228,
     "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
   },
   {
@@ -154,7 +139,6 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 239,
     "fileName": "src/main/java/org/zstack/image/ImageBase.java"
   },
   {
@@ -165,7 +149,6 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 249,
     "fileName": "src/main/java/org/zstack/image/ImageBase.java"
   },
   {
@@ -176,7 +159,6 @@
       "msg.getImageUuid()",
       "JSONObjectUtil.toJsonString(errors)"
     ],
-    "line": 433,
     "fileName": "src/main/java/org/zstack/image/ImageBase.java"
   },
   {
@@ -189,7 +171,6 @@
       "ref.getStatus()",
       "bsUuid"
     ],
-    "line": 753,
     "fileName": "src/main/java/org/zstack/image/ImageBase.java"
   },
   {
@@ -200,7 +181,6 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 790,
     "fileName": "src/main/java/org/zstack/image/ImageBase.java"
   },
   {
@@ -212,7 +192,6 @@
       "self.getName()",
       "bsUuid"
     ],
-    "line": 799,
     "fileName": "src/main/java/org/zstack/image/ImageBase.java"
   },
   {
@@ -224,8 +203,16 @@
       "self.getName()",
       "bsUuid"
     ],
-    "line": 804,
     "fileName": "src/main/java/org/zstack/image/ImageBase.java"
+  },
+  {
+    "raw": "Cannot find image[uuid:%s], it may have been deleted",
+    "en_US": "Cannot find image[uuid:{0}], it may have been deleted",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getImageUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
     "raw": "only one bootMode system tag is allowed, but %d got",
@@ -234,7 +221,6 @@
     "arguments": [
       "bootModeCount"
     ],
-    "line": 861,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -245,7 +231,16 @@
       "bootMode",
       "systemTag"
     ],
-    "line": 879,
+    "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
+  },
+  {
+    "raw": "Failed to download image[name:%s] on all backup storage%s.",
+    "en_US": "Failed to download image[name:{0}] on all backup storage{1}.",
+    "zh_CN": "",
+    "arguments": [
+      "inv.getName()",
+      "msgData.getBackupStorageUuids()"
+    ],
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -256,7 +251,6 @@
       "msgData.getBackupStorageUuids()",
       "JSONObjectUtil.toJsonString(errs)"
     ],
-    "line": 1490,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -266,7 +260,6 @@
     "arguments": [
       "imageVO.getUuid()"
     ],
-    "line": 1579,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -276,7 +269,6 @@
     "arguments": [
       "rootVolumeUuid"
     ],
-    "line": 1610,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -284,7 +276,6 @@
     "en_US": "cannot find proper backup storage",
     "zh_CN": "找不到适当的备份存储",
     "arguments": [],
-    "line": 1805,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -295,7 +286,6 @@
       "msgData.getBackupStorageUuids()",
       "JSONObjectUtil.toJsonString(errs)"
     ],
-    "line": 1832,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -306,7 +296,6 @@
       "volumeUuid",
       "msgData.getBackupStorageUuids()"
     ],
-    "line": 1939,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -316,7 +305,6 @@
     "arguments": [
       "imageUuid"
     ],
-    "line": 2014,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -326,7 +314,6 @@
     "arguments": [
       "volumeUuid"
     ],
-    "line": 2020,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -336,7 +323,6 @@
     "arguments": [
       "architecture"
     ],
-    "line": 2063,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -344,7 +330,6 @@
     "en_US": "upload session expired",
     "zh_CN": "上传session失效了",
     "arguments": [],
-    "line": 198,
     "fileName": "src/main/java/org/zstack/image/UploadImageTracker.java"
   }
 ]

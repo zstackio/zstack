@@ -6,7 +6,6 @@
     "arguments": [
       "msg.getPoolName()"
     ],
-    "line": 79,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
@@ -17,7 +16,6 @@
       "msg.getPoolName()",
       "duplicatePoolUuid"
     ],
-    "line": 88,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
@@ -27,7 +25,6 @@
     "arguments": [
       "duplicatePoolUuid"
     ],
-    "line": 93,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
@@ -37,7 +34,6 @@
     "arguments": [
       "existing"
     ],
-    "line": 115,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
@@ -47,7 +43,6 @@
     "arguments": [
       "uri.getHostname()"
     ],
-    "line": 126,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
@@ -55,7 +50,6 @@
     "en_US": "Adding the same Mon node is not allowed",
     "zh_CN": "添加相同的Mon节点不被允许",
     "arguments": [],
-    "line": 152,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
@@ -65,7 +59,6 @@
     "arguments": [
       "msg.getHostname()"
     ],
-    "line": 157,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
@@ -76,7 +69,6 @@
       "monUrl",
       "MON_URL_FORMAT"
     ],
-    "line": 191,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
@@ -84,7 +76,6 @@
     "en_US": "dataVolumePoolName can be null but cannot be an empty string",
     "zh_CN": "DataVolumePoolName可以为空，但不能为空字符串",
     "arguments": [],
-    "line": 198,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
@@ -92,7 +83,6 @@
     "en_US": "rootVolumePoolName can be null but cannot be an empty string",
     "zh_CN": "RootVolumePoolName可以为空，但不能为空字符串",
     "arguments": [],
-    "line": 203,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
@@ -100,7 +90,6 @@
     "en_US": "imageCachePoolName can be null but cannot be an empty string",
     "zh_CN": "ImageCachePoolName可以为空，但不能为空字符串",
     "arguments": [],
-    "line": 208,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
@@ -110,7 +99,6 @@
     "arguments": [
       "existing"
     ],
-    "line": 225,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
@@ -118,7 +106,6 @@
     "en_US": "poolName can be null but cannot be an empty string",
     "zh_CN": "PoolName可以为空，但不能为空字符串",
     "arguments": [],
-    "line": 231,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
@@ -126,7 +113,6 @@
     "en_US": "poolName is required when importImages is true",
     "zh_CN": "当importImages为真的时候必须填写池名",
     "arguments": [],
-    "line": 233,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
@@ -134,7 +120,6 @@
     "en_US": "The problem may be caused by an incorrect user name or password or SSH port or unstable network environment",
     "zh_CN": "该问题可能是由不正确的用户名、密码、SSH端口或者不稳定的网络环境引起的",
     "arguments": [],
-    "line": 72,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephMonBase.java"
   },
   {
@@ -144,7 +129,6 @@
     "arguments": [
       "ret.getError()"
     ],
-    "line": 174,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephMonBase.java"
   },
   {
@@ -154,17 +138,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 758,
-    "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
-  },
-  {
-    "raw": "all monitors cannot execute http call[%s]",
-    "en_US": "all monitors cannot execute http call[{0}]",
-    "zh_CN": "所有的监控节点都无法执行http call[{0}]",
-    "arguments": [
-      "path"
-    ],
-    "line": 766,
     "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
   },
   {
@@ -175,7 +148,15 @@
       "msg.getHostname()",
       "msg.getBackupStorageUuid()"
     ],
-    "line": 864,
+    "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
+  },
+  {
+    "raw": "unable to connect to the ceph backup storage[uuid:%s], failed to connect all ceph monitors.",
+    "en_US": "unable to connect to the ceph backup storage[uuid:{0}], failed to connect all ceph monitors.",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
   },
   {
@@ -187,7 +168,13 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 1735,
+    "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
+  },
+  {
+    "raw": "unable to add mon to ceph backup storage",
+    "en_US": "unable to add mon to ceph backup storage",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
   },
   {
@@ -195,7 +182,6 @@
     "en_US": "ceph backup storage do not support calculate image hash",
     "zh_CN": "",
     "arguments": [],
-    "line": 2016,
     "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
   },
   {
@@ -205,7 +191,6 @@
     "arguments": [
       "getSelf().getBackupStorageUuid()"
     ],
-    "line": 464,
     "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageMonBase.java"
   },
   {
@@ -213,7 +198,6 @@
     "en_US": "delete volume chain error, continue to delete",
     "zh_CN": "",
     "arguments": [],
-    "line": 55,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephDeleteVolumeChainGC.java"
   },
   {
@@ -224,7 +208,6 @@
       "psUuid",
       "bsUuid"
     ],
-    "line": 2748,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
@@ -234,7 +217,15 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 3450,
+    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
+  },
+  {
+    "raw": "all monitors cannot execute http call[%s]",
+    "en_US": "all monitors cannot execute http call[{0}]",
+    "zh_CN": "所有的监控节点都无法执行http call[{0}]",
+    "arguments": [
+      "path"
+    ],
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
@@ -244,7 +235,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 3545,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
@@ -252,7 +242,20 @@
     "en_US": "the fsid returned by mons are mismatching, it seems the mons belong to different ceph clusters:\\n",
     "zh_CN": "监控节点返回的fsid不匹配，似乎监控节点属于不同的ceph集群",
     "arguments": [],
-    "line": 3642,
+    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
+  },
+  {
+    "raw": "unable to connect mons",
+    "en_US": "unable to connect mons",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
+  },
+  {
+    "raw": "unable to add mon to ceph primary storage",
+    "en_US": "unable to add mon to ceph primary storage",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
@@ -262,7 +265,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 4725,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
@@ -270,7 +272,6 @@
     "en_US": "operation error, because: failed to get response",
     "zh_CN": "操作错误，原因：无法获取响应",
     "arguments": [],
-    "line": 4898,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
@@ -278,7 +279,6 @@
     "en_US": "backing up snapshots to backup storage is a depreciated feature, which will be removed in future version",
     "zh_CN": "将快照备份到备份存储是一项过时的功能，在未来版本中将被删除",
     "arguments": [],
-    "line": 4945,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
@@ -289,7 +289,6 @@
       "volume.getUuid()",
       "volume.getRootImageUuid()"
     ],
-    "line": 5117,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
@@ -297,7 +296,6 @@
     "en_US": "allocated url not found",
     "zh_CN": "未找到分配的URL",
     "arguments": [],
-    "line": 5959,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
@@ -307,7 +305,6 @@
     "arguments": [
       "allocatedUrl"
     ],
-    "line": 5964,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
@@ -317,7 +314,6 @@
     "arguments": [
       "vol.getPrimaryStorageUuid()"
     ],
-    "line": 396,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java"
   },
   {
@@ -328,7 +324,6 @@
       "targetCephPoolName",
       "cephPoolName"
     ],
-    "line": 825,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java"
   },
   {
@@ -339,7 +334,6 @@
       "targetCephPoolName",
       "cephPoolName"
     ],
-    "line": 951,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java"
   },
   {
@@ -350,7 +344,6 @@
       "rootVolume.getInstallPath()",
       "reply.getError().getDetails()"
     ],
-    "line": 1200,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java"
   },
   {
@@ -361,7 +354,6 @@
       "msg.getVolumeUuid()",
       "installPath"
     ],
-    "line": 1216,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java"
   },
   {
@@ -371,7 +363,6 @@
     "arguments": [
       "poolName"
     ],
-    "line": 1333,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java"
   },
   {
@@ -382,7 +373,6 @@
       "poolName",
       "volumeSize"
     ],
-    "line": 1343,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java"
   },
   {
@@ -393,7 +383,6 @@
       "psUuid",
       "purpose"
     ],
-    "line": 1391,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java"
   },
   {
@@ -403,7 +392,6 @@
     "arguments": [
       "primaryStorageUuid"
     ],
-    "line": 472,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageMonBase.java"
   },
   {
@@ -413,7 +401,6 @@
     "arguments": [
       "poolUuid"
     ],
-    "line": 203,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/capacity/CephOsdGroupCapacityHelper.java"
   }
 ]
