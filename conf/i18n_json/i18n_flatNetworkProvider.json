@@ -6,7 +6,6 @@
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
-    "line": 73,
     "fileName": "src/main/java/org/zstack/network/service/flat/DhcpApply.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
-    "line": 77,
     "fileName": "src/main/java/org/zstack/network/service/flat/DhcpApply.java"
   },
   {
@@ -24,7 +22,6 @@
     "en_US": "Session/account uuid is not valid.",
     "zh_CN": "会话/帐户uuid无效。",
     "arguments": [],
-    "line": 38,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatApiInterceptor.java"
   },
   {
@@ -35,7 +32,6 @@
       "accountUuid",
       "msg.getL3NetworkUuid()"
     ],
-    "line": 48,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatApiInterceptor.java"
   },
   {
@@ -46,7 +42,6 @@
       "msg.getDhcpv6ServerIp()",
       "dhcpIp"
     ],
-    "line": 314,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -54,7 +49,6 @@
     "en_US": "l3 network uuid cannot be null",
     "zh_CN": "三层网络的uuid不能为空",
     "arguments": [],
-    "line": 897,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -65,7 +59,6 @@
       "inv.getUuid()",
       "destHostUuid"
     ],
-    "line": 1345,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -75,7 +68,6 @@
     "arguments": [
       "IPv6Constants.IPV6_PREFIX_LEN_MIN_DNSMASQ"
     ],
-    "line": 2190,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -85,7 +77,6 @@
     "arguments": [
       "dhcpServerIp"
     ],
-    "line": 2211,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -96,7 +87,6 @@
       "dhcpServerIp",
       "inv.getNetworkCidr()"
     ],
-    "line": 2215,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -106,7 +96,6 @@
     "arguments": [
       "dhcpServerIp"
     ],
-    "line": 2219,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -117,7 +106,6 @@
       "entry.getKey()",
       "inv.getL3NetworkUuid()"
     ],
-    "line": 2230,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -127,7 +115,6 @@
     "arguments": [
       "dhcpServerIp"
     ],
-    "line": 2235,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -137,7 +124,6 @@
     "arguments": [
       "dhcpServerIp"
     ],
-    "line": 2241,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -145,7 +131,6 @@
     "en_US": "could not set dhcp v4 server ip, because there is no ipv4 range",
     "zh_CN": "",
     "arguments": [],
-    "line": 2318,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -156,7 +141,6 @@
       "dhcpIp",
       "ipv4Ranges.get(0).getNetworkCidr()"
     ],
-    "line": 2323,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -164,7 +148,6 @@
     "en_US": "could not set dhcp v6 server ip, because there is no ipv6 range",
     "zh_CN": "",
     "arguments": [],
-    "line": 2329,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -175,7 +158,6 @@
       "dhcpIp",
       "ipv6Ranges.get(0).getNetworkCidr()"
     ],
-    "line": 2334,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -183,7 +165,6 @@
     "en_US": "either [service] or [networkServices] must be provided",
     "zh_CN": "",
     "arguments": [],
-    "line": 2348,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -191,7 +172,6 @@
     "en_US": "could change dhcp server ip, because flat dhcp is not enabled",
     "zh_CN": "",
     "arguments": [],
-    "line": 2355,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -202,7 +182,6 @@
       "msg.getSession().getAccountUuid()",
       "msg.getL3NetworkUuid()"
     ],
-    "line": 2360,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -210,7 +189,6 @@
     "en_US": "could change dhcp v4 server ip, because there is no ipv4 range",
     "zh_CN": "",
     "arguments": [],
-    "line": 2369,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -221,7 +199,6 @@
       "msg.getDhcpServerIp()",
       "ipv4Ranges.get(0).getNetworkCidr()"
     ],
-    "line": 2374,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -229,7 +206,6 @@
     "en_US": "could change dhcp v6 server ip, because there is no ipv6 range",
     "zh_CN": "",
     "arguments": [],
-    "line": 2380,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -240,7 +216,6 @@
       "msg.getDhcpv6ServerIp()",
       "ipv6Ranges.get(0).getNetworkCidr()"
     ],
-    "line": 2385,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -250,7 +225,6 @@
     "arguments": [
       "msg.getDhcpServerIp()"
     ],
-    "line": 2393,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -260,7 +234,6 @@
     "arguments": [
       "msg.getDhcpServerIp()"
     ],
-    "line": 2401,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -270,7 +243,6 @@
     "arguments": [
       "l3VO.getUuid()"
     ],
-    "line": 2678,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -280,7 +252,6 @@
     "arguments": [
       "struct.getL3NetworkUuid()"
     ],
-    "line": 2785,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -290,7 +261,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 2796,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
@@ -300,7 +270,6 @@
     "arguments": [
       "nicUuid"
     ],
-    "line": 78,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatEipApiInterceptor.java"
   },
   {
@@ -308,7 +277,6 @@
     "en_US": "could not attach eip because ipv6 eip can ONLY be attached to flat network",
     "zh_CN": "无法附加EIP，因为IPv6 EIP只能附加到三层网络",
     "arguments": [],
-    "line": 109,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatEipApiInterceptor.java"
   },
   {
@@ -319,7 +287,6 @@
       "version",
       "vmNicUuid"
     ],
-    "line": 165,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatEipApiInterceptor.java"
   },
   {
@@ -330,7 +297,6 @@
       "vmUuid",
       "vm.getState()"
     ],
-    "line": 586,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatEipBackend.java"
   },
   {
@@ -340,7 +306,6 @@
     "arguments": [
       "struct.getHostUuid()"
     ],
-    "line": 389,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatUserdataBackend.java"
   }
 ]

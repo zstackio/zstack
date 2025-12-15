@@ -6,15 +6,27 @@
     "arguments": [
       "loginType"
     ],
-    "line": 34,
     "fileName": "src/main/java/org/zstack/twoFactorAuthentication/TwoFactorAuthenticationAccountBackend.java"
+  },
+  {
+    "raw": "wrong account name or password",
+    "en_US": "wrong account name or password",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/twoFactorAuthentication/TwoFactorAuthenticationManagerImpl.java"
   },
   {
     "raw": "two factor authenticator is not enabled",
     "en_US": "two factor authenticator is not enabled",
     "zh_CN": "双因子认证未启用",
     "arguments": [],
-    "line": 119,
+    "fileName": "src/main/java/org/zstack/twoFactorAuthentication/TwoFactorAuthenticationManagerImpl.java"
+  },
+  {
+    "raw": "additional authentication failed",
+    "en_US": "additional authentication failed",
+    "zh_CN": "附加认证失败",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/twoFactorAuthentication/TwoFactorAuthenticationManagerImpl.java"
   },
   {
@@ -22,7 +34,6 @@
     "en_US": "two factor authentication failed because there is no system tags in msg",
     "zh_CN": "双因素身份验证失败，因为MSG中没有系统标记",
     "arguments": [],
-    "line": 358,
     "fileName": "src/main/java/org/zstack/twoFactorAuthentication/TwoFactorAuthenticationManagerImpl.java"
   },
   {
@@ -30,7 +41,6 @@
     "en_US": "two factor authentication failed because there is no token in msg system tag",
     "zh_CN": "双因素身份验证失败，因为MSG系统标记中没有令牌",
     "arguments": [],
-    "line": 364,
     "fileName": "src/main/java/org/zstack/twoFactorAuthentication/TwoFactorAuthenticationManagerImpl.java"
   },
   {
@@ -41,7 +51,6 @@
       "loginContext.getLoginBackendType()",
       "info.getAccountUuid()"
     ],
-    "line": 371,
     "fileName": "src/main/java/org/zstack/twoFactorAuthentication/TwoFactorAuthenticationManagerImpl.java"
   },
   {
@@ -49,7 +58,6 @@
     "en_US": "failed to verify two factor authentication code",
     "zh_CN": "验证双因素身份验证代码失败",
     "arguments": [],
-    "line": 381,
     "fileName": "src/main/java/org/zstack/twoFactorAuthentication/TwoFactorAuthenticationManagerImpl.java"
   }
 ]

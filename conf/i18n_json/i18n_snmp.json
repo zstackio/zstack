@@ -4,7 +4,6 @@
     "en_US": "Failed to create SNMP agent, because snmp agent already created.",
     "zh_CN": "",
     "arguments": [],
-    "line": 42,
     "fileName": "src/main/java/org/zstack/snmp/SnmpApiInterceptor.java"
   },
   {
@@ -12,7 +11,6 @@
     "en_US": "Failed to stop SNMP agent, please create a snmp agent first.",
     "zh_CN": "",
     "arguments": [],
-    "line": 51,
     "fileName": "src/main/java/org/zstack/snmp/SnmpApiInterceptor.java"
   },
   {
@@ -20,7 +18,6 @@
     "en_US": "Failed to update SNMP agent, please create a snmp agent first.",
     "zh_CN": "",
     "arguments": [],
-    "line": 58,
     "fileName": "src/main/java/org/zstack/snmp/SnmpApiInterceptor.java"
   },
   {
@@ -28,7 +25,6 @@
     "en_US": "Failed to start SNMP agent, please create a snmp agent first.",
     "zh_CN": "",
     "arguments": [],
-    "line": 66,
     "fileName": "src/main/java/org/zstack/snmp/SnmpApiInterceptor.java"
   },
   {
@@ -36,7 +32,6 @@
     "en_US": "can\u0027t get SnmpAgentImpl instance, due to no SnmpAgentVO exist.",
     "zh_CN": "",
     "arguments": [],
-    "line": 66,
     "fileName": "src/main/java/org/zstack/snmp/agent/SnmpAgentInstance.java"
   },
   {
@@ -44,7 +39,6 @@
     "en_US": "more than one SnmpAgentVO exist.",
     "zh_CN": "",
     "arguments": [],
-    "line": 69,
     "fileName": "src/main/java/org/zstack/snmp/agent/SnmpAgentInstance.java"
   },
   {
@@ -56,7 +50,6 @@
       "getSelf().getPort()",
       "e.getMessage()"
     ],
-    "line": 159,
     "fileName": "src/main/java/org/zstack/snmp/agent/SnmpAgentInstance.java"
   },
   {
@@ -66,7 +59,6 @@
     "arguments": [
       "vo.getUuid()"
     ],
-    "line": 215,
     "fileName": "src/main/java/org/zstack/snmp/agent/SnmpAgentInstance.java"
   },
   {
@@ -78,7 +70,6 @@
       "getSelf().getPort()",
       "e.getMessage()"
     ],
-    "line": 340,
     "fileName": "src/main/java/org/zstack/snmp/agent/SnmpAgentInstance.java"
   },
   {
@@ -90,7 +81,6 @@
       "getSelf().getPort()",
       "e.getMessage()"
     ],
-    "line": 427,
     "fileName": "src/main/java/org/zstack/snmp/agent/SnmpAgentInstance.java"
   }
 ]

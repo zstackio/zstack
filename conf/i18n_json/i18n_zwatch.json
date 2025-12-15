@@ -7,7 +7,6 @@
       "paramName",
       "normalizedExpr"
     ],
-    "line": 241,
     "fileName": "src/main/java/org/zstack/zwatch/ZQLReturnWithExtension.java"
   },
   {
@@ -18,7 +17,6 @@
       "expr",
       "e.getMessage()"
     ],
-    "line": 250,
     "fileName": "src/main/java/org/zstack/zwatch/ZQLReturnWithExtension.java"
   },
   {
@@ -26,7 +24,6 @@
     "en_US": "Some messages have expired. The expired messages are not allowed to be modified. The system will automatically clean up the expired messages. Please operate later",
     "zh_CN": "部分消息已过期，过期消息不允许修改。系统会自动清理过期消息，请稍后再操作",
     "arguments": [],
-    "line": 1244,
     "fileName": "src/main/java/org/zstack/zwatch/ZWatchManagerImpl.java"
   },
   {
@@ -37,7 +34,6 @@
       "msg.getActionUuid()",
       "msg.getSubscriptionUuid()"
     ],
-    "line": 138,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -47,7 +43,6 @@
     "arguments": [
       "msg.getKey()"
     ],
-    "line": 163,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -57,7 +52,6 @@
     "arguments": [
       "msg.getKey()"
     ],
-    "line": 168,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -68,7 +62,6 @@
       "ns.getName()",
       "msg.getEventName()"
     ],
-    "line": 188,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -79,7 +72,6 @@
       "msg.getEventName()",
       "l.getKey()"
     ],
-    "line": 196,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -89,7 +81,6 @@
     "arguments": [
       "msg.getNamespace()"
     ],
-    "line": 214,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -99,7 +90,6 @@
     "arguments": [
       "msg.getMetricName()"
     ],
-    "line": 220,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -109,7 +99,6 @@
     "arguments": [
       "msg.getMetricName()"
     ],
-    "line": 223,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -119,7 +108,6 @@
     "arguments": [
       "actionType"
     ],
-    "line": 274,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -130,7 +118,6 @@
       "actionUuid",
       "actionType"
     ],
-    "line": 279,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -142,7 +129,6 @@
       "msg.getActionType()",
       "msg.getAlarmUuid()"
     ],
-    "line": 287,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -155,7 +141,6 @@
       "msg.getValue()",
       "msg.getAlarmUuid()"
     ],
-    "line": 297,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -166,7 +151,6 @@
       "templateVO.getMetricName()",
       "l.getKey()"
     ],
-    "line": 351,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -177,7 +161,6 @@
       "k",
       "l"
     ],
-    "line": 362,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -187,7 +170,6 @@
     "arguments": [
       "msg.getNamespace()"
     ],
-    "line": 391,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -198,7 +180,6 @@
       "msg.getNamespace()",
       "metricName"
     ],
-    "line": 402,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -208,7 +189,6 @@
     "arguments": [
       "metric"
     ],
-    "line": 406,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {
@@ -218,7 +198,6 @@
     "arguments": [
       "msg.getSubscriptionUuid()"
     ],
-    "line": 112,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmManagerImpl.java"
   },
   {
@@ -228,7 +207,6 @@
     "arguments": [
       "msg.getAlarmUuid()"
     ],
-    "line": 121,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmManagerImpl.java"
   },
   {
@@ -238,7 +216,6 @@
     "arguments": [
       "alarmVO.getMetricName()"
     ],
-    "line": 533,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmManagerImpl.java"
   },
   {
@@ -246,7 +223,6 @@
     "en_US": "OK",
     "zh_CN": "监控中",
     "arguments": [],
-    "line": 12,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmStatus.java"
   },
   {
@@ -254,7 +230,6 @@
     "en_US": "Alarm",
     "zh_CN": "已触发",
     "arguments": [],
-    "line": 14,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmStatus.java"
   },
   {
@@ -262,8 +237,16 @@
     "en_US": "InsufficientData",
     "zh_CN": "数据不足",
     "arguments": [],
-    "line": 16,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmStatus.java"
+  },
+  {
+    "raw": "cannot find ActiveAlarmTemplateVO[uuid:%s], it may have been deleted",
+    "en_US": "cannot find ActiveAlarmTemplateVO[uuid:{0}], it may have been deleted",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/zwatch/alarm/activealarm/ActiveAlarmManagerImpl.java"
   },
   {
     "raw": "cannot find the topic[uuid:%s]",
@@ -272,7 +255,6 @@
     "arguments": [
       "actionUuid"
     ],
-    "line": 55,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/sns/SNSActionFactory.java"
   },
   {
@@ -282,7 +264,6 @@
     "arguments": [
       "msg.getAlarmTextTemplateUuid()"
     ],
-    "line": 96,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/sns/SNSActionFactory.java"
   },
   {
@@ -293,7 +274,6 @@
       "sign",
       "sign.length()"
     ],
-    "line": 107,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/sns/SNSTextTemplateApiInterceptor.java"
   },
   {
@@ -304,7 +284,6 @@
       "alarmTemplateCode",
       "alarmTemplateCode.length()"
     ],
-    "line": 112,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/sns/SNSTextTemplateApiInterceptor.java"
   },
   {
@@ -315,7 +294,6 @@
       "eventTemplateCode",
       "eventTemplateCode.length()"
     ],
-    "line": 117,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/sns/SNSTextTemplateApiInterceptor.java"
   },
   {
@@ -325,7 +303,6 @@
     "arguments": [
       "vo.getApplicationPlatformType()"
     ],
-    "line": 198,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/sns/SNSTextTemplateApiInterceptor.java"
   },
   {
@@ -335,7 +312,6 @@
     "arguments": [
       "vo.getApplicationPlatformType()"
     ],
-    "line": 203,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/sns/SNSTextTemplateApiInterceptor.java"
   },
   {
@@ -346,7 +322,6 @@
       "String.join(\",\\n\", errorRecoverParams)",
       "String.join(\",\\n\", AbstractTextTemplate.defaultSupportedParams.get(vo.getType()))"
     ],
-    "line": 212,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/sns/SNSTextTemplateApiInterceptor.java"
   },
   {
@@ -356,7 +331,6 @@
     "arguments": [
       "type"
     ],
-    "line": 31,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/sns/TextTemplateFactory.java"
   },
   {
@@ -366,7 +340,6 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 43,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/sns/TextTemplateFactory.java"
   },
   {
@@ -376,7 +349,6 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 62,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/sns/template/http/HttpTextTemplateFactory.java"
   },
   {
@@ -386,7 +358,6 @@
     "arguments": [
       "DATA_DIR_CAPACITY_ALARM_UUID"
     ],
-    "line": 1298,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/system/SystemAlarmManagerImpl.java"
   },
   {
@@ -397,7 +368,6 @@
       "SNSSystemAlarmTopicManager.SYSTEM_ALARM_TOPIC_UUID",
       "DATA_DIR_CAPACITY_ALARM_UUID"
     ],
-    "line": 1309,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/system/SystemAlarmManagerImpl.java"
   },
   {
@@ -405,7 +375,6 @@
     "en_US": "dataUuid cannot be missed",
     "zh_CN": "不能缺少数据用户ID",
     "arguments": [],
-    "line": 168,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -413,7 +382,6 @@
     "en_US": "dataStartTime and dataEndTime cannot be missed",
     "zh_CN": "DataStartTime和DataEndTime不能丢失",
     "arguments": [],
-    "line": 174,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -424,7 +392,6 @@
       "msg.getDataStartTime()",
       "msg.getDataEndTime()"
     ],
-    "line": 178,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -434,7 +401,6 @@
     "arguments": [
       "Namespace.ZSTACK_NAMESPACE_PREFIX"
     ],
-    "line": 196,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -444,7 +410,6 @@
     "arguments": [
       "MAX_QUERY_PERIOD"
     ],
-    "line": 284,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -455,7 +420,6 @@
       "msg.getMetricName()",
       "msg.getNamespace()"
     ],
-    "line": 303,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -466,7 +430,6 @@
       "msg.getMetricName()",
       "l.getValue()"
     ],
-    "line": 335,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -477,7 +440,6 @@
       "l.getKey()",
       "AuditDataV2.queryableLoginLabels"
     ],
-    "line": 354,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -488,7 +450,6 @@
       "msg.getSession().getAccountUuid()",
       "opt.get().getValue()"
     ],
-    "line": 411,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -496,7 +457,6 @@
     "en_US": "if namespace is all, not support specify metric and labels",
     "zh_CN": "如果命名空间为ALL，则不支持指定规格和标签",
     "arguments": [],
-    "line": 433,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -506,7 +466,6 @@
     "arguments": [
       "msg.getNamespace()"
     ],
-    "line": 442,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -518,7 +477,6 @@
       "labels",
       "label.getKey()"
     ],
-    "line": 465,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -531,7 +489,6 @@
       "start",
       "msg.getStartTime()"
     ],
-    "line": 483,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -539,7 +496,6 @@
     "en_US": "The url format is invalid, the beginning is not http",
     "zh_CN": "URL格式无效，开头不是HTTP",
     "arguments": [],
-    "line": 520,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -549,7 +505,6 @@
     "arguments": [
       "msg.getNamespace()"
     ],
-    "line": 527,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -560,7 +515,6 @@
       "msg.getNamespace()",
       "msg.getMetricName()"
     ],
-    "line": 530,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -568,7 +522,6 @@
     "en_US": "Illegal json string, labelsJsonStr format is invalid",
     "zh_CN": "非法的JSON字符串，labelsjsonstr格式无效",
     "arguments": [],
-    "line": 536,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -578,7 +531,6 @@
     "arguments": [
       "url"
     ],
-    "line": 564,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -589,7 +541,6 @@
       "startTime",
       "endTime"
     ],
-    "line": 574,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -599,7 +550,6 @@
     "arguments": [
       "msg.getAlertDataUuid()"
     ],
-    "line": 585,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -609,7 +559,6 @@
     "arguments": [
       "tableName"
     ],
-    "line": 603,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -620,7 +569,6 @@
       "endTime",
       "startTime"
     ],
-    "line": 609,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -630,7 +578,6 @@
     "arguments": [
       "maxDurationDay"
     ],
-    "line": 614,
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
@@ -638,7 +585,6 @@
     "en_US": "Emergent",
     "zh_CN": "紧急",
     "arguments": [],
-    "line": 15,
     "fileName": "src/main/java/org/zstack/zwatch/datatype/EmergencyLevel.java"
   },
   {
@@ -646,7 +592,6 @@
     "en_US": "Important",
     "zh_CN": "严重",
     "arguments": [],
-    "line": 17,
     "fileName": "src/main/java/org/zstack/zwatch/datatype/EmergencyLevel.java"
   },
   {
@@ -654,7 +599,6 @@
     "en_US": "Normal",
     "zh_CN": "提示",
     "arguments": [],
-    "line": 19,
     "fileName": "src/main/java/org/zstack/zwatch/datatype/EmergencyLevel.java"
   },
   {
@@ -665,7 +609,6 @@
       "expr",
       "e.getMessage()"
     ],
-    "line": 106,
     "fileName": "src/main/java/org/zstack/zwatch/datatype/Function.java"
   },
   {
@@ -675,7 +618,6 @@
     "arguments": [
       "expr"
     ],
-    "line": 110,
     "fileName": "src/main/java/org/zstack/zwatch/datatype/Function.java"
   },
   {
@@ -685,7 +627,6 @@
     "arguments": [
       "str"
     ],
-    "line": 66,
     "fileName": "src/main/java/org/zstack/zwatch/datatype/ValueCondition.java"
   },
   {
@@ -695,7 +636,6 @@
     "arguments": [
       "str"
     ],
-    "line": 73,
     "fileName": "src/main/java/org/zstack/zwatch/datatype/ValueCondition.java"
   },
   {
@@ -705,7 +645,6 @@
     "arguments": [
       "JSONObjectUtil.toJsonString(this)"
     ],
-    "line": 86,
     "fileName": "src/main/java/org/zstack/zwatch/datatype/ValueCondition.java"
   },
   {
@@ -715,7 +654,6 @@
     "arguments": [
       "JSONObjectUtil.toJsonString(this)"
     ],
-    "line": 89,
     "fileName": "src/main/java/org/zstack/zwatch/datatype/ValueCondition.java"
   },
   {
@@ -725,7 +663,6 @@
     "arguments": [
       "JSONObjectUtil.toJsonString(this)"
     ],
-    "line": 92,
     "fileName": "src/main/java/org/zstack/zwatch/datatype/ValueCondition.java"
   },
   {
@@ -736,7 +673,6 @@
       "value",
       "name"
     ],
-    "line": 30,
     "fileName": "src/main/java/org/zstack/zwatch/function/ArgumentChecker.java"
   },
   {
@@ -744,7 +680,6 @@
     "en_US": "unknown arguments",
     "zh_CN": "未知参数",
     "arguments": [],
-    "line": 24,
     "fileName": "src/main/java/org/zstack/zwatch/function/ExtremumFunction.java"
   },
   {
@@ -752,7 +687,6 @@
     "en_US": "missing required argument",
     "zh_CN": "缺少必需的参数",
     "arguments": [],
-    "line": 30,
     "fileName": "src/main/java/org/zstack/zwatch/function/ExtremumFunction.java"
   },
   {
@@ -762,7 +696,6 @@
     "arguments": [
       "name"
     ],
-    "line": 88,
     "fileName": "src/main/java/org/zstack/zwatch/function/MetricFunction.java"
   },
   {
@@ -772,7 +705,6 @@
     "arguments": [
       "k"
     ],
-    "line": 101,
     "fileName": "src/main/java/org/zstack/zwatch/function/MetricFunction.java"
   },
   {
@@ -782,7 +714,6 @@
     "arguments": [
       "func.getName()"
     ],
-    "line": 116,
     "fileName": "src/main/java/org/zstack/zwatch/function/MetricFunction.java"
   },
   {
@@ -792,7 +723,6 @@
     "arguments": [
       "v"
     ],
-    "line": 19,
     "fileName": "src/main/java/org/zstack/zwatch/function/PaginationFunction.java"
   },
   {
@@ -802,7 +732,6 @@
     "arguments": [
       "v"
     ],
-    "line": 29,
     "fileName": "src/main/java/org/zstack/zwatch/function/PaginationFunction.java"
   },
   {
@@ -812,7 +741,6 @@
     "arguments": [
       "v"
     ],
-    "line": 32,
     "fileName": "src/main/java/org/zstack/zwatch/function/PaginationFunction.java"
   },
   {
@@ -822,7 +750,6 @@
     "arguments": [
       "arg.name"
     ],
-    "line": 42,
     "fileName": "src/main/java/org/zstack/zwatch/function/SortFunction.java"
   },
   {
@@ -833,7 +760,6 @@
       "label.getKey()",
       "nameSpaceLabelList"
     ],
-    "line": 730,
     "fileName": "src/main/java/org/zstack/zwatch/migratedb/MigrateDBEventDatabaseDriver.java"
   },
   {
@@ -844,7 +770,6 @@
       "name",
       "namespace"
     ],
-    "line": 801,
     "fileName": "src/main/java/org/zstack/zwatch/migratedb/MigrateDBEventDatabaseDriver.java"
   },
   {
@@ -854,7 +779,6 @@
     "arguments": [
       "name"
     ],
-    "line": 810,
     "fileName": "src/main/java/org/zstack/zwatch/migratedb/MigrateDBEventDatabaseDriver.java"
   },
   {
@@ -864,7 +788,6 @@
     "arguments": [
       "msg.getInstanceUuid()"
     ],
-    "line": 55,
     "fileName": "src/main/java/org/zstack/zwatch/monitorgroup/MonitorGroupApiInterceptor.java"
   },
   {
@@ -874,7 +797,6 @@
     "arguments": [
       "msg.getInstanceUuid()"
     ],
-    "line": 66,
     "fileName": "src/main/java/org/zstack/zwatch/monitorgroup/MonitorGroupApiInterceptor.java"
   },
   {
@@ -884,7 +806,6 @@
     "arguments": [
       "msg.getGroupUuid()"
     ],
-    "line": 76,
     "fileName": "src/main/java/org/zstack/zwatch/monitorgroup/MonitorGroupApiInterceptor.java"
   },
   {
@@ -892,7 +813,6 @@
     "en_US": "The instance in the group has reached the maximum limit",
     "zh_CN": "组中的实例已达到最大限制",
     "arguments": [],
-    "line": 335,
     "fileName": "src/main/java/org/zstack/zwatch/monitorgroup/MonitorGroupBase.java"
   },
   {
@@ -900,7 +820,6 @@
     "en_US": "The rule in the template has reached the maximum limit",
     "zh_CN": "模板中的规则已达到最大限制",
     "arguments": [],
-    "line": 617,
     "fileName": "src/main/java/org/zstack/zwatch/monitorgroup/MonitorGroupManagerImpl.java"
   },
   {
@@ -910,7 +829,6 @@
     "arguments": [
       "qo.getNamespaceName()"
     ],
-    "line": 49,
     "fileName": "src/main/java/org/zstack/zwatch/mysql/MysqlDatabaseDriver.java"
   },
   {
@@ -921,7 +839,6 @@
       "getName()",
       "queryObject.getMetricName()"
     ],
-    "line": 48,
     "fileName": "src/main/java/org/zstack/zwatch/namespace/AbstractNamespace.java"
   },
   {
@@ -933,7 +850,6 @@
       "getName()",
       "l.getKey()"
     ],
-    "line": 54,
     "fileName": "src/main/java/org/zstack/zwatch/namespace/AbstractNamespace.java"
   },
   {
@@ -941,7 +857,6 @@
     "en_US": "error happened but reason not specified",
     "zh_CN": "发生了意想不到的错误",
     "arguments": [],
-    "line": 803,
     "fileName": "src/main/java/org/zstack/zwatch/namespace/NamespaceEventManagerImpl.java"
   },
   {
@@ -952,7 +867,6 @@
       "d",
       "Platform.getManagementServerIp()"
     ],
-    "line": 32,
     "fileName": "src/main/java/org/zstack/zwatch/namespace/SystemNamespace.java"
   },
   {
@@ -962,7 +876,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 131,
     "fileName": "src/main/java/org/zstack/zwatch/prometheus/ImageStoreScrape.java"
   },
   {
@@ -970,7 +883,6 @@
     "en_US": "GreaterThanOrEqualTo",
     "zh_CN": "大于等于",
     "arguments": [],
-    "line": 29,
     "fileName": "src/main/java/org/zstack/zwatch/ruleengine/ComparisonOperator.java"
   },
   {
@@ -978,7 +890,6 @@
     "en_US": "GreaterThan",
     "zh_CN": "大于",
     "arguments": [],
-    "line": 31,
     "fileName": "src/main/java/org/zstack/zwatch/ruleengine/ComparisonOperator.java"
   },
   {
@@ -986,7 +897,6 @@
     "en_US": "LessThan",
     "zh_CN": "小于",
     "arguments": [],
-    "line": 33,
     "fileName": "src/main/java/org/zstack/zwatch/ruleengine/ComparisonOperator.java"
   },
   {
@@ -994,7 +904,6 @@
     "en_US": "LessThanOrEqualTo",
     "zh_CN": "小于等于",
     "arguments": [],
-    "line": 35,
     "fileName": "src/main/java/org/zstack/zwatch/ruleengine/ComparisonOperator.java"
   },
   {
@@ -1004,7 +913,6 @@
     "arguments": [
       "voClassSimpleName"
     ],
-    "line": 74,
     "fileName": "src/main/java/org/zstack/zwatch/utils/ResourceVOToNamespaceMappingUtils.java"
   }
 ]

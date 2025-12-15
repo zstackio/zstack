@@ -7,7 +7,6 @@
       "HostAllocatorConstant.MAX_INSTANCE_PER_HOST_HOST_ALLOCATOR_STRATEGY_TYPE",
       "HostAllocatorSystemTags.MAX_INSTANCE_PER_HOST_TOKEN"
     ],
-    "line": 58,
     "fileName": "src/main/java/org/zstack/pluginpremium/compute/allocator/MaxInstancePerHostHostAllocatorStrategyFactory.java"
   },
   {
@@ -17,7 +16,6 @@
     "arguments": [
       "HostAllocatorSystemTags.MAX_INSTANCE_PER_HOST_TOKEN"
     ],
-    "line": 76,
     "fileName": "src/main/java/org/zstack/pluginpremium/compute/allocator/MaxInstancePerHostHostAllocatorStrategyFactory.java"
   },
   {
@@ -28,7 +26,6 @@
       "HostAllocatorSystemTags.MINIMUM_MEMORY_USAGE_HOST_ALLOCATOR_STRATEGY_MODE_TOKEN",
       "modes"
     ],
-    "line": 58,
     "fileName": "src/main/java/org/zstack/pluginpremium/compute/allocator/MinimumMemoryUsageHostAllocatorStrategyFactory.java"
   }
 ]

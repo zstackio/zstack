@@ -7,7 +7,6 @@
       "zbox.getName()",
       "zbox.getStatus()"
     ],
-    "line": 72,
     "fileName": "src/main/java/org/zstack/zbox/ZBoxApiInterceptor.java"
   },
   {
@@ -17,7 +16,6 @@
     "arguments": [
       "msg.getZBoxUuid()"
     ],
-    "line": 122,
     "fileName": "src/main/java/org/zstack/zbox/ZBoxBase.java"
   },
   {
@@ -27,7 +25,6 @@
     "arguments": [
       "msg.getZBoxUuid()"
     ],
-    "line": 151,
     "fileName": "src/main/java/org/zstack/zbox/ZBoxBase.java"
   },
   {
@@ -38,7 +35,6 @@
       "self.getMountPath()",
       "msg.getInstallPath()"
     ],
-    "line": 219,
     "fileName": "src/main/java/org/zstack/zbox/ZBoxBase.java"
   },
   {
@@ -49,7 +45,6 @@
       "self.getName()",
       "self.getStatus()"
     ],
-    "line": 285,
     "fileName": "src/main/java/org/zstack/zbox/ZBoxBase.java"
   },
   {
@@ -59,7 +54,6 @@
     "arguments": [
       "zbox.getUuid()"
     ],
-    "line": 57,
     "fileName": "src/main/java/org/zstack/zbox/ZBoxFactory.java"
   }
 ]

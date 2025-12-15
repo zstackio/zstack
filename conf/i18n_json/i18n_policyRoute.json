@@ -4,7 +4,6 @@
     "en_US": "default route network can not be changed when system policy route is enabled",
     "zh_CN": "启用系统策略路由时，无法更改默认路由网络",
     "arguments": [],
-    "line": 93,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -14,7 +13,6 @@
     "arguments": [
       "msg.getL3Uuid()"
     ],
-    "line": 132,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -24,7 +22,6 @@
     "arguments": [
       "vRouteUuid"
     ],
-    "line": 139,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -35,7 +32,6 @@
       "msg.getvRouterUuid()",
       "msg.getName()"
     ],
-    "line": 192,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -45,7 +41,6 @@
     "arguments": [
       "msg.getDestinationCidr()"
     ],
-    "line": 198,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -55,7 +50,6 @@
     "arguments": [
       "msg.getNextHopIp()"
     ],
-    "line": 202,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -65,7 +59,6 @@
     "arguments": [
       "ip"
     ],
-    "line": 237,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -75,7 +68,6 @@
     "arguments": [
       "protocol"
     ],
-    "line": 245,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -86,7 +78,6 @@
       "msg.getRuleSetUuid()",
       "msg.getRuleNumber()"
     ],
-    "line": 254,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -94,7 +85,6 @@
     "en_US": "only tcp or udp protocol can use port",
     "zh_CN": "只有TCP或UDP协议可以使用端口",
     "arguments": [],
-    "line": 272,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -102,7 +92,6 @@
     "en_US": "can not find related vRouter",
     "zh_CN": "找不到相关的VRouter",
     "arguments": [],
-    "line": 278,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -110,7 +99,6 @@
     "en_US": "can not update system policy route set",
     "zh_CN": "无法更新系统策略路由集",
     "arguments": [],
-    "line": 283,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -118,7 +106,6 @@
     "en_US": "can not update system policy route table",
     "zh_CN": "无法更新系统策略路由表",
     "arguments": [],
-    "line": 288,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -129,7 +116,6 @@
       "msg.getvRouterUuid()",
       "msg.getNumber()"
     ],
-    "line": 310,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -139,7 +125,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 360,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -147,7 +132,6 @@
     "en_US": "can not delete system policy route set",
     "zh_CN": "无法删除系统策略路由集",
     "arguments": [],
-    "line": 371,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -155,7 +139,6 @@
     "en_US": "can not find related virtual router",
     "zh_CN": "找不到相关的虚拟路由器",
     "arguments": [],
-    "line": 382,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -163,7 +146,6 @@
     "en_US": "can not delete system policy route table",
     "zh_CN": "无法删除系统策略路由表",
     "arguments": [],
-    "line": 387,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteApiInterceptor.java"
   },
   {
@@ -173,7 +155,6 @@
     "arguments": [
       "vrouterVmUuid"
     ],
-    "line": 959,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteManagerImpl.java"
   },
   {
@@ -183,7 +164,6 @@
     "arguments": [
       "vo.getApplianceVmType()"
     ],
-    "line": 964,
     "fileName": "src/main/java/org/zstack/policyRoute/PolicyRouteManagerImpl.java"
   },
   {
@@ -193,7 +173,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 117,
     "fileName": "src/main/java/org/zstack/policyRoute/vyos/VyosPolicyRouteBackend.java"
   }
 ]

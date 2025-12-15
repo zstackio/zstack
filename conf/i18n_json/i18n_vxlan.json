@@ -7,8 +7,28 @@
       "inv.getUuid()",
       "destHostUuid"
     ],
-    "line": 232,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetwork/VxlanNetworkFactory.java"
+  },
+  {
+    "raw": "cannot allocate vni[%s] in l2Network[uuid:%s], out of vni range",
+    "en_US": "cannot allocate vni[{0}] in l2Network[uuid:{1}], out of vni range",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getRequiredVni()",
+      "msg.getL2NetworkUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/AbstractVniAllocatorStrategy.java"
+  },
+  {
+    "raw": "cannot allocate vni[%s] in l2Network[uuid:%s], duplicate with l2Network[uuid:%s]",
+    "en_US": "cannot allocate vni[{0}] in l2Network[uuid:{1}], duplicate with l2Network[uuid:{2}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getRequiredVni()",
+      "msg.getL2NetworkUuid()",
+      "duplicate"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/AbstractVniAllocatorStrategy.java"
   },
   {
     "raw": "find multiple vtep ips[%s] for one host[uuid:%s], need to delete host and add again",
@@ -18,7 +38,6 @@
       "vtepIps",
       "hostUuid"
     ],
-    "line": 76,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/KVMRealizeL2VxlanNetworkBackend.java"
   },
   {
@@ -29,7 +48,6 @@
       "hostUuid",
       "l2vxlan.getPoolUuid()"
     ],
-    "line": 81,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/KVMRealizeL2VxlanNetworkBackend.java"
   },
   {
@@ -44,7 +62,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 141,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/KVMRealizeL2VxlanNetworkBackend.java"
   },
   {
@@ -58,7 +75,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 199,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/KVMRealizeL2VxlanNetworkBackend.java"
   },
   {
@@ -72,7 +88,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 256,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/KVMRealizeL2VxlanNetworkBackend.java"
   },
   {
@@ -87,7 +102,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 539,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/KVMRealizeL2VxlanNetworkBackend.java"
   },
   {
@@ -101,7 +115,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 108,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/KVMRealizeL2VxlanNetworkPoolBackend.java"
   },
   {
@@ -114,7 +127,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 265,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/KVMRealizeL2VxlanNetworkPoolBackend.java"
   },
   {
@@ -124,7 +136,16 @@
     "arguments": [
       "msg.getVirtualNetworkId()"
     ],
-    "line": 42,
+    "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
+  },
+  {
+    "raw": "cannot allocate vni[%s] in vxlan network[uuid:%s] which is already allocated",
+    "en_US": "cannot allocate vni[{0}] in vxlan network[uuid:{1}] which is already allocated",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVirtualNetworkId()",
+      "msg.getL2NetworkUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
   },
   {
@@ -134,7 +155,6 @@
     "arguments": [
       "VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTagFormat()"
     ],
-    "line": 63,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
   },
   {
@@ -145,7 +165,6 @@
       "tag",
       "VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTagFormat()"
     ],
-    "line": 75,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
   },
   {
@@ -155,7 +174,6 @@
     "arguments": [
       "tag"
     ],
-    "line": 81,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
   },
   {
@@ -166,7 +184,6 @@
       "inv.getType()",
       "overlappedPool"
     ],
-    "line": 90,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
   },
   {
@@ -174,8 +191,39 @@
     "en_US": "vxlan network pool doesn\u0027t support create l3 network",
     "zh_CN": "vxlan network pool不支持创建三层网络",
     "arguments": [],
-    "line": 129,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
+  },
+  {
+    "raw": "Vni allocator strategy[%s] returns nothing, because no vni is available in this VxlanNetwork[name:%s, uuid:%s]",
+    "en_US": "Vni allocator strategy[{0}] returns nothing, because no vni is available in this VxlanNetwork[name:{1}, uuid:{2}]",
+    "zh_CN": "",
+    "arguments": [
+      "strategyType",
+      "self.getName()",
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkPool.java"
+  },
+  {
+    "raw": "Cannot find L2NetworkClusterRefVO item for l2NetworkUuid[%s] clusterUuid[%s]",
+    "en_US": "Cannot find L2NetworkClusterRefVO item for l2NetworkUuid[{0}] clusterUuid[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getL2NetworkUuid()",
+      "msg.getClusterUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkPool.java"
+  },
+  {
+    "raw": "ip[%s] l2NetworkUuid[%s] clusterUuid[%s] exist",
+    "en_US": "ip[{0}] l2NetworkUuid[{1}] clusterUuid[{2}] exist",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getRemoteVtepIp()",
+      "msg.getL2NetworkUuid()",
+      "msg.getClusterUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkPool.java"
   },
   {
     "raw": "ip[%s] l2NetworkUuid[%s] clusterUuid[%s] ip exist in local vtep",
@@ -186,7 +234,6 @@
       "msg.getL2NetworkUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 69,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanPoolApiInterceptor.java"
   },
   {
@@ -196,7 +243,6 @@
     "arguments": [
       "msg.getRemoteVtepIp()"
     ],
-    "line": 77,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanPoolApiInterceptor.java"
   },
   {
@@ -207,7 +253,6 @@
       "msg.getHostUuid()",
       "msg.getPoolUuid()"
     ],
-    "line": 85,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanPoolApiInterceptor.java"
   },
   {
@@ -217,7 +262,6 @@
     "arguments": [
       "msg.getL2NetworkUuid()"
     ],
-    "line": 124,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanPoolApiInterceptor.java"
   }
 ]

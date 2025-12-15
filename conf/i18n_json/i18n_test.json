@@ -6,7 +6,6 @@
     "arguments": [
       "item"
     ],
-    "line": 39,
     "fileName": "src/test/java/org/zstack/test/TestSafeWhile.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "item"
     ],
-    "line": 40,
     "fileName": "src/test/java/org/zstack/test/TestSafeWhile.java"
   },
   {
@@ -26,7 +24,6 @@
     "arguments": [
       "item"
     ],
-    "line": 56,
     "fileName": "src/test/java/org/zstack/test/TestSafeWhile.java"
   },
   {
@@ -34,7 +31,6 @@
     "en_US": "done, on purpose",
     "zh_CN": "",
     "arguments": [],
-    "line": 63,
     "fileName": "src/test/java/org/zstack/test/TestSafeWhile.java"
   },
   {
@@ -42,7 +38,6 @@
     "en_US": "on purpose",
     "zh_CN": "",
     "arguments": [],
-    "line": 80,
     "fileName": "src/test/java/org/zstack/test/TestSafeWhile.java"
   },
   {
@@ -50,7 +45,6 @@
     "en_US": "I should not be errs list",
     "zh_CN": "",
     "arguments": [],
-    "line": 81,
     "fileName": "src/test/java/org/zstack/test/TestSafeWhile.java"
   },
   {
@@ -58,7 +52,6 @@
     "en_US": "I should not be errs list either.",
     "zh_CN": "",
     "arguments": [],
-    "line": 82,
     "fileName": "src/test/java/org/zstack/test/TestSafeWhile.java"
   }
 ]

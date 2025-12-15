@@ -4,7 +4,6 @@
     "en_US": "field[hosts] must not be null or empty",
     "zh_CN": "",
     "arguments": [],
-    "line": 46,
     "fileName": "src/main/java/org/zstack/zstone/ZStoneApiInterceptor.java"
   },
   {
@@ -12,7 +11,6 @@
     "en_US": "at least 2 hosts are required for ZStone initialization",
     "zh_CN": "",
     "arguments": [],
-    "line": 51,
     "fileName": "src/main/java/org/zstack/zstone/ZStoneApiInterceptor.java"
   },
   {
@@ -20,7 +18,6 @@
     "en_US": "field[uuid] in hosts must not be null or empty",
     "zh_CN": "",
     "arguments": [],
-    "line": 58,
     "fileName": "src/main/java/org/zstack/zstone/ZStoneApiInterceptor.java"
   },
   {
@@ -30,7 +27,6 @@
     "arguments": [
       "dups"
     ],
-    "line": 65,
     "fileName": "src/main/java/org/zstack/zstone/ZStoneApiInterceptor.java"
   },
   {
@@ -40,7 +36,6 @@
     "arguments": [
       "hostUuidList"
     ],
-    "line": 87,
     "fileName": "src/main/java/org/zstack/zstone/ZStoneApiInterceptor.java"
   },
   {
@@ -48,7 +43,6 @@
     "en_US": "field[publicIp] of message[APIUpdateZStoneHostConfigMsg].hosts is mandatory, can not be null",
     "zh_CN": "",
     "arguments": [],
-    "line": 93,
     "fileName": "src/main/java/org/zstack/zstone/ZStoneApiInterceptor.java"
   },
   {
@@ -56,15 +50,55 @@
     "en_US": "invalid package status. only Installed, InitializeFailed or Initialized packages can be initialized",
     "zh_CN": "",
     "arguments": [],
-    "line": 110,
     "fileName": "src/main/java/org/zstack/zstone/ZStoneApiInterceptor.java"
+  },
+  {
+    "raw": "failed to connect to zstone[%s]",
+    "en_US": "failed to connect to zstone[{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getManagementIp()"
+    ],
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
+  },
+  {
+    "raw": "ZStone with management ip[%s] already exists",
+    "en_US": "ZStone with management ip[{0}] already exists",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getManagementIp()"
+    ],
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
+  },
+  {
+    "raw": "ZStone[%s] has %s block clusters, we must ensure no other clusters in ZStone before add new cluster",
+    "en_US": "ZStone[{0}] has {1} block clusters, we must ensure no other clusters in ZStone before add new cluster",
+    "zh_CN": "",
+    "arguments": [
+      "zstone.getUuid()",
+      "errorableValue.result.size()"
+    ],
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
+  },
+  {
+    "raw": "all management nodes must have the same username and password",
+    "en_US": "all management nodes must have the same username and password",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
+  },
+  {
+    "raw": "all storage nodes must have the same username and password",
+    "en_US": "all storage nodes must have the same username and password",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
   },
   {
     "raw": "config parameter cannot be null or empty",
     "en_US": "config parameter cannot be null or empty",
     "zh_CN": "",
     "arguments": [],
-    "line": 1161,
     "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
   },
   {
@@ -72,7 +106,6 @@
     "en_US": "failed to install distributed storage",
     "zh_CN": "",
     "arguments": [],
-    "line": 1209,
     "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
   },
   {
@@ -82,7 +115,6 @@
     "arguments": [
       "installPath"
     ],
-    "line": 1246,
     "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
   },
   {
@@ -92,7 +124,6 @@
     "arguments": [
       "softwarePackageVO.getUuid()"
     ],
-    "line": 1258,
     "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
   },
   {
@@ -100,7 +131,66 @@
     "en_US": "failed to cleanup env",
     "zh_CN": "",
     "arguments": [],
-    "line": 1282,
     "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
+  },
+  {
+    "raw": "failed to uninstall distributed storage on hosts",
+    "en_US": "failed to uninstall distributed storage on hosts",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
+  },
+  {
+    "raw": "failed to get licenses from ZStone: %s",
+    "en_US": "failed to get licenses from ZStone: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "response.result.error"
+    ],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
+    "raw": "failed to get clusters from ZStone 5.2.x / 5.3.x",
+    "en_US": "failed to get clusters from ZStone 5.2.x / 5.3.x",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
+    "raw": "failed to get clusters from ZStone (version \u003e\u003d 5.4.x)",
+    "en_US": "failed to get clusters from ZStone (version \u003e\u003d 5.4.x)",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
+    "raw": "failed to add ZStone hosts",
+    "en_US": "failed to add ZStone hosts",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
+    "raw": "invalid session for ZStone server",
+    "en_US": "invalid session for ZStone server",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
+    "raw": "ZStone session expired",
+    "en_US": "ZStone session expired",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
+    "raw": "Failed to find ZStone with uuid [%s]",
+    "en_US": "Failed to find ZStone with uuid [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "addition.resourceUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/zstone/compute/ZsvZStoneLicenseFactory.java"
   }
 ]

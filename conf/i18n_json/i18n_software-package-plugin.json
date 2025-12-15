@@ -4,7 +4,6 @@
     "en_US": "shell command failed",
     "zh_CN": "",
     "arguments": [],
-    "line": 42,
     "fileName": "src/main/java/org/zstack/softwarePackage/ShellCommandUtils.java"
   },
   {
@@ -12,7 +11,6 @@
     "en_US": "path cannot be null or empty",
     "zh_CN": "",
     "arguments": [],
-    "line": 72,
     "fileName": "src/main/java/org/zstack/softwarePackage/ShellCommandUtils.java"
   },
   {
@@ -23,7 +21,6 @@
       "path",
       "unzipPath"
     ],
-    "line": 82,
     "fileName": "src/main/java/org/zstack/softwarePackage/ShellCommandUtils.java"
   },
   {
@@ -33,7 +30,6 @@
     "arguments": [
       "path"
     ],
-    "line": 89,
     "fileName": "src/main/java/org/zstack/softwarePackage/ShellCommandUtils.java"
   },
   {
@@ -41,7 +37,6 @@
     "en_US": "filesystem stat failed",
     "zh_CN": "",
     "arguments": [],
-    "line": 96,
     "fileName": "src/main/java/org/zstack/softwarePackage/ShellCommandUtils.java"
   },
   {
@@ -49,7 +44,6 @@
     "en_US": "invalid df output",
     "zh_CN": "",
     "arguments": [],
-    "line": 101,
     "fileName": "src/main/java/org/zstack/softwarePackage/ShellCommandUtils.java"
   },
   {
@@ -57,7 +51,6 @@
     "en_US": "invalid number format",
     "zh_CN": "",
     "arguments": [],
-    "line": 108,
     "fileName": "src/main/java/org/zstack/softwarePackage/ShellCommandUtils.java"
   },
   {
@@ -70,7 +63,6 @@
       "Uploaded.toString()",
       "InstallFailed.toString()"
     ],
-    "line": 77,
     "fileName": "src/main/java/org/zstack/softwarePackage/SoftwarePackageApiInterceptor.java"
   },
   {
@@ -82,7 +74,6 @@
       "softwarePackageVO.getStatus()",
       "allowedStatus"
     ],
-    "line": 94,
     "fileName": "src/main/java/org/zstack/softwarePackage/SoftwarePackageApiInterceptor.java"
   },
   {
@@ -92,7 +83,6 @@
     "arguments": [
       "softwarePackageVO.getType()"
     ],
-    "line": 563,
     "fileName": "src/main/java/org/zstack/softwarePackage/SoftwarePackagePackageManagerImpl.java"
   },
   {
@@ -102,7 +92,6 @@
     "arguments": [
       "msg.getResourceUuid()"
     ],
-    "line": 209,
     "fileName": "src/main/java/org/zstack/softwarePackage/UploadSoftwarePackageLongJob.java"
   },
   {
@@ -110,7 +99,6 @@
     "en_US": "not support",
     "zh_CN": "",
     "arguments": [],
-    "line": 229,
     "fileName": "src/main/java/org/zstack/softwarePackage/UploadSoftwarePackageLongJob.java"
   },
   {
@@ -118,7 +106,6 @@
     "en_US": "failed to get software package type",
     "zh_CN": "",
     "arguments": [],
-    "line": 92,
     "fileName": "src/main/java/org/zstack/softwarePackage/UploadSoftwarePackageTracker.java"
   },
   {
@@ -126,7 +113,6 @@
     "en_US": "upload software package session expired",
     "zh_CN": "",
     "arguments": [],
-    "line": 143,
     "fileName": "src/main/java/org/zstack/softwarePackage/UploadSoftwarePackageTracker.java"
   }
 ]

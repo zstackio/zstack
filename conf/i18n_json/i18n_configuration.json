@@ -6,7 +6,6 @@
     "arguments": [
       "msg.getType()"
     ],
-    "line": 72,
     "fileName": "src/main/java/org/zstack/configuration/ConfigurationApiInterceptor.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "msg.getCpuNum()"
     ],
-    "line": 76,
     "fileName": "src/main/java/org/zstack/configuration/ConfigurationApiInterceptor.java"
   },
   {
@@ -26,7 +24,6 @@
     "arguments": [
       "msg.getMemorySize()"
     ],
-    "line": 80,
     "fileName": "src/main/java/org/zstack/configuration/ConfigurationApiInterceptor.java"
   },
   {
@@ -37,7 +34,6 @@
       "msg.getReservedMemorySize()",
       "msg.getMemorySize()"
     ],
-    "line": 84,
     "fileName": "src/main/java/org/zstack/configuration/ConfigurationApiInterceptor.java"
   },
   {
@@ -47,7 +43,6 @@
     "arguments": [
       "msg.getAllocatorStrategy()"
     ],
-    "line": 90,
     "fileName": "src/main/java/org/zstack/configuration/ConfigurationApiInterceptor.java"
   },
   {
@@ -57,7 +52,6 @@
     "arguments": [
       "msg.getAllocationStrategy()"
     ],
-    "line": 96,
     "fileName": "src/main/java/org/zstack/configuration/ConfigurationApiInterceptor.java"
   },
   {
@@ -67,7 +61,6 @@
     "arguments": [
       "resourceUuid"
     ],
-    "line": 1049,
     "fileName": "src/main/java/org/zstack/configuration/ConfigurationManagerImpl.java"
   },
   {
@@ -77,7 +70,6 @@
     "arguments": [
       "resourceUuid"
     ],
-    "line": 1091,
     "fileName": "src/main/java/org/zstack/configuration/ConfigurationManagerImpl.java"
   },
   {
@@ -85,7 +77,6 @@
     "en_US": "Shouldn\u0027t be more than one systemTag for one instanceOffering.",
     "zh_CN": "对于一个实例提供，不应超过一个系统标记。",
     "arguments": [],
-    "line": 1114,
     "fileName": "src/main/java/org/zstack/configuration/ConfigurationManagerImpl.java"
   }
 ]

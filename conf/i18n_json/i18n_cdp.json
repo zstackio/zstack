@@ -6,17 +6,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 235,
-    "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupKvmBackend.java"
-  },
-  {
-    "raw": "%s",
-    "en_US": "{0}",
-    "zh_CN": "{0}",
-    "arguments": [
-      "rsp.getError()"
-    ],
-    "line": 299,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupKvmBackend.java"
   },
   {
@@ -26,7 +15,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 316,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupKvmBackend.java"
   },
   {
@@ -36,7 +24,6 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 323,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupKvmBackend.java"
   },
   {
@@ -46,7 +33,6 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 329,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupKvmBackend.java"
   },
   {
@@ -56,7 +42,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 361,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupKvmBackend.java"
   },
   {
@@ -64,7 +49,6 @@
     "en_US": "CDP task is still enabled",
     "zh_CN": "CDP任务仍处于启用状态",
     "arguments": [],
-    "line": 141,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -75,7 +59,6 @@
       "s",
       "OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS)"
     ],
-    "line": 166,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -83,7 +66,6 @@
     "en_US": "could not create vm, because at least one of field (l3NetworkUuids,zoneUuid,clusterUuid,hostUuid) should be set",
     "zh_CN": "无法创建VM，因为至少应设置字段（l3NetworkUuids、zoneUuid、clusterUuid、hostUuid）中的一个",
     "arguments": [],
-    "line": 195,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -93,7 +75,6 @@
     "arguments": [
       "state"
     ],
-    "line": 205,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -104,7 +85,6 @@
       "volumeUuid",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 249,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -114,7 +94,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 259,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -125,7 +104,6 @@
       "msg.getUuid()",
       "taskVO.getTaskType()"
     ],
-    "line": 264,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -135,7 +113,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 272,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -145,7 +122,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 276,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -155,7 +131,6 @@
     "arguments": [
       "refVO.getResourceUuid()"
     ],
-    "line": 285,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -165,7 +140,6 @@
     "arguments": [
       "state"
     ],
-    "line": 299,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -175,7 +149,6 @@
     "arguments": [
       "taskVO.getBackupStorageUuid()"
     ],
-    "line": 307,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -185,7 +158,6 @@
     "arguments": [
       "taskVO.getBackupStorageUuid()"
     ],
-    "line": 312,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -195,7 +167,6 @@
     "arguments": [
       "taskVO.getBackupStorageUuid()"
     ],
-    "line": 317,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -205,7 +176,6 @@
     "arguments": [
       "refVO.getResourceUuid()"
     ],
-    "line": 333,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -215,7 +185,6 @@
     "arguments": [
       "msg.getTaskType()"
     ],
-    "line": 344,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -228,7 +197,6 @@
       "s1",
       "v1"
     ],
-    "line": 358,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -238,7 +206,6 @@
     "arguments": [
       "\"hourlyRpSinceDay\""
     ],
-    "line": 364,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -246,7 +213,6 @@
     "en_US": "parameter RetentionTimePerDay and DailyRpSinceDay cannot be equal",
     "zh_CN": "",
     "arguments": [],
-    "line": 372,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -256,7 +222,6 @@
     "arguments": [
       "vmUuids.size()"
     ],
-    "line": 404,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -266,7 +231,6 @@
     "arguments": [
       "vmUuids.get(0)"
     ],
-    "line": 408,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -276,7 +240,6 @@
     "arguments": [
       "msg.getTargetResourceUuid()"
     ],
-    "line": 430,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -287,7 +250,6 @@
       "vol.getUuid()",
       "reply.getError()"
     ],
-    "line": 486,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
@@ -297,7 +259,6 @@
     "arguments": [
       "groupId"
     ],
-    "line": 243,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageImpl.java"
   },
   {
@@ -307,7 +268,15 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 338,
+    "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageImpl.java"
+  },
+  {
+    "raw": "%s",
+    "en_US": "{0}",
+    "zh_CN": "{0}",
+    "arguments": [
+      "ret.getError()"
+    ],
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageImpl.java"
   },
   {
@@ -317,7 +286,6 @@
     "arguments": [
       "backupStorageUuid"
     ],
-    "line": 725,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageImpl.java"
   },
   {
@@ -328,7 +296,6 @@
       "msg.getMaxCapacity()",
       "oldUsedCapacity"
     ],
-    "line": 176,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
@@ -339,7 +306,6 @@
       "vmUuid",
       "tasks.get(0)"
     ],
-    "line": 266,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
@@ -347,7 +313,6 @@
     "en_US": "revert job cancelled",
     "zh_CN": "已取消还原作业",
     "arguments": [],
-    "line": 816,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
@@ -355,7 +320,15 @@
     "en_US": "create-vm job cancelled",
     "zh_CN": "创建虚拟机作业已取消",
     "arguments": [],
-    "line": 882,
+    "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
+  },
+  {
+    "raw": "unable to find CdpTask[uuid\u003d%s]",
+    "en_US": "unable to find CdpTask[uuid\u003d{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "taskUuid"
+    ],
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
@@ -365,7 +338,6 @@
     "arguments": [
       "taskVO.getUuid()"
     ],
-    "line": 1312,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
@@ -375,7 +347,6 @@
     "arguments": [
       "taskVO.getUuid()"
     ],
-    "line": 1353,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
@@ -383,7 +354,6 @@
     "en_US": "Cdp task is merging data, cannot pickup.",
     "zh_CN": "",
     "arguments": [],
-    "line": 1411,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
@@ -395,7 +365,6 @@
       "maxCapacity",
       "usedCapacity"
     ],
-    "line": 1426,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
@@ -405,7 +374,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 1910,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
@@ -415,7 +383,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 1918,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
@@ -425,7 +392,6 @@
     "arguments": [
       "hypervisorType"
     ],
-    "line": 1968,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
@@ -435,7 +401,6 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 1999,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
@@ -445,7 +410,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 2100,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
@@ -456,7 +420,6 @@
       "volume.getVmInstanceUuid()",
       "volume.getUuid()"
     ],
-    "line": 188,
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpTaskMonitor.java"
   },
   {
@@ -464,7 +427,6 @@
     "en_US": "there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null",
     "zh_CN": "在三层网络uuid列表中指定了多个三层网络，但是默认的三层网络的uuid为空",
     "arguments": [],
-    "line": 73,
     "fileName": "src/main/java/org/zstack/storage/cdp/CreateVmFromCdpBackupLongJob.java"
   },
   {
@@ -475,7 +437,6 @@
       "apiMessage.getDefaultL3NetworkUuid()",
       "apiMessage.getL3NetworkUuids()"
     ],
-    "line": 78,
     "fileName": "src/main/java/org/zstack/storage/cdp/CreateVmFromCdpBackupLongJob.java"
   },
   {
@@ -485,7 +446,6 @@
     "arguments": [
       "apiMessage.getCdpTaskUuid()"
     ],
-    "line": 88,
     "fileName": "src/main/java/org/zstack/storage/cdp/CreateVmFromCdpBackupLongJob.java"
   },
   {
@@ -495,7 +455,6 @@
     "arguments": [
       "bsUuid"
     ],
-    "line": 119,
     "fileName": "src/main/java/org/zstack/storage/cdp/CreateVmFromCdpBackupLongJob.java"
   },
   {
@@ -506,7 +465,6 @@
       "hostUuid",
       "bsUuid"
     ],
-    "line": 129,
     "fileName": "src/main/java/org/zstack/storage/cdp/CreateVmFromCdpBackupLongJob.java"
   },
   {
@@ -516,7 +474,6 @@
     "arguments": [
       "apiMessage.getCdpTaskUuid()"
     ],
-    "line": 73,
     "fileName": "src/main/java/org/zstack/storage/cdp/EnableCdpTaskLongJob.java"
   },
   {
@@ -526,7 +483,6 @@
     "arguments": [
       "taskUuid"
     ],
-    "line": 135,
     "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveCreateFlowChain.java"
   },
   {
@@ -536,7 +492,6 @@
     "arguments": [
       "taskUuid"
     ],
-    "line": 144,
     "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveCreateFlowChain.java"
   },
   {
@@ -547,7 +502,6 @@
       "taskUuid",
       "msg.getGroupId()"
     ],
-    "line": 227,
     "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveCreateFlowChain.java"
   },
   {
@@ -558,7 +512,6 @@
       "taskUuid",
       "msg.getGroupId()"
     ],
-    "line": 241,
     "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveCreateFlowChain.java"
   },
   {
@@ -569,7 +522,6 @@
       "taskUuid",
       "msg.getGroupId()"
     ],
-    "line": 248,
     "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveCreateFlowChain.java"
   },
   {
@@ -580,7 +532,6 @@
       "hostUuid",
       "this.msg.getVmInstanceUuid()"
     ],
-    "line": 118,
     "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveRestoreFlowChain.java"
   },
   {
@@ -590,7 +541,6 @@
     "arguments": [
       "uuids"
     ],
-    "line": 216,
     "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveRestoreFlowChain.java"
   },
   {
@@ -598,7 +548,6 @@
     "en_US": "no volume records found from VM backup",
     "zh_CN": "未从虚拟机备份中找到卷记录",
     "arguments": [],
-    "line": 292,
     "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveRestoreFlowChain.java"
   },
   {
@@ -606,7 +555,6 @@
     "en_US": "no root volume found from VM backup",
     "zh_CN": "未从虚拟机备份中找到根卷",
     "arguments": [],
-    "line": 298,
     "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveRestoreFlowChain.java"
   },
   {
@@ -617,7 +565,6 @@
       "uuid",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 370,
     "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveRestoreFlowChain.java"
   },
   {
@@ -628,7 +575,6 @@
       "volumeUuid",
       "oldVolumeSize"
     ],
-    "line": 711,
     "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveRestoreFlowChain.java"
   },
   {
@@ -639,7 +585,6 @@
       "volumeUuid",
       "reply.getError().getDetails()"
     ],
-    "line": 739,
     "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveRestoreFlowChain.java"
   },
   {
@@ -650,15 +595,20 @@
       "volumeUuid",
       "installPath"
     ],
-    "line": 788,
     "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveRestoreFlowChain.java"
+  },
+  {
+    "raw": "Available License not found, please apply addon license for product CDP.",
+    "en_US": "Available License not found, please apply addon license for product CDP.",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/cdp/LicenseChecker.java"
   },
   {
     "raw": "kvmagent restarted",
     "en_US": "kvmagent restarted",
     "zh_CN": "KVMAGENT重新启动",
     "arguments": [],
-    "line": 145,
     "fileName": "src/main/java/org/zstack/storage/cdp/RecoverVmTracker.java"
   },
   {
@@ -668,7 +618,6 @@
     "arguments": [
       "maxFailure"
     ],
-    "line": 164,
     "fileName": "src/main/java/org/zstack/storage/cdp/RecoverVmTracker.java"
   },
   {
@@ -678,7 +627,6 @@
     "arguments": [
       "apiMessage.getVmInstanceUuid()"
     ],
-    "line": 72,
     "fileName": "src/main/java/org/zstack/storage/cdp/RevertVmFromCdpBackupMsgLongJob.java"
   },
   {
@@ -688,7 +636,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 165,
     "fileName": "src/main/java/org/zstack/storage/cdp/RevertVmFromCdpBackupMsgLongJob.java"
   },
   {
@@ -699,7 +646,6 @@
       "vmUuid",
       "backupStorageUuid"
     ],
-    "line": 174,
     "fileName": "src/main/java/org/zstack/storage/cdp/RevertVmFromCdpBackupMsgLongJob.java"
   }
 ]

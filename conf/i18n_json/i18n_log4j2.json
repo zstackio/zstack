@@ -6,7 +6,6 @@
     "arguments": [
       "lstruct.getAppenderType()"
     ],
-    "line": 60,
     "fileName": "src/main/java/org/zstack/log4j2/Log4j2LogConfigurationFactory.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "lstruct.getAppenderType()"
     ],
-    "line": 134,
     "fileName": "src/main/java/org/zstack/log4j2/Log4j2LogConfigurationFactory.java"
   },
   {
@@ -24,7 +22,6 @@
     "en_US": "facility can not be null",
     "zh_CN": "设备不能为空",
     "arguments": [],
-    "line": 49,
     "fileName": "src/main/java/org/zstack/log4j2/appender/syslog/SyslogAppenderProxyFactory.java"
   },
   {
@@ -34,7 +31,6 @@
     "arguments": [
       "configuration.facility"
     ],
-    "line": 53,
     "fileName": "src/main/java/org/zstack/log4j2/appender/syslog/SyslogAppenderProxyFactory.java"
   },
   {
@@ -42,7 +38,6 @@
     "en_US": "hostname can not be null",
     "zh_CN": "主机名不能为空",
     "arguments": [],
-    "line": 57,
     "fileName": "src/main/java/org/zstack/log4j2/appender/syslog/SyslogAppenderProxyFactory.java"
   },
   {
@@ -50,7 +45,6 @@
     "en_US": "port can not be null",
     "zh_CN": "端口不能为空",
     "arguments": [],
-    "line": 61,
     "fileName": "src/main/java/org/zstack/log4j2/appender/syslog/SyslogAppenderProxyFactory.java"
   },
   {
@@ -58,7 +52,6 @@
     "en_US": "protocol can not be null",
     "zh_CN": "协议不能为空",
     "arguments": [],
-    "line": 65,
     "fileName": "src/main/java/org/zstack/log4j2/appender/syslog/SyslogAppenderProxyFactory.java"
   },
   {
@@ -68,7 +61,6 @@
     "arguments": [
       "configuration.protocol"
     ],
-    "line": 71,
     "fileName": "src/main/java/org/zstack/log4j2/appender/syslog/SyslogAppenderProxyFactory.java"
   },
   {
@@ -78,7 +70,6 @@
     "arguments": [
       "configuration.hostname"
     ],
-    "line": 77,
     "fileName": "src/main/java/org/zstack/log4j2/appender/syslog/SyslogAppenderProxyFactory.java"
   },
   {
@@ -89,7 +80,6 @@
       "configuration.hostname",
       "configuration.port"
     ],
-    "line": 85,
     "fileName": "src/main/java/org/zstack/log4j2/appender/syslog/SyslogAppenderProxyFactory.java"
   }
 ]

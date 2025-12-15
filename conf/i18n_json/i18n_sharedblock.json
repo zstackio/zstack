@@ -7,7 +7,6 @@
       "cmd.hostIds",
       "sentinelHostUuid"
     ],
-    "line": 142,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/HaSanlockHostChecker.java"
   },
   {
@@ -18,7 +17,6 @@
       "vmInstanceUuid",
       "lunUuids"
     ],
-    "line": 101,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockApiInterceptor.java"
   },
   {
@@ -29,7 +27,6 @@
       "sharedBlockVO.getSharedBlockGroupUuid()",
       "scsiLunVO.getWwid()"
     ],
-    "line": 112,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockApiInterceptor.java"
   },
   {
@@ -37,7 +34,6 @@
     "en_US": "must specify at least one disk when add shared block group primary storage",
     "zh_CN": "添加共享块存储时必须指定至少一个云盘",
     "arguments": [],
-    "line": 161,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockApiInterceptor.java"
   },
   {
@@ -47,7 +43,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 196,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockApiInterceptor.java"
   },
   {
@@ -58,7 +53,6 @@
       "volumeUuid",
       "notStoppedVmUuids"
     ],
-    "line": 265,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockApiInterceptor.java"
   },
   {
@@ -68,7 +62,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 291,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockApiInterceptor.java"
   },
   {
@@ -80,7 +73,6 @@
       "t.get(1, String.class)",
       "t.get(2, String.class)"
     ],
-    "line": 319,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockApiInterceptor.java"
   },
   {
@@ -90,7 +82,6 @@
     "arguments": [
       "getSelfInventory().getUuid()"
     ],
-    "line": 699,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageBase.java"
   },
   {
@@ -100,7 +91,24 @@
     "arguments": [
       "finalClusterUuids"
     ],
-    "line": 1129,
+    "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageBase.java"
+  },
+  {
+    "raw": "cannot find volume snapshot[uuid:%s]",
+    "en_US": "cannot find volume snapshot[uuid:{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getSnapshotUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageBase.java"
+  },
+  {
+    "raw": "host where vm[uuid:%s] locate is not Connected.",
+    "en_US": "host where vm[uuid:{0}] locate is not Connected.",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVmInstanceUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageBase.java"
   },
   {
@@ -108,7 +116,6 @@
     "en_US": "empty migrateVolumeStructs in migrateVolumesBetweenSharedBlockGroupPrimaryStorageMsg!",
     "zh_CN": "MigrateEvoluesBetweenSharedBlockGroupPrimaryStorageMsg中的MigrateEvolumeStructs为空！",
     "arguments": [],
-    "line": 1354,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageBase.java"
   },
   {
@@ -116,7 +123,6 @@
     "en_US": "no volume in migrateVolumeStructs in migrateVolumesBetweenSharedBlockGroupPrimaryStorageMsg!",
     "zh_CN": "MigrateEvolumesBetweenSharedBlockGroupPrimaryStorageMsg中的MigrateEvolmeStructs中没有卷！",
     "arguments": [],
-    "line": 1360,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageBase.java"
   },
   {
@@ -126,7 +132,6 @@
     "arguments": [
       "rsp.error"
     ],
-    "line": 1460,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageBase.java"
   },
   {
@@ -137,7 +142,6 @@
       "psUuid",
       "imageFormat"
     ],
-    "line": 1684,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageBase.java"
   },
   {
@@ -147,7 +151,6 @@
     "arguments": [
       "newValue"
     ],
-    "line": 113,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageFactory.java"
   },
   {
@@ -157,7 +160,6 @@
     "arguments": [
       "pri.getUuid()"
     ],
-    "line": 453,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageFactory.java"
   },
   {
@@ -167,7 +169,6 @@
     "arguments": [
       "psUuid"
     ],
-    "line": 533,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageFactory.java"
   },
   {
@@ -177,7 +178,6 @@
     "arguments": [
       "volUuid"
     ],
-    "line": 550,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageFactory.java"
   },
   {
@@ -187,7 +187,6 @@
     "arguments": [
       "volumeUuid"
     ],
-    "line": 89,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockImageStoreBackend.java"
   },
   {
@@ -195,7 +194,6 @@
     "en_US": "shared volume not support thin provisioning",
     "zh_CN": "共享云盘不支持精简配置",
     "arguments": [],
-    "line": 830,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -206,7 +204,6 @@
       "vol.getVmInstanceUuid()",
       "state"
     ],
-    "line": 1118,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -218,7 +215,6 @@
       "volume.getVmInstanceUuid()",
       "state"
     ],
-    "line": 1308,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -228,7 +224,6 @@
     "arguments": [
       "volume.getUuid()"
     ],
-    "line": 1397,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -239,7 +234,6 @@
       "img.getUuid()",
       "img.getName()"
     ],
-    "line": 1486,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -249,7 +243,6 @@
     "arguments": [
       "clusterUuid"
     ],
-    "line": 1950,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -259,7 +252,6 @@
     "arguments": [
       "ret.firstAccessHosts.stream().map( h -\u003e h.hostUuid).collect(Collectors.toList())"
     ],
-    "line": 2086,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -269,7 +261,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 2303,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -277,7 +268,6 @@
     "en_US": "not support convert thin volume to thick volume yet",
     "zh_CN": "尚不支持将精简卷转换为密集卷",
     "arguments": [],
-    "line": 2506,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -285,7 +275,6 @@
     "en_US": "expected status is {0} and current status",
     "zh_CN": "预期状态为{0}，当前状态为",
     "arguments": [],
-    "line": 2559,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -295,7 +284,6 @@
     "arguments": [
       "backupStorageUuid"
     ],
-    "line": 3123,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -306,7 +294,6 @@
       "spec.getVmInventory().getUuid()",
       "String.join(\",\", psUuids)"
     ],
-    "line": 3657,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -316,7 +303,6 @@
     "arguments": [
       "volume.getUuid()"
     ],
-    "line": 3832,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -324,7 +310,6 @@
     "en_US": "only support full",
     "zh_CN": "共享块存储目前只支持全量快照",
     "arguments": [],
-    "line": 5033,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -334,7 +319,6 @@
     "arguments": [
       "returnValue.error"
     ],
-    "line": 5224,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -345,7 +329,6 @@
       "snapshotVO.getUuid()",
       "volumeVO.getUuid()"
     ],
-    "line": 5350,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -356,7 +339,6 @@
       "snapshotVO.getUuid()",
       "instanceVO.getUuid()"
     ],
-    "line": 5526,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -366,7 +348,6 @@
     "arguments": [
       "vm.getUuid()"
     ],
-    "line": 5776,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -376,7 +357,6 @@
     "arguments": [
       "errorCodeList.getCauses().toString()"
     ],
-    "line": 6044,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -387,7 +367,6 @@
       "childrenPath",
       "errorCode.getDetails()"
     ],
-    "line": 6104,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -395,7 +374,6 @@
     "en_US": "invalid thinProvisioningInitializeSize tag",
     "zh_CN": "",
     "arguments": [],
-    "line": 192,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockManagerImpl.java"
   },
   {
@@ -405,7 +383,6 @@
     "arguments": [
       "SharedBlockConstants.MIN_THIN_PROVISIONING_INITIALIZE_SIZE"
     ],
-    "line": 199,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockManagerImpl.java"
   },
   {
@@ -415,7 +392,6 @@
     "arguments": [
       "size"
     ],
-    "line": 206,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockManagerImpl.java"
   },
   {
@@ -426,7 +402,6 @@
       "size",
       "Long.MAX_VALUE"
     ],
-    "line": 210,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockManagerImpl.java"
   },
   {
@@ -434,7 +409,6 @@
     "en_US": "migrate volume without snapshot on shared block is not support to cancel.",
     "zh_CN": "不支持取消在共享数据块上迁移不带快照的卷。",
     "arguments": [],
-    "line": 33,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/migration/SblkToSblkCancelMigrateVolumeFlow.java"
   },
   {
@@ -447,7 +421,6 @@
       "dstVolumeFolderPath",
       "reply1.getResourceUuid()"
     ],
-    "line": 124,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/migration/SblkToSblkMigrateVolumeFlow.java"
   },
   {
@@ -457,7 +430,6 @@
     "arguments": [
       "srcPsUuid"
     ],
-    "line": 70,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/migration/SblkToSblkRollbackMigrateVolumeFlow.java"
   }
 ]

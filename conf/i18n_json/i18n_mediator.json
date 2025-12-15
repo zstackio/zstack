@@ -6,7 +6,6 @@
     "arguments": [
       "l3NetworkUuid"
     ],
-    "line": 105,
     "fileName": "src/main/java/org/zstack/mediator/ApiValidator.java"
   },
   {
@@ -17,7 +16,6 @@
       "l3NetworkUuid",
       "vmNicVO.getL3NetworkUuid()"
     ],
-    "line": 123,
     "fileName": "src/main/java/org/zstack/mediator/ApiValidator.java"
   },
   {
@@ -29,7 +27,6 @@
       "vm.getUuid()",
       "StringUtils.join(pfStr, \",\")"
     ],
-    "line": 155,
     "fileName": "src/main/java/org/zstack/mediator/ApiValidator.java"
   },
   {
@@ -41,7 +38,6 @@
       "vm.getUuid()",
       "StringUtils.join(eipStr, \",\")"
     ],
-    "line": 176,
     "fileName": "src/main/java/org/zstack/mediator/ApiValidator.java"
   },
   {
@@ -52,7 +48,6 @@
       "msg.getVipUuid()",
       "useForList.toString()"
     ],
-    "line": 191,
     "fileName": "src/main/java/org/zstack/mediator/ApiValidator.java"
   },
   {
@@ -67,7 +62,6 @@
       "vipUuid",
       "protocol"
     ],
-    "line": 228,
     "fileName": "src/main/java/org/zstack/mediator/ApiValidator.java"
   },
   {
@@ -82,7 +76,6 @@
       "vipUuid",
       "protocol"
     ],
-    "line": 231,
     "fileName": "src/main/java/org/zstack/mediator/ApiValidator.java"
   }
 ]

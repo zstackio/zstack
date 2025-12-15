@@ -4,7 +4,6 @@
     "en_US": "could not get candidate vmnic, because both load balancer uuid and server group uuid are not specified",
     "zh_CN": "无法获取候选vmnic，因为未指定负载平衡器uuid和服务器组uuid",
     "arguments": [],
-    "line": 180,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -12,7 +11,6 @@
     "en_US": "could not get candidate l3 network, because both load balancer uuid and server group uuid are not specified",
     "zh_CN": "无法获取候选三层网络，因为未指定负载平衡器uuid和服务器组uuid",
     "arguments": [],
-    "line": 198,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -22,7 +20,6 @@
     "arguments": [
       "msg.getListenerUuid()"
     ],
-    "line": 222,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -33,7 +30,6 @@
       "msg.getVipUuid()",
       "useForList.toString()"
     ],
-    "line": 234,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -43,7 +39,6 @@
     "arguments": [
       "vipVO.getIp()"
     ],
-    "line": 251,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -53,7 +48,6 @@
     "arguments": [
       "ipVer"
     ],
-    "line": 282,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -64,7 +58,6 @@
       "ips",
       "acl.getUuid()"
     ],
-    "line": 288,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -74,7 +67,6 @@
     "arguments": [
       "ips"
     ],
-    "line": 295,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -88,7 +80,6 @@
       "NetworkUtils.longToIpv4String(r.upperEndpoint())",
       "acl.getUuid()"
     ],
-    "line": 299,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -98,7 +89,6 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 306,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -109,7 +99,6 @@
       "aclUuids",
       "lbUuid"
     ],
-    "line": 321,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -121,7 +110,6 @@
       "aclEntry.getUrl()",
       "acl.getUuid()"
     ],
-    "line": 396,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -131,7 +119,6 @@
     "arguments": [
       "msg.getAclUuids()"
     ],
-    "line": 414,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -141,7 +128,6 @@
     "arguments": [
       "msg.getAclUuids()"
     ],
-    "line": 419,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -152,7 +138,6 @@
       "msg.getAclUuids()",
       "msg.getListenerUuid()"
     ],
-    "line": 424,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -162,7 +147,6 @@
     "arguments": [
       "msg.getAclUuids()"
     ],
-    "line": 443,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -173,7 +157,6 @@
       "msg.getAclUuids()",
       "msg.getListenerUuid()"
     ],
-    "line": 456,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -184,7 +167,6 @@
       "msg.getListenerUuid()",
       "LoadBalancerGlobalConfig.ACL_REDIRECT_MAX_COUNT.value(Long.class)"
     ],
-    "line": 468,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -195,7 +177,6 @@
       "msg.getListenerUuid()",
       "redireRuleExistAclUuid"
     ],
-    "line": 494,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -206,7 +187,6 @@
       "msg.getAclType()",
       "msg.getAclUuids()"
     ],
-    "line": 506,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -217,7 +197,6 @@
       "existingAcls",
       "msg.getListenerUuid()"
     ],
-    "line": 515,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -228,7 +207,6 @@
       "msg.getListenerUuid()",
       "type.toString()"
     ],
-    "line": 521,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -239,7 +217,6 @@
       "msg.getListenerUuid()",
       "LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)"
     ],
-    "line": 526,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -250,7 +227,6 @@
       "msg.getServerGroupUuids()",
       "msg.getListenerUuid()"
     ],
-    "line": 547,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -261,7 +237,6 @@
       "msg.getAclUuid()",
       "msg.getListenerUuid()"
     ],
-    "line": 555,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -272,7 +247,6 @@
       "nicUuid",
       "groupVO.getUuid()"
     ],
-    "line": 587,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -282,7 +256,6 @@
     "arguments": [
       "LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)"
     ],
-    "line": 697,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -293,7 +266,6 @@
       "msg.getProtocol()",
       "msg.getName()"
     ],
-    "line": 786,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -304,7 +276,6 @@
       "httpRedirectHttps",
       "validRedirectValues"
     ],
-    "line": 821,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -315,7 +286,6 @@
       "statusCode",
       "validCodeValues"
     ],
-    "line": 826,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -326,7 +296,6 @@
       "seessionPersistence",
       "validPersistenceValues"
     ],
-    "line": 856,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -338,7 +307,6 @@
       "msg.getName()",
       "algorithm"
     ],
-    "line": 863,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -350,7 +318,6 @@
       "msg.getName()",
       "algorithm"
     ],
-    "line": 878,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -361,7 +328,6 @@
       "enableSession",
       "Arrays.toString(LoadBalancerSessionPersistence.values())"
     ],
-    "line": 904,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -373,7 +339,6 @@
       "LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MIN",
       "LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MAX"
     ],
-    "line": 911,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -384,7 +349,6 @@
       "cookieName",
       "COOKIE_NAME_MAX"
     ],
-    "line": 918,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -394,7 +358,6 @@
     "arguments": [
       "cookieName"
     ],
-    "line": 921,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -405,7 +368,6 @@
       "msg.getLoadBalancerUuid()",
       "msg.getName()"
     ],
-    "line": 925,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -416,7 +378,6 @@
       "msg.getLoadBalancerUuid()",
       "msg.getName()"
     ],
-    "line": 931,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -427,7 +388,6 @@
       "msg.getLoadBalancerUuid()",
       "msg.getName()"
     ],
-    "line": 935,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -438,7 +398,6 @@
       "msg.getLoadBalancerUuid()",
       "msg.getName()"
     ],
-    "line": 949,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -449,7 +408,6 @@
       "msg.getLoadBalancerUuid()",
       "msg.getName()"
     ],
-    "line": 954,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -460,7 +418,6 @@
       "msg.getLoadBalancerUuid()",
       "msg.getName()"
     ],
-    "line": 959,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -471,7 +428,6 @@
       "msg.getLoadBalancerUuid()",
       "msg.getName()"
     ],
-    "line": 964,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -482,7 +438,6 @@
       "msg.getLoadBalancerUuid()",
       "msg.getName()"
     ],
-    "line": 975,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -493,7 +448,6 @@
       "msg.getLoadBalancerUuid()",
       "msg.getName()"
     ],
-    "line": 987,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -505,7 +459,6 @@
       "s",
       "LoadBalancerConstants.MAX_CONNECTION_LIMIT"
     ],
-    "line": 1005,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -516,7 +469,6 @@
       "msg.getLoadBalancerPort()",
       "luuid"
     ],
-    "line": 1027,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -526,7 +478,6 @@
     "arguments": [
       "vo.getProtocol()"
     ],
-    "line": 1060,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -537,7 +488,6 @@
       "msg.getListenerUuid()",
       "msg.getCertificateUuid()"
     ],
-    "line": 1064,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -548,7 +498,6 @@
       "msg.getCertificateUuid()",
       "msg.getListenerUuid()"
     ],
-    "line": 1074,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -558,7 +507,6 @@
     "arguments": [
       "target"
     ],
-    "line": 1089,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -566,7 +514,6 @@
     "en_US": "could not assign redirect port or status code without specifying http redirect https",
     "zh_CN": "",
     "arguments": [],
-    "line": 1104,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -574,7 +521,6 @@
     "en_US": "could not support protocols other than HTTP when specifying http redirect https",
     "zh_CN": "",
     "arguments": [],
-    "line": 1109,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -585,7 +531,6 @@
       "listener.getProtocol()",
       "listener.getName()"
     ],
-    "line": 1131,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -593,7 +538,6 @@
     "en_US": "could not support both HTTP redirect HTTPS and session persistence at the same time",
     "zh_CN": "",
     "arguments": [],
-    "line": 1141,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -603,7 +547,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 1151,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -613,7 +556,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 1159,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -623,7 +565,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 1166,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -633,7 +574,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 1171,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -644,7 +584,6 @@
       "msg.getUuid()",
       "msg.getBalancerAlgorithm()"
     ],
-    "line": 1177,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -655,7 +594,6 @@
       "msg.getUuid()",
       "msg.getBalancerAlgorithm()"
     ],
-    "line": 1185,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -665,7 +603,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 1193,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -675,7 +612,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 1197,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -685,7 +621,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 1201,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -695,7 +630,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 1205,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -707,7 +641,6 @@
       "LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MIN",
       "LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MAX"
     ],
-    "line": 1219,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -715,7 +648,6 @@
     "en_US": "the http health check protocol must be specified its healthy checking parameter healthCheckURI",
     "zh_CN": "http类型的健康检查必须提供healthCheckURI参数",
     "arguments": [],
-    "line": 1232,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -725,7 +657,6 @@
     "arguments": [
       "msg.getHealthCheckHttpCode()"
     ],
-    "line": 1239,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -736,7 +667,6 @@
       "listenerVO.getProtocol()",
       "msg.getHealthCheckProtocol()"
     ],
-    "line": 1248,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -747,7 +677,6 @@
       "listenerVO.getProtocol()",
       "msg.getHealthCheckProtocol()"
     ],
-    "line": 1263,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -755,7 +684,6 @@
     "en_US": "the http health check protocol must be specified its healthy checking parameters including healthCheckMethod and healthCheckURI",
     "zh_CN": "http类型的健康检查协议必须提供healthCheckMethod和healthCheckURI参数",
     "arguments": [],
-    "line": 1268,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -765,7 +693,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 1291,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -775,7 +702,6 @@
     "arguments": [
       "msg.getServerGroupUuid()"
     ],
-    "line": 1343,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -786,7 +712,6 @@
       "vmNic.get(\"uuid\")",
       "msg.getServerGroupUuid()"
     ],
-    "line": 1350,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -796,7 +721,6 @@
     "arguments": [
       "vmNic.get(\"weight\")"
     ],
-    "line": 1361,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -807,7 +731,6 @@
       "l3Uuids",
       "LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING"
     ],
-    "line": 1381,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -818,7 +741,6 @@
       "existingNics",
       "msg.getServerGroupUuid()"
     ],
-    "line": 1391,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -829,7 +751,6 @@
       "msg.getServerGroupUuid()",
       "vmNicIps"
     ],
-    "line": 1400,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -840,7 +761,6 @@
       "msg.getServerGroupUuid()",
       "server.get(\"ipAddress\")"
     ],
-    "line": 1428,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -853,7 +773,6 @@
       "LoadBalancerConstants.BALANCER_WEIGHT_MIN",
       "LoadBalancerConstants.BALANCER_WEIGHT_MAX"
     ],
-    "line": 1439,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -864,7 +783,6 @@
       "existingServerIps",
       "msg.getServerGroupUuid()"
     ],
-    "line": 1454,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -874,7 +792,6 @@
     "arguments": [
       "msg.getServerGroupUuid()"
     ],
-    "line": 1484,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -884,7 +801,6 @@
     "arguments": [
       "msg.getServerGroupUuid()"
     ],
-    "line": 1501,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -894,7 +810,6 @@
     "arguments": [
       "msg.getServerGroupUuid()"
     ],
-    "line": 1516,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -902,7 +817,6 @@
     "en_US": "vmnic or ip is null",
     "zh_CN": "vmnic或IP为空",
     "arguments": [],
-    "line": 1520,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -913,7 +827,6 @@
       "msg.getServerGroupUuid()",
       "msg.getlistenerUuid()"
     ],
-    "line": 1531,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -925,7 +838,6 @@
       "msg.getlistenerUuid()",
       "nicUuid"
     ],
-    "line": 1548,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -937,7 +849,6 @@
       "msg.getlistenerUuid()",
       "ipAddress"
     ],
-    "line": 1563,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -948,7 +859,6 @@
       "msg.getServerGroupUuid()",
       "msg.getListenerUuid()"
     ],
-    "line": 1581,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -959,7 +869,6 @@
       "msg.getServerGroupUuid()",
       "msg.getListenerUuid()"
     ],
-    "line": 1590,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -969,7 +878,6 @@
     "arguments": [
       "loadBalancerUuid"
     ],
-    "line": 1605,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -979,7 +887,6 @@
     "arguments": [
       "msg.getServerGroupUuid()"
     ],
-    "line": 1620,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -990,7 +897,6 @@
       "msg.getServerGroupUuid()",
       "vmNic.containsKey(\"uuid\")"
     ],
-    "line": 1636,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -1003,7 +909,6 @@
       "LoadBalancerConstants.BALANCER_WEIGHT_MIN",
       "LoadBalancerConstants.BALANCER_WEIGHT_MAX"
     ],
-    "line": 1646,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -1013,7 +918,6 @@
     "arguments": [
       "vmNic.get(\"weight\")"
     ],
-    "line": 1653,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -1023,7 +927,6 @@
     "arguments": [
       "vmNic.get(\"uuid\")"
     ],
-    "line": 1658,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -1033,7 +936,6 @@
     "arguments": [
       "msg.getServerGroupUuid()"
     ],
-    "line": 1661,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -1044,7 +946,6 @@
       "msg.getServerGroupUuid()",
       "ipAddress"
     ],
-    "line": 1677,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -1057,7 +958,6 @@
       "LoadBalancerConstants.BALANCER_WEIGHT_MIN",
       "LoadBalancerConstants.BALANCER_WEIGHT_MAX"
     ],
-    "line": 1686,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -1067,7 +967,6 @@
     "arguments": [
       "server.get(\"weight\")"
     ],
-    "line": 1693,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -1077,7 +976,6 @@
     "arguments": [
       "server.get(\"ipAddress\")"
     ],
-    "line": 1696,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -1088,7 +986,6 @@
       "msg.getServerGroupUuid()",
       "serverIps"
     ],
-    "line": 1700,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -1096,7 +993,6 @@
     "en_US": "could not add server ip to share load balancer server group",
     "zh_CN": "无法将服务器IP添加到共享负载平衡器服务器组",
     "arguments": [],
-    "line": 1705,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -1104,7 +1000,6 @@
     "en_US": "could not change backendserver, beacause vmincs and serverips is null",
     "zh_CN": "无法更改后端服务器，因为VMINCS和ServerIPS为空",
     "arguments": [],
-    "line": 1712,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -1114,7 +1009,6 @@
     "arguments": [
       "struct.listenerUuid"
     ],
-    "line": 1343,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerBase.java"
   },
   {
@@ -1125,7 +1019,6 @@
       "msg.getLoadBalancerPort()",
       "msg.getLoadBalancerUuid()"
     ],
-    "line": 1474,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerBase.java"
   },
   {
@@ -1135,7 +1028,6 @@
     "arguments": [
       "param"
     ],
-    "line": 2011,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerBase.java"
   },
   {
@@ -1145,7 +1037,6 @@
     "arguments": [
       "msg.getLoadBalancerUuid()"
     ],
-    "line": 100,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1155,7 +1046,6 @@
     "arguments": [
       "tag.getTag()"
     ],
-    "line": 484,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1166,7 +1056,6 @@
       "nicUuid",
       "systemTag"
     ],
-    "line": 503,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1179,7 +1068,6 @@
       "LoadBalancerConstants.BALANCER_WEIGHT_MIN",
       "LoadBalancerConstants.BALANCER_WEIGHT_MAX"
     ],
-    "line": 511,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1190,7 +1078,6 @@
       "systemTag",
       "s"
     ],
-    "line": 515,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1201,7 +1088,6 @@
       "algorithm",
       "LoadBalancerConstants.BALANCE_ALGORITHMS"
     ],
-    "line": 527,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1212,7 +1098,6 @@
       "systemTag",
       "s"
     ],
-    "line": 603,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1223,7 +1108,6 @@
       "systemTag",
       "s"
     ],
-    "line": 617,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1234,7 +1118,6 @@
       "systemTag",
       "s"
     ],
-    "line": 631,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1245,7 +1128,6 @@
       "systemTag",
       "s"
     ],
-    "line": 645,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1256,7 +1138,6 @@
       "systemTag",
       "s"
     ],
-    "line": 659,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1267,7 +1148,6 @@
       "systemTag",
       "s"
     ],
-    "line": 673,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1278,7 +1158,6 @@
       "systemTag",
       "s"
     ],
-    "line": 687,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1288,7 +1167,6 @@
     "arguments": [
       "systemTag"
     ],
-    "line": 700,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1300,7 +1178,6 @@
       "protocol",
       "LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCOLS"
     ],
-    "line": 705,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1311,7 +1188,6 @@
       "systemTag",
       "port"
     ],
-    "line": 714,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1322,7 +1198,6 @@
       "systemTag",
       "port"
     ],
-    "line": 717,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -1335,7 +1210,6 @@
       "LoadBalancerConstants.BALANCER_WEIGHT_MIN",
       "LoadBalancerConstants.BALANCER_WEIGHT_MAX"
     ],
-    "line": 89,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerWeightOperator.java"
   }
 ]

@@ -6,7 +6,6 @@
     "arguments": [
       "msg.getAreaId()"
     ],
-    "line": 69,
     "fileName": "src/main/java/org/zstack/routeProtocol/RouteProtocolApiInterceptor.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "msg.getAreaId()"
     ],
-    "line": 97,
     "fileName": "src/main/java/org/zstack/routeProtocol/RouteProtocolApiInterceptor.java"
   },
   {
@@ -26,7 +24,6 @@
     "arguments": [
       "msg.getAreaAuth()"
     ],
-    "line": 108,
     "fileName": "src/main/java/org/zstack/routeProtocol/RouteProtocolApiInterceptor.java"
   },
   {
@@ -36,7 +33,6 @@
     "arguments": [
       "msg.getAreaAuth()"
     ],
-    "line": 114,
     "fileName": "src/main/java/org/zstack/routeProtocol/RouteProtocolApiInterceptor.java"
   },
   {
@@ -46,7 +42,6 @@
     "arguments": [
       "msg.getAreaAuth()"
     ],
-    "line": 118,
     "fileName": "src/main/java/org/zstack/routeProtocol/RouteProtocolApiInterceptor.java"
   },
   {
@@ -57,7 +52,6 @@
       "vo.getAreaId()",
       "RouterAreaType.Standard.toString()"
     ],
-    "line": 127,
     "fileName": "src/main/java/org/zstack/routeProtocol/RouteProtocolApiInterceptor.java"
   },
   {
@@ -67,7 +61,6 @@
     "arguments": [
       "msg.getvRouterUuid()"
     ],
-    "line": 141,
     "fileName": "src/main/java/org/zstack/routeProtocol/RouteProtocolApiInterceptor.java"
   },
   {
@@ -78,7 +71,6 @@
       "vo.getL3NetworkUuid()",
       "vo.getRouterAreaUuid()"
     ],
-    "line": 150,
     "fileName": "src/main/java/org/zstack/routeProtocol/RouteProtocolApiInterceptor.java"
   },
   {
@@ -89,7 +81,6 @@
       "vo.getL3NetworkUuid()",
       "haUuid"
     ],
-    "line": 158,
     "fileName": "src/main/java/org/zstack/routeProtocol/RouteProtocolApiInterceptor.java"
   },
   {
@@ -99,7 +90,6 @@
     "arguments": [
       "msg.getRouterId()"
     ],
-    "line": 181,
     "fileName": "src/main/java/org/zstack/routeProtocol/RouteProtocolApiInterceptor.java"
   },
   {
@@ -109,7 +99,6 @@
     "arguments": [
       "msg.getRouterId()"
     ],
-    "line": 193,
     "fileName": "src/main/java/org/zstack/routeProtocol/RouteProtocolApiInterceptor.java"
   },
   {
@@ -119,7 +108,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 368,
     "fileName": "src/main/java/org/zstack/routeProtocol/RouteProtocolOspfBackend.java"
   }
 ]

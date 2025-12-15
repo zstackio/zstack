@@ -4,7 +4,6 @@
     "en_US": "primaryStorageUuid is mandatory when download image cache",
     "zh_CN": "",
     "arguments": [],
-    "line": 116,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageBase.java"
   },
   {
@@ -14,7 +13,6 @@
     "arguments": [
       "bsType"
     ],
-    "line": 580,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageBase.java"
   },
   {
@@ -24,7 +22,6 @@
     "arguments": [
       "msg.getVolumeInventory().getUuid()"
     ],
-    "line": 1036,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageBase.java"
   },
   {
@@ -34,7 +31,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 1109,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageBase.java"
   },
   {
@@ -44,7 +40,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 1125,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageBase.java"
   },
   {
@@ -54,7 +49,34 @@
     "arguments": [
       "msg.getDestHostUuid()"
     ],
-    "line": 1234,
+    "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageBase.java"
+  },
+  {
+    "raw": "Block primary[uuid: %s] has not attached to any clusters",
+    "en_US": "Block primary[uuid: {0}] has not attached to any clusters",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageBase.java"
+  },
+  {
+    "raw": "Fail to connect block primary[uuid: %s], because no connected host",
+    "en_US": "Fail to connect block primary[uuid: {0}], because no connected host",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageBase.java"
+  },
+  {
+    "raw": "Failed to attach block primary[uuid: %s] to cluster[uuid: %], because no connected host in cluster",
+    "en_US": "Failed to attach block primary[uuid: {0}] to cluster[uuid: %], because no connected host in cluster",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "clusterUuid"
+    ],
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageBase.java"
   },
   {
@@ -62,7 +84,6 @@
     "en_US": "backing up snapshots to backup storage is a depreciated feature, which doesn\u0027t support on block primary storage",
     "zh_CN": "",
     "arguments": [],
-    "line": 2153,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageBase.java"
   },
   {
@@ -72,7 +93,6 @@
     "arguments": [
       "msg.getPrimaryStorageUuid()"
     ],
-    "line": 2267,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageBase.java"
   },
   {
@@ -82,7 +102,6 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 2276,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageBase.java"
   },
   {
@@ -94,7 +113,6 @@
       "priUuid",
       "reply.getError()"
     ],
-    "line": 392,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageFactory.java"
   },
   {
@@ -105,7 +123,6 @@
       "isoUuid",
       "inv.getUuid()"
     ],
-    "line": 577,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageFactory.java"
   },
   {
@@ -115,7 +132,6 @@
     "arguments": [
       "volume.getUuid()"
     ],
-    "line": 755,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageFactory.java"
   },
   {
@@ -125,7 +141,6 @@
     "arguments": [
       "e.getCause().toString()"
     ],
-    "line": 944,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageFactory.java"
   },
   {
@@ -133,7 +148,6 @@
     "en_US": "fail to clean up after detach volume",
     "zh_CN": "",
     "arguments": [],
-    "line": 1048,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageFactory.java"
   },
   {
@@ -141,7 +155,6 @@
     "en_US": "fail to map lun to host before attach volume to vm",
     "zh_CN": "",
     "arguments": [],
-    "line": 1537,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageFactory.java"
   },
   {
@@ -151,7 +164,6 @@
     "arguments": [
       "rsp.error"
     ],
-    "line": 330,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageKvmCommandDispatcher.java"
   },
   {
@@ -159,7 +171,6 @@
     "en_US": "primary storage uuid is mandatory when delete lun",
     "zh_CN": "",
     "arguments": [],
-    "line": 95,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageManagerImpl.java"
   },
   {
@@ -170,7 +181,6 @@
       "blockPrimaryStorageHostRefVO.getInitiatorName()",
       "blockPrimaryStorageHostRefVO.getHostUuid()"
     ],
-    "line": 610,
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageManagerImpl.java"
   },
   {
@@ -184,7 +194,6 @@
       "psPath",
       "rsp.getError()"
     ],
-    "line": 143,
     "fileName": "src/main/java/org/zstack/storage/primary/block/ImageStoreBackupStorageBlockKvmDownloader.java"
   },
   {
@@ -192,7 +201,6 @@
     "en_US": "can not execute map lun to host flow, because backend device is null",
     "zh_CN": "",
     "arguments": [],
-    "line": 49,
     "fileName": "src/main/java/org/zstack/storage/primary/block/MapLunToHostFlow.java"
   },
   {
@@ -200,7 +208,6 @@
     "en_US": "can not execute map lun to host flow, because ps host ref is null",
     "zh_CN": "",
     "arguments": [],
-    "line": 53,
     "fileName": "src/main/java/org/zstack/storage/primary/block/MapLunToHostFlow.java"
   },
   {
@@ -208,7 +215,6 @@
     "en_US": "can not execute map lun to host flow, because ps host ref metadata is empty",
     "zh_CN": "",
     "arguments": [],
-    "line": 61,
     "fileName": "src/main/java/org/zstack/storage/primary/block/MapLunToHostFlow.java"
   },
   {
@@ -216,7 +222,6 @@
     "en_US": "can not execute map lun to host flow, invalid lun id",
     "zh_CN": "",
     "arguments": [],
-    "line": 65,
     "fileName": "src/main/java/org/zstack/storage/primary/block/MapLunToHostFlow.java"
   },
   {
@@ -224,7 +229,6 @@
     "en_US": "can not execute map lun to host flow, invalid lun lun type",
     "zh_CN": "",
     "arguments": [],
-    "line": 69,
     "fileName": "src/main/java/org/zstack/storage/primary/block/MapLunToHostFlow.java"
   },
   {
@@ -234,7 +238,6 @@
     "arguments": [
       "accessZoneRsp.getDetail_err_msg()"
     ],
-    "line": 935,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -244,7 +247,6 @@
     "arguments": [
       "queryAccessZoneSubnetRsp.getDetail_err_msg()"
     ],
-    "line": 941,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -254,7 +256,6 @@
     "arguments": [
       "queryHostRsp.getDetail_err_msg()"
     ],
-    "line": 953,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -265,7 +266,6 @@
       "ids.toString()",
       "queryHostRsp.getDetail_err_msg()"
     ],
-    "line": 968,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -277,7 +277,6 @@
       "String.valueOf(hostGroupId)",
       "addHostRsp.getDetail_err_msg()"
     ],
-    "line": 987,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -288,7 +287,6 @@
       "String.valueOf(hostId)",
       "rsp.getDetail_err_msg()"
     ],
-    "line": 1003,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -299,7 +297,6 @@
       "String.valueOf(hostGroupId)",
       "rsp.getDetail_err_msg()"
     ],
-    "line": 1015,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -309,7 +306,6 @@
     "arguments": [
       "String.valueOf(initiatorId)"
     ],
-    "line": 1022,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -320,7 +316,6 @@
       "String.valueOf(initiatorId)",
       "rsp.getDetail_err_msg()"
     ],
-    "line": 1027,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -330,7 +325,6 @@
     "arguments": [
       "queryHostGroupRsp.getDetail_err_msg()"
     ],
-    "line": 1035,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -341,7 +335,6 @@
       "name",
       "addHostGroupRsp.getDetail_err_msg()"
     ],
-    "line": 1053,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -352,7 +345,6 @@
       "ids.toString()",
       "queryLunRsp.getDetail_err_msg()"
     ],
-    "line": 1071,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -363,7 +355,6 @@
       "queryPath",
       "queryLunRsp.getDetail_err_msg()"
     ],
-    "line": 1110,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -374,7 +365,6 @@
       "name",
       "serverCommonRsp.getDetail_err_msg()"
     ],
-    "line": 1127,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -384,7 +374,15 @@
     "arguments": [
       "blockScsiLunVO.getName()"
     ],
-    "line": 1166,
+    "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
+  },
+  {
+    "raw": "lun[name:%s] has been occupied",
+    "en_US": "lun[name:{0}] has been occupied",
+    "zh_CN": "",
+    "arguments": [
+      "blockScsiLunVO.getName()"
+    ],
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -395,7 +393,6 @@
       "blockScsiLunVO.getName()",
       "serverRsp.getDetail_err_msg()"
     ],
-    "line": 1216,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -406,7 +403,6 @@
       "String.valueOf(lunId)",
       "queryLunRsp.getDetail_err_msg()"
     ],
-    "line": 1226,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -414,7 +410,6 @@
     "en_US": "lun id is mandatory when query lun map",
     "zh_CN": "",
     "arguments": [],
-    "line": 1239,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -425,7 +420,6 @@
       "String.valueOf(hostGroupId)",
       "queryLunMapRsp.getDetail_err_msg()"
     ],
-    "line": 1263,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -436,7 +430,6 @@
       "lunMapIds.toString()",
       "queryLunMapRsp.getDetail_err_msg()"
     ],
-    "line": 1282,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -446,7 +439,6 @@
     "arguments": [
       "clusterOverviewRsp.getDetail_err_msg()"
     ],
-    "line": 1297,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -458,7 +450,6 @@
       "String.valueOf(hostGroupId)",
       "serverRsp.getDetail_err_msg()"
     ],
-    "line": 1324,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -468,7 +459,6 @@
     "arguments": [
       "String.valueOf(lunMapId)"
     ],
-    "line": 1332,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -479,7 +469,6 @@
       "String.valueOf(lunMapId)",
       "serverRsp.getDetail_err_msg()"
     ],
-    "line": 1338,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -489,7 +478,6 @@
     "arguments": [
       "String.valueOf(lunId)"
     ],
-    "line": 1344,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -500,7 +488,6 @@
       "String.valueOf(lunId)",
       "serverRsp.getDetail_err_msg()"
     ],
-    "line": 1350,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -511,7 +498,6 @@
       "String.valueOf(id)",
       "storagePoolRsp.getDetail_err_msg()"
     ],
-    "line": 1360,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -522,7 +508,6 @@
       "JSONObjectUtil.toJsonString(blockScsiLunVO)",
       "rsp.getDetail_err_msg()"
     ],
-    "line": 1373,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -533,7 +518,6 @@
       "ids.toString()",
       "rsp.getDetail_err_msg()"
     ],
-    "line": 1395,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -543,7 +527,6 @@
     "arguments": [
       "String.valueOf(snapshotId)"
     ],
-    "line": 1402,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -554,7 +537,6 @@
       "String.valueOf(snapshotId)",
       "rsp.getDetail_err_msg()"
     ],
-    "line": 1409,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -565,7 +547,6 @@
       "String.valueOf(snapshotId)",
       "rsp.getDetail_err_msg()"
     ],
-    "line": 1420,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -576,7 +557,6 @@
       "String.valueOf(lunId)",
       "getLunSessionRsp.getDetail_err_msg()"
     ],
-    "line": 1431,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -587,7 +567,6 @@
       "String.valueOf(lunId)",
       "queryLunMapRsp.getDetail_err_msg()"
     ],
-    "line": 1447,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -598,7 +577,6 @@
       "String.valueOf(lunId)",
       "lunQuantityInfoRsp.getDetail_err_msg()"
     ],
-    "line": 1474,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
@@ -606,7 +584,6 @@
     "en_US": "There is no way to get lun map id, we just return as failure",
     "zh_CN": "",
     "arguments": [],
-    "line": 166,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDeviceImpl.java"
   },
   {
@@ -614,7 +591,6 @@
     "en_US": "lun map id is mandatory can not be null, neither 0",
     "zh_CN": "",
     "arguments": [],
-    "line": 175,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDeviceImpl.java"
   },
   {
@@ -622,7 +598,6 @@
     "en_US": "lun id is illegal",
     "zh_CN": "",
     "arguments": [],
-    "line": 199,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDeviceImpl.java"
   },
   {
@@ -632,7 +607,6 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 255,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDeviceImpl.java"
   },
   {
@@ -642,7 +616,13 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 260,
+    "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDeviceImpl.java"
+  },
+  {
+    "raw": "lun can not be found",
+    "en_US": "lun can not be found",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDeviceImpl.java"
   },
   {
@@ -654,7 +634,6 @@
       "clusterOverview.getCluster_healthy_state()",
       "clusterOverview.getCluster_running_state()"
     ],
-    "line": 534,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDeviceImpl.java"
   },
   {
@@ -662,7 +641,6 @@
     "en_US": "illegal lun id",
     "zh_CN": "",
     "arguments": [],
-    "line": 562,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDeviceImpl.java"
   },
   {
@@ -670,7 +648,6 @@
     "en_US": "fail to get image cache lun info",
     "zh_CN": "",
     "arguments": [],
-    "line": 654,
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDeviceImpl.java"
   }
 ]

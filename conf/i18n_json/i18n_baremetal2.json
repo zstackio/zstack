@@ -6,7 +6,6 @@
     "arguments": [
       "msg.getName()"
     ],
-    "line": 59,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/BareMetal2ChassisApiInterceptor.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "mac"
     ],
-    "line": 71,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/BareMetal2ChassisApiInterceptor.java"
   },
   {
@@ -26,7 +24,6 @@
     "arguments": [
       "clusterUuid"
     ],
-    "line": 107,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/BareMetal2ChassisApiInterceptor.java"
   },
   {
@@ -36,7 +33,6 @@
     "arguments": [
       "clusterUuid"
     ],
-    "line": 116,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/BareMetal2ChassisApiInterceptor.java"
   },
   {
@@ -46,7 +42,6 @@
     "arguments": [
       "clusterUuid"
     ],
-    "line": 124,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/BareMetal2ChassisApiInterceptor.java"
   },
   {
@@ -56,7 +51,6 @@
     "arguments": [
       "hardwareInfo"
     ],
-    "line": 79,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/BareMetal2ChassisHardwareInfoSyncer.java"
   },
   {
@@ -67,7 +61,6 @@
       "info.architecture",
       "clusterArchitecture"
     ],
-    "line": 88,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/BareMetal2ChassisHardwareInfoSyncer.java"
   },
   {
@@ -77,7 +70,6 @@
     "arguments": [
       "BareMetal2GlobalProperty.BAREMETAL2_SUPPORTED_BOOT_MODE"
     ],
-    "line": 98,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/BareMetal2ChassisHardwareInfoSyncer.java"
   },
   {
@@ -87,7 +79,6 @@
     "arguments": [
       "hardwareInfo"
     ],
-    "line": 109,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/BareMetal2ChassisHardwareInfoSyncer.java"
   },
   {
@@ -95,7 +86,6 @@
     "en_US": "there must be one and only one provision nic in a baremetal2 chassis",
     "zh_CN": "Baremetal2机箱中必须有且只有一个配置NIC",
     "arguments": [],
-    "line": 115,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/BareMetal2ChassisHardwareInfoSyncer.java"
   },
   {
@@ -105,7 +95,6 @@
     "arguments": [
       "hardwareInfo"
     ],
-    "line": 125,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/BareMetal2ChassisHardwareInfoSyncer.java"
   },
   {
@@ -113,7 +102,6 @@
     "en_US": "other chassis has nics with the same mac address, which is impossible",
     "zh_CN": "其他机箱具有相同MAC地址的NIC，这是不可能的",
     "arguments": [],
-    "line": 168,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/BareMetal2ChassisHardwareInfoSyncer.java"
   },
   {
@@ -123,7 +111,6 @@
     "arguments": [
       "msg.getClusterUuid()"
     ],
-    "line": 368,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/BareMetal2ChassisManagerImpl.java"
   },
   {
@@ -131,8 +118,30 @@
     "en_US": "no available baremetal2 chassis found",
     "zh_CN": "找不到可用的Baremetal2机箱",
     "arguments": [],
-    "line": 426,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/BareMetal2ChassisManagerImpl.java"
+  },
+  {
+    "raw": "Cannot find BareMetal2 Chassis[uuid:%s], it may have been deleted",
+    "en_US": "Cannot find BareMetal2 Chassis[uuid:{0}], it may have been deleted",
+    "zh_CN": "",
+    "arguments": [
+      "cmsg.getChassisUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/baremetal2/chassis/BareMetal2ChassisManagerImpl.java"
+  },
+  {
+    "raw": "License not found, please apply addon license for product elastic-baremetal.",
+    "en_US": "License not found, please apply addon license for product elastic-baremetal.",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/baremetal2/chassis/BareMetal2ChassisManagerImpl.java"
+  },
+  {
+    "raw": "not supported",
+    "en_US": "not supported",
+    "zh_CN": "不支持",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/baremetal2/chassis/BatchAddBareMetal2ChassisJob.java"
   },
   {
     "raw": "Bare Metal IPMI 2 Chassis %s:%d already exists",
@@ -142,7 +151,6 @@
       "address",
       "port"
     ],
-    "line": 74,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/ipmi/BareMetal2IpmiChassisApiInterceptor.java"
   },
   {
@@ -152,7 +160,6 @@
     "arguments": [
       "address"
     ],
-    "line": 82,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/ipmi/BareMetal2IpmiChassisApiInterceptor.java"
   },
   {
@@ -163,7 +170,6 @@
       "address",
       "port"
     ],
-    "line": 111,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/ipmi/BareMetal2IpmiChassisApiInterceptor.java"
   },
   {
@@ -174,7 +180,6 @@
       "address",
       "port"
     ],
-    "line": 121,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/ipmi/BareMetal2IpmiChassisApiInterceptor.java"
   },
   {
@@ -184,7 +189,6 @@
     "arguments": [
       "msg.getClusterUuid()"
     ],
-    "line": 133,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/ipmi/BareMetal2IpmiChassisApiInterceptor.java"
   },
   {
@@ -194,7 +198,6 @@
     "arguments": [
       "msg.getClusterUuid()"
     ],
-    "line": 140,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/ipmi/BareMetal2IpmiChassisApiInterceptor.java"
   },
   {
@@ -204,7 +207,6 @@
     "arguments": [
       "msg.getClusterUuid()"
     ],
-    "line": 146,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/ipmi/BareMetal2IpmiChassisApiInterceptor.java"
   },
   {
@@ -214,7 +216,6 @@
     "arguments": [
       "clusterUuid"
     ],
-    "line": 178,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/ipmi/BareMetal2IpmiChassisApiInterceptor.java"
   },
   {
@@ -224,7 +225,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 134,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/ipmi/BareMetal2IpmiChassisBase.java"
   },
   {
@@ -234,7 +234,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 206,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/ipmi/BareMetal2IpmiChassisBase.java"
   },
   {
@@ -244,7 +243,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 249,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/ipmi/BareMetal2IpmiChassisBase.java"
   },
   {
@@ -254,7 +252,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 340,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/ipmi/BareMetal2IpmiChassisBase.java"
   },
   {
@@ -264,7 +261,6 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 76,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/ipmi/BareMetal2IpmiChassisFactory.java"
   },
   {
@@ -272,7 +268,6 @@
     "en_US": "the api message\u0027s chassis type is ipmi, but it\u0027s not an APICreateBareMetal2ChassisHardwareInfoMsg",
     "zh_CN": "API消息的机箱类型为IPMI，但它不是APICreateBareMetal2ChassisHardwareInfoMsg",
     "arguments": [],
-    "line": 94,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/ipmi/BareMetal2IpmiChassisFactory.java"
   },
   {
@@ -283,7 +278,6 @@
       "imsg.getIpmiAddress()",
       "imsg.getIpmiPort()"
     ],
-    "line": 104,
     "fileName": "src/main/java/org/zstack/baremetal2/chassis/ipmi/BareMetal2IpmiChassisFactory.java"
   },
   {
@@ -291,7 +285,6 @@
     "en_US": "cluster type and hypervisor type should all be baremetal2 or all not",
     "zh_CN": "集群类型和虚拟机管理程序类型应全部为BareMetal2或全部为非BareMetal2",
     "arguments": [],
-    "line": 84,
     "fileName": "src/main/java/org/zstack/baremetal2/cluster/BareMetal2ClusterFactory.java"
   },
   {
@@ -299,7 +292,6 @@
     "en_US": "the architecture must be set when create new baremetal2 clusters",
     "zh_CN": "创建新的Baremetal2集群时必须设置体系结构",
     "arguments": [],
-    "line": 90,
     "fileName": "src/main/java/org/zstack/baremetal2/cluster/BareMetal2ClusterFactory.java"
   },
   {
@@ -307,7 +299,6 @@
     "en_US": "do not add host into baremetal2 cluster",
     "zh_CN": "不要将主机添加到BareMetal2集群中",
     "arguments": [],
-    "line": 101,
     "fileName": "src/main/java/org/zstack/baremetal2/cluster/BareMetal2ClusterFactory.java"
   },
   {
@@ -315,7 +306,6 @@
     "en_US": "Can not attach third-party ceph with token into aarch64 cluster.",
     "zh_CN": "无法使用令牌将第三方 分布式存储 附加到Aarch64集群。",
     "arguments": [],
-    "line": 29,
     "fileName": "src/main/java/org/zstack/baremetal2/cluster/CephStorageAttachBm2ClusterMetric.java"
   },
   {
@@ -323,7 +313,6 @@
     "en_US": "Can not attach local storage into baremetal2 cluster.",
     "zh_CN": "无法将本地存储连接到BareMetal2集群。",
     "arguments": [],
-    "line": 12,
     "fileName": "src/main/java/org/zstack/baremetal2/cluster/LocalStorageAttachBm2ClusterMetric.java"
   },
   {
@@ -333,7 +322,6 @@
     "arguments": [
       "bm.getUuid()"
     ],
-    "line": 318,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -343,7 +331,6 @@
     "arguments": [
       "msg.getInstanceUuid()"
     ],
-    "line": 364,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -353,7 +340,6 @@
     "arguments": [
       "chassis.getUuid()"
     ],
-    "line": 585,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -361,7 +347,6 @@
     "en_US": "convert image data to local disk failed",
     "zh_CN": "将图像数据转换到本地磁盘失败",
     "arguments": [],
-    "line": 735,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -373,7 +358,6 @@
       "chassis.getUuid()",
       "BareMetal2GlobalConfig.CONVERT_VOLUME_TO_LOCAL_DISK_TIMEOUT.value(Integer.class)"
     ],
-    "line": 744,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -383,7 +367,6 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 1274,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -394,7 +377,6 @@
       "self.getUuid()",
       "ret.getError()"
     ],
-    "line": 1403,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -405,7 +387,6 @@
       "self.getUuid()",
       "ret.getError()"
     ],
-    "line": 1472,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -415,7 +396,6 @@
     "arguments": [
       "msg.getInstanceUuid()"
     ],
-    "line": 1496,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -425,7 +405,6 @@
     "arguments": [
       "chassis.getUuid()"
     ],
-    "line": 2005,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -435,7 +414,6 @@
     "arguments": [
       "chassis.getUuid()"
     ],
-    "line": 2034,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -446,7 +424,6 @@
       "chassis.getUuid()",
       "timeout"
     ],
-    "line": 2119,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -454,7 +431,6 @@
     "en_US": "vmInstanceUuids is empty",
     "zh_CN": "VMInstanceUuids为空",
     "arguments": [],
-    "line": 2299,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -465,7 +441,6 @@
       "self.getUuid()",
       "self.getStatus()"
     ],
-    "line": 2305,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -475,7 +450,6 @@
     "arguments": [
       "bmUuid"
     ],
-    "line": 2382,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -485,7 +459,6 @@
     "arguments": [
       "bmUuid"
     ],
-    "line": 2448,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -495,7 +468,6 @@
     "arguments": [
       "bmUuid"
     ],
-    "line": 2730,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -507,7 +479,6 @@
       "volumeUuid",
       "ret.getError()"
     ],
-    "line": 2817,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -517,7 +488,6 @@
     "arguments": [
       "vo.getUuid()"
     ],
-    "line": 3002,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2Gateway.java"
   },
   {
@@ -527,7 +497,6 @@
     "arguments": [
       "msg.getManagementIp()"
     ],
-    "line": 66,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayApiInterceptor.java"
   },
   {
@@ -537,7 +506,6 @@
     "arguments": [
       "msg.getManagementIp()"
     ],
-    "line": 80,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayApiInterceptor.java"
   },
   {
@@ -547,7 +515,6 @@
     "arguments": [
       "msg.getClusterUuid()"
     ],
-    "line": 90,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayApiInterceptor.java"
   },
   {
@@ -557,7 +524,6 @@
     "arguments": [
       "msg.getManagementIp()"
     ],
-    "line": 100,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayApiInterceptor.java"
   },
   {
@@ -567,7 +533,6 @@
     "arguments": [
       "msg.getManagementIp()"
     ],
-    "line": 107,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayApiInterceptor.java"
   },
   {
@@ -578,7 +543,6 @@
       "msg.getGatewayUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 120,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayApiInterceptor.java"
   },
   {
@@ -589,7 +553,6 @@
       "msg.getGatewayUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 131,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayApiInterceptor.java"
   },
   {
@@ -599,7 +562,6 @@
     "arguments": [
       "msg.getGatewayUuid()"
     ],
-    "line": 140,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayApiInterceptor.java"
   },
   {
@@ -610,7 +572,6 @@
       "msg.getGatewayUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 151,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayApiInterceptor.java"
   },
   {
@@ -620,7 +581,6 @@
     "arguments": [
       "msg.getGatewayUuid()"
     ],
-    "line": 156,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayApiInterceptor.java"
   },
   {
@@ -630,7 +590,6 @@
     "arguments": [
       "msg.getClusterUuid()"
     ],
-    "line": 164,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayApiInterceptor.java"
   },
   {
@@ -640,7 +599,6 @@
     "arguments": [
       "msg.getClusterUuid()"
     ],
-    "line": 168,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayApiInterceptor.java"
   },
   {
@@ -650,7 +608,6 @@
     "arguments": [
       "msg.getGatewayUuid()"
     ],
-    "line": 173,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayApiInterceptor.java"
   },
   {
@@ -661,7 +618,6 @@
       "msg.getGatewayUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 177,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayApiInterceptor.java"
   },
   {
@@ -672,7 +628,6 @@
       "msg.getGatewayUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 181,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayApiInterceptor.java"
   },
   {
@@ -680,7 +635,6 @@
     "en_US": "baremetal2 instance[uuid:{0}] doesn\u0027t exist, cannot generate its console url",
     "zh_CN": "Baremetal2实例[uuid：{0}]不存在，无法生成其控制台URL",
     "arguments": [],
-    "line": 45,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayConsoleHypervisorBackend.java"
   },
   {
@@ -691,7 +645,6 @@
       "msg.getClusterUuid()",
       "BareMetal2GatewayConstant.BM2_HYPERVISOR_TYPE"
     ],
-    "line": 30,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayFactory.java"
   },
   {
@@ -701,7 +654,6 @@
     "arguments": [
       "resourceUuid"
     ],
-    "line": 256,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayManagerImpl.java"
   },
   {
@@ -709,7 +661,6 @@
     "en_US": "baremetal2 instance required",
     "zh_CN": "",
     "arguments": [],
-    "line": 301,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/BareMetal2GatewayManagerImpl.java"
   },
   {
@@ -717,7 +668,6 @@
     "en_US": "failed to allocate baremetal2 gateway",
     "zh_CN": "无法分配Baremetal2网关",
     "arguments": [],
-    "line": 102,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/allocator/AbstractGatewayAllocatorStrategy.java"
   },
   {
@@ -725,7 +675,6 @@
     "en_US": "no available baremetal2 gateway found",
     "zh_CN": "找不到可用的Baremetal2网关",
     "arguments": [],
-    "line": 62,
     "fileName": "src/main/java/org/zstack/baremetal2/gateway/allocator/BareMetal2GatewayMainAllocatorFlow.java"
   },
   {
@@ -735,7 +684,6 @@
     "arguments": [
       "bm2ImageCount"
     ],
-    "line": 138,
     "fileName": "src/main/java/org/zstack/baremetal2/image/BareMetal2ImageManagerImpl.java"
   },
   {
@@ -743,7 +691,6 @@
     "en_US": "only root volume template of format raw/qcow2 can be tagged with baremetal2",
     "zh_CN": "只有RAW/QCOW2格式的根卷模板才能使用BareMetal2进行标记",
     "arguments": [],
-    "line": 158,
     "fileName": "src/main/java/org/zstack/baremetal2/image/BareMetal2ImageManagerImpl.java"
   },
   {
@@ -751,7 +698,6 @@
     "en_US": "the bootMode tag is mandatory for baremetal2 images",
     "zh_CN": "对于BareMetal2镜像，bootmode标记是必需的",
     "arguments": [],
-    "line": 162,
     "fileName": "src/main/java/org/zstack/baremetal2/image/BareMetal2ImageManagerImpl.java"
   },
   {
@@ -761,7 +707,6 @@
     "arguments": [
       "BareMetal2GlobalProperty.BAREMETAL2_SUPPORTED_BOOT_MODE"
     ],
-    "line": 166,
     "fileName": "src/main/java/org/zstack/baremetal2/image/BareMetal2ImageManagerImpl.java"
   },
   {
@@ -772,7 +717,6 @@
       "spec.getRequiredChassisDiskUuid()",
       "chassis.getUuid()"
     ],
-    "line": 76,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceAllocateChassisFlow.java"
   },
   {
@@ -783,7 +727,6 @@
       "chassis.getUuid()",
       "spec.getImageSpec().getInventory().getUuid()"
     ],
-    "line": 88,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceAllocateChassisFlow.java"
   },
   {
@@ -791,7 +734,6 @@
     "en_US": "not enough information to determine which baremetal2 cluster should be used",
     "zh_CN": "没有足够的信息来确定应使用哪个BareMetal2集群",
     "arguments": [],
-    "line": 85,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceAllocateClusterFlow.java"
   },
   {
@@ -799,7 +741,6 @@
     "en_US": "no baremetal2 cluster found",
     "zh_CN": "未找到BareMetal2集群",
     "arguments": [],
-    "line": 100,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceAllocateClusterFlow.java"
   },
   {
@@ -810,7 +751,6 @@
       "spec.findOnlyAllowedClusters()",
       "spec.getVmInventory().getUuid()"
     ],
-    "line": 217,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceAllocateClusterFlow.java"
   },
   {
@@ -821,7 +761,6 @@
       "spec.findOnlyAllowedClusters()",
       "spec.getVmInventory().getUuid()"
     ],
-    "line": 224,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceAllocateClusterFlow.java"
   },
   {
@@ -832,7 +771,6 @@
       "spec.findOnlyAllowedClusters()",
       "spec.getVmInventory().getUuid()"
     ],
-    "line": 231,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceAllocateClusterFlow.java"
   },
   {
@@ -842,7 +780,6 @@
     "arguments": [
       "spec.findOnlyAllowedClusters()"
     ],
-    "line": 253,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceAllocateClusterFlow.java"
   },
   {
@@ -850,7 +787,6 @@
     "en_US": "only support vpc network support attach eip on baremetal2 instance",
     "zh_CN": "仅支持VPC网络支持在Baremetal2实例上附加EIP",
     "arguments": [],
-    "line": 197,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -858,7 +794,6 @@
     "en_US": "bare metal instance not allowed to change vm nic network",
     "zh_CN": "不允许裸机实例更改VM NIC网络",
     "arguments": [],
-    "line": 207,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -866,7 +801,6 @@
     "en_US": "current operation is not supported on local baremetal instance",
     "zh_CN": "本地裸机实例不支持当前操作",
     "arguments": [],
-    "line": 218,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -874,7 +808,6 @@
     "en_US": "not supported by baremetal2 instance",
     "zh_CN": "BareMetal2实例不支持",
     "arguments": [],
-    "line": 229,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -884,7 +817,6 @@
     "arguments": [
       "bm.getUuid()"
     ],
-    "line": 235,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -894,7 +826,6 @@
     "arguments": [
       "bm.getUuid()"
     ],
-    "line": 243,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -904,7 +835,6 @@
     "arguments": [
       "networkUuid"
     ],
-    "line": 272,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -914,7 +844,6 @@
     "arguments": [
       "ipVersion"
     ],
-    "line": 370,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -924,7 +853,6 @@
     "arguments": [
       "l2Type"
     ],
-    "line": 376,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -932,7 +860,6 @@
     "en_US": "customMac is mandatory when attaching l3 network to baremetal2 instance",
     "zh_CN": "将三层网络连接到Baremetal2实例时，CustomMAC是必需的",
     "arguments": [],
-    "line": 382,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -942,7 +869,6 @@
     "arguments": [
       "msg.getCustomMac()"
     ],
-    "line": 386,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -952,7 +878,6 @@
     "arguments": [
       "msg.getCustomMac()"
     ],
-    "line": 391,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -962,7 +887,6 @@
     "arguments": [
       "msg.getCustomMac()"
     ],
-    "line": 409,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -972,7 +896,6 @@
     "arguments": [
       "msg.getCustomMac()"
     ],
-    "line": 426,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -980,7 +903,6 @@
     "en_US": "third party ceph cannot mixed with other primary storage",
     "zh_CN": "第三方 分布式存储 不能与其他主存储混合",
     "arguments": [],
-    "line": 475,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -988,7 +910,6 @@
     "en_US": "remote provision instance not support attach provision nic to bond",
     "zh_CN": "",
     "arguments": [],
-    "line": 539,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -998,7 +919,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 644,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -1008,7 +928,6 @@
     "arguments": [
       "msg.getChassisOfferingUuid()"
     ],
-    "line": 651,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -1018,7 +937,6 @@
     "arguments": [
       "msg.getChassisOfferingUuid()"
     ],
-    "line": 655,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -1026,7 +944,6 @@
     "en_US": "no need to set chassisOfferingUuid because the instance has been assigned an chassis already",
     "zh_CN": "无需设置Chassisofferinguuid，因为实例已分配机箱",
     "arguments": [],
-    "line": 663,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -1034,7 +951,6 @@
     "en_US": "no need to set chassisOfferingUuid because the instance has been assigned an chassis offering already",
     "zh_CN": "无需设置ChassisOfferinguuid，因为已为实例分配了机箱产品",
     "arguments": [],
-    "line": 667,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -1044,7 +960,6 @@
     "arguments": [
       "msg.getChassisUuid()"
     ],
-    "line": 675,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -1054,7 +969,6 @@
     "arguments": [
       "msg.getChassisUuid()"
     ],
-    "line": 685,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -1064,7 +978,6 @@
     "arguments": [
       "msg.getChassisUuid()"
     ],
-    "line": 689,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -1072,7 +985,6 @@
     "en_US": "neither chassisUuid nor chassisOfferingUuid is set when create baremetal2 instance",
     "zh_CN": "创建BareMetal2实例时，Chassisuuid和ChassisOfferuuid均未设置",
     "arguments": [],
-    "line": 751,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -1080,7 +992,6 @@
     "en_US": "do not set chassisUuid and chassisOfferingUuid at the same time",
     "zh_CN": "不要同时设置Chassisuuid和ChassisOfferuuid",
     "arguments": [],
-    "line": 755,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -1088,7 +999,6 @@
     "en_US": "image cannot be empty unless chassis is in direct mode",
     "zh_CN": "除非机箱处于直接模式，否则镜像不能为空",
     "arguments": [],
-    "line": 824,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -1096,7 +1006,6 @@
     "en_US": "direct mode not support choose image",
     "zh_CN": "直接模式不支持选择镜像",
     "arguments": [],
-    "line": 831,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -1106,7 +1015,6 @@
     "arguments": [
       "msg.getImageUuid()"
     ],
-    "line": 838,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -1117,7 +1025,6 @@
       "disk.getUuid()",
       "image.getUuid()"
     ],
-    "line": 844,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -1125,7 +1032,6 @@
     "en_US": "different boot mode between the image and chassis/offering",
     "zh_CN": "镜像和机箱/产品之间的引导模式不同",
     "arguments": [],
-    "line": 885,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -1133,7 +1039,6 @@
     "en_US": "cannot decide which zone the baremetal2 instance should be created in",
     "zh_CN": "无法确定应在哪个数据中心中创建BareMetal2实例",
     "arguments": [],
-    "line": 934,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceApiInterceptor.java"
   },
   {
@@ -1141,7 +1046,6 @@
     "en_US": "baremetal2 instance[uuid:{0}] is either not exist or not Connected, cannot change its password",
     "zh_CN": "Baremetal2实例[uuid：{0}]不存在或未连接，无法更改其密码",
     "arguments": [],
-    "line": 675,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceBase.java"
   },
   {
@@ -1152,8 +1056,16 @@
       "zoneUuid",
       "isoImageUuid"
     ],
-    "line": 129,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceImageSelectBackupStorageFlow.java"
+  },
+  {
+    "raw": "Cannot find BareMetal2 Instance[uuid:%s], it may have been deleted",
+    "en_US": "Cannot find BareMetal2 Instance[uuid:{0}], it may have been deleted",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getInstanceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceManagerImpl.java"
   },
   {
     "raw": "%s can only be created or deleted",
@@ -1162,7 +1074,6 @@
     "arguments": [
       "releaseTag"
     ],
-    "line": 384,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceManagerImpl.java"
   },
   {
@@ -1172,7 +1083,6 @@
     "arguments": [
       "releaseTag"
     ],
-    "line": 395,
     "fileName": "src/main/java/org/zstack/baremetal2/instance/BareMetal2InstanceManagerImpl.java"
   },
   {
@@ -1182,7 +1092,6 @@
     "arguments": [
       "netmask"
     ],
-    "line": 141,
     "fileName": "src/main/java/org/zstack/baremetal2/provisionnetwork/BareMetal2ProvisionNetworkApiInterceptor.java"
   },
   {
@@ -1193,7 +1102,6 @@
       "begin",
       "end"
     ],
-    "line": 147,
     "fileName": "src/main/java/org/zstack/baremetal2/provisionnetwork/BareMetal2ProvisionNetworkApiInterceptor.java"
   },
   {
@@ -1204,7 +1112,6 @@
       "msg.getNetworkUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 171,
     "fileName": "src/main/java/org/zstack/baremetal2/provisionnetwork/BareMetal2ProvisionNetworkApiInterceptor.java"
   },
   {
@@ -1215,7 +1122,6 @@
       "msg.getNetworkUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 182,
     "fileName": "src/main/java/org/zstack/baremetal2/provisionnetwork/BareMetal2ProvisionNetworkApiInterceptor.java"
   },
   {
@@ -1226,7 +1132,6 @@
       "msg.getNetworkUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 188,
     "fileName": "src/main/java/org/zstack/baremetal2/provisionnetwork/BareMetal2ProvisionNetworkApiInterceptor.java"
   },
   {
@@ -1237,7 +1142,6 @@
       "msg.getNetworkUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 198,
     "fileName": "src/main/java/org/zstack/baremetal2/provisionnetwork/BareMetal2ProvisionNetworkApiInterceptor.java"
   },
   {
@@ -1245,7 +1149,6 @@
     "en_US": "networkUuids is empty",
     "zh_CN": "网络uuid为空",
     "arguments": [],
-    "line": 258,
     "fileName": "src/main/java/org/zstack/baremetal2/provisionnetwork/BareMetal2ProvisionNetworkApiInterceptor.java"
   },
   {
@@ -1255,7 +1158,6 @@
     "arguments": [
       "msg.getNetworkUuids()"
     ],
-    "line": 265,
     "fileName": "src/main/java/org/zstack/baremetal2/provisionnetwork/BareMetal2ProvisionNetworkApiInterceptor.java"
   },
   {
@@ -1267,7 +1169,6 @@
       "gatewayUuid",
       "reply.getError()"
     ],
-    "line": 308,
     "fileName": "src/main/java/org/zstack/baremetal2/provisionnetwork/BareMetal2ProvisionNetworkBase.java"
   },
   {
@@ -1279,7 +1180,6 @@
       "gatewayUuid",
       "reply.getError()"
     ],
-    "line": 496,
     "fileName": "src/main/java/org/zstack/baremetal2/provisionnetwork/BareMetal2ProvisionNetworkBase.java"
   },
   {
@@ -1289,7 +1189,6 @@
     "arguments": [
       "msg.getNetworkUuid()"
     ],
-    "line": 657,
     "fileName": "src/main/java/org/zstack/baremetal2/provisionnetwork/BareMetal2ProvisionNetworkBase.java"
   },
   {
@@ -1299,7 +1198,6 @@
     "arguments": [
       "requiredIp"
     ],
-    "line": 672,
     "fileName": "src/main/java/org/zstack/baremetal2/provisionnetwork/BareMetal2ProvisionNetworkBase.java"
   },
   {
@@ -1311,7 +1209,15 @@
       "self.getDhcpRangeStartIp()",
       "self.getDhcpRangeEndIp()"
     ],
-    "line": 677,
     "fileName": "src/main/java/org/zstack/baremetal2/provisionnetwork/BareMetal2ProvisionNetworkBase.java"
+  },
+  {
+    "raw": "Cannot find BareMetal2 Provision Network[uuid:%s], it may have been deleted",
+    "en_US": "Cannot find BareMetal2 Provision Network[uuid:{0}], it may have been deleted",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getNetworkUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/baremetal2/provisionnetwork/BareMetal2ProvisionNetworkManagerImpl.java"
   }
 ]

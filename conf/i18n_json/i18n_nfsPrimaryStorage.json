@@ -7,7 +7,6 @@
       "url",
       "zoneUuid"
     ],
-    "line": 46,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsApiParamChecker.java"
   },
   {
@@ -15,7 +14,6 @@
     "en_US": " the url contains an invalid folder[/dev or /proc or /sys]",
     "zh_CN": "URL包含了一个无效的目录[/dev or /proc or /sys]",
     "arguments": [],
-    "line": 52,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsApiParamChecker.java"
   },
   {
@@ -23,7 +21,6 @@
     "en_US": "found multiple CIDR",
     "zh_CN": "返现多个CIDR",
     "arguments": [],
-    "line": 65,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsApiParamChecker.java"
   },
   {
@@ -33,7 +30,6 @@
     "arguments": [
       "cidr"
     ],
-    "line": 78,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsApiParamChecker.java"
   },
   {
@@ -44,7 +40,6 @@
       "ipAddr",
       "cidr"
     ],
-    "line": 82,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsApiParamChecker.java"
   },
   {
@@ -52,7 +47,6 @@
     "en_US": "cannot find usable backend",
     "zh_CN": "无法找到可用的NFS主存储后端",
     "arguments": [],
-    "line": 247,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -60,7 +54,6 @@
     "en_US": "no usable backend found",
     "zh_CN": "无法找到可用的NFS主存储后端",
     "arguments": [],
-    "line": 306,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -71,7 +64,6 @@
       "vol.getVmInstanceUuid()",
       "state"
     ],
-    "line": 633,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -81,7 +73,15 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 676,
+    "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
+  },
+  {
+    "raw": "host where vm[uuid:%s] locate is not Connected.",
+    "en_US": "host where vm[uuid:{0}] locate is not Connected.",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVmInstanceUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -92,7 +92,6 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 1825,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -102,7 +101,6 @@
     "arguments": [
       "msg.getVolume().getUuid()"
     ],
-    "line": 1875,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -112,7 +110,6 @@
     "arguments": [
       "pri.getUuid()"
     ],
-    "line": 277,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageFactory.java"
   },
   {
@@ -122,7 +119,6 @@
     "arguments": [
       "pri.getUuid()"
     ],
-    "line": 286,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageFactory.java"
   },
   {
@@ -133,7 +129,6 @@
       "psUuid",
       "imageFormat"
     ],
-    "line": 402,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageFactory.java"
   },
   {
@@ -146,7 +141,6 @@
       "host.getManagementIp()",
       "rsp.getError()"
     ],
-    "line": 324,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
   },
   {
@@ -156,7 +150,6 @@
     "arguments": [
       "inv.getUuid()"
     ],
-    "line": 402,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
   },
   {
@@ -166,7 +159,6 @@
     "arguments": [
       "msg.getHostUuid()"
     ],
-    "line": 880,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
   },
   {
@@ -176,7 +168,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 945,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
   },
   {
@@ -188,7 +179,6 @@
       "inv.getUuid()",
       "rsp.getError()"
     ],
-    "line": 1022,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
   },
   {
@@ -202,7 +192,6 @@
       "host.getManagementIp()",
       "rsp.getError()"
     ],
-    "line": 1131,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
   },
   {
@@ -216,7 +205,6 @@
       "host.getManagementIp()",
       "rsp.getError()"
     ],
-    "line": 1305,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
   },
   {
@@ -230,7 +218,6 @@
       "host.getManagementIp()",
       "rsp.getError()"
     ],
-    "line": 1342,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
   },
   {
@@ -242,7 +229,6 @@
       "imageCache.getImageUuid()",
       "rsp.getError()"
     ],
-    "line": 1386,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
   },
   {
@@ -252,7 +238,6 @@
     "arguments": [
       "clusterUuid"
     ],
-    "line": 1537,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
   },
   {
@@ -264,7 +249,6 @@
       "msg.getVolume().getInstallPath()",
       "cmd.srcDir"
     ],
-    "line": 1657,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
   },
   {
@@ -278,7 +262,6 @@
       "host.getManagementIp()",
       "rsp.getError()"
     ],
-    "line": 1924,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
   },
   {
@@ -288,7 +271,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 2040,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
   },
   {
@@ -302,7 +284,6 @@
       "primaryStorageInstallPath",
       "rsp.getError()"
     ],
-    "line": 109,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryToSftpBackupKVMBackend.java"
   },
   {
@@ -316,7 +297,6 @@
       "backupStorageInstallPath",
       "rsp.getError()"
     ],
-    "line": 165,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryToSftpBackupKVMBackend.java"
   }
 ]

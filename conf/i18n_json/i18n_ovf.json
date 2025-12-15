@@ -6,7 +6,6 @@
     "arguments": [
       "data.getStage()"
     ],
-    "line": 184,
     "fileName": "src/main/java/org/zstack/ovf/CreateVmInstanceFromOvfLongJob.java"
   },
   {
@@ -14,7 +13,6 @@
     "en_US": "not support",
     "zh_CN": "不是支持",
     "arguments": [],
-    "line": 235,
     "fileName": "src/main/java/org/zstack/ovf/CreateVmInstanceFromOvfLongJob.java"
   },
   {
@@ -24,7 +22,6 @@
     "arguments": [
       "id"
     ],
-    "line": 99,
     "fileName": "src/main/java/org/zstack/ovf/OvfHelper.java"
   },
   {
@@ -34,7 +31,6 @@
     "arguments": [
       "capacity"
     ],
-    "line": 112,
     "fileName": "src/main/java/org/zstack/ovf/OvfHelper.java"
   },
   {
@@ -44,7 +40,6 @@
     "arguments": [
       "pSize"
     ],
-    "line": 122,
     "fileName": "src/main/java/org/zstack/ovf/OvfHelper.java"
   },
   {
@@ -52,7 +47,6 @@
     "en_US": "Volume controller not found.",
     "zh_CN": "未找到卷控制器。",
     "arguments": [],
-    "line": 292,
     "fileName": "src/main/java/org/zstack/ovf/OvfHelper.java"
   },
   {
@@ -60,7 +54,6 @@
     "en_US": "CD Driver controller not found.",
     "zh_CN": "找不到光驱控制器。",
     "arguments": [],
-    "line": 324,
     "fileName": "src/main/java/org/zstack/ovf/OvfHelper.java"
   },
   {
@@ -70,7 +63,6 @@
     "arguments": [
       "name"
     ],
-    "line": 372,
     "fileName": "src/main/java/org/zstack/ovf/OvfHelper.java"
   },
   {
@@ -78,7 +70,6 @@
     "en_US": "Memory \u0027InstanceID\u0027 not found",
     "zh_CN": "未找到内存“ instanceId ”",
     "arguments": [],
-    "line": 384,
     "fileName": "src/main/java/org/zstack/ovf/OvfHelper.java"
   },
   {
@@ -86,7 +77,6 @@
     "en_US": "Memory \u0027VirtualQuantity\u0027 not found",
     "zh_CN": "未找到内存“ virtualQuantity ”",
     "arguments": [],
-    "line": 391,
     "fileName": "src/main/java/org/zstack/ovf/OvfHelper.java"
   },
   {
@@ -96,7 +86,6 @@
     "arguments": [
       "quantity"
     ],
-    "line": 396,
     "fileName": "src/main/java/org/zstack/ovf/OvfHelper.java"
   },
   {
@@ -104,7 +93,6 @@
     "en_US": "CPU \u0027InstanceID\u0027 not found",
     "zh_CN": "未找到CPU “ instanceId ”",
     "arguments": [],
-    "line": 405,
     "fileName": "src/main/java/org/zstack/ovf/OvfHelper.java"
   },
   {
@@ -112,7 +100,6 @@
     "en_US": "CPU \u0027VirtualQuantity\u0027 not found",
     "zh_CN": "未找到CPU \u0027 virtualQuantity \u0027",
     "arguments": [],
-    "line": 411,
     "fileName": "src/main/java/org/zstack/ovf/OvfHelper.java"
   },
   {
@@ -122,7 +109,6 @@
     "arguments": [
       "quantity"
     ],
-    "line": 416,
     "fileName": "src/main/java/org/zstack/ovf/OvfHelper.java"
   },
   {
@@ -132,8 +118,41 @@
     "arguments": [
       "cps"
     ],
-    "line": 426,
     "fileName": "src/main/java/org/zstack/ovf/OvfHelper.java"
+  },
+  {
+    "raw": "failed to parse image info, because %s",
+    "en_US": "failed to parse image info, because {0}",
+    "zh_CN": "",
+    "arguments": [
+      "e.getMessage()"
+    ],
+    "fileName": "src/main/java/org/zstack/ovf/OvfHelper.java"
+  },
+  {
+    "raw": "cancel create OVF VM process during image downloading",
+    "en_US": "cancel create OVF VM process during image downloading",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/ovf/OvfImageUploadTracker.java"
+  },
+  {
+    "raw": "OVF long job[uuid:%s] execute fail",
+    "en_US": "OVF long job[uuid:{0}] execute fail",
+    "zh_CN": "OVF镜像上传长作业 {0} 执行失败",
+    "arguments": [
+      "context.longJobUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/ovf/OvfImageUploadTracker.java"
+  },
+  {
+    "raw": "OVF long job[uuid:%s] suspended",
+    "en_US": "OVF long job[uuid:{0}] suspended",
+    "zh_CN": "OVF镜像上传长作业 {0} 被暂停了，很可能是网络问题导致目标服务器长时间没有收到镜像数据。请检查网络配置后重试",
+    "arguments": [
+      "context.longJobUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/ovf/OvfImageUploadTracker.java"
   },
   {
     "raw": "Vm[uuid: %s] is already exported as the ova package[uuid: %s], please delete the package and try again.",
@@ -143,7 +162,6 @@
       "msg.getVmUuid()",
       "ovaUuid"
     ],
-    "line": 62,
     "fileName": "src/main/java/org/zstack/ovf/OvfInterceptor.java"
   },
   {
@@ -153,7 +171,6 @@
     "arguments": [
       "msg.getBackupStorageUuid()"
     ],
-    "line": 70,
     "fileName": "src/main/java/org/zstack/ovf/OvfInterceptor.java"
   },
   {
@@ -163,7 +180,6 @@
     "arguments": [
       "msg.getVmUuid()"
     ],
-    "line": 77,
     "fileName": "src/main/java/org/zstack/ovf/OvfInterceptor.java"
   },
   {
@@ -173,7 +189,6 @@
     "arguments": [
       "VmInstanceState.Stopped.toString()"
     ],
-    "line": 82,
     "fileName": "src/main/java/org/zstack/ovf/OvfInterceptor.java"
   },
   {
@@ -181,7 +196,6 @@
     "en_US": "failed to parse jsonCreateVmParam in APICreateVmInstanceFromOvfMsg",
     "zh_CN": "无法分析APICreateVmInstanceFromOvFMsg中的JsonCreateVmParam",
     "arguments": [],
-    "line": 107,
     "fileName": "src/main/java/org/zstack/ovf/OvfInterceptor.java"
   },
   {
@@ -191,7 +205,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 630,
     "fileName": "src/main/java/org/zstack/ovf/OvfManagerImpl.java"
   },
   {
@@ -199,7 +212,38 @@
     "en_US": "Failed to read ovf file.",
     "zh_CN": "无法读取OVF文件。",
     "arguments": [],
-    "line": 758,
+    "fileName": "src/main/java/org/zstack/ovf/OvfManagerImpl.java"
+  },
+  {
+    "raw": "invalid ovfId: %s",
+    "en_US": "invalid ovfId: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "invalidParams"
+    ],
+    "fileName": "src/main/java/org/zstack/ovf/OvfManagerImpl.java"
+  },
+  {
+    "raw": "cancel create OVF VM process before adding images",
+    "en_US": "cancel create OVF VM process before adding images",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/ovf/OvfManagerImpl.java"
+  },
+  {
+    "raw": "invalid firmware parameter: %s",
+    "en_US": "invalid firmware parameter: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "firmware"
+    ],
+    "fileName": "src/main/java/org/zstack/ovf/OvfManagerImpl.java"
+  },
+  {
+    "raw": "cancel create OVF VM process before creating VM",
+    "en_US": "cancel create OVF VM process before creating VM",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/ovf/OvfManagerImpl.java"
   },
   {
@@ -207,7 +251,48 @@
     "en_US": "failed to create VM from OVF because the root disk of the VM cannot be found",
     "zh_CN": "无法从OVF创建VM，因为找不到VM的根磁盘",
     "arguments": [],
-    "line": 1071,
     "fileName": "src/main/java/org/zstack/ovf/OvfManagerImpl.java"
+  },
+  {
+    "raw": "message can not be null",
+    "en_US": "message can not be null",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/ovf/datatype/CreateVmFromOvfBundle.java"
+  },
+  {
+    "raw": "ovfInfo can not be null",
+    "en_US": "ovfInfo can not be null",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/ovf/datatype/CreateVmFromOvfBundle.java"
+  },
+  {
+    "raw": "failed to validate ovf bundle",
+    "en_US": "failed to validate ovf bundle",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/ovf/datatype/CreateVmFromOvfBundle.java"
+  },
+  {
+    "raw": "ovfId is null",
+    "en_US": "ovfId is null",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/ovf/datatype/CreateVmFromOvfImageParam.java"
+  },
+  {
+    "raw": "type is null",
+    "en_US": "type is null",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/ovf/datatype/CreateVmFromOvfImageParam.java"
+  },
+  {
+    "raw": "url and uuid is null when type is Upload",
+    "en_US": "url and uuid is null when type is Upload",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/ovf/datatype/CreateVmFromOvfImageParam.java"
   }
 ]

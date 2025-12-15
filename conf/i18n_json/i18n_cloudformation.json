@@ -6,7 +6,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 63,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationInterceptor.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "validStatus"
     ],
-    "line": 67,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationInterceptor.java"
   },
   {
@@ -26,7 +24,6 @@
     "arguments": [
       "validStatus"
     ],
-    "line": 98,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationInterceptor.java"
   },
   {
@@ -34,7 +31,6 @@
     "en_US": "templateContent and templateUuid mustn\u0027t both be empty!",
     "zh_CN": "TemplateContent和TemplateUuid不能同时为空！",
     "arguments": [],
-    "line": 118,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationInterceptor.java"
   },
   {
@@ -42,7 +38,6 @@
     "en_US": "templateContent and url mustn\u0027t both be empty or both be set!",
     "zh_CN": "TemplateContent和URL不能同时为空或同时设置！",
     "arguments": [],
-    "line": 129,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationInterceptor.java"
   },
   {
@@ -50,7 +45,6 @@
     "en_US": "only admin could enable/disable system StackTemplate",
     "zh_CN": "只有管理员才能启用/禁用系统堆栈模板",
     "arguments": [],
-    "line": 145,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationInterceptor.java"
   },
   {
@@ -58,7 +52,6 @@
     "en_US": "templateContent and uuid mustn\u0027t both be empty or both be set!",
     "zh_CN": "TemplateContent和uuid不能同时为空或同时设置！",
     "arguments": [],
-    "line": 173,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationInterceptor.java"
   },
   {
@@ -68,7 +61,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 321,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -78,7 +70,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 611,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -88,7 +79,6 @@
     "arguments": [
       "uuid"
     ],
-    "line": 641,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -98,7 +88,6 @@
     "arguments": [
       "template.getUuid()"
     ],
-    "line": 864,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -106,7 +95,6 @@
     "en_US": "templateContent must be set!",
     "zh_CN": "必须设置TemplateContent！",
     "arguments": [],
-    "line": 870,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -117,7 +105,6 @@
       "p.getParamName()",
       "p.getResourceType()"
     ],
-    "line": 954,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -125,7 +112,6 @@
     "en_US": "StackTemplateVO has been deleted...",
     "zh_CN": "StackTemplateVo已被删除..",
     "arguments": [],
-    "line": 1024,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -135,7 +121,6 @@
     "arguments": [
       "vo.getName()"
     ],
-    "line": 1031,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -143,7 +128,6 @@
     "en_US": "content must be set by templateContent or url!",
     "zh_CN": "必须通过TemplateContent或URL设置内容！",
     "arguments": [],
-    "line": 1047,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -151,7 +135,6 @@
     "en_US": "get null content input",
     "zh_CN": "获取空内容输入",
     "arguments": [],
-    "line": 1065,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -161,7 +144,6 @@
     "arguments": [
       "result.getTemplateVersion()"
     ],
-    "line": 1072,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -171,7 +153,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 1086,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -179,7 +160,6 @@
     "en_US": "[cloudformation] filterName must be cloudformation:true or cloudformation:false",
     "zh_CN": "[cloudFormation]FilterName必须为cloudFormation：true或cloudFormat：false",
     "arguments": [],
-    "line": 1387,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -187,7 +167,6 @@
     "en_US": "get null element in template content",
     "zh_CN": "获取模板内容中的空元素",
     "arguments": [],
-    "line": 31,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationUtils.java"
   },
   {
@@ -195,7 +174,6 @@
     "en_US": "template must contain [ZStackTemplateFormatVersion]",
     "zh_CN": "模板必须包含[ZStackTemplateFormatVersion]",
     "arguments": [],
-    "line": 35,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationUtils.java"
   },
   {
@@ -206,7 +184,6 @@
       "result.getTemplateVersion()",
       "CloudFormationConstant.version"
     ],
-    "line": 38,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationUtils.java"
   },
   {
@@ -216,7 +193,6 @@
     "arguments": [
       "l2Uuid"
     ],
-    "line": 124,
     "fileName": "src/main/java/org/zstack/cloudformation/VmPortMonitorTask.java"
   },
   {
@@ -226,7 +202,6 @@
     "arguments": [
       "vm.getUuid()"
     ],
-    "line": 135,
     "fileName": "src/main/java/org/zstack/cloudformation/VmPortMonitorTask.java"
   },
   {
@@ -234,7 +209,6 @@
     "en_US": "cannot find resource of properties set before!",
     "zh_CN": "找不到以前设置的属性的资源！",
     "arguments": [],
-    "line": 97,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationCreator.java"
   },
   {
@@ -244,7 +218,6 @@
     "arguments": [
       "value"
     ],
-    "line": 152,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationCreator.java"
   },
   {
@@ -252,7 +225,6 @@
     "en_US": "verb must contain \u0027::\u0027!",
     "zh_CN": "谓词必须包含“：:”！",
     "arguments": [],
-    "line": 174,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationCreator.java"
   },
   {
@@ -263,7 +235,6 @@
       "t[0]",
       "last.getClass().getName()"
     ],
-    "line": 218,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationCreator.java"
   },
   {
@@ -271,7 +242,6 @@
     "en_US": "Some actions are invalid",
     "zh_CN": "某些操作无效",
     "arguments": [],
-    "line": 380,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationCreator.java"
   },
   {
@@ -279,7 +249,6 @@
     "en_US": "no root element found, please check your cfn formation!",
     "zh_CN": "找不到根元素，请检查您的CFN结构！",
     "arguments": [],
-    "line": 253,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationDecoder.java"
   },
   {
@@ -289,7 +258,6 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 432,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationDecoder.java"
   },
   {
@@ -297,7 +265,6 @@
     "en_US": "CfnRootDecoder\u0027s weight must between 0-100, 0 means decode first, default is 50",
     "zh_CN": "cfnRootDecoder的权重必须介于0-100之间，0表示先解码，默认值为50",
     "arguments": [],
-    "line": 14,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/AbstractCfnRootDecoder.java"
   },
   {
@@ -305,7 +272,6 @@
     "en_US": "Value must be boolean in \u0027Condition\u0027 field",
     "zh_CN": "“条件”字段中的值必须为布尔值",
     "arguments": [],
-    "line": 37,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ConditionDecoder.java"
   },
   {
@@ -313,7 +279,6 @@
     "en_US": "Only support ZStack Template Functions in \u0027Condition\u0027 field!",
     "zh_CN": "仅支持“条件”字段中的ZStack模板函数！",
     "arguments": [],
-    "line": 41,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ConditionDecoder.java"
   },
   {
@@ -321,7 +286,6 @@
     "en_US": "Condition body cannot support json null or array!",
     "zh_CN": "条件体不支持JSON NULL或数组！",
     "arguments": [],
-    "line": 45,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ConditionDecoder.java"
   },
   {
@@ -331,7 +295,6 @@
     "arguments": [
       "msg"
     ],
-    "line": 93,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/DecoderUtils.java"
   },
   {
@@ -339,7 +302,6 @@
     "en_US": "Mapping value body cannot support json array!",
     "zh_CN": "映射值主体不支持JSON数组！",
     "arguments": [],
-    "line": 54,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/MappingDecoder.java"
   },
   {
@@ -347,7 +309,6 @@
     "en_US": "Mapping value body cannot support null!",
     "zh_CN": "映射值正文不能支持Null！",
     "arguments": [],
-    "line": 56,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/MappingDecoder.java"
   },
   {
@@ -355,7 +316,6 @@
     "en_US": "mappingName must be found in result, or it is invalid cfn json.",
     "zh_CN": "必须在结果中找到MappingName，否则它是无效的CFN JSON。",
     "arguments": [],
-    "line": 66,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/MappingDecoder.java"
   },
   {
@@ -363,7 +323,6 @@
     "en_US": "Output body cannot support json null!",
     "zh_CN": "输出正文不支持JSON NULL！",
     "arguments": [],
-    "line": 57,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/OutputDecoder.java"
   },
   {
@@ -371,7 +330,6 @@
     "en_US": "Description in Outputs must be String type!",
     "zh_CN": "输出中的描述必须是字符串类型！",
     "arguments": [],
-    "line": 70,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/OutputDecoder.java"
   },
   {
@@ -379,7 +337,6 @@
     "en_US": "Mapping body cannot support non map value!",
     "zh_CN": "映射体不支持非映射值！",
     "arguments": [],
-    "line": 82,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/OutputDecoder.java"
   },
   {
@@ -387,7 +344,6 @@
     "en_US": "Mapping body cannot support json null!",
     "zh_CN": "映射体不支持JSON NULL！",
     "arguments": [],
-    "line": 84,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/OutputDecoder.java"
   },
   {
@@ -395,7 +351,6 @@
     "en_US": "paramName must be found in result, or it is invalid cfn json.",
     "zh_CN": "必须在结果中找到ParamName，否则它是无效的CFN JSON。",
     "arguments": [],
-    "line": 59,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ParameterDecoder.java"
   },
   {
@@ -403,7 +358,6 @@
     "en_US": "Parameters root body must be json object!",
     "zh_CN": "参数根体必须是JSON对象！",
     "arguments": [],
-    "line": 53,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/PreParameterDecoder.java"
   },
   {
@@ -415,7 +369,6 @@
       "e.getKey()",
       "resource.getResourceName()"
     ],
-    "line": 48,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ResourceDecoder.java"
   },
   {
@@ -423,7 +376,6 @@
     "en_US": "Resource value body cannot support null!",
     "zh_CN": "资源值体不能支持null！",
     "arguments": [],
-    "line": 68,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ResourceDecoder.java"
   },
   {
@@ -431,7 +383,6 @@
     "en_US": "resourceName must be found in result, or it is invalid cfn json.",
     "zh_CN": "ResourceName必须在结果中找到，或者它是无效的CFN JSON。",
     "arguments": [],
-    "line": 112,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ResourceDecoder.java"
   },
   {
@@ -439,7 +390,6 @@
     "en_US": "Parameters body cannot support null!",
     "zh_CN": "参数体不支持NULL！",
     "arguments": [],
-    "line": 123,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ResourceDecoder.java"
   },
   {
@@ -447,7 +397,6 @@
     "en_US": "Mappings root body must be json object!",
     "zh_CN": "映射根体必须是JSON对象！",
     "arguments": [],
-    "line": 145,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ResourceDecoder.java"
   },
   {
@@ -455,7 +404,6 @@
     "en_US": "Resource Type must be String!",
     "zh_CN": "资源类型必须是字符串！",
     "arguments": [],
-    "line": 216,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ResourceDecoder.java"
   },
   {
@@ -463,7 +411,6 @@
     "en_US": "Resource root body must be json object!",
     "zh_CN": "资源根体必须是JSON对象！",
     "arguments": [],
-    "line": 254,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ResourceDecoder.java"
   },
   {
@@ -473,7 +420,6 @@
     "arguments": [
       "cond"
     ],
-    "line": 42,
     "fileName": "src/main/java/org/zstack/cloudformation/template/function/IfTemplateFunction.java"
   },
   {
@@ -484,7 +430,6 @@
       "keys",
       "e.getAsString()"
     ],
-    "line": 35,
     "fileName": "src/main/java/org/zstack/cloudformation/template/function/OrTemplateFunction.java"
   },
   {
@@ -494,7 +439,6 @@
     "arguments": [
       "e.getAsString()"
     ],
-    "line": 42,
     "fileName": "src/main/java/org/zstack/cloudformation/template/function/OrTemplateFunction.java"
   },
   {
@@ -502,7 +446,6 @@
     "en_US": "Fn::Select out of range, please check your json file!",
     "zh_CN": "FN：:选择超出范围，请检查您的JSON文件！",
     "arguments": [],
-    "line": 83,
     "fileName": "src/main/java/org/zstack/cloudformation/template/function/SelectTemplateFunction.java"
   },
   {
@@ -512,7 +455,6 @@
     "arguments": [
       "e.getKey()"
     ],
-    "line": 75,
     "fileName": "src/main/java/org/zstack/cloudformation/template/function/TemplateFunctionUtils.java"
   },
   {
@@ -520,7 +462,6 @@
     "en_US": "element is null!",
     "zh_CN": "元素为空！",
     "arguments": [],
-    "line": 90,
     "fileName": "src/main/java/org/zstack/cloudformation/template/function/TemplateFunctionUtils.java"
   }
 ]

@@ -7,7 +7,6 @@
       "msg.getRuleUuid()",
       "state"
     ],
-    "line": 71,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
@@ -17,7 +16,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 86,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
@@ -28,7 +26,6 @@
       "msg.getRuleUuid()",
       "vmNicUuid"
     ],
-    "line": 102,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
@@ -39,7 +36,6 @@
       "msg.getRuleUuid()",
       "state"
     ],
-    "line": 107,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
@@ -50,7 +46,6 @@
       "msg.getVmNicUuid()",
       "msg.getRuleUuid()"
     ],
-    "line": 126,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
@@ -63,7 +58,6 @@
       "msg.getPrivatePortStart()",
       "msg.getPrivatePortEnd()"
     ],
-    "line": 170,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
@@ -76,7 +70,6 @@
       "msg.getPrivatePortStart()",
       "msg.getPrivatePortEnd()"
     ],
-    "line": 187,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
@@ -86,7 +79,6 @@
     "arguments": [
       "msg.getAllowedCidr()"
     ],
-    "line": 194,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
@@ -96,7 +88,6 @@
     "arguments": [
       "msg.getAllowedCidr()"
     ],
-    "line": 196,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
@@ -107,7 +98,6 @@
       "msg.getVipUuid()",
       "useForList.toString()"
     ],
-    "line": 204,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
@@ -121,7 +111,6 @@
       "vo.getVipPortStart()",
       "vo.getVipPortEnd()"
     ],
-    "line": 214,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
@@ -132,7 +121,6 @@
       "msg.getVmNicUuid()",
       "msg.getVipUuid()"
     ],
-    "line": 229,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
@@ -144,7 +132,6 @@
       "vm.getUuid()",
       "vipUuid"
     ],
-    "line": 273,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
@@ -155,7 +142,6 @@
       "vmNic.getUuid()",
       "vipUuid"
     ],
-    "line": 278,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
@@ -165,8 +151,17 @@
     "arguments": [
       "vmNicUuid"
     ],
-    "line": 291,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
+  },
+  {
+    "raw": "unable to create port forwarding rule, extension[%s] refused it because %s",
+    "en_US": "unable to create port forwarding rule, extension[{0}] refused it because {1}",
+    "zh_CN": "",
+    "arguments": [
+      "extp.getClass().getName()",
+      "e.getMessage()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingManagerImpl.java"
   },
   {
     "raw": "port forwarding rule [uuid:%s] is deleted",
@@ -175,7 +170,6 @@
     "arguments": [
       "struct.getRule().getUuid()"
     ],
-    "line": 1221,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingManagerImpl.java"
   }
 ]

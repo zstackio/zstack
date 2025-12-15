@@ -7,7 +7,17 @@
       "builder.deleteCharAt(builder.length() - 1)",
       "timeout"
     ],
-    "line": 348,
+    "fileName": "src/main/java/org/zstack/aliyun/account/AliyunAccountBase.java"
+  },
+  {
+    "raw": "[%s, %s] not a valid ak pair, please check it. more details: %s",
+    "en_US": "[{0}, {1}] not a valid ak pair, please check it. more details: {2}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getKey()",
+      "\"******\"",
+      "reply.getError().getDetails()"
+    ],
     "fileName": "src/main/java/org/zstack/aliyun/account/AliyunAccountBase.java"
   },
   {
@@ -15,7 +25,6 @@
     "en_US": "no bucket found for backup",
     "zh_CN": "没有可用的Bucket执行备份",
     "arguments": [],
-    "line": 466,
     "fileName": "src/main/java/org/zstack/aliyun/backup/BackupToAliyunBase.java"
   },
   {
@@ -23,7 +32,6 @@
     "en_US": "accessKey and keySecret must be set!",
     "zh_CN": "必须设置AccessKey和KeySecret！",
     "arguments": [],
-    "line": 33,
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunClient.java"
   },
   {
@@ -31,7 +39,6 @@
     "en_US": "regionId must be set!",
     "zh_CN": "必须设置RegionID！",
     "arguments": [],
-    "line": 37,
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunClient.java"
   },
   {
@@ -39,7 +46,24 @@
     "en_US": "cannot find key / secret from msg",
     "zh_CN": "无法从消息中找到密钥/机密",
     "arguments": [],
-    "line": 237,
+    "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
+  },
+  {
+    "raw": "no such instance type support: %s",
+    "en_US": "no such instance type support: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getTypeId()"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
+  },
+  {
+    "raw": "couldn\u0027t find router table in router: [%s]",
+    "en_US": "couldn\u0027t find router table in router: [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getvRouterId()"
+    ],
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
   },
   {
@@ -49,7 +73,6 @@
     "arguments": [
       "AliyunConstant.DEFAULT_ENTRY_WAIT_STATUS_TIMEOUT"
     ],
-    "line": 2151,
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
   },
   {
@@ -59,7 +82,6 @@
     "arguments": [
       "request.getInstanceIds()"
     ],
-    "line": 2637,
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
   },
   {
@@ -67,7 +89,13 @@
     "en_US": "image already existed remote, please use sync first.",
     "zh_CN": "镜像已经存在阿里云服务器上，请尝试同步数据",
     "arguments": [],
-    "line": 2697,
+    "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
+  },
+  {
+    "raw": "the izone chosen by user doesn\u0027t support VPC",
+    "en_US": "the izone chosen by user doesn\u0027t support VPC",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
   },
   {
@@ -77,7 +105,6 @@
     "arguments": [
       "request.getRegionId()"
     ],
-    "line": 3004,
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
   },
   {
@@ -87,7 +114,13 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 259,
+    "fileName": "src/main/java/org/zstack/aliyun/core/AliyunUtils.java"
+  },
+  {
+    "raw": "no accountUuid found, please check the login session!",
+    "en_US": "no accountUuid found, please check the login session!",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunUtils.java"
   },
   {
@@ -95,7 +128,6 @@
     "en_US": "cannot input 0-length file as vm images!",
     "zh_CN": "无法将长度为0的文件作为虚拟机镜像输入！",
     "arguments": [],
-    "line": 410,
     "fileName": "src/main/java/org/zstack/aliyun/core/OssSdkImpl.java"
   },
   {
@@ -105,7 +137,15 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 499,
+    "fileName": "src/main/java/org/zstack/aliyun/core/OssSdkImpl.java"
+  },
+  {
+    "raw": "no such oss bucket: %s",
+    "en_US": "no such oss bucket: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getBucketName()"
+    ],
     "fileName": "src/main/java/org/zstack/aliyun/core/OssSdkImpl.java"
   },
   {
@@ -115,7 +155,6 @@
     "arguments": [
       "e.getRequestId()"
     ],
-    "line": 588,
     "fileName": "src/main/java/org/zstack/aliyun/core/OssSdkImpl.java"
   },
   {
@@ -127,7 +166,6 @@
       "eivo.getName()",
       "eivo.getCreateDate()"
     ],
-    "line": 79,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/CheckEcsImageExistPublicFlow.java"
   },
   {
@@ -138,15 +176,27 @@
       "msg.getName()",
       "new SimpleDateFormat(\"yyyy/MM/dd HH:mm:ss\").format(HybridUtilsForAliyun.fmtTime(rpl.getCreateDate()))"
     ],
-    "line": 107,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/CheckEcsImageExistPublicFlow.java"
+  },
+  {
+    "raw": "no such instance-offering uuid",
+    "en_US": "no such instance-offering uuid",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/aliyun/ecs/CreateEcsInstancePublicFlow.java"
+  },
+  {
+    "raw": "mem must \\\\\u003e 1G, and mem GB must \\\\\u003e\u003d cpu",
+    "en_US": "mem must \\\\\u003e 1G, and mem GB must \\\\\u003e\u003d cpu",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/aliyun/ecs/CreateEcsInstancePublicFlow.java"
   },
   {
     "raw": "No Available instance types now.",
     "en_US": "No Available instance types now.",
     "zh_CN": "没有可用的实例类型",
     "arguments": [],
-    "line": 184,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/CreateEcsInstancePublicFlow.java"
   },
   {
@@ -157,7 +207,6 @@
       "ecs.getUuid()",
       "ecs.getEcsInstanceId()"
     ],
-    "line": 344,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/CreateEcsInstancePublicFlow.java"
   },
   {
@@ -167,7 +216,6 @@
     "arguments": [
       "evo.getEcsStatus().toString()"
     ],
-    "line": 65,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
   },
   {
@@ -177,7 +225,6 @@
     "arguments": [
       "evo.getChargeType().toString()"
     ],
-    "line": 70,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
   },
   {
@@ -185,7 +232,6 @@
     "en_US": "Only admin can set parameter [onlyZstack] \u003d false",
     "zh_CN": "只有管理员能设置[onlyZsatck]参数为false",
     "arguments": [],
-    "line": 84,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
   },
   {
@@ -195,7 +241,6 @@
     "arguments": [
       "evo.getAvailableIpAddressCount()"
     ],
-    "line": 93,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
   },
   {
@@ -206,7 +251,6 @@
       "privateIp",
       "cidr"
     ],
-    "line": 97,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
   },
   {
@@ -217,7 +261,6 @@
       "vSwitchUuid",
       "ecs.getUuid()"
     ],
-    "line": 103,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
   },
   {
@@ -225,7 +268,6 @@
     "en_US": "bandwidth must be set while allocate publicIp",
     "zh_CN": "当分配公有IP时带宽必须被设置",
     "arguments": [],
-    "line": 137,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
   },
   {
@@ -235,7 +277,6 @@
     "arguments": [
       "msg.getPrivateIpAddress()"
     ],
-    "line": 140,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
   },
   {
@@ -246,7 +287,6 @@
       "msg.getEcsRootVolumeType()",
       "EcsInstanceConstant.validVolumeCategory.toString()"
     ],
-    "line": 143,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
   },
   {
@@ -254,7 +294,6 @@
     "en_US": "instanceOffering or instanceType must be set!",
     "zh_CN": "计算规格和实例类型必须被设置",
     "arguments": [],
-    "line": 147,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
   },
   {
@@ -264,7 +303,6 @@
     "arguments": [
       "rly1.getVncUrl()"
     ],
-    "line": 517,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsInstanceManagerImpl.java"
   },
   {
@@ -272,15 +310,20 @@
     "en_US": "image has been deleted!",
     "zh_CN": "图像已删除！",
     "arguments": [],
-    "line": 52,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/ExportImageFromBSFlow.java"
+  },
+  {
+    "raw": "must less than 500 GB",
+    "en_US": "must less than 500 GB",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/aliyun/ecs/ImportEcsImageFlow.java"
   },
   {
     "raw": "no identity found",
     "en_US": "no identity found",
     "zh_CN": "找不到身份",
     "arguments": [],
-    "line": 187,
     "fileName": "src/main/java/org/zstack/aliyun/identityzone/AliyunIdentityZoneBase.java"
   },
   {
@@ -288,7 +331,6 @@
     "en_US": "the operation only custom image",
     "zh_CN": "这个操作只能对用户自己的镜像进行",
     "arguments": [],
-    "line": 70,
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageApiInterceptor.java"
   },
   {
@@ -296,7 +338,6 @@
     "en_US": "Only system disks can create mirrors",
     "zh_CN": "只有系统云盘可以创建快照",
     "arguments": [],
-    "line": 79,
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageApiInterceptor.java"
   },
   {
@@ -306,7 +347,6 @@
     "arguments": [
       "msg.getDataCenterUuid()"
     ],
-    "line": 93,
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageApiInterceptor.java"
   },
   {
@@ -314,7 +354,6 @@
     "en_US": "can not delete ecs system image remote",
     "zh_CN": "不能删除阿里云服务器上的云主机系统镜像",
     "arguments": [],
-    "line": 130,
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageApiInterceptor.java"
   },
   {
@@ -322,7 +361,6 @@
     "en_US": "Only support ImageStoreBackupStorage",
     "zh_CN": "用本地镜像创建阿里云上的镜像只支持ImageStore镜像服务器",
     "arguments": [],
-    "line": 141,
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageApiInterceptor.java"
   },
   {
@@ -330,7 +368,6 @@
     "en_US": "image name cannot starts with http:// or https://",
     "zh_CN": "镜像名称不可以以http://或https://开始",
     "arguments": [],
-    "line": 144,
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageApiInterceptor.java"
   },
   {
@@ -340,7 +377,6 @@
     "arguments": [
       "imageUuid"
     ],
-    "line": 152,
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageApiInterceptor.java"
   },
   {
@@ -350,7 +386,6 @@
     "arguments": [
       "imageUuid"
     ],
-    "line": 156,
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageApiInterceptor.java"
   },
   {
@@ -360,7 +395,6 @@
     "arguments": [
       "ivo.getUuid()"
     ],
-    "line": 172,
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageApiInterceptor.java"
   },
   {
@@ -371,7 +405,6 @@
       "msg.getImageUuid()",
       "msg.getDataCenterUuid()"
     ],
-    "line": 361,
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageManagerImpl.java"
   },
   {
@@ -381,7 +414,6 @@
     "arguments": [
       "eipVo.getAllocateResourceUuid()"
     ],
-    "line": 533,
     "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
   },
   {
@@ -391,7 +423,15 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 2857,
+    "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
+  },
+  {
+    "raw": "couldn\u0027t find such router interface: [%s]",
+    "en_US": "couldn\u0027t find such router interface: [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "vRouterInterfaceUuid"
+    ],
     "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
   },
   {
@@ -402,7 +442,15 @@
       "tupleCidr",
       "msg.getNextHopUuid()"
     ],
-    "line": 3386,
+    "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
+  },
+  {
+    "raw": "couldn\u0027t find such vr entry: [%s]",
+    "en_US": "couldn\u0027t find such vr entry: [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
   },
   {
@@ -412,7 +460,6 @@
     "arguments": [
       "msg.getVbrUuid()"
     ],
-    "line": 585,
     "fileName": "src/main/java/org/zstack/aliyun/network/connection/AliyunConnectionManagerImpl.java"
   },
   {
@@ -422,7 +469,6 @@
     "arguments": [
       "msg.getL3networkUuid()"
     ],
-    "line": 42,
     "fileName": "src/main/java/org/zstack/aliyun/network/connection/GetCidrsFlow.java"
   },
   {
@@ -432,8 +478,57 @@
     "arguments": [
       "msg.getL3networkUuid()"
     ],
-    "line": 51,
     "fileName": "src/main/java/org/zstack/aliyun/network/connection/GetCidrsFlow.java"
+  },
+  {
+    "raw": "No Such Ecs VPC found: %s",
+    "en_US": "No Such Ecs VPC found: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVpcUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/GetCidrsFlow.java"
+  },
+  {
+    "raw": "no such router interface in vbr: %s",
+    "en_US": "no such router interface in vbr: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVbrUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/GetRouterInterfaceFlow.java"
+  },
+  {
+    "raw": "no interface on vrouter: %s, maybe it has been deleted.",
+    "en_US": "no interface on vrouter: {0}, maybe it has been deleted.",
+    "zh_CN": "",
+    "arguments": [
+      "vrUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/GetRouterInterfaceFlow.java"
+  },
+  {
+    "raw": "cannot find a pair of router interface for indicated vbr[%s] and vrouter[%s]",
+    "en_US": "cannot find a pair of router interface for indicated vbr[{0}] and vrouter[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVbrUuid()",
+      "vrUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/GetRouterInterfaceFlow.java"
+  },
+  {
+    "raw": "the interface [%s and %s] doesn\u0027t matched vbr-%s and vrouter-%s, which belong to vpc-%s",
+    "en_US": "the interface [{0} and {1}] doesn\u0027t matched vbr-{2} and vrouter-{3}, which belong to vpc-{4}",
+    "zh_CN": "",
+    "arguments": [
+      "vbrri.getUuid()",
+      "vpcri.getUuid()",
+      "msg.getVbrUuid()",
+      "vrUuid",
+      "msg.getVpcUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/GetRouterInterfaceFlow.java"
   },
   {
     "raw": "no such vpc found for: %s",
@@ -442,7 +537,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 43,
     "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
   },
   {
@@ -452,7 +546,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 48,
     "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
   },
   {
@@ -462,7 +555,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 53,
     "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
   },
   {
@@ -472,7 +564,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 58,
     "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
   },
   {
@@ -482,7 +573,6 @@
     "arguments": [
       "msg.getResourceType()"
     ],
-    "line": 62,
     "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
   },
   {
@@ -490,7 +580,6 @@
     "en_US": "Only admin can create connections",
     "zh_CN": "只有admin才能创建连接",
     "arguments": [],
-    "line": 68,
     "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
   },
   {
@@ -500,7 +589,6 @@
     "arguments": [
       "msg.getCpeIp()"
     ],
-    "line": 72,
     "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
   },
   {
@@ -508,7 +596,6 @@
     "en_US": "cpeIp must be ipv4 address",
     "zh_CN": "cpeIp必须是ipv4地址",
     "arguments": [],
-    "line": 76,
     "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
   },
   {
@@ -519,7 +606,6 @@
       "msg.getL3networkUuid()",
       "msg.getVpcUuid()"
     ],
-    "line": 82,
     "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
   },
   {
@@ -527,7 +613,6 @@
     "en_US": "vpn gateway and user gateway are not in the same dataCenterUuid!",
     "zh_CN": "vpn网关和用户网关不是同一个dataCenterUuid",
     "arguments": [],
-    "line": 955,
     "fileName": "src/main/java/org/zstack/aliyun/network/vpn/AliyunVpcVpnBase.java"
   },
   {
@@ -538,7 +623,6 @@
       "msg.getBucketName()",
       "msg.getDataCenterUuid()"
     ],
-    "line": 33,
     "fileName": "src/main/java/org/zstack/aliyun/oss/EcsOssApiInterceptor.java"
   },
   {
@@ -548,7 +632,6 @@
     "arguments": [
       "ovo.getUuid()"
     ],
-    "line": 41,
     "fileName": "src/main/java/org/zstack/aliyun/oss/EcsOssApiInterceptor.java"
   },
   {
@@ -556,7 +639,6 @@
     "en_US": "domain, key, secret must be set all",
     "zh_CN": "域、密钥、机密必须全部设置",
     "arguments": [],
-    "line": 114,
     "fileName": "src/main/java/org/zstack/aliyun/oss/EcsOssManagerImpl.java"
   },
   {
@@ -564,7 +646,6 @@
     "en_US": "oss bucket is not empty!",
     "zh_CN": "oss Bucket不为空",
     "arguments": [],
-    "line": 107,
     "fileName": "src/main/java/org/zstack/aliyun/oss/OssBucketCascadeExtension.java"
   },
   {
@@ -572,7 +653,6 @@
     "en_US": "Root volume cannot be deleted",
     "zh_CN": "云盘不能被删除",
     "arguments": [],
-    "line": 62,
     "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
   },
   {
@@ -582,7 +662,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 95,
     "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
   },
   {
@@ -590,7 +669,6 @@
     "en_US": "Only data disk can be mounted on ecs",
     "zh_CN": "只有云盘可以挂装到云主机上",
     "arguments": [],
-    "line": 105,
     "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
   },
   {
@@ -598,7 +676,6 @@
     "en_US": "The disk not be attach on any ecs",
     "zh_CN": "该云盘没有加载到任何云主机",
     "arguments": [],
-    "line": 109,
     "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
   },
   {
@@ -608,7 +685,6 @@
     "arguments": [
       "msg.getEcsUuid()"
     ],
-    "line": 121,
     "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
   },
   {
@@ -616,7 +692,6 @@
     "en_US": "Disk and ecs instances must be in the same zone",
     "zh_CN": "云盘和云主机必须在相同的数据中心下",
     "arguments": [],
-    "line": 126,
     "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
   },
   {
@@ -627,7 +702,6 @@
       "msg.getDiskUuid()",
       "msg.getEcsUuid()"
     ],
-    "line": 130,
     "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
   },
   {
@@ -635,7 +709,6 @@
     "en_US": "Only data disk can attach to ecs",
     "zh_CN": "只有云盘能加载到云服务器",
     "arguments": [],
-    "line": 135,
     "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
   },
   {
@@ -643,7 +716,6 @@
     "en_US": "Cannot attach disk when in use",
     "zh_CN": "不能加载正在使用的云盘",
     "arguments": [],
-    "line": 139,
     "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
   },
   {
@@ -651,7 +723,6 @@
     "en_US": "Non-independent disk can only be destroyed with instances",
     "zh_CN": "未独立的云盘只能和云主机一起删除",
     "arguments": [],
-    "line": 143,
     "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
   },
   {
@@ -659,7 +730,6 @@
     "en_US": "Not allowed create disk on root volume snapshot",
     "zh_CN": "不允许在云盘快照上创建云盘",
     "arguments": [],
-    "line": 167,
     "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
   },
   {
@@ -667,7 +737,6 @@
     "en_US": "the disk name or description cannot set start with \u0027http://\u0027 or \u0027https://\u0027 ",
     "zh_CN": "云盘名称和介绍不能以http://或https://开头",
     "arguments": [],
-    "line": 176,
     "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
   },
   {
@@ -675,7 +744,6 @@
     "en_US": "The operation allows only when ecs state of the ecs instance status be running or stopped",
     "zh_CN": "当云主机态为运行中或已停止时该操作才被允许",
     "arguments": [],
-    "line": 41,
     "fileName": "src/main/java/org/zstack/aliyun/storage/snapshot/AliyunSnapshotApiInterceptor.java"
   },
   {
@@ -685,7 +753,6 @@
     "arguments": [
       "type"
     ],
-    "line": 44,
     "fileName": "src/main/java/org/zstack/hybrid/account/HybridAccountApiInterceptor.java"
   },
   {
@@ -697,7 +764,6 @@
       "msg.getType()",
       "accountUuid"
     ],
-    "line": 60,
     "fileName": "src/main/java/org/zstack/hybrid/account/HybridAccountApiInterceptor.java"
   },
   {
@@ -705,7 +771,6 @@
     "en_US": "parameters [accountUuid] only can be used by admin user!",
     "zh_CN": "参数[accountUuid]必须被admin用户设置",
     "arguments": [],
-    "line": 76,
     "fileName": "src/main/java/org/zstack/hybrid/account/HybridAccountApiInterceptor.java"
   },
   {
@@ -716,7 +781,6 @@
       "msg.getKey()",
       "accountUuid"
     ],
-    "line": 84,
     "fileName": "src/main/java/org/zstack/hybrid/account/HybridAccountApiInterceptor.java"
   },
   {
@@ -726,8 +790,167 @@
     "arguments": [
       "msg.getClass().getSimpleName()"
     ],
-    "line": 27,
     "fileName": "src/main/java/org/zstack/hybrid/backup/HybridBackupApiInterceptor.java"
+  },
+  {
+    "raw": "couldn\u0027t find such vpn-connection: [%s]",
+    "en_US": "couldn\u0027t find such vpn-connection: [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "conUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "couldn\u0027t find such vpn gateway: [%s]",
+    "en_US": "couldn\u0027t find such vpn gateway: [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "gvo"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "couldn\u0027t find such datacenter: [%s]",
+    "en_US": "couldn\u0027t find such datacenter: [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "dcUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "couldn\u0027t find such identityzone: [%s]",
+    "en_US": "couldn\u0027t find such identityzone: [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "izUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "couldn\u0027t find such vpc: [%s]",
+    "en_US": "couldn\u0027t find such vpc: [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "vpcUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "couldn\u0027t find such vswitch: [%s]",
+    "en_US": "couldn\u0027t find such vswitch: [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "vswitchUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "couldn\u0027t find such oss bucket: [%s]",
+    "en_US": "couldn\u0027t find such oss bucket: [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "ossBucketUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "couldn\u0027t find such virtual border router: [%s]",
+    "en_US": "couldn\u0027t find such virtual border router: [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "vrUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "couldn\u0027t find such virtual router: [%s]",
+    "en_US": "couldn\u0027t find such virtual router: [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "vrUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "non support virtual router type: [%s]",
+    "en_US": "non support virtual router type: [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "type"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "couldn\u0027t find such vswitch: %s",
+    "en_US": "couldn\u0027t find such vswitch: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "vswitchUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "couldn\u0027t find such virtual border router: %s",
+    "en_US": "couldn\u0027t find such virtual border router: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "vRouterId"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "couldn\u0027t find vpc in dataCenter: %s",
+    "en_US": "couldn\u0027t find vpc in dataCenter: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "dataCenterUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "couldn\u0027t find such virtual router: %s",
+    "en_US": "couldn\u0027t find such virtual router: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "vRouterId"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "non supported virtual router type: %s",
+    "en_US": "non supported virtual router type: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "type"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "couldn\u0027t find such virtual router from vpcUuid: %s",
+    "en_US": "couldn\u0027t find such virtual router from vpcUuid: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "vpcUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "no current used key/secret for aliyun!",
+    "en_US": "no current used key/secret for aliyun!",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
+  },
+  {
+    "raw": "no current used key/secret for %s!",
+    "en_US": "no current used key/secret for {0}!",
+    "zh_CN": "",
+    "arguments": [
+      "type.toString()"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/core/HybridUtilsForAliyun.java"
   },
   {
     "raw": "dcType not supported type [%s]",
@@ -736,7 +959,6 @@
     "arguments": [
       "type"
     ],
-    "line": 46,
     "fileName": "src/main/java/org/zstack/hybrid/datacenter/DataCenterApiInterceptor.java"
   },
   {
@@ -747,7 +969,6 @@
       "msg.getRegionId()",
       "ak"
     ],
-    "line": 63,
     "fileName": "src/main/java/org/zstack/hybrid/datacenter/DataCenterApiInterceptor.java"
   },
   {
@@ -757,7 +978,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 96,
     "fileName": "src/main/java/org/zstack/hybrid/datacenter/DataCenterManagerImpl.java"
   },
   {
@@ -768,7 +988,6 @@
       "msg.getZoneId()",
       "izo.getUuid()"
     ],
-    "line": 55,
     "fileName": "src/main/java/org/zstack/hybrid/identityzone/IdentityZoneApiInterceptor.java"
   },
   {
@@ -779,7 +998,6 @@
       "type",
       "dvo.getDcType().toString()"
     ],
-    "line": 72,
     "fileName": "src/main/java/org/zstack/hybrid/identityzone/IdentityZoneApiInterceptor.java"
   },
   {
@@ -787,7 +1005,6 @@
     "en_US": "either dataCenterUuid or regionId should be set, please check the parameters.",
     "zh_CN": "dataCenterUuid和regionId应该被设置，请检查参数",
     "arguments": [],
-    "line": 82,
     "fileName": "src/main/java/org/zstack/hybrid/identityzone/IdentityZoneApiInterceptor.java"
   },
   {
@@ -797,7 +1014,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 111,
     "fileName": "src/main/java/org/zstack/hybrid/identityzone/IdentityZoneManagerImpl.java"
   },
   {
@@ -805,7 +1021,6 @@
     "en_US": "EcsInstance must be running or stopped while deleting eip ",
     "zh_CN": "删除弹性IP时云主机必须时允许中或者已停止",
     "arguments": [],
-    "line": 88,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridEipCascadeExtension.java"
   },
   {
@@ -818,7 +1033,6 @@
       "vrouteri.getUuid()",
       "vrouteri.getDataCenterUuid()"
     ],
-    "line": 83,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -829,7 +1043,6 @@
       "vrouteri.getUuid()",
       "vrouteri.getStatus()"
     ],
-    "line": 93,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -840,7 +1053,6 @@
       "vrouteri.getUuid()",
       "vrouteri.getOppositeInterfaceUuid()"
     ],
-    "line": 101,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -848,7 +1060,6 @@
     "en_US": "accessPointUuid cannot be null if the router interface on VBR type router",
     "zh_CN": "当路由接口的类型为VBR路由时，accessPointUuid不能为空",
     "arguments": [],
-    "line": 109,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -856,7 +1067,6 @@
     "en_US": "cannot delete system entry",
     "zh_CN": "不能删除系统路由条目",
     "arguments": [],
-    "line": 183,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -864,7 +1074,6 @@
     "en_US": "only support intranet rule in vpc",
     "zh_CN": "在VPC中仅仅支持内网规则",
     "arguments": [],
-    "line": 189,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -874,7 +1083,6 @@
     "arguments": [
       "msg.getCidr()"
     ],
-    "line": 194,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -882,7 +1090,6 @@
     "en_US": "security group rule already existed",
     "zh_CN": "安全组已经存在了",
     "arguments": [],
-    "line": 204,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -892,7 +1099,6 @@
     "arguments": [
       "msg.getDstCidrBlock()"
     ],
-    "line": 210,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -902,7 +1108,6 @@
     "arguments": [
       "msg.getNextHopUuid()"
     ],
-    "line": 217,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -913,7 +1118,6 @@
       "rivo.getvRouterType().toString()",
       "msg.getvRouterType()"
     ],
-    "line": 224,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -923,7 +1127,6 @@
     "arguments": [
       "msg.getNextHopUuid()"
     ],
-    "line": 235,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -933,7 +1136,6 @@
     "arguments": [
       "msg.getNextHopType()"
     ],
-    "line": 239,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -941,7 +1143,6 @@
     "en_US": "virtual border router only support routerinterface as next hop type",
     "zh_CN": "作为下一跳类型，虚拟边界路由只支持路由接口",
     "arguments": [],
-    "line": 249,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -952,7 +1153,6 @@
       "msg.getCidrBlock()",
       "vpcCidr"
     ],
-    "line": 269,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -962,7 +1162,6 @@
     "arguments": [
       "old.getUuid()"
     ],
-    "line": 276,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -972,7 +1171,6 @@
     "arguments": [
       "msg.getvRouterUuid()"
     ],
-    "line": 300,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -982,7 +1180,6 @@
     "arguments": [
       "msg.getvRouterUuid()"
     ],
-    "line": 305,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -992,7 +1189,6 @@
     "arguments": [
       "msg.getLocalGatewayIp()"
     ],
-    "line": 312,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -1002,7 +1198,6 @@
     "arguments": [
       "msg.getPeerGatewayIp()"
     ],
-    "line": 315,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -1012,7 +1207,6 @@
     "arguments": [
       "msg.getPeeringSubnetMask()"
     ],
-    "line": 318,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -1022,7 +1216,6 @@
     "arguments": [
       "msg.getVlanId()"
     ],
-    "line": 322,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -1034,7 +1227,6 @@
       "msg.getEipUuid()",
       "hevo.getAllocateResourceUuid()"
     ],
-    "line": 332,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -1044,7 +1236,6 @@
     "arguments": [
       "msg.getEcsUuid()"
     ],
-    "line": 337,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -1055,7 +1246,6 @@
       "msg.getEipUuid()",
       "msg.getEcsUuid()"
     ],
-    "line": 343,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -1066,7 +1256,6 @@
       "msg.getEipUuid()",
       "msg.getEcsUuid()"
     ],
-    "line": 350,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -1076,8 +1265,16 @@
     "arguments": [
       "msg.getEipUuid()"
     ],
-    "line": 359,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
+  },
+  {
+    "raw": "couldn\u0027t find such security group: [%s]",
+    "en_US": "couldn\u0027t find such security group: [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "rule.getEcsSecurityGroupUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkSecurityGroupRuleCascadeExtension.java"
   },
   {
     "raw": "%s is not a valid ipv4 address",
@@ -1086,7 +1283,6 @@
     "arguments": [
       "msg.getId()"
     ],
-    "line": 45,
     "fileName": "src/main/java/org/zstack/hybrid/network/vpn/VpcVpnApiInterceptor.java"
   },
   {
@@ -1094,7 +1290,6 @@
     "en_US": "localCidr must be Cidr!",
     "zh_CN": "本地CIDR必须是CIDR",
     "arguments": [],
-    "line": 51,
     "fileName": "src/main/java/org/zstack/hybrid/network/vpn/VpcVpnApiInterceptor.java"
   },
   {
@@ -1102,7 +1297,6 @@
     "en_US": "remoteCidr must be Cidr!",
     "zh_CN": "远程CIDR必须是CIDR",
     "arguments": [],
-    "line": 55,
     "fileName": "src/main/java/org/zstack/hybrid/network/vpn/VpcVpnApiInterceptor.java"
   },
   {
@@ -1110,7 +1304,6 @@
     "en_US": "localCidr and remoteCidr must be Cidr!",
     "zh_CN": "本地CIDR和远程CIDR必须是CIDR",
     "arguments": [],
-    "line": 62,
     "fileName": "src/main/java/org/zstack/hybrid/network/vpn/VpcVpnApiInterceptor.java"
   },
   {
@@ -1120,7 +1313,6 @@
     "arguments": [
       "gateways.get(0).getUuid()"
     ],
-    "line": 80,
     "fileName": "src/main/java/org/zstack/hybrid/network/vpn/VpcVpnGatewayCascadeExtension.java"
   }
 ]

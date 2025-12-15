@@ -6,7 +6,6 @@
     "arguments": [
       "msg.getResourceUuid()"
     ],
-    "line": 82,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageApiInterceptor.java"
   },
   {
@@ -14,7 +13,6 @@
     "en_US": "primary storage uuid cannot be null.",
     "zh_CN": "主存储uuid不能为空。",
     "arguments": [],
-    "line": 88,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageApiInterceptor.java"
   },
   {
@@ -24,7 +22,6 @@
     "arguments": [
       "msg.getResourceUuid()"
     ],
-    "line": 124,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageApiInterceptor.java"
   },
   {
@@ -35,7 +32,6 @@
       "task",
       "hostUuids"
     ],
-    "line": 191,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageApiInterceptor.java"
   },
   {
@@ -46,7 +42,6 @@
       "psUuid",
       "imageFormat"
     ],
-    "line": 166,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageBase.java"
   },
   {
@@ -56,7 +51,6 @@
     "arguments": [
       "msg.getResourceType()"
     ],
-    "line": 216,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageBase.java"
   },
   {
@@ -64,7 +58,6 @@
     "en_US": "can not determine which host",
     "zh_CN": "无法确定是哪个主机",
     "arguments": [],
-    "line": 673,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageBase.java"
   },
   {
@@ -72,7 +65,6 @@
     "en_US": "no connected host found, mini storage failed",
     "zh_CN": "未找到连接的主机，小型存储失败",
     "arguments": [],
-    "line": 1364,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageBase.java"
   },
   {
@@ -80,7 +72,6 @@
     "en_US": "not supported",
     "zh_CN": "不支持",
     "arguments": [],
-    "line": 1449,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageBase.java"
   },
   {
@@ -91,7 +82,6 @@
       "self.getUuid()",
       "hostUuid"
     ],
-    "line": 1549,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageBase.java"
   },
   {
@@ -101,7 +91,6 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 75,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageDeactivateVolumeGC.java"
   },
   {
@@ -112,7 +101,6 @@
       "hvType",
       "bsType"
     ],
-    "line": 173,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageFactory.java"
   },
   {
@@ -122,7 +110,6 @@
     "arguments": [
       "volumeUuid"
     ],
-    "line": 59,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageImageStoreBackend.java"
   },
   {
@@ -132,7 +119,6 @@
     "arguments": [
       "clusterUuid"
     ],
-    "line": 188,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageKvmBackend.java"
   },
   {
@@ -143,7 +129,6 @@
       "volume.getRootImageUuid()",
       "volume.getUuid()"
     ],
-    "line": 330,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageKvmBackend.java"
   },
   {
@@ -154,7 +139,6 @@
       "image.getUuid()",
       "cache.backupStorage.getUuid()"
     ],
-    "line": 341,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageKvmBackend.java"
   },
   {
@@ -164,7 +148,6 @@
     "arguments": [
       "returnValue.error"
     ],
-    "line": 1063,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageKvmBackend.java"
   },
   {
@@ -174,7 +157,6 @@
     "arguments": [
       "backupStorageUuid"
     ],
-    "line": 1903,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageKvmBackend.java"
   },
   {
@@ -184,7 +166,6 @@
     "arguments": [
       "rsp.error"
     ],
-    "line": 274,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageKvmCommandSender.java"
   },
   {
@@ -194,7 +175,6 @@
     "arguments": [
       "dir"
     ],
-    "line": 73,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageManagerImpl.java"
   },
   {
@@ -204,7 +184,6 @@
     "arguments": [
       "resourceUuid"
     ],
-    "line": 80,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageManagerImpl.java"
   },
   {
@@ -215,7 +194,6 @@
       "resourceUuid",
       "hostUuid"
     ],
-    "line": 115,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStoragePathManagerImpl.java"
   },
   {
@@ -227,7 +205,6 @@
       "msg.getPrimaryStorageUuid()",
       "volume.getUuid()"
     ],
-    "line": 140,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStoragePlacementManagerImpl.java"
   },
   {
@@ -238,7 +215,6 @@
       "clusterUuid",
       "volume.getUuid()"
     ],
-    "line": 147,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStoragePlacementManagerImpl.java"
   },
   {
@@ -246,7 +222,6 @@
     "en_US": "mini storage volume or replicas required",
     "zh_CN": "",
     "arguments": [],
-    "line": 214,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStoragePlacementManagerImpl.java"
   },
   {
@@ -256,7 +231,6 @@
     "arguments": [
       "primaryStorageUuid"
     ],
-    "line": 436,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStoragePlacementManagerImpl.java"
   },
   {
@@ -266,7 +240,6 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 467,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStoragePlacementManagerImpl.java"
   },
   {
@@ -277,7 +250,6 @@
       "hostUuids",
       "finalHostUuids"
     ],
-    "line": 613,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStoragePlacementManagerImpl.java"
   },
   {
@@ -287,7 +259,6 @@
     "arguments": [
       "msg.getPrimaryStorageUuid()"
     ],
-    "line": 91,
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniToZBoxBackupStorageMediator.java"
   }
 ]

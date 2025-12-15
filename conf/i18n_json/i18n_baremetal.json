@@ -6,7 +6,6 @@
     "arguments": [
       "address"
     ],
-    "line": 57,
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisApiInterceptor.java"
   },
   {
@@ -17,7 +16,6 @@
       "address",
       "port"
     ],
-    "line": 81,
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisApiInterceptor.java"
   },
   {
@@ -27,7 +25,6 @@
     "arguments": [
       "msg.getClusterUuid()"
     ],
-    "line": 93,
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisApiInterceptor.java"
   },
   {
@@ -37,7 +34,6 @@
     "arguments": [
       "msg.getClusterUuid()"
     ],
-    "line": 100,
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisApiInterceptor.java"
   },
   {
@@ -47,7 +43,6 @@
     "arguments": [
       "msg.getClusterUuid()"
     ],
-    "line": 106,
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisApiInterceptor.java"
   },
   {
@@ -58,7 +53,6 @@
       "address",
       "port"
     ],
-    "line": 144,
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisApiInterceptor.java"
   },
   {
@@ -68,7 +62,6 @@
     "arguments": [
       "clusterUuid"
     ],
-    "line": 209,
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisApiInterceptor.java"
   },
   {
@@ -80,7 +73,13 @@
       "chassis.getPxeServerUuid()",
       "cmd.content"
     ],
-    "line": 174,
+    "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisManagerImpl.java"
+  },
+  {
+    "raw": "License not found, please apply addon license for product baremetal.",
+    "en_US": "License not found, please apply addon license for product baremetal.",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisManagerImpl.java"
   },
   {
@@ -90,7 +89,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 670,
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisManagerImpl.java"
   },
   {
@@ -100,7 +98,6 @@
     "arguments": [
       "bmc.getUuid()"
     ],
-    "line": 736,
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisManagerImpl.java"
   },
   {
@@ -110,7 +107,6 @@
     "arguments": [
       "bmc.getUuid()"
     ],
-    "line": 752,
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisManagerImpl.java"
   },
   {
@@ -120,7 +116,6 @@
     "arguments": [
       "bmc.getUuid()"
     ],
-    "line": 763,
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisManagerImpl.java"
   },
   {
@@ -130,7 +125,6 @@
     "arguments": [
       "bmc.getUuid()"
     ],
-    "line": 923,
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisManagerImpl.java"
   },
   {
@@ -140,7 +134,6 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 1003,
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisManagerImpl.java"
   },
   {
@@ -150,7 +143,6 @@
     "arguments": [
       "msg.getChassisUuid()"
     ],
-    "line": 60,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -160,7 +152,6 @@
     "arguments": [
       "chassis.getUuid()"
     ],
-    "line": 66,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -170,7 +161,6 @@
     "arguments": [
       "chassis.getUuid()"
     ],
-    "line": 72,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -180,7 +170,6 @@
     "arguments": [
       "chassis.getUuid()"
     ],
-    "line": 85,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -190,7 +179,6 @@
     "arguments": [
       "chassis.getPxeServerUuid()"
     ],
-    "line": 96,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -200,7 +188,6 @@
     "arguments": [
       "mac"
     ],
-    "line": 113,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -211,7 +198,6 @@
       "chassis.getUuid()",
       "mac"
     ],
-    "line": 119,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -219,7 +205,6 @@
     "en_US": "duplicated bm bonding uuid detacted",
     "zh_CN": "已分离重复的BM绑定uuid",
     "arguments": [],
-    "line": 137,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -227,7 +212,6 @@
     "en_US": "Baremetal Bonding does not exist",
     "zh_CN": "裸机焊接不存在",
     "arguments": [],
-    "line": 141,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -235,7 +219,6 @@
     "en_US": "duplicated l3 network uuid detacted",
     "zh_CN": "已分离重复的三层网络uuid",
     "arguments": [],
-    "line": 149,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -243,7 +226,6 @@
     "en_US": "the selected l3 network doesn\u0027t exist",
     "zh_CN": "选定的三层网络不存在",
     "arguments": [],
-    "line": 153,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -253,7 +235,6 @@
     "arguments": [
       "chassis.getUuid()"
     ],
-    "line": 166,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -261,7 +242,6 @@
     "en_US": "only iso image is supported in zstack baremetal service",
     "zh_CN": "目前仅支持为裸机部署ISO镜像",
     "arguments": [],
-    "line": 178,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -269,7 +249,6 @@
     "en_US": "only ImageStoreBackupStorage is supported in zstack baremetal service",
     "zh_CN": "目前仅支持从镜像仓库中为裸机选择ISO镜像",
     "arguments": [],
-    "line": 187,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -277,7 +256,6 @@
     "en_US": "image platform cannot be null",
     "zh_CN": "",
     "arguments": [],
-    "line": 200,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -285,7 +263,6 @@
     "en_US": "cannot recover baremetal instance that\u0027s not in Destroyed state",
     "zh_CN": "只能恢复处于Destroyed状态的裸金属主机",
     "arguments": [],
-    "line": 214,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -293,7 +270,6 @@
     "en_US": "cannot expunge baremetal instance that\u0027s not in Destroyed state",
     "zh_CN": "只能彻底删除处于Destroyed状态的裸金属主机",
     "arguments": [],
-    "line": 226,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceApiInterceptor.java"
   },
   {
@@ -303,7 +279,6 @@
     "arguments": [
       "self.getClusterUuid()"
     ],
-    "line": 270,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceBase.java"
   },
   {
@@ -314,7 +289,6 @@
       "reboot ? \"reset\" : \"on\"",
       "bmc.getUuid()"
     ],
-    "line": 457,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceBase.java"
   },
   {
@@ -324,7 +298,6 @@
     "arguments": [
       "bmc.getUuid()"
     ],
-    "line": 465,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceBase.java"
   },
   {
@@ -334,7 +307,6 @@
     "arguments": [
       "msg.getL2NetworkUuid()"
     ],
-    "line": 1181,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceManagerImpl.java"
   },
   {
@@ -344,7 +316,6 @@
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
-    "line": 1209,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceManagerImpl.java"
   },
   {
@@ -354,7 +325,6 @@
     "arguments": [
       "msg.getIpRangeUuid()"
     ],
-    "line": 1229,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceManagerImpl.java"
   },
   {
@@ -362,7 +332,6 @@
     "en_US": "creating bm bonding is only allowed before creating bm instance",
     "zh_CN": "只能在创建BM实例之前创建BM绑定",
     "arguments": [],
-    "line": 39,
     "fileName": "src/main/java/org/zstack/baremetal/network/BaremetalNetworkApiInterceptor.java"
   },
   {
@@ -372,7 +341,6 @@
     "arguments": [
       "msg.getName()"
     ],
-    "line": 48,
     "fileName": "src/main/java/org/zstack/baremetal/network/BaremetalNetworkApiInterceptor.java"
   },
   {
@@ -382,7 +350,6 @@
     "arguments": [
       "slave"
     ],
-    "line": 73,
     "fileName": "src/main/java/org/zstack/baremetal/network/BaremetalNetworkApiInterceptor.java"
   },
   {
@@ -393,7 +360,6 @@
       "slave",
       "msg.getChassisUuid()"
     ],
-    "line": 79,
     "fileName": "src/main/java/org/zstack/baremetal/network/BaremetalNetworkApiInterceptor.java"
   },
   {
@@ -403,7 +369,6 @@
     "arguments": [
       "slave"
     ],
-    "line": 85,
     "fileName": "src/main/java/org/zstack/baremetal/network/BaremetalNetworkApiInterceptor.java"
   },
   {
@@ -411,7 +376,6 @@
     "en_US": "cannot update predefined preconfiguration templates",
     "zh_CN": "无法更新预定义的预配置模板",
     "arguments": [],
-    "line": 43,
     "fileName": "src/main/java/org/zstack/baremetal/preconfiguration/PreconfigurationApiInterceptor.java"
   },
   {
@@ -419,7 +383,6 @@
     "en_US": "cannot delete predefined preconfiguration templates",
     "zh_CN": "无法删除预定义的预配置模板",
     "arguments": [],
-    "line": 55,
     "fileName": "src/main/java/org/zstack/baremetal/preconfiguration/PreconfigurationApiInterceptor.java"
   },
   {
@@ -427,7 +390,6 @@
     "en_US": "cannot change state of predefined preconfiguration templates",
     "zh_CN": "无法更改预定义的预配置模板的状态",
     "arguments": [],
-    "line": 63,
     "fileName": "src/main/java/org/zstack/baremetal/preconfiguration/PreconfigurationApiInterceptor.java"
   },
   {
@@ -437,7 +399,6 @@
     "arguments": [
       "msg.getTemplateUuid()"
     ],
-    "line": 67,
     "fileName": "src/main/java/org/zstack/baremetal/preconfiguration/PreconfigurationManagerImpl.java"
   },
   {
@@ -447,7 +408,6 @@
     "arguments": [
       "netmask"
     ],
-    "line": 68,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
@@ -458,7 +418,6 @@
       "begin",
       "end"
     ],
-    "line": 74,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
@@ -468,7 +427,6 @@
     "arguments": [
       "msg.getHostname()"
     ],
-    "line": 91,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
@@ -476,7 +434,6 @@
     "en_US": "storagePath should be an absolute path",
     "zh_CN": "部署服务器的存储路径必须是绝对路径",
     "arguments": [],
-    "line": 98,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
@@ -486,7 +443,6 @@
     "arguments": [
       "msg.getHostname()"
     ],
-    "line": 114,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
@@ -496,7 +452,6 @@
     "arguments": [
       "msg.getHostname()"
     ],
-    "line": 124,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
@@ -506,7 +461,6 @@
     "arguments": [
       "msg.getDhcpInterface()"
     ],
-    "line": 134,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
@@ -518,7 +472,6 @@
       "msg.getDhcpRangeEnd()",
       "msg.getDhcpInterface()"
     ],
-    "line": 143,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
@@ -529,7 +482,6 @@
       "msg.getClusterUuid()",
       "msg.getPxeServerUuid()"
     ],
-    "line": 180,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
@@ -539,7 +491,6 @@
     "arguments": [
       "msg.getClusterUuid()"
     ],
-    "line": 189,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
@@ -550,7 +501,6 @@
       "msg.getPxeServerUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 200,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
@@ -561,7 +511,6 @@
       "msg.getPxeServerUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 243,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
@@ -571,7 +520,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 294,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },
   {
@@ -581,7 +529,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 431,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },
   {
@@ -591,7 +538,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 462,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },
   {
@@ -601,7 +547,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 493,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },
   {
@@ -611,7 +556,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 524,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },
   {
@@ -621,7 +565,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 557,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },
   {
@@ -631,7 +574,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 588,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },
   {
@@ -641,7 +583,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 619,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },
   {
@@ -651,7 +592,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 652,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },
   {
@@ -662,7 +602,6 @@
       "msg.getChassisUuid()",
       "self.getUuid()"
     ],
-    "line": 966,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },
   {
@@ -673,7 +612,6 @@
       "msg.getChassisUuid()",
       "self.getUuid()"
     ],
-    "line": 995,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },
   {
@@ -683,7 +621,6 @@
     "arguments": [
       "ret.error"
     ],
-    "line": 1057,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },
   {
@@ -694,7 +631,6 @@
       "url",
       "rsp.error"
     ],
-    "line": 1268,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },
   {
@@ -704,7 +640,6 @@
     "arguments": [
       "cache.getImageUuid()"
     ],
-    "line": 1360,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },
   {
@@ -714,7 +649,6 @@
     "arguments": [
       "msg.getImageUuid()"
     ],
-    "line": 1465,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },
   {
@@ -722,7 +656,6 @@
     "en_US": "unsupported backup storage type for baremetal",
     "zh_CN": "裸金属管理所不支持的镜像服务器类型",
     "arguments": [],
-    "line": 1561,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },
   {
@@ -732,7 +665,6 @@
     "arguments": [
       "ret.error"
     ],
-    "line": 1573,
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   }
 ]

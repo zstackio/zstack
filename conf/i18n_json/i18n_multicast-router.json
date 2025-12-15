@@ -6,7 +6,6 @@
     "arguments": [
       "rpAddress"
     ],
-    "line": 59,
     "fileName": "src/main/java/org/zstack/multicast/router/MulticastRouterApiInterceptor.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "multicastGroup"
     ],
-    "line": 63,
     "fileName": "src/main/java/org/zstack/multicast/router/MulticastRouterApiInterceptor.java"
   },
   {
@@ -28,7 +26,6 @@
       "msg.getGroupAddress()",
       "msg.getUuid()"
     ],
-    "line": 75,
     "fileName": "src/main/java/org/zstack/multicast/router/MulticastRouterApiInterceptor.java"
   },
   {
@@ -40,7 +37,6 @@
       "msg.getGroupAddress()",
       "msg.getUuid()"
     ],
-    "line": 89,
     "fileName": "src/main/java/org/zstack/multicast/router/MulticastRouterApiInterceptor.java"
   },
   {
@@ -50,7 +46,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 98,
     "fileName": "src/main/java/org/zstack/multicast/router/MulticastRouterManagerImpl.java"
   },
   {
@@ -60,7 +55,6 @@
     "arguments": [
       "msg.getVpcRouterVmUuid()"
     ],
-    "line": 124,
     "fileName": "src/main/java/org/zstack/multicast/router/MulticastRouterManagerImpl.java"
   },
   {
@@ -70,7 +64,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 317,
     "fileName": "src/main/java/org/zstack/multicast/router/MulticastRouterManagerImpl.java"
   },
   {
@@ -80,7 +73,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 760,
     "fileName": "src/main/java/org/zstack/multicast/router/MulticastRouterManagerImpl.java"
   },
   {
@@ -90,7 +82,6 @@
     "arguments": [
       "vrUuid"
     ],
-    "line": 95,
     "fileName": "src/main/java/org/zstack/multicast/router/backend/MulticastRouterVyosBackendImpl.java"
   }
 ]

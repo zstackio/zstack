@@ -7,7 +7,6 @@
       "firstScsiLunVO.getUuid()",
       "scsiLunVO.getUuid()"
     ],
-    "line": 62,
     "fileName": "src/main/java/org/zstack/storage/device/ScsiLunAllocatorFactory.java"
   },
   {
@@ -17,7 +16,6 @@
     "arguments": [
       "scsiLunVO.getUuid()"
     ],
-    "line": 67,
     "fileName": "src/main/java/org/zstack/storage/device/ScsiLunAllocatorFactory.java"
   },
   {
@@ -25,7 +23,6 @@
     "en_US": "the specific SCSI lun required",
     "zh_CN": "",
     "arguments": [],
-    "line": 73,
     "fileName": "src/main/java/org/zstack/storage/device/ScsiLunAllocatorFactory.java"
   },
   {
@@ -35,7 +32,6 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 99,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
   },
   {
@@ -47,7 +43,6 @@
       "msg.getPort()",
       "msg.getTransport()"
     ],
-    "line": 112,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
   },
   {
@@ -57,7 +52,6 @@
     "arguments": [
       "msg.getIp()"
     ],
-    "line": 117,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
   },
   {
@@ -68,7 +62,6 @@
       "msg.getUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 126,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
   },
   {
@@ -79,7 +72,6 @@
       "msg.getIp()",
       "msg.getPort()"
     ],
-    "line": 155,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
   },
   {
@@ -89,7 +81,6 @@
     "arguments": [
       "msg.getIp()"
     ],
-    "line": 160,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
   },
   {
@@ -100,7 +91,6 @@
       "msg.getUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 169,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
   },
   {
@@ -111,7 +101,6 @@
       "msg.getUuid()",
       "msg.getClusterUuid()"
     ],
-    "line": 179,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
   },
   {
@@ -122,7 +111,6 @@
       "msg.getUuid()",
       "clusterUuid"
     ],
-    "line": 190,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
   },
   {
@@ -133,7 +121,6 @@
       "scsiLunVO.getWwid()",
       "refVO.getVmInstanceUuid()"
     ],
-    "line": 219,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
   },
   {
@@ -144,7 +131,6 @@
       "lunUuids.toString()",
       "msg.getHostUuid()"
     ],
-    "line": 247,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
   },
   {
@@ -154,7 +140,6 @@
     "arguments": [
       "VmInstanceUuid"
     ],
-    "line": 269,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
   },
   {
@@ -164,7 +149,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 242,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceKvmBackend.java"
   },
   {
@@ -174,7 +158,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 739,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceKvmBackend.java"
   },
   {
@@ -185,7 +168,6 @@
       "lunVO.getWwid()",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 2009,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
   },
   {
@@ -197,7 +179,6 @@
       "vmInstanceVO.getState()",
       "allowedVmOperationStates"
     ],
-    "line": 2084,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
   },
   {
@@ -209,7 +190,6 @@
       "hostVO.getUuid()",
       "msg.getUuid()"
     ],
-    "line": 2093,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
   },
   {
@@ -220,7 +200,6 @@
       "hostVO.getUuid()",
       "context.checkerHostUuid"
     ],
-    "line": 2505,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
   },
   {
@@ -231,7 +210,6 @@
       "msg.getUuid()",
       "vmUuids"
     ],
-    "line": 2743,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
   },
   {
@@ -242,7 +220,6 @@
       "msg.getUuid()",
       "msg.getHostUuid()"
     ],
-    "line": 2753,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
   },
   {
@@ -253,7 +230,6 @@
       "hvType",
       "msg.getHostUuid()"
     ],
-    "line": 2765,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
   },
   {
@@ -263,7 +239,6 @@
     "arguments": [
       "refVO.getScsiLunUuid()"
     ],
-    "line": 3686,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
   },
   {
@@ -275,7 +250,6 @@
       "lunVO.getWwid()",
       "vmInstanceUuid"
     ],
-    "line": 3743,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
   },
   {
@@ -287,7 +261,6 @@
       "vmInstanceVO.getState()",
       "allowedVmOperationStates"
     ],
-    "line": 3750,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
   },
   {
@@ -299,7 +272,6 @@
       "vmInstanceVO.getHostUuid()",
       "resourceUuid"
     ],
-    "line": 3759,
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
   }
 ]

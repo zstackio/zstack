@@ -7,7 +7,6 @@
       "targetHostUuid",
       "primaryStorageUuid"
     ],
-    "line": 158,
     "fileName": "src/main/java/org/zstack/storage/primary/cbd/CbdHostHeartbeatChecker.java"
   },
   {
@@ -17,7 +16,6 @@
     "arguments": [
       "targetHostUuid"
     ],
-    "line": 208,
     "fileName": "src/main/java/org/zstack/storage/primary/cbd/CbdHostHeartbeatChecker.java"
   },
   {
@@ -27,7 +25,6 @@
     "arguments": [
       "cmd.targetHostUuid"
     ],
-    "line": 161,
     "fileName": "src/main/java/org/zstack/storage/primary/filesystem/AbstractFileSystemHostHeartbeatChecker.java"
   },
   {
@@ -38,7 +35,6 @@
       "cmd.hostUuid",
       "sentinelHostUuid"
     ],
-    "line": 139,
     "fileName": "src/main/java/org/zstack/storage/primary/shareblock/ShareBlockHostHeartbeatChecker.java"
   }
 ]

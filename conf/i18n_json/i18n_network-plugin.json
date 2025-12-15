@@ -6,7 +6,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 288,
     "fileName": "src/main/java/org/zstack/network/plugin/FlatGratuitousARPBackend.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 332,
     "fileName": "src/main/java/org/zstack/network/plugin/FlatGratuitousARPBackend.java"
   }
 ]

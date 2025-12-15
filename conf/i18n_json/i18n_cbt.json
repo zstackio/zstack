@@ -6,7 +6,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 59,
     "fileName": "src/main/java/org/zstack/storage/cbt/CbtBackupApiInterceptor.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 63,
     "fileName": "src/main/java/org/zstack/storage/cbt/CbtBackupApiInterceptor.java"
   },
   {
@@ -27,7 +25,6 @@
       "vmUuid",
       "state"
     ],
-    "line": 76,
     "fileName": "src/main/java/org/zstack/storage/cbt/CbtBackupApiInterceptor.java"
   },
   {
@@ -37,7 +34,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 92,
     "fileName": "src/main/java/org/zstack/storage/cbt/CbtBackupApiInterceptor.java"
   },
   {
@@ -47,7 +43,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 343,
     "fileName": "src/main/java/org/zstack/storage/cbt/CbtBackupKvmBackend.java"
   },
   {
@@ -57,7 +52,6 @@
     "arguments": [
       "msg.getCbtTaskUuid()"
     ],
-    "line": 87,
     "fileName": "src/main/java/org/zstack/storage/cbt/CbtBackupManagerImpl.java"
   },
   {
@@ -67,7 +61,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 434,
     "fileName": "src/main/java/org/zstack/storage/cbt/CbtBackupManagerImpl.java"
   },
   {
@@ -78,7 +71,6 @@
       "entry.getKey()",
       "vmUuid"
     ],
-    "line": 461,
     "fileName": "src/main/java/org/zstack/storage/cbt/CbtBackupManagerImpl.java"
   },
   {
@@ -88,7 +80,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 755,
     "fileName": "src/main/java/org/zstack/storage/cbt/CbtBackupManagerImpl.java"
   },
   {
@@ -99,7 +90,6 @@
       "vmUuid",
       "tasks.get(0)"
     ],
-    "line": 850,
     "fileName": "src/main/java/org/zstack/storage/cbt/CbtBackupManagerImpl.java"
   },
   {
@@ -109,7 +99,6 @@
     "arguments": [
       "reply.getError().getDetails()"
     ],
-    "line": 910,
     "fileName": "src/main/java/org/zstack/storage/cbt/CbtBackupManagerImpl.java"
   },
   {
@@ -119,7 +108,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 1025,
     "fileName": "src/main/java/org/zstack/storage/cbt/CbtBackupManagerImpl.java"
   },
   {
@@ -129,7 +117,6 @@
     "arguments": [
       "hypervisorType"
     ],
-    "line": 1034,
     "fileName": "src/main/java/org/zstack/storage/cbt/CbtBackupManagerImpl.java"
   }
 ]

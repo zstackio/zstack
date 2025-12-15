@@ -9,7 +9,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 64,
     "fileName": "src/main/java/org/zstack/macvlan/KVMRealizeL2VlanMacVlanBackend.java"
   },
   {
@@ -23,7 +22,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 147,
     "fileName": "src/main/java/org/zstack/macvlan/KVMRealizeL2VlanMacVlanBackend.java"
   },
   {
@@ -33,7 +31,6 @@
     "arguments": [
       "VmMacVlanNicConstant.MACVLAN_L2_NETWORK_TYPES"
     ],
-    "line": 60,
     "fileName": "src/main/java/org/zstack/macvlan/VmMacVlanNicApiInterceptor.java"
   },
   {
@@ -45,7 +42,6 @@
       "l3NetworkVO.getL2NetworkUuid()",
       "vSwitch"
     ],
-    "line": 78,
     "fileName": "src/main/java/org/zstack/macvlan/VmMacVlanNicApiInterceptor.java"
   },
   {
@@ -57,7 +53,6 @@
       "l3NetworkVO.getL2NetworkUuid()",
       "vSwitch"
     ],
-    "line": 85,
     "fileName": "src/main/java/org/zstack/macvlan/VmMacVlanNicApiInterceptor.java"
   },
   {
@@ -69,7 +64,6 @@
       "l3NetworkVO.getL2NetworkUuid()",
       "vSwitch"
     ],
-    "line": 94,
     "fileName": "src/main/java/org/zstack/macvlan/VmMacVlanNicApiInterceptor.java"
   },
   {
@@ -81,7 +75,6 @@
       "l3NetworkVO.getL2NetworkUuid()",
       "vSwitch"
     ],
-    "line": 98,
     "fileName": "src/main/java/org/zstack/macvlan/VmMacVlanNicApiInterceptor.java"
   },
   {
@@ -89,7 +82,6 @@
     "en_US": "only kvm hosts support l2 which vSwitchType is MacVlan",
     "zh_CN": "",
     "arguments": [],
-    "line": 118,
     "fileName": "src/main/java/org/zstack/macvlan/VmMacVlanNicApiInterceptor.java"
   },
   {
@@ -100,7 +92,13 @@
       "l2Vo.getvSwitchType()",
       "l2Vo.getPhysicalInterface()"
     ],
-    "line": 152,
     "fileName": "src/main/java/org/zstack/macvlan/VmMacVlanNicApiInterceptor.java"
+  },
+  {
+    "raw": "unable to find an available mac address after re-try 5 times, too many collisions",
+    "en_US": "unable to find an available mac address after re-try 5 times, too many collisions",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/macvlan/VmMacVlanNicFactory.java"
   }
 ]

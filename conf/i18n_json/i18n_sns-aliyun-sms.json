@@ -6,7 +6,6 @@
     "arguments": [
       "msg.getAccessKeyUuid()"
     ],
-    "line": 44,
     "fileName": "src/main/java/org/zstack/sns/platform/aliyunsms/SNSAliyunSmsApiInterceptor.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "number"
     ],
-    "line": 53,
     "fileName": "src/main/java/org/zstack/sns/platform/aliyunsms/SNSAliyunSmsApiInterceptor.java"
   },
   {
@@ -26,7 +24,6 @@
     "arguments": [
       "SysErrors.RESOURCE_NOT_FOUND"
     ],
-    "line": 83,
     "fileName": "src/main/java/org/zstack/sns/platform/aliyunsms/SNSAliyunSmsEndpoint.java"
   }
 ]

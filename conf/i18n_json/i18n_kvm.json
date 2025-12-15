@@ -6,7 +6,6 @@
     "arguments": [
       "msg.getManagementIp()"
     ],
-    "line": 46,
     "fileName": "src/main/java/org/zstack/kvm/KVMApiInterceptor.java"
   },
   {
@@ -16,7 +15,6 @@
     "arguments": [
       "l2.getPhysicalInterface()"
     ],
-    "line": 64,
     "fileName": "src/main/java/org/zstack/kvm/KVMApiInterceptor.java"
   },
   {
@@ -26,7 +24,6 @@
     "arguments": [
       "vm.getUuid()"
     ],
-    "line": 64,
     "fileName": "src/main/java/org/zstack/kvm/KVMConsoleHypervisorBackend.java"
   },
   {
@@ -37,7 +34,6 @@
       "rsp.getPort()",
       "vm.getUuid()"
     ],
-    "line": 70,
     "fileName": "src/main/java/org/zstack/kvm/KVMConsoleHypervisorBackend.java"
   },
   {
@@ -47,7 +43,6 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 523,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -57,7 +52,6 @@
     "arguments": [
       "msg.getHostUuid()"
     ],
-    "line": 758,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -67,7 +61,6 @@
     "arguments": [
       "msg.getHostUuid()"
     ],
-    "line": 821,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -75,7 +68,6 @@
     "en_US": "Failed to update the quota configuration item in the virtual machine XML",
     "zh_CN": "",
     "arguments": [],
-    "line": 854,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -83,7 +75,6 @@
     "en_US": "failed to get VM uptime",
     "zh_CN": "",
     "arguments": [],
-    "line": 929,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -91,7 +82,6 @@
     "en_US": "failed to take VM console screenshot",
     "zh_CN": "",
     "arguments": [],
-    "line": 987,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -99,7 +89,6 @@
     "en_US": "failed to do block commit",
     "zh_CN": "",
     "arguments": [],
-    "line": 1051,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -107,7 +96,6 @@
     "en_US": "failed to do block pull",
     "zh_CN": "",
     "arguments": [],
-    "line": 1165,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -120,7 +108,6 @@
       "host.getPort()",
       "webSsh.status"
     ],
-    "line": 1285,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -130,7 +117,6 @@
     "arguments": [
       "reply.getError()"
     ],
-    "line": 1777,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -142,7 +128,6 @@
       "rsp.getTotalMemory()",
       "reservedSize"
     ],
-    "line": 1788,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -155,7 +140,6 @@
       "self.getManagementIp()",
       "ret.getError()"
     ],
-    "line": 1843,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -168,7 +152,6 @@
       "self.getManagementIp()",
       "ret.getError()"
     ],
-    "line": 1901,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -181,7 +164,6 @@
       "self.getManagementIp()",
       "ret.getError()"
     ],
-    "line": 1956,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -194,7 +176,6 @@
       "self.getManagementIp()",
       "ret.getError()"
     ],
-    "line": 1988,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -207,7 +188,6 @@
       "self.getManagementIp()",
       "ret.getError()"
     ],
-    "line": 2029,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -218,7 +198,6 @@
       "msg.getVmInstanceUuid()",
       "rsp.getError()"
     ],
-    "line": 2078,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -229,7 +208,6 @@
       "msg.getHostUuid()",
       "rsp.getError()"
     ],
-    "line": 2133,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -239,7 +217,6 @@
     "arguments": [
       "ret.getError()"
     ],
-    "line": 2215,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -251,7 +228,6 @@
       "getSelf().getUsername()",
       "getSelf().getPort()"
     ],
-    "line": 2316,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -262,7 +238,6 @@
       "self.getUuid()",
       "self.getStatus()"
     ],
-    "line": 2398,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -273,7 +248,25 @@
       "msg.getVmUuid()",
       "vmState"
     ],
-    "line": 2979,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "kvm host[uuid:%s, name:%s, ip:%s] doesn\u0027t not support live snapshot. please stop vm[uuid:%s] and try again",
+    "en_US": "kvm host[uuid:{0}, name:{1}, ip:{2}] doesn\u0027t not support live snapshot. please stop vm[uuid:{3}] and try again",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "self.getName()",
+      "self.getManagementIp()",
+      "msg.getVmUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to migrate VM",
+    "en_US": "failed to migrate VM",
+    "zh_CN": "迁移虚拟机失败",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -289,7 +282,16 @@
       "getSelf().getManagementIp()",
       "ret.getError()"
     ],
-    "line": 3560,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "In the hypervisorType[%s], attach volume is not allowed in the current vm instance state[%s].",
+    "en_US": "In the hypervisorType[{0}], attach volume is not allowed in the current vm instance state[{1}].",
+    "zh_CN": "",
+    "arguments": [
+      "self.getHypervisorType()",
+      "state"
+    ],
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -303,7 +305,32 @@
       "self.getManagementIp()",
       "e.getMessage()"
     ],
-    "line": 3718,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to destroy vm[uuid:%s,  name:%s] on kvm host [uuid:%s, ip:%s], because %s",
+    "en_US": "unable to destroy vm[uuid:{0},  name:{1}] on kvm host [uuid:{2}, ip:{3}], because {4}",
+    "zh_CN": "",
+    "arguments": [
+      "vminv.getUuid()",
+      "vminv.getName()",
+      "self.getUuid()",
+      "self.getManagementIp()",
+      "ret.getError()"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to reboot vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+    "en_US": "unable to reboot vm[uuid:{0}, name:{1}] on kvm host[uuid:{2}, ip:{3}], because {4}",
+    "zh_CN": "",
+    "arguments": [
+      "vminv.getUuid()",
+      "vminv.getName()",
+      "self.getUuid()",
+      "self.getManagementIp()",
+      "ret.getError()"
+    ],
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -317,7 +344,19 @@
       "self.getManagementIp()",
       "e.getMessage()"
     ],
-    "line": 3852,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to stop vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+    "en_US": "unable to stop vm[uuid:{0},  name:{1}] on kvm host[uuid:{2}, ip:{3}], because {4}",
+    "zh_CN": "",
+    "arguments": [
+      "vminv.getUuid()",
+      "vminv.getName()",
+      "self.getUuid()",
+      "self.getManagementIp()",
+      "ret.getError()"
+    ],
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -329,7 +368,6 @@
       "cpuChangeTo - oldCpuNum",
       "alignedMemory.get() - oldMemorySize"
     ],
-    "line": 4035,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -340,7 +378,6 @@
       "msg.getHostUuid()",
       "ret.getError()"
     ],
-    "line": 4143,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -350,7 +387,44 @@
     "arguments": [
       "total"
     ],
-    "line": 4273,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to start vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s]",
+    "en_US": "failed to start vm[uuid:{0}, name:{1}] on kvm host[uuid:{2}, ip:{3}]",
+    "zh_CN": "",
+    "arguments": [
+      "spec.getVmInventory().getUuid()",
+      "spec.getVmInventory().getName()",
+      "self.getUuid()",
+      "self.getManagementIp()"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to pause vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+    "en_US": "unable to pause vm[uuid:{0},  name:{1}] on kvm host[uuid:{2}, ip:{3}], because {4}",
+    "zh_CN": "",
+    "arguments": [
+      "vminv.getUuid()",
+      "vminv.getName()",
+      "self.getUuid()",
+      "self.getManagementIp()",
+      "ret.getError()"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to resume vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+    "en_US": "unable to resume vm[uuid:{0},  name:{1}] on kvm host[uuid:{2}, ip:{3}], because {4}",
+    "zh_CN": "",
+    "arguments": [
+      "vminv.getUuid()",
+      "vminv.getName()",
+      "self.getUuid()",
+      "self.getManagementIp()",
+      "ret.getError()"
+    ],
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -362,7 +436,40 @@
       "context.getInventory().getUuid()",
       "context.getInventory().getManagementIp()"
     ],
-    "line": 4788,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "host %s is not managed by current mn node",
+    "en_US": "host {0} is not managed by current mn node",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getHostUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "host %s is not connected, skip to restart kvmagent",
+    "en_US": "host {0} is not connected, skip to restart kvmagent",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "running task exists on host %s",
+    "en_US": "running task exists on host {0}",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to get local running tasks in some MN",
+    "en_US": "failed to get local running tasks in some MN",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -375,7 +482,13 @@
       "connectPath",
       "rsp.getError()"
     ],
-    "line": 5106,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "host can not access any primary storage",
+    "en_US": "host can not access any primary storage",
+    "zh_CN": "主机无法访问任何数据存储",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -387,7 +500,33 @@
       "getSelf().getPort()",
       "TimeUnit.MILLISECONDS.toSeconds(sshTimeout)"
     ],
-    "line": 5295,
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "host password has been changed. Please update host password in management node by UpdateKVMHostAction with host UUID[%s]",
+    "en_US": "host password has been changed. Please update host password in management node by UpdateKVMHostAction with host UUID[{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to connect host[UUID\u003d%s] with SSH password",
+    "en_US": "failed to connect host[UUID\u003d{0}] with SSH password",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to connect host[UUID\u003d%s] with private key",
+    "en_US": "failed to connect host[UUID\u003d{0}] with private key",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -400,7 +539,6 @@
       "getSelf().getPort()",
       "ret.getExitErrorMessage()"
     ],
-    "line": 5412,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -410,7 +548,6 @@
     "arguments": [
       "checkList"
     ],
-    "line": 5414,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -418,7 +555,6 @@
     "en_US": "unable to check whether the host is taken over",
     "zh_CN": "无法检查主机是否已被接管",
     "arguments": [],
-    "line": 5502,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -426,7 +562,6 @@
     "en_US": "unable to get the host takeover information",
     "zh_CN": "无法读取主机的接管信息",
     "arguments": [],
-    "line": 5520,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -439,7 +574,6 @@
       "diff",
       "HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)"
     ],
-    "line": 5530,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -450,7 +584,6 @@
       "self.getManagementIp()",
       "lastHostInv.getUuid()"
     ],
-    "line": 5539,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -458,7 +591,6 @@
     "en_US": "unable to get host cpu architecture, please check if username/password is wrong",
     "zh_CN": "无法获取主机 CPU 架构，请检查用户名和密码是否正确",
     "arguments": [],
-    "line": 5557,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -469,7 +601,6 @@
       "hostArchitecture",
       "cluster.getArchitecture()"
     ],
-    "line": 5586,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -480,7 +611,6 @@
       "self.getUuid()",
       "self.getClusterUuid()"
     ],
-    "line": 5929,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -491,7 +621,6 @@
       "self.getUuid()",
       "self.getClusterUuid()"
     ],
-    "line": 5949,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -499,7 +628,6 @@
     "en_US": "cannot find either \u0027vmx\u0027 or \u0027svm\u0027 in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting",
     "zh_CN": "不能发现以下任意一个  \u0027vmx\u0027 or \u0027svm\u0027 在路径 /proc/cpuinfo 里, 请检查你是否在你的BIOS设置里开启了virtualization选项",
     "arguments": [],
-    "line": 6010,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -512,7 +640,6 @@
       "oldValue",
       "newValue"
     ],
-    "line": 6059,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -523,7 +650,6 @@
       "msg.getHostUuid()",
       "ctimeout"
     ],
-    "line": 6274,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -531,7 +657,6 @@
     "en_US": "host is in the premaintenance state, cannot update os",
     "zh_CN": "物理机正处于预维护状态，不能升级操作系统",
     "arguments": [],
-    "line": 6429,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -539,7 +664,6 @@
     "en_US": "host is not in the connected status, cannot update os",
     "zh_CN": "物理机当前并不是已连接状态，不能升级操作系统",
     "arguments": [],
-    "line": 6431,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -549,7 +673,6 @@
     "arguments": [
       "ret.getError()"
     ],
-    "line": 6502,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -559,7 +682,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 6737,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -569,7 +691,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 6798,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -580,7 +701,6 @@
       "msg.getVmUuid()",
       "rsp.getError()"
     ],
-    "line": 6864,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -590,7 +710,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 6932,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -600,7 +719,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 6977,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -611,7 +729,6 @@
       "msg.getUrl()",
       "e.getMessage()"
     ],
-    "line": 7010,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -621,7 +738,6 @@
     "arguments": [
       "msg.getUrl()"
     ],
-    "line": 7016,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -631,7 +747,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 7027,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -643,7 +758,6 @@
       "self.getUuid()",
       "resp.getError()"
     ],
-    "line": 7056,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -653,7 +767,6 @@
     "arguments": [
       "srcHostUuid"
     ],
-    "line": 190,
     "fileName": "src/main/java/org/zstack/kvm/KVMHostAllocatorFilterExtensionPoint.java"
   },
   {
@@ -664,7 +777,6 @@
       "msg.getClusterUuid()",
       "KVMConstant.KVM_HYPERVISOR_TYPE"
     ],
-    "line": 151,
     "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
   },
   {
@@ -674,7 +786,6 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 170,
     "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
   },
   {
@@ -686,7 +797,6 @@
       "vo.getName()",
       "vo.getManagementIp()"
     ],
-    "line": 301,
     "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
   },
   {
@@ -700,7 +810,6 @@
       "vo.getManagementIp()",
       "os"
     ],
-    "line": 327,
     "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
   },
   {
@@ -710,7 +819,6 @@
     "arguments": [
       "cmd.vmUuid"
     ],
-    "line": 569,
     "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
   },
   {
@@ -721,7 +829,6 @@
       "cmd.host",
       "cmd.detail"
     ],
-    "line": 669,
     "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
   },
   {
@@ -731,7 +838,6 @@
     "arguments": [
       "str.toString()"
     ],
-    "line": 702,
     "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
   },
   {
@@ -741,7 +847,6 @@
     "arguments": [
       "KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN"
     ],
-    "line": 712,
     "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
   },
   {
@@ -751,7 +856,6 @@
     "arguments": [
       "KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN"
     ],
-    "line": 716,
     "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
   },
   {
@@ -759,7 +863,6 @@
     "en_US": "vm do not support having both SCSI and Virtio-SCSI bus type volumes simultaneously.",
     "zh_CN": "",
     "arguments": [],
-    "line": 792,
     "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
   },
   {
@@ -769,7 +872,6 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 1071,
     "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
   },
   {
@@ -783,7 +885,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 71,
     "fileName": "src/main/java/org/zstack/kvm/KVMRealizeL2NoVlanNetworkBackend.java"
   },
   {
@@ -797,7 +898,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 130,
     "fileName": "src/main/java/org/zstack/kvm/KVMRealizeL2NoVlanNetworkBackend.java"
   },
   {
@@ -811,7 +911,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 206,
     "fileName": "src/main/java/org/zstack/kvm/KVMRealizeL2NoVlanNetworkBackend.java"
   },
   {
@@ -826,7 +925,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 77,
     "fileName": "src/main/java/org/zstack/kvm/KVMRealizeL2VlanNetworkBackend.java"
   },
   {
@@ -840,7 +938,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 137,
     "fileName": "src/main/java/org/zstack/kvm/KVMRealizeL2VlanNetworkBackend.java"
   },
   {
@@ -855,7 +952,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 229,
     "fileName": "src/main/java/org/zstack/kvm/KVMRealizeL2VlanNetworkBackend.java"
   },
   {
@@ -866,7 +962,6 @@
       "hto.getHostUuid()",
       "rsp.getError()"
     ],
-    "line": 108,
     "fileName": "src/main/java/org/zstack/kvm/KVMSecurityGroupBackend.java"
   },
   {
@@ -877,7 +972,6 @@
       "hostUuid",
       "rsp.getError()"
     ],
-    "line": 151,
     "fileName": "src/main/java/org/zstack/kvm/KVMSecurityGroupBackend.java"
   },
   {
@@ -887,7 +981,6 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 213,
     "fileName": "src/main/java/org/zstack/kvm/KVMSecurityGroupBackend.java"
   },
   {
@@ -897,7 +990,6 @@
     "arguments": [
       "msg.getMessageName()"
     ],
-    "line": 95,
     "fileName": "src/main/java/org/zstack/kvm/KvmVmSyncPingTask.java"
   },
   {
@@ -909,7 +1001,6 @@
       "host.getManagementIp()",
       "ret.getError()"
     ],
-    "line": 262,
     "fileName": "src/main/java/org/zstack/kvm/KvmVmSyncPingTask.java"
   },
   {
@@ -919,7 +1010,6 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 291,
     "fileName": "src/main/java/org/zstack/kvm/KvmVmSyncPingTask.java"
   }
 ]

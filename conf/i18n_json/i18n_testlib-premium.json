@@ -7,7 +7,6 @@
       "data",
       "algType"
     ],
-    "line": 111,
     "fileName": "src/main/java/org/zstack/testlib/premium/crypto/EncryptDriverSimulator.java"
   },
   {
@@ -17,7 +16,6 @@
     "arguments": [
       "algType"
     ],
-    "line": 123,
     "fileName": "src/main/java/org/zstack/testlib/premium/crypto/EncryptDriverSimulator.java"
   },
   {
@@ -25,8 +23,14 @@
     "en_US": "failed to decrypt data",
     "zh_CN": "",
     "arguments": [],
-    "line": 136,
     "fileName": "src/main/java/org/zstack/testlib/premium/crypto/EncryptDriverSimulator.java"
+  },
+  {
+    "raw": "fail to decrypt cipher text",
+    "en_US": "fail to decrypt cipher text",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/testlib/premium/crypto/SecurityMachineSimulator.java"
   },
   {
     "raw": "failed to parse MS envelope: %s, %s",
@@ -36,7 +40,6 @@
       "e.getMessage()",
       "cipherText"
     ],
-    "line": 399,
     "fileName": "src/main/java/org/zstack/testlib/premium/crypto/SecurityMachineSimulator.java"
   }
 ]

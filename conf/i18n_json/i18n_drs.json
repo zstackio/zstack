@@ -1,5 +1,42 @@
 [
   {
+    "raw": "Advice not allowed while scheduling",
+    "en_US": "Advice not allowed while scheduling",
+    "zh_CN": "计划时不允许通知",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/drs/DRSBase.java"
+  },
+  {
+    "raw": "delete DRS is not allowed while the vm is being migrated",
+    "en_US": "delete DRS is not allowed while the vm is being migrated",
+    "zh_CN": "迁移云主机时不允许删除 DRS",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/drs/DRSBase.java"
+  },
+  {
+    "raw": "Scheduling is not allowed while the vm is being migrated",
+    "en_US": "Scheduling is not allowed while the vm is being migrated",
+    "zh_CN": "迁移云主机时不允许计划",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/drs/DRSBase.java"
+  },
+  {
+    "raw": "DRS[%s] skip scheduling, no enabled and connected host in cluster",
+    "en_US": "DRS[{0}] skip scheduling, no enabled and connected host in cluster",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/drs/DRSBase.java"
+  },
+  {
+    "raw": "Lack of host CPU, memory monitoring data",
+    "en_US": "Lack of host CPU, memory monitoring data",
+    "zh_CN": "缺少物理机CPU、内存监控数据",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/drs/DRSBase.java"
+  },
+  {
     "raw": "Host CPU usage is %f%%, exceeding %f%%",
     "en_US": "Host CPU usage is {0}%%, exceeding {1}%%",
     "zh_CN": "",
@@ -7,7 +44,6 @@
       "hostNode.getUsedCPUPercent()",
       "cpuUsedPercentThreshold"
     ],
-    "line": 756,
     "fileName": "src/main/java/org/zstack/drs/DRSBase.java"
   },
   {
@@ -18,15 +54,22 @@
       "hostNode.getUsedMemoryPercent()",
       "memUsedPercentThreshold"
     ],
-    "line": 763,
     "fileName": "src/main/java/org/zstack/drs/DRSBase.java"
+  },
+  {
+    "raw": "The cluster[%s] has created DRS",
+    "en_US": "The cluster[{0}] has created DRS",
+    "zh_CN": "集群 {0} 已创建DRS",
+    "arguments": [
+      "msg.getClusterUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
   },
   {
     "raw": "thresholds can not be empty",
     "en_US": "thresholds can not be empty",
     "zh_CN": "阈值不能为空",
     "arguments": [],
-    "line": 62,
     "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
   },
   {
@@ -36,7 +79,6 @@
     "arguments": [
       "threshold.getThresholdName()"
     ],
-    "line": 71,
     "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
   },
   {
@@ -46,7 +88,6 @@
     "arguments": [
       "threshold.getOperator()"
     ],
-    "line": 75,
     "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
   },
   {
@@ -54,7 +95,6 @@
     "en_US": "thresholdValue can not be empty",
     "zh_CN": "阈值不能为空",
     "arguments": [],
-    "line": 79,
     "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
   },
   {
@@ -62,7 +102,16 @@
     "en_US": "illegal thresholdValue, valid range: (0, 100]",
     "zh_CN": "阈值非法，有效范围：（[0，100]",
     "arguments": [],
-    "line": 84,
+    "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
+  },
+  {
+    "raw": "The DRS[%s] state is %s",
+    "en_US": "The DRS[{0}] state is {1}",
+    "zh_CN": "DRS {0} 状态为 {1}",
+    "arguments": [
+      "msg.getUuid()",
+      "state.toString()"
+    ],
     "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
   },
   {
@@ -72,7 +121,6 @@
     "arguments": [
       "adviceVO.getDrsUuid()"
     ],
-    "line": 118,
     "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
   },
   {
@@ -82,7 +130,6 @@
     "arguments": [
       "msg.getAdviceUuid()"
     ],
-    "line": 132,
     "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
   },
   {
@@ -90,7 +137,6 @@
     "en_US": "Successfully executed, no repeated executions allowed",
     "zh_CN": "执行成功，不允许重复执行",
     "arguments": [],
-    "line": 141,
     "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
   },
   {
@@ -100,7 +146,6 @@
     "arguments": [
       "adviceVO.getVmUuid()"
     ],
-    "line": 148,
     "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
   },
   {
@@ -110,7 +155,6 @@
     "arguments": [
       "adviceVO.getVmUuid()"
     ],
-    "line": 151,
     "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
   },
   {
@@ -121,15 +165,38 @@
       "adviceVO.getVmUuid()",
       "adviceVO.getVmSourceHostUuid()"
     ],
-    "line": 154,
     "fileName": "src/main/java/org/zstack/drs/DRSInterceptor.java"
+  },
+  {
+    "raw": "The cluster[%s] does not support DRS.",
+    "en_US": "The cluster[{0}] does not support DRS.",
+    "zh_CN": "集群 {0} 不支持 DRS",
+    "arguments": [
+      "msg.getClusterUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/drs/DRSManagerImpl.java"
+  },
+  {
+    "raw": "Can not create DRS, %s",
+    "en_US": "Can not create DRS, {0}",
+    "zh_CN": "无法创建DRS, {0}",
+    "arguments": [
+      "reasons"
+    ],
+    "fileName": "src/main/java/org/zstack/drs/DRSManagerImpl.java"
   },
   {
     "raw": "hostUuids is empty",
     "en_US": "hostUuids is empty",
     "zh_CN": "HOSTuuidS为空",
     "arguments": [],
-    "line": 318,
+    "fileName": "src/main/java/org/zstack/drs/DRSManagerImpl.java"
+  },
+  {
+    "raw": "query hosts utilization data failed",
+    "en_US": "query hosts utilization data failed",
+    "zh_CN": "查询物理机利用率数据失败",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/drs/DRSManagerImpl.java"
   }
 ]

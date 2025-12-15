@@ -4,7 +4,6 @@
     "en_US": "The sshKeyPair already upload",
     "zh_CN": "",
     "arguments": [],
-    "line": 69,
     "fileName": "src/main/java/org/zstack/sshkeypair/SshKeyPairAPIInterceptor.java"
   },
   {
@@ -14,7 +13,6 @@
     "arguments": [
       "msg.getSshKeyPairUuid()"
     ],
-    "line": 78,
     "fileName": "src/main/java/org/zstack/sshkeypair/SshKeyPairAPIInterceptor.java"
   },
   {
@@ -25,7 +23,6 @@
       "msg.getSshKeyPairUuid()",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 95,
     "fileName": "src/main/java/org/zstack/sshkeypair/SshKeyPairAPIInterceptor.java"
   },
   {
@@ -36,7 +33,6 @@
       "msg.getSshKeyPairUuid()",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 114,
     "fileName": "src/main/java/org/zstack/sshkeypair/SshKeyPairAPIInterceptor.java"
   },
   {
@@ -46,7 +42,6 @@
     "arguments": [
       "vmInstanceVO.getUuid()"
     ],
-    "line": 122,
     "fileName": "src/main/java/org/zstack/sshkeypair/SshKeyPairAPIInterceptor.java"
   },
   {
@@ -57,7 +52,6 @@
       "type",
       "ALLOW_RESOURCE_TYPES"
     ],
-    "line": 129,
     "fileName": "src/main/java/org/zstack/sshkeypair/SshKeyPairAPIInterceptor.java"
   },
   {
@@ -67,8 +61,25 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 284,
     "fileName": "src/main/java/org/zstack/sshkeypair/SshKeyPairBase.java"
+  },
+  {
+    "raw": "unable to find sshKeyPair[uuid\u003d%s]",
+    "en_US": "unable to find sshKeyPair[uuid\u003d{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getSshKeyPairUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/sshkeypair/SshKeyPairManagerImpl.java"
+  },
+  {
+    "raw": "Cannot generate sshKeyPair, error: %s",
+    "en_US": "Cannot generate sshKeyPair, error: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "e.toString()"
+    ],
+    "fileName": "src/main/java/org/zstack/sshkeypair/SshKeyPairManagerImpl.java"
   },
   {
     "raw": "failed to load the public key: %s, err: %s",
@@ -78,7 +89,6 @@
       "keyContent",
       "e.toString()"
     ],
-    "line": 172,
     "fileName": "src/main/java/org/zstack/sshkeypair/SshKeyPairManagerImpl.java"
   },
   {
@@ -89,7 +99,6 @@
       "uuid",
       "vmUuid"
     ],
-    "line": 229,
     "fileName": "src/main/java/org/zstack/sshkeypair/SshKeyPairManagerImpl.java"
   }
 ]

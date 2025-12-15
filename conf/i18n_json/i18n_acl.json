@@ -6,7 +6,6 @@
     "arguments": [
       "ipVer"
     ],
-    "line": 92,
     "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
   },
   {
@@ -17,7 +16,6 @@
       "ips",
       "acl.getUuid()"
     ],
-    "line": 98,
     "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
   },
   {
@@ -27,7 +25,6 @@
     "arguments": [
       "ips"
     ],
-    "line": 105,
     "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
   },
   {
@@ -41,7 +38,6 @@
       "NetworkUtils.longToIpv4String(r.upperEndpoint())",
       "acl.getUuid()"
     ],
-    "line": 109,
     "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
   },
   {
@@ -51,7 +47,6 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 116,
     "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
   },
   {
@@ -61,7 +56,6 @@
     "arguments": [
       "acl.getUuid()"
     ],
-    "line": 127,
     "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
   },
   {
@@ -72,7 +66,6 @@
       "acl.getUuid()",
       "AccessControlListConstants.MAX_ENTRY_COUNT_PER_GROUP"
     ],
-    "line": 133,
     "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
   },
   {
@@ -82,7 +75,6 @@
     "arguments": [
       "acl.getUuid()"
     ],
-    "line": 138,
     "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
   },
   {
@@ -92,7 +84,6 @@
     "arguments": [
       "acl.getUuid()"
     ],
-    "line": 154,
     "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
   },
   {
@@ -102,7 +93,6 @@
     "arguments": [
       "acl.getUuid()"
     ],
-    "line": 158,
     "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
   },
   {
@@ -110,7 +100,6 @@
     "en_US": "domain and url can not both empty",
     "zh_CN": "域和URL不能同时为空",
     "arguments": [],
-    "line": 162,
     "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
   },
   {
@@ -120,7 +109,6 @@
     "arguments": [
       "msg.getDomain()"
     ],
-    "line": 167,
     "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
   },
   {
@@ -130,7 +118,6 @@
     "arguments": [
       "msg.getUrl()"
     ],
-    "line": 178,
     "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
   }
 ]

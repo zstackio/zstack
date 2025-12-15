@@ -7,7 +7,6 @@
       "url",
       "MDS_URL_FORMAT"
     ],
-    "line": 73,
     "fileName": "src/main/java/org/zstack/cbd/MdsUri.java"
   },
   {
@@ -17,7 +16,6 @@
     "arguments": [
       "rsp.error"
     ],
-    "line": 216,
     "fileName": "src/main/java/org/zstack/cbd/kvm/KvmCbdNodeServer.java"
   }
 ]
