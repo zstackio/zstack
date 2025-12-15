@@ -224,6 +224,14 @@ class ZbsPrimaryStorageCase extends SubCase {
             }
         }
 
+        expect(AssertionError.class) {
+            updateExternalPrimaryStorage {
+                uuid = ps.uuid
+                config = "{\"mdsUrls\":[\"root:password@127.0.1.1\",\"root:password@127.0.1.1\"]}"
+            }
+        }
+
+
         updateExternalPrimaryStorage {
             uuid = ps.uuid
             config = "{\"mdsUrls\":[\"root:password@127.0.1.1\",\"root:password@127.0.1.2\"],\"logicalPoolName\":\"lpool1\"}"
