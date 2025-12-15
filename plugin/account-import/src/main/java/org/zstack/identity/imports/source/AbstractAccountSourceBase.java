@@ -471,8 +471,9 @@ public abstract class AbstractAccountSourceBase {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                completion.fail(operr(errCode, "failed to import account from source[uuid=%s, type=%s]",
-                        spec.getSourceUuid(), spec.getSourceType()));
+                completion.fail(operr("failed to import account from source[uuid=%s, type=%s]",
+                        spec.getSourceUuid(), spec.getSourceType())
+                                .withCause(errCode));
             }
         }).start();
     }
@@ -684,8 +685,9 @@ public abstract class AbstractAccountSourceBase {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                completion.fail(operr(errCode, "failed to unbinding accounts from source[uuid=%s, type=%s]",
-                        self.getUuid(), self.getType()));
+                completion.fail(operr("failed to unbinding accounts from source[uuid=%s, type=%s]",
+                        self.getUuid(), self.getType())
+                                .withCause(errCode));
             }
         }).start();
     }
@@ -894,8 +896,8 @@ public abstract class AbstractAccountSourceBase {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                completion.fail(operr(errCode, "failed to delete source[uuid=%s, type=%s]",
-                        self.getUuid(), self.getType()));
+                completion.fail(operr("failed to delete source[uuid=%s, type=%s]", self.getUuid(), self.getType())
+                                .withCause(errCode));
             }
         }).start();
     }

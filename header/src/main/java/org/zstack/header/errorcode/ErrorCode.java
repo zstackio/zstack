@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.zstack.utils.CollectionUtils.isEmpty;
 import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_ERROR_LOCATION;
 import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_EXCEPTION;
 
@@ -276,6 +277,10 @@ public class ErrorCode implements Serializable, Cloneable, OpaqueCollection {
         }
     }
 
+    /**
+     * use {@link #rootCause()}
+     */
+    @Deprecated
     public ErrorCode getRootCause() {
         ErrorCode root = this;
         do {
@@ -284,6 +289,17 @@ public class ErrorCode implements Serializable, Cloneable, OpaqueCollection {
             } else {
                 break;
             }
+        } while (true);
+        return root;
+    }
+
+    public ErrorCode rootCause() {
+        ErrorCode root = this;
+        do {
+            if (isEmpty(root.causes)) {
+                break;
+            }
+            root = root.causes.get(0);
         } while (true);
         return root;
     }

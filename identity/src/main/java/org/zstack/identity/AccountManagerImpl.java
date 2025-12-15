@@ -1098,7 +1098,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             ErrorCode errorCode = checker.check(quota, msg.getValue());
             if (errorCode != null) {
                 throw new ApiMessageInterceptionException(
-                        operr(errorCode, "cannot update Quota[name: %s] for the account[uuid: %s]", msg.getName(), msg.getIdentityUuid()));
+                        operr("cannot update Quota[name: %s] for the account[uuid: %s]", msg.getName(), msg.getIdentityUuid())
+                                .withCause(errorCode));
             }
         }
 

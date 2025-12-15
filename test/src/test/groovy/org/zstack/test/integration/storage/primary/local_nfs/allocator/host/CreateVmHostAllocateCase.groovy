@@ -180,11 +180,10 @@ class CreateVmHostAllocateCase extends SubCase {
                 ]
             }
         }) {
-            assert delegate.code == "SYS.1006"
-            assert delegate.cause
-            assert delegate.cause.code == "HOST_ALLOCATION.1001"
-            assert delegate.cause.opaque["rejectedCandidates"]
-            def list = (delegate.cause.opaque["rejectedCandidates"] as List<Map<String, Object>>)
+            assert delegate.code == "HOST_ALLOCATION.1001"
+            assert delegate.opaque
+            assert delegate.opaque["rejectedCandidates"]
+            def list = (delegate.opaque["rejectedCandidates"] as List<Map<String, Object>>)
             assert list.size() == 2
             assert list.any { it["hostUuid"] == kvm.uuid && it["hostName"] == "kvm" }
             assert list.any { it["hostUuid"] == kvm1.uuid && it["hostName"] == "kvm1" }
