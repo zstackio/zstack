@@ -1,5 +1,6 @@
 package org.zstack.storage.ceph.backup;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.SyncThread;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
@@ -47,10 +49,13 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
+import org.zstack.utils.path.RemotePathValidator;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.Serializable;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -87,10 +92,19 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     ReconnectMonLock reconnectMonLock = new ReconnectMonLock();
 
+    private static final Set<String> ALLOWED_URL_SCHEMES = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList("http", "https", "ftp", "sftp")));
+
+    // SSH username: only alphanumeric, dots, hyphens, underscores, optional trailing $
+    private static final java.util.regex.Pattern SSH_USERNAME_PATTERN =
+            java.util.regex.Pattern.compile("^[a-zA-Z0-9._-]+\\$?$");
+
     @Autowired
     protected RESTFacade restf;
     @Autowired
     protected CephBackupStorageMetaDataMaker metaDataMaker;
+    @Autowired
+    private ApiTimeoutManager timeoutManager;
 
     public enum PingOperationFailure {
         UnableToCreateFile,
@@ -659,6 +673,96 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
     }
 
+    public static class DownloadFileCmd extends AgentCommand implements HasThreadContext, Serializable {
+        public String taskUuid;
+        public String installPath;
+        @NoLogging(type = NoLogging.Type.Uri)
+        public String url;
+        @NoLogging(type = NoLogging.Type.Uri)
+        public String urlScheme;
+        public long timeout;
+        @NoLogging(type = NoLogging.Type.Uri)
+        public String sendCommandUrl;
+    }
+
+    public static class DownloadFileResponse extends AgentResponse {
+        public String md5sum;
+        public long size;
+        public String format;
+    }
+
+    public static class DeleteFilesCmd extends AgentCommand implements HasThreadContext, Serializable {
+        public List<String> filePaths;
+    }
+
+    public static class DeleteFilesResponse extends AgentResponse {
+    }
+
+    public static class UploadFileCmd extends AgentCommand implements HasThreadContext, Serializable {
+        public String taskUuid;
+        public String installPath;
+        @NoLogging(type = NoLogging.Type.Uri)
+        public String url;
+        public long timeout;
+    }
+
+    public static class UploadFileResponse extends AgentResponse {
+        public String directUploadUrl;
+    }
+
+    public static class GetDownloadFileProgressCmd extends AgentCommand implements HasThreadContext, Serializable {
+        public String taskUuid;
+    }
+
+    public static class GetDownloadFileProgressResponse extends AgentResponse {
+        public boolean completed;
+        public int progress;
+        public long size;
+        public long actualSize;
+        public String installPath;
+        public String format;
+        public long lastOpTime;
+        public long downloadSize;
+        public String md5sum;
+        public boolean supportSuspend;
+    }
+
+    public static class UnzipFileCmd extends AgentCommand implements HasThreadContext, Serializable {
+        public String installPath;
+    }
+
+    public static class UnzipFileResponse extends AgentResponse {
+        public String unzipInstallPath;
+        public Map<String, Long> fileSizes;
+    }
+
+    /**
+     * Command to deploy a software upgrade package from a Ceph backup storage host
+     * to a target host via SCP/SSH.
+     *
+     * NOTE: targetHostSshPassword is the Base64-encoded password (not plaintext),
+     * and is annotated with @NoLogging so it will never appear in logs.
+     * The HTTP transport to the Ceph agent is within the trusted management network.
+     *
+     * TODO(security): The SSH password is transmitted over HTTP (management network) as Base64.
+     * While @NoLogging prevents log leakage and the management network is considered trusted,
+     * this is still vulnerable to network sniffing. Consider migrating to HTTPS transport
+     * or pushing password handling down to the agent side (e.g., vault/key-based auth).
+     */
+    public static class SoftwareUpgradePackageCmd extends AgentCommand implements HasThreadContext, Serializable {
+        public String upgradePackagePath;
+        public String upgradePackageTargetPath;
+        public String upgradeScriptPath;
+        public int targetHostSshPort;
+        public String targetHostSshUsername;
+        @NoLogging
+        public String targetHostSshPassword;
+        public String targetHostIp;
+    }
+
+    public static class SoftwareUpgradePackageResponse extends AgentResponse {
+    }
+
     // common response of storage migration
     public static class StorageMigrationRsp extends AgentResponse {
     }
@@ -679,6 +783,13 @@ public class CephBackupStorageBase extends BackupStorageBase {
     public static final String CHECK_POOL_PATH = "/ceph/backupstorage/checkpool";
     public static final String GET_LOCAL_FILE_SIZE = "/ceph/backupstorage/getlocalfilesize";
     public static final String CEPH_TO_CEPH_MIGRATE_IMAGE_PATH = "/ceph/backupstorage/image/migrate";
+
+    public static final String FILE_DOWNLOAD_PATH = "/ceph/file/download";
+    public static final String FILE_UPLOAD_PATH = "/ceph/file/upload";
+    public static final String FILE_DOWNLOAD_PROGRESS_PATH = "/ceph/file/progress";
+    public static final String DELETE_FILES_PATH = "/ceph/files/delete";
+    public static final String UNZIP_FILE_PATH = "/ceph/file/unzip";
+    public static final String SOFTWARE_UPGRADE_PACKAGE_DEPLOY_PATH = "/ceph/upgrade/deploy";
 
     protected String makeImageInstallPath(String imageUuid) {
         return String.format("ceph://%s/%s", getSelf().getPoolName(), imageUuid);
@@ -2020,5 +2131,387 @@ public class CephBackupStorageBase extends BackupStorageBase {
     @SyncThread(signature = RESTORE_IMAGES_BACKUP_STORAGE_METADATA_TO_DATABASE)
     private void doRestoreImagesBackupStorageMetadataToDatabase(RestoreImagesBackupStorageMetadataToDatabaseMsg msg) {
         metaDataMaker.restoreImagesBackupStorageMetadataToDatabase(msg.getImagesMetadata(), msg.getBackupStorageUuid());
+    }
+
+    /**
+     * Find a specific Ceph mon by its UUID.
+     * @throws OperationFailureException if the mon cannot be found
+     */
+    private CephBackupStorageMonVO findMonByUuid(String backupStorageHostUuid) {
+        if (backupStorageHostUuid == null) {
+            throw new OperationFailureException(operr("backup storage host uuid is null"));
+        }
+
+        Set<CephBackupStorageMonVO> mons = getSelf().getMons();
+        if (mons == null || mons.isEmpty()) {
+            throw new OperationFailureException(operr("backup storage [%s] has no mon", getSelf().getName()));
+        }
+
+        return mons.stream()
+                .filter(m -> m.getUuid().equals(backupStorageHostUuid)).findAny()
+                .orElseThrow(() -> new OperationFailureException(
+                        operr("failed to find mon with uuid [%s]", backupStorageHostUuid)));
+    }
+
+    @Override
+    protected void handle(final UploadFileToBackupStorageHostMsg msg) {
+        UploadFileToBackupStorageHostReply reply = new UploadFileToBackupStorageHostReply();
+        if (StringUtils.isEmpty(msg.getUrl())) {
+            reply.setError(operr("url cannot be null or empty"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        // Validate installPath to prevent path traversal and injection attacks.
+        if (msg.getInstallPath() != null && !msg.getInstallPath().isEmpty()) {
+            String pathErr = RemotePathValidator.validateRemotePath(msg.getInstallPath(), "installPath");
+            if (pathErr != null) {
+                reply.setError(operr(pathErr));
+                bus.reply(msg, reply);
+                return;
+            }
+        }
+
+        // "upload://" scheme: the caller will push file data directly to the agent's upload endpoint.
+        // The agent returns a directUploadUrl that the caller uses for the actual data transfer.
+        if (msg.getUrl().startsWith("upload://")) {
+            UploadFileCmd cmd = new UploadFileCmd();
+            cmd.url = msg.getUrl();
+            cmd.installPath = msg.getInstallPath();
+            cmd.timeout = timeoutManager.getTimeout();
+            cmd.taskUuid = msg.getTaskUuid();
+            httpCall(FILE_UPLOAD_PATH, cmd, UploadFileResponse.class, new ReturnValueCompletion<UploadFileResponse>(msg) {
+                @Override
+                public void fail(ErrorCode err) {
+                    reply.setError(err);
+                    bus.reply(msg, reply);
+                }
+
+                @Override
+                public void success(UploadFileResponse rsp) {
+                    reply.setDirectUploadUrl(rsp.directUploadUrl);
+                    reply.setBackupStorageHostUuid(rsp.handleMon.getMonUuid());
+                    bus.reply(msg, reply);
+                }
+            });
+            return;
+        }
+
+        // Other URL schemes (http://, https://, ftp://, etc.): the agent pulls the file
+        // from the given URL. Used for remote download scenarios where the file is
+        // hosted on an accessible server.
+        DownloadFileCmd cmd = new DownloadFileCmd();
+        cmd.url = msg.getUrl();
+        cmd.installPath = msg.getInstallPath();
+        cmd.timeout = timeoutManager.getTimeout();
+        cmd.taskUuid = msg.getTaskUuid();
+        cmd.sendCommandUrl = restf.getSendCommandUrl();
+
+        String scheme;
+        try {
+            URI uri = new URI(msg.getUrl());
+            scheme = uri.getScheme();
+        } catch (URISyntaxException e) {
+            reply.setError(operr("failed to parse upload URL [%s]: %s", msg.getUrl(), e.getMessage()));
+            bus.reply(msg, reply);
+            return;
+        }
+        if (scheme == null || scheme.isEmpty()) {
+            reply.setError(operr("upload URL [%s] is missing a protocol prefix", msg.getUrl()));
+            bus.reply(msg, reply);
+            return;
+        }
+        if (!ALLOWED_URL_SCHEMES.contains(scheme.toLowerCase())) {
+            reply.setError(operr("upload URL [%s] uses unsupported protocol [%s], only %s are allowed",
+                    msg.getUrl(), scheme, ALLOWED_URL_SCHEMES));
+            bus.reply(msg, reply);
+            return;
+        }
+        cmd.urlScheme = scheme;
+
+        httpCall(FILE_DOWNLOAD_PATH, cmd, DownloadFileResponse.class, new ReturnValueCompletion<DownloadFileResponse>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(DownloadFileResponse rsp) {
+                reply.setMd5sum(rsp.md5sum);
+                reply.setSize(rsp.size);
+                reply.setFormat(rsp.format);
+                reply.setBackupStorageHostUuid(rsp.handleMon.getMonUuid());
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(final UnzipFileOnBackupStorageHostMsg msg) {
+        UnzipFileOnBackupStorageHostReply reply = new UnzipFileOnBackupStorageHostReply();
+
+        if (StringUtils.isEmpty(msg.getInstallPath())) {
+            reply.setError(operr("installPath cannot be null or empty"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        String pathErr = RemotePathValidator.validateRemotePath(msg.getInstallPath(), "installPath");
+        if (pathErr != null) {
+            reply.setError(operr(pathErr));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        CephBackupStorageMonVO mon;
+        try {
+            mon = findMonByUuid(msg.getBackupStorageHostUuid());
+        } catch (OperationFailureException e) {
+            reply.setError(e.getErrorCode());
+            bus.reply(msg, reply);
+            return;
+        }
+
+        UnzipFileCmd cmd = new UnzipFileCmd();
+        cmd.installPath = msg.getInstallPath();
+
+        CephBackupStorageMonBase monBase = new CephBackupStorageMonBase(mon);
+        monBase.httpCall(UNZIP_FILE_PATH, cmd, UnzipFileResponse.class, new ReturnValueCompletion<UnzipFileResponse>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(UnzipFileResponse rsp) {
+                reply.setUnzipInstallPath(rsp.unzipInstallPath);
+                reply.setFileSizes(rsp.fileSizes);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(final DeleteFilesOnBackupStorageHostMsg msg) {
+        DeleteFilesOnBackupStorageHostReply reply = new DeleteFilesOnBackupStorageHostReply();
+
+        if (msg.getFilePaths() == null || msg.getFilePaths().isEmpty()) {
+            bus.reply(msg, reply);
+            return;
+        }
+
+        // Validate each file path to prevent path traversal and injection attacks.
+        for (String filePath : msg.getFilePaths()) {
+            String pathErr = RemotePathValidator.validateRemotePath(filePath, "filePath");
+            if (pathErr != null) {
+                reply.setError(operr(pathErr));
+                bus.reply(msg, reply);
+                return;
+            }
+        }
+
+        CephBackupStorageMonVO mon;
+        try {
+            mon = findMonByUuid(msg.getBackupStorageHostUuid());
+        } catch (OperationFailureException e) {
+            reply.setError(e.getErrorCode());
+            bus.reply(msg, reply);
+            return;
+        }
+
+        DeleteFilesCmd cmd = new DeleteFilesCmd();
+        cmd.filePaths = msg.getFilePaths();
+
+        CephBackupStorageMonBase monBase = new CephBackupStorageMonBase(mon);
+        monBase.httpCall(DELETE_FILES_PATH, cmd, DeleteFilesResponse.class, new ReturnValueCompletion<DeleteFilesResponse>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(DeleteFilesResponse rsp) {
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(GetFileDownloadProgressFromBackupStorageHostMsg msg) {
+        GetFileDownloadProgressFromBackupStorageHostReply reply = new GetFileDownloadProgressFromBackupStorageHostReply();
+
+        if (msg.getTaskUuid() == null || msg.getTaskUuid().isEmpty()) {
+            reply.setError(operr("taskUuid cannot be null or empty"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        CephBackupStorageMonVO mon;
+        try {
+            mon = findMonByUuid(msg.getBackupStorageHostUuid());
+        } catch (OperationFailureException e) {
+            reply.setError(e.getErrorCode());
+            bus.reply(msg, reply);
+            return;
+        }
+
+        GetDownloadFileProgressCmd cmd = new GetDownloadFileProgressCmd();
+        cmd.taskUuid = msg.getTaskUuid();
+
+        CephBackupStorageMonBase monBase = new CephBackupStorageMonBase(mon);
+        monBase.httpCall(FILE_DOWNLOAD_PROGRESS_PATH, cmd, GetDownloadFileProgressResponse.class, new ReturnValueCompletion<GetDownloadFileProgressResponse>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(GetDownloadFileProgressResponse rsp) {
+                reply.setCompleted(rsp.completed);
+                reply.setProgress(rsp.progress);
+                reply.setActualSize(rsp.actualSize);
+                reply.setSize(rsp.size);
+                reply.setInstallPath(rsp.installPath);
+                reply.setDownloadSize(rsp.downloadSize);
+                reply.setLastOpTime(rsp.lastOpTime);
+                reply.setMd5sum(rsp.md5sum);
+                reply.setSupportSuspend(rsp.supportSuspend);
+                reply.setFormat(rsp.format);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(SoftwareUpgradePackageDeployMsg msg) {
+        SoftwareUpgradePackageDeployReply reply = new SoftwareUpgradePackageDeployReply();
+
+        if (msg.getUpgradePackagePath() == null || msg.getUpgradePackagePath().isEmpty()) {
+            reply.setError(operr("upgradePackagePath cannot be null or empty"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        if (msg.getTargetHostIp() == null || msg.getTargetHostIp().isEmpty()) {
+            reply.setError(operr("targetHostIp cannot be null or empty"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        if (msg.getTargetHostSshPort() <= 0 || msg.getTargetHostSshPort() > 65535) {
+            reply.setError(operr("targetHostSshPort must be in range 1-65535, but got [%d]", msg.getTargetHostSshPort()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        if (!NetworkUtils.isValidIPAddress(msg.getTargetHostIp())) {
+            reply.setError(operr("targetHostIp [%s] is not a valid IPv4 or IPv6 address", msg.getTargetHostIp()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        if (msg.getTargetHostSshUsername() == null || !SSH_USERNAME_PATTERN.matcher(msg.getTargetHostSshUsername()).matches()) {
+            reply.setError(operr("targetHostSshUsername [%s] is invalid, only alphanumeric characters, dots, hyphens, underscores and trailing dollar sign are allowed",
+                    msg.getTargetHostSshUsername()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        // Validate all paths to prevent path traversal and injection attacks.
+        String pathErr = RemotePathValidator.validateRemotePath(msg.getUpgradePackagePath(), "upgradePackagePath");
+        if (pathErr != null) {
+            reply.setError(operr(pathErr));
+            bus.reply(msg, reply);
+            return;
+        }
+        if (msg.getUpgradePackageTargetPath() != null) {
+            pathErr = RemotePathValidator.validateRemotePath(msg.getUpgradePackageTargetPath(), "upgradePackageTargetPath");
+            if (pathErr != null) {
+                reply.setError(operr(pathErr));
+                bus.reply(msg, reply);
+                return;
+            }
+        }
+        if (msg.getUpgradeScriptPath() != null) {
+            pathErr = RemotePathValidator.validateRemotePath(msg.getUpgradeScriptPath(), "upgradeScriptPath");
+            if (pathErr != null) {
+                reply.setError(operr(pathErr));
+                bus.reply(msg, reply);
+                return;
+            }
+        }
+
+        CephBackupStorageMonVO mon;
+        try {
+            mon = findMonByUuid(msg.getBackupStorageHostUuid());
+        } catch (OperationFailureException e) {
+            reply.setError(e.getErrorCode());
+            bus.reply(msg, reply);
+            return;
+        }
+
+        SoftwareUpgradePackageCmd cmd = new SoftwareUpgradePackageCmd();
+        cmd.upgradePackagePath = msg.getUpgradePackagePath();
+        cmd.upgradePackageTargetPath = msg.getUpgradePackageTargetPath();
+        cmd.upgradeScriptPath = msg.getUpgradeScriptPath();
+        cmd.targetHostSshPort = msg.getTargetHostSshPort();
+        cmd.targetHostSshUsername = msg.getTargetHostSshUsername();
+        cmd.targetHostSshPassword = msg.getTargetHostSshPassword();
+        cmd.targetHostIp = msg.getTargetHostIp();
+
+        CephBackupStorageMonBase monBase = new CephBackupStorageMonBase(mon);
+        monBase.httpCall(SOFTWARE_UPGRADE_PACKAGE_DEPLOY_PATH, cmd, SoftwareUpgradePackageResponse.class, new ReturnValueCompletion<SoftwareUpgradePackageResponse>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(SoftwareUpgradePackageResponse rsp) {
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(CancelDownloadFileOnBackupStorageHostMsg msg) {
+        CancelDownloadFileOnBackupStorageHostReply reply = new CancelDownloadFileOnBackupStorageHostReply();
+
+        if (StringUtils.isEmpty(msg.getCancellationApiId())) {
+            reply.setError(operr("cancellationApiId is required to cancel a download task"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        CephBackupStorageMonVO mon;
+        try {
+            mon = findMonByUuid(msg.getBackupStorageHostUuid());
+        } catch (OperationFailureException e) {
+            reply.setError(e.getErrorCode());
+            bus.reply(msg, reply);
+            return;
+        }
+
+        CancelCommand cmd = new CancelCommand();
+        cmd.setCancellationApiId(msg.getCancellationApiId());
+
+        CephBackupStorageMonBase monBase = new CephBackupStorageMonBase(mon);
+        monBase.httpCall(AgentConstant.CANCEL_JOB, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(AgentResponse rsp) {
+                bus.reply(msg, reply);
+            }
+        });
     }
 }
