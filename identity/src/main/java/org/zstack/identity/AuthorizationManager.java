@@ -2,8 +2,6 @@ package org.zstack.identity;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -150,11 +148,8 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
     }
 
     public static ErrorCode createAdditionAuthErrorCode(Map<String, String> properties, String... authentications) {
-        JsonObject o = new JsonObject();
-        JsonArray authArray = new JsonArray(authentications.length);
-        Arrays.asList(authentications).forEach(authArray::add);
-        o.add("authentications", authArray);
-        properties.forEach(o::addProperty);
-        return err(IdentityErrors.NEED_ADDITION_AUTHENTICATION, "%s", o.toString());
+        return err(IdentityErrors.NEED_ADDITION_AUTHENTICATION, "additional authentication required")
+                .withOpaque("authentications", authentications)
+                .withOpaque("authentications.properties", properties);
     }
 }
