@@ -940,6 +940,10 @@ public class Platform {
         return err(errCode, null, fmt, args);
     }
 
+    /**
+     * use err(errCode, fmt, args...).withCause(cause)
+     */
+    @Deprecated
     public static ErrorCode err(Enum errCode, ErrorCode cause, String fmt, Object...args) {
         ErrorFacade errf = getComponentLoader().getComponent(ErrorFacade.class);
         String details = null;
@@ -1124,6 +1128,10 @@ public class Platform {
         return err(SysErrors.OPERATION_ERROR, fmt, args);
     }
 
+    /**
+     * use operr(fmt, args...).withCause(cause)
+     */
+    @Deprecated
     public static ErrorCode operr(ErrorCode cause, String fmt, Object...args) {
         return err(SysErrors.OPERATION_ERROR, cause, fmt, args);
     }
@@ -1140,6 +1148,10 @@ public class Platform {
         return err(SysErrors.TIMEOUT, fmt, args);
     }
 
+    /**
+     * use touterr(fmt, args...).withCause(cause)
+     */
+    @Deprecated
     public static ErrorCode touterr(ErrorCode cause, String fmt, Object...args) {
         return err(SysErrors.TIMEOUT, cause, fmt, args);
     }
