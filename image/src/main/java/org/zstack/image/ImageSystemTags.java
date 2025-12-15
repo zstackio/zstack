@@ -53,4 +53,10 @@ public class ImageSystemTags {
 
     public static String IMAGE_ID ="imageId";
     public static PatternedSystemTag UPLOAD_IMAGE_INFO = new PatternedSystemTag(String.format("uploadImage::{%s}", IMAGE_ID), LongJobVO.class);
+
+    public static final String MARKET_PLACE_TOKEN = "marketplace::true";
+
+    public static PatternedSystemTag CREATED_BY_MARKETPLACE = new PatternedSystemTag(
+            MARKET_PLACE_TOKEN, ImageVO.class
+    );
 }
