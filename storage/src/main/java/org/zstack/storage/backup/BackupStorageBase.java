@@ -123,6 +123,30 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         bus.dealWithUnknownMessage(msg);
     }
 
+    protected void handle(UploadFileToBackupStorageHostMsg msg) {
+        bus.dealWithUnknownMessage(msg);
+    }
+
+    protected void handle(DeleteFilesOnBackupStorageHostMsg msg) {
+        bus.dealWithUnknownMessage(msg);
+    }
+
+    protected void handle(GetFileDownloadProgressFromBackupStorageHostMsg msg) {
+        bus.dealWithUnknownMessage(msg);
+    }
+
+    protected void handle(SoftwareUpgradePackageDeployMsg msg) {
+        bus.dealWithUnknownMessage(msg);
+    }
+
+    protected void handle(CancelDownloadFileOnBackupStorageHostMsg msg) {
+        bus.dealWithUnknownMessage(msg);
+    }
+
+    protected void handle(UnzipFileOnBackupStorageHostMsg msg) {
+        bus.dealWithUnknownMessage(msg);
+    }
+
     public BackupStorageBase(BackupStorageVO self) {
         this.self = self;
         this.id = BackupStorage.buildId(self.getUuid());
@@ -274,8 +298,20 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             handle((RestoreImagesBackupStorageMetadataToDatabaseMsg) msg);
         } else if (msg instanceof CalculateImageHashOnBackupStorageMsg) {
             handle((CalculateImageHashOnBackupStorageMsg) msg);
+        } else if (msg instanceof UploadFileToBackupStorageHostMsg) {
+            handle((UploadFileToBackupStorageHostMsg) msg);
+        } else if (msg instanceof DeleteFilesOnBackupStorageHostMsg) {
+            handle((DeleteFilesOnBackupStorageHostMsg) msg);
         } else if (msg instanceof GetBackupStorageManagerHostnameMsg) {
             handle((GetBackupStorageManagerHostnameMsg) msg);
+        } else if (msg instanceof GetFileDownloadProgressFromBackupStorageHostMsg) {
+            handle((GetFileDownloadProgressFromBackupStorageHostMsg) msg);
+        } else if (msg instanceof SoftwareUpgradePackageDeployMsg) {
+            handle((SoftwareUpgradePackageDeployMsg) msg);
+        } else if (msg instanceof CancelDownloadFileOnBackupStorageHostMsg) {
+            handle((CancelDownloadFileOnBackupStorageHostMsg) msg);
+        } else if (msg instanceof UnzipFileOnBackupStorageHostMsg) {
+            handle((UnzipFileOnBackupStorageHostMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }

@@ -227,4 +227,82 @@ public class CephBackupStorageSimulator {
         return null;
     }
 
+    @RequestMapping(value=CephBackupStorageBase.GET_LOCAL_FILE_SIZE, method= RequestMethod.POST)
+    public @ResponseBody
+    String getLocalFileSize(HttpEntity<String> entity) {
+        GetLocalFileSizeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetLocalFileSizeCmd.class);
+        GetLocalFileSizeRsp rsp = new GetLocalFileSizeRsp();
+        rsp.size = 0;
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=CephBackupStorageBase.FILE_DOWNLOAD_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String fileDownload(HttpEntity<String> entity) {
+        DownloadFileCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DownloadFileCmd.class);
+        DownloadFileResponse rsp = new DownloadFileResponse();
+        rsp.md5sum = "d41d8cd98f00b204e9800998ecf8427e";
+        rsp.size = 0;
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=CephBackupStorageBase.FILE_UPLOAD_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String fileUpload(HttpEntity<String> entity) {
+        UploadFileCmd cmd = JSONObjectUtil.toObject(entity.getBody(), UploadFileCmd.class);
+        UploadFileResponse rsp = new UploadFileResponse();
+        rsp.directUploadUrl = "http://127.0.0.1:7761/ceph/file/direct/upload";
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=CephBackupStorageBase.FILE_DOWNLOAD_PROGRESS_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String fileDownloadProgress(HttpEntity<String> entity) {
+        GetDownloadFileProgressCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetDownloadFileProgressCmd.class);
+        GetDownloadFileProgressResponse rsp = new GetDownloadFileProgressResponse();
+        rsp.completed = true;
+        rsp.progress = 100;
+        rsp.size = 0;
+        rsp.actualSize = 0;
+        rsp.installPath = "/tmp/test-software-package/unzipInstallPath";
+        rsp.format = "qcow2";
+        rsp.lastOpTime = System.currentTimeMillis();
+        rsp.downloadSize = 0;
+        rsp.md5sum = "d41d8cd98f00b204e9800998ecf8427e";
+        rsp.supportSuspend = true;
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=CephBackupStorageBase.DELETE_FILES_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String deleteFiles(HttpEntity<String> entity) {
+        DeleteFilesCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteFilesCmd.class);
+        DeleteFilesResponse rsp = new DeleteFilesResponse();
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=CephBackupStorageBase.UNZIP_FILE_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String unzipFile(HttpEntity<String> entity) {
+        UnzipFileCmd cmd = JSONObjectUtil.toObject(entity.getBody(), UnzipFileCmd.class);
+        UnzipFileResponse rsp = new UnzipFileResponse();
+        rsp.unzipInstallPath = "/tmp/test-software-package/unzipInstallPath";
+        rsp.fileSizes = new java.util.HashMap<>();
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=CephBackupStorageBase.SOFTWARE_UPGRADE_PACKAGE_DEPLOY_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String softwareUpgradePackageDeploy(HttpEntity<String> entity) {
+        SoftwareUpgradePackageCmd cmd = JSONObjectUtil.toObject(entity.getBody(), SoftwareUpgradePackageCmd.class);
+        SoftwareUpgradePackageResponse rsp = new SoftwareUpgradePackageResponse();
+        reply(entity, rsp);
+        return null;
+    }
 }
