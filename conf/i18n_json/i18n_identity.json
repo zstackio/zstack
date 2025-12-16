@@ -185,9 +185,9 @@
     "fileName": "src/main/java/org/zstack/identity/AccountQuotaUpdateChecker.java"
   },
   {
-    "raw": "%s",
-    "en_US": "{0}",
-    "zh_CN": "{0}",
+    "raw": "additional authentication required",
+    "en_US": "additional authentication required",
+    "zh_CN": "需要额外认证",
     "arguments": [
       "o.toString()"
     ],
