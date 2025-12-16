@@ -1,4 +1,4 @@
-package org.zstack.cbd;
+package org.zstack.storage.zbs;
 
 /**
  * @author Xingwei Yu

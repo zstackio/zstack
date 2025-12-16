@@ -1,4 +1,4 @@
-package org.zstack.cbd;
+package org.zstack.storage.zbs;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -30,8 +30,10 @@ public class MdsUri {
     private static final Integer DEFAULT_SSH_PORT = 22;
 
     private static List<String> allowedQueryParameter;
+
+    private static final String MDS_PARAM_MDS_PORT = "mdsPort";
     static {
-        allowedQueryParameter = list(CbdConstants.MDS_PARAM_MDS_PORT);
+        allowedQueryParameter = list(MDS_PARAM_MDS_PORT);
     }
 
     public static String getQueryValue(URI uri, String name) {
@@ -90,7 +92,7 @@ public class MdsUri {
                                 " in format of %s", url, MDS_URL_FORMAT)
                 );
             }
-            String v = getQueryValue(uri, CbdConstants.MDS_PARAM_MDS_PORT);
+            String v = getQueryValue(uri, MDS_PARAM_MDS_PORT);
             mdsPort = v == null ? mdsPort : Integer.parseInt(v);
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(e);

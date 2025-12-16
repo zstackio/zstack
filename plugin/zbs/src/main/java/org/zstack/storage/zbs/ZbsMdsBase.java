@@ -3,7 +3,6 @@ package org.zstack.storage.zbs;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.cbd.MdsInfo;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
