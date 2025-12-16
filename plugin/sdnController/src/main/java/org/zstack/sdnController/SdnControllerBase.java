@@ -126,10 +126,52 @@ public class SdnControllerBase {
             handle((PullSdnControllerTenantMsg) msg);
         } else if (msg instanceof ReconnectSdnControllerMsg) {
             handle((ReconnectSdnControllerMsg) msg);
+        } else if (msg instanceof SyncSdnControllerDataMsg) {
+            handle((SyncSdnControllerDataMsg) msg);
         } else {
             SdnController controller = getSdnController();
             controller.handleMessage(msg);
         }
+    }
+
+    private void handle(SyncSdnControllerDataMsg msg) {
+        SyncSdnControllerDataReply reply = new SyncSdnControllerDataReply();
+        // Run a sync chain that only syncs data, without touching connection status
+        thdf.chainSubmit(new ChainTask(reply) {
+            @Override
+            public String getSyncSignature() {
+                return getSdnControllerSignature();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                FlowChain flowChain = sdnMgr.getSyncChain(self);
+                flowChain.getData().put(SDN_CONTROLLER_UUID, self.getUuid());
+                flowChain.setName(String.format("sync-sdn-controller-data-%s-%s", self.getUuid(), self.getName()));
+
+                // Start the chain; flows in factory-provided chain should perform data sync operations
+                flowChain.done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                }).error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        SyncSdnControllerDataReply r = new SyncSdnControllerDataReply();
+                        r.setError(errCode);
+                        bus.reply(msg, r);
+                        chain.next();
+                    }
+                }).start();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("sync-sdn-controller-data-%s", self.getUuid());
+            }
+        });
     }
 
     public void changeSdnControllerStatus(SdnControllerStatus status) {
