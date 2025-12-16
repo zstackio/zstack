@@ -953,7 +953,7 @@ public class L2NoVlanNetwork implements L2Network {
                                         " from L2NetworkVO l2, L2NetworkClusterRefVO ref, SystemTagVO tag" +
                                         " where l2.uuid = ref.l2NetworkUuid" +
                                         " and ref.clusterUuid = :clusterUuid" +
-                                        " and type = 'L2NoVlanNetwork'" +
+                                        " and l2.type = 'L2NoVlanNetwork'" +
                                         " and tag.resourceUuid=l2.uuid " +
                                         " and tag.resourceType='L2NetworkVO' " +
                                         " and tag.tag=:tag")
