@@ -1,8 +1,10 @@
 package org.zstack.vhost.kvm;
 
+import javax.persistence.TypedQuery;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -15,6 +17,7 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeProtocolCapability;
 import org.zstack.kvm.*;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 
 import java.util.ArrayList;
@@ -27,6 +30,10 @@ public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
         KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint {
     @Autowired
     private ExternalPrimaryStorageFactory extPsFactory;
+    @Autowired
+    private DatabaseFacade dbf;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     private PluginRegistry pluginRgty;
 
@@ -39,6 +46,21 @@ public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
         capability.setSupportReadonly(false);
     }
 
+    private boolean needSupportVhostPrimaryStorage(String clusterUuid) {
+        String generateVhostConfig = VmGlobalConfig.GENERATE_CONFIG_VHOST_REQUIRED.value(String.class);
+        if (!"auto".equals(generateVhostConfig)) {
+            return Boolean.parseBoolean(generateVhostConfig);
+        }
+        String sql = "select count(ref) from PrimaryStorageClusterRefVO ref, PrimaryStorageOutputProtocolRefVO protoRef" +
+                " where ref.primaryStorageUuid = protoRef.primaryStorageUuid" +
+                " and ref.clusterUuid = :clusterUuid" +
+                " and protoRef.outputProtocol = :outputProtocol";
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("clusterUuid", clusterUuid);
+        q.setParameter("outputProtocol", VolumeProtocol.Vhost.name());
+        Long count = q.getSingleResult();
+        return count != null && count > 0;
+    }
 
     @Override
     public void beforeStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, KVMAgentCommands.StartVmCmd cmd) {
@@ -54,12 +76,14 @@ public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
             }
         }
 
-        cmd.setDataVolumes(dtos);
         if (VolumeProtocol.Vhost.name().equals(spec.getDestRootVolume().getProtocol()) ||
-                spec.getDestDataVolumes().stream().anyMatch(v -> VolumeProtocol.Vhost.name().equals(v.getProtocol()))) {
+                spec.getDestDataVolumes().stream().anyMatch(v -> VolumeProtocol.Vhost.name().equals(v.getProtocol())) ||
+                needSupportVhostPrimaryStorage(host.getClusterUuid())) {
             cmd.setUseHugePage(true);
             cmd.setMemAccess("shared");
         }
+
+        cmd.setDataVolumes(dtos);
 
         // vhostuser disk not support readonly mode, so no iso.
     }
