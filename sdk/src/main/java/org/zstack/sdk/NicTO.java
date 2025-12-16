@@ -149,6 +149,14 @@ public class NicTO extends org.zstack.sdk.BaseVirtualDeviceTO {
         return this.pciDeviceAddress;
     }
 
+    public java.util.List extraPciDeviceAddresses;
+    public void setExtraPciDeviceAddresses(java.util.List extraPciDeviceAddresses) {
+        this.extraPciDeviceAddresses = extraPciDeviceAddresses;
+    }
+    public java.util.List getExtraPciDeviceAddresses() {
+        return this.extraPciDeviceAddresses;
+    }
+
     public java.lang.String ipForTf;
     public void setIpForTf(java.lang.String ipForTf) {
         this.ipForTf = ipForTf;

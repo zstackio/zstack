@@ -953,6 +953,16 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                                     }
                                 }
                                 if (addIp) {
+                                    // Check if VR has a NIC connected to this L3 network
+                                    if (vr != null) {
+                                        boolean vrHasL3Network = vr.getVmNics().stream()
+                                                .anyMatch(vrNic -> usedIpInventory.getL3NetworkUuid().equals(vrNic.getL3NetworkUuid()));
+                                        if (!vrHasL3Network) {
+                                            logger.warn(String.format("VR[uuid:%s] has no NIC connected to L3Network[uuid:%s], " +
+                                                    "skip backend server IP[%s]", vr.getUuid(), usedIpInventory.getL3NetworkUuid(), usedIpInventory.getIp()));
+                                            continue;
+                                        }
+                                    }
                                     ips.add(usedIpInventory.getIp());
                                     params.add(String.format("balancerWeight::%s::%s", usedIpInventory.getIp(), nicRef.getWeight()));
                                     backendServers.add(new LbTO.BackendServer(usedIpInventory.getIp(), nicRef.getWeight()));
@@ -2572,7 +2582,12 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             LoadBalancerStruct struct = new LoadBalancerStruct();
             LoadBalancerVO lb = dbf.findByUuid(e.getKey(), LoadBalancerVO.class);
             struct.setLb(LoadBalancerInventory.valueOf(lb));
-            struct.setVip(VipInventory.valueOf(dbf.findByUuid(lb.getVipUuid(), VipVO.class)));
+            if (lb.getVipUuid() != null) {
+                struct.setVip(VipInventory.valueOf(dbf.findByUuid(lb.getVipUuid(), VipVO.class)));
+            }
+            if (lb.getIpv6VipUuid() != null) {
+                struct.setIpv6Vip(VipInventory.valueOf(dbf.findByUuid(lb.getIpv6VipUuid(), VipVO.class)));
+            }
 
             struct.setListenerServerGroupMap(new HashMap<>());
             List<String> serverGroupUuids = new ArrayList<>();
