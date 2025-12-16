@@ -135,6 +135,7 @@ public class ZbsStorageFactory implements ExternalPrimaryStorageSvcBuilder, Back
         return Q.New(VolumeVO.class).eq(VolumeVO_.protocol, VolumeProtocol.CBD.toString()).eq(VolumeVO_.uuid, volumeUuid).isExists();
     }
 
+    // TODO: remove it, do not use extension point.
     @Override
     public void volumeSnapshotAfterCleanUpExtensionPoint(String volumeUuid, List<VolumeSnapshotInventory> snapshots) {
         if (CollectionUtils.isEmpty(snapshots) || !isCbdProtocol(volumeUuid)) {

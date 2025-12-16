@@ -3,6 +3,7 @@ package org.zstack.cbd.kvm;
 import org.zstack.kvm.KVMAgentCommands;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Xingwei Yu
@@ -21,8 +22,7 @@ public class KvmCbdCommands {
     public static class KvmSetupSelfFencerCmd extends AgentCmd {
         public long interval;
         public int maxAttempts;
-        public List<String> coveringPaths;
-        public String heartbeatUrl;
+        public Map<String, String> heartbeatPathByCoveringPaths;
         public int storageCheckerTimeout;
         public String hostUuid;
         public Integer hostId;
