@@ -34,14 +34,9 @@ import static org.zstack.core.Platform.operr;
  * @author Xingwei Yu
  * @date 2024/3/21 11:56
  */
-public class ZbsStorageFactory implements ExternalPrimaryStorageSvcBuilder, BackupStorageSelector, VolumeSnapshotAfterDeleteExtensionPoint {
+public class ZbsStorageFactory implements ExternalPrimaryStorageSvcBuilder, BackupStorageSelector {
     private static CLogger logger = Utils.getLogger(ZbsStorageFactory.class);
     public static final ExternalStorageFencerType fencerType = new ExternalStorageFencerType(ZbsConstants.IDENTITY, VolumeProtocol.CBD.toString());
-
-    @Autowired
-    private CloudBus bus;
-    @Autowired
-    private StorageTrash trash;
 
     private List<String> preferBackupStorageTypes;
 
@@ -72,40 +67,5 @@ public class ZbsStorageFactory implements ExternalPrimaryStorageSvcBuilder, Back
     @Override
     public String getIdentity() {
         return ZbsConstants.IDENTITY;
-    }
-
-    @Override
-    public void volumeSnapshotAfterDeleteExtensionPoint(VolumeSnapshotInventory snapshot, NoErrorCompletion completion) {
-        completion.done();
-    }
-
-    private boolean isCbdProtocol(String volumeUuid) {
-        return Q.New(VolumeVO.class).eq(VolumeVO_.protocol, VolumeProtocol.CBD.toString()).eq(VolumeVO_.uuid, volumeUuid).isExists();
-    }
-
-    @Override
-    public void volumeSnapshotAfterCleanUpExtensionPoint(String volumeUuid, List<VolumeSnapshotInventory> snapshots) {
-        if (CollectionUtils.isEmpty(snapshots) || !isCbdProtocol(volumeUuid)) {
-            return;
-        }
-
-        Set<String> volumeInstallPaths = snapshots.stream().map(s -> getVolumeFromSnapshotPath(s.getPrimaryStorageInstallPath()))
-                .collect(Collectors.toSet());
-        if (volumeInstallPaths.isEmpty()) {
-            return;
-        }
-
-        volumeInstallPaths.forEach(volumeInstallPath -> {
-            String details = trash.makeSureInstallPathNotUsed(volumeInstallPath, VolumeVO.class.getSimpleName());
-
-            if (StringUtils.isBlank(details)) {
-                logger.debug(String.format("delete volume[InstallPath:%s] after cleaning up snapshots", volumeInstallPath));
-                DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
-                msg.setPrimaryStorageUuid(snapshots.get(0).getPrimaryStorageUuid());
-                msg.setInstallPath(volumeInstallPath);
-                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, snapshots.get(0).getPrimaryStorageUuid());
-                bus.send(msg);
-            }
-        });
     }
 }

@@ -3320,7 +3320,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         if (VolumeType.Data.toString().equals(volumeType) || VolumeType.Root.toString().equals(volumeType)) {
             cap.setSupport(true);
             cap.setArrangementType(VolumeSnapshotArrangementType.INDIVIDUAL);
-            cap.setVolumePathFromInnerSnapshotRegex("^[^@]+");
+            cap.setPlacementType(VolumeSnapshotCapability.VolumeSnapshotPlacementType.INTERNAL);
+            cap.setVolumePathFromInternalSnapshotRegex("^[^@]+");
         } else if (VolumeType.Memory.toString().equals(volumeType)) {
             cap.setSupport(false);
         } else {
@@ -4722,7 +4723,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         DeleteImageCacheCmd cmd = new DeleteImageCacheCmd();
         cmd.setFsId(getSelf().getFsid());
         cmd.setUuid(self.getUuid());
-        cmd.imagePath = msg.getInstallPath().split("@")[0];
+        cmd.imagePath = getVolumePathFromSnapshot(msg.getInstallPath());
         cmd.snapshotPath = msg.getInstallPath();
         httpCall(DELETE_IMAGE_CACHE, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(msg) {
             @Override
@@ -5172,7 +5173,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 boolean fastRevert = VolumeSnapshotGlobalConfig.ENABLE_FAST_REVERT.value(Boolean.class);
                 String snapShotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
                 // get volume path from snapshot path, just split @
-                String volumePath = snapShotPath.split("@")[0];
+                String volumePath = getVolumePathFromSnapshot(snapShotPath);
                 final String newVolumePath = makeVolumeInstallPathByTargetPool(Platform.getUuid(), getTargetPoolNameFromAllocatedUrl(snapShotPath));
 
                 flow(new NoRollbackFlow() {
@@ -6078,6 +6079,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         bus.reply(msg, reply);
     }
 
+    @Override
+    protected void handle(GetOwningVolumePathFromInternalSnapshotMsg msg) {
+        GetOwningVolumePathFromInternalSnapshotReply reply = new GetOwningVolumePathFromInternalSnapshotReply();
+        if (msg.getSnapshotPaths() != null) {
+            for (String snapshotPath : msg.getSnapshotPaths()) {
+                reply.putOwningVolumePath(snapshotPath, getVolumePathFromSnapshot(snapshotPath));
+            }
+        }
+
+        bus.reply(msg, reply);
+    }
+
     protected void handle(CleanUpStorageTrashOnPrimaryStorageMsg msg) {
         CleanUpStorageTrashOnPrimaryStorageReply reply = new CleanUpStorageTrashOnPrimaryStorageReply();
         thdf.singleFlightSubmit(new SingleFlightTask(msg)
@@ -6140,6 +6153,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         return String.format("ceph://%s", originPath);
+    }
+
+    private static String getVolumePathFromSnapshot(String snapshotPath) {
+        return snapshotPath.split("@")[0];
     }
 
     protected String getTargetPoolNameFromAllocatedUrl(String allocatedUrl) {

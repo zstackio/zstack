@@ -44,6 +44,14 @@ public class GpuDeviceInventory extends org.zstack.sdk.PciDeviceInventory {
         return this.gpuType;
     }
 
+    public java.lang.String gpuStatus;
+    public void setGpuStatus(java.lang.String gpuStatus) {
+        this.gpuStatus = gpuStatus;
+    }
+    public java.lang.String getGpuStatus() {
+        return this.gpuStatus;
+    }
+
     public GpuAllocateStatus allocateStatus;
     public void setAllocateStatus(GpuAllocateStatus allocateStatus) {
         this.allocateStatus = allocateStatus;

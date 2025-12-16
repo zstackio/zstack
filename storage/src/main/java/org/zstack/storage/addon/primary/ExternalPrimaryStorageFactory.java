@@ -1,5 +1,6 @@
 package org.zstack.storage.addon.primary;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
@@ -11,6 +12,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.singleflight.MultiNodeSingleFlightImpl;
+import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -38,17 +40,21 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO_;
+import org.zstack.header.volume.VolumeDeletionPolicyManager;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.block.BlockVolumeVO;
 import org.zstack.storage.addon.backup.ExternalBackupStorageFactory;
 import org.zstack.storage.primary.PrimaryStorageFeatureAllocatorExtensionPoint;
 import org.zstack.storage.snapshot.MarkRootVolumeAsSnapshotExtension;
+import org.zstack.storage.volume.ChangeVolumeProcessingMethodExtensionPoint;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
@@ -58,7 +64,8 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
         VmAttachVolumeExtensionPoint, VmDetachVolumeExtensionPoint, BeforeTakeLiveSnapshotsOnVolumes,
         CreateTemplateFromVolumeSnapshotExtensionPoint, MarkRootVolumeAsSnapshotExtension, VmInstanceMigrateExtensionPoint,
-        ManagementNodeChangeListener, PrimaryStorageFeatureAllocatorExtensionPoint, HostResizeVolumeExtensionPoint {
+        ManagementNodeChangeListener, PrimaryStorageFeatureAllocatorExtensionPoint, HostResizeVolumeExtensionPoint,
+        VolumeSnapshotAfterDeleteExtensionPoint, ChangeVolumeProcessingMethodExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ExternalBackupStorageFactory.class);
 
     public static PrimaryStorageType type = new PrimaryStorageType(PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE);
@@ -81,6 +88,8 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     protected CloudBus bus;
     @Autowired
     protected EventFacade evtf;
+    @Autowired
+    protected StorageTrash trash;
 
     static {
         type.setSupportHeartbeatFile(true);
@@ -1000,5 +1009,71 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
 
         struct.setSize(controller.alignSize(struct.getSize()));
         return struct;
+    }
+
+    @Override
+    public void volumeSnapshotAfterDeleteExtensionPoint(VolumeSnapshotInventory snapshot, NoErrorCompletion completion) {
+        completion.done();
+    }
+
+
+    @Override
+    public void volumeSnapshotAfterCleanUpExtensionPoint(String volumeUuid, List<VolumeSnapshotInventory> snapshots) {
+        if (CollectionUtils.isEmpty(snapshots)) {
+            return;
+        }
+
+        String psUuid = snapshots.get(0).getPrimaryStorageUuid();
+        PrimaryStorageControllerSvc controller = controllers.get(psUuid);
+        if (controller == null) {
+            return;
+        }
+
+        VolumeSnapshotCapability snapCap = controller.reportCapabilities().getSnapshotCapability();
+        if (snapCap.getPlacementType() != VolumeSnapshotCapability.VolumeSnapshotPlacementType.INTERNAL) {
+            return;
+        }
+
+        Pattern pattern = Pattern.compile(snapCap.getVolumePathFromInternalSnapshotRegex());
+        Set<String> volumeInstallPaths = snapshots.stream().map(s -> {
+            Matcher matcher = pattern.matcher(s.getPrimaryStorageInstallPath());
+            if (matcher.find()) {
+                return matcher.group();
+            } else {
+                logger.warn(String.format("cannot find volume install path from internal snapshot install path[%s] " +
+                        "by regex[%s], skip deleting volume bits on primary storage", s.getPrimaryStorageInstallPath(),
+                        snapCap.getVolumePathFromInternalSnapshotRegex()));
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toSet());
+
+        volumeInstallPaths.forEach(volumeInstallPath -> {
+            String details = trash.makeSureInstallPathNotUsed(volumeInstallPath, VolumeVO.class.getSimpleName());
+
+            if (StringUtils.isBlank(details)) {
+                logger.debug(String.format("delete volume[InstallPath:%s] after cleaning up snapshots", volumeInstallPath));
+                DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
+                msg.setPrimaryStorageUuid(snapshots.get(0).getPrimaryStorageUuid());
+                msg.setInstallPath(volumeInstallPath);
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, snapshots.get(0).getPrimaryStorageUuid());
+                bus.send(msg);
+            }
+        });
+    }
+
+    @Override
+    public VolumeDeletionPolicyManager.VolumeDeletionPolicy getTransientVolumeDeletionPolicy(VolumeInventory transientVolume) {
+        PrimaryStorageControllerSvc controllerSvc = controllers.get(transientVolume.getPrimaryStorageUuid());
+        if (controllerSvc == null || controllerSvc.reportCapabilities().getSnapshotCapability()
+                .getPlacementType() != VolumeSnapshotCapability.VolumeSnapshotPlacementType.INTERNAL) {
+            return null;
+        }
+
+        boolean hasSnapshots = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.primaryStorageUuid, transientVolume.getPrimaryStorageUuid())
+                .like(VolumeSnapshotVO_.primaryStorageInstallPath, String.format("%s@%%", transientVolume.getInstallPath())).isExists();
+        if (!hasSnapshots) {
+            return VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct;
+        }
+        return VolumeDeletionPolicyManager.VolumeDeletionPolicy.DBOnly;
     }
 }

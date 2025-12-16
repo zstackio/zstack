@@ -263,7 +263,7 @@ class CephOperationCase extends SubCase {
                 .select(GlobalConfigVO_.value)
                 .eq(GlobalConfigVO_.name, "sds.admin.password")
                 .eq(GlobalConfigVO_.category, "ceph")
-                .findValue() == "password"
+                .findValue() == "Admin@123"
 
         updateGlobalConfig {
             category = CephGlobalConfig.CATEGORY
