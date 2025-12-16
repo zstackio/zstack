@@ -182,6 +182,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             externalVO.setDefaultProtocol(msg.getDefaultProtocol());
         }
         boolean needReconnect = false;
+        String oldConfig = externalVO.getConfig();
         if (msg.getConfig() != null) {
             String config = controller.validateConfig(msg.getConfig());
             externalVO.setConfig(config);
@@ -200,7 +201,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         evt.setError(reply.getError());
                     } else {
                         self = dbf.reload(self);
-                        evt.setInventory(externalVO.toInventory());
+                        ExternalPrimaryStorageInventory inv = externalVO.toInventory();
+                        evt.setInventory(inv);
+
+                        // TODO: use controller not extension point
+                        for (UpdatePrimaryStorageExtensionPoint ext : pluginRgty.getExtensionList(UpdatePrimaryStorageExtensionPoint.class)) {
+                            ext.afterUpdatePrimaryStorage(inv);
+                        }
                     }
 
                     bus.publish(evt);

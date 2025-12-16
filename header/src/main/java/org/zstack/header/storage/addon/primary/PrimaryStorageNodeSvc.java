@@ -25,11 +25,11 @@ public interface PrimaryStorageNodeSvc {
 
     void deployClient(HostInventory h, Completion comp);
 
-    void activateHeartbeatVolume(HostInventory h, ReturnValueCompletion<HeartbeatVolumeTO> comp);
+    void activateHeartbeatVolume(HostInventory h, ReturnValueCompletion<HeartbeatVolumeTopology> comp);
 
     void deactivateHeartbeatVolume(HostInventory h, Completion comp);
 
-    HeartbeatVolumeTO getHeartbeatVolumeActiveInfo(HostInventory h);
+    HeartbeatVolumeTopology getHeartbeatVolumeActiveInfo(HostInventory h);
 
     String getIdentity();
 }

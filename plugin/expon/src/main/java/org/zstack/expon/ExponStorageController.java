@@ -625,7 +625,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     @Override
-    public synchronized void activateHeartbeatVolume(HostInventory h, ReturnValueCompletion<HeartbeatVolumeTO> comp) {
+    public synchronized void activateHeartbeatVolume(HostInventory h, ReturnValueCompletion<HeartbeatVolumeTopology> comp) {
         String clientIqn = IscsiUtils.getHostInitiatorName(h.getUuid());
         if (clientIqn == null) {
             throw new RuntimeException(String.format("cannot get host[uuid:%s] initiator name", h.getUuid()));
@@ -662,7 +662,9 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         to.setHostId(getHostId(h));
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
         to.setCoveringPaths(Collections.singletonList(vhostSocketDir));
-        comp.success(to);
+        HeartbeatVolumeTopology topology = new HeartbeatVolumeTopology();
+        topology.setHeartbeatVolumeByCoveringPaths(Collections.singletonMap(vhostSocketDir, to));
+        comp.success(topology);
     }
 
     // hardcode
@@ -704,7 +706,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     @Override
-    public HeartbeatVolumeTO getHeartbeatVolumeActiveInfo(HostInventory h) {
+    public HeartbeatVolumeTopology getHeartbeatVolumeActiveInfo(HostInventory h) {
         String tianshuId = addonInfo.getClusters().get(0).getId();
         List<IscsiSeverNode> nodes = getIscsiServers(tianshuId);
 
@@ -730,7 +732,10 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         to.setHostId(getHostId(h));
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
         to.setCoveringPaths(Collections.singletonList(vhostSocketDir));
-        return to;
+
+        HeartbeatVolumeTopology topology = new HeartbeatVolumeTopology();
+        topology.setHeartbeatVolumeByCoveringPaths(Collections.singletonMap(vhostSocketDir, to));
+        return topology;
     }
 
     private void deactivateVhost(String installPath, HostInventory h) {
