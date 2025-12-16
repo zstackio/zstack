@@ -4,7 +4,6 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.cbd.*;
 import org.zstack.cbd.kvm.CbdHeartbeatVolumeTO;
 import org.zstack.cbd.kvm.CbdVolumeTo;
 import org.zstack.compute.host.HostGlobalConfig;
@@ -56,7 +55,6 @@ import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -286,7 +284,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public void connect(String cfg, String url, ReturnValueCompletion<LinkedHashMap> completion) {
         AddonInfo newAddonInfo = new AddonInfo();
         Config current = JSONObjectUtil.toObject(cfg, Config.class);
-        List<MdsInfo> mdsInfos = parseMdsInfos(current.getMdsUrls());
+        List<MdsInfo> mdsInfos = MdsInfo.valueOf(current.getMdsUrls());
         newAddonInfo.setMdsInfos(mdsInfos);
         final List<ZbsPrimaryStorageMdsBase> mdsList = CollectionUtils.transformToList(newAddonInfo.getMdsInfos(),
                 ZbsPrimaryStorageMdsBase::new);
@@ -1069,7 +1067,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             throw new ApiMessageInterceptionException(argerr("ensure at least one MDS is configured"));
         }
 
-        List<MdsInfo> newMdsInfos = parseMdsInfos(current.getMdsUrls());
+        List<MdsInfo> newMdsInfos = MdsInfo.valueOf(current.getMdsUrls());
         List<MdsInfo> duplicateMdsInfos = newMdsInfos.stream().collect(Collectors.groupingBy(MdsInfo::getAddr))
                 .values().stream().filter(addr -> addr.size() > 1).flatMap(List::stream).collect(Collectors.toList());
         if (!duplicateMdsInfos.isEmpty()) {
@@ -1078,7 +1076,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             ));
         }
 
-        List<MdsInfo> oldMdsInfos = parseMdsInfos(old.getMdsUrls());
+        List<MdsInfo> oldMdsInfos = MdsInfo.valueOf(old.getMdsUrls());
         List<MdsInfo> changedMdsInfos = newMdsInfos.stream().filter(n -> oldMdsInfos.stream().noneMatch(o -> o.equals(n))).collect(Collectors.toList());
         if (!changedMdsInfos.isEmpty() && !CoreGlobalProperty.UNIT_TEST_ON) {
             List<ZbsPrimaryStorageMdsBase> mdsList = CollectionUtils.transformToList(changedMdsInfos, ZbsPrimaryStorageMdsBase::new);
@@ -1132,18 +1130,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         config = StringUtils.isEmpty(self.getConfig()) ? new Config() : JSONObjectUtil.toObject(self.getConfig(), Config.class);
         physicalPoolByLogicalPool = addonInfo.getLogicalPoolInfos().stream()
                 .collect(Collectors.toMap(LogicalPoolInfo::getLogicalPoolName, LogicalPoolInfo::getPhysicalPoolName) );
-    }
-
-    private List<MdsInfo> parseMdsInfos(List<String> mdsUrls) {
-        return mdsUrls.stream().map(mdsUrl -> {
-            MdsUri uri = new MdsUri(mdsUrl);
-            MdsInfo mdsInfo = new MdsInfo();
-            mdsInfo.setUsername(uri.getUsername());
-            mdsInfo.setPassword(uri.getPassword());
-            mdsInfo.setPort(uri.getSshPort());
-            mdsInfo.setAddr(uri.getHostname());
-            return mdsInfo;
-        }).collect(Collectors.toList());
     }
 
     protected String getPhysicalPoolName(String logicalPoolName) {
@@ -1821,5 +1807,12 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public ZbsStorageController(ExternalPrimaryStorageVO self) {
         this.self = self;
         this.reloadDbInfo();
+    }
+
+    public ZbsStorageController(String config) {
+        this.self = new ExternalPrimaryStorageVO();
+        this.self.setConfig(config);
+        this.config = StringUtils.isEmpty(self.getConfig()) ? new Config() : JSONObjectUtil.toObject(self.getConfig(), Config.class);
+        this.addonInfo = new AddonInfo();
     }
 }

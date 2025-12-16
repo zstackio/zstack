@@ -170,4 +170,24 @@ public class LogicalPoolInfo {
             this.zoneNum = zoneNum;
         }
     }
+
+    public static LogicalPoolInfo valueOf(ZbsListPoolResult.LogicalPoolInfo logicalPoolInfo) {
+        LogicalPoolInfo info = new LogicalPoolInfo();
+        info.setAllocatedSize(logicalPoolInfo.getAllocatedSize());
+        info.setCapacity(logicalPoolInfo.getCapacity());
+        info.setCreateTime(logicalPoolInfo.getCreateTime());
+        info.setLogicalPoolID(logicalPoolInfo.getLogicalPoolID());
+        info.setLogicalPoolName(logicalPoolInfo.getLogicalPoolName());
+        info.setPhysicalPoolID(logicalPoolInfo.getPhysicalPoolID());
+        info.setPhysicalPoolName(logicalPoolInfo.getPhysicalPoolName());
+        info.setQuota(logicalPoolInfo.getQuota());
+        info.setRawUsedSize(logicalPoolInfo.getRawUsedSize());
+        info.setRawWalUsedSize(logicalPoolInfo.getRawWalUsedSize());
+        info.setType(logicalPoolInfo.getType());
+        info.setUsedSize(logicalPoolInfo.getUsedSize());
+        info.setUserPolicy(logicalPoolInfo.getUserPolicy());
+        info.setAllocateStatus(logicalPoolInfo.getAllocateStatus());
+        return info;
+
+    }
 }
