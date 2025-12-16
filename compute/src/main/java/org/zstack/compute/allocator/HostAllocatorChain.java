@@ -163,7 +163,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         context.spec = allocationSpec;
         context.paginationInfo = paginationInfo;
         context.hostConsumer = hosts::addAll;
-        context.errorReporter = errorCode -> fail(operr(errorCode, "failed to allocate hosts"));
+        context.errorReporter = errorCode -> fail(operr("failed to allocate hosts").withCause(errorCode));
 
         if (producerInUse == null) {
             for (HostCandidateProducer producer : producers) {
@@ -257,16 +257,9 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         result = null;
         this.errorCode = err(HostAllocatorError.NO_AVAILABLE_HOST, "[Host Allocation] no host meet the requirements");
         this.errorCode.setOpaque(buildOpaque());
-
-        ErrorCode errors = new ErrorCode();
-        errors.setDetails("pagination error list in causes fields");
-        this.errorCode.setCause(errors);
-
-        errors.setCauses(new ArrayList<>());
-        errors.getCauses().add(errorCode);
-
+        this.errorCode.withCause(errorCode);
         if (!seriesErrorWhenPagination.isEmpty()) {
-            errors.getCauses().addAll(seriesErrorWhenPagination);
+            this.errorCode.withCause(seriesErrorWhenPagination);
         }
 
         done();

@@ -122,7 +122,7 @@ public class KvmHypervisorInfoExtensions implements
                         if (reply.isSuccess()) {
                             trigger.next();
                         } else {
-                            trigger.fail(operr(reply.getError(), "failed to collect host virtualizer info"));
+                            trigger.fail(operr("failed to collect host virtualizer info").withCause(reply.getError()));
                         }
                     }
                 });

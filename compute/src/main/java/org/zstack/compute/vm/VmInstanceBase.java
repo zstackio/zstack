@@ -2809,8 +2809,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                     msg.getRootVolumeInventory().getPrimaryStorageUuid());
             bus.send(cmsg, new CloudBusCallBack(chain) {
                 private void fail(ErrorCode errorCode) {
-                    reply.setError(operr(errorCode, "failed to create template from root volume[uuid:%s] on primary storage[uuid:%s]",
-                            msg.getRootVolumeInventory().getUuid(), msg.getRootVolumeInventory().getPrimaryStorageUuid()));
+                    reply.setError(operr("failed to create template from root volume[uuid:%s] on primary storage[uuid:%s]",
+                            msg.getRootVolumeInventory().getUuid(), msg.getRootVolumeInventory().getPrimaryStorageUuid())
+                            .withCause(errorCode));
                     logger.warn(reply.getError().getDetails());
                     bus.reply(msg, reply);
                 }
@@ -5833,8 +5834,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void run(MessageReply innerReply) {
                 if (!innerReply.isSuccess()) {
-                    completion.fail(Platform.operr(innerReply.getError(),
-                            "Failed to update vm[uuid=%s] on hypervisor.", self.getUuid()));
+                    completion.fail(Platform.operr("failed to update vm[uuid=%s] on hypervisor.", self.getUuid())
+                            .withCause(innerReply.getError()));
                     return;
                 }
                 final UpdateVmOnHypervisorReply casedReply = innerReply.castReply();
@@ -5985,8 +5986,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                     @Override
                     public void run(MessageReply innerReply) {
                         if (!innerReply.isSuccess()) {
-                            trigger.fail(Platform.operr(innerReply.getError(),
-                                    "failed to update vm[uuid=%s] on hypervisor", self.getUuid()));
+                            trigger.fail(Platform.operr("failed to update vm[uuid=%s] on hypervisor", self.getUuid())
+                                    .withCause(innerReply.getError()));
                             return;
                         }
                         final UpdateVmOnHypervisorReply casedReply = innerReply.castReply();
@@ -7171,8 +7172,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                completion.fail(operr(errCode, "Failed to detach volume[uuid=%s] of VM[uuid=%s]",
-                        msg.getVolume().getUuid(), self.getUuid()));
+                completion.fail(operr("failed to detach volume[uuid=%s] of VM[uuid=%s]",
+                        msg.getVolume().getUuid(), self.getUuid()).withCause(errCode));
             }
         }).start();
     }
@@ -7890,7 +7891,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     logger.warn(e.getMessage());
                 }
 
-                completion.fail(operr(errCode, errCode.getDetails()));
+                completion.fail(errCode);
             }
         }).start();
     }

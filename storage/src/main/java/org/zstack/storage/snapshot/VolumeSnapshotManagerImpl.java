@@ -1074,9 +1074,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         bus.makeTargetServiceIdByResourceUuid(askMsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
                         MessageReply reply = bus.call(askMsg);
                         if (!reply.isSuccess()) {
-                            ret.setError(operr(reply.getError(),
-                                    "cannot ask primary storage[uuid:%s] for volume snapshot capability",
-                                    vol.getUuid()));
+                            ret.setError(operr("cannot ask primary storage[uuid:%s] for volume snapshot capability",
+                                    vol.getUuid()).withCause(reply.getError()));
                             bus.reply(msg, ret);
                             trigger.fail(ret.getError());
                             return;
