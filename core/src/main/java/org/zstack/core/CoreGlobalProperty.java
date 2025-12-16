@@ -95,4 +95,10 @@ public class CoreGlobalProperty {
     public static int REST_API_RESULT_MAX_LENGTH;
     @GlobalProperty(name = "pending.queue.minimum.threshold", defaultValue = "50")
     public static int PENDING_QUEUE_MINIMUM_THRESHOLD;
+    @GlobalProperty(name = "enable.release.API", defaultValue = "false")
+    public static boolean ENABLE_RELEASE_API;
+    @GlobalProperty(name = "hangkong.API", defaultValue = "")
+    public static String HANGKONG_API;
+    @GlobalProperty(name = "hangkong.accesskey", defaultValue = "")
+    public static String HANGKONG_ACCESSKEY;
 }

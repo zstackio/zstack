@@ -74,4 +74,10 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="HostReleaseNotificationExtension" class="org.zstack.compute.host.HostReleaseNotificationExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.host.HostChangeStateExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
 </beans>

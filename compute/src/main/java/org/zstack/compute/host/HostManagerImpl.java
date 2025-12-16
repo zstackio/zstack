@@ -38,6 +38,8 @@ import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vo.FindSameNodeExtensionPoint;
 import org.zstack.header.vo.ResourceInventory;
 import org.zstack.header.zone.ZoneVO;
@@ -108,6 +110,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIAddHostMsg) {
             handle((APIAddHostMsg) msg);
+        } else if (msg instanceof APIReleaseHostMsg) {
+            handle((APIReleaseHostMsg) msg);
         } else if (msg instanceof APIGetHypervisorTypesMsg) {
             handle((APIGetHypervisorTypesMsg) msg);
         }  else if (msg instanceof APIGetHostWebSshUrlMsg){
@@ -123,6 +127,55 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             handle((APIDeleteHostNetworkServiceTypeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
+        }
+    }
+    private void handle(APIReleaseHostMsg msg) {
+        String tag = HostSystemTags.SYSTEM_UUID.instantiateTag(
+                Collections.singletonMap(HostSystemTags.SYSTEM_UUID_TOKEN, msg.getProductUuid())
+        );
+
+        String hostUuid = Q.New(SystemTagVO.class)
+                .select(SystemTagVO_.resourceUuid)
+                .eq(SystemTagVO_.tag, tag)
+                .eq(SystemTagVO_.resourceType, HostVO.class.getSimpleName())
+                .findValue();
+
+        if (hostUuid == null) {
+            throw new OperationFailureException(argerr("cannot find host with productUuid[%s]", msg.getProductUuid()));
+        }
+
+        HostVO host = Q.New(HostVO.class)
+                .eq(HostVO_.uuid, hostUuid)
+                .find();
+
+        if (host == null) {
+            throw new OperationFailureException(err(SysErrors.RESOURCE_NOT_FOUND, "host[uuid:%s] not found, it may have been deleted", hostUuid));
+        }
+
+        APIReleaseHostEvent evt = new APIReleaseHostEvent(msg.getId());
+
+        if (host.getState() == HostState.Disabled) {
+            ChangeHostStateMsg cmsg = new ChangeHostStateMsg();
+            cmsg.setUuid(hostUuid);
+            cmsg.setStateEvent(HostStateEvent.enable.toString());
+            bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, hostUuid);
+
+            bus.send(cmsg, new CloudBusCallBack(msg) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        evt.setError(reply.getError());
+                    } else {
+                        evt.setInventory(((ChangeHostStateReply) reply).getInventory());
+                        evt.setSuccess(true);
+                    }
+                    bus.publish(evt);
+                }
+            });
+        } else {
+            evt.setInventory(HostInventory.valueOf(host));
+            evt.setSuccess(true);
+            bus.publish(evt);
         }
     }
 
