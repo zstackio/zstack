@@ -35,7 +35,7 @@ import static org.zstack.core.Platform.operr;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class ExternalPrimaryStorageSpaceCapacityHelper {
+public class ExternalPrimaryStorageSpaceCapacityHelper extends ExternalPrimaryStorageSpaceHelper {
     @Autowired
     protected PrimaryStorageOverProvisioningManager ratioMgr;
     @Autowired
@@ -51,29 +51,15 @@ public class ExternalPrimaryStorageSpaceCapacityHelper {
     private Map<String, ExternalPrimaryStorageSpaceVO> storageSpacesByUrl;
 
     public ExternalPrimaryStorageSpaceCapacityHelper(ExternalPrimaryStorageVO ps) {
+        super(ps);
         this.primaryStorageUuid = ps.getUuid();
         this.spaceName = ps.getIdentity();
     }
 
     public ExternalPrimaryStorageSpaceCapacityHelper(String psUuid, String identity) {
+        super(psUuid, identity);
         this.primaryStorageUuid = psUuid;
         spaceName = identity;
-    }
-
-    public Map<String, ExternalPrimaryStorageSpaceVO> getStorageSpacesByUrl() {
-        if (storageSpacesByUrl == null) {
-            List<ExternalPrimaryStorageSpaceVO> spaces = Q.New(ExternalPrimaryStorageSpaceVO.class)
-                    .eq(ExternalPrimaryStorageSpaceVO_.primaryStorageUuid, primaryStorageUuid)
-                    .list();
-            if (CollectionUtils.isEmpty(spaces)) {
-                storageSpacesByUrl = new HashMap<>();
-            } else {
-                storageSpacesByUrl = spaces.stream()
-                        .collect(Collectors.toMap(ExternalPrimaryStorageSpaceVO::getLocationUrl, it -> it));
-                spaceName += (" " + spaces.get(0).getType());
-            }
-        }
-        return storageSpacesByUrl;
     }
 
     protected void updateStorageSpace(StorageCapacity cap) {
@@ -295,10 +281,5 @@ public class ExternalPrimaryStorageSpaceCapacityHelper {
         return suitableSpaces.get(0).getLocationUrl();
     }
 
-    // TODO: add cache for db result
-    public String getLocationSpaceUrl(String installUrl) {
-        Set<String> spaceUrls = getStorageSpacesByUrl().keySet();
-        return spaceUrls.stream().filter(installUrl::startsWith).findFirst()
-                .orElseThrow(() -> new OperationFailureException(operr("cannot find storage space for installUrl[%s]", installUrl)));
-    }
+
 }
