@@ -11,7 +11,7 @@ import org.zstack.header.storage.primary.PrimaryStorageCapacityVO_
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageStatus
-import org.zstack.cbd.MdsUri
+import org.zstack.storage.zbs.MdsUri
 import org.zstack.sdk.*
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageSystemTags
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig

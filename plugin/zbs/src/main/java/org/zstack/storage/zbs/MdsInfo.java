@@ -1,6 +1,9 @@
-package org.zstack.cbd;
+package org.zstack.storage.zbs;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author Xingwei Yu
@@ -77,5 +80,19 @@ public class MdsInfo {
 
     public void setStatus(MdsStatus status) {
         this.status = status;
+    }
+
+    public static MdsInfo valueOf(String mdsUrl) {
+        MdsUri uri = new MdsUri(mdsUrl);
+        MdsInfo mdsInfo = new MdsInfo();
+        mdsInfo.setUsername(uri.getUsername());
+        mdsInfo.setPassword(uri.getPassword());
+        mdsInfo.setPort(uri.getSshPort());
+        mdsInfo.setAddr(uri.getHostname());
+        return mdsInfo;
+    }
+
+    public static List<MdsInfo> valueOf(Collection<String> mdsUrls) {
+        return mdsUrls.stream().map(MdsInfo::valueOf).collect(Collectors.toList());
     }
 }
