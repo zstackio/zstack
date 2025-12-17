@@ -148,13 +148,16 @@ public abstract class HostBase extends AbstractHost {
     protected void checkStatus() {
         if (HostStatus.Connected != self.getStatus()) {
             ErrorCode cause = err(HostErrors.HOST_IS_DISCONNECTED, "host[uuid:%s, name:%s] is in status[%s], cannot perform required operation", self.getUuid(), self.getName(), self.getStatus());
-            throw new OperationFailureException(err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, cause, "unable to do the operation because the host is in status of Disconnected"));
+            throw err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "unable to do the operation because the host is in status of Disconnected")
+                    .withCause(cause)
+                    .toException();
         }
     }
 
     protected void checkState() {
         if (HostState.PreMaintenance == self.getState() || HostState.Maintenance == self.getState()) {
-            throw new OperationFailureException(operr("host[uuid:%s, name:%s] is in state[%s], cannot perform required operation", self.getUuid(), self.getName(), self.getState()));
+            throw operr("host[uuid:%s, name:%s] is in state[%s], cannot perform required operation", self.getUuid(), self.getName(), self.getState())
+                    .toException();
         }
     }
 
@@ -780,7 +783,7 @@ public abstract class HostBase extends AbstractHost {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode.getDetails()).withCause(errCode));
                 bus.publish(evt);
             }
         }).start();
@@ -1575,7 +1578,7 @@ public abstract class HostBase extends AbstractHost {
                     HostStateEvent rollbackEvent = dbf.reload(self).getState().getTargetStateDrivenEvent(originState);
                     DebugUtils.Assert(rollbackEvent != null, "rollbackEvent not found!");
                     changeState(rollbackEvent);
-                    completion.fail(err(HostErrors.UNABLE_TO_ENTER_MAINTENANCE_MODE, errorCode, errorCode.getDetails()));
+                    completion.fail(err(HostErrors.UNABLE_TO_ENTER_MAINTENANCE_MODE, errorCode.getDetails()).withCause(errorCode));
                 }
             });
         } else {

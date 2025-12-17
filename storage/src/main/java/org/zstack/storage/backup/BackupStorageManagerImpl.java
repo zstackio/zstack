@@ -17,7 +17,6 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
@@ -30,7 +29,6 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagValidator;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
@@ -198,7 +196,7 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
 
                 } else {
                     dbf.removeByPrimaryKey(inv.getUuid(), BackupStorageVO.class);
-                    evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, reply.getError(), reply.getError().getDetails()));
+                    evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, reply.getError().getDetails()).withCause(reply.getError()));
                     bus.publish(evt);
                 }
             }

@@ -19,7 +19,7 @@ public class KVMHostReconnectTaskFactory implements HostReconnectTaskFactory {
 
     @Override
     public HostReconnectTask createTaskWithLastConnectError(String hostUuid, ErrorCode errorCode, NoErrorCompletion completion) {
-        if (errorCode.getRootCause().isError(HostErrors.HOST_PASSWORD_HAS_BEEN_CHANGED)) {
+        if (errorCode.rootCause().isError(HostErrors.HOST_PASSWORD_HAS_BEEN_CHANGED)) {
             logger.warn(String.format(
                     "stop tracking host[uuid:%s] until its password is updated correctly", hostUuid));
 
