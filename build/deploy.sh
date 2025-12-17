@@ -12,6 +12,7 @@ cd -
 
 mvn war:war
 rm -rf $CATALINA_HOME/webapps/zstack
+rm -rf $CATALINA_HOME/webapps/cloud
 rm -f $CATALINA_HOME/webapps/zstack.war
 cp target/zstack.war $CATALINA_HOME/webapps/zstack.war
 
