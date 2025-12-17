@@ -386,11 +386,17 @@ public class StringSimilarity {
      * @param args arguments
      * @return formatted error code elaboration message
      */
-    public static String formatElaboration(String message, Object...args) {
+    public static String formatElaborationDeprecated(String message, Object...args) {
         StringBuilder buffer = new StringBuilder();
         buffer.append(message);
 
         buffer.deleteCharAt(buffer.lastIndexOf("\n"));
+        return String.format(buffer.toString(), args);
+    }
+
+    public static String formatElaboration(String message, Object...args) {
+        StringBuilder buffer = new StringBuilder();
+        buffer.append(message);
         return String.format(buffer.toString(), args);
     }
 
