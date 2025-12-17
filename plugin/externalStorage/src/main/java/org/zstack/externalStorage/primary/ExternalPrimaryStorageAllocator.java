@@ -19,7 +19,7 @@ import org.zstack.header.vm.MarshalVmOperationFlowExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
-import org.zstack.storage.addon.primary.ExternalPrimaryStorageSpaceCapacityHelper;
+import org.zstack.storage.addon.primary.ExternalPrimaryStorageSpaceHelper;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageSystemTags;
 import org.zstack.storage.primary.ImageCacheUtil;
 import org.zstack.utils.Utils;
@@ -91,7 +91,7 @@ public class ExternalPrimaryStorageAllocator implements MarshalVmOperationFlowEx
                 return null;
             }
 
-            ExternalPrimaryStorageSpaceCapacityHelper helper = new ExternalPrimaryStorageSpaceCapacityHelper(requiredPsUuid, controller.getIdentity());
+            ExternalPrimaryStorageSpaceHelper helper = new ExternalPrimaryStorageSpaceHelper(requiredPsUuid, controller.getIdentity());
             List<String> candidateUrls = cacheInstallUrls.stream()
                     .map(helper::getLocationSpaceUrl)
                     .collect(Collectors.toList());
