@@ -14,6 +14,7 @@ public class ExternalStorageFencerType {
     private final String identity;
     private final String protocol;
 
+    // TODO: refactor it, remove protocol
     public ExternalStorageFencerType(String identity, String protocol) {
         if (types.containsKey(identity)) {
             throw new IllegalArgumentException(String.format("duplicate ExternalStorageNodeServer for identity[%s]", identity));

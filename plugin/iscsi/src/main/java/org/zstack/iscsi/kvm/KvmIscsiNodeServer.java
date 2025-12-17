@@ -9,7 +9,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.externalStorage.primary.ExternalStorageConstant;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -23,6 +22,7 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
 import org.zstack.header.storage.addon.primary.HeartbeatVolumeTO;
+import org.zstack.header.storage.addon.primary.HeartbeatVolumeTopology;
 import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
@@ -213,10 +213,11 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, 
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        nodeSvc.activateHeartbeatVolume(host, new ReturnValueCompletion<HeartbeatVolumeTO>(trigger) {
+                        nodeSvc.activateHeartbeatVolume(host, new ReturnValueCompletion<HeartbeatVolumeTopology>(trigger) {
                             @Override
-                            public void success(HeartbeatVolumeTO vol) {
-                                heartbeatVol = vol;
+                            public void success(HeartbeatVolumeTopology topology) {
+                                // TODO handle multiple heartbeat volumes
+                                heartbeatVol = topology.getHeartbeatVolumeByCoveringPaths().values().iterator().next();
                                 trigger.next();
                             }
 

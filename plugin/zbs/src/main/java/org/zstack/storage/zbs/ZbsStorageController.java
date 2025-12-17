@@ -224,31 +224,47 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     @Override
-    public synchronized void activateHeartbeatVolume(HostInventory h, ReturnValueCompletion<HeartbeatVolumeTO> comp) {
+    public synchronized void activateHeartbeatVolume(HostInventory h, ReturnValueCompletion<HeartbeatVolumeTopology> completion) {
         if (config == null) {
             reloadDbInfo();
         }
 
-        CreateVolumeCmd cmd = new CreateVolumeCmd();
-        cmd.setLogicalPool(config.getLogicalPoolName());
-        cmd.setVolume(ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME);
-        cmd.setSize(ZbsConstants.ZBS_HEARTBEAT_VOLUME_SIZE_IN_GIGABYTE);
-        cmd.setSkipIfExisting(true);
+        // TODO: split by physical pool not logical pool, handle logical pool deletion
+        HeartbeatVolumeTopology topology = new HeartbeatVolumeTopology();
+        new While<>(config.getPoolNames()).each((poolName, comp) -> {
+            CreateVolumeCmd cmd = new CreateVolumeCmd();
+            cmd.setLogicalPool(poolName);
+            cmd.setVolume(ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME);
+            cmd.setSize(ZbsConstants.ZBS_HEARTBEAT_VOLUME_SIZE_IN_GIGABYTE);
+            cmd.setSkipIfExisting(true);
 
-        httpCall(CREATE_VOLUME_PATH, cmd, CreateVolumeRsp.class, new ReturnValueCompletion<CreateVolumeRsp>(comp) {
-            @Override
-            public void success(CreateVolumeRsp returnValue) {
-                CbdHeartbeatVolumeTO to = new CbdHeartbeatVolumeTO();
-                String zbsPath = returnValue.installPath;
-                to.setInstallPath(ZbsHelper.convertZbsPathToCbdPath(zbsPath, ZbsStorageController.this::getPhysicalPoolName));
-                to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
-                to.setCoveringPaths(config.getPoolNames());
-                comp.success(to);
-            }
+            httpCall(CREATE_VOLUME_PATH, cmd, CreateVolumeRsp.class, new ReturnValueCompletion<CreateVolumeRsp>(comp) {
+                @Override
+                public void success(CreateVolumeRsp returnValue) {
+                    CbdHeartbeatVolumeTO to = new CbdHeartbeatVolumeTO();
+                    String zbsPath = returnValue.installPath;
+                    to.setInstallPath(ZbsHelper.convertZbsPathToCbdPath(zbsPath, ZbsStorageController.this::getPhysicalPoolName));
+                    to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
+                    to.setCoveringPaths(config.getPoolNames());
+                    topology.putHeartbeatVolume(poolName, to);
+                    comp.done();
+                }
 
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    comp.addError(errorCode);
+                    comp.allDone();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void fail(ErrorCode errorCode) {
-                comp.fail(errorCode);
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                    return;
+                }
+
+                completion.success(topology);
             }
         });
     }
@@ -259,20 +275,27 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     @Override
-    public HeartbeatVolumeTO getHeartbeatVolumeActiveInfo(HostInventory h) {
+    public HeartbeatVolumeTopology getHeartbeatVolumeActiveInfo(HostInventory h) {
         if (config == null) {
             reloadDbInfo();
         }
 
-        String zbsPath = buildHeartbeatVolumePath(config.getLogicalPoolName());
-        String cbdPath = ZbsHelper.convertZbsPathToCbdPath(zbsPath, this::getPhysicalPoolName);
+        HeartbeatVolumeTopology topology = new HeartbeatVolumeTopology();
+        Map<String, HeartbeatVolumeTO> map = new HashMap<>();
+        for (String poolName : config.getPoolNames()) {
+            String zbsPath = buildHeartbeatVolumePath(poolName);
 
-        CbdHeartbeatVolumeTO to = new CbdHeartbeatVolumeTO();
-        to.setInstallPath(cbdPath);
-        to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
-        to.setCoveringPaths(config.getPoolNames());
+            String cbdPath = ZbsHelper.convertZbsPathToCbdPath(zbsPath, it -> poolName);
+            CbdHeartbeatVolumeTO to = new CbdHeartbeatVolumeTO();
+            to.setInstallPath(cbdPath);
+            to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
+            to.setCoveringPaths(config.getPoolNames());
 
-        return to;
+            map.put(poolName, to);
+        }
+
+        topology.setHeartbeatVolumeByCoveringPaths(map);
+        return topology;
     }
 
     @Override

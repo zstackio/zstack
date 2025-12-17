@@ -15,7 +15,6 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -35,8 +34,8 @@ import org.zstack.utils.logging.CLogger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
 /**
@@ -76,7 +75,7 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("setup-self-fencer-for-external-primary-storage-%s-on-kvm-%s", param.getPrimaryStorage().getUuid(), host.getUuid()));
         chain.then(new ShareFlow() {
-            HeartbeatVolumeTO heartbeatVol;
+            HeartbeatVolumeTopology heartbeatVolumeTopology;
 
             @Override
             public void setup() {
@@ -104,10 +103,10 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        nodeSvc.activateHeartbeatVolume(host, new ReturnValueCompletion<HeartbeatVolumeTO>(trigger) {
+                        nodeSvc.activateHeartbeatVolume(host, new ReturnValueCompletion<HeartbeatVolumeTopology>(trigger) {
                             @Override
-                            public void success(HeartbeatVolumeTO returnValue) {
-                                heartbeatVol = returnValue;
+                            public void success(HeartbeatVolumeTopology topology) {
+                                heartbeatVolumeTopology = topology;
                                 trigger.next();
                             }
 
@@ -136,10 +135,13 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
                         KvmSetupSelfFencerCmd cmd = new KvmSetupSelfFencerCmd();
                         cmd.interval = param.getInterval();
                         cmd.maxAttempts = param.getMaxAttempts();
-                        cmd.coveringPaths = heartbeatVol.getCoveringPaths();
-                        cmd.heartbeatUrl = heartbeatVol.getInstallPath();
+                        cmd.heartbeatPathByCoveringPaths = heartbeatVolumeTopology
+                                .getHeartbeatVolumeByCoveringPaths().entrySet().stream().collect(Collectors.toMap(
+                                        Map.Entry::getKey, it -> it.getValue().getInstallPath()
+                                ));
                         cmd.storageCheckerTimeout = param.getStorageCheckerTimeout();
-                        cmd.heartbeatRequiredSpace = heartbeatVol.getHeartbeatRequiredSpace();
+                        cmd.heartbeatRequiredSpace = heartbeatVolumeTopology.getHeartbeatVolumeByCoveringPaths()
+                                .values().iterator().next().getHeartbeatRequiredSpace();
                         cmd.hostUuid = param.getHostUuid();
                         cmd.hostId = ref.getHostId();
                         cmd.strategy = param.getStrategy();
