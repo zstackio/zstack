@@ -1,8 +1,8 @@
 package org.zstack.header.host;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIReleaseHostEvent.class,
         parameterName = "params"
 )
-public class APIReleaseHostMsg extends APIMessage {
+public class APIReleaseHostMsg extends APISyncCallMessage {
     @APIParam(required = true, nonempty = true)
     private String productUuid;
 
