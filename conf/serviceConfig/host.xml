@@ -20,6 +20,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.host.APIReleaseHostMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.host.APIQueryHostMsg</name>
         <serviceId>query</serviceId>
     </message>
