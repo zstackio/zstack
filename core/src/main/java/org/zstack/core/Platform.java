@@ -914,6 +914,37 @@ public class Platform {
         }
     }
 
+    public static String errorCodeElaboration(String fmt, Object...args) {
+        return errorCodeElaboration(locale, fmt, args);
+    }
+
+    /**
+     * No cache for error code elaboration
+     */
+    public static String errorCodeElaboration(Locale locale, String fmt, Object...args) {
+        ErrorCodeElaboration elaboration = elaborate(fmt, args);
+
+        if (elaboration == null) {
+            return null;
+        }
+
+        String msg;
+        if (locale.equals(Locale.SIMPLIFIED_CHINESE)) {
+            msg = elaboration.getMessage_cn();
+        } else {
+            msg = elaboration.getMessage_en();
+        }
+
+        // tricky code that we treat the only one args error maybe use the cause or
+        // error from other component directly, so we need to check if the args is
+        // matched with the regex at first
+        if (args.length == 1 && StringSimilarity.isRegexMatched(elaboration.getRegex(), String.valueOf(args[0]))) {
+            return StringSimilarity.formatElaboration(msg);
+        } else {
+            return StringSimilarity.formatElaboration(msg, args);
+        }
+    }
+
     private static ErrorCodeElaboration elaborate(String fmt, Object...args) {
         try {
             if (String.format(fmt, args).length() > StringSimilarity.maxElaborationRegex) {
@@ -1052,11 +1083,11 @@ public class Platform {
             result.setMessages(ErrorCodeElaboration.clone(ela)
                     .removeCnMessageIfLocaleIsNotMatch(locale));
             String formatError = String.format(prefix, args[0]);
-            result.setElaboration(StringSimilarity.formatElaboration(formatError));
+            result.setElaboration(StringSimilarity.formatElaborationDeprecated(formatError));
         } else {
             result.setMessages(ErrorCodeElaboration.cloneSimple(ela, args)
                     .removeCnMessageIfLocaleIsNotMatch(locale));
-            result.setElaboration(StringSimilarity.formatElaboration(String.format(prefix, msg), args));
+            result.setElaboration(StringSimilarity.formatElaborationDeprecated(String.format(prefix, msg), args));
         }
 
         StringSimilarity.addErrors(fmt, ela);
