@@ -853,7 +853,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         CopyCmd cmd = new CopyCmd();
         cmd.setPath(srcInstallPath);
         cmd.setDstVolume(dst.getName());
-        cmd.setDstSize(dst.getSize() / (1L << 30));
+        if (dst.getAllocatedUrl() != null) {
+            cmd.setDstPool(getPoolFromVolumePath(dst.getAllocatedUrl()));
+        }
 
         httpCall(COPY_PATH, cmd, CopyRsp.class, new ReturnValueCompletion<CopyRsp>(comp) {
             @Override
@@ -1536,7 +1538,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     public static class CopyCmd extends VolumeCommand implements HasThreadContext {
         private String dstVolume;
-        private long dstSize;
+        private String dstPool;
 
         public String getDstVolume() {
             return dstVolume;
@@ -1546,12 +1548,12 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             this.dstVolume = dstVolume;
         }
 
-        public long getDstSize() {
-            return dstSize;
+        public void setDstPool(String dstPool) {
+            this.dstPool = dstPool;
         }
 
-        public void setDstSize(long dstSize) {
-            this.dstSize = dstSize;
+        public String getDstPool() {
+            return dstPool;
         }
     }
 

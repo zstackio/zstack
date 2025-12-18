@@ -779,7 +779,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
             ImageCacheInventory inventory;
 
-            ImageInventory image = msg.getImageInventory();
+            final ImageInventory image = msg.getImageInventory();
+
+            final String requiredUrlTag = msg.getSystemTag(ExternalPrimaryStorageSystemTags.REQUIRED_INSTALL_URL::isMatch);
 
             @Override
             public void setup() {
@@ -792,6 +794,11 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         spec.setName(buildImageName(image.getUuid()));
                         spec.setUuid(msg.getImageInventory().getUuid());
                         spec.setSize(msg.getImageInventory().getSize());
+                        if (requiredUrlTag != null) {
+                            String requiredUrl = ExternalPrimaryStorageSystemTags.REQUIRED_INSTALL_URL.getTokenByTag(
+                                    requiredUrlTag, ExternalPrimaryStorageSystemTags.REQUIRED_INSTALL_URL_TOKEN);
+                            spec.setAllocatedUrl(requiredUrl);
+                        }
                         controller.copyVolume(msg.getVolumeSnapshot().getPrimaryStorageInstallPath(), spec, new ReturnValueCompletion<VolumeStats>(trigger) {
                             @Override
                             public void success(VolumeStats dst) {
