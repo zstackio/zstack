@@ -133,4 +133,8 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(validValues = {"None", "AuthenticAMD"})
     @BindResourceConfig(value = {VmInstanceVO.class})
     public static GlobalConfig VM_CPUID_VENDOR = new GlobalConfig(CATEGORY, "vm.cpuid.vendor");
+
+    @GlobalConfigValidation(validValues = {"true", "false", "auto"})
+    @GlobalConfigDef(defaultValue = "false", type = String.class, description = "generate config required for vhost primary storage")
+    public static GlobalConfig GENERATE_CONFIG_VHOST_REQUIRED = new GlobalConfig(CATEGORY, "generate.config.vhost.required");
 }

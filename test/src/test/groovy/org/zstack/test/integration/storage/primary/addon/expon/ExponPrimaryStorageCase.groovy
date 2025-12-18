@@ -1,6 +1,8 @@
 package org.zstack.test.integration.storage.primary.addon.expon
 
 import org.springframework.http.HttpEntity
+import org.zstack.compute.cluster.ClusterGlobalConfig
+import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
@@ -49,6 +51,7 @@ import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 import static java.util.Arrays.asList
+import static java.util.UUID.randomUUID
 import static org.zstack.expon.ExponIscsiHelper.iscsiExportTargetName
 import static org.zstack.expon.ExponNameHelper.getVolIdFromPath
 
@@ -204,7 +207,7 @@ class ExponPrimaryStorageCase extends SubCase {
             reconnectPrimaryStorage {
                 uuid = ps.uuid
             }
-
+            testCreateVmWhenSpecifiedSblk()
             testDeletePs()
         }
     }
@@ -711,6 +714,70 @@ class ExponPrimaryStorageCase extends SubCase {
             assert Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid, image.uuid).count() == 0
             assert Q.New(ImageCacheShadowVO.class).eq(ImageCacheShadowVO_.imageUuid, image.uuid).count() == 0
         }
+    }
+
+    void testCreateVmWhenSpecifiedSblk() {
+        def sblk = addSharedBlockGroupPrimaryStorage {
+            name = "sblk"
+            diskUuids = [randomUUID() as String]
+            zoneUuid = cluster.getZoneUuid()
+        } as PrimaryStorageInventory
+
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = sblk.uuid
+            clusterUuid = cluster.getUuid()
+        }
+
+        env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
+            assert cmd.useHugePage
+            assert cmd.memAccess == "shared"
+            return rsp
+        }
+
+        VmGlobalConfig.GENERATE_CONFIG_VHOST_REQUIRED.updateValue("auto")
+
+        def vm1 = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = instanceOffering.uuid
+            rootDiskOfferingUuid = diskOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            primaryStorageUuidForRootVolume = sblk.uuid
+        } as VmInstanceInventory
+
+        VmGlobalConfig.GENERATE_CONFIG_VHOST_REQUIRED.updateValue("true")
+
+        def vm2 = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = instanceOffering.uuid
+            rootDiskOfferingUuid = diskOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            primaryStorageUuidForRootVolume = sblk.uuid
+        } as VmInstanceInventory
+
+        detachPrimaryStorageFromCluster {
+            primaryStorageUuid = sblk.uuid
+            clusterUuid = cluster.getUuid()
+        }
+
+        deletePrimaryStorage {
+            uuid = sblk.uuid
+        }
+
+        VmGlobalConfig.GENERATE_CONFIG_VHOST_REQUIRED.updateValue("false")
+        def vm3 = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = instanceOffering.uuid
+            rootDiskOfferingUuid = diskOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+        } as VmInstanceInventory
+
+        deleteVm(vm1.uuid)
+        deleteVm(vm2.uuid)
+        deleteVm(vm3.uuid)
     }
 
     void testDeletePs() {
