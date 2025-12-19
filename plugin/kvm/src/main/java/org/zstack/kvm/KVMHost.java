@@ -5392,7 +5392,8 @@ public class KVMHost extends HostBase implements Host {
             public void handle(Map data) {
                 if (noStorageAccessible()) {
                     ErrorCodeList errorCodeList = (ErrorCodeList) data.get(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR);
-                    completion.fail(multiErr(errorCodeList, "host can not access any primary storage"));
+                    completion.fail(err(HostErrors.UNABLE_TO_RECONNECT_HOST, "host can not access any primary storage")
+                            .withCause(errorCodeList));
                 } else {
                     if (CoreGlobalProperty.UNIT_TEST_ON) {
                         completion.success();

@@ -1147,9 +1147,7 @@ public abstract class HostBase extends AbstractHost {
                     public void run(MessageReply reply) {
                         ReconnectHostReply r = new ReconnectHostReply();
                         if (!reply.isSuccess()) {
-                            r.setError(err(HostErrors.UNABLE_TO_RECONNECT_HOST, "failed to connect host")
-                                    .withCause(reply.getError())
-                                    .withOpaque("host.uuid", self.getUuid()));
+                            r.setError(reply.getError());
                         }
                         bus.reply(msg, r);
                     }

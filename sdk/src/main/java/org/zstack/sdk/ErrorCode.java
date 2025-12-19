@@ -28,6 +28,15 @@ public class ErrorCode  {
         return this.details;
     }
 
+    public java.lang.String i18nDetails;
+    public void setI18nDetails(java.lang.String i18nDetails) {
+        this.i18nDetails = i18nDetails;
+    }
+    public java.lang.String getI18nDetails() {
+        return this.i18nDetails;
+    }
+
+    @Deprecated
     public java.lang.String elaboration;
     public void setElaboration(java.lang.String elaboration) {
         this.elaboration = elaboration;

@@ -967,8 +967,22 @@ public class Platform {
 
     private static List<Enum> allowCode = CollectionDSL.list(IdentityErrors.INVALID_SESSION);
 
-    public static ErrorCode err(Enum errCode, String fmt, Object...args) {
-        return err(errCode, null, fmt, args);
+    public static ErrorCode err(Enum<?> errCode, String fmt, Object...args) {
+        ErrorCode errorCode = getComponentLoader().getComponent(ErrorFacade.class)
+                .instantiateErrorCode(errCode, fmt, args);
+
+        if (fmt != null && fmt.length() > 0) {
+            try {
+                errorCode.setI18nDetails(SysErrors.INTERNAL == errCode ? errorCode.getDetails() : toI18nString(fmt, args));
+            } catch (Exception e) {
+                logger.warn("exception happened when build error message i18n");
+                logger.warn(e.getMessage());
+                errorCode.setI18nDetails(errorCode.getDetails());
+            }
+        }
+
+        addErrorCounter(errorCode);
+        return errorCode;
     }
 
     /**
