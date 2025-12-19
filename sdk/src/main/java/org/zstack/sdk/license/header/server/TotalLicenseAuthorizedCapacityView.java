@@ -45,4 +45,12 @@ public class TotalLicenseAuthorizedCapacityView  {
         return this.addOns;
     }
 
+    public java.util.Map extensions;
+    public void setExtensions(java.util.Map extensions) {
+        this.extensions = extensions;
+    }
+    public java.util.Map getExtensions() {
+        return this.extensions;
+    }
+
 }
