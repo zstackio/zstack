@@ -32,12 +32,6 @@ class AttachL3NetWorkToVmCase extends SubCase{
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-
             diskOffering {
                 name = "diskOffering"
                 diskSize = SizeUnit.GIGABYTE.toByte(20)
@@ -134,7 +128,6 @@ class AttachL3NetWorkToVmCase extends SubCase{
     }
 
     void createVmWithL3NoIpRange() {
-        def instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
         def image = env.inventoryByName("image1") as ImageInventory
         def pubL3 = env.inventoryByName("pubL3") as L3NetworkInventory
         def noDhcpL3 = env.inventoryByName("pubL3-no-dhcp") as L3NetworkInventory
@@ -142,7 +135,8 @@ class AttachL3NetWorkToVmCase extends SubCase{
         expect(AssertionError.class) {
             createVmInstance {
                 name = "vm"
-                instanceOfferingUuid = instanceOffering.uuid
+                cpuNum = 4
+                memorySize = gb(8)
                 imageUuid = image.uuid
                 l3NetworkUuids = [pubL3.uuid]
             }
@@ -151,7 +145,8 @@ class AttachL3NetWorkToVmCase extends SubCase{
         expect(AssertionError.class) {
             createVmInstance {
                 name = "vm"
-                instanceOfferingUuid = instanceOffering.uuid
+                cpuNum = 4
+                memorySize = gb(8)
                 imageUuid = image.uuid
                 l3NetworkUuids = [noDhcpL3.uuid]
             }
@@ -159,7 +154,6 @@ class AttachL3NetWorkToVmCase extends SubCase{
     }
 
     void addIpRangeAndCreateVm() {
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
         L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
 
@@ -174,7 +168,8 @@ class AttachL3NetWorkToVmCase extends SubCase{
 
         vm = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 4
+            memorySize = gb(8)
             imageUuid = image.uuid
             l3NetworkUuids = [pubL3.uuid]
         } as VmInstanceInventory

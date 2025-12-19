@@ -10,7 +10,6 @@ import org.zstack.header.network.l3.L3NetworkVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMSecurityGroupBackend
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg
-import org.zstack.network.securitygroup.APIChangeSecurityGroupStateMsg
 import org.zstack.network.securitygroup.SecurityGroupL3NetworkRefVO
 import org.zstack.network.securitygroup.SecurityGroupL3NetworkRefVO_
 import org.zstack.network.securitygroup.SecurityGroupMembersTO
@@ -20,11 +19,9 @@ import org.zstack.network.securitygroup.RuleTO
 import org.zstack.network.securitygroup.SecurityGroupRuleType
 import org.zstack.network.securitygroup.SecurityGroupRuleVO
 import org.zstack.network.securitygroup.SecurityGroupRuleVO_
-import org.zstack.network.securitygroup.SecurityGroupVO
 import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO
 import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO_
 import org.zstack.sdk.AddSecurityGroupRuleAction
-import org.zstack.sdk.ChangeSecurityGroupStateAction
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
@@ -377,7 +374,6 @@ class AddRulesRemoteGroupsCase extends SubCase{
     void testCreateVmWithSecurityGroup(String sgUuid, List<String> expectHostUuids) {
         def l3 = env.inventoryByName("l3") as org.zstack.sdk.L3NetworkInventory
         def image = env.inventoryByName("image") as ImageInventory
-        def instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
         List<String> actuallyHostUuids = Collections.synchronizedList(new ArrayList<String>())
 
         KVMAgentCommands.UpdateGroupMemberCmd ucmd
@@ -390,7 +386,8 @@ class AddRulesRemoteGroupsCase extends SubCase{
 
         def vm_5 = createVmInstance {
             name = "vm-5"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 2
+            memorySize = gb(4)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
             systemTags = ["l3::${l3.uuid}::SecurityGroupUuids::${sgUuid}".toString()]

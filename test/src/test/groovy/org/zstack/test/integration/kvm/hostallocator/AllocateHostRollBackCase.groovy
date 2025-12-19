@@ -45,7 +45,6 @@ class AllocateHostRollBackCase extends SubCase {
         host = env.inventoryByName("host6") as HostInventory
         def image = env.inventoryByName("image") as ImageInventory
         def l3 = env.inventoryByName("l3") as L3NetworkInventory
-        def instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
 
         HostAllocateExtension ext = bean(HostAllocateExtension.class)
         ext.setErrorOut(true)
@@ -59,7 +58,8 @@ class AllocateHostRollBackCase extends SubCase {
                 name = "vm1"
                 imageUuid = image.uuid
                 l3NetworkUuids = [l3.uuid]
-                instanceOfferingUuid = instanceOffering.uuid
+                cpuNum = 2
+                memorySize = gb(4)
                 hostUuid = host.uuid
             } as VmInstanceInventory
         }

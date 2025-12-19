@@ -52,12 +52,12 @@ class AttachIpv6RangeToVmCase extends SubCase {
         L3NetworkInventory l3_slaac = env.inventoryByName("l3-SLAAC")
         L3NetworkInventory l3 = env.inventoryByName("l3")
         L3NetworkInventory l3_1 = env.inventoryByName("l3-1")
-        InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
 
         VmInstanceInventory vm = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = offering.uuid
+            cpuNum = 2
+            memorySize = gb(2)
             imageUuid = image.uuid
             l3NetworkUuids = [l3_statefull.uuid, l3.uuid]
             defaultL3NetworkUuid = l3_statefull.uuid
@@ -139,12 +139,12 @@ class AttachIpv6RangeToVmCase extends SubCase {
     void testAttachDualStackNetworkToVm() {
         L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
         L3NetworkInventory l3 = env.inventoryByName("l3")
-        InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
 
         VmInstanceInventory vm = createVmInstance {
             name = "vm-test"
-            instanceOfferingUuid = offering.uuid
+            cpuNum = 2
+            memorySize = gb(2)
             imageUuid = image.uuid
             defaultL3NetworkUuid = l3.uuid
             l3NetworkUuids = [l3.uuid]

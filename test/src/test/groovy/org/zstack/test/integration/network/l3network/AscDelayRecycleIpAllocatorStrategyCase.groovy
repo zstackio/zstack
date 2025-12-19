@@ -21,12 +21,6 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(1)
-                cpu = 1
-            }
-
             diskOffering {
                 name = "diskOffering"
                 diskSize = SizeUnit.GIGABYTE.toByte(20)
@@ -103,7 +97,6 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
     void testAscDelayRecycleOneIpRange() {
         def l2 = env.inventoryByName("l2") as L2NetworkInventory
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
 
         L3NetworkInventory l3 = createL3Network {
@@ -136,7 +129,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_1 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -144,7 +138,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_2 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -152,7 +147,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_3 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -160,7 +156,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_4 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -169,7 +166,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
         deleteVmInstance(vm_4)
         vm_4 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -180,7 +178,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_5 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -188,7 +187,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_6 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
             systemTags = ["staticIp::"+l3.uuid+"::192.168.0.10"]
@@ -197,7 +197,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_7 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -205,7 +206,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_8 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -213,7 +215,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_9 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -234,7 +237,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
                 try {
                     def vm = createVmInstance {
                         name = "vm_${i}"
-                        instanceOfferingUuid = instanceOffering.uuid
+                        cpuNum = 1
+                        memorySize = gb(1)
                         imageUuid = image.uuid
                         l3NetworkUuids = [l3.uuid]
                     } as VmInstanceInventory
@@ -257,7 +261,6 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
     void testAscDelayRecycleMultiIpRange() {
         def l2 = env.inventoryByName("l2") as L2NetworkInventory
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
 
         L3NetworkInventory l3 = createL3Network {
@@ -308,7 +311,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_1 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -316,7 +320,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_2 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -324,7 +329,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_3 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
             systemTags = ["staticIp::"+l3.uuid+"::192.168.0.10"]
@@ -333,7 +339,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_4 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -341,7 +348,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_5 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
             systemTags = ["staticIp::"+l3.uuid+"::192.168.0.37"]
@@ -350,7 +358,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_6 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -358,7 +367,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_7 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -368,7 +378,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_8 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -376,7 +387,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_9 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -384,7 +396,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
 
         VmInstanceInventory vm_10 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -393,7 +406,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
         deleteIpRange { uuid = range_3.uuid }
         VmInstanceInventory vm_11 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
@@ -402,7 +416,8 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
         deleteIpRange { uuid = range_2.uuid }
         VmInstanceInventory vm_12 = createVmInstance {
             name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }

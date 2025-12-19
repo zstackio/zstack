@@ -36,12 +36,6 @@ class AttachDataVolumeCrossClusterCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(1)
-                cpu = 1
-            }
-
             diskOffering {
                 name = "diskOffering"
                 diskSize = SizeUnit.GIGABYTE.toByte(1)
@@ -150,7 +144,8 @@ class AttachDataVolumeCrossClusterCase extends SubCase {
                 useCluster("cluster2")
                 useHost("kvm3")
                 useL3Networks("l3")
-                useInstanceOffering("instanceOffering")
+                cpu = 1
+                memoryGB(1)
                 useRootDiskOffering("diskOffering")
                 useImage("image")
 
@@ -200,14 +195,14 @@ class AttachDataVolumeCrossClusterCase extends SubCase {
         PrimaryStorageInventory local = env.inventoryByName("local")
         HostInventory host = env.inventoryByName("kvm")
         ImageInventory image = env.inventoryByName("image")
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         L3NetworkInventory l3 = env.inventoryByName("l3")
         HostInventory host4 = env.inventoryByName("kvm4")
 
         VmInstanceInventory vm = createVmInstance {
             name = "test-2"
             imageUuid = image.uuid
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             l3NetworkUuids = [l3.uuid]
             hostUuid = host4.uuid
             strategy = VmCreationStrategy.JustCreate.toString()
@@ -236,7 +231,6 @@ class AttachDataVolumeCrossClusterCase extends SubCase {
         PrimaryStorageInventory nfs = env.inventoryByName("nfs")
         HostInventory host = env.inventoryByName("kvm")
         ImageInventory image = env.inventoryByName("image")
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         L3NetworkInventory l3 = env.inventoryByName("l3")
         ClusterInventory cluster = env.inventoryByName("cluster")
         HostInventory host4 = env.inventoryByName("kvm4")
@@ -255,7 +249,8 @@ class AttachDataVolumeCrossClusterCase extends SubCase {
         VmInstanceInventory vm = createVmInstance {
             name = "test-3"
             imageUuid = image.uuid
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             l3NetworkUuids = [l3.uuid]
             hostUuid = host.uuid
             primaryStorageUuidForRootVolume = nfs.uuid
@@ -299,7 +294,6 @@ class AttachDataVolumeCrossClusterCase extends SubCase {
         PrimaryStorageInventory nfs = env.inventoryByName("nfs")
         HostInventory host = env.inventoryByName("kvm")
         ImageInventory image = env.inventoryByName("image")
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         L3NetworkInventory l3 = env.inventoryByName("l3")
         ClusterInventory cluster = env.inventoryByName("cluster")
 
@@ -311,7 +305,8 @@ class AttachDataVolumeCrossClusterCase extends SubCase {
         VmInstanceInventory vm = createVmInstance {
             name = "test-4"
             imageUuid = image.uuid
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             l3NetworkUuids = [l3.uuid]
             hostUuid = host.uuid
             primaryStorageUuidForRootVolume = nfs.uuid

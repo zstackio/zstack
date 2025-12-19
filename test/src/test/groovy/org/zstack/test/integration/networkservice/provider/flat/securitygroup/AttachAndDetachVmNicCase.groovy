@@ -33,7 +33,6 @@ class AttachAndDetachVmNicCase extends SubCase {
     EnvSpec env
 
     L3NetworkInventory l3Net, l3Net_2, pubL3
-    InstanceOfferingInventory offer
     ImageInventory image
     VmInstanceInventory vm1, vm2, vm3, vm4
     SecurityGroupInventory sg1, sg2, sg3, sg4
@@ -219,7 +218,8 @@ class AttachAndDetachVmNicCase extends SubCase {
         VmInstanceInventory vm5 = createVmInstance {
             l3NetworkUuids = [l3Net.uuid]
             imageUuid = image.uuid
-            instanceOfferingUuid = offer.uuid
+            cpuNum = 2
+            memorySize = gb(4)
             name = "vm5"
         }
 
@@ -327,7 +327,6 @@ class AttachAndDetachVmNicCase extends SubCase {
             pubL3 = env.inventoryByName("pubL3") as L3NetworkInventory
             l3Net = env.inventoryByName("l3") as L3NetworkInventory
             l3Net_2 = env.inventoryByName("l3-2") as L3NetworkInventory
-            offer = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
             image = env.inventoryByName("image") as ImageInventory
             l3Net = env.inventoryByName("l3") as L3NetworkInventory
             vm1 = env.inventoryByName("vm1") as VmInstanceInventory // vm1 in host1

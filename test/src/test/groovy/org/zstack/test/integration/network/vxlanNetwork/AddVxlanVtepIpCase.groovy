@@ -24,12 +24,6 @@ class AddVxlanVtepIpCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(1)
-                cpu = 1
-            }
-
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -209,7 +203,8 @@ class AddVxlanVtepIpCase extends SubCase {
         }
         def vm1 = createVmInstance {
             name = "TestVm1"
-            instanceOfferingUuid = (env.inventoryByName("instanceOffering") as InstanceOfferingInventory).uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = (env.inventoryByName("image1") as ImageInventory).uuid
             l3NetworkUuids = [l3.uuid]
             hostUuid = host1.uuid
