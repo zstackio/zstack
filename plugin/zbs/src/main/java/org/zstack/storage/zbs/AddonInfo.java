@@ -1,4 +1,4 @@
-package org.zstack.cbd;
+package org.zstack.storage.zbs;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,5 +34,9 @@ public class AddonInfo {
 
     public void setLogicalPoolInfos(List<LogicalPoolInfo> logicalPoolInfos) {
         this.logicalPoolInfos = logicalPoolInfos;
+    }
+
+    public void addLogicalPoolInfo(LogicalPoolInfo logicalPoolInfo) {
+        this.logicalPoolInfos.add(logicalPoolInfo);
     }
 }

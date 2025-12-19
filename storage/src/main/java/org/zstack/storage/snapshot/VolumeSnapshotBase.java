@@ -24,6 +24,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.DeleteSnapshotOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.IncreasePrimaryStorageCapacityMsg;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.ReleasePrimaryStorageSpaceMsg;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus.StatusEvent;
 import org.zstack.utils.CollectionUtils;
@@ -283,6 +284,7 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        // TODO: replace ReleasePrimaryStorageSpaceMsg
                         IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
                         imsg.setDiskSize(self.getSize());
                         imsg.setNoOverProvisioning(true);

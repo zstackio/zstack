@@ -414,7 +414,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     }
 
     @Override
-    public synchronized void activateHeartbeatVolume(HostInventory h, ReturnValueCompletion<HeartbeatVolumeTO> comp) {
+    public synchronized void activateHeartbeatVolume(HostInventory h, ReturnValueCompletion<HeartbeatVolumeTopology> comp) {
         String clientIqn = IscsiUtils.getHostInitiatorName(h.getUuid());
         if (clientIqn == null) {
             throw new RuntimeException(String.format("cannot get host[uuid:%s] initiator name", h.getUuid()));
@@ -431,7 +431,10 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         to.setHostId(apiHelper.queryBdcByIp(h.getManagementIp()).getSpec().getId());
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
         to.setCoveringPaths(Collections.singletonList(getVhostSocketDir()));
-        comp.success(to);
+
+        HeartbeatVolumeTopology topology = new HeartbeatVolumeTopology();
+        topology.setHeartbeatVolumeByCoveringPaths(Collections.singletonMap(getVhostSocketDir(), to));
+        comp.success(topology);
     }
 
     @Override
@@ -460,7 +463,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     }
 
     @Override
-    public HeartbeatVolumeTO getHeartbeatVolumeActiveInfo(HostInventory h) {
+    public HeartbeatVolumeTopology getHeartbeatVolumeActiveInfo(HostInventory h) {
         VolumeModule heartbeatVol = apiHelper.queryVolumeByName(iscsiHeartbeatVolumeName);
         if (heartbeatVol == null) {
             throw new RuntimeException("heartbeat volume not found");
@@ -477,7 +480,10 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         to.setHostId(apiHelper.queryBdcByIp(h.getManagementIp()).getSpec().getId());
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
         to.setCoveringPaths(Collections.singletonList(getVhostSocketDir()));
-        return to;
+
+        HeartbeatVolumeTopology topology = new HeartbeatVolumeTopology();
+        topology.setHeartbeatVolumeByCoveringPaths(Collections.singletonMap(getVhostSocketDir(), to));
+        return topology;
     }
 
     private VolumeModule getVolumeModule(BaseVolumeInfo vol) {
@@ -556,6 +562,30 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         self = dbf.reload(self);
         addonInfo = StringUtils.isEmpty(self.getAddonInfo()) ? new XInfiniAddonInfo() : JSONObjectUtil.toObject(self.getAddonInfo(), XInfiniAddonInfo.class);
         config = StringUtils.isEmpty(self.getConfig()) ? new XInfiniConfig() : JSONObjectUtil.toObject(self.getConfig(), XInfiniConfig.class);
+    }
+
+    // TODO: add more not found handling when support multi pool
+    @Override
+    public void getCapacity(List<String> requiredUrls, ReturnValueCompletion<StorageCapacity> comp) {
+        Map<Integer, XInfiniAddonInfo.Pool> pools = refreshPoolCapacity()
+                .stream()
+                .filter(it -> config.getPoolIds().contains(it.getId()))
+                .collect(Collectors.toMap(XInfiniAddonInfo.Pool::getId, it -> it));
+
+        long total = pools.values().stream().mapToLong(XInfiniAddonInfo.Pool::getTotalCapacity).sum();
+        long avail = pools.values().stream().mapToLong(XInfiniAddonInfo.Pool::getAvailableCapacity).sum();
+        StorageCapacity cap = new StorageCapacity();
+        cap.setAvailableCapacity(avail);
+        cap.setTotalCapacity(total);
+
+        for (String url : requiredUrls) {
+            int poolId = getPoolIdFromPath(url);
+            XInfiniAddonInfo.Pool pool = pools.get(poolId);
+            if (pool != null) {
+                cap.putCapacity(url, pool.getAvailableCapacity(), pool.getTotalCapacity());
+            }
+        }
+        comp.success(cap);
     }
 
     @Override
@@ -1009,8 +1039,8 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     }
 
     @Override
-    public void validateConfig(String config) {
-
+    public String validateConfig(String config) {
+        return config;
     }
 
     @Override

@@ -256,7 +256,7 @@ public class NfsDownloadImageToCacheJob implements Job {
 
     private void useExistingCache(final ImageCacheVO cvo, final ReturnValueCompletion<Object> completion) {
         NfsPrimaryStorageBackend bkd = nfsFactory.getHypervisorBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(image.getInventory().getFormat(), primaryStorage.getUuid()));
-        bkd.checkIsBitsExisting(primaryStorage, ImageCacheUtil.getImageCachePath(cvo.toInventory()), new ReturnValueCompletion<Boolean>(completion) {
+        bkd.checkIsBitsExisting(primaryStorage, ImageCacheUtil.getImageCachePath(cvo.getInstallUrl()), new ReturnValueCompletion<Boolean>(completion) {
             @Override
             public void success(Boolean returnValue) {
                 if (returnValue) {

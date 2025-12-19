@@ -19,22 +19,22 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.addon.primary.HeartbeatVolumeTO;
-import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
-import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostRefVO;
-import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostRefVO_;
+import org.zstack.header.storage.addon.primary.*;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeProtocol;
-import org.zstack.kvm.KVMAgentCommands;
-import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
-import org.zstack.kvm.KVMHostAsyncHttpCallReply;
-import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint;
+import org.zstack.kvm.*;
 import org.zstack.storage.addon.primary.ExternalHostIdGetter;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
@@ -42,7 +42,8 @@ import static org.zstack.core.Platform.operr;
  * @author Xingwei Yu
  * @date 2024/4/9 16:22
  */
-public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionPoint {
+public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionPoint, KVMStartVmExtensionPoint,
+        KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmCbdNodeServer.class);
 
     @Autowired
@@ -74,7 +75,7 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("setup-self-fencer-for-external-primary-storage-%s-on-kvm-%s", param.getPrimaryStorage().getUuid(), host.getUuid()));
         chain.then(new ShareFlow() {
-            HeartbeatVolumeTO heartbeatVol;
+            HeartbeatVolumeTopology heartbeatVolumeTopology;
 
             @Override
             public void setup() {
@@ -102,10 +103,10 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        nodeSvc.activateHeartbeatVolume(host, new ReturnValueCompletion<HeartbeatVolumeTO>(trigger) {
+                        nodeSvc.activateHeartbeatVolume(host, new ReturnValueCompletion<HeartbeatVolumeTopology>(trigger) {
                             @Override
-                            public void success(HeartbeatVolumeTO returnValue) {
-                                heartbeatVol = returnValue;
+                            public void success(HeartbeatVolumeTopology topology) {
+                                heartbeatVolumeTopology = topology;
                                 trigger.next();
                             }
 
@@ -134,10 +135,13 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
                         KvmSetupSelfFencerCmd cmd = new KvmSetupSelfFencerCmd();
                         cmd.interval = param.getInterval();
                         cmd.maxAttempts = param.getMaxAttempts();
-                        cmd.coveringPaths = heartbeatVol.getCoveringPaths();
-                        cmd.heartbeatUrl = heartbeatVol.getInstallPath();
+                        cmd.heartbeatPathByCoveringPaths = heartbeatVolumeTopology
+                                .getHeartbeatVolumeByCoveringPaths().entrySet().stream().collect(Collectors.toMap(
+                                        Map.Entry::getKey, it -> it.getValue().getInstallPath()
+                                ));
                         cmd.storageCheckerTimeout = param.getStorageCheckerTimeout();
-                        cmd.heartbeatRequiredSpace = heartbeatVol.getHeartbeatRequiredSpace();
+                        cmd.heartbeatRequiredSpace = heartbeatVolumeTopology.getHeartbeatVolumeByCoveringPaths()
+                                .values().iterator().next().getHeartbeatRequiredSpace();
                         cmd.hostUuid = param.getHostUuid();
                         cmd.hostId = ref.getHostId();
                         cmd.strategy = param.getStrategy();
@@ -219,5 +223,90 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
                 completion.success(rsp);
             }
         });
+    }
+
+    private PrimaryStorageNodeSvc getNodeService(VolumeInventory volumeInventory) {
+        String identity = volumeInventory.getInstallPath().split("://")[0];
+        if (!extPsFactory.support(identity)) {
+            return null;
+        }
+
+        return extPsFactory.getNodeSvc(volumeInventory.getPrimaryStorageUuid());
+    }
+
+    private VolumeTO convertVolumeIfNeeded(VolumeInventory volumeInventory, HostInventory host, VolumeTO volumeTO) {
+        if (!VolumeProtocol.CBD.name().equals(volumeInventory.getProtocol())) {
+            return volumeTO;
+        }
+
+        PrimaryStorageNodeSvc nodeSvc = getNodeService(volumeInventory);
+        if (nodeSvc == null) {
+            return volumeTO;
+        }
+
+        String path = nodeSvc.getActivePath(BaseVolumeInfo.valueOf(volumeInventory), host,false);
+        volumeTO.setInstallPath(path);
+        return volumeTO;
+    }
+
+    @Override
+    public void beforeAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, KVMAgentCommands.AttachDataVolumeCmd cmd, Map data) {
+        cmd.setVolume(convertVolumeIfNeeded(volume, host, cmd.getVolume()));
+    }
+
+    @Override
+    public void afterAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, KVMAgentCommands.AttachDataVolumeCmd cmd) {
+    }
+
+    @Override
+    public void attachVolumeFailed(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, KVMAgentCommands.AttachDataVolumeCmd cmd, ErrorCode err, Map data) {
+
+    }
+
+    @Override
+    public VolumeTO convertVolumeIfNeed(KVMHostInventory host, VolumeInventory inventory, VolumeTO to) {
+        return convertVolumeIfNeeded(inventory, host, to);
+    }
+
+    @Override
+    public void beforeDetachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, KVMAgentCommands.DetachDataVolumeCmd cmd) {
+        cmd.setVolume(convertVolumeIfNeeded(volume, host, cmd.getVolume()));
+    }
+
+    @Override
+    public void afterDetachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, KVMAgentCommands.DetachDataVolumeCmd cmd) {
+
+    }
+
+    @Override
+    public void detachVolumeFailed(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, KVMAgentCommands.DetachDataVolumeCmd cmd, ErrorCode err) {
+
+    }
+
+    @Override
+    public void beforeStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, KVMAgentCommands.StartVmCmd cmd) {
+        cmd.setRootVolume(convertVolumeIfNeeded(spec.getDestRootVolume(), host, cmd.getRootVolume()));
+
+        List<VolumeTO> dtos = new ArrayList<>();
+        for (VolumeTO to : cmd.getDataVolumes()) {
+            for (VolumeInventory vol : spec.getDestDataVolumes()) {
+                if (vol.getUuid().equals(to.getVolumeUuid())) {
+                    dtos.add(convertVolumeIfNeeded(vol, host, to));
+                    break;
+                }
+            }
+        }
+
+        cmd.setDataVolumes(dtos);
+    }
+
+    @Override
+    public void startVmOnKvmSuccess(KVMHostInventory host, VmInstanceSpec spec) {
+
+    }
+
+    @Override
+    public void startVmOnKvmFailed(KVMHostInventory host, VmInstanceSpec spec, ErrorCode err) {
+
     }
 }

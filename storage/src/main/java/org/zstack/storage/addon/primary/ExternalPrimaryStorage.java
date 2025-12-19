@@ -182,9 +182,10 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             externalVO.setDefaultProtocol(msg.getDefaultProtocol());
         }
         boolean needReconnect = false;
+        String oldConfig = externalVO.getConfig();
         if (msg.getConfig() != null) {
-            controller.validateConfig(msg.getConfig());
-            externalVO.setConfig(msg.getConfig());
+            String config = controller.validateConfig(msg.getConfig());
+            externalVO.setConfig(config);
             needReconnect = true;
         }
         externalVO = dbf.updateAndRefresh(externalVO);
@@ -200,7 +201,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         evt.setError(reply.getError());
                     } else {
                         self = dbf.reload(self);
-                        evt.setInventory(externalVO.toInventory());
+                        ExternalPrimaryStorageInventory inv = externalVO.toInventory();
+                        evt.setInventory(inv);
+
+                        // TODO: use controller not extension point
+                        for (UpdatePrimaryStorageExtensionPoint ext : pluginRgty.getExtensionList(UpdatePrimaryStorageExtensionPoint.class)) {
+                            ext.afterUpdatePrimaryStorage(inv);
+                        }
                     }
 
                     bus.publish(evt);
@@ -336,7 +343,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        downloadImageCache(msg.getTemplateSpec().getInventory(), new ReturnValueCompletion<ImageCacheInventory>(trigger) {
+                        downloadImageCache(msg.getTemplateSpec().getInventory(), spec.getAllocatedUrl(), new ReturnValueCompletion<ImageCacheInventory>(trigger) {
                             @Override
                             public void success(ImageCacheInventory returnValue) {
                                 pathInCache = ImageCacheUtil.getImageCachePath(returnValue);
@@ -772,7 +779,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
             ImageCacheInventory inventory;
 
-            ImageInventory image = msg.getImageInventory();
+            final ImageInventory image = msg.getImageInventory();
+
+            final String requiredUrlTag = msg.getSystemTag(ExternalPrimaryStorageSystemTags.REQUIRED_INSTALL_URL::isMatch);
 
             @Override
             public void setup() {
@@ -785,6 +794,11 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         spec.setName(buildImageName(image.getUuid()));
                         spec.setUuid(msg.getImageInventory().getUuid());
                         spec.setSize(msg.getImageInventory().getSize());
+                        if (requiredUrlTag != null) {
+                            String requiredUrl = ExternalPrimaryStorageSystemTags.REQUIRED_INSTALL_URL.getTokenByTag(
+                                    requiredUrlTag, ExternalPrimaryStorageSystemTags.REQUIRED_INSTALL_URL_TOKEN);
+                            spec.setAllocatedUrl(requiredUrl);
+                        }
                         controller.copyVolume(msg.getVolumeSnapshot().getPrimaryStorageInstallPath(), spec, new ReturnValueCompletion<VolumeStats>(trigger) {
                             @Override
                             public void success(VolumeStats dst) {
@@ -1156,7 +1170,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
-    private void downloadImageCache(ImageInventory image, ReturnValueCompletion<ImageCacheInventory> completion) {
+    private void downloadImageCache(ImageInventory image, String allocatedUrl, ReturnValueCompletion<ImageCacheInventory> completion) {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
@@ -1165,7 +1179,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
             @Override
             public void run(SyncTaskChain chain) {
-                doDownloadImageCache(image, new ReturnValueCompletion<ImageCacheInventory>(chain) {
+                doDownloadImageCache(image, allocatedUrl, new ReturnValueCompletion<ImageCacheInventory>(chain) {
                     @Override
                     public void success(ImageCacheInventory returnValue) {
                         completion.success(returnValue);
@@ -1187,19 +1201,24 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
-    private void doDownloadImageCache(ImageInventory image, ReturnValueCompletion<ImageCacheInventory> completion) {
+    private void doDownloadImageCache(ImageInventory image, String allocatedUrl, ReturnValueCompletion<ImageCacheInventory> completion) {
         CreateVolumeSpec spec = new CreateVolumeSpec();
         spec.setUuid(image.getUuid());
         spec.setName(buildImageName(image.getUuid()));
+        spec.setAllocatedUrl(allocatedUrl);
 
-        ImageCacheVO cache = Q.New(ImageCacheVO.class)
+        List<ImageCacheVO> caches = Q.New(ImageCacheVO.class)
                 .eq(ImageCacheVO_.primaryStorageUuid, self.getUuid())
                 .eq(ImageCacheVO_.imageUuid, image.getUuid())
-                .find();
-        if (cache != null) {
-            // TODO check exists in ps
-            completion.success(ImageCacheInventory.valueOf(cache));
-            return;
+                .list();
+
+        for (ImageCacheVO cache : caches) {
+            ImageCacheInventory inv = cache.toInventory();
+            // TODO: suppose that path always starts with allocatedUrl
+            if (allocatedUrl != null && ImageCacheUtil.getImageCachePath(inv).startsWith(allocatedUrl)) {
+                completion.success(inv);
+                return;
+            }
         }
 
         downloadImageTo(image, spec, ImageCacheVO.class.getSimpleName(), new ReturnValueCompletion<VolumeStats>(completion) {
@@ -1429,6 +1448,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         AllocateSpaceSpec aspec = new AllocateSpaceSpec();
         aspec.setSize(msg.getImage().getSize());
         aspec.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume);
+        aspec.setRequiredUrl(msg.getAllocatedInstallUrl());
 
         String installPath = controller.allocateSpace(aspec);
         reply.setInstallPath(installPath);
@@ -1567,6 +1587,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         trashVolume(msg.getVolume().getInstallPath(), msg.getVolume().getProtocol(), force, new Completion(msg) {
             @Override
             public void success() {
+                ExternalPrimaryStorageSpaceCapacityHelper helper = new ExternalPrimaryStorageSpaceCapacityHelper(self.getUuid(), controller.getIdentity());
+                helper.releaseAvailableCapWithRatio(msg.getVolume().getInstallPath(), msg.getVolume().getSize());
                 bus.reply(msg, reply);
             }
 
@@ -1617,7 +1639,12 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(DownloadIsoToPrimaryStorageMsg msg) {
         DownloadIsoToPrimaryStorageReply reply = new DownloadIsoToPrimaryStorageReply();
-        downloadImageCache(msg.getIsoSpec().getInventory(), new ReturnValueCompletion<ImageCacheInventory>(msg) {
+        String urlTag = msg.getSystemTag(ExternalPrimaryStorageSystemTags.REQUIRED_INSTALL_URL::isMatch);
+        String allocatedUrl = urlTag == null ? null :
+                ExternalPrimaryStorageSystemTags.REQUIRED_INSTALL_URL.getTokenByTag(urlTag,
+                        ExternalPrimaryStorageSystemTags.REQUIRED_INSTALL_URL_TOKEN);
+
+        downloadImageCache(msg.getIsoSpec().getInventory(), allocatedUrl, new ReturnValueCompletion<ImageCacheInventory>(msg) {
             @Override
             public void success(ImageCacheInventory cache) {
                 String isoProtocol = controller.reportCapabilities().getDefaultIsoActiveProtocol() != null
@@ -1774,6 +1801,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         controller.deleteSnapshot(msg.getSnapshot().getPrimaryStorageInstallPath(), new Completion(msg) {
             @Override
             public void success() {
+                ExternalPrimaryStorageSpaceCapacityHelper helper = new ExternalPrimaryStorageSpaceCapacityHelper(self.getUuid(), controller.getIdentity());
+                helper.releaseAvailableCapacity(msg.getSnapshot().getPrimaryStorageInstallPath(), msg.getSnapshot().getSize());
                 bus.reply(msg, reply);
             }
 
@@ -1828,7 +1857,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         }
 
                         ImageInventory image = ImageInventory.valueOf(ivo);
-                        downloadImageCache(image, new ReturnValueCompletion<ImageCacheInventory>(trigger) {
+                        downloadImageCache(image, msg.getAllocatedInstallUrl(), new ReturnValueCompletion<ImageCacheInventory>(trigger) {
                             @Override
                             public void success(ImageCacheInventory returnValue) {
                                 installUrl = returnValue.getInstallUrl();
@@ -1964,15 +1993,19 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void connectHook(ConnectParam param, Completion completion) {
-        controller.validateConfig(externalVO.getConfig());
-        controller.connect(externalVO.getConfig(), self.getUrl(), new ReturnValueCompletion<LinkedHashMap>(completion) {
+        String config = controller.validateConfig(externalVO.getConfig());
+        controller.connect(config, self.getUrl(), new ReturnValueCompletion<LinkedHashMap>(completion) {
             @Override
             public void success(LinkedHashMap addonInfo) {
                 if (param.isNewAdded()) {
                     controller.onFirstAdditionConfigure(new NopeCompletion());
                 }
+
                 SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
                         .set(ExternalPrimaryStorageVO_.addonInfo, JSONObjectUtil.toJsonString(addonInfo))
+                        .set(ExternalPrimaryStorageVO_.config, config)
+                        .set(ExternalPrimaryStorageVO_.url, StringUtils.isEmpty(self.getUrl()) ?
+                                externalVO.getIdentity() + "://" + self.getUuid() : self.getUrl())
                         .update();
                 controller.setTrashExpireTime(PrimaryStorageGlobalConfig.TRASH_EXPIRATION_TIME.value(Integer.class), new NopeCompletion());
                 pingHook(completion);
@@ -2031,6 +2064,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                                         return cap;
                                     });
+
+                                    new ExternalPrimaryStorageSpaceCapacityHelper(externalVO).updateStorageSpace(capacity);
                                     trigger.next();
                                 } else {
                                     trigger.fail(operr("storage is not healthy:%s", capacity.getHealthy().toString()));

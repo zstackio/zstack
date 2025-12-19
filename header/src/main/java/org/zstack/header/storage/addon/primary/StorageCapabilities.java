@@ -9,10 +9,10 @@ import java.util.List;
 public class StorageCapabilities {
     private VolumeSnapshotCapability snapshotCapability;
 
+    private boolean supportMultiSpace;
     private boolean supportCloneFromVolume;
-
+    private boolean supportCloneFromAnotherSpace;
     private boolean supportStorageQos;
-
     private boolean supportLiveExpandVolume;
     private boolean supportShareableVolume;
     private boolean supportExportVolumeSnapshot;
@@ -68,6 +68,14 @@ public class StorageCapabilities {
         this.supportCloneFromVolume = supportCloneFromVolume;
     }
 
+    public boolean isSupportCloneFromAnotherSpace() {
+        return supportCloneFromAnotherSpace;
+    }
+
+    public void setSupportCloneFromAnotherSpace(boolean supportCloneFromAnotherSpace) {
+        this.supportCloneFromAnotherSpace = supportCloneFromAnotherSpace;
+    }
+
     public List<String> getSupportedImageFormats() {
         return supportedImageFormats;
     }
@@ -90,5 +98,13 @@ public class StorageCapabilities {
 
     public void setSupportLiveExpandVolume(boolean supportLiveExpandVolume) {
         this.supportLiveExpandVolume = supportLiveExpandVolume;
+    }
+
+    public boolean isSupportMultiSpace() {
+        return supportMultiSpace;
+    }
+
+    public void setSupportMultiSpace(boolean supportMultiSpace) {
+        this.supportMultiSpace = supportMultiSpace;
     }
 }

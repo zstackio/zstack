@@ -23,10 +23,14 @@ public class ImageCacheUtil {
     }
 
     public static String getImageCachePath(ImageCacheInventory cache) {
-        if (!cache.getInstallUrl().contains(ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA)) {
-            return cache.getInstallUrl();
+        return getImageCachePath(cache.getInstallUrl());
+    }
+
+    public static String getImageCachePath(String cacheInstallUrl) {
+        if (!cacheInstallUrl.contains(ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA)) {
+            return cacheInstallUrl;
         }
-        String snapshotUuid = cache.getInstallUrl().substring(cache.getInstallUrl().length() - 32);
+        String snapshotUuid = cacheInstallUrl.substring(cacheInstallUrl.length() - 32);
         return Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.primaryStorageInstallPath)
                 .eq(VolumeSnapshotVO_.uuid, snapshotUuid)
                 .findValue();

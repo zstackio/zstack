@@ -625,7 +625,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     @Override
-    public synchronized void activateHeartbeatVolume(HostInventory h, ReturnValueCompletion<HeartbeatVolumeTO> comp) {
+    public synchronized void activateHeartbeatVolume(HostInventory h, ReturnValueCompletion<HeartbeatVolumeTopology> comp) {
         String clientIqn = IscsiUtils.getHostInitiatorName(h.getUuid());
         if (clientIqn == null) {
             throw new RuntimeException(String.format("cannot get host[uuid:%s] initiator name", h.getUuid()));
@@ -662,7 +662,9 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         to.setHostId(getHostId(h));
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
         to.setCoveringPaths(Collections.singletonList(vhostSocketDir));
-        comp.success(to);
+        HeartbeatVolumeTopology topology = new HeartbeatVolumeTopology();
+        topology.setHeartbeatVolumeByCoveringPaths(Collections.singletonMap(vhostSocketDir, to));
+        comp.success(topology);
     }
 
     // hardcode
@@ -704,7 +706,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     @Override
-    public HeartbeatVolumeTO getHeartbeatVolumeActiveInfo(HostInventory h) {
+    public HeartbeatVolumeTopology getHeartbeatVolumeActiveInfo(HostInventory h) {
         String tianshuId = addonInfo.getClusters().get(0).getId();
         List<IscsiSeverNode> nodes = getIscsiServers(tianshuId);
 
@@ -730,7 +732,10 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         to.setHostId(getHostId(h));
         to.setHeartbeatRequiredSpace(SizeUnit.MEGABYTE.toByte(1));
         to.setCoveringPaths(Collections.singletonList(vhostSocketDir));
-        return to;
+
+        HeartbeatVolumeTopology topology = new HeartbeatVolumeTopology();
+        topology.setHeartbeatVolumeByCoveringPaths(Collections.singletonMap(vhostSocketDir, to));
+        return topology;
     }
 
     private void deactivateVhost(String installPath, HostInventory h) {
@@ -883,6 +888,26 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         self = dbf.reload(self);
         addonInfo = StringUtils.isEmpty(self.getAddonInfo()) ? new ExponAddonInfo() : JSONObjectUtil.toObject(self.getAddonInfo(), ExponAddonInfo.class);
         config = StringUtils.isEmpty(self.getConfig()) ? new ExponConfig() : JSONObjectUtil.toObject(self.getConfig(), ExponConfig.class);
+    }
+
+    // TODO: add more not found handling when support multi pool
+    @Override
+    public void getCapacity(List<String> locationUrl, ReturnValueCompletion<StorageCapacity> comp) {
+        List<FailureDomainModule> pools = getSelfPools();
+        StorageCapacity cap = new StorageCapacity();
+        long total = pools.stream().mapToLong(FailureDomainModule::getValidSize).sum();
+        long avail = total - pools.stream().mapToLong(FailureDomainModule::getRealDataSize).sum();
+        cap.setAvailableCapacity(avail);
+        cap.setTotalCapacity(total);
+        for (String url : locationUrl) {
+            String poolName = getPoolNameFromPath(url);
+            FailureDomainModule pool = pools.stream().filter(it -> it.getFailureDomainName().equals(poolName)).findFirst().orElse(null);
+            if (pool != null) {
+                cap.putCapacity(url, pool.getValidSize() - pool.getRealDataSize(), pool.getValidSize());
+            }
+        }
+
+        comp.success(cap);
     }
 
     @Override
@@ -1310,8 +1335,8 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     @Override
-    public void validateConfig(String config) {
-
+    public String validateConfig(String config) {
+        return config;
     }
 
     @Override

@@ -1,9 +1,6 @@
 package org.zstack.storage.zbs;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.cbd.ClusterInfo;
-import org.zstack.cbd.MdsInfo;
-import org.zstack.cbd.MdsStatus;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;

@@ -1058,6 +1058,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
                     logger.info(String.format("Deleted volume %s in Trash.", inv.getInstallPath()));
+                    // TODO: replace ReleasePrimaryStorageSpaceMsg
                     IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
                     imsg.setPrimaryStorageUuid(self.getUuid());
                     imsg.setDiskSize(inv.getSize());

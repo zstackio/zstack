@@ -38,6 +38,8 @@ public interface KvmSetupSelfFencerExtensionPoint {
         private PrimaryStorageInventory primaryStorage;
         private String strategy;
         private List<String> fencers;
+        // all previous self-fencer configurations on the ps will be removed after applying the new one
+        private boolean flushPrevious = true;
 
         public String getHostUuid() {
             return hostUuid;
@@ -93,6 +95,14 @@ public interface KvmSetupSelfFencerExtensionPoint {
 
         public void setFencers(List<String> fencers) {
             this.fencers = fencers;
+        }
+
+        public boolean isFlushPrevious() {
+            return flushPrevious;
+        }
+
+        public void setFlushPrevious(boolean flushPrevious) {
+            this.flushPrevious = flushPrevious;
         }
     }
 

@@ -16,6 +16,7 @@ import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.allocator.HostAllocatorStrategyExtensionPoint;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.*;
@@ -345,7 +346,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
+    public String allocateSpaceDryRun(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
         String hostUuid = getHostUuidFromAllocateMsg(msg);
 
         if (hostUuid == null) {

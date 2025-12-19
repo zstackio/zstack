@@ -1848,6 +1848,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
+                //TODO: replace with ReleasePrimaryStorageSpaceMsg
                 IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
                 imsg.setPrimaryStorageUuid(self.getUuid());
                 imsg.setDiskSize(inv.getSize());
@@ -1944,6 +1945,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             chain.done(new FlowDoneHandler(coml) {
                 @Override
                 public void handle(Map data) {
+                    // TODO: replace with ReleasePrimaryStorageSpaceMsg
                     IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
                     imsg.setPrimaryStorageUuid(self.getUuid());
                     imsg.setDiskSize(inv.getSize());
@@ -2512,7 +2514,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     if (cache != null) {
                         final CheckIsBitsExistingCmd cmd = new CheckIsBitsExistingCmd();
-                        cmd.setInstallPath(ImageCacheUtil.getImageCachePath(cache.toInventory()));
+                        cmd.setInstallPath(ImageCacheUtil.getImageCachePath(cache.getInstallUrl()));
                         httpCall(CHECK_BITS_PATH, cmd, CheckIsBitsExistingRsp.class, new ReturnValueCompletion<CheckIsBitsExistingRsp>(chain) {
                             @Override
                             public void success(CheckIsBitsExistingRsp returnValue) {
@@ -2527,9 +2529,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                     q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getInventory().getUuid());
                                     ImageCacheVO cvo = q.find();
 
-                                    IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                    ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
                                     imsg.setDiskSize(cvo.getSize());
                                     imsg.setPrimaryStorageUuid(cvo.getPrimaryStorageUuid());
+                                    imsg.setAllocatedInstallUrl(cvo.getInstallUrl());
                                     bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, cvo.getPrimaryStorageUuid());
                                     bus.send(imsg);
                                     dbf.remove(cvo);
@@ -5438,7 +5441,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         httpCall(DELETE_SNAPSHOT_PATH, cmd, DeleteSnapshotRsp.class, new ReturnValueCompletion<DeleteSnapshotRsp>(msg) {
             @Override
             public void success(DeleteSnapshotRsp returnValue) {
-                osdHelper.releaseAvailableCapWithRatio(msg.getSnapshot().getPrimaryStorageInstallPath(), msg.getSnapshot().getSize());
+                osdHelper.releaseAvailableCapacity(msg.getSnapshot().getPrimaryStorageInstallPath(), msg.getSnapshot().getSize());
                 bus.reply(msg, reply);
                 completion.done();
             }
