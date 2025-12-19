@@ -1,9 +1,6 @@
 package org.zstack.test.integration.networkservice.provider.flat.eip
 
 
-import org.zstack.core.db.SQL
-import org.zstack.header.network.l3.UsedIpVO
-import org.zstack.header.network.l3.UsedIpVO_
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
@@ -12,7 +9,6 @@ import org.zstack.sdk.*
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.utils.data.SizeUnit
 
 class AllocateHostWithEipCase extends SubCase {
 
@@ -26,12 +22,6 @@ class AllocateHostWithEipCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -145,7 +135,6 @@ class AllocateHostWithEipCase extends SubCase {
     void testRestartVmWithEip() {
         HostInventory host1 = env.inventoryByName("host-1")
         HostInventory host2 = env.inventoryByName("host-2")
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image")
         L3NetworkInventory pubL3 = env.inventoryByName("l3-pub")
         L3NetworkInventory l3 = env.inventoryByName("l3-pri")
@@ -153,7 +142,8 @@ class AllocateHostWithEipCase extends SubCase {
 
         VmInstanceInventory vm = createVmInstance {
             name = "test"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 4
+            memorySize = gb(8)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
             hostUuid = host1.uuid

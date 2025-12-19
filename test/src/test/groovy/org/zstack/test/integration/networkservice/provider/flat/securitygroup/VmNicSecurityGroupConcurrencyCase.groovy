@@ -1,43 +1,28 @@
 package org.zstack.test.integration.networkservice.provider.flat.securitygroup
 
-import org.springframework.http.HttpEntity
-import org.zstack.compute.vm.VmSystemTags
-import org.zstack.kvm.KVMAgentCommands
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.core.db.SimpleQuery
-import org.zstack.kvm.KVMSecurityGroupBackend
-import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO
 import org.zstack.network.securitygroup.APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO
 import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO
 import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO_
 import org.zstack.network.securitygroup.VmNicSecurityPolicyVO
-import org.zstack.network.securitygroup.SecurityGroupMembersTO
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.SecurityGroupInventory
-import org.zstack.sdk.SecurityGroupRuleInventory
-import org.zstack.sdk.VmNicSecurityGroupRefInventory
 import org.zstack.sdk.VmInstanceInventory
-import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.ImageInventory
-import org.zstack.sdk.VmNicSecurityPolicyInventory
-import org.zstack.sdk.AddVmNicToSecurityGroupAction
 import org.zstack.sdk.DeleteVmNicFromSecurityGroupAction
 import org.zstack.sdk.AddVmNicToSecurityGroupAction
 import org.zstack.sdk.SetVmNicSecurityGroupAction
-import org.zstack.header.apimediator.ApiMessageInterceptionException
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.test.integration.networkservice.provider.virtualrouter.VirtualRouterNetworkServiceEnv
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.utils.gson.JSONObjectUtil
 
-import java.util.concurrent.atomic.AtomicInteger
 class VmNicSecurityGroupConcurrencyCase extends SubCase {
     EnvSpec env
 
     L3NetworkInventory l3Net
-    InstanceOfferingInventory offer
     ImageInventory image
     List<VmInstanceInventory> vmInvs = new ArrayList<>();
     List<SecurityGroupInventory> sgInvs = new ArrayList<>();
@@ -50,7 +35,8 @@ class VmNicSecurityGroupConcurrencyCase extends SubCase {
                 name = "vm-$i"
                 imageUuid = image.uuid
                 l3NetworkUuids = [l3Net.uuid]
-                instanceOfferingUuid  = offer.uuid
+                memorySize = gb(4)
+                cpuNum = 2
             } as VmInstanceInventory
 
             vmInvs.add(vm)
@@ -286,7 +272,6 @@ class VmNicSecurityGroupConcurrencyCase extends SubCase {
     @Override
     void test() {
         env.create {
-            offer = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
             image = env.inventoryByName("image") as ImageInventory
             l3Net = env.inventoryByName("l3") as L3NetworkInventory
             buildVmInvenceory()

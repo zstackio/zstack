@@ -11,7 +11,6 @@ import org.zstack.sdk.AddSftpBackupStorageAction
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.ImageInventory
-import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -20,7 +19,6 @@ import org.zstack.sdk.ZoneInventory
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
 import org.zstack.storage.primary.smp.KvmBackend
-import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -46,12 +44,6 @@ class AddSftpBackupStorageCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-
             diskOffering {
                 name = "diskOffering"
                 diskSize = SizeUnit.GIGABYTE.toByte(20)
@@ -150,7 +142,8 @@ class AddSftpBackupStorageCase extends SubCase {
 
             vm {
                 name = "vm"
-                useInstanceOffering("instanceOffering")
+                cpu = 4
+                memoryGB(8)
                 useImage("image1")
                 useL3Networks("l3")
             }
@@ -171,7 +164,6 @@ class AddSftpBackupStorageCase extends SubCase {
         def zone = env.inventoryByName("zone") as ZoneInventory
         def image = env.inventoryByName("image1") as ImageInventory
         def l3 = env.inventoryByName("l3") as L3NetworkInventory
-        def instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
         def clusterInv = env.inventoryByName("cluster") as ClusterInventory
         def sftp = env.inventoryByName("sftp") as BackupStorageInventory
 
@@ -195,7 +187,8 @@ class AddSftpBackupStorageCase extends SubCase {
 
         def vm = createVmInstance {
             name = "test_vm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 4
+            memorySize = gb(8)
             l3NetworkUuids = [l3.uuid]
             imageUuid = image.uuid
             primaryStorageUuidForRootVolume = ps.uuid

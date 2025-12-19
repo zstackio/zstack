@@ -23,7 +23,6 @@ import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.ZoneInventory
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.HostSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
@@ -45,12 +44,6 @@ public class AttachL2NetworkWithTwoClustersCase extends SubCase{
     @Override
     public void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(2)
-                cpu = 2
-            }
-
             diskOffering {
                 name = "diskOffering"
                 diskSize = SizeUnit.GIGABYTE.toByte(20)
@@ -183,7 +176,6 @@ public class AttachL2NetworkWithTwoClustersCase extends SubCase{
         ClusterInventory cluster1 = env.inventoryByName("cluster1")
         ClusterInventory cluster2 = env.inventoryByName("cluster2")
         L3NetworkInventory l3_1 = env.inventoryByName("l3-1")
-        InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
         HostInventory host1 = env.inventoryByName("kvm-1")
         HostInventory host2 = env.inventoryByName("kvm-2")
@@ -192,7 +184,8 @@ public class AttachL2NetworkWithTwoClustersCase extends SubCase{
 
         VmInstanceInventory vm1 = createVmInstance {
             name = "vm-1"
-            instanceOfferingUuid = offering.uuid
+            cpuNum = 2
+            memorySize = gb(2)
             imageUuid = image.uuid
             l3NetworkUuids = asList(l3_1.uuid)
             hostUuid = host1.uuid
@@ -201,7 +194,8 @@ public class AttachL2NetworkWithTwoClustersCase extends SubCase{
 
         VmInstanceInventory vm2 = createVmInstance {
             name = "vm-2"
-            instanceOfferingUuid = offering.uuid
+            cpuNum = 2
+            memorySize = gb(2)
             imageUuid = image.uuid
             l3NetworkUuids = asList(l3_1.uuid)
             hostUuid = host2.uuid
@@ -237,7 +231,6 @@ public class AttachL2NetworkWithTwoClustersCase extends SubCase{
         ClusterInventory cluster1 = env.inventoryByName("cluster1")
         ClusterInventory cluster2 = env.inventoryByName("cluster2")
         L3NetworkInventory l3_1 = env.inventoryByName("l3-2")
-        InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
         HostInventory host1 = env.inventoryByName("kvm-1")
         HostInventory host2 = env.inventoryByName("kvm-2")
@@ -246,7 +239,8 @@ public class AttachL2NetworkWithTwoClustersCase extends SubCase{
 
         VmInstanceInventory vm1 = createVmInstance {
             name = "vm-21"
-            instanceOfferingUuid = offering.uuid
+            cpuNum = 2
+            memorySize = gb(2)
             imageUuid = image.uuid
             l3NetworkUuids = asList(l3_1.uuid)
             hostUuid = host1.uuid
@@ -255,7 +249,8 @@ public class AttachL2NetworkWithTwoClustersCase extends SubCase{
 
         VmInstanceInventory vm2 = createVmInstance {
             name = "vm-22"
-            instanceOfferingUuid = offering.uuid
+            cpuNum = 2
+            memorySize = gb(2)
             imageUuid = image.uuid
             l3NetworkUuids = asList(l3_1.uuid)
             hostUuid = host2.uuid
@@ -290,7 +285,6 @@ public class AttachL2NetworkWithTwoClustersCase extends SubCase{
         ZoneInventory zone = env.inventoryByName("zone")
         ClusterInventory cluster1 = env.inventoryByName("cluster1")
         ClusterInventory cluster2 = env.inventoryByName("cluster2")
-        InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
         HostInventory host1 = env.inventoryByName("kvm-1")
         HostInventory host2 = env.inventoryByName("kvm-2")
@@ -358,7 +352,8 @@ public class AttachL2NetworkWithTwoClustersCase extends SubCase{
 
         VmInstanceInventory vm1 = createVmInstance {
             name = "vm-31"
-            instanceOfferingUuid = offering.uuid
+            cpuNum = 2
+            memorySize = gb(2)
             imageUuid = image.uuid
             l3NetworkUuids = asList(vxlanL3.uuid)
             hostUuid = host1.uuid
@@ -367,7 +362,8 @@ public class AttachL2NetworkWithTwoClustersCase extends SubCase{
 
         VmInstanceInventory vm2 = createVmInstance {
             name = "vm-22"
-            instanceOfferingUuid = offering.uuid
+            cpuNum = 2
+            memorySize = gb(2)
             imageUuid = image.uuid
             l3NetworkUuids = asList(vxlanL3.uuid)
             hostUuid = host2.uuid
