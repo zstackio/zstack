@@ -4974,17 +4974,43 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         String snapShotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
         final String volPath = makeVolumeInstallPathByTargetPool(msg.getVolumeUuid(), getTargetPoolNameFromAllocatedUrl(snapShotPath));
         VolumeSnapshotInventory sp = msg.getSnapshot();
-        cloneAndProtectSnaphost(sp.getPrimaryStorageInstallPath(), volPath, new ReturnValueCompletion<CloneRsp>(completion) {
+        cloneAndProtectSnapshot(sp.getPrimaryStorageInstallPath(), volPath, new ReturnValueCompletion<CloneRsp>(completion) {
             @Override
             public void success(CloneRsp rsp) {
                 reply.setInstallPath(volPath);
-                reply.setSize(rsp.size);
                 // current ceph has no way to get the actual size
                 long asize = rsp.actualSize == null ? 1 : rsp.actualSize;
                 reply.setActualSize(asize);
                 reply.setIncremental(true);
-                bus.reply(msg, reply);
-                completion.done();
+
+                long srcSnapshotVolumeSize = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, sp.getVolumeUuid()).select(VolumeVO_.size).findValue();
+                VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).find();
+
+                if (volume.getSize() <= srcSnapshotVolumeSize) {
+                    reply.setSize(rsp.size);
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
+                }
+
+                ResizeVolumeOnPrimaryStorageMsg rmsg = new ResizeVolumeOnPrimaryStorageMsg();
+                rmsg.setVolume(VolumeInventory.valueOf(volume));
+                rmsg.setSize(volume.getSize());
+                rmsg.setPrimaryStorageUuid(self.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                bus.send(rmsg, new CloudBusCallBack(completion) {
+                    @Override
+                    public void run(MessageReply re) {
+                        if (re.getError() != null) {
+                            reply.setError(re.getError());
+                        } else {
+                            ResizeVolumeOnPrimaryStorageReply r = re.castReply();
+                            reply.setSize(r.getVolume().getSize());
+                        }
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
+                });
             }
 
             @Override
@@ -4994,10 +5020,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 completion.done();
             }
         });
-
     }
 
-    private void cloneAndProtectSnaphost(String snapshotPath, String dstPath, ReturnValueCompletion<CloneRsp> completion) {
+    private void cloneAndProtectSnapshot(String snapshotPath, String dstPath, ReturnValueCompletion<CloneRsp> completion) {
         ProtectSnapshotCmd cmd = new ProtectSnapshotCmd();
         cmd.snapshotPath = snapshotPath;
         cmd.ignoreError = true;

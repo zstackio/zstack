@@ -3,14 +3,15 @@ package org.zstack.testlib
 import org.springframework.http.HttpEntity
 import org.zstack.cbd.LogicalPoolInfo
 import org.zstack.cbd.kvm.KvmCbdCommands
-import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
 import org.zstack.utils.Utils
 import org.zstack.utils.data.SizeUnit
-import org.zstack.utils.logging.CLogger
 import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.utils.logging.CLogger
+
+import static org.zstack.storage.zbs.ZbsHelper.convertSizeToByte
 
 /**
  * @author Xingwei Yu
@@ -192,6 +193,17 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
 
                 def rsp = new ZbsStorageController.ExpandVolumeRsp()
+                rsp.setSize(convertSizeToByte(cmd.size, cmd.unit))
+
+                return rsp
+            }
+
+            simulator(ZbsStorageController.FLATTEN_VOLUME_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                ZbsStorageController.FlattenVolumeCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.FlattenVolumeCmd.class)
+                ExternalPrimaryStorageSpec zspec = spec.specByUuid(cmd.uuid)
+                assert zspec != null: "cannot found zbs primary storage[uuid:${cmd.uuid}], check your environment()."
+
+                def rsp = new ZbsStorageController.FlattenVolumeRsp()
                 rsp.setSize(targetSize)
 
                 return rsp
