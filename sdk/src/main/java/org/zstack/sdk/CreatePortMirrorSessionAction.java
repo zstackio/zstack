@@ -43,8 +43,14 @@ public class CreatePortMirrorSessionAction extends AbstractAction {
     @Param(required = false, maxLength = 32, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String dstEndPoint;
 
-    @Param(required = false, validValues = {"VmNic","UpLinkPort"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"VmNic","UpLinkPort","RemoteTunnel"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String dstEndPointType = "VmNic";
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String remoteTunnelIp;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,4294967295L}, noTrim = false)
+    public long tunnelKey = 0L;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

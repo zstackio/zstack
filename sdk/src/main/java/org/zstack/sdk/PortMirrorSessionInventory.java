@@ -85,6 +85,14 @@ public class PortMirrorSessionInventory  {
         return this.portMirrorUuid;
     }
 
+    public java.lang.String remoteTunnelIp;
+    public void setRemoteTunnelIp(java.lang.String remoteTunnelIp) {
+        this.remoteTunnelIp = remoteTunnelIp;
+    }
+    public java.lang.String getRemoteTunnelIp() {
+        return this.remoteTunnelIp;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
