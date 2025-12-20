@@ -1342,8 +1342,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         err = err(SysErrors.CREATE_RESOURCE_ERROR, "Failed to download image[name:%s] on all backup storage%s.",
                                 inv.getName(), msgData.getBackupStorageUuids());
                     } else {
-                        err = err(SysErrors.CREATE_RESOURCE_ERROR, errors.get(0), "Failed to download image[name:%s] on all backup storage%s.",
-                                inv.getName(), msgData.getBackupStorageUuids());
+                        err = err(SysErrors.CREATE_RESOURCE_ERROR, "Failed to download image[name:%s] on all backup storage%s.",
+                                inv.getName(), msgData.getBackupStorageUuids())
+                                .withCause(errors);
                     }
 
                     extEmitter.failedToAddImage(inv, err);

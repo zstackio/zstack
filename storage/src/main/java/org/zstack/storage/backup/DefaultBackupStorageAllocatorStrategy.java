@@ -59,7 +59,8 @@ public class DefaultBackupStorageAllocatorStrategy implements BackupStorageAlloc
         }).start();
 
         if (ret.errorCode != null) {
-            throw new BackupStorageException(err(BackupStorageErrors.ALLOCATE_ERROR, ret.errorCode, "unable to allocate a backup storage"));
+            throw new BackupStorageException(
+                    err(BackupStorageErrors.ALLOCATE_ERROR, "unable to allocate a backup storage").withCause(ret.errorCode));
         } else {
             Collections.shuffle(ret.results);
             return BackupStorageInventory.valueOf(ret.results);

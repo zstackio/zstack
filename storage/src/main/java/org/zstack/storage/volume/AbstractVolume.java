@@ -92,7 +92,7 @@ public abstract class AbstractVolume {
         ErrorCode cause = Platform.err(VmErrors.NOT_IN_CORRECT_STATE, "current volume state[%s] doesn't allow to proceed message[%s]", currentState,
                 msg.getMessageName());
         if (errorCode != null) {
-            return Platform.err(errorCode, cause, cause.getDetails());
+            return Platform.err(errorCode, cause.getDetails()).withCause(cause);
         }
         return cause;
     }

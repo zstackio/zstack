@@ -2732,7 +2732,8 @@ public class KVMHost extends HostBase implements Host {
             public void fail(ErrorCode err) {
                 KVMHostAsyncHttpCallReply reply = new KVMHostAsyncHttpCallReply();
                 if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)) {
-                    reply.setError(err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, err, "cannot do the operation on the KVM host"));
+                    reply.setError(err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "cannot do the operation on the KVM host")
+                            .withCause(err));
                 } else {
                     reply.setError(err);
                 }
@@ -3751,7 +3752,7 @@ public class KVMHost extends HostBase implements Host {
                 DestroyVmOnHypervisorReply reply = new DestroyVmOnHypervisorReply();
 
                 if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR, SysErrors.TIMEOUT)) {
-                    err = err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, err, "unable to destroy a vm");
+                    err = err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "unable to destroy a vm").withCause(err);
                 }
 
                 reply.setError(err);
@@ -3884,7 +3885,7 @@ public class KVMHost extends HostBase implements Host {
             public void fail(ErrorCode err) {
                 StopVmOnHypervisorReply reply = new StopVmOnHypervisorReply();
                 if (err.isError(SysErrors.IO_ERROR, SysErrors.HTTP_ERROR)) {
-                    err = err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, err, "unable to stop a vm");
+                    err = err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "unable to stop a vm").withCause(err);
                 }
 
                 reply.setError(err);
@@ -5137,7 +5138,7 @@ public class KVMHost extends HostBase implements Host {
 
     @Override
     protected void connectHostFailHook(ErrorCode errorCode) {
-        if (errorCode.getRootCause().isError(HostErrors.HOST_PASSWORD_HAS_BEEN_CHANGED)) {
+        if (errorCode.rootCause().isError(HostErrors.HOST_PASSWORD_HAS_BEEN_CHANGED)) {
             logger.warn(String.format("fail to connect host[uuid:%s] due to wrong SSH password", self.getUuid()));
             new HostDisconnectedCanonicalEvent(self.getUuid(), errorCode).fire();
             // stop tracking host by tracker.trackHost within the current tracking cycle
@@ -5415,8 +5416,9 @@ public class KVMHost extends HostBase implements Host {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                completion.fail(err(HostErrors.CONNECTION_ERROR, errCode, "connection error for KVM host[uuid:%s, ip:%s]", self.getUuid(),
-                        self.getManagementIp()));
+                completion.fail(err(HostErrors.CONNECTION_ERROR, "connection error for KVM host[uuid:%s, ip:%s]", self.getUuid(),
+                        self.getManagementIp())
+                        .withCause(errCode));
             }
         }).start();
     }

@@ -224,7 +224,7 @@ public abstract class AbstractVmInstance implements VmInstance {
             ErrorCode cause = err(VmErrors.NOT_IN_CORRECT_STATE, "current vm instance state[%s] doesn't allow to proceed message[%s], allowed states are %s", currentState,
                     msg.getMessageName(), checker.getStatesForOperation(msg.getMessageName()));
             if (errorCode != null) {
-                return err(errorCode, cause, cause.getDetails());
+                return err(errorCode, cause.getDetails()).withCause(cause);
             } else {
                 return cause;
             }

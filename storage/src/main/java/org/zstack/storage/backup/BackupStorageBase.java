@@ -35,7 +35,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.image.CancelDownloadImageMsg;
 import org.zstack.header.image.ImageConstant;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -49,7 +48,6 @@ import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
@@ -760,7 +758,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             public void fail(ErrorCode errorCode) {
                 logger.warn(errorCode.getDetails());
                 extpEmitter.failToDetach(self, msg.getZoneUuid());
-                evt.setError(err(BackupStorageErrors.DETACH_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(err(BackupStorageErrors.DETACH_ERROR, errorCode.getDetails()).withCause(errorCode));
                 bus.publish(evt);
             }
         });
@@ -798,7 +796,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             public void fail(ErrorCode errorCode) {
                 logger.warn(errorCode.getReadableDetails());
                 extpEmitter.failToAttach(svo, msg.getZoneUuid());
-                evt.setError(err(BackupStorageErrors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(err(BackupStorageErrors.ATTACH_ERROR, errorCode.getDetails()).withCause(errorCode));
                 bus.publish(evt);
             }
         });
@@ -895,7 +893,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode.getDetails()).withCause(errCode));
                 bus.publish(evt);
             }
         }).start();
