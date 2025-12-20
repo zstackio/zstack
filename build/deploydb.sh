@@ -27,7 +27,12 @@ else
   loginCmd="--user=$user --password=$password --host=$host --port=$port"
 fi
 
-if command -v greatdb &> /dev/null; then
+# Detect MySQL version
+# Extract major version number from various MySQL/MariaDB/GreatDB output formats
+db_version=$(${MYSQL} --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1 | cut -d'.' -f1 || echo "5")
+
+# GreatDB and MySQL 8.0+ require CREATE USER before GRANT
+if command -v greatdb &> /dev/null || [ "$db_version" -ge 8 ] 2>/dev/null; then
   ${MYSQL} ${loginCmd} << EOF
     set global log_bin_trust_function_creators=1;
     DROP DATABASE IF EXISTS zstack;
@@ -42,16 +47,17 @@ if command -v greatdb &> /dev/null; then
     grant all privileges on zstack_rest.* to root@'127.0.0.1';
 EOF
 else
+  # MySQL 5.x: GRANT with IDENTIFIED BY auto-creates users
   ${MYSQL} ${loginCmd} << EOF
-  set global log_bin_trust_function_creators=1;
-  DROP DATABASE IF EXISTS zstack;
-  CREATE DATABASE zstack;
-  DROP DATABASE IF EXISTS zstack_rest;
-  CREATE DATABASE zstack_rest;
-  grant all privileges on zstack.* to root@'%' identified by "${password}";
-  grant all privileges on zstack_rest.* to root@'%' identified by "${password}";
-  grant all privileges on zstack.* to root@'127.0.0.1' identified by "${password}";
-  grant all privileges on zstack_rest.* to root@'127.0.0.1' identified by "${password}";
+    set global log_bin_trust_function_creators=1;
+    DROP DATABASE IF EXISTS zstack;
+    CREATE DATABASE zstack;
+    DROP DATABASE IF EXISTS zstack_rest;
+    CREATE DATABASE zstack_rest;
+    grant all privileges on zstack.* to root@'%' identified by "${password}";
+    grant all privileges on zstack_rest.* to root@'%' identified by "${password}";
+    grant all privileges on zstack.* to root@'127.0.0.1' identified by "${password}";
+    grant all privileges on zstack_rest.* to root@'127.0.0.1' identified by "${password}";
 EOF
 fi
 
