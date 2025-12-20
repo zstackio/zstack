@@ -36,7 +36,9 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.network.l3.datatypes.IpCapacityData;
 import org.zstack.header.network.service.GetSdnControllerExtensionPoint;
 import org.zstack.header.network.service.SdnControllerDhcp;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.vm.VmNicInventory;
+
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.zone.ZoneVO;
@@ -53,7 +55,6 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -65,7 +66,6 @@ import javax.persistence.TypedQuery;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.*;
@@ -157,38 +157,29 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         );
         creator.create();
 
-        L3NetworkVO l3Vo = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName("change-l3-network-mtu");
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                if (!l3Vo.enableIpAddressAllocation()) {
+                String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(msg.getL3NetworkUuid());
+                if (sdnControllerUuid == null) {
                     trigger.next();
                     return;
                 }
 
-                SdnControllerDhcp dhcp = getSdnControllerDhcp(msg.getL3NetworkUuid());
-                if (dhcp == null) {
-                    trigger.next();
-                    return;
-                }
-
-                List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(l3Vo);
-                if (iprs.isEmpty()) {
-                    trigger.next();
-                    return;
-                }
-
-                dhcp.enableDhcp(Collections.singletonList(L3NetworkInventory.valueOf(l3Vo)), new Completion(trigger) {
+                SdnControllerUpdateDHCPMsg dmsg = new SdnControllerUpdateDHCPMsg();
+                dmsg.setL3NetworkUuid(msg.getL3NetworkUuid());
+                dmsg.setSdnControllerUuid(sdnControllerUuid);
+                bus.makeTargetServiceIdByResourceUuid(dmsg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
+                bus.send(dmsg, new CloudBusCallBack(trigger) {
                     @Override
-                    public void success() {
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                        } else {
+                            trigger.next();
+                        }
                     }
                 });
             }

@@ -637,6 +637,13 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
     @Override
     public void preReleaseVmResource(VmInstanceSpec spec, Completion completion) {
+        // create/start/reboot vm failed, code will go here VmInstantiateResourcePreFlow.rollack()
+        // vm change image failed,
+        if (VmInstanceConstant.VmOperation.NewCreate != spec.getCurrentVmOperation()) {
+            completion.success();
+            return;
+        }
+
         if (spec.getL3Networks() == null || spec.getL3Networks().isEmpty()) {
             completion.success();
             return;
