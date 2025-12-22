@@ -291,8 +291,8 @@ BEGIN
                 WHERE `modelServiceUuid` = service_uuid;
                 SELECT CONCAT('INFO: Updated ModelServiceTemplateVO for service_uuid=', service_uuid, ', updated_rows=', ROW_COUNT()) AS msg;
             ELSE
-                INSERT INTO `zstack`.`ModelServiceTemplateVO` (`uuid`, `modelServiceUuid`, `pythonVersionSemver`, `cudaVersion`, `cannVersion`, `frameworkVersionSemver`, `gpuVendor`)
-                VALUES (REPLACE(UUID(),'-',''), service_uuid, py_version, cuda_version, cann_version, fw_version, gpu_vendor_name);
+                INSERT INTO `zstack`.`ModelServiceTemplateVO` (`uuid`, `modelServiceUuid`, `cpuArchitecture`, `pythonVersionSemver`, `cudaVersion`, `cannVersion`, `frameworkVersionSemver`, `gpuVendor`, `createDate`, `lastOpDate`)
+                    VALUES (REPLACE(UUID(),'-',''), service_uuid, 'x86_64', py_version, cuda_version, cann_version, fw_version, gpu_vendor_name, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
                 SELECT CONCAT('INFO: Inserted ModelServiceTemplateVO for service_uuid=', service_uuid, ', inserted_rows=', ROW_COUNT()) AS msg;
             END IF;
 
