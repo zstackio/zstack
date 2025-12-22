@@ -2,9 +2,7 @@ package org.zstack.compute.vm;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.Platform;
-import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -142,8 +140,8 @@ public class MacOperator {
     }
 
     public static String generateMacWithDeviceIdIp(short deviceId) {
-        String mgtIp = Platform.getManagementServerIp();
-        if (!NetworkUtils.isIpv4Address(mgtIp)) {
+        String consoleProxyIp = CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP;//Platform.getManagementServerIp();
+        if (!NetworkUtils.isIpv4Address(consoleProxyIp) || "0.0.0.0".equals(consoleProxyIp)) {
             return generateMacWithDeviceIdRandom(deviceId);
         }
 
@@ -151,7 +149,7 @@ public class MacOperator {
         * mgt ip is: 172.24.0.81, its hex string: AC 18 00 51,
         * so mac address will look like: fa:00:51:xx:xx:yy
         * xx:xx are random. yy is device ID */
-        int mgtIpL = (int)NetworkUtils.ipv4StringToLong(mgtIp);
+        int mgtIpL = (int)NetworkUtils.ipv4StringToLong(consoleProxyIp);
         String mgtIpStr = Integer.toHexString(mgtIpL);
         if (mgtIpStr.length() < 8) {
             String compensate = StringUtils.repeat("0", 8 - mgtIpStr.length());
