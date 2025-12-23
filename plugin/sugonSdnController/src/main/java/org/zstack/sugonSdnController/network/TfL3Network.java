@@ -112,7 +112,7 @@ public class TfL3Network extends L3BasicNetwork {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                    evt.setError(errorCode);
                     bus.publish(evt);
                 }
             });
@@ -137,7 +137,7 @@ public class TfL3Network extends L3BasicNetwork {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                    evt.setError(errorCode);
                     bus.publish(evt);
                 }
             });
@@ -164,7 +164,7 @@ public class TfL3Network extends L3BasicNetwork {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                    evt.setError(errorCode);
                     bus.publish(evt);
                 }
             });
@@ -188,7 +188,7 @@ public class TfL3Network extends L3BasicNetwork {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                    evt.setError(errorCode);
                     bus.publish(evt);
                 }
             });
@@ -213,7 +213,7 @@ public class TfL3Network extends L3BasicNetwork {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                    evt.setError(errorCode);
                     bus.publish(evt);
                 }
             });
@@ -238,7 +238,7 @@ public class TfL3Network extends L3BasicNetwork {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                    evt.setError(errorCode);
                     bus.publish(evt);
                 }
             });
@@ -263,7 +263,7 @@ public class TfL3Network extends L3BasicNetwork {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                    evt.setError(errorCode);
                     bus.publish(evt);
                 }
             });
@@ -289,7 +289,7 @@ public class TfL3Network extends L3BasicNetwork {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                    evt.setError(errorCode);
                     bus.publish(evt);
                 }
             });

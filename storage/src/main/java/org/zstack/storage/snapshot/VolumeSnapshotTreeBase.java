@@ -2936,7 +2936,7 @@ public class VolumeSnapshotTreeBase {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                completion.fail(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                completion.fail(errCode);
             }
         }).start();
     }
