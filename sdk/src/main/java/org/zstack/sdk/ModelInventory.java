@@ -116,6 +116,14 @@ public class ModelInventory  {
         return this.minGpuMemory;
     }
 
+    public java.lang.Long recommendedGpuMemory;
+    public void setRecommendedGpuMemory(java.lang.Long recommendedGpuMemory) {
+        this.recommendedGpuMemory = recommendedGpuMemory;
+    }
+    public java.lang.Long getRecommendedGpuMemory() {
+        return this.recommendedGpuMemory;
+    }
+
     public java.util.List recommendedGpuNum;
     public void setRecommendedGpuNum(java.util.List recommendedGpuNum) {
         this.recommendedGpuNum = recommendedGpuNum;
