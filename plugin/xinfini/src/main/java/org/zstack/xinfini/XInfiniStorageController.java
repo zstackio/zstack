@@ -1,7 +1,6 @@
 package org.zstack.xinfini;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.util.packed.DirectMonotonicReader;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -9,7 +8,6 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -26,8 +24,6 @@ import org.zstack.iscsi.IscsiUtils;
 import org.zstack.iscsi.kvm.IscsiHeartbeatVolumeTO;
 import org.zstack.iscsi.kvm.IscsiVolumeTO;
 import org.zstack.kvm.KVMConstant;
-import org.zstack.resourceconfig.ResourceConfigFacade;
-import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.storage.volume.VolumeConfigsGetter;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -69,15 +65,13 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     private static CLogger logger = Utils.getLogger(XInfiniStorageController.class);
 
     @Autowired
+    @Deprecated
     private DatabaseFacade dbf;
-    @Autowired
-    private ThreadFacade thdf;
+
     private ExternalPrimaryStorageVO self;
     private XInfiniConfig config;
     private XInfiniAddonInfo addonInfo;
     private final XInfiniApiHelper apiHelper;
-    @Autowired
-    private ResourceConfigFacade rcf;
 
     private String vhostSocketDir;
 
@@ -121,11 +115,20 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     public XInfiniStorageController(String configStr) {
         config = JSONObjectUtil.toObject(configStr, XInfiniConfig.class);
+
         XInfiniConnectConfig clientConfig = new XInfiniConnectConfig();
         clientConfig.readTimeout = TimeUnit.MINUTES.toMillis(10);
         clientConfig.writeTimeout = TimeUnit.MINUTES.toMillis(10);
         clientConfig.token = config.getToken();
-        clientConfig.xInfiniConfig = config;
+        clientConfig.connectedNodeProvider = () -> {
+            Set<String> connectedIps = this.addonInfo.getNodes().stream()
+                    .filter(it -> it.getStatus() == NodeStatus.Connected)
+                    .map(XInfiniAddonInfo.Node::getIp)
+                    .collect(Collectors.toSet());
+            return this.config.getNodes().stream()
+                    .filter(it -> connectedIps.contains(it.getIp()))
+                    .findFirst().orElse(null);
+        };
         XInfiniClient client = new XInfiniClient();
         client.configure(clientConfig);
 
@@ -498,20 +501,17 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     }
 
     @Override
-    public void ping(Completion completion) {
+    public void ping(ReturnValueCompletion<PingResult> completion) {
         reloadDbInfo();
         Map<String, NodeStatus> nodesStatus = apiHelper.checkNodesConnection(config.getNodes());
         logger.info(String.format("get nodes status: %s", nodesStatus));
 
-        config.getNodes().forEach(it -> it.setStatus(nodesStatus.getOrDefault(it.getIp(), NodeStatus.Disconnected)));
-        SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
-                .set(ExternalPrimaryStorageVO_.config, JSONObjectUtil.toJsonString(config))
-                .update();
-        completion.success();
+        addonInfo.getNodes().forEach(it -> it.setStatus(nodesStatus.getOrDefault(it.getIp(), NodeStatus.Disconnected)));
+        completion.success(new PingResult(addonInfo));
     }
 
     @Override
-    public void connect(String config, String url, ReturnValueCompletion<LinkedHashMap> comp) {
+    public void connect(String config, String url, ReturnValueCompletion<AddonInfo> comp) {
         DebugUtils.Assert(StringUtils.isNotEmpty(config), "config cannot be none");
         XInfiniAddonInfo info = new XInfiniAddonInfo();
         XInfiniConfig xConfig = JSONObjectUtil.toObject(config, XInfiniConfig.class);
@@ -527,6 +527,8 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
                 .findAny()
                 .orElseThrow(() -> new OperationFailureException(operr("fail to get node %s details, check ip address and role config", it.getIp()))));
         info.setNodes(nodes.stream().map(XInfiniAddonInfo.Node::valueOf).collect(Collectors.toList()));
+        Map<String, NodeStatus> nodeIpStatus = apiHelper.checkNodesConnection(xConfig.getNodes());
+        info.getNodes().forEach(it -> it.setStatus(nodeIpStatus.get(it.getIp())));
 
         List<PoolModule> pools = apiHelper.queryPools();
         if (CollectionUtils.isEmpty(pools)) {
@@ -542,7 +544,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         }
         info.setPools(pools.stream().map(this::getPoolAddonInfo).collect(Collectors.toList()));
         vhostSocketDir = String.format("/var/run/bdc-%s/", apiHelper.getClusterUuid());
-        comp.success(JSONObjectUtil.rehashObject(info, LinkedHashMap.class));
+        comp.success(info);
     }
 
     private XInfiniAddonInfo.Pool getPoolAddonInfo(PoolModule pool) {
@@ -551,6 +553,17 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         return XInfiniAddonInfo.Pool.valueOf(pool, bsPolicy, capacity);
     }
 
+    @Override
+    public void syncAddonInfo(String addonInfo) {
+        this.addonInfo = StringUtils.isEmpty(addonInfo) ? new XInfiniAddonInfo() : JSONObjectUtil.toObject(addonInfo, XInfiniAddonInfo.class);
+    }
+
+    @Override
+    public void syncConfig(String config) {
+        this.config = StringUtils.isEmpty(config) ? new XInfiniConfig() : JSONObjectUtil.toObject(config, XInfiniConfig.class);
+    }
+
+    @Deprecated
     private void reloadDbInfo() {
         self = dbf.reload(self);
         addonInfo = StringUtils.isEmpty(self.getAddonInfo()) ? new XInfiniAddonInfo() : JSONObjectUtil.toObject(self.getAddonInfo(), XInfiniAddonInfo.class);
@@ -559,7 +572,6 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public void reportCapacity(ReturnValueCompletion<StorageCapacity> comp) {
-        reloadDbInfo();
         List<XInfiniAddonInfo.Pool> pools = refreshPoolCapacity()
                 .stream()
                 .filter(it -> config.getPoolIds().contains(it.getId()))

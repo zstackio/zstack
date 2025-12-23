@@ -56,7 +56,7 @@ public class ZbsStorageFactory implements ExternalPrimaryStorageSvcBuilder, Back
     }
 
     @Override
-    public void discover(String url, String config, ReturnValueCompletion<LinkedHashMap> completion) {
+    public void discover(String url, String config, ReturnValueCompletion<AddonInfo> completion) {
         completion.fail(operr("zbs not support discover yet"));
     }
 
