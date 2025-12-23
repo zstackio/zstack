@@ -99,6 +99,9 @@ public class CoreGlobalProperty {
     public static boolean ENABLE_RELEASE_API;
     @GlobalProperty(name = "hangkong.API", defaultValue = "")
     public static String HANGKONG_API;
-    @GlobalProperty(name = "hangkong.accesskey", defaultValue = "")
-    public static String HANGKONG_ACCESSKEY;
+    @GlobalProperty(name = "hangkong.accesskey.id", defaultValue = "")
+    public static String HANGKONG_ACCESSKEY_ID;
+    @GlobalProperty(name = "hangkong.accesskey.secret", defaultValue = "")
+    public static String HANGKONG_ACCESSKEY_SECRET;
+
 }

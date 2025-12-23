@@ -46,12 +46,6 @@ public class ReleaseHostAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -93,7 +87,7 @@ public class ReleaseHostAction extends AbstractAction {
         info.httpMethod = "POST";
         info.path = "/hosts/release";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "params";
         return info;
     }
