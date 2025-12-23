@@ -471,3 +471,6 @@ CREATE TABLE IF NOT EXISTS `OvnControllerVO` (
 
 INSERT IGNORE INTO OvnControllerVO (uuid, remoteOvn)
 SELECT uuid, 0 FROM SdnControllerVO where vendorType = 'Ovn';
+
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'architecture', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'gpuVendor', 'VARCHAR(128)', 1, NULL);

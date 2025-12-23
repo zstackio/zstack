@@ -108,6 +108,22 @@ public class ModelServiceInstanceInventory  {
         return this.accountUuid;
     }
 
+    public java.lang.String architecture;
+    public void setArchitecture(java.lang.String architecture) {
+        this.architecture = architecture;
+    }
+    public java.lang.String getArchitecture() {
+        return this.architecture;
+    }
+
+    public java.lang.String gpuVendor;
+    public void setGpuVendor(java.lang.String gpuVendor) {
+        this.gpuVendor = gpuVendor;
+    }
+    public java.lang.String getGpuVendor() {
+        return this.gpuVendor;
+    }
+
     public VmInstanceInventory vm;
     public void setVm(VmInstanceInventory vm) {
         this.vm = vm;
