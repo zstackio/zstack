@@ -28,9 +28,9 @@ public interface ErrorFacade {
 
     ErrorCode stringToOperationError(String details, List<ErrorCode> causes);
 
-    ErrorCode instantiateErrorCode(Enum code, String details);
+    ErrorCode instantiateErrorCode(Enum<?> code, String fmt, Object... args);
 
-    ErrorCode instantiateErrorCode(String code, String details);
+    ErrorCode instantiateErrorCode(String code, String fmt, Object... args);
 
     ErrorCode stringToInternalError(String details);
 

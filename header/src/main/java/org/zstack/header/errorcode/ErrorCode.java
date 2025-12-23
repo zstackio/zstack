@@ -18,17 +18,39 @@ import java.util.Map;
 import java.util.Objects;
 
 import static org.zstack.utils.CollectionUtils.isEmpty;
-import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_ERROR_LOCATION;
-import static org.zstack.utils.opaque.OpaqueConstants.OPAQUE_KEY_EXCEPTION;
+import static org.zstack.utils.opaque.OpaqueConstants.*;
 
+/**
+ * This is an example:  (since zsv_4.10.28)
+ *
+ * <blockquote><pre>
+ * code = "SYS.1006"
+ * elaboration = "An operation failed"  (from sys.xml)
+ * details = "the quota[name:vm.num] of account[uuid:f2ac2633101d014b9d4307be7d45883b36215c28] can not be -6"
+ * i18nDetails = "帐户[uuid：f2ac2633101d014b9d4307be7d45883b36215c28]的配额[名称：vm.num]不能为-6"
+ *         (from i18n_identity.json => conf/i18n/messages_zh_CN.properties)
+ *
+ * opaque = {
+ *     "template" : "the quota[name:%s] of account[uuid:%s] can not be %d",
+ *     "0" : "vm.num",
+ *     "1" : "f2ac2633101d014b9d4307be7d45883b36215c28",
+ *     "2" : -6
+ * }
+ * </pre></blockquote>
+ */
 public class ErrorCode implements Serializable, Cloneable, OpaqueCollection {
     private String code;
     private String description;
     private String details;
+    private String i18nDetails;
+
+    @Deprecated
     private String elaboration;
     @APINoSee
+    @Deprecated
     private ErrorCodeElaboration messages;
     @APINoSee
+    @Deprecated
     private String cost;
     /**
      * TODO: merge cause to causes
@@ -84,22 +106,26 @@ public class ErrorCode implements Serializable, Cloneable, OpaqueCollection {
     }
 
     public ErrorCode(String code, String description) {
-        super();
-        this.code = code;
-        this.description = description;
+        this(code, description, null, null);
     }
 
     public ErrorCode(String code, String description, String details) {
+        this(code, description, details, details);
+    }
+
+    public ErrorCode(String code, String description, String details, String i18nDetails) {
         super();
         this.code = code;
         this.description = description;
         this.details = details;
+        this.i18nDetails = i18nDetails;
     }
 
     public ErrorCode(ErrorCode other) {
         this.code = other.code;
         this.description = other.description;
         this.details = other.details;
+        this.i18nDetails = other.i18nDetails;
         this.elaboration = other.elaboration;
         this.messages = other.messages;
         this.cause = other.cause;
@@ -131,6 +157,14 @@ public class ErrorCode implements Serializable, Cloneable, OpaqueCollection {
 
     public void setDetails(String details) {
         this.details = details;
+    }
+
+    public String getI18nDetails() {
+        return i18nDetails;
+    }
+
+    public void setI18nDetails(String i18nDetails) {
+        this.i18nDetails = i18nDetails;
     }
 
     public ErrorCode copy() {
@@ -257,11 +291,16 @@ public class ErrorCode implements Serializable, Cloneable, OpaqueCollection {
         builder.append(String.format("[%s] %s", code == null ? "???" : code, details == null ? "" : details));
         if (opaque != null && !opaque.isEmpty()) {
             for (Map.Entry<String, Object> entry : opaque.entrySet()) {
+                String key = entry.getKey();
+                if (OPAQUE_KEY_TEMPLATE.equals(key) || isOpaqueKey(key)) {
+                    continue;
+                }
+
                 builder.append("\n");
                 for (int i = 0; i < level; i++) {
                     builder.append("  ");
                 }
-                builder.append(String.format("        * %s: %s", entry.getKey(), JSONObjectUtil.toJsonString(entry.getValue())));
+                builder.append(String.format("        * %s: %s", key, JSONObjectUtil.toJsonString(entry.getValue())));
             }
         }
 

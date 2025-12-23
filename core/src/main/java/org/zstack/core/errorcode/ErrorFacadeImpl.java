@@ -18,6 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.utils.opaque.OpaqueConstants.*;
+
 /**
  */
 public class ErrorFacadeImpl implements ErrorFacade {
@@ -47,11 +49,6 @@ public class ErrorFacadeImpl implements ErrorFacade {
             err.setCause(cause);
         }
         return err;
-    }
-
-    @Override
-    public ErrorCode instantiateErrorCode(Enum code, String details) {
-        return instantiateErrorCode(code.toString(), details);
     }
 
     private void replaceSystemError(ErrorCode err, String details) {
@@ -99,8 +96,34 @@ public class ErrorFacadeImpl implements ErrorFacade {
     }
 
     @Override
-    public ErrorCode instantiateErrorCode(String code, String details) {
-        return doInstantiateErrorCode(code, details, null);
+    public ErrorCode instantiateErrorCode(Enum<?> code, String fmt, Object... args) {
+        return instantiateErrorCode(code.toString(), fmt, args);
+    }
+
+    @Override
+    public ErrorCode instantiateErrorCode(String code, String fmt, Object... args) {
+        String details;
+        if (fmt == null) {
+            details = "";
+        } else if (args == null || args.length == 0) {
+            details = fmt;
+        } else {
+            try {
+                details = String.format(fmt, args);
+            } catch (Exception e) {
+                logger.warn("exception happened when format error message");
+                logger.warn(e.getMessage());
+                details = fmt;
+            }
+        }
+        ErrorCode errorCode = doInstantiateErrorCode(code, details, null)
+                .withOpaque(OPAQUE_KEY_TEMPLATE, fmt);
+        if (args != null) {
+            for (int i = 0; i < args.length; i++) {
+                errorCode.withOpaque(opaqueKeyForArg(i), args[i]);
+            }
+        }
+        return errorCode;
     }
 
     @Override
