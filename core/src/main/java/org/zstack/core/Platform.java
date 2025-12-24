@@ -29,7 +29,6 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountConstant;
-import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.utils.*;
 import org.zstack.utils.data.StringTemplate;
@@ -104,7 +103,7 @@ public class Platform {
     }
 
     private static Map<String, String> linkGlobalPropertyMap(String prefix) {
-        Map<String, String> ret = new HashMap<String, String>();
+        Map<String, String> ret = new HashMap<>();
         Map<String, String> map = getGlobalPropertiesStartWith(prefix);
         if (map.isEmpty()) {
             return ret;
@@ -118,7 +117,7 @@ public class Platform {
         return ret;
     }
 
-    private static void linkGlobalProperty(Class clz, Map<String, String> propertiesMap) {
+    private static void linkGlobalProperty(Class<?> clz, Map<String, String> propertiesMap) {
         for (Field f : clz.getDeclaredFields()) {
             GlobalProperty at = f.getAnnotation(GlobalProperty.class);
             if (at == null) {
@@ -214,13 +213,12 @@ public class Platform {
 
     private static List<String> linkGlobalPropertyList(String name) {
         Map<String, String> map = getGlobalPropertiesStartWith(name);
-        List<String> ret = new ArrayList<String>(map.size());
+        List<String> ret = new ArrayList<>(map.size());
         if (map.isEmpty()) {
             return ret;
         }
 
-        List<String> orderedKeys = new ArrayList<String>();
-        orderedKeys.addAll(map.keySet());
+        List<String> orderedKeys = new ArrayList<>(map.keySet());
         Collections.sort(orderedKeys);
 
         for (String key : orderedKeys) {
@@ -266,7 +264,7 @@ public class Platform {
 
         logger.debug(String.format("system properties:\n%s", StringUtils.join(lst, ",")));
 
-        for (Class clz : clzs) {
+        for (Class<?> clz : clzs) {
             linkGlobalProperty(clz, propertiesMap);
         }
     }
@@ -306,6 +304,7 @@ public class Platform {
         FileUtils.writeStringToFile(pidFile, pid);
     }
 
+    @SuppressWarnings("unchecked")
     private static void prepareDefaultDbProperties() {
         if (DatabaseGlobalProperty.DbUrl != null) {
             String dbUrl = DatabaseGlobalProperty.DbUrl;
@@ -623,21 +622,11 @@ public class Platform {
         return System.getProperty(name);
     }
 
-    public static String getGlobalPropertyAnnotationName(Class clz, String fieldName) {
-        try {
-            String name = clz.getDeclaredField(fieldName).getAnnotation(GlobalProperty.class).name().trim();
-            /* remove the last character '.' */
-            return name.substring(0, name.length() - 1);
-        } catch (Exception e) {
-            return "";
-        }
-    }
-
     public static Map<String, String> getGlobalPropertiesStartWith(String prefix) {
         Properties props = System.getProperties();
-        Enumeration e = props.propertyNames();
+        Enumeration<?> e = props.propertyNames();
 
-        Map<String, String> ret = new HashMap<String, String>();
+        Map<String, String> ret = new HashMap<>();
         while (e.hasMoreElements()) {
             String key = (String) e.nextElement();
             if (key.startsWith(prefix)) {
@@ -849,8 +838,8 @@ public class Platform {
         return toI18nString(code, null, args);
     }
 
-    public static String toI18nString(String code, Locale l, List args) {
-        return toI18nString(code, l, args.toArray(new Object[args.size()]));
+    public static String toI18nString(String code, Locale l, List<Object> args) {
+        return toI18nString(code, l, args.toArray(new Object[0]));
     }
 
     private static String stringFormat(String fmt, Object...args) {
@@ -964,8 +953,6 @@ public class Platform {
         }
         return null;
     }
-
-    private static List<Enum> allowCode = CollectionDSL.list(IdentityErrors.INVALID_SESSION);
 
     public static ErrorCode err(Enum<?> errCode, String fmt, Object...args) {
         ErrorCode errorCode = getComponentLoader().getComponent(ErrorFacade.class)
