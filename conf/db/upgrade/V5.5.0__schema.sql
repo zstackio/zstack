@@ -474,3 +474,5 @@ SELECT uuid, 0 FROM SdnControllerVO where vendorType = 'Ovn';
 
 CALL ADD_COLUMN('ModelServiceInstanceVO', 'architecture', 'VARCHAR(32)', 1, NULL);
 CALL ADD_COLUMN('ModelServiceInstanceVO', 'gpuVendor', 'VARCHAR(128)', 1, NULL);
+
+CALL ADD_COLUMN('ModelVO', 'dtype', 'varchar(32)', 1, NULL);
