@@ -8,7 +8,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/hosts/release",
         method = HttpMethod.POST,
-        responseClass = APIReleaseHostEvent.class,
+        responseClass = APIReleaseHostReply.class,
         parameterName = "params"
 )
 public class APIReleaseHostMsg extends APISyncCallMessage {

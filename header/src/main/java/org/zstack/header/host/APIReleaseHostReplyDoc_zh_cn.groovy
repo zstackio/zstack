@@ -9,7 +9,7 @@ doc {
 
 	ref {
 		name "inventory"
-		path "org.zstack.header.host.APIReleaseHostEvent.inventory"
+		path "org.zstack.header.host.APIReleaseHostReply.inventory"
 		desc "主机清单信息"
 		type "HostInventory"
 		since "5.4.6"
@@ -23,7 +23,7 @@ doc {
 	}
 	ref {
 		name "error"
-		path "org.zstack.header.host.APIReleaseHostEvent.error"
+		path "org.zstack.header.host.APIReleaseHostReply.error"
 		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
 		type "ErrorCode"
 		since "5.4.6"

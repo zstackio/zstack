@@ -130,6 +130,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }
     }
     private void handle(APIReleaseHostMsg msg) {
+        APIReleaseHostReply reply = new APIReleaseHostReply();
+
         String tag = HostSystemTags.SYSTEM_UUID.instantiateTag(
                 Collections.singletonMap(HostSystemTags.SYSTEM_UUID_TOKEN, msg.getProductUuid())
         );
@@ -141,7 +143,9 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 .findValue();
 
         if (hostUuid == null) {
-            throw new OperationFailureException(argerr("cannot find host with productUuid[%s]", msg.getProductUuid()));
+            reply.setError(argerr("cannot find host with productUuid[%s]", msg.getProductUuid()));
+            bus.reply(msg, reply);
+            return;
         }
 
         HostVO host = Q.New(HostVO.class)
@@ -149,10 +153,10 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 .find();
 
         if (host == null) {
-            throw new OperationFailureException(err(SysErrors.RESOURCE_NOT_FOUND, "host[uuid:%s] not found, it may have been deleted", hostUuid));
+            reply.setError(err(SysErrors.RESOURCE_NOT_FOUND, "host[uuid:%s] not found, it may have been deleted", hostUuid));
+            bus.reply(msg, reply);
+            return;
         }
-
-        APIReleaseHostEvent evt = new APIReleaseHostEvent(msg.getId());
 
         if (host.getState() == HostState.Disabled) {
             ChangeHostStateMsg cmsg = new ChangeHostStateMsg();
@@ -160,23 +164,17 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             cmsg.setStateEvent(HostStateEvent.enable.toString());
             bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, hostUuid);
 
-            bus.send(cmsg, new CloudBusCallBack(msg) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        evt.setError(reply.getError());
-                    } else {
-                        evt.setInventory(((ChangeHostStateReply) reply).getInventory());
-                        evt.setSuccess(true);
-                    }
-                    bus.publish(evt);
-                }
-            });
+            MessageReply r = bus.call(cmsg);
+            if (!r.isSuccess()) {
+                reply.setError(r.getError());
+            } else {
+                reply.setInventory(((ChangeHostStateReply) r).getInventory());
+            }
         } else {
-            evt.setInventory(HostInventory.valueOf(host));
-            evt.setSuccess(true);
-            bus.publish(evt);
+            reply.setInventory(HostInventory.valueOf(host));
         }
+
+        bus.reply(msg, reply);
     }
 
 
