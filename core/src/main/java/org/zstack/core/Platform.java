@@ -985,153 +985,24 @@ public class Platform {
         return errorCode;
     }
 
-    /**
-     * use err(errCode, fmt, args...).withCause(cause)
-     */
-    @Deprecated
-    public static ErrorCode err(Enum errCode, ErrorCode cause, String fmt, Object...args) {
-        ErrorFacade errf = getComponentLoader().getComponent(ErrorFacade.class);
-        String details = null;
-        if (fmt != null) {
-            try {
-                details = SysErrors.INTERNAL == errCode ? String.format(fmt, args) : toI18nString(fmt, args);
-            } catch (Exception e) {
-                logger.warn("exception happened when format error message");
-                logger.warn(e.getMessage());
-                details = fmt;
-            }
-        }
-
-        ErrorCode result = errf.instantiateErrorCode(errCode, details, cause);
-        handleErrorElaboration(errCode, fmt, result, cause, args);
-        addErrorCounter(result);
-
-        return result;
-    }
-
     public static ErrorCode multiErr(Collection<ErrorCode> causes, String fmt, Object...args) {
-        return err(SysErrors.MULTIPLE_REASONS, null, fmt, args)
+        return err(SysErrors.MULTIPLE_REASONS, fmt, args)
                 .withCause(causes);
     }
 
     public static ErrorCode multiErr(Collection<ErrorCode> causes) {
-        return err(SysErrors.MULTIPLE_REASONS, (ErrorCode) null, "Multiple errors")
+        return err(SysErrors.MULTIPLE_REASONS, "Multiple errors")
                 .withCause(causes);
     }
 
     public static ErrorCode multiErr(ErrorCodeList errorCodeList, String fmt, Object...args) {
-        return err(SysErrors.MULTIPLE_REASONS, null, fmt, args)
+        return err(SysErrors.MULTIPLE_REASONS, fmt, args)
                 .withCause(errorCodeList);
     }
 
     public static ErrorCode multiErr(ErrorCodeList errorCodeList) {
-        return err(SysErrors.MULTIPLE_REASONS, (ErrorCode) null, "Multiple errors")
+        return err(SysErrors.MULTIPLE_REASONS, "Multiple errors")
                 .withCause(errorCodeList);
-    }
-
-    private static void findElaborationFromCoreError(ErrorCode cause, ErrorCode result) {
-        ErrorCode coreError = cause == null ? getCoreError(result) : getCoreError(cause);
-        // use the core cause as elaboration if it existed
-        if (coreError.getElaboration() != null) {
-            result.setCost(coreError.getCost());
-            result.setElaboration(coreError.getElaboration());
-            result.setMessages(coreError.getMessages());
-        } else if (cause != null && !cause.getCauses().isEmpty()) {
-            // suppose elaborations are existed in causes...
-            String costs = null;
-            String elas = null;
-            ErrorCodeElaboration messages = null;
-            for (ErrorCode c: cause.getCauses()) {
-                ErrorCode lcError = getCoreError(c);
-                if (lcError.getElaboration() != null && !lcError.getElaboration().equals(elas) && !lcError.getMessages().equals(messages)) {
-                    costs = costs == null ? lcError.getCost() : addTwoCosts(costs, lcError.getCost());
-                    elas = elas == null ? lcError.getElaboration() : String.join(",", elas, lcError.getElaboration());
-                    messages = messages == null ? lcError.getMessages() : messages.addElaborationMessage(lcError.getMessages());
-                }
-            }
-            result.setCost(costs);
-            result.setElaboration(elas);
-            result.setMessages(messages);
-        }
-    }
-
-    private static void generateElaboration(Enum errCode, ErrorCode result, String fmt, Object...args) {
-        // try to find same error with fmt and args
-        ErrorCodeElaboration ela = elaborate(fmt, args);
-
-        // only elaborate the error code in allowCode if fmt missed
-        if (ela == null && allowCode.contains(errCode)) {
-            ela = elaborate(result.getDescription());
-        }
-
-        // failed to find elaboration, add the error code fmt string to missed list
-        if (ela == null) {
-            if (args != null) {
-                StringSimilarity.addMissed(String.format(fmt, args));
-            } else {
-                StringSimilarity.addMissed(fmt);
-            }
-
-            // note: if allowCode failed to find elaboration,
-            // we still need to add the description to missed list
-            if (allowCode.contains(errCode)) {
-                StringSimilarity.addMissed(result.getDescription());
-            }
-
-            return;
-        }
-
-        String prefix, msg;
-        if (locale.equals(Locale.SIMPLIFIED_CHINESE)) {
-            prefix = "错误信息: %s\n";
-            msg = ela.getMessage_cn();
-        } else {
-            prefix = "Error message: %s\n";
-            msg = ela.getMessage_en();
-        }
-
-        // tricky code that we treat the only one args error maybe use the cause or
-        // error from other component directly, so we need to check if the args is
-        // matched with the regex at first
-        if (args != null && args.length == 1 && StringSimilarity.isRegexMatched(ela.getRegex(), String.valueOf(args[0]))) {
-            result.setMessages(ErrorCodeElaboration.clone(ela)
-                    .removeCnMessageIfLocaleIsNotMatch(locale));
-            String formatError = String.format(prefix, args[0]);
-            result.setElaboration(StringSimilarity.formatElaborationDeprecated(formatError));
-        } else {
-            result.setMessages(ErrorCodeElaboration.cloneSimple(ela, args)
-                    .removeCnMessageIfLocaleIsNotMatch(locale));
-            result.setElaboration(StringSimilarity.formatElaborationDeprecated(String.format(prefix, msg), args));
-        }
-
-        StringSimilarity.addErrors(fmt, ela);
-    }
-
-    private static void handleErrorElaboration(Enum errCode, String fmt, ErrorCode result, ErrorCode cause, Object...args) {
-        if (!CoreGlobalProperty.ENABLE_ELABORATION) {
-            return;
-        }
-
-        // start to generate elaboration...
-        try {
-            findElaborationFromCoreError(cause, result);
-
-            // if the elaboration is not found, try to generate it
-            if (result.getElaboration() == null && cause == null) {
-                long start = System.currentTimeMillis();
-                generateElaboration(errCode, result, fmt, args);
-                result.setCost((System.currentTimeMillis() - start) + "ms");
-            }
-        } catch (Throwable e) {
-            logger.warn("exception happened when found elaboration");
-            logger.warn(e.getMessage());
-        }
-    }
-
-    private static String addTwoCosts(String origin, String increase) {
-        long c1 = Long.parseLong(origin.substring(0, origin.length() - 2).trim());
-        long c2 = Long.parseLong(increase.substring(0, increase.length() - 2).trim());
-        return (c1 + c2) + "ms";
     }
 
     private static ErrorCode getCoreError(ErrorCode result) {
@@ -1173,14 +1044,6 @@ public class Platform {
         return err(SysErrors.OPERATION_ERROR, fmt, args);
     }
 
-    /**
-     * use operr(fmt, args...).withCause(cause)
-     */
-    @Deprecated
-    public static ErrorCode operr(ErrorCode cause, String fmt, Object...args) {
-        return err(SysErrors.OPERATION_ERROR, cause, fmt, args);
-    }
-
     public static ErrorCode canerr(String fmt, Object...args) {
         return err(SysErrors.CANCEL_ERROR, fmt, args);
     }
@@ -1191,14 +1054,6 @@ public class Platform {
 
     public static ErrorCode touterr(String fmt, Object...args) {
         return err(SysErrors.TIMEOUT, fmt, args);
-    }
-
-    /**
-     * use touterr(fmt, args...).withCause(cause)
-     */
-    @Deprecated
-    public static ErrorCode touterr(ErrorCode cause, String fmt, Object...args) {
-        return err(SysErrors.TIMEOUT, cause, fmt, args);
     }
 
     public static ErrorCode ioerr(String fmt, Object...args) {
