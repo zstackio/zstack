@@ -1064,6 +1064,10 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         refreshVmSecurityGroupRulesBySdn(sdnNicUuidsMap, msg, new Completion(new NopeCompletion()) {
             @Override
             public void success() {
+                if (otherNicUuids.isEmpty()) {
+                    bus.reply(msg, reply);
+                    return;
+                }
                 refreshVmSecurityGroupRules(otherNicUuids, msg);
                 bus.reply(msg, reply);
             }
