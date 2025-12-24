@@ -25,6 +25,7 @@ import org.zstack.sdk.ZSClient
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategy
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategyFactory
 import org.zstack.testlib.util.Retry
+import org.zstack.testlib.util.TestConfigUtils
 import org.zstack.utils.ShellUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
@@ -49,7 +50,6 @@ abstract class Test extends ApiHelper implements Retry {
     static Object deployer
     static Map<String, String> apiPaths = new ConcurrentHashMap<>()
 
-    private final static long DEFAULT_MESSAGE_TIMEOUT_SECS = TimeUnit.SECONDS.toMillis(25)
     static Map<Class, Closure> functionForMockTestObjectFactory = new ConcurrentHashMap<>()
 
     protected List<Closure> methodsOnClean = []
@@ -79,21 +79,6 @@ abstract class Test extends ApiHelper implements Retry {
 
             return entry.value(obj)
         }
-    }
-
-    static long getMessageTimeoutMillsConfig(){
-        String msgTimeoutStr = System.getProperty("msgTimeoutMins")
-
-        if(System.getProperty("maven.surefire.debug") != null && msgTimeoutStr == null){
-            return TimeUnit.MINUTES.toMillis(30)
-        }
-
-        if(msgTimeoutStr == null || msgTimeoutStr.isEmpty()){
-            return DEFAULT_MESSAGE_TIMEOUT_SECS
-        }
-
-        long msgTimeout = Long.parseLong(msgTimeoutStr)
-        return TimeUnit.MINUTES.toMillis(msgTimeout)
     }
 
     private final int PHASE_NONE = 0
@@ -318,8 +303,8 @@ abstract class Test extends ApiHelper implements Retry {
     private void hijackService() {
         CloudBus bus = bean(CloudBus.class)
         if(bus instanceof CloudBusImpl2){
-            logger.info(String.format("CloudBus message timeout: %s mills", getMessageTimeoutMillsConfig()))
-            ((CloudBusImpl2)bus).setDEFAULT_MESSAGE_TIMEOUT(getMessageTimeoutMillsConfig())
+            logger.info(String.format("CloudBus message timeout: %s mills", TestConfigUtils.getMessageTimeoutMillisConfig()))
+            ((CloudBusImpl2)bus).setDEFAULT_MESSAGE_TIMEOUT(TestConfigUtils.getMessageTimeoutMillisConfig())
         }
 
         def serviceId = "test.hijack.service"

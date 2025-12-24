@@ -14,6 +14,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterGlobalProperty
 import org.zstack.sdk.ZSClient
 import org.zstack.sdk.ZSConfig
 import org.zstack.storage.backup.sftp.SftpBackupStorageGlobalProperty
+import org.zstack.testlib.util.TestConfigUtils
 import org.zstack.utils.Utils
 
 import java.util.concurrent.TimeUnit
@@ -85,7 +86,7 @@ class WebBeanConstructor extends BeanConstructor {
                         .setPort(port)
                         .setWebHook(WEB_HOOK_PATH)
                         .setDefaultPollingInterval(100, TimeUnit.MILLISECONDS)
-                        .setDefaultPollingTimeout(Test.getMessageTimeoutMillsConfig(), TimeUnit.MILLISECONDS)
+                        .setDefaultPollingTimeout(TestConfigUtils.getMessageTimeoutMillisConfig(), TimeUnit.MILLISECONDS)
                         .setReadTimeout(10, TimeUnit.MINUTES)
                         .setWriteTimeout(10, TimeUnit.MINUTES)
                         .build()
