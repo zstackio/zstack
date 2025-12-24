@@ -843,7 +843,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                                 Vip v = new Vip(struct.getVip().getUuid());
                                 v.setStruct(vipStruct);
                                 v.release(new NopeCompletion());
-                                trigger.fail(err(SysErrors.CREATE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                                trigger.fail(errorCode);
                             }
                         });
                     }

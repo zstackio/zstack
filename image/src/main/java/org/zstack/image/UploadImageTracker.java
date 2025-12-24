@@ -211,7 +211,7 @@ public class UploadImageTracker {
 
                 boolean downloadingImageSuspendedTooLong = !reply.isDownloadComplete() && overMaxIdleTime(reply.getLastOpTime()) ;
                 if (downloadingImageSuspendedTooLong && reply.isSupportSuspend()) {
-                    markFailure(err(ImageErrors.UPLOAD_IMAGE_INTERRUPTED, reply.getError(),
+                    markFailure(err(ImageErrors.UPLOAD_IMAGE_INTERRUPTED,
                             "uploading has been inactive more than %d sec", maxIdleSecond));
                     return true;
                 }

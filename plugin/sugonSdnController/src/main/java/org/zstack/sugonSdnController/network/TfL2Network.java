@@ -1,15 +1,12 @@
 package org.zstack.sugonSdnController.network;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.sugonSdnController.controller.SugonSdnController;
 import org.zstack.sugonSdnController.controller.SugonSdnControllerConstant;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l2.*;
@@ -18,9 +15,6 @@ import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerManager;
 import org.zstack.sdnController.header.SdnControllerVO;
 import org.zstack.sdnController.header.SdnControllerVO_;
-
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
 
 public class TfL2Network extends L2NoVlanNetwork implements TfL2NetworkExtensionPoint{
 
@@ -82,7 +76,7 @@ public class TfL2Network extends L2NoVlanNetwork implements TfL2NetworkExtension
 
             @Override
             public void fail(ErrorCode errorCode) {
-                reply.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
         });
@@ -119,7 +113,7 @@ public class TfL2Network extends L2NoVlanNetwork implements TfL2NetworkExtension
 
             @Override
             public void fail(ErrorCode errorCode) {
-                reply.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
         });
@@ -202,7 +196,7 @@ public class TfL2Network extends L2NoVlanNetwork implements TfL2NetworkExtension
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });

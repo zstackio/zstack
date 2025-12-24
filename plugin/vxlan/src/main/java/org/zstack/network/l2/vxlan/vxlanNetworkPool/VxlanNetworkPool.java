@@ -2,10 +2,6 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.*;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.network.l2.vxlan.vxlanNetwork.*;
-import org.zstack.utils.network.NetworkUtils;
-import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.cluster.ClusterVO_;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +20,6 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.WhileCompletion;
 import org.zstack.header.core.workflow.*;
@@ -601,7 +596,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setError(err(L2Errors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });
@@ -879,7 +874,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             @Override
             public void fail(ErrorCode errorCode) {
                 afterAttachVxlanPoolFromClusterFailed(msg);
-                evt.setError(err(L2Errors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });

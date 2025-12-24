@@ -869,7 +869,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                     public void fail(ErrorCode errorCode) {
                         extpEmitter.failToDetach(self, msg.getClusterUuid());
                         logger.warn(errorCode.getReadableDetails());
-                        reply.setError(err(PrimaryStorageErrors.DETACH_ERROR, errorCode, errorCode.getDetails()));
+                        reply.setError(errorCode);
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -1513,7 +1513,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             @Override
             public void fail(ErrorCode errorCode) {
                 extpEmitter.failToAttach(self, msg.getClusterUuid());
-                evt.setError(err(PrimaryStorageErrors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(errorCode);
                 bus.publish(evt);
                 completion.done();
             }
@@ -1741,7 +1741,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                evt.setError(errCode);
                 bus.publish(evt);
                 completion.done();
             }

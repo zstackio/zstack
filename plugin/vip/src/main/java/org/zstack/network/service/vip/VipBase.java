@@ -793,7 +793,7 @@ public class VipBase {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                        evt.setError(errCode);
                         bus.publish(evt);
                     }
                 });

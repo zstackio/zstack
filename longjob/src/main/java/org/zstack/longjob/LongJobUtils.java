@@ -41,8 +41,7 @@ public class LongJobUtils {
     }
 
     public static ErrorCode cancelErr(String longJobUuid, ErrorCode cause) {
-        return err(LongJobErrors.CANCELED, cause,
-                "long job[uuid:%s] has been canceled", longJobUuid);
+        return err(LongJobErrors.CANCELED, "long job[uuid:%s] has been canceled", longJobUuid).withCause(cause);
     }
 
     public static ErrorCode noncancelableErr(String error) {
@@ -56,8 +55,10 @@ public class LongJobUtils {
     }
 
     public static ErrorCode interruptedErr(String longJobUuid, ErrorCode cause) {
-        return err(LongJobErrors.INTERRUPTED, cause, "some error interrupt long job[uuid:%s]," +
-                " analysis the cause to fix it and resume long job if you want to continue.", longJobUuid);
+        return err(LongJobErrors.INTERRUPTED,
+                "some error interrupt long job[uuid:%s], analysis the cause to fix it and resume long job if you want to continue.",
+                longJobUuid)
+                .withCause(cause);
     }
 
     public static ErrorCode buildErrIfCanceled() {

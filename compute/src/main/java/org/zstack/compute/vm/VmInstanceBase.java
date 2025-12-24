@@ -83,7 +83,6 @@ import org.zstack.utils.network.NicIpAddressInfo;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
-import org.zstack.utils.opaque.OpaqueConstants;
 
 import javax.persistence.PersistenceException;
 import javax.persistence.Tuple;
@@ -603,7 +602,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 ExecuteCrashStrategyReply reply = new ExecuteCrashStrategyReply();
-                reply.setError(err(VmErrors.REBOOT_ERROR, errorCode, errorCode.getDetails()));
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
                 chain.next();
             }
@@ -2717,7 +2716,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 RebootVmInstanceReply reply = new RebootVmInstanceReply();
-                reply.setError(err(VmErrors.REBOOT_ERROR, errorCode, errorCode.getDetails()));
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
                 chain.next();
             }
@@ -2757,7 +2756,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 StopVmInstanceReply reply = new StopVmInstanceReply();
-                reply.setError(err(VmErrors.STOP_ERROR, errorCode, errorCode.getDetails()));
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
                 chain.next();
             }
@@ -2881,7 +2880,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 AttachNicToVmReply r = new AttachNicToVmReply();
                 if (!reply.isSuccess()) {
-                    r.setError(err(VmErrors.ATTACH_NETWORK_ERROR, r.getError(), r.getError().getDetails()));
+                    r.setError(reply.getError());
                 }
                 bus.reply(msg, r);
             }
@@ -7263,7 +7262,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
                 extEmitter.failedToAttachVolume(getSelfInventory(), volume, errCode, data);
-                reply.setError(err(ATTACH_VOLUME_ERROR, errCode, errCode.getDetails()));
+                reply.setError(errCode);
                 bus.reply(msg, reply);
                 completion.done();
             }
@@ -8048,7 +8047,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                completion.fail(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                completion.fail(errCode);
             }
         }).start();
     }
@@ -8340,7 +8339,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 APIRebootVmInstanceEvent evt = new APIRebootVmInstanceEvent(msg.getId());
-                evt.setError(err(VmErrors.REBOOT_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(errorCode);
                 bus.publish(evt);
                 taskChain.next();
             }
@@ -8357,7 +8356,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    evt.setError(err(VmErrors.REBOOT_ERROR, reply.getError(), reply.getError().getDetails()));
+                    evt.setError(reply.getError());
                 } else {
                     refreshVO();
                     evt.setInventory(getSelfInventory());
@@ -8382,7 +8381,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 APIStopVmInstanceEvent evt = new APIStopVmInstanceEvent(msg.getId());
-                evt.setError(err(VmErrors.STOP_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(errorCode);
                 bus.publish(evt);
                 taskChain.next();
             }
@@ -8500,7 +8499,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 APIPauseVmInstanceEvent evt = new APIPauseVmInstanceEvent(msg.getId());
-                evt.setError(err(VmErrors.SUSPEND_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(errorCode);
                 bus.publish(evt);
                 taskChain.next();
             }
@@ -8580,7 +8579,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 APIResumeVmInstanceEvent evt = new APIResumeVmInstanceEvent(msg.getId());
-                evt.setError(err(VmErrors.RESUME_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(errorCode);
                 bus.publish(evt);
                 taskChain.next();
             }

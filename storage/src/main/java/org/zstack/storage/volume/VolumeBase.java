@@ -2701,7 +2701,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });
@@ -3219,7 +3219,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        reply.setError(err(VolumeErrors.FLATTEN_ERROR, errorCode, "failed to flatten volume[uuid:%s]", self.getUuid()));
+                        reply.setError(err(VolumeErrors.FLATTEN_ERROR, "failed to flatten volume[uuid:%s]", self.getUuid())
+                                .withCause(errorCode));
                         bus.reply(msg, reply);
                         chain.next();
                     }
