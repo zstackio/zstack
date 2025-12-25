@@ -471,8 +471,8 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
                 .select(PrimaryStorageHostRefVO_.status)
                 .findValue();
         if (primaryStorageHostStatus == PrimaryStorageHostStatus.Disconnected) {
-            return operr("Can not attach volume to vm runs on host[uuid: %s] which is disconnected " +
-                    "with volume's storage[uuid: %s]", hostUuid, volumeVO.getPrimaryStorageUuid());
+            return operr("Can not attach volume to vm runs on host[uuid: %s] which is disconnected with volume's storage[uuid: %s]",
+                    hostUuid, volumeVO.getPrimaryStorageUuid());
         }
 
         return null;
@@ -681,8 +681,10 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
             }
         }
 
-        if (!errors.isEmpty()) {
-            throw new ApiMessageInterceptionException(argerr(errors.toString()));
+        if (errors.size() == 1) {
+            throw new ApiMessageInterceptionException(errors.get(0));
+        } else if (errors.size() > 1) {
+            throw new ApiMessageInterceptionException(argerr("invalid disk states").withCause(errors));
         }
     }
 
