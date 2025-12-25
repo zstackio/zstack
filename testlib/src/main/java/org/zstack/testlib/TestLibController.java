@@ -3,18 +3,29 @@ package org.zstack.testlib;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.zstack.testlib.util.TestConfigUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
+import javax.annotation.PreDestroy;
+import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by xing5 on 2017/2/12.
  */
 @Controller
 public class TestLibController {
+    private static final CLogger logger = Utils.getLogger(TestLibController.class);
+
+    private static final ExecutorService pool = Executors.newFixedThreadPool(32);
+
     @RequestMapping(
             value = "/**",
             method = {
@@ -28,6 +39,38 @@ public class TestLibController {
             return;
         }
 
-        Test.handleHttp(request, response);
+        final AsyncContext asyncContext = request.startAsync();
+        asyncContext.setTimeout(TestConfigUtils.getMessageTimeoutMillisConfig());
+
+        pool.submit(() -> {
+            try {
+                Test.handleHttp((HttpServletRequest) asyncContext.getRequest(),
+                        (HttpServletResponse) asyncContext.getResponse());
+            } catch (Throwable t) {
+                logger.error(t.getMessage(), t);
+                try {
+                    ((HttpServletResponse) asyncContext.getResponse()).sendError(500);
+                } catch (IOException e) {
+                    logger.error(e.getMessage(), e);
+                }
+            } finally {
+                asyncContext.complete();
+            }
+        });
+    }
+
+    @PreDestroy
+    public void shutdownPool() {
+        logger.info("Shutting down TestLibController pool");
+        pool.shutdown();
+        try {
+            if (!pool.awaitTermination(10, TimeUnit.SECONDS)) {
+                logger.warn("Pool did not terminate within timeout, forcing shutdown");
+                pool.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            pool.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 }

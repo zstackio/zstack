@@ -26,11 +26,6 @@
             <version>4.11.0</version>
         </dependency>
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
             <version>9.4.49.v20220914</version>
@@ -50,8 +45,6 @@
             <artifactId>javaparser-core</artifactId>
             <version>3.0.1</version>
         </dependency>
-
-
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>core</artifactId>
@@ -219,6 +212,12 @@
         <dependency>
             <groupId>org.jasig.cas.client</groupId>
             <artifactId>cas-client-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>3.1.0</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
