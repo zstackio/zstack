@@ -236,6 +236,15 @@
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsManagerImpl.java"
   },
   {
+    "raw": "failed to check guest tools on host[uuid:%s]",
+    "en_US": "failed to check guest tools on host[uuid:{0}]",
+    "zh_CN": "无法检查主机 {0} 的 VM-Tools",
+    "arguments": [
+      "host.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/guesttools/GuestToolsManagerImpl.java"
+  },
+  {
     "raw": "failed to set vm[uuid: %s, name: %s] hostname, because qga state is not running and there is no dhcp service",
     "en_US": "failed to set vm[uuid: {0}, name: {1}] hostname, because qga state is not running and there is no dhcp service",
     "zh_CN": "无法设置VM[uuid：{0}，名称：{1}]主机名，因为QGA状态未在运行，并且没有DHCP服务",
@@ -332,6 +341,15 @@
     "fileName": "src/main/java/org/zstack/guesttools/kvm/GuestToolsOnKvmBackend.java"
   },
   {
+    "raw": "failed to detach guest tools in vm[uuid:%s]",
+    "en_US": "failed to detach guest tools in vm[uuid:{0}]",
+    "zh_CN": "无法从虚拟机 {0} 中卸载 VM-Tools",
+    "arguments": [
+      "vm.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/guesttools/kvm/GuestToolsOnKvmBackend.java"
+  },
+  {
     "raw": "%s",
     "en_US": "{0}",
     "zh_CN": "{0}",
@@ -375,6 +393,15 @@
     "arguments": [
       "vm.getUuid()",
       "rsp.getError()"
+    ],
+    "fileName": "src/main/java/org/zstack/guesttools/kvm/GuestToolsOnKvmBackend.java"
+  },
+  {
+    "raw": "failed to get guest tools state from prometheus: [metric\u003d%s]",
+    "en_US": "failed to get guest tools state from prometheus: [metric\u003d{0}]",
+    "zh_CN": "无法从 Prometheus 获取 metric={0} 的 VM-Tools 状态",
+    "arguments": [
+      "metricName"
     ],
     "fileName": "src/main/java/org/zstack/guesttools/kvm/GuestToolsOnKvmBackend.java"
   },

@@ -76,7 +76,16 @@
   {
     "raw": "long job[uuid:%s] has been canceled",
     "en_US": "long job[uuid:{0}] has been canceled",
-    "zh_CN": "",
+    "zh_CN": "长任务 {0} 已被取消",
+    "arguments": [
+      "longJobUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/longjob/LongJobUtils.java"
+  },
+  {
+    "raw": "some error interrupt long job[uuid:%s], analysis the cause to fix it and resume long job if you want to continue.",
+    "en_US": "some error interrupt long job[uuid:{0}], analysis the cause to fix it and resume long job if you want to continue.",
+    "zh_CN": "长任务 {0} 运行出错，请检查原因并恢复运行。",
     "arguments": [
       "longJobUuid"
     ],

@@ -1,5 +1,19 @@
 [
   {
+    "raw": "InfoSecEncryptDriver encrypt failed",
+    "en_US": "InfoSecEncryptDriver encrypt failed",
+    "zh_CN": "InfoSecEncryptDriver 加密失败",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/testlib/premium/crypto/EncryptDriverSimulator.java"
+  },
+  {
+    "raw": "InfoSecEncryptDriver decrypt failed",
+    "en_US": "InfoSecEncryptDriver decrypt failed",
+    "zh_CN": "InfoSecEncryptDriver 解密失败",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/testlib/premium/crypto/EncryptDriverSimulator.java"
+  },
+  {
     "raw": "encrypt data[%s] or algType[%s] is null",
     "en_US": "encrypt data[{0}] or algType[{1}] is null",
     "zh_CN": "",

@@ -67,6 +67,13 @@
     "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
   },
   {
+    "raw": "access-token is invalid",
+    "en_US": "access-token is invalid",
+    "zh_CN": "访问令牌无效",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
+  },
+  {
     "raw": "no management node is available to communicate with ZCE-X: xms-cli is missing",
     "en_US": "no management node is available to communicate with ZCE-X: xms-cli is missing",
     "zh_CN": "",
@@ -79,6 +86,15 @@
     "zh_CN": "",
     "arguments": [
       "msg.getManagementIp()"
+    ],
+    "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
+  },
+  {
+    "raw": "failed to create alert platform from ZCE-X[uuid\u003d%s]",
+    "en_US": "failed to create alert platform from ZCE-X[uuid\u003d{0}]",
+    "zh_CN": "创建 ZCE-X 告警平台失败",
+    "arguments": [
+      "msg.getUuid()"
     ],
     "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
   },
@@ -98,6 +114,20 @@
     "arguments": [
       "e.getMessage()"
     ],
+    "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
+  },
+  {
+    "raw": "failed to generate ZCE-X env config from template",
+    "en_US": "failed to generate ZCE-X env config from template",
+    "zh_CN": "生成 ZCE-X 环境配置文件失败",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
+  },
+  {
+    "raw": "failed to generate admin token",
+    "en_US": "failed to generate admin token",
+    "zh_CN": "生成 ZCE-X 管理员令牌失败",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
   },
   {
@@ -192,9 +222,51 @@
     "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
   },
   {
+    "raw": "failed to get cluster from ZCE-X",
+    "en_US": "failed to get cluster from ZCE-X",
+    "zh_CN": "获取 ZCE-X 集群失败",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zcex/client/ZceXHttpClient.java"
+  },
+  {
     "raw": "no cluster exists in ZCE-X",
     "en_US": "no cluster exists in ZCE-X",
     "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zcex/client/ZceXHttpClient.java"
+  },
+  {
+    "raw": "failed to get licenses from ZCE-X",
+    "en_US": "failed to get licenses from ZCE-X",
+    "zh_CN": "获取 ZCE-X 许可证失败",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zcex/client/ZceXHttpClient.java"
+  },
+  {
+    "raw": "failed to get hosts from ZCE-X",
+    "en_US": "failed to get hosts from ZCE-X",
+    "zh_CN": "获取 ZCE-X 主机失败",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zcex/client/ZceXHttpClient.java"
+  },
+  {
+    "raw": "failed to get pools from ZCE-X",
+    "en_US": "failed to get pools from ZCE-X",
+    "zh_CN": "获取 ZCE-X 存储池失败",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zcex/client/ZceXHttpClient.java"
+  },
+  {
+    "raw": "failed to get version from ZCE-X",
+    "en_US": "failed to get version from ZCE-X",
+    "zh_CN": "获取 ZCE-X 版本失败",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zcex/client/ZceXHttpClient.java"
+  },
+  {
+    "raw": "failed to get users from ZCE-X",
+    "en_US": "failed to get users from ZCE-X",
+    "zh_CN": "获取 ZCE-X 用户失败",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/zcex/client/ZceXHttpClient.java"
   },
@@ -294,6 +366,13 @@
     "raw": "failed to create ZCE-X access token",
     "en_US": "failed to create ZCE-X access token",
     "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zcex/client/ZceXLocalClient.java"
+  },
+  {
+    "raw": "xms-cli returns invalid access_token",
+    "en_US": "xms-cli returns invalid access_token",
+    "zh_CN": "xms-cli 返回的访问令牌无效",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/zcex/client/ZceXLocalClient.java"
   },

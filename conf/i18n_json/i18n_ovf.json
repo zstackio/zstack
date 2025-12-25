@@ -130,6 +130,15 @@
     "fileName": "src/main/java/org/zstack/ovf/OvfHelper.java"
   },
   {
+    "raw": "invalid image info[fileName\u003d%s]",
+    "en_US": "invalid image info[fileName\u003d{0}]",
+    "zh_CN": "非法镜像信息 [fileName={0}]",
+    "arguments": [
+      "param.getFileName()"
+    ],
+    "fileName": "src/main/java/org/zstack/ovf/OvfHelper.java"
+  },
+  {
     "raw": "cancel create OVF VM process during image downloading",
     "en_US": "cancel create OVF VM process during image downloading",
     "zh_CN": "",
@@ -199,6 +208,13 @@
     "fileName": "src/main/java/org/zstack/ovf/OvfInterceptor.java"
   },
   {
+    "raw": "failed to parse OVF XML string",
+    "en_US": "failed to parse OVF XML string",
+    "zh_CN": "无法解析 OVF XML",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/ovf/OvfManagerImpl.java"
+  },
+  {
     "raw": "ova package[uuid: %s] not found.",
     "en_US": "ova package[uuid: {0}] not found.",
     "zh_CN": "未找到OVA程序包[uuid：{0}]。",
@@ -264,6 +280,13 @@
     "raw": "ovfInfo can not be null",
     "en_US": "ovfInfo can not be null",
     "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/ovf/datatype/CreateVmFromOvfBundle.java"
+  },
+  {
+    "raw": "failed to create ovf bundle",
+    "en_US": "failed to create ovf bundle",
+    "zh_CN": "无法创建 OVF 程序包",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/ovf/datatype/CreateVmFromOvfBundle.java"
   },

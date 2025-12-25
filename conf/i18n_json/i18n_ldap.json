@@ -1,8 +1,15 @@
 [
   {
+    "raw": "Cannot connect to LDAP/AD server",
+    "en_US": "Cannot connect to LDAP/AD server",
+    "zh_CN": "无法连接到 LDAP/AD 服务器",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/ldap/LdapApiInterceptor.java"
+  },
+  {
     "raw": "the ldap uid has already been bound to account[uuid\u003d%s]",
     "en_US": "the ldap uid has already been bound to account[uuid\u003d{0}]",
-    "zh_CN": "该 LDAP 服务器中的用户已经绑定了账户[UUID={0}]",
+    "zh_CN": "该 LDAP 服务器中的用户已经绑定了账户[UUID\u003d{0}]",
     "arguments": [
       "msg.getAccountUuid()"
     ],
@@ -84,7 +91,7 @@
   {
     "raw": "The LDAP server[url\u003d%s,base\u003d%s] already exists",
     "en_US": "The LDAP server[url\u003d{0},base\u003d{1}] already exists",
-    "zh_CN": "LDAP 服务器[URL={0}, 起始DN={1}]已存在",
+    "zh_CN": "LDAP 服务器[URL\u003d{0}, 起始DN\u003d{1}]已存在",
     "arguments": [
       "spec.getUrl()",
       "spec.getBaseDn()"
@@ -138,7 +145,7 @@
   {
     "raw": "user[%s] is not exists on LDAP/AD server[address\u003d%s, baseDN\u003d%s]",
     "en_US": "user[{0}] is not exists on LDAP/AD server[address\u003d{1}, baseDN\u003d{2}]",
-    "zh_CN": "LDAP 服务器 [URL={1}, 基础DN={2}] 中用户 [DN={0}] 不存在",
+    "zh_CN": "LDAP 服务器 [URL\u003d{1}, 基础DN\u003d{2}] 中用户 [DN\u003d{0}] 不存在",
     "arguments": [
       "fullDn",
       "ldap.getUrl()",
@@ -149,7 +156,7 @@
   {
     "raw": "failed to find dn[%s] on LDAP/AD server[address\u003d%s, baseDN\u003d%s]: %s",
     "en_US": "failed to find dn[{0}] on LDAP/AD server[address\u003d{1}, baseDN\u003d{2}]: {3}",
-    "zh_CN": "在 LDAP 服务器[URL={1}, 基础DN={2}] 中查找用户 [DN={0}] 失败, 原因是{3}",
+    "zh_CN": "在 LDAP 服务器[URL\u003d{1}, 基础DN\u003d{2}] 中查找用户 [DN\u003d{0}] 失败, 原因是{3}",
     "arguments": [
       "fullDn",
       "String.join(\", \", context.getLdapContextSource().getUrls())",
@@ -168,7 +175,7 @@
   {
     "raw": "failed to query LDAP/AD server[uuid\u003d%s] with filter[%s]: %s",
     "en_US": "failed to query LDAP/AD server[uuid\u003d{0}] with filter[{1}]: {2}",
-    "zh_CN": "用过滤器 [{1}] 查询 LDAP 服务器 [UUID={0}] 失败, 原因是 {2}",
+    "zh_CN": "用过滤器 [{1}] 查询 LDAP 服务器 [UUID\u003d{0}] 失败, 原因是 {2}",
     "arguments": [
       "ldap.getUuid()",
       "filter",

@@ -162,6 +162,16 @@
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
+    "raw": "cannot update Quota[name: %s] for the account[uuid: %s]",
+    "en_US": "cannot update Quota[name: {0}] for the account[uuid: {1}]",
+    "zh_CN": "无法更新帐户 {1} 的配额 {0}",
+    "arguments": [
+      "msg.getName()",
+      "msg.getIdentityUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
+  },
+  {
     "raw": "the quota[name:%s] of account[uuid:%s] can not be %d",
     "en_US": "the quota[name:{0}] of account[uuid:{1}] can not be {2}",
     "zh_CN": "帐户[uuid：{1}]的配额[名称：{0}]不能为{2}",
@@ -185,12 +195,26 @@
     "fileName": "src/main/java/org/zstack/identity/AccountQuotaUpdateChecker.java"
   },
   {
+    "raw": "session of message[%s] is null",
+    "en_US": "session of message[{0}] is null",
+    "zh_CN": "消息 {0} 的会话是空的",
+    "arguments": [
+      "msg.getMessageName()"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/AuthorizationManager.java"
+  },
+  {
+    "raw": "session uuid is null",
+    "en_US": "session uuid is null",
+    "zh_CN": "session uuid 是空的",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/identity/AuthorizationManager.java"
+  },
+  {
     "raw": "additional authentication required",
     "en_US": "additional authentication required",
     "zh_CN": "需要额外认证",
-    "arguments": [
-      "o.toString()"
-    ],
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/identity/AuthorizationManager.java"
   },
   {
@@ -226,22 +250,6 @@
     "zh_CN": "",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/identity/Session.java"
-  },
-  {
-    "raw": "session of message[%s] is null",
-    "en_US": "session of message[{0}] is null",
-    "zh_CN": "",
-    "arguments": [
-      "message.getMessageName()"
-    ],
-    "fileName": "src/main/java/org/zstack/identity/SessionAPIRequestChecker.java"
-  },
-  {
-    "raw": "session uuid is null",
-    "en_US": "session uuid is null",
-    "zh_CN": "",
-    "arguments": [],
-    "fileName": "src/main/java/org/zstack/identity/SessionAPIRequestChecker.java"
   },
   {
     "raw": "unsupported login type %s",

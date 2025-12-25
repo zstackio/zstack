@@ -62,6 +62,30 @@
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
+    "raw": "either instanceOfferingUuid or cpuNum and memorySize must be specified",
+    "en_US": "either instanceOfferingUuid or cpuNum and memorySize must be specified",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
+  },
+  {
+    "raw": "there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null",
+    "en_US": "there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null",
+    "zh_CN": "在三层网络uuid列表中指定了多个三层网络，但是默认的三层网络的uuid为空",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
+  },
+  {
+    "raw": "defaultL3NetworkUuid[uuid:%s] is not in l3NetworkUuids%s",
+    "en_US": "defaultL3NetworkUuid[uuid:{0}] is not in l3NetworkUuids{1}",
+    "zh_CN": "默认的三层网络的uuid是[uuid：{0}]，不在三层网络uuid列表{1}中",
+    "arguments": [
+      "msg.getDefaultL3NetworkUuid()",
+      "msg.getL3NetworkUuids()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
+  },
+  {
     "raw": "could not create vm, because at least one of field (l3NetworkUuids,zoneUuid,clusterUuid,hostUuid) should be set",
     "en_US": "could not create vm, because at least one of field (l3NetworkUuids,zoneUuid,clusterUuid,hostUuid) should be set",
     "zh_CN": "无法创建VM，因为至少应设置字段（l3NetworkUuids、zoneUuid、clusterUuid、hostUuid）中的一个",
@@ -421,23 +445,6 @@
       "volume.getUuid()"
     ],
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpTaskMonitor.java"
-  },
-  {
-    "raw": "there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null",
-    "en_US": "there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null",
-    "zh_CN": "在三层网络uuid列表中指定了多个三层网络，但是默认的三层网络的uuid为空",
-    "arguments": [],
-    "fileName": "src/main/java/org/zstack/storage/cdp/CreateVmFromCdpBackupLongJob.java"
-  },
-  {
-    "raw": "defaultL3NetworkUuid[uuid:%s] is not in l3NetworkUuids%s",
-    "en_US": "defaultL3NetworkUuid[uuid:{0}] is not in l3NetworkUuids{1}",
-    "zh_CN": "默认的三层网络的uuid是[uuid：{0}]，不在三层网络uuid列表{1}中",
-    "arguments": [
-      "apiMessage.getDefaultL3NetworkUuid()",
-      "apiMessage.getL3NetworkUuids()"
-    ],
-    "fileName": "src/main/java/org/zstack/storage/cdp/CreateVmFromCdpBackupLongJob.java"
   },
   {
     "raw": "No VM found for CDP task[uuid: %s]",
