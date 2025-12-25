@@ -1,6 +1,6 @@
 package org.zstack.header.host
 
-import org.zstack.header.host.APIReleaseHostEvent
+import org.zstack.header.host.APIReleaseHostReply
 
 doc {
     title "释放主机信息"
@@ -52,7 +52,7 @@ doc {
         }
 
         response {
-            clz APIReleaseHostEvent.class
+            clz APIReleaseHostReply.class
         }
     }
 }
