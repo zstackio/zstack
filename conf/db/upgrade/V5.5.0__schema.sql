@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`NfvInstGroupVO` (
     `vipUuid` VARCHAR(32) DEFAULT NULL,
     `ipv6VipUuid` VARCHAR(32) DEFAULT NULL,
     `primaryStorageUuid` VARCHAR(32) DEFAULT NULL,
-    `primaryStoragePoolUuid` VARCHAR(32) DEFAULT NULL,
+    `primaryStoragePoolUuid` VARCHAR(255) DEFAULT NULL,
     `clusterUuid` VARCHAR(32) DEFAULT NULL,
     `zoneUuid` VARCHAR(32) DEFAULT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
