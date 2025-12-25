@@ -203,6 +203,14 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         if (msg.getNicNames().size() > 1 && msg.getBondMode() == null) {
             msg.setBondMode(refVO.getBondMode());
         }
+
+        if (msg.getLacpMode() == null) {
+            msg.setLacpMode(refVO.getLacpMode());
+        }
+
+        if (msg.getBondMode() != null && msg.getBondMode().equals(L2NetworkConstant.BONDING_MODE_TCP) && msg.getLacpMode() == null) {
+            msg.setLacpMode(L2NetworkConstant.LACP_MODE_ACTIVE);
+        }
     }
 
     private void validateH3cTenantStatus(String l3NetworkUuid, String sdnControllerUuid) {
