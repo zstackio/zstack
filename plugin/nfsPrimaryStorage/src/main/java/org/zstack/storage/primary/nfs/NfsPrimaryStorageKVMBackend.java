@@ -157,8 +157,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             public void fail(ErrorCode errorCode) {
                 if (errorCode.getDetails().contains("java.net.SocketTimeoutException: Read timed out")) {
                     // socket read timeout is caused by timeout of mounting a wrong URL
-                    errorCode = touterr(errorCode, "mount timeout. Please the check if the URL[%s] is" +
-                            " valid to mount", inv.getUrl());
+                    errorCode = touterr("mount timeout. Please check if the URL[%s] is" +
+                            " valid to mount", inv.getUrl()).withCause(errorCode);
                 }
                 completion.fail(errorCode);
             }
