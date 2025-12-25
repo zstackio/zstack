@@ -8,4 +8,5 @@ public enum GpuVendor {
 	Huawei,
 	TianShu,
 	Other,
+	Alibaba,
 }
