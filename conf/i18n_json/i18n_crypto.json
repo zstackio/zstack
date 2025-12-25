@@ -26,6 +26,13 @@
     "fileName": "src/main/java/org/zstack/crypto/auth/AbstractCryptoAuthenticationFacade.java"
   },
   {
+    "raw": "failed to connect remote crypto server",
+    "en_US": "failed to connect remote crypto server",
+    "zh_CN": "连接到远程密钥（密评）服务器失败",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/crypto/auth/AbstractCryptoAuthenticationFacade.java"
+  },
+  {
     "raw": "parseCertificate failed: %s",
     "en_US": "parseCertificate failed: {0}",
     "zh_CN": "",
@@ -45,6 +52,13 @@
     "raw": "additional authentication failed",
     "en_US": "additional authentication failed",
     "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/crypto/auth/AbstractCryptoAuthenticationFacade.java"
+  },
+  {
+    "raw": "failed to parse certificate",
+    "en_US": "failed to parse certificate",
+    "zh_CN": "解析证书失败",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/crypto/auth/AbstractCryptoAuthenticationFacade.java"
   },
@@ -209,6 +223,13 @@
     "arguments": [
       "msg.getAuthenticationId()"
     ],
+    "fileName": "src/main/java/org/zstack/crypto/ccs/CCSCertificateManagerImpl.java"
+  },
+  {
+    "raw": "failed to decrypt cipher text",
+    "en_US": "failed to decrypt cipher text",
+    "zh_CN": "无法解密密文",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/crypto/ccs/CCSCertificateManagerImpl.java"
   },
   {
@@ -845,6 +866,13 @@
       "vo.getUuid()",
       "hmacTokenTokenRes.error"
     ],
+    "fileName": "src/main/java/org/zstack/crypto/securitymachine/thirdparty/infoSec/InfoSecSecretResourcePoolBase.java"
+  },
+  {
+    "raw": "failed to parse encrypt public key",
+    "en_US": "failed to parse encrypt public key",
+    "zh_CN": "无法分析加密公钥",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/crypto/securitymachine/thirdparty/infoSec/InfoSecSecretResourcePoolBase.java"
   }
 ]

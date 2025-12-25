@@ -9,6 +9,13 @@
     "fileName": "src/main/java/org/zstack/core/CoreManagerImpl.java"
   },
   {
+    "raw": "Multiple errors",
+    "en_US": "Multiple errors",
+    "zh_CN": "多重错误触发，详情请查看 causes",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/core/Platform.java"
+  },
+  {
     "raw": "fail to create new File[%s]",
     "en_US": "fail to create new File[{0}]",
     "zh_CN": "无法创建新文件[{0}]",

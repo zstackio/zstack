@@ -141,12 +141,33 @@
     "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
   },
   {
+    "raw": "failed to authorize in ZStone server",
+    "en_US": "failed to authorize in ZStone server",
+    "zh_CN": "无法登录 ZStone 服务器",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
+    "raw": "failed to get licenses from ZStone",
+    "en_US": "failed to get licenses from ZStone",
+    "zh_CN": "无法从 ZStone 获取许可证",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
     "raw": "failed to get licenses from ZStone: %s",
     "en_US": "failed to get licenses from ZStone: {0}",
     "zh_CN": "",
     "arguments": [
       "response.result.error"
     ],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
+    "raw": "failed to reload licenses from ZStone",
+    "en_US": "failed to reload licenses from ZStone",
+    "zh_CN": "无法从 ZStone 重新加载许可证",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
   },
   {
@@ -160,6 +181,48 @@
     "raw": "failed to get clusters from ZStone (version \u003e\u003d 5.4.x)",
     "en_US": "failed to get clusters from ZStone (version \u003e\u003d 5.4.x)",
     "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
+    "raw": "failed to get clusters from ZStone",
+    "en_US": "failed to get clusters from ZStone",
+    "zh_CN": "无法从 ZStone 获取集群信息",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
+    "raw": "failed to get host info from ZStone",
+    "en_US": "failed to get host info from ZStone",
+    "zh_CN": "无法从 ZStone 获取主机信息",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
+    "raw": "failed to get pool info from ZStone",
+    "en_US": "failed to get pool info from ZStone",
+    "zh_CN": "无法从 ZStone 获取存储池信息",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
+    "raw": "failed to get session info from ZStone",
+    "en_US": "failed to get session info from ZStone",
+    "zh_CN": "无法从 ZStone 获取会话信息",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
+    "raw": "failed to update cluster",
+    "en_US": "failed to update cluster",
+    "zh_CN": "无法更新集群信息",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
+    "raw": "failed to add host",
+    "en_US": "failed to add host",
+    "zh_CN": "无法添加主机",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
   },
@@ -181,6 +244,22 @@
     "raw": "ZStone session expired",
     "en_US": "ZStone session expired",
     "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
+    "raw": "failed to get api response for path[%s]",
+    "en_US": "failed to get api response for path[{0}]",
+    "zh_CN": "无法获取 ZStone API 响应",
+    "arguments": [
+      "redirectApiResponse.requestUrl"
+    ],
+    "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
+  },
+  {
+    "raw": "ZStone API failed",
+    "en_US": "ZStone API failed",
+    "zh_CN": "无法调用 ZStone API",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/zstone/client/ZStoneClient.java"
   },

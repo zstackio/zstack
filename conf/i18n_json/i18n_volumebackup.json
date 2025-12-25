@@ -265,7 +265,7 @@
   {
     "raw": "Failed to create volume backup for volume[uuid:%s], because it is not attached to any vm",
     "en_US": "Failed to create volume backup for volume[uuid:{0}], because it is not attached to any vm",
-    "zh_CN": "无法给云盘[uuid:{0}]创建云盘备份，因为它未加载到云主机上",
+    "zh_CN": "无法给云盘[uuid:{0}]创建云盘备份，因为它未加载到虚拟机上",
     "arguments": [
       "msg.getVolumeUuid()"
     ],
@@ -274,7 +274,7 @@
   {
     "raw": "Failed to create volume backup for volume[uuid:%s], because the vm is not in state[%s, %s]",
     "en_US": "Failed to create volume backup for volume[uuid:{0}], because the vm is not in state[{1}, {2}]",
-    "zh_CN": "无法给云盘[uuid:{0}]创建云盘备份，因为加载到的云主机并不处于以下状态[{1}, {2}]",
+    "zh_CN": "无法给云盘[uuid:{0}]创建云盘备份，因为加载到的虚拟机并不处于以下状态[{1}, {2}]",
     "arguments": [
       "msg.getVolumeUuid()",
       "VmInstanceState.Running.toString()",
@@ -285,7 +285,7 @@
   {
     "raw": "Failed to create volume backup for volume[uuid:%s], because its attached volume is not in state[%s, %s]",
     "en_US": "Failed to create volume backup for volume[uuid:{0}], because its attached volume is not in state[{1}, {2}]",
-    "zh_CN": "无法给云盘[uuid:{0}]创建云盘备份，因为加载到的云主机并不处于以下状态[{1}, {2}]",
+    "zh_CN": "无法给云盘[uuid:{0}]创建云盘备份，因为加载到的虚拟机并不处于以下状态[{1}, {2}]",
     "arguments": [
       "msg.getVolumeUuid()",
       "VmInstanceState.Running.toString()",
@@ -343,7 +343,7 @@
   {
     "raw": "Current vm[uuid: %s] of the volume[uuid: %s] is no longer the vm[uuid: %s] that was used for backup",
     "en_US": "Current vm[uuid: {0}] of the volume[uuid: {1}] is no longer the vm[uuid: {2}] that was used for backup",
-    "zh_CN": "卷[uuid：{1}]的当前云主机[uuid：{0}]不再是用于备份的云主机[UuId：{2}]",
+    "zh_CN": "卷[uuid：{1}]的当前虚拟机[uuid：{0}]不再是用于备份的虚拟机[UuId：{2}]",
     "arguments": [
       "expectVmUuid",
       "rootVolumeInfo.get(0)",
@@ -382,6 +382,13 @@
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
+    "raw": "either instanceOfferingUuid or cpuNum and memorySize must be specified",
+    "en_US": "either instanceOfferingUuid or cpuNum and memorySize must be specified",
+    "zh_CN": "创建虚拟机时，必须指定实例规格 UUID 或 CPU核数和内存大小",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
+  },
+  {
     "raw": "volume backup[uuid:%s] is in state %s, cannot revert volume to it",
     "en_US": "volume backup[uuid:{0}] is in state {1}, cannot revert volume to it",
     "zh_CN": "云盘备份[uuid:{0}]处于{1}状态，无法用于恢复云盘",
@@ -403,7 +410,7 @@
   {
     "raw": "original volume[uuid:%s] for backup[uuid:%s] is no longer attached to vm[uuid:%s]",
     "en_US": "original volume[uuid:{0}] for backup[uuid:{1}] is no longer attached to vm[uuid:{2}]",
-    "zh_CN": "原始卷[uuid：{0}]（用于备份[uuid：{1}]）不再连接到云主机[uuid：{2}]",
+    "zh_CN": "原始卷[uuid：{0}]（用于备份[uuid：{1}]）不再连接到虚拟机[uuid：{2}]",
     "arguments": [
       "volUuid",
       "backupUuid",
@@ -414,7 +421,7 @@
   {
     "raw": "VM not found with volume backup[uuid:%s]",
     "en_US": "VM not found with volume backup[uuid:{0}]",
-    "zh_CN": "找不到和云盘备份[uuid:{0}]对应的云主机",
+    "zh_CN": "找不到和云盘备份[uuid:{0}]对应的虚拟机",
     "arguments": [
       "backupUuid"
     ],
@@ -423,7 +430,7 @@
   {
     "raw": "VM is not in stopped state: %s",
     "en_US": "VM is not in stopped state: {0}",
-    "zh_CN": "当前云主机状态并不是停止状态：{0}",
+    "zh_CN": "当前虚拟机状态并不是停止状态：{0}",
     "arguments": [
       "vmState"
     ],
@@ -465,7 +472,7 @@
   {
     "raw": "No VM found for volume[uuid:%s]",
     "en_US": "No VM found for volume[uuid:{0}]",
-    "zh_CN": "找不到和云盘[uuid:{0}]对应的云主机",
+    "zh_CN": "找不到和云盘[uuid:{0}]对应的虚拟机",
     "arguments": [
       "volumeVO.getUuid()"
     ],
@@ -474,7 +481,7 @@
   {
     "raw": "No VM found with root volume uuid: %s",
     "en_US": "No VM found with root volume uuid: {0}",
-    "zh_CN": "找不到根卷uuid为{0}的云主机",
+    "zh_CN": "找不到根卷uuid为{0}的虚拟机",
     "arguments": [
       "msg.getRootVolumeUuid()"
     ],
@@ -511,7 +518,7 @@
   {
     "raw": "Current vm[uuid: %s] of the backup volume is no longer the vm[uuid: %s] that was used for backup",
     "en_US": "Current vm[uuid: {0}] of the backup volume is no longer the vm[uuid: {1}] that was used for backup",
-    "zh_CN": "备份卷的当前云主机[uuid：{0}]不再是用于备份的云主机[uuid：{1}]",
+    "zh_CN": "备份卷的当前虚拟机[uuid：{0}]不再是用于备份的虚拟机[uuid：{1}]",
     "arguments": [
       "volumeVmUuid",
       "backupUuid",

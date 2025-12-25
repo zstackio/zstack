@@ -229,6 +229,13 @@
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageReservedCapacityAllocatorFlow.java"
   },
   {
+    "raw": "unable to allocate a backup storage",
+    "en_US": "unable to allocate a backup storage",
+    "zh_CN": "无法分配镜像存储",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/backup/DefaultBackupStorageAllocatorStrategy.java"
+  },
+  {
     "raw": "unknown primary storage type[%s]",
     "en_US": "unknown primary storage type[{0}]",
     "zh_CN": "",
@@ -339,7 +346,7 @@
   {
     "raw": "cannot attach volume[uuid:%s] whose primary storage is Maintenance",
     "en_US": "cannot attach volume[uuid:{0}] whose primary storage is Maintenance",
-    "zh_CN": "无法挂载云盘[uuid:{0}]，其主存储处于维护模式",
+    "zh_CN": "无法挂载硬盘[uuid:{0}]，其主存储处于维护模式",
     "arguments": [
       "volumeUuid"
     ],
@@ -446,7 +453,7 @@
   {
     "raw": "the VM[uuid:%s] volume stored location primary storage is in a state of maintenance",
     "en_US": "the VM[uuid:{0}] volume stored location primary storage is in a state of maintenance",
-    "zh_CN": "虚拟机[{0}]云盘所在主存储处于维护状态",
+    "zh_CN": "虚拟机[{0}]硬盘所在主存储处于维护状态",
     "arguments": [
       "vmUuid"
     ],
@@ -495,7 +502,7 @@
   {
     "raw": "cannot find primary storage[uuid:%s], the uuid is specified in instance offering or disk offering",
     "en_US": "cannot find primary storage[uuid:{0}], the uuid is specified in instance offering or disk offering",
-    "zh_CN": "找不到由计算规格或云盘规格指定的主存储[uuid:{0}]",
+    "zh_CN": "找不到由计算规格或硬盘规格指定的主存储[uuid:{0}]",
     "arguments": [
       "uuid"
     ],
@@ -504,7 +511,7 @@
   {
     "raw": "cannot find primary storage having user tag[%s]. The user tag is specified in instance offering or disk offering",
     "en_US": "cannot find primary storage having user tag[{0}]. The user tag is specified in instance offering or disk offering",
-    "zh_CN": "找不到带有指定用户标签的主存储[uuid:{0}]，该标签由计算规格或者云盘规格指定",
+    "zh_CN": "找不到带有指定用户标签的主存储[uuid:{0}]，该标签由计算规格或者硬盘规格指定",
     "arguments": [
       "tag"
     ],
@@ -548,7 +555,7 @@
   {
     "raw": "volume snapshot[uuid:%s] is in state %s, cannot revert volume to it",
     "en_US": "volume snapshot[uuid:{0}] is in state {1}, cannot revert volume to it",
-    "zh_CN": "云盘快照[uuid:{0}]出于状态{1}，不能恢复云盘到该快照状态",
+    "zh_CN": "硬盘快照[uuid:{0}]出于状态{1}，不能恢复硬盘到该快照状态",
     "arguments": [
       "msg.getUuid()",
       "state"
@@ -558,7 +565,7 @@
   {
     "raw": "original volume for snapshot[uuid:%s] has been deleted, cannot revert volume to it",
     "en_US": "original volume for snapshot[uuid:{0}] has been deleted, cannot revert volume to it",
-    "zh_CN": "快照[uuid:{0}]的原版云盘已经被删除，不能恢复云盘到该快照",
+    "zh_CN": "快照[uuid:{0}]的原版硬盘已经被删除，不能恢复硬盘到该快照",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -622,6 +629,15 @@
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotManagerImpl.java"
   },
   {
+    "raw": "cannot ask primary storage[uuid:%s] for volume snapshot capability",
+    "en_US": "cannot ask primary storage[uuid:{0}] for volume snapshot capability",
+    "zh_CN": "无法向数据存储 {0} 请求卷快照功能",
+    "arguments": [
+      "vol.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotManagerImpl.java"
+  },
+  {
     "raw": "cannot find snapshot: %s",
     "en_US": "cannot find snapshot: {0}",
     "zh_CN": "找不到快照：{0}",
@@ -664,7 +680,7 @@
   {
     "raw": "cannot find volume snapshot[uuid:%s, name:%s], it may have been deleted by previous operation",
     "en_US": "cannot find volume snapshot[uuid:{0}, name:{1}], it may have been deleted by previous operation",
-    "zh_CN": "不能创建云盘快照[uuid:{0}, name:{1}]，该快照可能已经被以前的操作删除",
+    "zh_CN": "不能创建硬盘快照[uuid:{0}, name:{1}]，该快照可能已经被以前的操作删除",
     "arguments": [
       "currentRoot.getUuid()",
       "currentRoot.getName()"
@@ -683,7 +699,7 @@
   {
     "raw": "failed to change status of volume snapshot[uuid:%s, name:%s] by status event[%s]",
     "en_US": "failed to change status of volume snapshot[uuid:{0}, name:{1}] by status event[{2}]",
-    "zh_CN": "通过状态事件[{2}]改变云盘快照[uuid:{0}, name:{1}]失败",
+    "zh_CN": "通过状态事件[{2}]改变硬盘快照[uuid:{0}, name:{1}]失败",
     "arguments": [
       "failSnapshot.getUuid()",
       "failSnapshot.getName()",
@@ -727,9 +743,19 @@
     "fileName": "src/main/java/org/zstack/storage/volume/DownloadIsoForVmExtension.java"
   },
   {
+    "raw": "primary storage uuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
+    "en_US": "primary storage uuid conflict, the primary storage specified by the disk offering are {0}, and the primary storage specified in the creation parameter is {1}",
+    "zh_CN": "主存储组冲突，硬盘规格指定的数据存储组是 {0}，而创建参数指定的数据存储组是 {1}",
+    "arguments": [
+      "requiredPrimaryStorageUuids",
+      "msg.getPrimaryStorageUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
     "raw": "volume[uuid:%s] is not in status Ready, current is %s, can\u0027t create snapshot",
     "en_US": "volume[uuid:{0}] is not in status Ready, current is {1}, can\u0027t create snapshot",
-    "zh_CN": "云盘[uuid:{0}]未出于就绪状态，当前是{1}，不能创建快照",
+    "zh_CN": "硬盘[uuid:{0}]未出于就绪状态，当前是{1}，不能创建快照",
     "arguments": [
       "msg.getVolumeUuid()",
       "status"
@@ -749,7 +775,7 @@
   {
     "raw": "volume[uuid:%s] is not root volume",
     "en_US": "volume[uuid:{0}] is not root volume",
-    "zh_CN": "云盘[uuid:{0}]不是云盘",
+    "zh_CN": "硬盘[uuid:{0}]不是硬盘",
     "arguments": [
       "msg.getRootVolumeUuid()"
     ],
@@ -769,7 +795,7 @@
   {
     "raw": "the volume[uuid:%s] is not in status of deleted. This is operation is to recover a deleted data volume",
     "en_US": "the volume[uuid:{0}] is not in status of deleted. This is operation is to recover a deleted data volume",
-    "zh_CN": "云盘[uuid:{0}]未处于删除状态。此操作将覆盖一个被删除的云盘",
+    "zh_CN": "硬盘[uuid:{0}]未处于删除状态。此操作将覆盖一个被删除的硬盘",
     "arguments": [
       "msg.getVolumeUuid()"
     ],
@@ -809,7 +835,7 @@
   {
     "raw": "volume[uuid:%s] is Root volume, can not be attach to vm",
     "en_US": "volume[uuid:{0}] is Root volume, can not be attach to vm",
-    "zh_CN": "云盘[uuid:{0}]是一个云盘，不能被手动挂载到其他虚拟机",
+    "zh_CN": "硬盘[uuid:{0}]是一个硬盘，不能被手动挂载到其他虚拟机",
     "arguments": [
       "msg.getVolumeUuid()"
     ],
@@ -818,7 +844,7 @@
   {
     "raw": "volume[uuid:%s] is in state[%s], data volume can only be attached when state is %s",
     "en_US": "volume[uuid:{0}] is in state[{1}], data volume can only be attached when state is {2}",
-    "zh_CN": "云盘[uuid:{0}]处于[{1}]状态，云盘只能在处于{2}状态的时候挂载",
+    "zh_CN": "硬盘[uuid:{0}]处于[{1}]状态，硬盘只能在处于{2}状态的时候挂载",
     "arguments": [
       "msg.getVolumeUuid()",
       "state",
@@ -829,7 +855,7 @@
   {
     "raw": "volume[uuid:%s] is in status[%s], data volume can only be attached when status is %s or %S",
     "en_US": "volume[uuid:{0}] is in status[{1}], data volume can only be attached when status is {2} or %S",
-    "zh_CN": "云盘[uuid:{0}]处于[{1}]，云盘只能在处于{2}或%S状态的时候挂载",
+    "zh_CN": "硬盘[uuid:{0}]处于[{1}]，硬盘只能在处于{2}或%S状态的时候挂载",
     "arguments": [
       "msg.getVolumeUuid()",
       "status",
@@ -841,7 +867,7 @@
   {
     "raw": "data volume[uuid:%s] is not attached to any vm, can\u0027t detach",
     "en_US": "data volume[uuid:{0}] is not attached to any vm, can\u0027t detach",
-    "zh_CN": "云盘没有被挂载到任何虚拟机上，不能卸载",
+    "zh_CN": "硬盘没有被挂载到任何虚拟机上，不能卸载",
     "arguments": [
       "msg.getVolumeUuid()"
     ],
@@ -850,7 +876,7 @@
   {
     "raw": "to detach shareable data volume[uuid:%s], vm uuid is needed.",
     "en_US": "to detach shareable data volume[uuid:{0}], vm uuid is needed.",
-    "zh_CN": "卸载共享云盘[uuid:{0}]需要虚拟机的uuid",
+    "zh_CN": "卸载共享硬盘[uuid:{0}]需要虚拟机的uuid",
     "arguments": [
       "msg.getVolumeUuid()"
     ],
@@ -870,7 +896,7 @@
   {
     "raw": "the vm[uuid:%s] doesn\u0027t support to online attach volume[%s] on the basis of that the image platform type of the vm is other ",
     "en_US": "the vm[uuid:{0}] doesn\u0027t support to online attach volume[{1}] on the basis of that the image platform type of the vm is other ",
-    "zh_CN": "虚拟机[uuid:{0}]不支持在线挂载云盘[{1}]。因为这台云主机的基础镜像平台类型为“其他”",
+    "zh_CN": "虚拟机[uuid:{0}]不支持在线挂载硬盘[{1}]。因为这台虚拟机的基础镜像平台类型为“其他”",
     "arguments": [
       "msg.getVmInstanceUuid()",
       "msg.getVolumeUuid()"
@@ -887,7 +913,7 @@
   {
     "raw": "the volume[uuid:%s, name:%s] is Root Volume, can\u0027t attach it",
     "en_US": "the volume[uuid:{0}, name:{1}] is Root Volume, can\u0027t attach it",
-    "zh_CN": "不能挂载云盘[uuid:{0}, name:{1}]",
+    "zh_CN": "不能挂载硬盘[uuid:{0}, name:{1}]",
     "arguments": [
       "volumeVO.getUuid()",
       "volumeVO.getName()"
@@ -897,7 +923,7 @@
   {
     "raw": "data volume[uuid:%s] is Disabled, can\u0027t attach",
     "en_US": "data volume[uuid:{0}] is Disabled, can\u0027t attach",
-    "zh_CN": "云盘已被禁用，不能挂载",
+    "zh_CN": "硬盘已被禁用，不能挂载",
     "arguments": [
       "volumeVO.getUuid()"
     ],
@@ -906,7 +932,7 @@
   {
     "raw": "the volume[uuid:%s] is in status of deleted, cannot do the operation",
     "en_US": "the volume[uuid:{0}] is in status of deleted, cannot do the operation",
-    "zh_CN": "云盘[uuid:{0}]已经被删除，不能执行此操作",
+    "zh_CN": "硬盘[uuid:{0}]已经被删除，不能执行此操作",
     "arguments": [
       "volumeVO.getUuid()"
     ],
@@ -915,7 +941,7 @@
   {
     "raw": "data volume[uuid:%s] has been attached to some vm, can\u0027t attach again",
     "en_US": "data volume[uuid:{0}] has been attached to some vm, can\u0027t attach again",
-    "zh_CN": "云盘[uuid:{0}]已经被加载上云主机了，不能再次加载",
+    "zh_CN": "硬盘[uuid:{0}]已经被加载上虚拟机了，不能再次加载",
     "arguments": [
       "volumeVO.getUuid()"
     ],
@@ -924,7 +950,7 @@
   {
     "raw": "data volume can only be attached when status is [%s, %s], current is %s",
     "en_US": "data volume can only be attached when status is [{0}, {1}], current is {2}",
-    "zh_CN": "云盘仅能当处于[{0}, {1}]状态挂载，当前状态是{2}",
+    "zh_CN": "硬盘仅能当处于[{0}, {1}]状态挂载，当前状态是{2}",
     "arguments": [
       "VolumeStatus.Ready",
       "VolumeStatus.NotInstantiated",
@@ -945,14 +971,14 @@
   {
     "raw": "Can\u0027t attach volume to VM, no qualified cluster",
     "en_US": "Can\u0027t attach volume to VM, no qualified cluster",
-    "zh_CN": "不能加载云盘到云主机上，没有可用集群",
+    "zh_CN": "不能加载硬盘到虚拟机上，没有可用集群",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
     "raw": "it\u0027s not allowed to backup root volume, uuid:%s",
     "en_US": "it\u0027s not allowed to backup root volume, uuid:{0}",
-    "zh_CN": "备份云盘不被允许，uuid:{0}",
+    "zh_CN": "备份硬盘不被允许，uuid:{0}",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -978,7 +1004,7 @@
   {
     "raw": "volume[uuid:%s] is already in status of deleted",
     "en_US": "volume[uuid:{0}] is already in status of deleted",
-    "zh_CN": "云盘[uuid:{0}]早已处于被删除状态",
+    "zh_CN": "硬盘[uuid:{0}]早已处于被删除状态",
     "arguments": [
       "msg.getVolumeUuid()"
     ],
@@ -987,7 +1013,7 @@
   {
     "raw": "it\u0027s not allowed to change state of root volume, uuid:%s",
     "en_US": "it\u0027s not allowed to change state of root volume, uuid:{0}",
-    "zh_CN": "不能改变云盘状态，uuid:{0}",
+    "zh_CN": "不能改变硬盘状态，uuid:{0}",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -996,7 +1022,7 @@
   {
     "raw": "can not attach volume[%s] to host[%s], because host[status:%s] is not connected",
     "en_US": "can not attach volume[{0}] to host[{1}], because host[status:{2}] is not connected",
-    "zh_CN": "无法将云盘[{0}]挂载到主机[{1}]，因为物理机[status:{2}]未连接",
+    "zh_CN": "无法将硬盘[{0}]挂载到主机[{1}]，因为主机[status:{2}]未连接",
     "arguments": [
       "msg.getVolumeUuid()",
       "msg.getHostUuid()",
@@ -1014,7 +1040,7 @@
   {
     "raw": "can not attach volume[%s] to host[%s], because volume is attaching to host[%s]",
     "en_US": "can not attach volume[{0}] to host[{1}], because volume is attaching to host[{2}]",
-    "zh_CN": "无法将云盘[{0}]挂载到物理机[{1}]，因为云盘正在挂载到物理机[{2}]",
+    "zh_CN": "无法将硬盘[{0}]挂载到主机[{1}]，因为硬盘正在挂载到主机[{2}]",
     "arguments": [
       "msg.getVolumeUuid()",
       "msg.getHostUuid()",
@@ -1025,7 +1051,7 @@
   {
     "raw": "can not attach volume[%s] to host[%s], because the volume[%s] occupies the mount path[%s] on host[%s]",
     "en_US": "can not attach volume[{0}] to host[{1}], because the volume[{2}] occupies the mount path[{3}] on host[{4}]",
-    "zh_CN": "无法将云盘[{0}]挂载到物理机[{1}]，因为云盘[{2}]在物理机[{4}]上占用了挂载路径[{3}]",
+    "zh_CN": "无法将硬盘[{0}]挂载到主机[{1}]，因为硬盘[{2}]在主机[{4}]上占用了挂载路径[{3}]",
     "arguments": [
       "msg.getVolumeUuid()",
       "msg.getHostUuid()",
@@ -1038,7 +1064,7 @@
   {
     "raw": "can not attach volume[%s] to host[%s], because the another volume occupies the mount path[%s]",
     "en_US": "can not attach volume[{0}] to host[{1}], because the another volume occupies the mount path[{2}]",
-    "zh_CN": "无法将云盘[{0}]挂载到物理机[{1}]，因为另一个云盘占用了挂载路径[{2}]",
+    "zh_CN": "无法将硬盘[{0}]挂载到主机[{1}]，因为另一个硬盘占用了挂载路径[{2}]",
     "arguments": [
       "msg.getVolumeUuid()",
       "msg.getHostUuid()",
@@ -1092,7 +1118,7 @@
   {
     "raw": "the volume[uuid:%s, name:%s] is not deleted yet, can\u0027t expunge it",
     "en_US": "the volume[uuid:{0}, name:{1}] is not deleted yet, can\u0027t expunge it",
-    "zh_CN": "云盘[uuid:{0}, name:{1}]仍未被删除，不能清除该云盘",
+    "zh_CN": "硬盘[uuid:{0}, name:{1}]仍未被删除，不能清除该硬盘",
     "arguments": [
       "self.getUuid()",
       "self.getName()"
@@ -1114,9 +1140,18 @@
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeBase.java"
   },
   {
+    "raw": "failed to flatten volume[uuid:%s]",
+    "en_US": "failed to flatten volume[uuid:{0}]",
+    "zh_CN": "展开硬盘 {0} 失败",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeBase.java"
+  },
+  {
     "raw": "hypervisor[%s] only allows max %s data volumes to be attached to a single vm; there have been %s data volumes attached to vm[uuid:%s]",
     "en_US": "hypervisor[{0}] only allows max {1} data volumes to be attached to a single vm; there have been {2} data volumes attached to vm[uuid:{3}]",
-    "zh_CN": "[{0}]管理程序仅允许最大不超过{1}云盘挂载到单个云主机。{2} data volumes已经挂载到云主机[uuid:{3}]",
+    "zh_CN": "[{0}]管理程序仅允许最大不超过{1}硬盘挂载到单个虚拟机。{2} data volumes已经挂载到虚拟机[uuid:{3}]",
     "arguments": [
       "hypervisorType",
       "maxDataVolumeNum",
@@ -1137,7 +1172,7 @@
   {
     "raw": "primaryStorage type [%s] not support shared volume yet",
     "en_US": "primaryStorage type [{0}] not support shared volume yet",
-    "zh_CN": "主存储类型[{0}]尚不支持共享云盘",
+    "zh_CN": "主存储类型[{0}]尚不支持共享硬盘",
     "arguments": [
       "psType"
     ],
@@ -1159,16 +1194,6 @@
     "zh_CN": "无法找到一个镜像[uuid:{0}]所在的镜像服务器符合全部的下列条件: 状态启动[state:Enabled]，已连接[status:Connected]，被挂载到主存储[uuid:{1}]所在的数据中心中",
     "arguments": [
       "template.getUuid()",
-      "msg.getPrimaryStorageUuid()"
-    ],
-    "fileName": "src/main/java/org/zstack/storage/volume/VolumeManagerImpl.java"
-  },
-  {
-    "raw": "primary storage uuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
-    "en_US": "primary storage uuid conflict, the primary storage specified by the disk offering are {0}, and the primary storage specified in the creation parameter is {1}",
-    "zh_CN": "",
-    "arguments": [
-      "requiredPrimaryStorageUuids",
       "msg.getPrimaryStorageUuid()"
     ],
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeManagerImpl.java"

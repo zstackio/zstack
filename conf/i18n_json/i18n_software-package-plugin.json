@@ -114,5 +114,14 @@
     "zh_CN": "",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/softwarePackage/UploadSoftwarePackageTracker.java"
+  },
+  {
+    "raw": "uploading has been inactive more than %d sec",
+    "en_US": "uploading has been inactive more than {0} sec",
+    "zh_CN": "上传镜像任务已处于空闲状态超过 {0} 秒: 已经有很久没有收到新的镜像上传数据了",
+    "arguments": [
+      "maxIdleSecond"
+    ],
+    "fileName": "src/main/java/org/zstack/softwarePackage/UploadSoftwarePackageTracker.java"
   }
 ]

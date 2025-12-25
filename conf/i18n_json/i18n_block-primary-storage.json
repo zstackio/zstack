@@ -377,8 +377,8 @@
     "fileName": "src/main/java/org/zstack/storage/primary/block/vendor/xstor/XStorDevice.java"
   },
   {
-    "raw": "lun[name:%s] has been occupied",
-    "en_US": "lun[name:{0}] has been occupied",
+    "raw": "unable to do the operation because the lun[%s] has been occupied",
+    "en_US": "unable to do the operation because the lun[{0}] has been occupied",
     "zh_CN": "",
     "arguments": [
       "blockScsiLunVO.getName()"

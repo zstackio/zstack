@@ -39,6 +39,13 @@
     "fileName": "src/main/java/org/zstack/compute/allocator/HostAllocatorChain.java"
   },
   {
+    "raw": "failed to allocate hosts",
+    "en_US": "failed to allocate hosts",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/compute/allocator/HostAllocatorChain.java"
+  },
+  {
     "raw": "no available hosts found",
     "en_US": "no available hosts found",
     "zh_CN": "",
@@ -218,6 +225,13 @@
     "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
   },
   {
+    "raw": "unable to do the operation because the host is in status of Disconnected",
+    "en_US": "unable to do the operation because the host is in status of Disconnected",
+    "zh_CN": "主机失联，无法进行操作",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
+  },
+  {
     "raw": "host[uuid:%s, name:%s] is in state[%s], cannot perform required operation",
     "en_US": "host[uuid:{0}, name:{1}] is in state[{2}], cannot perform required operation",
     "zh_CN": "主机 [uuid:{0}, name:{1}] 处于状态 [{2}] 中，不能处理该请求",
@@ -253,13 +267,6 @@
     "raw": "host is connecting, ping failed",
     "en_US": "host is connecting, ping failed",
     "zh_CN": "主机正在连接, 不能进行 ping 操作",
-    "arguments": [],
-    "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
-  },
-  {
-    "raw": "failed to connect host",
-    "en_US": "failed to connect host",
-    "zh_CN": "",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
   },
@@ -1548,6 +1555,16 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
+    "raw": "failed to create template from root volume[uuid:%s] on primary storage[uuid:%s]",
+    "en_US": "failed to create template from root volume[uuid:{0}] on primary storage[uuid:{1}]",
+    "zh_CN": "数据存储 {1} 中，用根盘 {0} 创建模板失败",
+    "arguments": [
+      "msg.getRootVolumeInventory().getUuid()",
+      "msg.getRootVolumeInventory().getPrimaryStorageUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
+  },
+  {
     "raw": "failed to update templated vmInstance[uuid:%s], %s",
     "en_US": "failed to update templated vmInstance[uuid:{0}], {1}",
     "zh_CN": "",
@@ -1605,6 +1622,15 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
+    "raw": "failed to update vm[uuid\u003d%s] on hypervisor.",
+    "en_US": "failed to update vm[uuid\u003d{0}] on hypervisor.",
+    "zh_CN": "更新虚拟机 {0} 失败",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
+  },
+  {
     "raw": "Failed to update vm[uuid\u003d%s] on hypervisor: The modification of some properties failed",
     "en_US": "Failed to update vm[uuid\u003d{0}] on hypervisor: The modification of some properties failed",
     "zh_CN": "",
@@ -1619,6 +1645,15 @@
     "zh_CN": "",
     "arguments": [
       "msg.getName()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
+  },
+  {
+    "raw": "failed to update vm[uuid\u003d%s] on hypervisor",
+    "en_US": "failed to update vm[uuid\u003d{0}] on hypervisor",
+    "zh_CN": "更新虚拟机 {0} 失败",
+    "arguments": [
+      "self.getUuid()"
     ],
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
@@ -1648,6 +1683,16 @@
     "arguments": [
       "self.getUuid()",
       "self.getState()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
+  },
+  {
+    "raw": "failed to detach volume[uuid\u003d%s] of VM[uuid\u003d%s]",
+    "en_US": "failed to detach volume[uuid\u003d{0}] of VM[uuid\u003d{1}]",
+    "zh_CN": "虚拟机 {1} 删除卷 {0} 失败",
+    "arguments": [
+      "msg.getVolume().getUuid()",
+      "self.getUuid()"
     ],
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
