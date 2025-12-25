@@ -181,7 +181,9 @@ i18njson() {
 }
 
 i18n() {
-  ./build/zsi18n -j conf/i18n.json -d conf/i18n/
+  MY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  cd premium/i18n-tools
+  mvn test -Dtest=I18nPropertiesBuilderTest -Dsrc=$MY_DIR/conf/i18n_json/ -Ddst=$MY_DIR/conf/i18n/
 }
 
 foreignkey() {
