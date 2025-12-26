@@ -200,16 +200,24 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
             msg.setNicNames(new ArrayList<>(nicNamePciAddressMap.keySet()));
         }
 
-        if (msg.getNicNames().size() > 1 && msg.getBondMode() == null) {
+        if (msg.getBondMode() == null) {
             msg.setBondMode(refVO.getBondMode());
         }
 
-        if (msg.getLacpMode() == null) {
+        if (msg.getBondMode().equals(refVO.getBondMode())) {
             msg.setLacpMode(refVO.getLacpMode());
         }
 
-        if (msg.getBondMode() != null && msg.getBondMode().equals(L2NetworkConstant.BONDING_MODE_TCP) && msg.getLacpMode() == null) {
+        if (msg.getBondMode().equals(L2NetworkConstant.BONDING_MODE_TCP)) {
             msg.setLacpMode(L2NetworkConstant.LACP_MODE_ACTIVE);
+        } else if (msg.getBondMode().equals(L2NetworkConstant.BONDING_MODE_SLB)) {
+            if (msg.getLacpMode() == null) {
+                msg.setLacpMode(L2NetworkConstant.LACP_MODE_OFF);
+            } else if (!(msg.getLacpMode().equals(L2NetworkConstant.LACP_MODE_PASSIVE))) {
+                msg.setLacpMode(L2NetworkConstant.LACP_MODE_OFF);
+            }
+        } else {
+            msg.setLacpMode(L2NetworkConstant.LACP_MODE_OFF);
         }
     }
 
