@@ -40,6 +40,9 @@ public class ExecuteGuestVmScriptAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String recordUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String runtimeParams;
+
     @Param(required = false)
     public java.util.List systemTags;
 
