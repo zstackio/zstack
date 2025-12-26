@@ -949,6 +949,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
             String snapshotPath;
             String bsInstallPath;
+            String actualFormat;
 
             long templateSize;
 
@@ -1077,6 +1078,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                                     DownloadImageFromRemoteTargetReply r = reply.castReply();
                                     bsInstallPath = r.getInstallPath();
                                     templateSize = r.getSize();
+                                    actualFormat = r.getFormat();
                                     trigger.next();
                                 }
                             }
@@ -1109,7 +1111,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     @Override
                     public void handle(Map data) {
                         reply.setTemplateBackupStorageInstallPath(bsInstallPath);
-                        reply.setFormat(msg.getVolumeInventory().getFormat());
+                        reply.setFormat(actualFormat);
                         reply.setActualSize(templateSize);
                         bus.reply(msg, reply);
                     }
