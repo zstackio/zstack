@@ -122,8 +122,8 @@ public class VmInstanceHelper {
 
             if (msg.getZoneUuid() != null && !Objects.equals(msg.getZoneUuid(), expectZoneUuid)) {
                 throw new ApiMessageInterceptionException(
-                        argerr("host[uuid:%s] is specified but it is not in cluster[uuid:%s], can not create vm from it",
-                        msg.getHostUuid(), expectClusterUuid)
+                        argerr("host[uuid:%s] is specified but it is not in zone[uuid:%s], can not create vm from it",
+                        msg.getHostUuid(), expectZoneUuid)
                         .withOpaque("host.uuid", msg.getHostUuid())
                         .withOpaque("expect.zone.uuid", expectZoneUuid)
                         .withOpaque("actual.zone.uuid", msg.getZoneUuid()));
