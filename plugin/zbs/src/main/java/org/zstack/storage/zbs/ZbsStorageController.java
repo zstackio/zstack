@@ -954,7 +954,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     @Override
     public void expandVolume(String installPath, long size, ReturnValueCompletion<VolumeStats> comp) {
         ExpandVolumeCmd cmd = new ExpandVolumeCmd();
-        cmd.setPath(installPath);
+        cmd.setPath(convertZbsPathToCbdPath(installPath, ZbsStorageController.this::getPhysicalPoolName));
         cmd.setUnit(getSizeUnit(addonInfo.getClusterInfo().getVersion()));
         cmd.setSize(alignSizeTo(size, cmd.getUnit()));
 
