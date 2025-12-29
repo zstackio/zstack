@@ -91,6 +91,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.zstack.appliancevm.ApplianceVmConstant.APPLIANCE_VM_TYPE_SLB;
 import static org.zstack.compute.vm.VmSystemTags.MACHINE_TYPE_TOKEN;
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
@@ -2662,7 +2663,13 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             completion.done();
             return;
         }
-        List<VipTO> vips = findVipsOnVirtualRouter(vfNics, inv.getUuid());
+        boolean skipSlbServiceProviderVip = false;
+        ApplianceVmVO apvm = dbf.findByUuid(inv.getUuid(), ApplianceVmVO.class);
+        if (apvm != null
+                && APPLIANCE_VM_TYPE_SLB.equals(apvm.getApplianceVmType())) {
+            skipSlbServiceProviderVip = true;
+        }
+        List<VipTO> vips = findVipsOnVirtualRouter(vfNics, inv.getUuid(), skipSlbServiceProviderVip);
         if (vips.isEmpty()) {
             completion.done();
             return;
@@ -2717,7 +2724,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         });
     }
 
-    private List<VipTO> findVipsOnVirtualRouter(List<VmNicInventory> vfNics, String vrUuid) {
+    private List<VipTO> findVipsOnVirtualRouter(List<VmNicInventory> vfNics, String vrUuid, boolean skipSlbServiceProviderVip) {
         List<String> l3Uuids = vfNics.stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList());
         List<L3NetworkVO> l3Networks = Q.New(L3NetworkVO.class).in(L3NetworkVO_.uuid, l3Uuids).list();
 
@@ -2781,6 +2788,14 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
 
         List<VipVO> vips = Q.New(VipVO.class).in(VipVO_.uuid, filteredVipUuids).list();
+        if (skipSlbServiceProviderVip) {
+            vips = vips.stream()
+                    .filter(vip -> !APPLIANCE_VM_TYPE_SLB.equals(vip.getServiceProvider()))
+                    .collect(Collectors.toList());
+            if (vips.isEmpty()) {
+                return new ArrayList<>();
+            }
+        }
         VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf((VirtualRouterVmVO)
                 Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrUuid).find());
 
