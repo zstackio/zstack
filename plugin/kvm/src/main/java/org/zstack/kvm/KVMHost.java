@@ -4263,7 +4263,13 @@ public class KVMHost extends HostBase implements Host {
 
         int cpuNum = spec.getVmInventory().getCpuNum();
         cmd.setCpuNum(cpuNum);
-        cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, spec.getVmInventory().getUuid(), Boolean.class));
+        if (spec.getImageSpec() != null && spec.getImageSpec().getInventory() != null
+                && ImagePlatform.Embedded.toString().equals(spec.getImageSpec().getInventory().getPlatform())) {
+            // hardcode on 4.8.30-jianchuan
+            cmd.setUseNuma(false);
+        } else {
+            cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, spec.getVmInventory().getUuid(), Boolean.class));
+        }
         setStartVmCpuTopology(spec, cmd, platform);
 
         cmd.setImagePlatform(platform);
