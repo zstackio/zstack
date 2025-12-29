@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.cbd.*;
 import org.zstack.cbd.kvm.CbdHeartbeatVolumeTO;
 import org.zstack.cbd.kvm.CbdVolumeTo;
 import org.zstack.compute.host.HostGlobalConfig;
@@ -74,6 +75,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     private static final CLogger logger = Utils.getLogger(ZbsStorageController.class);
 
     @Autowired
+    @Deprecated
     private DatabaseFacade dbf;
     @Autowired
     protected RESTFacade restf;
@@ -372,7 +374,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     @Override
-    public void connect(String cfg, String url, ReturnValueCompletion<LinkedHashMap> completion) {
+    public void connect(String cfg, String url, ReturnValueCompletion<org.zstack.header.storage.addon.primary.AddonInfo> completion) {
         AddonInfo newAddonInfo = new AddonInfo();
         Config current = JSONObjectUtil.toObject(cfg, Config.class);
         List<MdsInfo> mdsInfos = MdsInfo.valueOf(current.getMdsUrls());
@@ -526,7 +528,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                     @Override
                     public void handle(Map data) {
                         addonInfo = newAddonInfo;
-                        completion.success(JSONObjectUtil.rehashObject(newAddonInfo, LinkedHashMap.class));
+                        completion.success(newAddonInfo);
                     }
                 });
 
@@ -541,7 +543,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     @Override
-    public void ping(Completion completion) {
+    public void ping(ReturnValueCompletion<PingResult> completion) {
         reloadDbInfo();
 
         if (addonInfo == null || addonInfo.getClusterInfo() == null) {
@@ -565,10 +567,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         })).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
-                        .set(ExternalPrimaryStorageVO_.addonInfo, JSONObjectUtil.toJsonString(addonInfo))
-                        .update();
-
                 boolean isConnected = addonInfo.getMdsInfos().stream().anyMatch(mdsInfo -> MdsStatus.Connected.equals(mdsInfo.getStatus()));
                 if (!isConnected) {
                     String notConnectedIps = addonInfo.getMdsInfos().stream()
@@ -576,10 +574,10 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                             .map(MdsInfo::getAddr)
                             .collect(Collectors.joining(", "));
 
-                    completion.fail(operr("no MDS is Connected, the following MDS[%s] are not Connected.", notConnectedIps));
+                    completion.success(new PingResult(addonInfo, String.format("all MDS are not connected, disconnected MDS addresses: %s", notConnectedIps)));
                     return;
                 }
-                completion.success();
+                completion.success(new PingResult(addonInfo));
             }
         });
     }
@@ -592,7 +590,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void reportCapacity(ReturnValueCompletion<StorageCapacity> comp) {
-        reloadDbInfo();
         getPoolCapacities(config.getPoolNames(), comp);
     }
 
@@ -603,6 +600,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         httpCall(GET_CAPACITY_PATH, cmd, GetCapacityRsp.class, new ReturnValueCompletion<GetCapacityRsp>(comp) {
             @Override
             public void success(GetCapacityRsp returnValue) {
+                reloadDbInfo();
                 addonInfo.setLogicalPoolInfos(returnValue.getLogicalPoolInfos());
                 SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
                         .set(ExternalPrimaryStorageVO_.addonInfo, JSONObjectUtil.toJsonString(addonInfo))
@@ -1217,6 +1215,18 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         });
     }
 
+
+    @Override
+    public void syncAddonInfo(String addonInfo) {
+        this.addonInfo = StringUtils.isEmpty(addonInfo) ? new AddonInfo() : JSONObjectUtil.toObject(addonInfo, AddonInfo.class);
+    }
+
+    @Override
+    public void syncConfig(String config) {
+        this.config = StringUtils.isEmpty(config) ? new Config() : JSONObjectUtil.toObject(config, Config.class);
+    }
+
+    @Deprecated
     private void reloadDbInfo() {
         self = dbf.reload(self);
         addonInfo = StringUtils.isEmpty(self.getAddonInfo()) ? new AddonInfo() : JSONObjectUtil.toObject(self.getAddonInfo(), AddonInfo.class);

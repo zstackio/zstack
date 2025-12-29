@@ -3,6 +3,7 @@ package org.zstack.xinfini.sdk;
 import org.zstack.xinfini.XInfiniConfig;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 public class XInfiniConnectConfig {
     public String hostname = "localhost";
@@ -12,7 +13,7 @@ public class XInfiniConnectConfig {
     public Long readTimeout;
     public Long writeTimeout;
     public String token;
-    public XInfiniConfig xInfiniConfig;
+    public Supplier<XInfiniConfig.Node> connectedNodeProvider;
 
     public void setPort(int port) {
         this.port = port;
