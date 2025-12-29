@@ -1,6 +1,8 @@
 package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.db.DatabaseFacade
+import org.zstack.kvm.KVMAgentCommands
 import org.zstack.storage.zbs.LogicalPoolInfo
 import org.zstack.cbd.kvm.KvmCbdCommands
 import org.zstack.sdk.PrimaryStorageInventory
@@ -11,12 +13,17 @@ import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.logging.CLogger
 import org.zstack.utils.gson.JSONObjectUtil
 
+import java.util.concurrent.ConcurrentHashMap
+
 /**
  * @author Xingwei Yu
  * @date 2024/4/19 下午2:28
  */
 class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
     private static final CLogger logger = Utils.getLogger(ExternalPrimaryStorageSpec.class);
+
+
+    static ConcurrentHashMap<String, String> mdsAddrVersionHashMap = new ConcurrentHashMap<>()
 
     @SpecParam(required = true)
     String identity
@@ -46,16 +53,20 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 return [:]
             }
 
-            simulator(ZbsPrimaryStorageMdsBase.PING_PATH) {
+            simulator(ZbsPrimaryStorageMdsBase.PING_PATH) { HttpEntity<String> e ->
+                def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.PingCmd.class)
                 ZbsPrimaryStorageMdsBase.PingRsp rsp = new ZbsPrimaryStorageMdsBase.PingRsp()
                 rsp.success = true
+                rsp.agentVersion = mdsAddrVersionHashMap.get(cmd.addr)
                 return rsp
             }
 
-            simulator(ZbsPrimaryStorageMdsBase.SYNC_METADATA_PATH) {
+            simulator(ZbsPrimaryStorageMdsBase.SYNC_METADATA_PATH) { HttpEntity<String> e ->
+                def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.SyncMetadataCmd.class)
                 ZbsPrimaryStorageMdsBase.SyncMetadataRsp rsp = new ZbsPrimaryStorageMdsBase.SyncMetadataRsp()
                 rsp.success = true
                 rsp.externalAddr = "127.0.0.1"
+                mdsAddrVersionHashMap.put(cmd.addr, cmd.agentVersion)
                 return rsp
             }
 
