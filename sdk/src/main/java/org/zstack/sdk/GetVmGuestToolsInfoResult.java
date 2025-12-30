@@ -27,4 +27,12 @@ public class GetVmGuestToolsInfoResult {
         return this.features;
     }
 
+    public java.lang.String timeProtocol;
+    public void setTimeProtocol(java.lang.String timeProtocol) {
+        this.timeProtocol = timeProtocol;
+    }
+    public java.lang.String getTimeProtocol() {
+        return this.timeProtocol;
+    }
+
 }
