@@ -598,7 +598,8 @@ public class ZSClient {
 
             String configHost = String.format("%s:%s", config.getHostname(), config.getPort());
             if (!pollingUrl.contains(configHost)) {
-                String splitRegex = Boolean.parseBoolean(System.getProperty("unitTestOn")) ? "/v1/api-jobs" : "/zstack/v1/api-jobs";
+                String contextPath = config.contextPath != null ? "/" + config.contextPath : "/zstack";
+                String splitRegex = Boolean.parseBoolean(System.getProperty("unitTestOn")) ? "/v1/api-jobs" : contextPath + "/v1/api-jobs";
                 pollingUrl = String.format("http://%s%s%s", configHost, splitRegex ,pollingUrl.split(splitRegex)[1]);
             }
 
