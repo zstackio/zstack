@@ -213,6 +213,15 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     }
 
                     s.usedMemory = ratioMgr.calculateMemoryByRatio(s.hostUuid, t.get(0, Long.class));
+                    long usedMemBySysCom = 0L;
+                    final List<SysComponentMemUsageExtensionPoint> extps =
+                            pluginRgty.getExtensionList(SysComponentMemUsageExtensionPoint.class);
+                    for (SysComponentMemUsageExtensionPoint extp : extps) {
+                        long hugePageMemUsage = Math.max(0L, extp.getHugePageMemoryUsage(s.hostUuid));
+                        long normalMemUsage = Math.max(0L, extp.getNormalMemoryUsage(s.hostUuid));
+                        usedMemBySysCom += hugePageMemUsage + normalMemUsage;
+                    }
+                    s.usedMemory = usedMemBySysCom + ratioMgr.calculateMemoryByRatio(s.hostUuid, t.get(0, Long.class));
                     s.usedCpu = t.get(2, Long.class);
                     ret.add(s);
                 }
