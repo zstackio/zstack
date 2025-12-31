@@ -41,15 +41,15 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
 
     private transient boolean forceRun = false;
 
-    @SerializedName("oem_name")
-    private String oemName;
+    @SerializedName("app_name")
+    private String appName;
 
-    public String getOEMName() {
-        return oemName;
+    public String getAppName() {
+        return appName;
     }
 
-    public String setOEMName(String oemName) {
-        return this.oemName = oemName;
+    public void setAppName(String appName) {
+        this.appName = appName;
     }
 
     public String getInit() {

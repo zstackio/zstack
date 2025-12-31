@@ -389,7 +389,7 @@ public class AnsibleRunner {
                 deployArguments = new AnsibleBasicArguments();
             }
 
-            deployArguments.setPipUrl(String.format("http://%s:%d/%s/static/pypi/simple", restf.getHostName(), port, CoreGlobalProperty.OEM_NAME));
+            deployArguments.setPipUrl(String.format("http://%s:%d/%s/static/pypi/simple", restf.getHostName(), port, CoreGlobalProperty.APP_NAME));
             deployArguments.setTrustedHost(restf.getHostName());
             deployArguments.setYumServer(String.format("%s:%d", restf.getHostName(), port));
             deployArguments.setRemoteUser(username);

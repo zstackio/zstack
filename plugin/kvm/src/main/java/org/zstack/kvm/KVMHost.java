@@ -5783,7 +5783,7 @@ public class KVMHost extends HostBase implements Host {
                         String postUrl = ub.build().toString();
 
                         deployArguments.setPostUrl(postUrl);
-                        deployArguments.setOEMName(CoreGlobalProperty.OEM_NAME);
+                        deployArguments.setAppName(CoreGlobalProperty.APP_NAME);
                         runner.setDeployArguments(deployArguments);
                         runner.run(new ReturnValueCompletion<Boolean>(trigger) {
                             @Override
