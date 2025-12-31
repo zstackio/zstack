@@ -1,8 +1,13 @@
 package org.zstack.core.cloudbus;
 
+import io.sentry.Sentry;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.zstack.core.CoreGlobalProperty;
@@ -13,7 +18,12 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.log.LogUtils;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
-import org.zstack.core.thread.*;
+import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.thread.ThreadFacadeImpl;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.Constants;
 import org.zstack.header.Service;
@@ -26,7 +36,18 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APIReply;
+import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.message.BeforeDeliveryMessageInterceptor;
+import org.zstack.header.message.BeforePublishEventInterceptor;
+import org.zstack.header.message.BeforeSendMessageInterceptor;
+import org.zstack.header.message.Event;
+import org.zstack.header.message.JsonSchemaBuilder;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.RestAPIExtensionPoint;
 import org.zstack.header.rest.TimeoutRestTemplate;
@@ -40,7 +61,15 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -830,6 +859,19 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                                     replyErrorByMessageType(msg, ((OperationFailureException) t).getErrorCode());
                                 } else {
                                     replyErrorByMessageType(msg, inerr(t.getMessage()));
+
+                                    if (CloudBusGlobalProperty.SENTRY_ON) {
+                                        try {
+                                            // Add message context to Sentry before capturing the exception
+                                            Sentry.configureScope(scope -> {
+                                                scope.setExtra("message.dump", dumpMessage(msg));
+                                                scope.setTag("service.id", serv.getId());
+                                                scope.setTag("message.class", msg.getClass().getSimpleName());
+                                            });
+                                        } catch (Exception sentryEx) {
+                                            logger.warn("Failed to capture exception with Sentry", sentryEx);
+                                        }
+                                    }
                                 }
                             }
 
