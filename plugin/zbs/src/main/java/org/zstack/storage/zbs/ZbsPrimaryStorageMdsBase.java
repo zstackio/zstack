@@ -7,6 +7,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.ansible.*;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -43,7 +44,12 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
     private String syncId;
 
     @Autowired
+    @Deprecated
     private ThreadFacade thdf;
+
+    @Autowired
+    @Deprecated
+    private DatabaseFacade dbf;
 
     public static final String ECHO_PATH = "/zbs/primarystorage/echo";
     public static final String PING_PATH = "/zbs/primarystorage/ping";
@@ -199,10 +205,18 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                     public void run(FlowTrigger trigger, Map data) {
                         SyncMetadataCmd cmd = new SyncMetadataCmd();
                         cmd.setAddr(getSelf().getAddr());
+                        // TODO: use agent version not zstack version
+                        cmd.setAgentVersion(dbf.getDbVersion());
 
                         restf.asyncJsonPost(ZbsAgentUrl.primaryStorageUrl(getSelf().getAddr(), SYNC_METADATA_PATH), cmd, new JsonAsyncRESTCallback<SyncMetadataRsp>(trigger) {
                             @Override
                             public void success(SyncMetadataRsp ret) {
+                                if (!ret.isSuccess()) {
+                                    trigger.fail(operr("unable to sync metadata from ZBS primary storage MDS[%s], because %s",
+                                            getSelf().getAddr(), ret.getError()));
+                                    return;
+                                }
+
                                 getSelf().setExternalAddr(ret.getExternalAddr());
                                 trigger.next();
                             }
@@ -310,6 +324,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
             stepCount.add(i);
         }
 
+        String[] version = new String[1];
         new While<>(stepCount).each((step, comp) -> {
             PingCmd cmd = new PingCmd();
             cmd.setClusterInfo(clusterInfo);
@@ -318,7 +333,8 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                     cmd, new JsonAsyncRESTCallback<PingRsp>(completion) {
                         @Override
                         public void success(PingRsp rsp) {
-                            if (rsp.isSuccess()){
+                            if (rsp.isSuccess()) {
+                                version[0] = rsp.agentVersion;
                                 comp.allDone();
                                 return;
                             }
@@ -358,12 +374,28 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                     completion.fail(errorCodeList.getCauses().get(0));
                     return;
                 }
+
+                if (!dbf.getDbVersion().equals(version[0])) {
+                    completion.fail(operr("ZBS primary storage MDS[%s] version[%s] is different" +
+                                    " from management node[%s], please reconnect the MDS and check SSH connection",
+                            getSelf().getAddr(), version[0], dbf.getDbVersion()));
+                    return;
+                }
                 completion.success();
             }
         });
     }
 
     public static class PingRsp extends ZbsMdsBase.AgentResponse {
+        private String agentVersion;
+
+        public void setAgentVersion(String agentVersion) {
+            this.agentVersion = agentVersion;
+        }
+
+        public String getAgentVersion() {
+            return agentVersion;
+        }
     }
 
     public static class PingCmd extends ZbsMdsBase.AgentCommand {
@@ -391,6 +423,15 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
     }
 
     public static class SyncMetadataCmd extends ZbsMdsBase.AgentCommand {
+        private String agentVersion;
+
+        public void setAgentVersion(String agentVersion) {
+            this.agentVersion = agentVersion;
+        }
+
+        public String getAgentVersion() {
+            return agentVersion;
+        }
     }
 
     @Override

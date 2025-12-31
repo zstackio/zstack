@@ -78,10 +78,10 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     @Deprecated
     private DatabaseFacade dbf;
     @Autowired
-    protected RESTFacade restf;
-    @Autowired
+    @Deprecated
     private ResourceConfigFacade rcf;
     @Autowired
+    @Deprecated
     private CloudBus bus;
 
     private ExternalPrimaryStorageVO self;
@@ -403,6 +403,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                             trigger.fail(operr("ZBS primary storage[uuid:%s] may have been deleted", self.getUuid()));
                         } else {
                             self = vo;
+                            addonInfo = newAddonInfo;
                             trigger.next();
                         }
                     }
@@ -436,7 +437,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         new Connector().connect(trigger);
-                        addonInfo = newAddonInfo;
                     }
                 });
 

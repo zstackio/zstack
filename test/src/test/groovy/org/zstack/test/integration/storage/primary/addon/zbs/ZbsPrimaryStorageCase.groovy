@@ -166,6 +166,7 @@ class ZbsPrimaryStorageCase extends SubCase {
 
             testDefaultConfig()
             testUpdateExternalPrimaryStorage()
+            testMdsConnectFailed()
             testLifecycle()
             testDataVolumeLifecycle()
             testMdsPing()
@@ -291,19 +292,72 @@ class ZbsPrimaryStorageCase extends SubCase {
                     Q.New(ExternalPrimaryStorageVO.class)
                             .select(ExternalPrimaryStorageVO_.config)
                             .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
-                            .findValue(),
+                            .findValue().toString(),
                     Config.class)
             AddonInfo info = JSONObjectUtil.toObject(
                     Q.New(ExternalPrimaryStorageVO.class)
                             .select(ExternalPrimaryStorageVO_.addonInfo)
                             .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
-                            .findValue(),
+                            .findValue().toString(),
                     AddonInfo.class)
             assert config.pools.size() == 2
             assert info.logicalPoolInfos.size() == 2
             assert config.poolNames.containsAll(["lpool1", "lpool2"])
             assert info.logicalPoolInfos.collect { it.logicalPoolName }.containsAll(["lpool1", "lpool2"])
         }
+    }
+
+    void testMdsConnectFailed() {
+        env.afterSimulator(ZbsPrimaryStorageMdsBase.SYNC_METADATA_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.SyncMetadataCmd.class)
+            if (!cmd.addr.equals("127.0.1.1")) {
+                rsp.setError("on purpose")
+            }
+            return rsp
+        }
+
+        env.afterSimulator(ZbsStorageController.GET_CAPACITY_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.GetCapacityCmd)
+            if (!cmd.addr.equals("127.0.1.1")) {
+                rsp.setError("on purpose")
+            }
+            return rsp
+        }
+
+        env.afterSimulator(ZbsPrimaryStorageMdsBase.PING_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.PingCmd.class)
+            if (!cmd.addr.equals("127.0.1.1")) {
+                rsp.agentVersion = null
+            }
+
+            return rsp
+        }
+
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+
+        AddonInfo addonInfo = JSONObjectUtil.toObject(
+                 Q.New(ExternalPrimaryStorageVO.class)
+                        .select(ExternalPrimaryStorageVO_.addonInfo)
+                        .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                        .findValue().toString(),
+                AddonInfo.class)
+        assert addonInfo.mdsInfos.findAll { it.status.toString() == "Disconnected" }.size() == 2
+
+        env.cleanAfterSimulatorHandlers()
+
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+
+        addonInfo = JSONObjectUtil.toObject(
+                Q.New(ExternalPrimaryStorageVO.class)
+                        .select(ExternalPrimaryStorageVO_.addonInfo)
+                        .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                        .findValue().toString(),
+                AddonInfo.class)
+        assert addonInfo.mdsInfos.findAll { it.status.toString() == "Connected" }.size() == 3
     }
 
     void testDefaultConfig() {
@@ -395,13 +449,12 @@ class ZbsPrimaryStorageCase extends SubCase {
 
         env.afterSimulator(ZbsPrimaryStorageMdsBase.PING_PATH) { rsp, HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.PingCmd.class)
-            ZbsPrimaryStorageMdsBase.PingRsp pingRsp = new ZbsPrimaryStorageMdsBase.PingRsp()
             if (cmd.addr.equals("127.0.1.1")) {
-                pingRsp.success = false
-                pingRsp.error = "on purpose"
+                rsp.success = false
+                rsp.error = "on purpose"
             }
 
-            return pingRsp
+            return rsp
         }
 
         sleep(2000)
@@ -421,16 +474,15 @@ class ZbsPrimaryStorageCase extends SubCase {
 
         env.afterSimulator(ZbsPrimaryStorageMdsBase.PING_PATH) { rsp, HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.PingCmd.class)
-            ZbsPrimaryStorageMdsBase.PingRsp pingRsp = new ZbsPrimaryStorageMdsBase.PingRsp()
             if (cmd.addr.equals("127.0.1.1")) {
-                pingRsp.success = false
-                pingRsp.error = "on purpose"
+                rsp.success = false
+                rsp.error = "on purpose"
             } else if (cmd.addr.equals("127.0.1.2")) {
-                pingRsp.success = false
-                pingRsp.error = "on purpose"
+                rsp.success = false
+                rsp.error = "on purpose"
             } else if (cmd.addr.equals("127.0.1.3")) {
-                pingRsp.success = false
-                pingRsp.error = "on purpose"
+                rsp.success = false
+                rsp.error = "on purpose"
             }
 
             return pingRsp
