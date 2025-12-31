@@ -2,6 +2,7 @@ package org.zstack.storage.primary;
 
 import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
+import java.util.function.Consumer;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -19,6 +20,9 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.job.JobQueueFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.MergeQueue;
+import org.zstack.core.thread.SingleFlightTask;
+import org.zstack.core.thread.SingleFlightTask.SingleFlightDone;
+import org.zstack.core.thread.SingleFlightTaskResult;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.trash.StorageTrash;
@@ -1244,23 +1248,33 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        syncPhysicalCapacity(new ReturnValueCompletion<PhysicalCapacityUsage>(trigger) {
-                            @Override
-                            public void success(PhysicalCapacityUsage returnValue) {
-                                PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
-                                updater.run(cap -> {
-                                    cap.setAvailablePhysicalCapacity(returnValue.availablePhysicalSize < 0 ? 0 : returnValue.availablePhysicalSize);
-                                    cap.setTotalPhysicalCapacity(returnValue.totalPhysicalSize);
-                                    return cap;
-                                });
-                                trigger.next();
-                            }
+                        thdf.singleFlightSubmit(new SingleFlightTask(trigger)
+                                .setSyncSignature("sync-physical-capacity-on-ps-" + self.getUuid())
+                                .run(completion -> {
+                                    syncPhysicalCapacity(new ReturnValueCompletion<PhysicalCapacityUsage>(completion) {
+                                        @Override
+                                        public void success(PhysicalCapacityUsage returnValue) {
+                                            PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
+                                            updater.run(cap -> {
+                                                cap.setAvailablePhysicalCapacity(returnValue.availablePhysicalSize < 0 ? 0 : returnValue.availablePhysicalSize);
+                                                cap.setTotalPhysicalCapacity(returnValue.totalPhysicalSize);
+                                                return cap;
+                                            });
+                                            completion.success(null);
+                                        }
 
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
+                                        @Override
+                                        public void fail(ErrorCode errorCode) {
+                                            completion.fail(errorCode);
+                                        }
+                                    });
+                                }).done(result -> {
+                                    if (!result.isSuccess()) {
+                                        trigger.fail(result.getErrorCode());
+                                    } else {
+                                        trigger.next();
+                                    }
+                                }));
                     }
                 });
 

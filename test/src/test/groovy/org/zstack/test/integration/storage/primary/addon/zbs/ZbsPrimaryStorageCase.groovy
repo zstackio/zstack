@@ -32,6 +32,8 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
+import java.util.concurrent.atomic.AtomicInteger
+
 /**
  * @author Xingwei Yu
  * @date 2024/4/19 10:09
@@ -164,6 +166,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             kvm = env.inventoryByName("kvm-1") as KVMHostInventory
             evtf = bean(EventFacade.class)
 
+            testSyncPrimaryStorageCapacityConcurrently()
             testDefaultConfig()
             testUpdateExternalPrimaryStorage()
             testMdsConnectFailed()
@@ -175,6 +178,22 @@ class ZbsPrimaryStorageCase extends SubCase {
             testDataVolumeNegativeScenario()
             testDecodeMdsUriWithSpecialPassword()
         }
+    }
+
+    void testSyncPrimaryStorageCapacityConcurrently() {
+        def threads = new ArrayList<>()
+        def success_cnt = new AtomicInteger(0)
+        (1..20).forEach {
+            threads.add(Thread.start {
+                syncPrimaryStorageCapacity {
+                    primaryStorageUuid = ps.uuid
+                }
+                success_cnt.incrementAndGet()
+            })
+        }
+
+        threads.each { it.join() }
+        assert success_cnt.get() == 20
     }
 
     void testCheckHostStorageConnection() {

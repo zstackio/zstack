@@ -4,7 +4,6 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.cbd.*;
 import org.zstack.cbd.kvm.CbdHeartbeatVolumeTO;
 import org.zstack.cbd.kvm.CbdVolumeTo;
 import org.zstack.compute.host.HostGlobalConfig;
@@ -32,7 +31,6 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.addon.*;
 import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.storage.primary.*;
@@ -711,9 +709,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     private List<LogicalPoolInfo> getSelfPools() {
-        List<LogicalPoolInfo> logicalPoolInfos = addonInfo.getLogicalPoolInfos();
-        logicalPoolInfos.removeIf(it -> !config.getPoolNames().contains(it.getLogicalPoolName()));
-        return logicalPoolInfos;
+        return addonInfo.getLogicalPoolInfos().stream().filter(pool ->
+                config.getPoolNames().contains(pool.getLogicalPoolName())).collect(Collectors.toList());
     }
 
     @Override
