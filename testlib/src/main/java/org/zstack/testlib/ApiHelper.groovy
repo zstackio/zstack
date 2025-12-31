@@ -51345,6 +51345,33 @@ abstract class ApiHelper {
     }
 
 
+    def getLicenseNodeUsageDetails(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.license.api.server.GetLicenseNodeUsageDetailsAction.class) Closure c) {
+        def a = new org.zstack.sdk.license.api.server.GetLicenseNodeUsageDetailsAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def isLicenseServer(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.license.api.server.IsLicenseServerAction.class) Closure c) {
         def a = new org.zstack.sdk.license.api.server.IsLicenseServerAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
