@@ -790,9 +790,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     private List<LogicalPoolInfo> getSelfPools() {
         String configLogicalPoolName = config.getLogicalPoolName();
-        List<LogicalPoolInfo> logicalPoolInfos = addonInfo.getLogicalPoolInfos();
-        logicalPoolInfos.removeIf(it -> !configLogicalPoolName.equals(it.getLogicalPoolName()));
-        return logicalPoolInfos;
+        return addonInfo.getLogicalPoolInfos().stream().filter(pool ->
+                configLogicalPoolName.equals(pool.getLogicalPoolName())).collect(Collectors.toList());
     }
 
     @Override
