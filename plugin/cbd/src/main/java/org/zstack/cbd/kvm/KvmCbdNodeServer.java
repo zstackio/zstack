@@ -234,6 +234,15 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
         return extPsFactory.getNodeSvc(volumeInventory.getPrimaryStorageUuid());
     }
 
+    private PrimaryStorageNodeSvc getNodeService(VmInstanceSpec.CdRomSpec cdRomSpec) {
+        String identity = cdRomSpec.getInstallPath().split("://")[0];
+        if (!extPsFactory.support(identity)) {
+            return null;
+        }
+
+        return extPsFactory.getNodeSvc(cdRomSpec.getPrimaryStorageUuid());
+    }
+
     private VolumeTO convertVolumeIfNeeded(VolumeInventory volumeInventory, HostInventory host, VolumeTO volumeTO) {
         if (!VolumeProtocol.CBD.name().equals(volumeInventory.getProtocol())) {
             return volumeTO;
@@ -247,6 +256,19 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
         String path = nodeSvc.getActivePath(BaseVolumeInfo.valueOf(volumeInventory), host,false);
         volumeTO.setInstallPath(path);
         return volumeTO;
+    }
+
+    private KVMAgentCommands.CdRomTO convertCdRomIfNeeded(VmInstanceSpec.CdRomSpec cdRomSpec, HostInventory host, KVMAgentCommands.CdRomTO cdRomTO) {
+        if (!VolumeProtocol.CBD.name().equals(cdRomSpec.getProtocol())){
+            return cdRomTO;
+        }
+        PrimaryStorageNodeSvc nodeSvc = getNodeService(cdRomSpec);
+        if (nodeSvc == null) {
+            return cdRomTO;
+        }
+        String path = nodeSvc.getActivePath(BaseVolumeInfo.valueOf(cdRomSpec), host,false);
+        cdRomTO.setPath(path);
+        return cdRomTO;
     }
 
     @Override
@@ -298,6 +320,18 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
         }
 
         cmd.setDataVolumes(dtos);
+
+        List<KVMAgentCommands.CdRomTO> ctos = new ArrayList<>();
+        for (KVMAgentCommands.CdRomTO cto : cmd.getCdRoms()){
+            for (VmInstanceSpec.CdRomSpec cdRom : spec.getCdRomSpecs()){
+                if (cdRom.getUuid().equals(cto.getResourceUuid())){
+                    ctos.add(convertCdRomIfNeeded(cdRom, host, cto));
+                    break;
+                }
+            }
+        }
+        cmd.setCdRoms(ctos);
+
     }
 
     @Override
