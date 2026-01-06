@@ -351,6 +351,7 @@ public class SourceClassMap {
 			put("org.zstack.license.LicenseInventory", "org.zstack.sdk.LicenseInventory");
 			put("org.zstack.license.UKeyInventory", "org.zstack.sdk.UKeyInventory");
 			put("org.zstack.license.UKeyStatus", "org.zstack.sdk.UKeyStatus");
+			put("org.zstack.license.entity.LicenseHistoryInventory", "org.zstack.sdk.license.entity.LicenseHistoryInventory");
 			put("org.zstack.license.entity.LicenseUsageView", "org.zstack.sdk.license.entity.LicenseUsageView");
 			put("org.zstack.license.entity.UpdateLicenseView", "org.zstack.sdk.license.entity.UpdateLicenseView");
 			put("org.zstack.loginControl.entity.AccessControlRuleInventory", "org.zstack.sdk.AccessControlRuleInventory");
@@ -1242,6 +1243,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.identity.ldap.entity.LdapServerInventory", "org.zstack.ldap.entity.LdapServerInventory");
 			put("org.zstack.sdk.identity.role.RoleAccountRefInventory", "org.zstack.header.identity.role.RoleAccountRefInventory");
 			put("org.zstack.sdk.identity.role.RoleInventory", "org.zstack.header.identity.role.RoleInventory");
+			put("org.zstack.sdk.license.entity.LicenseHistoryInventory", "org.zstack.license.entity.LicenseHistoryInventory");
 			put("org.zstack.sdk.license.entity.LicenseUsageView", "org.zstack.license.entity.LicenseUsageView");
 			put("org.zstack.sdk.license.entity.UpdateLicenseView", "org.zstack.license.entity.UpdateLicenseView");
 			put("org.zstack.sdk.managements.common.ManagementNodeStatusView", "org.zstack.managements.entity.common.ManagementNodeStatusView");
