@@ -1,4 +1,4 @@
-CREATE TABLE `SSOClientAttributeVO` (
+CREATE TABLE IF NOT EXISTS `SSOClientAttributeVO` (
     `uuid` VARCHAR(32) NOT NULL,
     `name` TEXT NOT NULL,
     `value` TEXT DEFAULT NULL,
