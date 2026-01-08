@@ -124,6 +124,17 @@ public class BaseVolumeInfo extends VolumeStats {
         return info;
     }
 
+    public static BaseVolumeInfo valueOf(VmInstanceSpec.IsoSpec iso) {
+        BaseVolumeInfo info = new BaseVolumeInfo();
+        info.uuid = iso.getImageUuid();
+        info.setInstallPath(iso.getInstallPath());
+        info.setProtocol(iso.getProtocol());
+        info.setShareable(true);
+        info.setPrimaryStorageUuid(iso.getPrimaryStorageUuid());
+        info.setType("image");
+        return info;
+    }
+
     public static List<BaseVolumeInfo> valueOf(Collection<VolumeInventory> vols) {
         return vols.stream().map(BaseVolumeInfo::valueOf).collect(java.util.stream.Collectors.toList());
     }

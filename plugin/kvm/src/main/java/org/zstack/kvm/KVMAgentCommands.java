@@ -4447,6 +4447,14 @@ public class KVMAgentCommands {
         public IsoTO iso;
         @GrayVersion(value = "5.0.0")
         public String vmUuid;
+
+        public IsoTO getIso() { return iso; }
+
+        public void setIso(IsoTO iso) { this.iso = iso; }
+
+        public String getVmUuid() { return vmUuid; }
+
+        public void setVmUuid(String vmUuid) { this.vmUuid = vmUuid; }
     }
 
     public static class AttachIsoRsp extends AgentResponse {

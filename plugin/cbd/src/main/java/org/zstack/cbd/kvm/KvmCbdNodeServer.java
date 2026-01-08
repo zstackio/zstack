@@ -42,8 +42,14 @@ import static org.zstack.core.Platform.operr;
  * @author Xingwei Yu
  * @date 2024/4/9 16:22
  */
+
+@FunctionalInterface
+interface PathSetter<T> {
+    void setPath(T target, String path);
+}
+
 public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionPoint, KVMStartVmExtensionPoint,
-        KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint {
+        KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint, KVMPreAttachIsoExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmCbdNodeServer.class);
 
     @Autowired
@@ -225,50 +231,53 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
         });
     }
 
-    private PrimaryStorageNodeSvc getNodeService(VolumeInventory volumeInventory) {
-        String identity = volumeInventory.getInstallPath().split("://")[0];
-        if (!extPsFactory.support(identity)) {
-            return null;
+    private String convertPathIfNeeded(BaseVolumeInfo volumeInfo, HostInventory host){
+        if (!VolumeProtocol.CBD.name().equals(volumeInfo.getProtocol())){
+            return volumeInfo.getInstallPath();
         }
 
-        return extPsFactory.getNodeSvc(volumeInventory.getPrimaryStorageUuid());
+        PrimaryStorageNodeSvc nodeSvc = getNodeService(volumeInfo);
+        if (nodeSvc == null) {
+            return volumeInfo.getInstallPath();
+        }
+
+        return nodeSvc.getActivePath(volumeInfo, host, false);
     }
 
-    private PrimaryStorageNodeSvc getNodeService(VmInstanceSpec.CdRomSpec cdRomSpec) {
-        String identity = cdRomSpec.getInstallPath().split("://")[0];
+    private <T> void convertAndSetPathIfNeeded(BaseVolumeInfo volumeInfo, HostInventory host, T target, PathSetter<T> setter) {
+        String newInstallPath = convertPathIfNeeded(volumeInfo, host);
+        setter.setPath(target, newInstallPath);
+    }
+
+
+    private PrimaryStorageNodeSvc getNodeService(BaseVolumeInfo volumeInfo) {
+        String identity = volumeInfo.getInstallPath().split("://")[0];
         if (!extPsFactory.support(identity)) {
             return null;
         }
 
-        return extPsFactory.getNodeSvc(cdRomSpec.getPrimaryStorageUuid());
+        return extPsFactory.getNodeSvc(volumeInfo.getPrimaryStorageUuid());
     }
 
     private VolumeTO convertVolumeIfNeeded(VolumeInventory volumeInventory, HostInventory host, VolumeTO volumeTO) {
-        if (!VolumeProtocol.CBD.name().equals(volumeInventory.getProtocol())) {
-            return volumeTO;
-        }
+        BaseVolumeInfo volumeInfo = BaseVolumeInfo.valueOf(volumeInventory);
+        convertAndSetPathIfNeeded(volumeInfo, host, volumeTO, VolumeTO::setInstallPath);
 
-        PrimaryStorageNodeSvc nodeSvc = getNodeService(volumeInventory);
-        if (nodeSvc == null) {
-            return volumeTO;
-        }
-
-        String path = nodeSvc.getActivePath(BaseVolumeInfo.valueOf(volumeInventory), host,false);
-        volumeTO.setInstallPath(path);
         return volumeTO;
     }
 
     private KVMAgentCommands.CdRomTO convertCdRomIfNeeded(VmInstanceSpec.CdRomSpec cdRomSpec, HostInventory host, KVMAgentCommands.CdRomTO cdRomTO) {
-        if (!VolumeProtocol.CBD.name().equals(cdRomSpec.getProtocol())){
-            return cdRomTO;
-        }
-        PrimaryStorageNodeSvc nodeSvc = getNodeService(cdRomSpec);
-        if (nodeSvc == null) {
-            return cdRomTO;
-        }
-        String path = nodeSvc.getActivePath(BaseVolumeInfo.valueOf(cdRomSpec), host,false);
-        cdRomTO.setPath(path);
+        BaseVolumeInfo cdRomInfo = BaseVolumeInfo.valueOf(cdRomSpec);
+        convertAndSetPathIfNeeded(cdRomInfo, host, cdRomTO, KVMAgentCommands.CdRomTO::setPath);
+
         return cdRomTO;
+    }
+
+    private KVMAgentCommands.IsoTO convertIsoIfNeeded( VmInstanceSpec.IsoSpec isoSpec ,HostInventory host, KVMAgentCommands.IsoTO isoTO) {
+        BaseVolumeInfo isoInfo = BaseVolumeInfo.valueOf(isoSpec);
+        convertAndSetPathIfNeeded(isoInfo, host, isoTO, KVMAgentCommands.IsoTO::setPath);
+
+        return isoTO;
     }
 
     @Override
@@ -342,5 +351,17 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
     @Override
     public void startVmOnKvmFailed(KVMHostInventory host, VmInstanceSpec spec, ErrorCode err) {
 
+    }
+
+    @Override
+    public void preAttachIsoExtensionPoint(KVMHostInventory host, KVMAgentCommands.AttachIsoCmd cmd) {
+        KVMAgentCommands.IsoTO isoTO = cmd.getIso();
+        VmInstanceSpec.IsoSpec isoSpec = new VmInstanceSpec.IsoSpec();
+        isoSpec.setDeviceId(isoTO.getDeviceId());
+        isoSpec.setImageUuid(isoTO.getImageUuid());
+        isoSpec.setInstallPath(isoTO.getPath());
+        isoSpec.setPrimaryStorageUuid(isoTO.getPrimaryStorageUuid());
+        isoSpec.setProtocol(isoTO.getProtocol());
+        cmd.setIso(convertIsoIfNeeded(isoSpec, host, isoTO));
     }
 }
