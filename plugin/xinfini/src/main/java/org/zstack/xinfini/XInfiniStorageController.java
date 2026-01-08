@@ -523,7 +523,20 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         XInfiniAddonInfo info = new XInfiniAddonInfo();
         XInfiniConfig xConfig = JSONObjectUtil.toObject(config, XInfiniConfig.class);
 
-        List<NodeModule> nodes = apiHelper.queryNodes();
+        XInfiniConfig.Node connectedNode;
+
+        Map<String, NodeStatus> nodeIpStatus = apiHelper.checkNodesConnection(xConfig.getNodes());
+        connectedNode = xConfig.getNodes().stream()
+                .filter(it -> nodeIpStatus.get(it.getIp()) == NodeStatus.Connected)
+                .findAny()
+                .orElse(null);
+
+        if (connectedNode == null) {
+            comp.fail(operr("no connected node found"));
+            return;
+        }
+
+        List<NodeModule> nodes = apiHelper.queryNodes(connectedNode);
         if (CollectionUtils.isEmpty(nodes)) {
             comp.fail(operr("no node found"));
             return;
@@ -534,10 +547,9 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
                 .findAny()
                 .orElseThrow(() -> new OperationFailureException(operr("fail to get node %s details, check ip address and role config", it.getIp()))));
         info.setNodes(nodes.stream().map(XInfiniAddonInfo.Node::valueOf).collect(Collectors.toList()));
-        Map<String, NodeStatus> nodeIpStatus = apiHelper.checkNodesConnection(xConfig.getNodes());
         info.getNodes().forEach(it -> it.setStatus(nodeIpStatus.get(it.getIp())));
 
-        List<PoolModule> pools = apiHelper.queryPools();
+        List<PoolModule> pools = apiHelper.queryPools(connectedNode);
         if (CollectionUtils.isEmpty(pools)) {
             comp.fail(operr("no pool found"));
             return;
@@ -549,14 +561,20 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
                     .findAny()
                     .orElseThrow(() -> new OperationFailureException(operr("fail to get pool[id:%d, name:%s] %s details", it.getId(), it.getName()))));
         }
-        info.setPools(pools.stream().map(this::getPoolAddonInfo).collect(Collectors.toList()));
-        vhostSocketDir = String.format("/var/run/bdc-%s/", apiHelper.getClusterUuid());
+        info.setPools(pools.stream().map(v -> getPoolAddonInfo(v, connectedNode)).collect(Collectors.toList()));
+        vhostSocketDir = String.format("/var/run/bdc-%s/", apiHelper.getClusterUuid(connectedNode));
         comp.success(info);
     }
 
     private XInfiniAddonInfo.Pool getPoolAddonInfo(PoolModule pool) {
         BsPolicyModule bsPolicy = apiHelper.getBsPolicy(pool.getSpec().getDefaultBsPolicyId());
         PoolCapacity capacity = apiHelper.getPoolCapacity(pool);
+        return XInfiniAddonInfo.Pool.valueOf(pool, bsPolicy, capacity);
+    }
+
+    private XInfiniAddonInfo.Pool getPoolAddonInfo(PoolModule pool, XInfiniConfig.Node node) {
+        BsPolicyModule bsPolicy = apiHelper.getBsPolicy(pool.getSpec().getDefaultBsPolicyId(), node);
+        PoolCapacity capacity = apiHelper.getPoolCapacity(pool, node);
         return XInfiniAddonInfo.Pool.valueOf(pool, bsPolicy, capacity);
     }
 
