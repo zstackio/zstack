@@ -57,6 +57,12 @@ public class XInfiniApiHelper {
         return client.call(req, clz, node);
     }
 
+    public <T extends XInfiniResponse> T callErrorOutWithNode(XInfiniRequest req, Class<T> clz, XInfiniConfig.Node node) {
+        T rsp = client.call(req, clz, node);
+        errorOut(rsp);
+        return rsp;
+    }
+
     public <T extends XInfiniResponse> T callErrorOut(XInfiniRequest req, Class<T> clz) {
         T rsp = client.call(req, clz);
         errorOut(rsp);
@@ -107,9 +113,19 @@ public class XInfiniApiHelper {
     public <T extends XInfiniQueryResponse> T queryErrorOut(XInfiniQueryRequest req, Class<T> clz) {
         return callErrorOut(req, clz);
     }
+
+    public <T extends XInfiniQueryResponse> T queryErrorOut(XInfiniQueryRequest req, Class<T> clz, XInfiniConfig.Node node) {
+        return callErrorOutWithNode(req, clz, node);
+    }
+
     public List<PoolModule> queryPools() {
         QueryPoolRequest req = new QueryPoolRequest();
         return queryErrorOut(req, QueryPoolResponse.class).getItems();
+    }
+
+    public List<PoolModule> queryPools(XInfiniConfig.Node node) {
+        QueryPoolRequest req = new QueryPoolRequest();
+        return queryErrorOut(req, QueryPoolResponse.class, node).getItems();
     }
 
     public PoolModule getPool(int id) {
@@ -121,6 +137,11 @@ public class XInfiniApiHelper {
     public String getClusterUuid() {
         QueryClusterRequest req = new QueryClusterRequest();
         return queryErrorOut(req, QueryClusterResponse.class).toModule().getUuid();
+    }
+
+    public String getClusterUuid(XInfiniConfig.Node node) {
+        QueryClusterRequest req = new QueryClusterRequest();
+        return queryErrorOut(req, QueryClusterResponse.class, node).toModule().getUuid();
     }
 
     public Map<String, NodeStatus> checkNodesConnection(List<XInfiniConfig.Node> nodes) {
@@ -140,9 +161,9 @@ public class XInfiniApiHelper {
         return nodesStatus;
     }
 
-    public List<NodeModule> queryNodes() {
+    public List<NodeModule> queryNodes(XInfiniConfig.Node node) {
         QueryNodeRequest req = new QueryNodeRequest();
-        return queryErrorOut(req, QueryNodeResponse.class).getItems();
+        return callErrorOutWithNode(req, QueryNodeResponse.class, node).getItems();
     }
 
     public NodeModule getNode(int id) {
@@ -192,10 +213,26 @@ public class XInfiniApiHelper {
         return callErrorOut(req, GetBsPolicyResponse.class).toModule();
     }
 
+    public BsPolicyModule getBsPolicy(int id, XInfiniConfig.Node node) {
+        GetBsPolicyRequest req = new GetBsPolicyRequest();
+        req.setId(id);
+        return callErrorOutWithNode(req, GetBsPolicyResponse.class, node).toModule();
+    }
+
     public PoolCapacity getPoolCapacity(PoolModule pool) {
         PoolCapacity capacity = new PoolCapacity();
         long usedCapacity = SizeUnit.KILOBYTE.toByte(getPoolMetricValue(PoolMetrics.DATA_KBYTES, pool));
         long totalCapacity = SizeUnit.KILOBYTE.toByte(getPoolMetricValue(PoolMetrics.ACTUAL_KBYTES, pool));
+        long reservedCapacity = (long) (totalCapacity * POOL_RESERVED_SIZE_RATIO);
+        capacity.setTotalCapacity(totalCapacity);
+        capacity.setAvailableCapacity(totalCapacity - usedCapacity - reservedCapacity);
+        return capacity;
+    }
+
+    public PoolCapacity getPoolCapacity(PoolModule pool, XInfiniConfig.Node node) {
+        PoolCapacity capacity = new PoolCapacity();
+        long usedCapacity = SizeUnit.KILOBYTE.toByte(getPoolMetricValue(PoolMetrics.DATA_KBYTES, pool, node));
+        long totalCapacity = SizeUnit.KILOBYTE.toByte(getPoolMetricValue(PoolMetrics.ACTUAL_KBYTES, pool, node));
         long reservedCapacity = (long) (totalCapacity * POOL_RESERVED_SIZE_RATIO);
         capacity.setTotalCapacity(totalCapacity);
         capacity.setAvailableCapacity(totalCapacity - usedCapacity - reservedCapacity);
@@ -207,6 +244,19 @@ public class XInfiniApiHelper {
         req.metric = metricName;
         req.lables = String.format("pool_id=%s", pool.getSpec().getId());
         QueryMetricResponse rsp = callErrorOut(req, QueryMetricResponse.class);
+        if (rsp.getData() == null || CollectionUtils.isEmpty(rsp.getData().getResult())) {
+            logger.warn(String.format("get pool[id=%s, name=%s] metric %s value failed", pool.getSpec().getId(), pool.getSpec().getName(), metricName));
+            return 0;
+        }
+
+        return rsp.getData().getResult().get(0).getValue();
+    }
+
+    public long getPoolMetricValue(String metricName, PoolModule pool, XInfiniConfig.Node node) {
+        QueryMetricRequest req = new QueryMetricRequest();
+        req.metric = metricName;
+        req.lables = String.format("pool_id=%s", pool.getSpec().getId());
+        QueryMetricResponse rsp = callErrorOutWithNode(req, QueryMetricResponse.class, node);
         if (rsp.getData() == null || CollectionUtils.isEmpty(rsp.getData().getResult())) {
             logger.warn(String.format("get pool[id=%s, name=%s] metric %s value failed", pool.getSpec().getId(), pool.getSpec().getName(), metricName));
             return 0;
