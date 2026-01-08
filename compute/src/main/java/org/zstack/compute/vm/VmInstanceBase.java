@@ -1506,7 +1506,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             completion.done();
             return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmNoStateFromRunningStateHostNotChanged
-                || operation == VmAbnormalLifeCycleOperation.VmNoStateFromCrashedStateHostNotChanged) {
+                || operation == VmAbnormalLifeCycleOperation.VmNoStateFromCrashedStateHostNotChanged
+                || operation == VmAbnormalLifeCycleOperation.VmNoStateFromPausedStateHostNotChanged) {
             // the vm is detected on the host again. It's largely because the host disconnected before
             // and now reconnected
             changeVmStateInDb(VmInstanceStateEvent.noState, () -> self.setHostUuid(msg.getHostUuid()));
