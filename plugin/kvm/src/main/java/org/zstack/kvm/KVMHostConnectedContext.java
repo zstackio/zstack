@@ -1,5 +1,7 @@
 package org.zstack.kvm;
 
+import java.util.Set;
+
 /**
  */
 public class KVMHostConnectedContext {
@@ -7,6 +9,7 @@ public class KVMHostConnectedContext {
     private boolean newAddedHost;
     private String baseUrl;
     private String skipPackages;
+    private Set<String> attachedPrimaryStorageTypes;
 
     public boolean isNewAddedHost() {
         return newAddedHost;
@@ -38,5 +41,13 @@ public class KVMHostConnectedContext {
 
     public void setSkipPackages(String skipPackages) {
         this.skipPackages = skipPackages;
+    }
+
+    public Set<String> getAttachedPrimaryStorageTypes() {
+        return attachedPrimaryStorageTypes;
+    }
+
+    public void setAttachedPrimaryStorageTypes(Set<String> attachedPrimaryStorageTypes) {
+        this.attachedPrimaryStorageTypes = attachedPrimaryStorageTypes;
     }
 }

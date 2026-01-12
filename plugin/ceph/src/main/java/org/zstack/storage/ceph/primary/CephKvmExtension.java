@@ -129,6 +129,10 @@ public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConne
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        if (!context.getAttachedPrimaryStorageTypes().contains(CephConstants.CEPH_PRIMARY_STORAGE_TYPE)) {
+            return new NopeFlow();
+        }
+
         return new NoRollbackFlow() {
             String __name__ = "prepare-ceph-primary-storage";
 

@@ -14,6 +14,7 @@ import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
 import org.zstack.core.timeout.TimeHelper;
 import org.zstack.header.core.*;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.CoreGlobalProperty;
@@ -507,11 +508,11 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void success(T ret) {
-                        if (dbf.isExist(self.getUuid(), HostVO.class)) {
+                        //if (dbf.isExist(self.getUuid(), HostVO.class)) {
                             completion.success(ret);
-                        } else {
-                            completion.fail(operr("host[uuid:%s] has been deleted", self.getUuid()));
-                        }
+                        //} else {
+                        //    completion.fail(operr("host[uuid:%s] has been deleted", self.getUuid()));
+                        //}
                     }
 
                     @Override
@@ -5188,13 +5189,19 @@ public class KVMHost extends HostBase implements Host {
         chain.setName(String.format("continue-connecting-kvm-host-%s-%s", self.getManagementIp(), self.getUuid()));
         chain.getData().put(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR, new ErrorCodeList());
         chain.allowWatch();
+
+        Set<String> attachedPsTypes = new HashSet(SQL.New("select pri.type from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
+                        " where pri.uuid = ref.primaryStorageUuid" +
+                        " and ref.clusterUuid = :cuuid", String.class)
+                .param("cuuid", self.getClusterUuid())
+                .list());
         for (KVMHostConnectExtensionPoint extp : factory.getConnectExtensions()) {
             KVMHostConnectedContext ctx = new KVMHostConnectedContext();
             ctx.setInventory((KVMHostInventory) getSelfInventory());
             ctx.setNewAddedHost(info.isNewAdded());
             ctx.setBaseUrl(baseUrl);
             ctx.setSkipPackages(info.getSkipPackages());
-
+            ctx.setAttachedPrimaryStorageTypes(attachedPsTypes);
             chain.then(extp.createKvmHostConnectingFlow(ctx));
         }
 

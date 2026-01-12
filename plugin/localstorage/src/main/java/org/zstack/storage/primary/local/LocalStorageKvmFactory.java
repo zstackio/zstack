@@ -12,6 +12,7 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.core.workflow.NopeFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.AddHostMessage;
 import org.zstack.header.host.FailToAddHostExtensionPoint;
@@ -76,6 +77,10 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        if (!context.getAttachedPrimaryStorageTypes().contains(LocalStorageConstants.LOCAL_STORAGE_TYPE)) {
+            return new NopeFlow();
+        }
+
         return new NoRollbackFlow() {
             String __name__ = "init-local-storage";
 

@@ -31,7 +31,6 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.kvm.*;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -79,6 +78,10 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
 
     @Override
     public Flow createKvmHostConnectingFlow(KVMHostConnectedContext context) {
+        if (!context.getAttachedPrimaryStorageTypes().contains(PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE)) {
+            return new NopeFlow();
+        }
+
         List<ExternalPrimaryStorageVO> extPss = findExternalPsByClusterUuid(context.getInventory().getClusterUuid());
         if (extPss.isEmpty()) {
             return new NopeFlow();

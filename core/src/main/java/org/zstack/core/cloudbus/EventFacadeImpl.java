@@ -78,7 +78,9 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
 
         CallbackWrapper(String path, AbstractEventFacadeCallback callback) {
             this.path = path;
-            this.glob = createRegexFromGlob(path.replaceAll("\\{.*\\}", ".*"));
+            if (isGlobPath(path)) {
+                this.glob = createRegexFromGlob(path.replaceAll("\\{.*\\}", ".*"));
+            }
             this.callback = callback;
             if (callback instanceof AutoOffEventCallback) {
                 hasRun = new AtomicBoolean(false);
@@ -125,6 +127,10 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
                 }
             }
         }
+    }
+
+    private boolean isGlobPath(String path) {
+        return path.contains("*") || path.contains("?") || path.contains("{");
     }
 
     public String createRegexFromGlob(String glob) {
@@ -223,7 +229,7 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
         
         fireLocal(evt);
 
-        callWebhooks(evt);
+        // callWebhooks(evt);
         
         bus.publish(evt);
     }
@@ -250,7 +256,8 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
         wrappers.putAll(local);
 
         for (CallbackWrapper w : wrappers.values()) {
-            if (cevt.getPath().matches(w.getGlob())) {
+            boolean match = w.getGlob() == null ? cevt.getPath().equals(w.path) : cevt.getPath().matches(w.getGlob());
+            if (match) {
                 w.call(cevt);
             }
         }
@@ -271,7 +278,8 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
         Map<String, CallbackWrapper> wrappers = new HashMap<>();
         wrappers.putAll(global);
         for (CallbackWrapper w : wrappers.values()) {
-            if (cevt.getPath().matches(w.getGlob())) {
+            boolean match = w.getGlob() == null ? cevt.getPath().equals(w.path) : cevt.getPath().matches(w.getGlob());
+            if (match) {
                 w.call(cevt);
             }
         }

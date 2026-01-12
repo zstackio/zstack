@@ -1740,6 +1740,11 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        if (!context.getAttachedPrimaryStorageTypes().contains(NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)) {
+            return new NopeFlow();
+        }
+
+
         return new NoRollbackFlow() {
             String __name__ = "remount-nfs-primary-storage";
 

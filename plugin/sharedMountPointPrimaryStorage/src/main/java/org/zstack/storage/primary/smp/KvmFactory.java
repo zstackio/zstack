@@ -10,6 +10,7 @@ import org.zstack.core.db.SQL;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.core.workflow.NopeFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
@@ -58,6 +59,10 @@ public class KvmFactory implements HypervisorFactory, KVMHostConnectExtensionPoi
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        if (!context.getAttachedPrimaryStorageTypes().contains(SMPConstants.SMP_TYPE)) {
+            return new NopeFlow();
+        }
+
         return new NoRollbackFlow() {
             String __init__ = "init-smp-primary-storage";
 
