@@ -16,3 +16,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`TaskProgressVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Others
+
+ALTER TABLE `zstack`.`HostNetworkInterfaceVO` MODIFY COLUMN `deviceName` VARCHAR(255) DEFAULT NULL;
+ALTER TABLE `zstack`.`HostNetworkInterfaceVO` MODIFY COLUMN `vendorName` VARCHAR(255) DEFAULT NULL;
+ALTER TABLE `zstack`.`HostNetworkInterfaceVO` MODIFY COLUMN `subvendorName` VARCHAR(255) DEFAULT NULL;
+
