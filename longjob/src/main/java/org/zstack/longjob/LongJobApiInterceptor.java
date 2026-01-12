@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by GuoYi on 12/6/17.
@@ -87,7 +88,7 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
     private void validate(APISubmitLongJobMsg msg) {
         Class<APIMessage> apiClass = apiMsgOfLongJob.get(msg.getJobName());
         if (null == apiClass) {
-            throw new ApiMessageInterceptionException(argerr("%s is not an API", msg.getJobName()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_LONGJOB_10006, "%s is not an API", msg.getJobName()));
         }
         APIMessage jobMsg = JSONObjectUtil.toObject(msg.getJobData(), apiClass);
         jobMsg.setSession(msg.getSession());
@@ -149,10 +150,10 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
                 .findValue();
 
         if (state == LongJobState.Succeeded) {
-            throw new ApiMessageInterceptionException(argerr("cannot cancel longjob that is succeeded"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_LONGJOB_10007, "cannot cancel longjob that is succeeded"));
         }
         if (state == LongJobState.Failed) {
-            throw new ApiMessageInterceptionException(argerr("cannot cancel longjob that is failed"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_LONGJOB_10008, "cannot cancel longjob that is failed"));
         }
     }
 
@@ -163,7 +164,7 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
                 .findValue();
 
         if (state != LongJobState.Succeeded && state != LongJobState.Canceled && state != LongJobState.Failed) {
-            throw new ApiMessageInterceptionException(argerr("delete longjob only when it's succeeded, canceled, or failed"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_LONGJOB_10009, "delete longjob only when it's succeeded, canceled, or failed"));
         }
     }
 
@@ -174,7 +175,7 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
 
         LongJobState state = vo.getState();
         if (state != LongJobState.Succeeded && state != LongJobState.Canceled && state != LongJobState.Failed) {
-            throw new ApiMessageInterceptionException(argerr("rerun longjob only when it's succeeded, canceled, or failed"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_LONGJOB_10010, "rerun longjob only when it's succeeded, canceled, or failed"));
         }
 
         Class<APIMessage> apiClass = apiMsgOfLongJob.get(vo.getJobName());
@@ -203,7 +204,7 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
                 .findTuple();
 
         if (t.get(0, LongJobState.class) != LongJobState.Suspended) {
-            throw new ApiMessageInterceptionException(argerr("can only resume longjob that is Suspended"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_LONGJOB_10011, "can only resume longjob that is Suspended"));
         }
 
         Optional.ofNullable(t.get(1, String.class)).ifPresent(mnId ->

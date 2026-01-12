@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2016/7/25.
@@ -90,7 +91,7 @@ public class DebugManagerImpl extends AbstractService implements DebugManager {
         CleanQueueReply reply = new CleanQueueReply();
         ChainInfo taskInfo = thdf.cleanChainTaskInfo(msg.getSignatureName(), msg.getTaskIndex(), msg.getCleanUp(), msg.getRunningTask());
         if (taskInfo == null) {
-            reply.setError(operr("taskInfo was not found"));
+            reply.setError(operr(ORG_ZSTACK_CORE_DEBUG_10000, "taskInfo was not found"));
             bus.reply(msg, reply);
             return;
         }

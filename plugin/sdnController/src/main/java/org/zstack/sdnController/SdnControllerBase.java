@@ -55,6 +55,7 @@ import static org.zstack.sdnController.header.SdnControllerFlowDataParam.SDN_CON
 import static org.zstack.sdnController.header.SdnControllerFlowDataParam.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SdnControllerBase {
@@ -280,7 +281,7 @@ public class SdnControllerBase {
                     @Override
                     public void run(MessageReply reply) {
                         if (!reply.isSuccess()) {
-                            trigger.fail(operr("ping sdn controller failed, error: %s", reply.getError().getDetails()));
+                            trigger.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10009, "ping sdn controller failed, error: %s", reply.getError().getDetails()));
                         } else {
                             trigger.next();
                         }
@@ -483,7 +484,7 @@ public class SdnControllerBase {
                         .eq(SdnControllerHostRefVO_.vSwitchType, msg.getvSwitchType())
                         .eq(SdnControllerHostRefVO_.vtepIp, msg.getVtepIp()).find();
                 if (refvo != null) {
-                    completion.fail(argerr("could not add host[uuid:%s] to sdn controller[uuid:%s], " +
+                    completion.fail(argerr(ORG_ZSTACK_SDNCONTROLLER_10010, "could not add host[uuid:%s] to sdn controller[uuid:%s], " +
                                     " because vtepip is used by host[uuid:%s]", msg.getHostUuid(),
                             msg.getSdnControllerUuid(), refvo.getHostUuid()));
                     return;
@@ -1100,7 +1101,7 @@ public class SdnControllerBase {
         // But confirm again here to ensure type safety
         if (!SdnControllerConstant.H3C_VCFC_CONTROLLER.equals(self.getVendorType()) ||
             !SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V2.equals(self.getVendorVersion())) {
-            completion.fail(operr("Pull tenant operation is only supported for H3C VCFC V2 controllers"));
+            completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10011, "Pull tenant operation is only supported for H3C VCFC V2 controllers"));
             return;
         }
 
@@ -1131,7 +1132,7 @@ public class SdnControllerBase {
                         }
                     });
                 } catch (Exception e) {
-                    trigger.fail(operr("Failed to pull tenant data: %s", e.getMessage()));
+                    trigger.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10012, "Failed to pull tenant data: %s", e.getMessage()));
                 }
             }
         }).then(new NoRollbackFlow() {

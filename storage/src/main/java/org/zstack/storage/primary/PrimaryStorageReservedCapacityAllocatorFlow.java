@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -45,7 +46,7 @@ public class PrimaryStorageReservedCapacityAllocatorFlow extends NoRollbackFlow 
         ).collect(Collectors.toList());
 
         if (ret.isEmpty()) {
-            throw new OperationFailureException(operr("after subtracting reserved capacity[%s], there is no primary storage having required size[%s bytes], may be the threshold of primary storage physical capacity setting is lower",
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_10028, "after subtracting reserved capacity[%s], there is no primary storage having required size[%s bytes], may be the threshold of primary storage physical capacity setting is lower",
                             PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value(), spec.getSize()));
         }
 

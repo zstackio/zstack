@@ -1,5 +1,7 @@
 package org.zstack.test.integration.storage.volume
 
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
@@ -123,7 +125,7 @@ class CreateDataVolumeFromTemplateCase extends SubCase{
 
         env.message(DownloadDataVolumeToPrimaryStorageMsg.class){DownloadDataVolumeToPrimaryStorageMsg msg, CloudBus bus ->
             def reply = new DownloadDataVolumeToPrimaryStorageReply()
-            reply.setError(operr("on purpose"))
+            reply.setError(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_STORAGE_VOLUME_10000, "on purpose"))
             installPath = PathUtil.join(ps.getUrl(), PrimaryStoragePathMaker.makeDataVolumeInstallPath(volumeUuid))
             bus.reply(msg, reply)
         }

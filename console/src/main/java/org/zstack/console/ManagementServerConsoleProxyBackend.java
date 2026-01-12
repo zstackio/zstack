@@ -48,6 +48,7 @@ import java.util.Map;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -202,7 +203,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     setupPublicKey();
                     File privKeyFile = PathUtil.findFileOnClassPath("ansible/rsaKeys/id_rsa");
                     if (privKeyFile == null) {
-                        completion.fail(operr("Ansible private key not found."));
+                        completion.fail(operr(ORG_ZSTACK_CONSOLE_10000, "Ansible private key not found."));
                         chain.next();
                         return;
                     }
@@ -406,7 +407,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
         if (msg.getAgentUuids() != null) {
             for (String uuid : msg.getAgentUuids()) {
                 if (!mgmtNodeUuids.contains(uuid)) {
-                    errors.put(uuid, argerr("invalid management node UUID[%s]", uuid));
+                    errors.put(uuid, argerr(ORG_ZSTACK_CONSOLE_10001, "invalid management node UUID[%s]", uuid));
                 }
             }
         }
@@ -508,7 +509,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                         ShellResult res = runner.run();
                         String stdout = res.getStdout();
                         if (res.getRetCode() == 0) {
-                            trigger.fail(argerr("there is other process using the port: %s", stdout));
+                            trigger.fail(argerr(ORG_ZSTACK_CONSOLE_10002, "there is other process using the port: %s", stdout));
                         } else {
                             trigger.next();
                         }
@@ -567,7 +568,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                         if (rst == 0) {
                             trigger.next();
                         } else {
-                            trigger.fail(operr("failed to configure consoleProxyOverriddenIp[code:%d] or consoleProxyPort[code:%d]"));
+                            trigger.fail(operr(ORG_ZSTACK_CONSOLE_10003, "failed to configure consoleProxyOverriddenIp[code:%d] or consoleProxyPort[code:%d]"));
                         }
                     }
 
@@ -590,7 +591,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
-                                    trigger.fail(operr("failed to reconnect console proxy"));
+                                    trigger.fail(operr(ORG_ZSTACK_CONSOLE_10004, "failed to reconnect console proxy"));
                                 } else {
                                     trigger.next();
                                 }

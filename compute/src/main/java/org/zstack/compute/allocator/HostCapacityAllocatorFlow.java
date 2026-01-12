@@ -14,6 +14,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
@@ -62,7 +63,7 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
         ret = reserveMgr.filterOutHostsByReservedCapacity(ret, spec.getCpuCapacity(), spec.getMemoryCapacity());
 
         if (ret.isEmpty()) {
-            fail(Platform.operr("no host having cpu[%s], memory[%s bytes] found",
+            fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10021, "no host having cpu[%s], memory[%s bytes] found",
                     spec.getCpuCapacity(), spec.getMemoryCapacity()));
         } else {
             next(ret);

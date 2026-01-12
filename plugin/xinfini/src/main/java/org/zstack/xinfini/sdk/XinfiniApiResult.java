@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class XinfiniApiResult {
     private static final CLogger logger = Utils.getLogger(XinfiniApiResult.class);
@@ -105,7 +106,7 @@ public class XinfiniApiResult {
         try {
             ret = XInfiniClient.gson.fromJson(resultString, clz);
         } catch (Exception e) {
-            throw new OperationFailureException(operr("format api result to class[%s] failed, resultString: %s, exception: %s", clz.getName(), resultString, e.getMessage()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_XINFINI_SDK_10001, "format api result to class[%s] failed, resultString: %s, exception: %s", clz.getName(), resultString, e.getMessage()));
         }
         return ret;
     }

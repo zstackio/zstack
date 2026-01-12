@@ -61,6 +61,7 @@ import java.util.Map;
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 public class ApiMediatorImpl extends AbstractService implements
@@ -97,7 +98,7 @@ public class ApiMediatorImpl extends AbstractService implements
         ApiMessageDescriptor desc = processor.getApiMessageDescriptor(msg);
         if (desc == null) {
             Map message = map(e(msg.getClass().getName(), msg));
-            ErrorCode err = err(PortalErrors.NO_SERVICE_FOR_MESSAGE, "no service configuration file declares message: %s", JSONObjectUtil.toJsonString(message));
+            ErrorCode err = err(ORG_ZSTACK_PORTAL_APIMEDIATOR_10005, PortalErrors.NO_SERVICE_FOR_MESSAGE, "no service configuration file declares message: %s", JSONObjectUtil.toJsonString(message));
             logger.warn(err.getDetails());
             bus.replyErrorByMessageType(msg, err);
             return;
@@ -120,7 +121,7 @@ public class ApiMediatorImpl extends AbstractService implements
         }
 
         if (msg.getServiceId() == null) {
-            ErrorCode err = inerr("No service id found for API message[%s], message dump: %s", msg.getMessageName(), JSONObjectUtil.toJsonString(msg));
+            ErrorCode err = inerr(ORG_ZSTACK_PORTAL_APIMEDIATOR_10006, "No service id found for API message[%s], message dump: %s", msg.getMessageName(), JSONObjectUtil.toJsonString(msg));
             logger.warn(err.getDetails());
             bus.replyErrorByMessageType(msg, err);
             return;
@@ -403,7 +404,7 @@ public class ApiMediatorImpl extends AbstractService implements
                 } else {
                     IsManagementNodeReadyReply r = (IsManagementNodeReadyReply) reply;
                     if (!r.isReady()) {
-                        areply.setError(err(SysErrors.NOT_READY_ERROR,
+                        areply.setError(err(ORG_ZSTACK_PORTAL_APIMEDIATOR_10007, SysErrors.NOT_READY_ERROR,
                                 "management node[uuid:%s] is not ready yet", fnodeId));
                     }
                 }
@@ -490,7 +491,7 @@ public class ApiMediatorImpl extends AbstractService implements
             APICreateMessage cmsg = (APICreateMessage) msg;
             if (cmsg.getResourceUuid() != null) {
                 if (!StringDSL.isZStackUuid(cmsg.getResourceUuid())) {
-                    throw new ApiMessageInterceptionException(argerr("resourceUuid[%s] is not a valid uuid. A valid uuid is a UUID(v4 recommended) with '-' stripped. " +
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_PORTAL_APIMEDIATOR_10008, "resourceUuid[%s] is not a valid uuid. A valid uuid is a UUID(v4 recommended) with '-' stripped. " +
                                     "see http://en.wikipedia.org/wiki/Universally_unique_identifier for format of UUID, the regular expression uses" +
                                     " to validate a UUID is '[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}'", cmsg.getResourceUuid()));
                 }

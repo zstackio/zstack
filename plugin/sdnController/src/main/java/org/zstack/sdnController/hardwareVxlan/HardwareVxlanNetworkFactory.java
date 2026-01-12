@@ -57,6 +57,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by shixin.ruan on 09/17/2019.
@@ -90,7 +91,7 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
         HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(amsg.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
         SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
         if (sdn == null) {
-            completion.fail(operr("can not find sdn controller %s", poolVO.getSdnControllerUuid()));
+            completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_HARDWAREVXLAN_10005, "can not find sdn controller %s", poolVO.getSdnControllerUuid()));
             return;
         }
         SdnControllerL2 controller = sdnControllerManager.getSdnControllerL2(sdn);
@@ -425,7 +426,7 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (!errList.getCauses().isEmpty()) {
-                    completion.fail(operr("cannot configure hardware vxlan network for vm[uuid:%s] on the destination host[uuid:%s]",
+                    completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_HARDWAREVXLAN_10006, "cannot configure hardware vxlan network for vm[uuid:%s] on the destination host[uuid:%s]",
                             inv.getUuid(), destHostUuid).causedBy(errorCodeList.getCauses()));
                     return;
                 }

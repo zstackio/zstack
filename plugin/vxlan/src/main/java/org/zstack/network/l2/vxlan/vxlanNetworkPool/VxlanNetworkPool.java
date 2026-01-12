@@ -58,6 +58,7 @@ import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConst
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by weiwang on 01/03/2017.
@@ -303,7 +304,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         AllocateVniReply reply = new AllocateVniReply();
         Integer vni = vas.allocateVni(msg);
         if (vni == null) {
-            reply.setError(err(L2Errors.ALLOCATE_VNI_ERROR, "Vni allocator strategy[%s] returns nothing, because no vni is available in this VxlanNetwork[name:%s, uuid:%s]", strategyType, self.getName(), self.getUuid()));
+            reply.setError(err(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10010, L2Errors.ALLOCATE_VNI_ERROR, "Vni allocator strategy[%s] returns nothing, because no vni is available in this VxlanNetwork[name:%s, uuid:%s]", strategyType, self.getName(), self.getUuid()));
         } else {
             logger.debug(String.format("Vni allocator strategy[%s] successfully allocates an vni[%s]", strategyType, vni));
             reply.setVni(vni);
@@ -554,7 +555,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         rq.add(L2NetworkClusterRefVO_.l2NetworkUuid, SimpleQuery.Op.EQ, msg.getL2NetworkUuid());
         long count = rq.count();
         if (count == 0) {
-            evt.setError(err(SysErrors.RESOURCE_NOT_FOUND, "Cannot find L2NetworkClusterRefVO item for l2NetworkUuid[%s] clusterUuid[%s]", msg.getL2NetworkUuid(), msg.getClusterUuid()));
+            evt.setError(err(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10011, SysErrors.RESOURCE_NOT_FOUND, "Cannot find L2NetworkClusterRefVO item for l2NetworkUuid[%s] clusterUuid[%s]", msg.getL2NetworkUuid(), msg.getClusterUuid()));
             bus.publish(evt);
             return;
         }
@@ -565,7 +566,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         rqVtep.add(RemoteVtepVO_.vtepIp, SimpleQuery.Op.EQ, msg.getRemoteVtepIp());
         count = rqVtep.count();
         if (count > 0) {
-            evt.setError(err(SysErrors.OPERATION_ERROR, "ip[%s] l2NetworkUuid[%s] clusterUuid[%s] exist", msg.getRemoteVtepIp(), msg.getL2NetworkUuid(), msg.getClusterUuid()));
+            evt.setError(err(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10012, SysErrors.OPERATION_ERROR, "ip[%s] l2NetworkUuid[%s] clusterUuid[%s] exist", msg.getRemoteVtepIp(), msg.getL2NetworkUuid(), msg.getClusterUuid()));
             bus.publish(evt);
             return;
         }
@@ -601,7 +602,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setError(err(L2Errors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(err(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10013, L2Errors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
             }
         });
@@ -899,7 +900,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             @Override
             public void fail(ErrorCode errorCode) {
                 afterAttachVxlanPoolFromClusterFailed(msg);
-                evt.setError(err(L2Errors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(err(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10014, L2Errors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
             }
         });

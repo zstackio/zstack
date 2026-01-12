@@ -1,5 +1,7 @@
 package org.zstack.test.integration.core.cloudbus
 
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBusCallBack
 import org.zstack.core.cloudbus.CloudBusGlobalProperty
@@ -76,7 +78,7 @@ class CloudBusCase extends SubCase{
                 })
             } else if (msg instanceof FakeNeedReplyMessage3) {
                 def r = new MessageReply()
-                r.setError(errf.stringToOperationError("fake first error", [operr("origin error")]))
+                r.setError(errf.stringToOperationError("fake first error", [org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_CORE_CLOUDBUS_10000, "origin error")]))
                 bus.reply(msg, r)
             } else if (msg instanceof FakeNeedReplyMessage4) {
                 // no reply

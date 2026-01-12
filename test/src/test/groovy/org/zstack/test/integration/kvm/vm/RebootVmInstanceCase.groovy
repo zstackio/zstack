@@ -1,5 +1,7 @@
 package org.zstack.test.integration.kvm.vm
 
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.SQL
 import org.zstack.header.vm.StartVmOnHypervisorMsg
@@ -50,7 +52,7 @@ class RebootVmInstanceCase extends SubCase{
                     .update()
 
             StartVmOnHypervisorReply reply = new StartVmOnHypervisorReply()
-            reply.setError(operr("start fail on purpose"))
+            reply.setError(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_KVM_VM_10000, "start fail on purpose"))
             bus.reply(msg, reply)
         }
 

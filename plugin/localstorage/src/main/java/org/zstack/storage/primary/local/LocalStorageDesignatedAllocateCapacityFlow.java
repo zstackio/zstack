@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by lining on 2017/09/29.
@@ -124,13 +125,13 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
 
     private ErrorCode checkIfSpecifyPrimaryStorage(VmInstanceSpec spec) {
         if (spec.getRequiredPrimaryStorageUuidForRootVolume() == null) {
-            ErrorCode errorCode = operr("The cluster[uuid=%s] mounts multiple primary storage[LocalStorage, other non-LocalStorage primary storage], You must specify the primary storage where the root disk is located",
+            ErrorCode errorCode = operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10067, "The cluster[uuid=%s] mounts multiple primary storage[LocalStorage, other non-LocalStorage primary storage], You must specify the primary storage where the root disk is located",
                     spec.getDestHost().getClusterUuid());
             return errorCode;
         }
 
         if(spec.getDataDiskOfferings() != null && !spec.getDataDiskOfferings().isEmpty() && spec.getRequiredPrimaryStorageUuidForDataVolume() == null){
-            ErrorCode errorCode = operr("The cluster[uuid=%s] mounts multiple primary storage[LocalStorage, other non-LocalStorage primary storage], You must specify the primary storage where the data disk is located",
+            ErrorCode errorCode = operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10068, "The cluster[uuid=%s] mounts multiple primary storage[LocalStorage, other non-LocalStorage primary storage], You must specify the primary storage where the data disk is located",
                     spec.getDestHost().getClusterUuid());
             return errorCode;
         }

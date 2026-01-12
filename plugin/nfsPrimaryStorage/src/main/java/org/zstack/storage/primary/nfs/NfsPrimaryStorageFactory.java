@@ -60,6 +60,7 @@ import java.util.concurrent.Callable;
 
 import static org.zstack.header.Constants.THREAD_CONTEXT_API;
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component, CreateTemplateFromVolumeSnapshotExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint,
         PrimaryStorageDetachExtensionPoint, PrimaryStorageAttachExtensionPoint, HostDeleteExtensionPoint, PostMarkRootVolumeAsSnapshotExtension, ClusterUpdateOSExtensionPoint, AfterInstantiateVolumeExtensionPoint {
@@ -113,7 +114,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
                 }
 
                 if (!q(PrimaryStorageClusterRefVO.class).eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, psUuid).isExists()) {
-                    throw new OperationFailureException(operr("the NFS primary storage[uuid:%s] is not attached" +
+                    throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10000, "the NFS primary storage[uuid:%s] is not attached" +
                             " to any clusters, and cannot expunge the root volume[uuid:%s] of the VM[uuid:%s]", psUuid, vmUuid, volumeUuid));
                 }
             }
@@ -263,7 +264,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
 
     public List<HostInventory> getConnectedHostForPing(PrimaryStorageInventory pri) {
         if (pri.getAttachedClusterUuids().isEmpty()) {
-            throw new OperationFailureException(operr("cannot find a Connected host to execute command for nfs primary storage[uuid:%s]", pri.getUuid()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10001, "cannot find a Connected host to execute command for nfs primary storage[uuid:%s]", pri.getUuid()));
         }
 
         String sql = "select h from HostVO h " +
@@ -275,7 +276,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         List<HostVO> ret = q.getResultList();
         if (ret.isEmpty()) {
             throw new OperationFailureException(
-                    operr("cannot find a connected host in cluster which ps [uuid: %s] attached", pri.getUuid()));
+                    operr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10002, "cannot find a connected host in cluster which ps [uuid: %s] attached", pri.getUuid()));
         } else {
             Collections.shuffle(ret);
             return HostInventory.valueOf(ret);
@@ -284,7 +285,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
 
     public List<HostInventory> getConnectedHostForOperation(PrimaryStorageInventory pri) {
         if (pri.getAttachedClusterUuids().isEmpty()) {
-            throw new OperationFailureException(operr("cannot find a Connected host to execute command for nfs primary storage[uuid:%s]", pri.getUuid()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10003, "cannot find a Connected host to execute command for nfs primary storage[uuid:%s]", pri.getUuid()));
         }
 
         //we need to filter out the non-enabled host in case of host maintained but kvmagent downed
@@ -303,7 +304,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         List<HostVO> ret = q.getResultList();
         if (ret.isEmpty()) {
             throw new OperationFailureException(
-                    operr("cannot find a host which has Connected host-NFS connection to execute command " +
+                    operr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10004, "cannot find a host which has Connected host-NFS connection to execute command " +
                             "for nfs primary storage[uuid:%s]", pri.getUuid()));
         } else {
             String apiId = ThreadContext.get(THREAD_CONTEXT_API);
@@ -400,7 +401,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
             return HypervisorType.valueOf(type);
         }
 
-        throw new OperationFailureException(operr("cannot find proper hypervisorType for primary storage[uuid:%s] to handle image format or volume format[%s]", psUuid, imageFormat));
+        throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10005, "cannot find proper hypervisorType for primary storage[uuid:%s] to handle image format or volume format[%s]", psUuid, imageFormat));
     }
 
     @Override

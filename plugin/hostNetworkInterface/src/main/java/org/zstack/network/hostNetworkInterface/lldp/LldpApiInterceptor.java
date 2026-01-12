@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class LldpApiInterceptor implements ApiMessageInterceptor {
     @Autowired
@@ -47,14 +48,14 @@ public class LldpApiInterceptor implements ApiMessageInterceptor {
                 .listValues();
         Set<String> set = new HashSet<>(hostUuids);
         if (set.size() > 1) {
-            throw new ApiMessageInterceptionException((argerr("could not change lldp mode for the interfaces of different hosts")));
+            throw new ApiMessageInterceptionException((argerr(ORG_ZSTACK_NETWORK_HOSTNETWORKINTERFACE_LLDP_10000, "could not change lldp mode for the interfaces of different hosts")));
         }
     }
 
     private void validate(APIGetHostNetworkInterfaceLldpMsg msg) {
         String mode = Q.New(HostNetworkInterfaceLldpVO.class).select(HostNetworkInterfaceLldpVO_.mode).eq(HostNetworkInterfaceLldpVO_.interfaceUuid, msg.getInterfaceUuid()).findValue();
         if (mode != null && !mode.contains("rx")) {
-            throw new ApiMessageInterceptionException((argerr("could not get interface lldp info which is not in receive mode")));
+            throw new ApiMessageInterceptionException((argerr(ORG_ZSTACK_NETWORK_HOSTNETWORKINTERFACE_LLDP_10001, "could not get interface lldp info which is not in receive mode")));
         }
     }
 }

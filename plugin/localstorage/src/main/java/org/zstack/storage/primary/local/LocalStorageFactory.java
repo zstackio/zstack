@@ -68,6 +68,7 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 6/30/2015.
@@ -301,7 +302,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     public LocalStorageBackupStorageMediator getBackupStorageMediator(String hvType, String bsType) {
         LocalStorageBackupStorageMediator m = backupStorageMediatorMap.get(makeMediatorKey(hvType, bsType));
         if (m == null) {
-            throw new OperationFailureException(operr("no LocalStorageBackupStorageMediator supporting hypervisor[%s] and backup storage type[%s] ",
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10043, "no LocalStorageBackupStorageMediator supporting hypervisor[%s] and backup storage type[%s] ",
                     hvType, bsType));
         }
 
@@ -410,7 +411,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 return new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        trigger.fail(operr("creation rely on image cache[uuid:%s, locate host uuids: [%s]], cannot create other places.", imageUuid, cachedHostUuids));
+                        trigger.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10044, "creation rely on image cache[uuid:%s, locate host uuids: [%s]], cannot create other places.", imageUuid, cachedHostUuids));
 
                     }
                 };
@@ -468,7 +469,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             if (KVMConstant.KVM_HYPERVISOR_TYPE.equals(spec.getVmInventory().getHypervisorType())) {
                 return new LocalStorageKvmMigrateVmFlow();
             } else {
-                throw new OperationFailureException(operr("local storage doesn't support live migration for hypervisor[%s]", spec.getVmInventory().getHypervisorType()));
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10045, "local storage doesn't support live migration for hypervisor[%s]", spec.getVmInventory().getHypervisorType()));
             }
         }
 
@@ -686,7 +687,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             if (!Q.New(HostVO.class)
                     .eq(HostVO_.uuid, volumeHostUuid)
                     .eq(HostVO_.clusterUuid, vmClusterUuid).isExists()) {
-                throw new OperationFailureException(operr("Can't attach volume to VM, no qualified cluster"));
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10046, "Can't attach volume to VM, no qualified cluster"));
             }
         }
 
@@ -702,7 +703,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             String dataHost = q.findValue();
 
             if (!rootHost.equals(dataHost)) {
-                throw new OperationFailureException(operr("cannot attach the data volume[uuid:%s] to the vm[uuid:%s]." +
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10047, "cannot attach the data volume[uuid:%s] to the vm[uuid:%s]." +
                                 " Both vm's root volume and the data volume are" +
                                 " on local primary storage, but they are on different hosts." +
                                 " The root volume[uuid:%s] is on the host[uuid:%s] but the data volume[uuid: %s]" +
@@ -920,7 +921,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         rq.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, vol.getUuid());
         rq.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
         if (!rq.isExists()) {
-            throw new OperationFailureException(operr("the data volume[name:%s, uuid:%s] is on the local storage[uuid:%s]; however," +
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10048, "the data volume[name:%s, uuid:%s] is on the local storage[uuid:%s]; however," +
                                     "the host on which the data volume is has been deleted. Unable to recover this volume",
                             vol.getName(), vol.getUuid(), vol.getPrimaryStorageUuid()));
         }
@@ -962,7 +963,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         rq.setParameter("rtype", VolumeVO.class.getSimpleName());
         long count = rq.getSingleResult();
         if (count == 0) {
-            throw new OperationFailureException(operr("unable to recover the vm[uuid:%s, name:%s]. The vm's root volume is on the local" +
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10049, "unable to recover the vm[uuid:%s, name:%s]. The vm's root volume is on the local" +
                                     " storage[uuid:%s]; however, the host on which the root volume is has been deleted",
                             vm.getUuid(), vm.getName(), psuuid));
         }
@@ -996,17 +997,17 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
         // forbid live migration with data volumes for local storage
         if (vm.getAllDiskVolumes().size() > 1) {
-            return operr("unable to live migrate vm[uuid:%s] with data volumes on local storage." +
+            return operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10050, "unable to live migrate vm[uuid:%s] with data volumes on local storage." +
                     " Need detach all data volumes first.", vm.getUuid());
         }
 
         if (!ImagePlatform.Linux.toString().equals(vm.getPlatform())) {
-            return operr("unable to live migrate vm[uuid:%s] with local storage." +
+            return operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10051, "unable to live migrate vm[uuid:%s] with local storage." +
                     " Only linux guest is supported. Current platform is [%s]", vm.getUuid(), vm.getPlatform());
         }
 
         if (IsoOperator.isIsoAttachedToVm(vm.getUuid())) {
-            return operr("unable to live migrate vm[uuid:%s] with ISO on local storage." +
+            return operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10052, "unable to live migrate vm[uuid:%s] with ISO on local storage." +
                     " Need detach all ISO first.", vm.getUuid());
         }
 
@@ -1082,7 +1083,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
 
             if (hostUuid == null) {
-                throw new OperationFailureException(argerr("To create data volume on the local primary storage, you must specify the host that" +
+                throw new OperationFailureException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10053, "To create data volume on the local primary storage, you must specify the host that" +
                                         " the data volume is going to be created using the system tag [%s]",
                                 LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat()));
             }
@@ -1092,7 +1093,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, hostUuid);
         q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
         if (!q.isExists()) {
-            throw new OperationFailureException(argerr("the host[uuid:%s] doesn't belong to the local primary storage[uuid:%s]", hostUuid, msg.getPrimaryStorageUuid()));
+            throw new OperationFailureException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10054, "the host[uuid:%s] doesn't belong to the local primary storage[uuid:%s]", hostUuid, msg.getPrimaryStorageUuid()));
         }
 
         InstantiateVolumeOnPrimaryStorageMsg imsg;
@@ -1345,7 +1346,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                                 .checkRequiredSize(msg.getDiskSize()), 10);
 
         if (filterRefs.isEmpty()) {
-            throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
+            throw new OperationFailureException(err(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10055, HostAllocatorError.NO_AVAILABLE_HOST,
                     "the local primary storage[uuid:%s] has no hosts with enough disk capacity[%s bytes] required by the disk offering[uuid:%s]",
                     psUuid, msg.getDiskSize(), diskOffering
             ));

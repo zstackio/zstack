@@ -29,6 +29,7 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -74,7 +75,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         q.add(L2NetworkClusterRefVO_.clusterUuid, Op.EQ, msg.getClusterUuid());
         q.add(L2NetworkClusterRefVO_.l2NetworkUuid, Op.EQ, msg.getL2NetworkUuid());
         if (q.isExists()) {
-            throw new ApiMessageInterceptionException(operr("l2Network[uuid:%s] has attached to cluster[uuid:%s], can't attach again", msg.getL2NetworkUuid(), msg.getClusterUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_L2_10008, "l2Network[uuid:%s] has attached to cluster[uuid:%s], can't attach again", msg.getL2NetworkUuid(), msg.getClusterUuid()));
         }
 
         /* current ovs only support vlan, vxlan*/
@@ -87,7 +88,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             if (!otherL2s.isEmpty()) {
                 if (Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.clusterUuid, msg.getClusterUuid())
                         .in(L2NetworkClusterRefVO_.l2NetworkUuid, otherL2s).isExists()) {
-                    throw new ApiMessageInterceptionException(argerr("could not attach l2 network, because there " +
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10009, "could not attach l2 network, because there " +
                                     "is another network [uuid:%s] on physical interface [%s] with different vswitch type",
                             otherL2s.get(0), l2.getPhysicalInterface()));
                 }
@@ -100,7 +101,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         q.add(L2NetworkClusterRefVO_.clusterUuid, Op.EQ, msg.getClusterUuid());
         q.add(L2NetworkClusterRefVO_.l2NetworkUuid, Op.EQ, msg.getL2NetworkUuid());
         if (!q.isExists()) {
-            throw new ApiMessageInterceptionException(operr("l2Network[uuid:%s] has not attached to cluster[uuid:%s]", msg.getL2NetworkUuid(), msg.getClusterUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_L2_10010, "l2Network[uuid:%s] has not attached to cluster[uuid:%s]", msg.getL2NetworkUuid(), msg.getClusterUuid()));
         }
     }
 
@@ -114,13 +115,13 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APICreateL2NetworkMsg msg) {
         if (!L2NetworkType.hasType(msg.getType())) {
-            throw new ApiMessageInterceptionException(argerr("unsupported l2Network type[%s]", msg.getType()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10011, "unsupported l2Network type[%s]", msg.getType()));
         }
 
         try {
             VSwitchType.valueOf(msg.getvSwitchType());
         } catch (Exception e) {
-            throw new ApiMessageInterceptionException(argerr("unsupported vSwitch type[%s]", msg.getvSwitchType()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10012, "unsupported vSwitch type[%s]", msg.getvSwitchType()));
         }
     }
 
@@ -129,29 +130,29 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         l2.getAttachedClusterRefs().forEach(ref -> {
             if (Q.New(HostVO.class).eq(HostVO_.clusterUuid, ref.getClusterUuid())
                     .notEq(HostVO_.status, HostStatus.Connected).isExists()) {
-                throw new ApiMessageInterceptionException(operr("cannot change vlan for l2Network[uuid:%s]" +
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_L2_10013, "cannot change vlan for l2Network[uuid:%s]" +
                         " because there are hosts status in Connecting or Disconnected", l2.getUuid()));
             }
             if (!Q.New(ClusterVO.class).eq(ClusterVO_.uuid, ref.getClusterUuid())
                     .eq(ClusterVO_.hypervisorType, L2NetworkConstant.KVM_HYPERVISOR_TYPE).isExists()) {
-                throw new ApiMessageInterceptionException(operr("cannot change vlan for l2Network[uuid:%s]" +
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_L2_10014, "cannot change vlan for l2Network[uuid:%s]" +
                         " because it only supports an L2Network that is exclusively attached to a kvm cluster", l2.getUuid()));
             }
         });
         // pvlan isolated not support change vlan
         if (l2.getIsolated()) {
-            throw new ApiMessageInterceptionException(argerr("cannot change vlan for l2Network[uuid:%s]" +
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10015, "cannot change vlan for l2Network[uuid:%s]" +
                     " because this l2Network is isolated", l2.getUuid()));
         }
         String sdnControllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID
                 .getTokenByResourceUuid(msg.getL2NetworkUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
         if (msg.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
             if (msg.getVlan() == null) {
-                throw new ApiMessageInterceptionException(argerr("vlan is required for " +
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10016, "vlan is required for " +
                         "ChangeL2NetworkVlanId with type[%s]", msg.getType()));
             }
             if (!NetworkUtils.isValidVlan(msg.getVlan())) {
-                throw new ApiMessageInterceptionException(argerr("vlan[%s] is invalid", msg.getVlan()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10017, "vlan[%s] is invalid", msg.getVlan()));
             }
             List<String> attachedClusters = l2.getAttachedClusterRefs().stream()
                     .map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toList());
@@ -186,12 +187,12 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             }
             l2s = l2s.stream().filter(l -> !l.getUuid().equals(msg.getUuid())).collect(Collectors.toList());
             if (!l2s.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("There has been a l2Network attached to cluster with virtual network id[%s] and physical interface[%s]. Failed to change L2 network[uuid:%s]",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10018, "There has been a l2Network attached to cluster with virtual network id[%s] and physical interface[%s]. Failed to change L2 network[uuid:%s]",
                         msg.getVlan(), l2.getPhysicalInterface(), l2.getUuid()));
             }
         } else if (msg.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)) {
             if (msg.getVlan() != null) {
-                throw new ApiMessageInterceptionException(argerr("vlan is not allowed for " +
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10019, "vlan is not allowed for " +
                         "ChangeL2NetworkVlanId with type[%s]", msg.getType()));
             }
             List<String> attachedClusters = l2.getAttachedClusterRefs().stream()
@@ -223,7 +224,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             }
             l2s = l2s.stream().filter(l -> !l.getUuid().equals(msg.getUuid())).collect(Collectors.toList());
             if (!l2s.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("There has been a l2Network attached to cluster that has physical interface[%s]. Failed to change l2Network[uuid:%s]",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10020, "There has been a l2Network attached to cluster that has physical interface[%s]. Failed to change l2Network[uuid:%s]",
                         l2.getPhysicalInterface(), l2.getUuid()));
             }
         }

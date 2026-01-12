@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -137,7 +138,7 @@ public class HostCascadeExtension extends AbstractAsyncCascadeExtension {
 
             completion.success();
         } catch (HostException e) {
-            completion.fail(inerr(e.getMessage()));
+            completion.fail(inerr(ORG_ZSTACK_COMPUTE_HOST_10115, e.getMessage()));
         }
     }
 

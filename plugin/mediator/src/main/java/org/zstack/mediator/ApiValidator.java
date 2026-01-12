@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -102,7 +103,7 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
         List<VmNicVO> vmNicVOS = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, vmInstanceUuid).list();
         List<IpRangeVO> newIpRangeVOS = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, l3NetworkUuid).list();
         if (newIpRangeVOS == null || newIpRangeVOS.isEmpty()) {
-            throw new ApiMessageInterceptionException(operr("no ip ranges attached with l3 network[uuid:%s]", l3NetworkUuid));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_MEDIATOR_10000, "no ip ranges attached with l3 network[uuid:%s]", l3NetworkUuid));
         }
 
         List<IpRangeVO> newIp4RangeVOS = newIpRangeVOS.stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
@@ -114,13 +115,13 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
                     .eq(IpRangeVO_.ipVersion, IPv6Constants.IPv6).limit(1).list();
             if (!newIp4RangeVOS.isEmpty() && !ip4RangeVOS.isEmpty()) {
                 if (NetworkUtils.isCidrOverlap(newIp4RangeVOS.get(0).getNetworkCidr(), ip4RangeVOS.get(0).getNetworkCidr())) {
-                    throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The cidr of l3[%s] to attach overlapped with l3[%s] already attached to vm", l3NetworkUuid, vmNicVO.getL3NetworkUuid()));
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_MEDIATOR_10001, "unable to attach a L3 network. The cidr of l3[%s] to attach overlapped with l3[%s] already attached to vm", l3NetworkUuid, vmNicVO.getL3NetworkUuid()));
                 }
             }
             if (!newIp6RangeVOS.isEmpty() && !ip6RangeVOS.isEmpty()) {
                 if (IPv6NetworkUtils.isIpv6RangeOverlap(ip6RangeVOS.get(0).getStartIp(), ip6RangeVOS.get(0).getEndIp(),
                         newIp6RangeVOS.get(0).getStartIp(),  newIp6RangeVOS.get(0).getEndIp())) {
-                    throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The cidr of l3[%s] to attach overlapped with l3[%s] already attached to vm", l3NetworkUuid, vmNicVO.getL3NetworkUuid()));
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_MEDIATOR_10002, "unable to attach a L3 network. The cidr of l3[%s] to attach overlapped with l3[%s] already attached to vm", l3NetworkUuid, vmNicVO.getL3NetworkUuid()));
                 }
             }
         }
@@ -152,7 +153,7 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
 
             List<String> pfStr = pfs.stream().map(pf -> String.format("(name:%s, ip:%s)", pf.getName(), pf.getVipIp())).collect(Collectors.toList());
 
-            throw new ApiMessageInterceptionException(operr("the vm[name:%s, uuid:%s] already has some port forwarding rules%s attached", vm.getName(), vm.getUuid(),
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_MEDIATOR_10003, "the vm[name:%s, uuid:%s] already has some port forwarding rules%s attached", vm.getName(), vm.getUuid(),
                             StringUtils.join(pfStr, ",")));
         }
     }
@@ -173,7 +174,7 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
 
             List<String> eipStr = eips.stream().map(eip -> String.format("(name:%s, ip:%s)", eip.getName(), eip.getVipIp())).collect(Collectors.toList());
 
-            throw new ApiMessageInterceptionException(operr("the vm[name:%s, uuid:%s] already has some EIPs%s attached", vm.getName(), vm.getUuid(),
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_MEDIATOR_10004, "the vm[name:%s, uuid:%s] already has some EIPs%s attached", vm.getName(), vm.getUuid(),
                             StringUtils.join(eipStr, ",")));
         }
     }
@@ -188,7 +189,7 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
         if(useFor != null && !useFor.isEmpty()) {
             VipUseForList useForList = new VipUseForList(useFor);
             if (!useForList.validateNewAdded(EipConstant.EIP_NETWORK_SERVICE_TYPE)) {
-                throw new ApiMessageInterceptionException(operr("the vip[uuid:%s] already has bound to other service[%s]", msg.getVipUuid(), useForList.toString()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_MEDIATOR_10005, "the vip[uuid:%s] already has bound to other service[%s]", msg.getVipUuid(), useForList.toString()));
             }
         }
     }
@@ -232,10 +233,10 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
             RangeSet.Range cur = it.next();
             if (cur.isOverlap(range) || range.isOverlap(cur)){
                 if (cur.getSystem()) {
-                    throw new ApiMessageInterceptionException(operr("Current port range[%s, %s] is conflicted with system service port range [%s, %s] with vip[uuid: %s] protocol: %s ",
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_MEDIATOR_10006, "Current port range[%s, %s] is conflicted with system service port range [%s, %s] with vip[uuid: %s] protocol: %s ",
                             Long.toString(range.getStart()), Long.toString(range.getEnd()), Long.toString(cur.getStart()), Long.toString(cur.getEnd()), vipUuid, protocol));
                 } else {
-                    throw new ApiMessageInterceptionException(operr("Current port range[%s, %s] is conflicted with used port range [%s, %s] with vip[uuid: %s] protocol: %s ",
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_MEDIATOR_10007, "Current port range[%s, %s] is conflicted with used port range [%s, %s] with vip[uuid: %s] protocol: %s ",
                             Long.toString(range.getStart()), Long.toString(range.getEnd()), Long.toString(cur.getStart()), Long.toString(cur.getEnd()), vipUuid, protocol));
                 }
             }

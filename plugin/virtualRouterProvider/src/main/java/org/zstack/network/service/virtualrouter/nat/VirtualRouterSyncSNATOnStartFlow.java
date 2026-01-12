@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterSyncSNATOnStartFlow implements Flow {
@@ -144,7 +145,7 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
                 VirtualRouterAsyncHttpCallReply re = reply.castReply();
                 SyncSNATRsp ret = re.toResponse(SyncSNATRsp.class);
                 if (!ret.isSuccess()) {
-                    ErrorCode err = operr("virtual router[name: %s, uuid: %s] failed to sync snat%s, %s",
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_NAT_10000, "virtual router[name: %s, uuid: %s] failed to sync snat%s, %s",
                             vr.getName(), vr.getUuid(), JSONObjectUtil.toJsonString(snatInfo), ret.getError());
                     chain.fail(err);
                 } else {

@@ -55,6 +55,7 @@ import java.util.Map;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AccountBase extends AbstractAccount {
@@ -342,7 +343,7 @@ public class AccountBase extends AbstractAccount {
 
         if (!AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(msg.getAccountUuid()) &&
                 !group.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new OperationFailureException(argerr("the user group[uuid:%s] does not belong to the account[uuid:%s]", group.getUuid(), msg.getAccountUuid()));
+            throw new OperationFailureException(argerr(ORG_ZSTACK_IDENTITY_10008, "the user group[uuid:%s] does not belong to the account[uuid:%s]", group.getUuid(), msg.getAccountUuid()));
         }
 
         boolean update = false;
@@ -547,7 +548,7 @@ public class AccountBase extends AbstractAccount {
 
         for (String ruuid : msg.getResourceUuids()) {
             if (!uuidType.containsKey(ruuid)) {
-                throw new OperationFailureException(argerr("the account[uuid: %s] doesn't have a resource[uuid: %s]", self.getUuid(), ruuid));
+                throw new OperationFailureException(argerr(ORG_ZSTACK_IDENTITY_10009, "the account[uuid: %s] doesn't have a resource[uuid: %s]", self.getUuid(), ruuid));
             }
         }
 
@@ -609,12 +610,12 @@ public class AccountBase extends AbstractAccount {
         UserVO user = dbf.findByUuid(msg.getUuid(), UserVO.class);
 
         if (!AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(msg.getAccountUuid()) && !user.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new OperationFailureException(argerr("the user[uuid:%s] does not belong to the" +
+            throw new OperationFailureException(argerr(ORG_ZSTACK_IDENTITY_10010, "the user[uuid:%s] does not belong to the" +
                     " account[uuid:%s]", user.getUuid(), msg.getAccountUuid()));
         }
 
         if (msg.getOldPassword() != null && !msg.getOldPassword().equals(user.getPassword())){
-            throw new OperationFailureException(argerr("old password is not equal to the original password, cannot update the password of user[uuid:%s]", user.getUuid()));
+            throw new OperationFailureException(argerr(ORG_ZSTACK_IDENTITY_10011, "old password is not equal to the original password, cannot update the password of user[uuid:%s]", user.getUuid()));
         }
 
         boolean update = false;

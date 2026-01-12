@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.touterr;
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -90,7 +91,7 @@ public class ApplianceVmConnectFlow extends NoRollbackFlow {
             private boolean countDown(String msg) {
                 retry.value--;
                 if (retry.value <= 0) {
-                    ErrorCode toutErr = touterr("connecting appliance vm[uuid:%s, name:%s, ip:%s] timeout, unable to ssh in[%s]", spec.getVmInventory().getUuid(), spec.getVmInventory().getName(), mgmtIp, msg);
+                    ErrorCode toutErr = touterr(ORG_ZSTACK_APPLIANCEVM_10003, "connecting appliance vm[uuid:%s, name:%s, ip:%s] timeout, unable to ssh in[%s]", spec.getVmInventory().getUuid(), spec.getVmInventory().getName(), mgmtIp, msg);
                     logger.warn(toutErr.getDetails());
                     chain.fail(toutErr);
                     return true;
@@ -142,7 +143,7 @@ public class ApplianceVmConnectFlow extends NoRollbackFlow {
                     }
                 } catch (Throwable e1) {
                     logger.warn(e1.getMessage(), e1);
-                    ErrorCode err = e1 instanceof OperationFailureException ? ((OperationFailureException)e1).getErrorCode() : err(ApplianceVmErrors.UNABLE_TO_START, e1.getMessage());
+                    ErrorCode err = e1 instanceof OperationFailureException ? ((OperationFailureException)e1).getErrorCode() : err(ORG_ZSTACK_APPLIANCEVM_10004, ApplianceVmErrors.UNABLE_TO_START, e1.getMessage());
                     chain.fail(err);
                     Thread.currentThread().interrupt();
                     return true;
@@ -153,7 +154,7 @@ public class ApplianceVmConnectFlow extends NoRollbackFlow {
                 SshResult ret = new Ssh().setHostname(mgmtIp).setUsername(username).setPrivateKey(privKey).setPort(sshPort)
                         .command(String.format("if [ -f %s ]; then cat %s; exit 1; else exit 0; fi", ERROR_LOG_PATH, ERROR_LOG_PATH)).setTimeout(60).runAndClose();
                 if (ret.getReturnCode() != 0) {
-                    throw new OperationFailureException(err(ApplianceVmErrors.UNABLE_TO_START, ret.getStdout()));
+                    throw new OperationFailureException(err(ORG_ZSTACK_APPLIANCEVM_10005, ApplianceVmErrors.UNABLE_TO_START, ret.getStdout()));
                 }
             }
 

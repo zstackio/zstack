@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.longjob.LongJobUtils.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 /**
@@ -198,7 +199,7 @@ public class AddImageLongJob implements LongJob {
                     logger.warn(String.format("delete image [%s] failed after management node restarted", msg.getResourceUuid()));
                 }
 
-                completion.fail(operr("Failed because management node restarted."));
+                completion.fail(operr(ORG_ZSTACK_IMAGE_10016, "Failed because management node restarted."));
             }
         });
     }

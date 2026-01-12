@@ -32,9 +32,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
-/**
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;/**
  * Created by miao on 16-10-9.
  */
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class QuotaUtil {
     private static final CLogger logger = Utils.getLogger(QuotaUtil.class);
@@ -79,7 +80,7 @@ public class QuotaUtil {
                 .eq(AccountVO_.uuid, quotaCompareInfo.resourceTargetOwnerAccountUuid)
                 .findValue();
         if (quotaCompareInfo.currentUsed + quotaCompareInfo.request > quotaCompareInfo.quotaValue) {
-            throw new ApiMessageInterceptionException(err(IdentityErrors.QUOTA_EXCEEDING,
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_IDENTITY_10002, IdentityErrors.QUOTA_EXCEEDING,
                     "quota exceeding." +
                             "The resource owner(or target resource owner) account[uuid: %s name: %s] exceeds a quota[name: %s, value: %s], " +
                             "Current used:%s, Request:%s. Please contact the administrator.",
@@ -129,14 +130,14 @@ public class QuotaUtil {
     }
 
     public ErrorCode buildQuataExceedError(String currentAccountUuid, String quotaName, long quotaValue){
-        return err(IdentityErrors.QUOTA_EXCEEDING,
+        return err(ORG_ZSTACK_IDENTITY_10003, IdentityErrors.QUOTA_EXCEEDING,
                 "quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]. Please contact the administrator.",
                 currentAccountUuid, quotaName, quotaValue);
     }
 
 
     public ErrorCode buildQuataExceedError(String currentAccountUuid, String quotaName, long quotaValue, long currentUsed, long request){
-        return err(IdentityErrors.QUOTA_EXCEEDING,
+        return err(ORG_ZSTACK_IDENTITY_10004, IdentityErrors.QUOTA_EXCEEDING,
                 "quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]," +
                         " Current used:%s, Request:%s. Please contact the administrator.",
                 currentAccountUuid, quotaName, quotaValue, currentUsed, request);

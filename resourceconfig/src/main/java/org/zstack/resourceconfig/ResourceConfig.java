@@ -25,6 +25,7 @@ import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.StringDSL.s;
 import static org.zstack.resourceconfig.ResourceConfigCanonicalEvents.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by MaJin on 2019/2/23.
@@ -268,7 +269,7 @@ public class ResourceConfig {
 
         if (typeByResourceUuids.keySet().size() >= 2) {
             throw new OperationFailureException(
-                    operr("resources has inconsistent resourceTypes. Details: %s", typeByResourceUuids.toString()));
+                    operr(ORG_ZSTACK_RESOURCECONFIG_10000, "resources has inconsistent resourceTypes. Details: %s", typeByResourceUuids.toString()));
         }
 
         typeByResourceUuids.forEach((resourceType, resUuids) -> {
@@ -428,11 +429,11 @@ public class ResourceConfig {
     private String getResourceType(String resourceUuid) {
         String resourceType = Q.New(ResourceVO.class).eq(ResourceVO_.uuid, resourceUuid).select(ResourceVO_.resourceType).findValue();
         if (resourceType == null) {
-            throw new OperationFailureException(operr("cannot find resource[uuid: %s]", resourceUuid));
+            throw new OperationFailureException(operr(ORG_ZSTACK_RESOURCECONFIG_10001, "cannot find resource[uuid: %s]", resourceUuid));
         }
 
         if (!configGetter.containsKey(resourceType)) {
-            throw new OperationFailureException(operr("ResourceConfig [category:%s, name:%s]" +
+            throw new OperationFailureException(operr(ORG_ZSTACK_RESOURCECONFIG_10002, "ResourceConfig [category:%s, name:%s]" +
                     " cannot bind to resourceType: %s", globalConfig.getCategory(), globalConfig.getName(), resourceType));
         }
         return resourceType;

@@ -8,6 +8,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class InitializeResourceConfigExtensionPoint implements PreVmInstantiateResourceExtensionPoint {
     private static final CLogger logger = Utils.getLogger(InitializeResourceConfigExtensionPoint.class);
@@ -55,7 +56,7 @@ public class InitializeResourceConfigExtensionPoint implements PreVmInstantiateR
             vicf.createVmConfigurations(spec);
         } catch (GlobalConfigException e) {
             logger.warn(String.format("create vm[uuid: %s] configuration failed, %s", spec.getVmInventory().getUuid(), e.getMessage()), e);
-            completion.fail(operr(e.getMessage()));
+            completion.fail(operr(ORG_ZSTACK_COMPUTE_VM_10223, e.getMessage()));
             return;
         }
 

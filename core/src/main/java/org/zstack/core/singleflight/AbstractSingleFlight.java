@@ -7,6 +7,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import java.util.*;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by Wenhao.Zhang on 20/11/10
@@ -50,7 +51,7 @@ public abstract class AbstractSingleFlight<K, V> {
     
     @AsyncThread
     protected void fail(ReturnValueCompletion<V> consumer, Exception ex) {
-        consumer.fail(operr(ex.getMessage()));
+        consumer.fail(operr(ORG_ZSTACK_CORE_SINGLEFLIGHT_10001, ex.getMessage()));
     }
     
     protected void notifyResult(Collection<ReturnValueCompletion<V>> consumers, final V v) {

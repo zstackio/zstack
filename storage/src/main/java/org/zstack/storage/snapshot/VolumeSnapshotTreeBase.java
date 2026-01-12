@@ -73,6 +73,7 @@ import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -144,7 +145,7 @@ public class VolumeSnapshotTreeBase {
         if (allowedStatus.isOperationAllowed(msg.getClass().getName(), currentRoot.getStatus().toString())) {
             return null;
         } else {
-            return err(VolumeSnapshotErrors.NOT_IN_CORRECT_STATE,
+            return err(ORG_ZSTACK_STORAGE_SNAPSHOT_10000, VolumeSnapshotErrors.NOT_IN_CORRECT_STATE,
                     "snapshot[uuid:%s, name:%s]'s status[%s] is not allowed for message[%s], allowed status%s",
                     currentRoot.getUuid(), currentRoot.getName(), currentRoot.getStatus(), msg.getClass().getName(), allowedStatus.getStatesForOperation(msg.getClass().getName()));
         }
@@ -153,7 +154,7 @@ public class VolumeSnapshotTreeBase {
     private void refreshVO() {
         VolumeSnapshotVO vo = dbf.reload(currentRoot);
         if (vo == null) {
-            throw new OperationFailureException(operr("cannot find volume snapshot[uuid:%s, name:%s], it may have been deleted by previous operation",
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10001, "cannot find volume snapshot[uuid:%s, name:%s], it may have been deleted by previous operation",
                     currentRoot.getUuid(), currentRoot.getName()));
         }
 
@@ -399,7 +400,7 @@ public class VolumeSnapshotTreeBase {
                     return;
                 }
 
-                trigger.fail(operr("snapshot or its desendant has reference volume[uuids:%s]", refVolUuids));
+                trigger.fail(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10002, "snapshot or its desendant has reference volume[uuids:%s]", refVolUuids));
             }
         });
         flow(new NoRollbackFlow() {
@@ -773,7 +774,7 @@ public class VolumeSnapshotTreeBase {
 
             public void run(final FlowTrigger trigger, Map data) {
                 if (volume == null) {
-                    trigger.fail(operr("volume not found for volumeUuid: %s", msg.getVolumeUuid()));
+                    trigger.fail(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10003, "volume not found for volumeUuid: %s", msg.getVolumeUuid()));
                     return;
                 }
 
@@ -797,7 +798,7 @@ public class VolumeSnapshotTreeBase {
                     vmState = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, volume.getVmInstanceUuid()).select(VmInstanceVO_.state).findValue();
                     if (vmState != VmInstanceState.Running && vmState != VmInstanceState.Paused
                             && vmState != VmInstanceState.Destroyed && vmState != VmInstanceState.Stopped && vmState != VmInstanceState.Destroying) {
-                        trigger.fail(operr("vm[uuid:%s] is not Running, Paused or Destroyed, Stopped, Destroying, " +
+                        trigger.fail(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10004, "vm[uuid:%s] is not Running, Paused or Destroyed, Stopped, Destroying, " +
                                 "current state[%s]", volume.getVmInstanceUuid(), vmState));
                         return;
                     }
@@ -889,7 +890,7 @@ public class VolumeSnapshotTreeBase {
                                         @Override
                                         public void run(MessageReply reply) {
                                             if (!reply.isSuccess()) {
-                                                trigger.fail(operr(String.format("failed to get volume[uuid:%s, installPath:%s] size " +
+                                                trigger.fail(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10005, String.format("failed to get volume[uuid:%s, installPath:%s] size " +
                                                                 "on primary storage[uuid:%s], %s", volume.getUuid(), volume.getInstallPath(),
                                                         volume.getPrimaryStorageUuid(), reply.getError().getDetails())));
                                                 return;
@@ -1149,7 +1150,7 @@ public class VolumeSnapshotTreeBase {
                                         @Override
                                         public void run(MessageReply reply) {
                                             if (!reply.isSuccess()) {
-                                                trigger.fail(operr(String.format("failed to get volume[uuid:%s, installPath:%s] size on primary storage[uuid:%s], because %s",
+                                                trigger.fail(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10006, String.format("failed to get volume[uuid:%s, installPath:%s] size on primary storage[uuid:%s], because %s",
                                                         volume.getUuid(), volume.getInstallPath(), volume.getPrimaryStorageUuid(), reply.getError().getDetails())));
                                                 return;
                                             }
@@ -1638,7 +1639,7 @@ public class VolumeSnapshotTreeBase {
                 }
 
                 if (err != null) {
-                    completion.fail(operr("failed to change status of volume snapshot[uuid:%s, name:%s] by status event[%s]",
+                    completion.fail(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10007, "failed to change status of volume snapshot[uuid:%s, name:%s] by status event[%s]",
                                     failSnapshot.getUuid(), failSnapshot.getName(), evt).causedBy(err));
                 } else {
                     completion.success();
@@ -2546,7 +2547,7 @@ public class VolumeSnapshotTreeBase {
                             q.add(VmInstanceVO_.uuid, Op.EQ, vmUuid);
                             VmInstanceState state = q.findValue();
                             if (state != VmInstanceState.Stopped) {
-                                trigger.fail(operr("unable to reset volume[uuid:%s] to snapshot[uuid:%s]," +
+                                trigger.fail(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10008, "unable to reset volume[uuid:%s] to snapshot[uuid:%s]," +
                                                 " the vm[uuid:%s] volume attached to is not in Stopped state," +
                                                 " current state is %s",
                                         volumeInventory.getUuid(),
@@ -2897,7 +2898,7 @@ public class VolumeSnapshotTreeBase {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                completion.fail(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                completion.fail(err(ORG_ZSTACK_STORAGE_SNAPSHOT_10009, SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
             }
         }).start();
     }

@@ -26,6 +26,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.List;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VirtualRouterKvmBackend implements VirtualRouterHypervisorBackend {
 	private static final CLogger logger = Utils.getLogger(VirtualRouterKvmBackend.class);
@@ -100,7 +101,7 @@ public class VirtualRouterKvmBackend implements VirtualRouterHypervisorBackend {
 
                 CreateVritualRouterBootstrapIsoRsp rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(CreateVritualRouterBootstrapIsoRsp.class);
                 if (!rsp.isSuccess()) {
-                    ErrorCode err = operr("failed to create VirtualRouterBootstrapIso[%s] on kvm host[uuid:%s, ip:%s] for virtual router[uuid:%s], because %s",
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10000, "failed to create VirtualRouterBootstrapIso[%s] on kvm host[uuid:%s, ip:%s] for virtual router[uuid:%s], because %s",
                             iso.getIsoPath(), vrSpec.getDestHost().getUuid(), vrSpec.getDestHost().getManagementIp(), iso.getVirtualRouterUuid(),
                             rsp.getError());
                     complete.fail(err);
@@ -133,7 +134,7 @@ public class VirtualRouterKvmBackend implements VirtualRouterHypervisorBackend {
 
                 DeleteVirtualRouterBootstrapIsoRsp rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(DeleteVirtualRouterBootstrapIsoRsp.class);
                 if (!rsp.isSuccess()) {
-					ErrorCode err = operr("failed to delete VirtualRouterBootstrapIso[%s] on kvm host[uuid:%s] for virtual router[uuid:%s], because %s",
+					ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10001, "failed to delete VirtualRouterBootstrapIso[%s] on kvm host[uuid:%s] for virtual router[uuid:%s], because %s",
 							iso.getIsoPath(), hostUuid, iso.getVirtualRouterUuid(),
 							rsp.getError());
 					complete.fail(err);

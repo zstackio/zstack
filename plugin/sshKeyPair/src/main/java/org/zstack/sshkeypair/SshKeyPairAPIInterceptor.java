@@ -21,6 +21,7 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class SshKeyPairAPIInterceptor implements ApiMessageInterceptor {
 
@@ -66,7 +67,7 @@ public class SshKeyPairAPIInterceptor implements ApiMessageInterceptor {
                 .in(AccountResourceRefVO_.resourceUuid, sshKeyPairUuids)
                 .isExists();
         if (isExist) {
-            throw new ApiMessageInterceptionException(argerr("The sshKeyPair already upload"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SSHKEYPAIR_10006, "The sshKeyPair already upload"));
         }
     }
 
@@ -75,7 +76,7 @@ public class SshKeyPairAPIInterceptor implements ApiMessageInterceptor {
                 .eq(SshKeyPairRefVO_.sshKeyPairUuid, msg.getUuid())
                 .isExists();
         if (exists) {
-            throw new ApiMessageInterceptionException((argerr("The sshKeyPair[uuid:%s] was in using.", msg.getSshKeyPairUuid())));
+            throw new ApiMessageInterceptionException((argerr(ORG_ZSTACK_SSHKEYPAIR_10007, "The sshKeyPair[uuid:%s] was in using.", msg.getSshKeyPairUuid())));
         }
     }
 
@@ -92,7 +93,7 @@ public class SshKeyPairAPIInterceptor implements ApiMessageInterceptor {
                 .eq(SshKeyPairRefVO_.resourceType, VmInstanceVO.class.getSimpleName())
                 .isExists();
         if (isExist) {
-            throw new ApiMessageInterceptionException((argerr("The sshKeyPair[uuid:%s] was already attached on vm[uuid:].",
+            throw new ApiMessageInterceptionException((argerr(ORG_ZSTACK_SSHKEYPAIR_10008, "The sshKeyPair[uuid:%s] was already attached on vm[uuid:].",
                     msg.getSshKeyPairUuid(), msg.getVmInstanceUuid())));
         }
         validateVmInstanceRunning(Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find());
@@ -111,7 +112,7 @@ public class SshKeyPairAPIInterceptor implements ApiMessageInterceptor {
                 .eq(SshKeyPairRefVO_.resourceType, VmInstanceVO.class.getSimpleName())
                 .isExists();
         if (!isExist) {
-            throw new ApiMessageInterceptionException((argerr("The sshKeyPair[uuid:%s] was not attached on vm[uuid:%s].",
+            throw new ApiMessageInterceptionException((argerr(ORG_ZSTACK_SSHKEYPAIR_10009, "The sshKeyPair[uuid:%s] was not attached on vm[uuid:%s].",
                     msg.getSshKeyPairUuid(), msg.getVmInstanceUuid())));
         }
         validateVmInstanceRunning(Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find());
@@ -120,13 +121,13 @@ public class SshKeyPairAPIInterceptor implements ApiMessageInterceptor {
     private void validateVmInstanceRunning(VmInstanceVO vmInstanceVO) {
         if (!vmInstanceVO.getState().equals(VmInstanceState.Running)) {
             throw new ApiMessageInterceptionException((argerr(
-                    "The vmInstance[uuid:%s] not in running state.", vmInstanceVO.getUuid())));
+            ORG_ZSTACK_SSHKEYPAIR_10010,         "The vmInstance[uuid:%s] not in running state.", vmInstanceVO.getUuid())));
         }
     }
 
     private void checkType(String type) {
         if (!ALLOW_RESOURCE_TYPES.contains(type)) {
-            throw new ApiMessageInterceptionException(argerr("resource types %s are not supported to attach sshKeyPair, allowed types are %s", type, ALLOW_RESOURCE_TYPES));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SSHKEYPAIR_10011, "resource types %s are not supported to attach sshKeyPair, allowed types are %s", type, ALLOW_RESOURCE_TYPES));
         }
     }
 }

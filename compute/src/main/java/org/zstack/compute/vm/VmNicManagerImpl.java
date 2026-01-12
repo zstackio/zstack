@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, PrepareDbInitialValueExtensionPoint, VmPlatformChangedExtensionPoint, Component {
@@ -328,7 +329,7 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
                         .findValue();
 
                 if (state == VmInstanceState.Running || state == VmInstanceState.Unknown) {
-                    throw new OperationFailureException(argerr("vm current state[%s], " +
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_COMPUTE_VM_10088, "vm current state[%s], " +
                             "modify virtio requires the vm state[%s]", state, VmInstanceState.Stopped));
                 }
             }

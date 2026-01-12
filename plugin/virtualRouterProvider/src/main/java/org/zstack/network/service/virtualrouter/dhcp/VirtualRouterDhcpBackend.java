@@ -41,6 +41,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend implements NetworkServiceDhcpBackend, VirtualRouterHaGetCallbackExtensionPoint {
     private final CLogger logger = Utils.getLogger(VirtualRouterDhcpBackend.class);
@@ -91,7 +92,7 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
                             JSONObjectUtil.toJsonString(info), vr.getUuid(), vr.getManagementNic().getIp()));
                     completion.success();
                 } else {
-                    ErrorCode err = operr("unable to add dhcp entries to virtual router vm[uuid:%s ip:%s], because %s, dhcp entry[%s]",
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_DHCP_10001, "unable to add dhcp entries to virtual router vm[uuid:%s ip:%s], because %s, dhcp entry[%s]",
                             vr.getUuid(), vr.getManagementNic().getIp(), rsp.getError(), JSONObjectUtil.toJsonString(info));
                     completion.fail(err);
                 }
@@ -373,7 +374,7 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
         if (vyosDhcpOnPublicNetwork) {
             VirtualRouterVmInventory vrInv = getVirtualRouterForVyosDhcp(l3Nw);
             if (vrInv == null) {
-                completion.fail(Platform.operr("no virtual router is configured for vyos dhcp"));
+                completion.fail(Platform.operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_DHCP_10002, "no virtual router is configured for vyos dhcp"));
             } else {
                 completion.success(vrInv);
             }

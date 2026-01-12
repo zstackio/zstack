@@ -22,6 +22,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.utils.gson.JSONObjectUtil;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by kayo on 2018/5/9.
@@ -95,22 +96,22 @@ public class DeleteVolumeSnapshotLongJob implements LongJob {
     private ErrorCode checkIfVolumeSnapshotSupportCancel(String volumeUuid) {
         VolumeVO volume = dbf.findByUuid(volumeUuid, VolumeVO.class);
         if (volume == null) {
-            return Platform.operr("failed to cancel deletion job. Volume[uuid:%s] not exists.");
+            return Platform.operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10026, "failed to cancel deletion job. Volume[uuid:%s] not exists.");
         }
 
         if (volume.getVmInstanceUuid() == null) {
-            return Platform.operr("failed to cancel deletion job. Volume[uuid:%s] not attached to any vm," +
+            return Platform.operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10027, "failed to cancel deletion job. Volume[uuid:%s] not attached to any vm," +
                     " offline snapshot deletion do not support cancel.");
         }
 
         VmInstanceVO vmInstance = dbf.findByUuid(volume.getVmInstanceUuid(), VmInstanceVO.class);
         if (vmInstance == null) {
-            return Platform.operr("failed to cancel deletion job. Volume[uuid:%s] attached vm not exists," +
+            return Platform.operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10028, "failed to cancel deletion job. Volume[uuid:%s] attached vm not exists," +
                     " offline snapshot deletion do not support cancel.");
         }
 
         if (!vmInstance.getState().equals(VmInstanceState.Running)) {
-            return Platform.operr("failed to cancel deletion job. Volume[uuid:%s] attached vm not in state %s" +
+            return Platform.operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10029, "failed to cancel deletion job. Volume[uuid:%s] attached vm not in state %s" +
                     " offline snapshot deletion do not support cancel.", VmInstanceState.Running);
         }
 

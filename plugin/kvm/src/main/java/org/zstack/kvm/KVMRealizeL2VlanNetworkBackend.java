@@ -31,6 +31,7 @@ import java.util.List;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExtensionPoint, KVMCompleteNicInformationExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KVMRealizeL2VlanNetworkBackend.class);
@@ -81,7 +82,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 CreateVlanBridgeResponse rsp = hreply.toResponse(CreateVlanBridgeResponse.class);
                 if (!rsp.isSuccess()) {
-                    ErrorCode err = operr("failed to create bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
+                    ErrorCode err = operr(ORG_ZSTACK_KVM_10140, "failed to create bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
                             cmd.getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vlan.getVlan(), hostUuid, rsp.getError());
                     completion.fail(err);
                     return;
@@ -141,7 +142,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 CheckVlanBridgeResponse rsp = hreply.toResponse(CheckVlanBridgeResponse.class);
                 if (!rsp.isSuccess()) {
-                    ErrorCode err = operr("failed to check bridge[%s] for l2VlanNetwork[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
+                    ErrorCode err = operr(ORG_ZSTACK_KVM_10141, "failed to check bridge[%s] for l2VlanNetwork[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
                                     cmd.getBridgeName(), l2vlan.getUuid(), l2vlan.getName(), hostUuid, rsp.getError());
                     completion.fail(err);
                     return;
@@ -192,7 +193,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 KVMAgentCommands.UpdateL2NetworkResponse rsp = hreply.toResponse(KVMAgentCommands.UpdateL2NetworkResponse.class);
                 if (!rsp.isSuccess()) {
-                    ErrorCode err = operr("failed to update bridge[%s] for l2Network[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
+                    ErrorCode err = operr(ORG_ZSTACK_KVM_10142, "failed to update bridge[%s] for l2Network[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
                             cmd.getBridgeName(), newL2.getUuid(), newL2.getName(), hostUuid, rsp.getError());
                     completion.fail(err);
                     return;
@@ -292,7 +293,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 DeleteVlanBridgeResponse rsp = hreply.toResponse(DeleteVlanBridgeResponse.class);
                 if (!rsp.isSuccess()) {
-                    ErrorCode err = operr("failed to delete bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
+                    ErrorCode err = operr(ORG_ZSTACK_KVM_10143, "failed to delete bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
                             cmd.getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vlan.getVlan(), hostUuid, rsp.getError());
                     completion.fail(err);
                     return;

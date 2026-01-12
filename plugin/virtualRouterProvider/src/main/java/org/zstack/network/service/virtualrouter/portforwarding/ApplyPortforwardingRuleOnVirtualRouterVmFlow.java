@@ -27,6 +27,7 @@ import static org.zstack.core.Platform.operr;
 
 import java.util.Arrays;
 import java.util.Map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ApplyPortforwardingRuleOnVirtualRouterVmFlow implements Flow {
@@ -82,7 +83,7 @@ public class ApplyPortforwardingRuleOnVirtualRouterVmFlow implements Flow {
                     chain.next();
                     fireFirewallEvent(vr.getUuid());
                 } else {
-                    ErrorCode err = operr("failed to create port forwarding rule[vip ip: %s, private ip: %s, vip start port: %s, vip end port: %s, private start port: %s, private end port: %s], because %s",
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_PORTFORWARDING_10000, "failed to create port forwarding rule[vip ip: %s, private ip: %s, vip start port: %s, vip end port: %s, private start port: %s, private end port: %s], because %s",
                             to.getVipIp(), to.getPrivateIp(), to.getVipPortStart(), to.getVipPortEnd(),
                             to.getPrivatePortStart(), to.getPrivatePortEnd(), ret.getError());
                     chain.fail(err);

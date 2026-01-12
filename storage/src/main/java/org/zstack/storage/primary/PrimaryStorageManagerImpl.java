@@ -75,6 +75,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
         ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, VmInstanceStartExtensionPoint,
@@ -123,11 +124,11 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 String uuid = PrimaryStorageSystemTags.PRIMARY_STORAGE_ALLOCATOR_UUID_TAG.getTokenByTag(
                         systemTag, PrimaryStorageSystemTags.PRIMARY_STORAGE_ALLOCATOR_UUID_TAG_TOKEN);
                 if (!StringDSL.isZStackUuid(uuid)) {
-                    throw new ApiMessageInterceptionException(argerr("%s is invalid. %s is not a valid zstack uuid", systemTag, uuid));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_10038, "%s is invalid. %s is not a valid zstack uuid", systemTag, uuid));
                 }
 
                 if (!dbf.isExist(uuid, PrimaryStorageVO.class)) {
-                    throw new ApiMessageInterceptionException(argerr("no primary storage[uuid:%s] found", resourceUuid));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_10039, "no primary storage[uuid:%s] found", resourceUuid));
                 }
             }
         });
@@ -157,7 +158,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         APIGetPrimaryStorageLicenseInfoReply sreply = new APIGetPrimaryStorageLicenseInfoReply();
         PrimaryStorageVO vo = dbf.findByUuid(msg.getUuid(), PrimaryStorageVO.class);
         if (vo == null) {
-            sreply.setError(operr("primaryStorage[uuid=%s] does not exist", msg.getUuid()));
+            sreply.setError(operr(ORG_ZSTACK_STORAGE_PRIMARY_10040, "primaryStorage[uuid=%s] does not exist", msg.getUuid()));
             bus.reply(msg, sreply);
             return;
         }
@@ -298,7 +299,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         Message msg = (Message) pmsg;
         if (vo == null) {
-            bus.replyErrorByMessageType(msg, err(SysErrors.RESOURCE_NOT_FOUND, "Cannot find primary storage[uuid:%s], it may have been deleted", pmsg.getPrimaryStorageUuid()));
+            bus.replyErrorByMessageType(msg, err(ORG_ZSTACK_STORAGE_PRIMARY_10041, SysErrors.RESOURCE_NOT_FOUND, "Cannot find primary storage[uuid:%s], it may have been deleted", pmsg.getPrimaryStorageUuid()));
             return;
         }
 
@@ -550,7 +551,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         AllocatePrimaryStorageSpaceReply reply = new AllocatePrimaryStorageSpaceReply(null);
         if (msg.getRequiredInstallUri() == null && msg.getPurpose() == null) {
             throw new OperationFailureException(
-                    argerr("please specify the purpose before allocating space"));
+                    argerr(ORG_ZSTACK_STORAGE_PRIMARY_10042, "please specify the purpose before allocating space"));
         }
 
         if (msg.getRequiredInstallUri() != null && msg.isForce()) {
@@ -615,7 +616,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
 
         if (target == null) {
-            throw new OperationFailureException(operr("cannot find any qualified primary storage, errors are %s", errs));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_10043, "cannot find any qualified primary storage, errors are %s", errs));
         }
 
         reply.setPrimaryStorageInventory(target);
@@ -670,7 +671,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
 
         if (target == null) {
-            throw new OperationFailureException(operr("cannot find any qualified primary storage, errors are %s", errs));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_10044, "cannot find any qualified primary storage, errors are %s", errs));
         }
 
         reply.setPrimaryStorageInventory(target);
@@ -887,7 +888,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                     String cidr = PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByTag(systemTag, PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN);
                     if (!NetworkUtils.isCidr(cidr)) {
                         throw new ApiMessageInterceptionException(argerr(
-                                "cidr[%s] Input Format Error", cidr));
+                        ORG_ZSTACK_STORAGE_PRIMARY_10045,         "cidr[%s] Input Format Error", cidr));
                     }
                 }
             }
@@ -902,12 +903,12 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 for (String systemTag : msg.getSystemTags()) {
                     if (PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.isMatch(systemTag)) {
                         if (++cidrCount > 1) {
-                            throw new ApiMessageInterceptionException(argerr("only one primaryStorage cidr system tag is allowed, but %d got", cidrCount));
+                            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_10046, "only one primaryStorage cidr system tag is allowed, but %d got", cidrCount));
                         }
                         String cidr = PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByTag(systemTag, PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN);
                         if (!NetworkUtils.isCidr(cidr)) {
                             throw new ApiMessageInterceptionException(argerr(
-                                    "cidr[%s] Input Format Error", cidr));
+                            ORG_ZSTACK_STORAGE_PRIMARY_10047,         "cidr[%s] Input Format Error", cidr));
                         }
                     }
                 }
@@ -1351,7 +1352,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 .param("psState", PrimaryStorageState.Maintenance)
                 .list();
         if (result != null && !result.isEmpty()) {
-            throw new OperationFailureException(argerr("the VM[uuid:%s] volume stored location primary storage is in a state of maintenance", vmUuid));
+            throw new OperationFailureException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_10048, "the VM[uuid:%s] volume stored location primary storage is in a state of maintenance", vmUuid));
         }
     }
 
@@ -1400,7 +1401,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             }
 
             if (msg.getClusterUuid() != null && !msg.getClusterUuid().equals(clusterUuid)) {
-                throw new OperationFailureException(operr("clusterUuid conflict, the cluster specified by the instance offering is %s, and the cluster specified in the creation parameter is %s"
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_10049, "clusterUuid conflict, the cluster specified by the instance offering is %s, and the cluster specified in the creation parameter is %s"
                         , clusterUuid, msg.getClusterUuid()));
             }
 
@@ -1415,7 +1416,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             if (config.getAllocate() != null && config.getAllocate().getPrimaryStorage() != null) {
                 String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
                 if (!msg.getCandidatePrimaryStorageUuidsForRootVolume().isEmpty() && !msg.getCandidatePrimaryStorageUuidsForRootVolume().contains(psUuid)) {
-                    throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the instance offering is %s, and the primary storage specified in the creation parameter is %s"
+                    throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_10050, "primaryStorageUuid conflict, the primary storage specified by the instance offering is %s, and the primary storage specified in the creation parameter is %s"
                             , psUuid, msg.getCandidatePrimaryStorageUuidsForRootVolume()));
                 }
                 msg.setPrimaryStorageUuidForRootVolume(psUuid);
@@ -1436,7 +1437,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             List<String> requiredPrimaryStorageUuids = config.getAllocate().getAllPrimaryStorages().stream()
                     .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
             if (!msg.getCandidatePrimaryStorageUuidsForRootVolume().isEmpty() && Collections.disjoint(requiredPrimaryStorageUuids, msg.getCandidatePrimaryStorageUuidsForRootVolume())) {
-                throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_10051, "primaryStorageUuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
                         requiredPrimaryStorageUuids, msg.getCandidatePrimaryStorageUuidsForRootVolume()));
             } else if (msg.getCandidatePrimaryStorageUuidsForRootVolume().isEmpty()) {
                 msg.setCandidatePrimaryStorageUuidsForRootVolume(requiredPrimaryStorageUuids);
@@ -1463,7 +1464,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             List<String> requiredPrimaryStorageUuids = config.getAllocate().getAllPrimaryStorages().stream()
                     .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
             if (!msg.getCandidatePrimaryStorageUuidsForDataVolume().isEmpty() && Collections.disjoint(requiredPrimaryStorageUuids, msg.getCandidatePrimaryStorageUuidsForDataVolume())) {
-                throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_10052, "primaryStorageUuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
                         requiredPrimaryStorageUuids, msg.getCandidatePrimaryStorageUuidsForDataVolume()));
              } else if (msg.getCandidatePrimaryStorageUuidsForDataVolume().isEmpty()) {
                 msg.setCandidatePrimaryStorageUuidsForDataVolume(requiredPrimaryStorageUuids);

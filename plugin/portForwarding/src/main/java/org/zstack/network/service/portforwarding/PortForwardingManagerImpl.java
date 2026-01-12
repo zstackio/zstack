@@ -57,6 +57,7 @@ import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class PortForwardingManagerImpl extends AbstractService implements PortForwardingManager,
         VipReleaseExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VipGetUsedPortRangeExtensionPoint,
@@ -516,7 +517,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             } catch (PortForwardingException e) {
                 String err = String.format("unable to revoke port forwarding rule[uuid:%s]", inv.getUuid());
                 logger.warn(err, e);
-                complete.fail(operr(e.getMessage()));
+                complete.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10000, e.getMessage()));
                 return;
             }
         }
@@ -787,7 +788,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                             try {
                                 extp.preAttachPortForwardingRule(ruleInv, providerType);
                             } catch (PortForwardingException e) {
-                                ErrorCode err = err(SysErrors.CREATE_RESOURCE_ERROR, "unable to create port forwarding rule, extension[%s] refused it because %s", extp.getClass().getName(), e.getMessage());
+                                ErrorCode err = err(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10001, SysErrors.CREATE_RESOURCE_ERROR, "unable to create port forwarding rule, extension[%s] refused it because %s", extp.getClass().getName(), e.getMessage());
                                 logger.warn(err.getDetails(), e);
                                 trigger.fail(err);
                                 return;
@@ -843,7 +844,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                                 Vip v = new Vip(struct.getVip().getUuid());
                                 v.setStruct(vipStruct);
                                 v.release(new NopeCompletion());
-                                trigger.fail(err(SysErrors.CREATE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                                trigger.fail(err(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10002, SysErrors.CREATE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
                             }
                         });
                     }
@@ -913,7 +914,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             @Override
             public void run(SyncTaskChain chain) {
                 if (!dbf.isExist(pf.getUuid(), PortForwardingRuleVO.class)) {
-                    completion.fail(operr("port forwarding rule [uuid:%s] is deleted", pf.getUuid()));
+                    completion.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10003, "port forwarding rule [uuid:%s] is deleted", pf.getUuid()));
                     chain.next();
                     return;
                 }
@@ -1092,7 +1093,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             @Override
             public void run(SyncTaskChain chain) {
                 if (!dbf.isExist(struct.getRule().getUuid(), PortForwardingRuleVO.class)) {
-                    completion.fail(operr("port forwarding rule [uuid:%s] is deleted", struct.getRule().getUuid()));
+                    completion.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10004, "port forwarding rule [uuid:%s] is deleted", struct.getRule().getUuid()));
                     chain.next();
                     return;
                 }
@@ -1218,7 +1219,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             @Override
             public void run(SyncTaskChain chain) {
                 if (!dbf.isExist(struct.getRule().getUuid(), PortForwardingRuleVO.class)) {
-                    completion.fail(operr("port forwarding rule [uuid:%s] is deleted", struct.getRule().getUuid()));
+                    completion.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10005, "port forwarding rule [uuid:%s] is deleted", struct.getRule().getUuid()));
                     chain.next();
                     return;
                 }

@@ -23,6 +23,7 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class MultiNodeSingleFlightImpl {
     private static final CLogger logger = Utils.getLogger(MultiNodeSingleFlightImpl.class);
@@ -85,7 +86,7 @@ public class MultiNodeSingleFlightImpl {
                             args[args.length - 1] = outCompletion;
                             consumer.invoke(executor, args);
                         } catch (IllegalAccessException | InvocationTargetException e) {
-                            outCompletion.fail(operr(e.getMessage()));
+                            outCompletion.fail(operr(ORG_ZSTACK_CORE_SINGLEFLIGHT_10000, e.getMessage()));
                         }
                     })
                     .done(result -> {

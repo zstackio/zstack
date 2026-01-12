@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class NfsApiParamChecker {
@@ -43,13 +44,13 @@ public class NfsApiParamChecker {
         q.add(PrimaryStorageVO_.url, Op.EQ, url);
         q.add(PrimaryStorageVO_.zoneUuid, Op.EQ, zoneUuid);
         if (q.isExists()) {
-            throw new ApiMessageInterceptionException(argerr("there has been a nfs primary storage having url as %s in zone[uuid:%s]", url, zoneUuid));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10006, "there has been a nfs primary storage having url as %s in zone[uuid:%s]", url, zoneUuid));
         }
 
         String[] results = url.split(":");
         if (results.length == 2 && (
                 results[1].startsWith("/dev") || results[1].startsWith("/proc") || results[1].startsWith("/sys"))) {
-            throw new ApiMessageInterceptionException(argerr(" the url contains an invalid folder[/dev or /proc or /sys]"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10007, " the url contains an invalid folder[/dev or /proc or /sys]"));
         }
 
         validateUrl(systemTags, results[0]);
@@ -62,7 +63,7 @@ public class NfsApiParamChecker {
             for (String sysTag: systemTags) {
                 if (PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.isMatch(sysTag)) {
                     if (found) {
-                        throw new ApiMessageInterceptionException(argerr("found multiple CIDR"));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10008, "found multiple CIDR"));
                     }
 
                     validateCidrTag(sysTag, ipAddr);
@@ -75,11 +76,11 @@ public class NfsApiParamChecker {
         String cidr = PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByTag(
                 sysTag, PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN);
         if (!NetworkUtils.isCidr(cidr)) {
-            throw new ApiMessageInterceptionException(argerr("invalid CIDR: %s", cidr));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10009, "invalid CIDR: %s", cidr));
         }
 
         if (!NetworkUtils.isIpv4InCidr(ipAddr, cidr)) {
-            throw new ApiMessageInterceptionException(argerr("IP address[%s] is not in CIDR[%s]", ipAddr, cidr));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10010, "IP address[%s] is not in CIDR[%s]", ipAddr, cidr));
         }
     }
 
@@ -93,7 +94,7 @@ public class NfsApiParamChecker {
 
         if (!ts.isEmpty()) {
             List<String> vms = ts.stream().map(v -> String.format("VM[name:%s, uuid:%s]", v.get(0, String.class), v.get(1, String.class))).collect(Collectors.toList());
-            throw new ApiMessageInterceptionException(operr("there are %s running VMs on the NFS primary storage, please" +
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10011, "there are %s running VMs on the NFS primary storage, please" +
                     " stop them and try again:\n%s\n", vms.size(), StringUtils.join(vms, "\n")));
         }
     }

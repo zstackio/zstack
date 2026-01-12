@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 5/23/2015.
@@ -163,7 +164,7 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
                     return;
                 }
 
-                ErrorCode ec = operr(new ErrorCodeList().causedBy(errorCodes), "unable to download iso to primary storage, becasue: %s",
+                ErrorCode ec = operr(ORG_ZSTACK_STORAGE_VOLUME_10096, new ErrorCodeList().causedBy(errorCodes), "unable to download iso to primary storage, becasue: %s",
                         errorCodes.get(0).getDetails());
 
                 completion.fail(ec);

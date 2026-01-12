@@ -1,5 +1,7 @@
 package org.zstack.test.integration.storage.primary.local.datavolume
 
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+
 import org.springframework.beans.BeanUtils
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmGlobalConfig
@@ -343,7 +345,7 @@ class MigrateVolumeCase extends SubCase {
             env.message(LocalStorageCreateEmptyVolumeMsg.class) { LocalStorageCreateEmptyVolumeMsg msg, CloudBus bus ->
                 def reply = new LocalStorageCreateEmptyVolumeReply()
                 run.run()
-                reply.setError(operr("on purpose"))
+                reply.setError(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_STORAGE_PRIMARY_LOCAL_DATAVOLUME_10000, "on purpose"))
                 context.called = true
                 bus.reply(msg, reply)
             }

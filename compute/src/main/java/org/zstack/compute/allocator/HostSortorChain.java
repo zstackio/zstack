@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by mingjian.deng on 2017/11/6.
@@ -133,7 +134,7 @@ public class HostSortorChain implements HostSortorStrategy {
                             logger.debug(String.format("[Host Allocation]: %s on host[uuid:%s]. try next one",
                                     e.getMessage(), host.getUuid()), e);
                             trigger.fail(operr(
-                                    "[Host Allocation]: %s on host[uuid:%s]. try next one. %s", e.getMessage(), host.getUuid(), e.getMessage()));
+                            ORG_ZSTACK_COMPUTE_ALLOCATOR_10034,         "[Host Allocation]: %s on host[uuid:%s]. try next one. %s", e.getMessage(), host.getUuid(), e.getMessage()));
                         }
                     }
 
@@ -198,7 +199,7 @@ public class HostSortorChain implements HostSortorStrategy {
                     if (!errorCodeList.getCauses().isEmpty()) {
                         completion.fail(errorCodeList.getCauses().get(0));
                     } else {
-                        completion.fail(operr("failed to reserve host capacity for all candidate hosts"));
+                        completion.fail(operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10035, "failed to reserve host capacity for all candidate hosts"));
                     }
                     return;
                 }

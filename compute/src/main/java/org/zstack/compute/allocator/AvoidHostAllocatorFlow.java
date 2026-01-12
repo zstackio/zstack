@@ -9,6 +9,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 import java.util.List;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AvoidHostAllocatorFlow extends AbstractHostAllocatorFlow {
@@ -27,7 +28,7 @@ public class AvoidHostAllocatorFlow extends AbstractHostAllocatorFlow {
         });
 
         if (ret.isEmpty()) {
-            fail(Platform.operr("after rule out avoided host%s, there is no host left in candidates", spec.getAvoidHostUuids()));
+            fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10026, "after rule out avoided host%s, there is no host left in candidates", spec.getAvoidHostUuids()));
         } else {
             next(ret);
         }

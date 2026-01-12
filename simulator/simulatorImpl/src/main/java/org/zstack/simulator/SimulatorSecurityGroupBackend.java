@@ -21,6 +21,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 public class SimulatorSecurityGroupBackend implements
@@ -42,7 +43,7 @@ public class SimulatorSecurityGroupBackend implements
 	public void applyRules(HostRuleTO hto, Completion complete) {
 		logger.debug(String.format("apply security rules to simulator host[uuid:%s], ipv4:\n%s\nipv6:\n%s", hto.getHostUuid(), JSONObjectUtil.toJsonString(hto.getRules()), JSONObjectUtil.toJsonString(hto.getIp6Rules())));
 		if (!securityGroupSuccess) {
-		    ErrorCode errorCode = operr("on purpose");
+		    ErrorCode errorCode = operr(ORG_ZSTACK_SIMULATOR_10000, "on purpose");
 		    complete.fail(errorCode);
 		    return;
 		}

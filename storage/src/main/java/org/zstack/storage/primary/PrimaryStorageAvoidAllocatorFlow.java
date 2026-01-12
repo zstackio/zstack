@@ -18,6 +18,7 @@ import static org.zstack.core.Platform.operr;
 
 import java.util.List;
 import java.util.Map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 7/4/2015.
@@ -47,7 +48,7 @@ public class PrimaryStorageAvoidAllocatorFlow extends NoRollbackFlow {
         });
 
         if (candidates.isEmpty()) {
-            throw new OperationFailureException(operr("after removing primary storage%s to avoid," +
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_10030, "after removing primary storage%s to avoid," +
                     " there is no candidate primary storage anymore. " +
                     "please check primary storage status and state in the cluster.", spec.getAvoidPrimaryStorageUuids()));
         }

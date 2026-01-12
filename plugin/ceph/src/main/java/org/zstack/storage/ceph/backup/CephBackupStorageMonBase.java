@@ -39,6 +39,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 7/27/2015.
@@ -101,7 +102,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
         self = dbf.reload(self);
         if (self == null) {
             throw new OperationFailureException(
-                    operr("cannot update status of the ceph backup storage mon[uuid:%s], it has been deleted." +
+                    operr(ORG_ZSTACK_STORAGE_CEPH_BACKUP_10012, "cannot update status of the ceph backup storage mon[uuid:%s], it has been deleted." +
                             "This error can be ignored", uuid)
             );
         }
@@ -294,7 +295,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
                                         .setHostname(self.getHostname())
                                         .setPort(self.getSshPort()).runErrorByExceptionAndClose();
                             } catch (SshException ex) {
-                                throw new OperationFailureException(operr(ex.toString()));
+                                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_BACKUP_10013, ex.toString()));
                             }
 
                             trigger.next();
@@ -376,7 +377,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
                     @Override
                     public void success(T ret) {
                         if (!ret.isSuccess()) {
-                            completion.fail(Platform.operr("operation error, because:%s", ret.getError()));
+                            completion.fail(Platform.operr(ORG_ZSTACK_STORAGE_CEPH_BACKUP_10014, "operation error, because:%s", ret.getError()));
                             return;
                         }
                         completion.success(ret);
@@ -488,7 +489,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
         q.add(CephBackupStorageVO_.uuid, Op.EQ, getSelf().getBackupStorageUuid());
         String poolName = q.findValue();
         if (poolName == null) {
-            completion.fail(operr("Ceph bs[uuid=%s] pool name not found", getSelf().getBackupStorageUuid()));
+            completion.fail(operr(ORG_ZSTACK_STORAGE_CEPH_BACKUP_10015, "Ceph bs[uuid=%s] pool name not found", getSelf().getBackupStorageUuid()));
             return;
         }
 

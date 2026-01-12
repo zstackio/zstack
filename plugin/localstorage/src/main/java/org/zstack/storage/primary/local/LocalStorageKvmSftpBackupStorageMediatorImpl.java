@@ -26,6 +26,7 @@ import java.util.List;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 7/1/2015.
@@ -215,7 +216,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                         KVMHostAsyncHttpCallReply kr = reply.castReply();
                         SftpDownloadBitsRsp rsp = kr.toResponse(SftpDownloadBitsRsp.class);
                         if (!rsp.isSuccess()) {
-                            completion.fail(operr("failed to download bits from the SFTP backup storage[hostname:%s, path: %s] to the local primary storage[uuid:%s, path: %s], %s",
+                            completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10062, "failed to download bits from the SFTP backup storage[hostname:%s, path: %s] to the local primary storage[uuid:%s, path: %s], %s",
                                     greply.getHostname(), backupStorageInstallPath, pinv.getUuid(), primaryStorageInstallPath, rsp.getError()));
                         } else {
                             completion.success();
@@ -264,7 +265,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                         KVMHostAsyncHttpCallReply kr = reply.castReply();
                         SftpUploadBitsRsp rsp = kr.toResponse(SftpUploadBitsRsp.class);
                         if (!rsp.isSuccess()) {
-                            completion.fail(operr("failed to upload bits from the local storage[uuid:%s, path:%s] to the SFTP backup storage[hostname:%s, path:%s], %s",
+                            completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10063, "failed to upload bits from the local storage[uuid:%s, path:%s] to the SFTP backup storage[hostname:%s, path:%s], %s",
                                             pinv.getUuid(), primaryStorageInstallPath, r.getHostname(), backupStorageInstallPath, rsp.getError()));
                             return;
                         }

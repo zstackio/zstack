@@ -62,6 +62,7 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.getDuplicateElementsOfList;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -175,13 +176,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         VmInstanceVO vm = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find();
         if (!vm.getState().equals(VmInstanceState.Running)) {
             throw new ApiMessageInterceptionException(operr(
-                    "can not take vm console screenshot for vm[uuid:%s] which is not Running", msg.getVmInstanceUuid()));
+            ORG_ZSTACK_COMPUTE_VM_10092,         "can not take vm console screenshot for vm[uuid:%s] which is not Running", msg.getVmInstanceUuid()));
         }
     }
 
     private void validate(APIGetInterdependentL3NetworksBackupStoragesMsg msg) {
         if (msg.getL3NetworkUuids() == null && msg.getBackupStorageUuid() == null) {
-            throw new ApiMessageInterceptionException(argerr("either l3NetworkUuids or backupStorageUuid must be set"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10093, "either l3NetworkUuids or backupStorageUuid must be set"));
         }
     }
 
@@ -200,7 +201,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 .param("l3Uuids", Arrays.asList(nicVO.getL3NetworkUuid(), msg.getDestL3NetworkUuid()))
                 .find();
         if (count > 1) {
-            throw new ApiMessageInterceptionException(operr("could not change to L3 network, the l2 of l3[uuid:%s, %s] use different vswitch",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10094, "could not change to L3 network, the l2 of l3[uuid:%s, %s] use different vswitch",
                     nicVO.getL3NetworkUuid(), msg.getDestL3NetworkUuid()));
         }
         for (VmNicChangeNetworkExtensionPoint extension : pluginRgty.getExtensionList(VmNicChangeNetworkExtensionPoint.class)) {
@@ -213,7 +214,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         if (!networkServices.isEmpty()) {
             String error = "vm nic [%s] attached network services, please detach manually/n" + networkServices.toString();
-            throw new ApiMessageInterceptionException(operr(error, msg.getVmNicUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10095, error, msg.getVmNicUuid()));
         }
 
         String sql = "select vm.uuid, vm.state, vm.type, nic.l3NetworkUuid from VmInstanceVO vm, VmNicVO nic where vm.uuid = nic.vmInstanceUuid and nic.uuid = :uuid";
@@ -227,13 +228,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         msg.setVmInstanceUuid(vmUuid);
 
         if (!VmInstanceState.Stopped.equals(state) && !VmInstanceState.Running.equals(state)) {
-            throw new ApiMessageInterceptionException(operr("unable to change to L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10096, "unable to change to L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
                     msg.getVmInstanceUuid(), state));
         }
 
         L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getDestL3NetworkUuid(), L3NetworkVO.class);
         if (l3NetworkVO.enableIpAddressAllocation() && l3NetworkVO.getIpRanges().isEmpty()) {
-            throw new ApiMessageInterceptionException(operr("unable to change to L3 network. The L3 network[uuid:%s] doesn't has have ip range",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10097, "unable to change to L3 network. The L3 network[uuid:%s] doesn't has have ip range",
                     msg.getDestL3NetworkUuid()));
         }
 
@@ -243,14 +244,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         List<String> l2Uuids = Q.New(L3NetworkVO.class).in(L3NetworkVO_.uuid, newAddedL3Uuids).select(L3NetworkVO_.l2NetworkUuid).listValues();
         l2Uuids = l2Uuids.stream().distinct().collect(Collectors.toList());
         if(l2Uuids.size() > 1) {
-            throw new ApiMessageInterceptionException(operr("unable to change to L3 network. The L3 network[uuid:%s] are belonged to different l2 networks [uuids:%s]",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10098, "unable to change to L3 network. The L3 network[uuid:%s] are belonged to different l2 networks [uuids:%s]",
                     newAddedL3Uuids, l2Uuids));
         }
 
         List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2Uuids.get(0))
                 .select(L2NetworkClusterRefVO_.clusterUuid).listValues();
         if (clusterUuids.isEmpty()) {
-            throw new ApiMessageInterceptionException(operr("unable to change to L3 network. The L3 network[uuid:%s] are belonged to l2 networks [uuids:%s] that have not been attached to any cluster",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10099, "unable to change to L3 network. The L3 network[uuid:%s] are belonged to l2 networks [uuids:%s] that have not been attached to any cluster",
                     newAddedL3Uuids, l2Uuids));
         }
 
@@ -262,14 +263,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (attachedL3Uuids != null && !attachedL3Uuids.isEmpty()) {
             if (!VmGlobalConfig.MULTI_VNIC_SUPPORT.value(Boolean.class)
                     || !VmInstanceConstant.USER_VM_TYPE.equals(type)) {
-                throw new ApiMessageInterceptionException(operr("unable to change to L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10100, "unable to change to L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
                         attachedL3Uuids, msg.getVmInstanceUuid()));
             }
 
             List<String> attachedNonGuestL3Uuids = Q.New(L3NetworkVO.class).select(L3NetworkVO_.uuid).
                     notEq(L3NetworkVO_.category, L3NetworkCategory.Private).in(L3NetworkVO_.uuid, attachedL3Uuids).listValues();
             if (attachedNonGuestL3Uuids != null && !attachedNonGuestL3Uuids.isEmpty()) {
-                throw new ApiMessageInterceptionException(operr("unable to change to a non-guest L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10101, "unable to change to a non-guest L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
                         attachedL3Uuids, msg.getVmInstanceUuid()));
             }
         }
@@ -277,10 +278,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         for (String l3Uuid : newAddedL3Uuids) {
             L3NetworkVO l3Vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
             if (l3Vo.getState() == L3NetworkState.Disabled) {
-                throw new ApiMessageInterceptionException(operr("unable to change to L3 network. The L3 network[uuid:%s] is disabled", l3Uuid));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10102, "unable to change to L3 network. The L3 network[uuid:%s] is disabled", l3Uuid));
             }
             if (VmInstanceConstant.USER_VM_TYPE.equals(type) && l3Vo.isSystem()) {
-                throw new ApiMessageInterceptionException(operr("unable to change to L3 network. The L3 network[uuid:%s] is a system network and vm is a user vm",
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10103, "unable to change to L3 network. The L3 network[uuid:%s] is a system network and vm is a user vm",
                         l3Uuid));
             }
         }
@@ -310,20 +311,20 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
 
             if (!found) {
-                throw new ApiMessageInterceptionException(argerr("the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getStaticIp(), msg.getDestL3NetworkUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10104, "the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getStaticIp(), msg.getDestL3NetworkUuid()));
             }
 
             SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
             uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getDestL3NetworkUuid());
             uq.add(UsedIpVO_.ip, Op.EQ, msg.getStaticIp());
             if (uq.isExists()) {
-                throw new ApiMessageInterceptionException(operr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", msg.getStaticIp(), msg.getDestL3NetworkUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10105, "the static IP[%s] has been occupied on the L3 network[uuid:%s]", msg.getStaticIp(), msg.getDestL3NetworkUuid()));
             }
         }
 
         for (Map.Entry<String, List<String>> e : staticIps.entrySet()) {
             if (!newAddedL3Uuids.contains(e.getKey())) {
-                throw new ApiMessageInterceptionException(argerr("static ip l3 uuid[%s] is not included in nic l3 [%s]", e.getKey(), newAddedL3Uuids));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10106, "static ip l3 uuid[%s] is not included in nic l3 [%s]", e.getKey(), newAddedL3Uuids));
             }
 
             String l3Uuid = e.getKey();
@@ -353,14 +354,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
 
                 if (!found) {
-                    throw new ApiMessageInterceptionException(argerr("the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", staticIp, l3Uuid));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10107, "the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", staticIp, l3Uuid));
                 }
 
                 SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
                 uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getDestL3NetworkUuid());
                 uq.add(UsedIpVO_.ip, Op.EQ, msg.getStaticIp());
                 if (uq.isExists()) {
-                    throw new ApiMessageInterceptionException(operr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", staticIp, l3Uuid));
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10108, "the static IP[%s] has been occupied on the L3 network[uuid:%s]", staticIp, l3Uuid));
                 }
             }
         }
@@ -375,10 +376,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         NicIpAddressInfo nicIpAddressInfo = nicNetworkInfo.get(msg.getDestL3NetworkUuid());
         if (nicIpAddressInfo != null) {
             if (!nicIpAddressInfo.ipv4Address.isEmpty() && Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, nicIpAddressInfo.ipv4Address).eq(UsedIpVO_.l3NetworkUuid, msg.getDestL3NetworkUuid()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", nicIpAddressInfo.ipv4Address, msg.getDestL3NetworkUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10109, "the static IP[%s] has been occupied on the L3 network[uuid:%s]", nicIpAddressInfo.ipv4Address, msg.getDestL3NetworkUuid()));
             }
             if (!nicIpAddressInfo.ipv6Address.isEmpty() && Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, IPv6NetworkUtils.getIpv6AddressCanonicalString(nicIpAddressInfo.ipv6Address)).eq(UsedIpVO_.l3NetworkUuid, msg.getDestL3NetworkUuid()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", nicIpAddressInfo.ipv6Address, msg.getDestL3NetworkUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10110, "the static IP[%s] has been occupied on the L3 network[uuid:%s]", nicIpAddressInfo.ipv6Address, msg.getDestL3NetworkUuid()));
             }
         }
     }
@@ -388,7 +389,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         if (instanceOfferingUuid == null) {
             if (msg.getCpuNum() == null || msg.getMemorySize() == null) {
-                throw new ApiMessageInterceptionException(operr("Missing CPU/memory settings"));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10111, "Missing CPU/memory settings"));
             }
         }
 
@@ -396,7 +397,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (image != null && image.getMediaType() == ImageMediaType.ISO) {
             if (msg.getRootDiskOfferingUuid() == null) {
                 if (msg.getRootDiskSize() == null || msg.getRootDiskSize() <= 0) {
-                    throw new OperationFailureException(argerr("the image[name:%s, uuid:%s] is an ISO, rootDiskSize must be set",
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_COMPUTE_VM_10112, "the image[name:%s, uuid:%s] is an ISO, rootDiskSize must be set",
                             image.getName(), image.getUuid()));
                 }
             }
@@ -407,7 +408,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         VmInstanceVO vo = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
         if (!vo.getState().equals(VmInstanceState.Stopped)) {
             throw new ApiMessageInterceptionException(argerr(
-                    "Can not create CD-ROM for vm[uuid:%s] which is in state[%s] ", msg.getVmInstanceUuid(), vo.getState().toString()));
+            ORG_ZSTACK_COMPUTE_VM_10113,         "Can not create CD-ROM for vm[uuid:%s] which is in state[%s] ", msg.getVmInstanceUuid(), vo.getState().toString()));
         }
     }
 
@@ -415,13 +416,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         VmInstanceVO vo = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
         if (vo.getPlatform().equals(ImagePlatform.Other.toString())) {
             throw new ApiMessageInterceptionException(argerr(
-                    "Current platform %s not support update nic driver yet", vo.getPlatform()));
+            ORG_ZSTACK_COMPUTE_VM_10114,         "Current platform %s not support update nic driver yet", vo.getPlatform()));
         }
 
         List<String> supportNicDriverTypes = nicManager.getSupportNicDriverTypes();
         if (!supportNicDriverTypes.contains(msg.getDriverType())) {
             throw new ApiMessageInterceptionException(argerr(
-                    "Nic driver %s not support yet", msg.getDriverType()));
+            ORG_ZSTACK_COMPUTE_VM_10115,         "Nic driver %s not support yet", msg.getDriverType()));
         }
     }
 
@@ -430,7 +431,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (ImageMediaType.ISO == mediaType) {
             if (msg.getRootDiskOfferingUuid() == null) {
                 if (msg.getRootDiskSize() == null || msg.getRootDiskSize() <= 0) {
-                    throw new ApiMessageInterceptionException(argerr("rootDiskSize is needed when image media type is ISO"));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10116, "rootDiskSize is needed when image media type is ISO"));
                 }
             }
         }
@@ -443,13 +444,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 VmInstanceVO vo = findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
                 if (vo.getState().equals(VmInstanceState.Running) && vo.getHostUuid().equals(msg.getHostUuid())) {
                     throw new ApiMessageInterceptionException(argerr(
-                            "the vm[uuid:%s] is already on host[uuid:%s]", msg.getVmInstanceUuid(), msg.getHostUuid()
+                    ORG_ZSTACK_COMPUTE_VM_10117,         "the vm[uuid:%s] is already on host[uuid:%s]", msg.getVmInstanceUuid(), msg.getHostUuid()
                     ));
                 }
 
                 if (vo.getState() == VmInstanceState.Paused && VmSystemTags.VM_STATE_PAUSED_AFTER_MIGRATE.hasTag(msg.getVmInstanceUuid())) {
                     throw new ApiMessageInterceptionException(argerr(
-                            "the vm[uuid:%s] is still paused after the last migration, please resume it before migrate.", msg.getVmInstanceUuid()));
+                    ORG_ZSTACK_COMPUTE_VM_10118,         "the vm[uuid:%s] is still paused after the last migration, please resume it before migrate.", msg.getVmInstanceUuid()));
                 }
             }
         }.execute();
@@ -465,12 +466,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 boolean numa = rcf.getResourceConfigValue(VmGlobalConfig.NUMA, msg.getVmInstanceUuid(), Boolean.class);
                 if (!numa && !VmInstanceState.Stopped.equals(vo.getState())) {
                     throw new ApiMessageInterceptionException(argerr(
-                            "the VM cannot do online cpu/memory update because of disabling Instance Offering Online Modification. Please stop the VM then do the cpu/memory update again"
+                    ORG_ZSTACK_COMPUTE_VM_10119,         "the VM cannot do online cpu/memory update because of disabling Instance Offering Online Modification. Please stop the VM then do the cpu/memory update again"
                     ));
                 }
 
                 if (!VmInstanceState.Stopped.equals(vo.getState()) && !VmInstanceState.Running.equals(vo.getState())) {
-                    throw new OperationFailureException(operr("The state of vm[uuid:%s] is %s. Only these state[%s] is allowed to update cpu or memory.",
+                    throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10120, "The state of vm[uuid:%s] is %s. Only these state[%s] is allowed to update cpu or memory.",
                             vo.getUuid(), vo.getState(),
                             StringUtils.join(list(VmInstanceState.Running, VmInstanceState.Stopped), ",")));
                 }
@@ -481,7 +482,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
                 if (instanceOfferingVO.getCpuNum() < vo.getCpuNum() || instanceOfferingVO.getMemorySize() < vo.getMemorySize()) {
                     throw new ApiMessageInterceptionException(argerr(
-                            "can't decrease capacity when vm[uuid:%s] is running", vo.getUuid()
+                    ORG_ZSTACK_COMPUTE_VM_10121,         "can't decrease capacity when vm[uuid:%s] is running", vo.getUuid()
                     ));
                 }
             }
@@ -498,7 +499,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     Long memorySize = msg.getMemorySize() == null ? vo.getMemorySize() : msg.getMemorySize();
                     if (msg.getReservedMemorySize() > memorySize) {
                         throw new ApiMessageInterceptionException(argerr(
-                                "reservedMemorySize[%s] is greater than memorySize[%s]", msg.getReservedMemorySize(), memorySize
+                        ORG_ZSTACK_COMPUTE_VM_10122,         "reservedMemorySize[%s] is greater than memorySize[%s]", msg.getReservedMemorySize(), memorySize
                         ));
                     }
                 }
@@ -509,7 +510,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
                 boolean uniqueVmName = VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class);
                 if (uniqueVmName && Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, msg.getName()).notEq(VmInstanceVO_.uuid, msg.getUuid()).isExists()) {
-                    throw new ApiMessageInterceptionException(operr("could not create vm, a vm with the name [%s] already exists",
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10123, "could not create vm, a vm with the name [%s] already exists",
                             msg.getName()));
                 }
 
@@ -521,19 +522,19 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 if (!numa && !VmInstanceState.Stopped.equals(vmState)) {
                     if (cpuSum != null && cpuSum != vo.getCpuNum()) {
                         throw new ApiMessageInterceptionException(argerr(
-                                "the VM cannot do cpu hot plug because of disabling cpu hot plug. Please stop the VM then do the cpu hot plug again"
+                        ORG_ZSTACK_COMPUTE_VM_10124,         "the VM cannot do cpu hot plug because of disabling cpu hot plug. Please stop the VM then do the cpu hot plug again"
                         ));
                     }
 
                     if (memorySize != null && memorySize != vo.getMemorySize()) {
                         throw new ApiMessageInterceptionException(argerr(
-                                "the VM cannot do memory hot plug because of disabling memory hot plug. Please stop the VM then do the memory hot plug again"
+                        ORG_ZSTACK_COMPUTE_VM_10125,         "the VM cannot do memory hot plug because of disabling memory hot plug. Please stop the VM then do the memory hot plug again"
                         ));
                     }
                 }
 
                 if (!VmInstanceState.Stopped.equals(vo.getState()) && !VmInstanceState.Running.equals(vo.getState())) {
-                    throw new OperationFailureException(operr("The state of vm[uuid:%s] is %s. Only these state[%s] is allowed to update cpu or memory.",
+                    throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10126, "The state of vm[uuid:%s] is %s. Only these state[%s] is allowed to update cpu or memory.",
                             vo.getUuid(), vo.getState(),
                             StringUtils.join(list(VmInstanceState.Running, VmInstanceState.Stopped), ",")));
                 }
@@ -544,13 +545,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
                 if (msg.getCpuNum() != null && msg.getCpuNum() < vo.getCpuNum()) {
                     throw new ApiMessageInterceptionException(argerr(
-                            "can't decrease cpu of vm[uuid:%s] when it is running", vo.getUuid()
+                    ORG_ZSTACK_COMPUTE_VM_10127,         "can't decrease cpu of vm[uuid:%s] when it is running", vo.getUuid()
                     ));
                 }
 
                 if (msg.getMemorySize() != null && msg.getMemorySize() < vo.getMemorySize()) {
                     throw new ApiMessageInterceptionException(argerr(
-                            "can't decrease memory size of vm[uuid:%s] when it is running", vo.getUuid()
+                    ORG_ZSTACK_COMPUTE_VM_10128,         "can't decrease memory size of vm[uuid:%s] when it is running", vo.getUuid()
                     ));
                 }
             }
@@ -570,7 +571,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     private void validateStaticIPv4(VmNicVO vmNicVO, L3NetworkVO l3NetworkVO, String ip) {
         if (!NetworkUtils.isIpv4Address(ip)) {
-            throw new ApiMessageInterceptionException(argerr("%s is not a valid IPv4 address", ip));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10129, "%s is not a valid IPv4 address", ip));
         }
 
         for (UsedIpVO ipVo : vmNicVO.getUsedIps()) {
@@ -580,7 +581,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
             if (ipVo.getL3NetworkUuid().equals(l3NetworkVO.getUuid())) {
                 if (ipVo.getIp().equals(ip)) {
-                    throw new ApiMessageInterceptionException(argerr("ip address [%s] already set to vmNic [uuid:%s]",
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10130, "ip address [%s] already set to vmNic [uuid:%s]",
                             ip, vmNicVO.getUuid()));
                 }
                 if (!l3NetworkVO.enableIpAddressAllocation()) {
@@ -589,7 +590,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 // check if the ip is in the ip range when ipam is enabled
                 NormalIpRangeVO rangeVO = dbf.findByUuid(ipVo.getIpRangeUuid(), NormalIpRangeVO.class);
                 if (!NetworkUtils.isIpv4InCidr(ip, rangeVO.getNetworkCidr())) {
-                    throw new ApiMessageInterceptionException(argerr("ip address [%s] is not in ip range [%s]",
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10131, "ip address [%s] is not in ip range [%s]",
                             ip, rangeVO.getNetworkCidr()));
                 }
             }
@@ -598,7 +599,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     private void validateStaticIPv6(VmNicVO vmNicVO, L3NetworkVO l3NetworkVO, String ip) {
         if (!IPv6NetworkUtils.isIpv6Address(ip)) {
-            throw new ApiMessageInterceptionException(argerr("%s is not a valid IPv6 address", ip));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10132, "%s is not a valid IPv6 address", ip));
         }
 
         for (UsedIpVO ipVo : vmNicVO.getUsedIps()) {
@@ -608,7 +609,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
             if (ipVo.getL3NetworkUuid().equals(l3NetworkVO.getUuid())) {
                 if (ip.equals(ipVo.getIp())) {
-                    throw new ApiMessageInterceptionException(argerr("ip address [%s] already set to vmNic [uuid:%s]",
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10133, "ip address [%s] already set to vmNic [uuid:%s]",
                             ip, vmNicVO.getUuid()));
                 }
                 if (!l3NetworkVO.enableIpAddressAllocation()) {
@@ -616,7 +617,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
                 NormalIpRangeVO rangeVO = dbf.findByUuid(ipVo.getIpRangeUuid(), NormalIpRangeVO.class);
                 if (!IPv6NetworkUtils.isIpv6InRange(ip, rangeVO.getStartIp(), rangeVO.getEndIp())) {
-                    throw new ApiMessageInterceptionException(argerr("ip address [%s] is not in ip range [startIp %s, endIp %s]",
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10134, "ip address [%s] is not in ip range [startIp %s, endIp %s]",
                             ip, rangeVO.getStartIp(), rangeVO.getEndIp()));
                 }
             }
@@ -627,7 +628,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
         if (msg.getIp() == null && msg.getIp6() == null) {
             if(l3NetworkVO.enableIpAddressAllocation()) {
-                throw new ApiMessageInterceptionException(argerr("could not set ip address, due to no ip address is specified"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10135, "could not set ip address, due to no ip address is specified"));
             }
         }
         List<NormalIpRangeVO> ipv4Ranges = Q.New(NormalIpRangeVO.class)
@@ -648,7 +649,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     validateStaticIPv6(nic, l3NetworkVO, ip);
                     msg.setIp(ip);
                 } else {
-                    throw new ApiMessageInterceptionException(argerr("static ip [%s] format error", msg.getIp()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10136, "static ip [%s] format error", msg.getIp()));
                 }
             }
             if (msg.getIp6() != null) {
@@ -661,7 +662,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             l3Found = true;
             if (msg.getNetmask() == null) {
                 if (ipv4Ranges.isEmpty()) {
-                    throw new ApiMessageInterceptionException(argerr("ipv4 address need a netmask"));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10137, "ipv4 address need a netmask"));
                 } else {
                     msg.setNetmask(ipv4Ranges.get(0).getNetmask());
                 }
@@ -674,14 +675,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
             }
             if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, msg.getIp()).eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr("ip address [%s] already set to vmNic", msg.getIp()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10138, "ip address [%s] already set to vmNic", msg.getIp()));
             }
         }
         if (msg.getIp6() != null && !l3NetworkVO.enableIpAddressAllocation()) {
             l3Found = true;
             if (msg.getIpv6Prefix() == null) {
                 if (ipv6Ranges.isEmpty()) {
-                    throw new ApiMessageInterceptionException(argerr("ipv6 address need a prefix"));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10139, "ipv6 address need a prefix"));
                 } else {
                     msg.setIpv6Prefix(ipv6Ranges.get(0).getPrefixLen().toString());
                 }
@@ -694,11 +695,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
             }
             if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, msg.getIp6()).eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr("ip address [%s] already set to vmNic", msg.getIp6()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10140, "ip address [%s] already set to vmNic", msg.getIp6()));
             }
         }
         if (!l3Found) {
-            throw new ApiMessageInterceptionException(argerr("the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10141, "the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
                             msg.getL3NetworkUuid()));
         }
     }
@@ -708,14 +709,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         q.add(VmNicVO_.vmInstanceUuid, Op.EQ, msg.getVmInstanceUuid());
         q.add(VmNicVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         if (!q.isExists()) {
-            throw new ApiMessageInterceptionException(argerr("the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10142, "the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
                             msg.getL3NetworkUuid()));
         }
 
         if (msg.getStaticIp() != null) {
             if (!Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid())
                     .eq(UsedIpVO_.ip, msg.getStaticIp()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr("could not delete static ip [%s] for vm [uuid:%s] " +
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10143, "could not delete static ip [%s] for vm [uuid:%s] " +
                                 "because it doesn't existed", msg.getStaticIp(), msg.getVmInstanceUuid()));
             }
         }
@@ -727,7 +728,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 try {
                     VmBootDevice.valueOf(o);
                 } catch (IllegalArgumentException e) {
-                    throw new ApiMessageInterceptionException(argerr("invalid boot device[%s] in boot order%s", o, msg.getBootOrder()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10144, "invalid boot device[%s] in boot order%s", o, msg.getBootOrder()));
                 }
             }
         }
@@ -750,16 +751,16 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private void validate(APISetVmBootVolumeMsg msg) {
         VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).find();
         if (volume.isShareable()) {
-            throw new ApiMessageInterceptionException(argerr("boot volume cannot be shareable."));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10145, "boot volume cannot be shareable."));
         }
 
         if (!msg.getVmInstanceUuid().equals(volume.getVmInstanceUuid())) {
-            throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] must be attached to vm[uuid:%s]",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10146, "volume[uuid:%s] must be attached to vm[uuid:%s]",
                     msg.getVolumeUuid(), msg.getVmInstanceUuid()));
         }
 
         if (isVmHasMemorySnapshotGroup(msg.getVmInstanceUuid())) {
-            throw new ApiMessageInterceptionException(argerr("the vm %s with memory snapshots do not support setting boot volume", msg.getVmInstanceUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10147, "the vm %s with memory snapshots do not support setting boot volume", msg.getVmInstanceUuid()));
         }
     }
 
@@ -767,12 +768,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIAttachIsoToVmInstanceMsg msg) {
         List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
         if (isoUuids.contains(msg.getIsoUuid())) {
-            throw new ApiMessageInterceptionException(operr("VM[uuid:%s] already has an ISO[uuid:%s] attached", msg.getVmInstanceUuid(), msg.getIsoUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10148, "VM[uuid:%s] already has an ISO[uuid:%s] attached", msg.getVmInstanceUuid(), msg.getIsoUuid()));
         }
 
         ImageConstant.ImageMediaType type = Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getIsoUuid()).select(ImageVO_.mediaType).findValue();
         if (type != ImageConstant.ImageMediaType.ISO) {
-            throw new ApiMessageInterceptionException(argerr("Unsupported Image Media Type: [%s] ", type));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10149, "Unsupported Image Media Type: [%s] ", type));
         }
 
         validateCdRomUuid(msg);
@@ -787,11 +788,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (cdRomUuid != null) {
             VmCdRomVO cdRomVO = dbf.findByUuid(cdRomUuid, VmCdRomVO.class);
             if (cdRomVO == null) {
-                throw new ApiMessageInterceptionException(operr("The cdRom[uuid:%s] does not exist", cdRomUuid));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10150, "The cdRom[uuid:%s] does not exist", cdRomUuid));
             }
 
             if (StringUtils.isNotEmpty(cdRomVO.getIsoUuid())){
-                throw new ApiMessageInterceptionException(operr("VM[uuid:%s] cdRom[uuid:%s] has mounted the ISO", msg.getVmInstanceUuid(), cdRomUuid));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10151, "VM[uuid:%s] cdRom[uuid:%s] has mounted the ISO", msg.getVmInstanceUuid(), cdRomUuid));
             }
 
             msg.setCdRomUuid(cdRomUuid);
@@ -809,7 +810,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
 
         if (isoUuids.size() > 1 && msg.getIsoUuid() == null) {
-            throw new ApiMessageInterceptionException(operr("VM[uuid:%s] has multiple ISOs attached, specify the isoUuid when detaching", msg.getVmInstanceUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10152, "VM[uuid:%s] has multiple ISOs attached, specify the isoUuid when detaching", msg.getVmInstanceUuid()));
         }
 
         if (msg.getIsoUuid() == null) {
@@ -820,7 +821,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private void validate(APICreateVmNicMsg msg) {
         L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         if (l3VO.getState() == L3NetworkState.Disabled) {
-            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is disabled", msg.getL3NetworkUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10153, "unable to attach a L3 network. The L3 network[uuid:%s] is disabled", msg.getL3NetworkUuid()));
         }
 
         if (msg.getIp() != null) {
@@ -841,14 +842,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
 
             if (!found) {
-                throw new ApiMessageInterceptionException(argerr("the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getIp(), msg.getL3NetworkUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10154, "the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getIp(), msg.getL3NetworkUuid()));
             }
 
             SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
             uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
             uq.add(UsedIpVO_.ip, Op.EQ, msg.getIp());
             if (uq.isExists()) {
-                throw new ApiMessageInterceptionException(operr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", msg.getIp(), msg.getL3NetworkUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10155, "the static IP[%s] has been occupied on the L3 network[uuid:%s]", msg.getIp(), msg.getL3NetworkUuid()));
             }
         }
     }
@@ -862,13 +863,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         VmInstanceState state = t.get(1, VmInstanceState.class);
 
         if (!VmInstanceState.Running.equals(state) && !VmInstanceState.Stopped.equals(state)) {
-            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10156, "unable to attach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
                             msg.getVmInstanceUuid(), state));
         }
 
         L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         if (l3NetworkVO.getIpRanges().isEmpty() && l3NetworkVO.enableIpAddressAllocation()) {
-            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] doesn't has have ip range",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10157, "unable to attach a L3 network. The L3 network[uuid:%s] doesn't has have ip range",
                     msg.getL3NetworkUuid()));
         }
 
@@ -878,7 +879,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         List<String> l2Uuids = Q.New(L3NetworkVO.class).in(L3NetworkVO_.uuid, newAddedL3Uuids).select(L3NetworkVO_.l2NetworkUuid).listValues();
         l2Uuids = l2Uuids.stream().distinct().collect(Collectors.toList());
         if(l2Uuids.size() > 1) {
-            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] are belonged to different l2 networks [uuids:%s]",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10158, "unable to attach a L3 network. The L3 network[uuid:%s] are belonged to different l2 networks [uuids:%s]",
                     newAddedL3Uuids, l2Uuids));
         }
 
@@ -891,7 +892,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2Uuids.get(0))
                     .select(L2NetworkClusterRefVO_.clusterUuid).listValues();
             if (clusterUuids.isEmpty()) {
-                throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] are belonged to l2 networks [uuids:%s] that have not been attached to any cluster",
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10159, "unable to attach a L3 network. The L3 network[uuid:%s] are belonged to l2 networks [uuids:%s] that have not been attached to any cluster",
                         newAddedL3Uuids, l2Uuids));
             }
         }
@@ -904,14 +905,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (attachedL3Uuids != null && !attachedL3Uuids.isEmpty()) {
             if (!VmGlobalConfig.MULTI_VNIC_SUPPORT.value(Boolean.class)
                     || !VmInstanceConstant.USER_VM_TYPE.equals(type)) {
-                throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10160, "unable to attach a L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
                         attachedL3Uuids, msg.getVmInstanceUuid()));
             }
 
             List<String> attachedNonGuestL3Uuids = Q.New(L3NetworkVO.class).select(L3NetworkVO_.uuid).
                     notEq(L3NetworkVO_.category, L3NetworkCategory.Private).in(L3NetworkVO_.uuid, attachedL3Uuids).listValues();
             if (attachedNonGuestL3Uuids != null && !attachedNonGuestL3Uuids.isEmpty()) {
-                throw new ApiMessageInterceptionException(operr("unable to attach a non-guest L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10161, "unable to attach a non-guest L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
                         attachedL3Uuids, msg.getVmInstanceUuid()));
             }
         }
@@ -919,10 +920,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         for (String l3Uuid : newAddedL3Uuids) {
             L3NetworkVO l3Vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
             if (l3Vo.getState() == L3NetworkState.Disabled) {
-                throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is disabled", l3Uuid));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10162, "unable to attach a L3 network. The L3 network[uuid:%s] is disabled", l3Uuid));
             }
             if (VmInstanceConstant.USER_VM_TYPE.equals(type) && l3Vo.isSystem()) {
-                throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is a system network and vm is a user vm",
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10163, "unable to attach a L3 network. The L3 network[uuid:%s] is a system network and vm is a user vm",
                         l3Uuid));
             }
         }
@@ -956,20 +957,20 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
 
             if (!found) {
-                throw new ApiMessageInterceptionException(argerr("the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getStaticIp(), msg.getL3NetworkUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10164, "the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getStaticIp(), msg.getL3NetworkUuid()));
             }
 
             SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
             uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
             uq.add(UsedIpVO_.ip, Op.EQ, msg.getStaticIp());
             if (uq.isExists()) {
-                throw new ApiMessageInterceptionException(operr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", msg.getStaticIp(), msg.getL3NetworkUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10165, "the static IP[%s] has been occupied on the L3 network[uuid:%s]", msg.getStaticIp(), msg.getL3NetworkUuid()));
             }
         }
 
         for (Map.Entry<String, List<String>> e : staticIps.entrySet()) {
             if (!newAddedL3Uuids.contains(e.getKey())) {
-                throw new ApiMessageInterceptionException(argerr("static ip l3 uuid[%s] is not included in nic l3 [%s]", e.getKey(), newAddedL3Uuids));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10166, "static ip l3 uuid[%s] is not included in nic l3 [%s]", e.getKey(), newAddedL3Uuids));
             }
 
             String l3Uuid = e.getKey();
@@ -999,14 +1000,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
 
                 if (!found) {
-                    throw new ApiMessageInterceptionException(argerr("the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", staticIp, l3Uuid));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10167, "the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", staticIp, l3Uuid));
                 }
 
                 SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
                 uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
                 uq.add(UsedIpVO_.ip, Op.EQ, staticIp);
                 if (uq.isExists()) {
-                    throw new ApiMessageInterceptionException(operr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", staticIp, l3Uuid));
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10168, "the static IP[%s] has been occupied on the L3 network[uuid:%s]", staticIp, l3Uuid));
                 }
             }
         }
@@ -1030,7 +1031,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             try {
                 vmNicParam = JSONObjectUtil.toObject(msg.getVmNicParams(), VmNicParam.class);
             } catch (JsonSyntaxException e) {
-                throw new OperationFailureException(operr("invalid json format, causes: %s", e.getMessage()));
+                throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10169, "invalid json format, causes: %s", e.getMessage()));
             }
 
             VmNicUtils.validateVmParms(Arrays.asList(vmNicParam), Arrays.asList(msg.getL3NetworkUuid()), supportNicDriverTypes);
@@ -1043,14 +1044,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         VmInstanceState state = vmInstanceVO.getState();
 
         if (!VmInstanceState.Running.equals(state) && !VmInstanceState.Stopped.equals(state)) {
-            throw new ApiMessageInterceptionException(operr("unable to attach the nic. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10170, "unable to attach the nic. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
                     msg.getVmInstanceUuid(), state));
         }
 
         VmNicVO vmNicVO = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
 
         if (vmNicVO.getVmInstanceUuid() != null) {
-            throw new ApiMessageInterceptionException(operr("unable to attach the nic. The nic has been attached with vm[uuid: %s]", vmNicVO.getVmInstanceUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10171, "unable to attach the nic. The nic has been attached with vm[uuid: %s]", vmNicVO.getVmInstanceUuid()));
         }
 
         boolean exist = Q.New(VmNicVO.class)
@@ -1061,12 +1062,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (exist) {
             if (!VmGlobalConfig.MULTI_VNIC_SUPPORT.value(Boolean.class)
                     || !VmInstanceConstant.USER_VM_TYPE.equals(type)) {
-                throw new ApiMessageInterceptionException(operr("unable to attach the nic. Its L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10172, "unable to attach the nic. Its L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
                         vmNicVO.getL3NetworkUuid(), msg.getVmInstanceUuid()));
             }
 
             if (!L3NetworkCategory.Private.equals(l3NetworkVO.getCategory())) {
-                throw new ApiMessageInterceptionException(operr("unable to attach the nic with a non-guest L3 network. Its L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10173, "unable to attach the nic with a non-guest L3 network. Its L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
                         vmNicVO.getL3NetworkUuid(), msg.getVmInstanceUuid()));
             }
         }
@@ -1075,17 +1076,17 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         boolean system = l3NetworkVO.isSystem();
 
         if (l3state == L3NetworkState.Disabled) {
-            throw new ApiMessageInterceptionException(operr("unable to attach the nic. Its L3 network[uuid:%s] is disabled", l3NetworkVO.getUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10174, "unable to attach the nic. Its L3 network[uuid:%s] is disabled", l3NetworkVO.getUuid()));
         }
         if (VmInstanceConstant.USER_VM_TYPE.equals(type) && system) {
-            throw new ApiMessageInterceptionException(operr("unable to attach the nic. Its L3 network[uuid:%s] is a system network and vm is a user vm",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10175, "unable to attach the nic. Its L3 network[uuid:%s] is a system network and vm is a user vm",
                     l3NetworkVO.getUuid()));
         }
 
         List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, l3NetworkVO.getL2NetworkUuid())
                                      .select(L2NetworkClusterRefVO_.clusterUuid).listValues();
         if (clusterUuids.isEmpty()) {
-            throw new ApiMessageInterceptionException(operr("unable to attach the nic. Its l2 network [uuid:%s] that have not been attached to any cluster",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10176, "unable to attach the nic. Its l2 network [uuid:%s] that have not been attached to any cluster",
                     l3NetworkVO.getL2NetworkUuid()));
         }
     }
@@ -1097,12 +1098,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             MacOperator mo = new MacOperator();
             if (mo.checkDuplicateMac(nicVO.getHypervisorType(), nicVO.getL3NetworkUuid(),
                     nicVO.getMac())) {
-                throw new ApiMessageInterceptionException(Platform.argerr("Duplicate mac address [%s]", nicVO.getMac()));
+                throw new ApiMessageInterceptionException(Platform.argerr(ORG_ZSTACK_COMPUTE_VM_10177, "Duplicate mac address [%s]", nicVO.getMac()));
             }
         }
 
         if (!nicVO.getType().equals(VmInstanceConstant.VIRTUAL_NIC_TYPE)) {
-            throw new ApiMessageInterceptionException(operr("could not update nic[uuid: %s] state, due to nic type[%s] not support",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10178, "could not update nic[uuid: %s] state, due to nic type[%s] not support",
                     msg.getVmNicUuid(), nicVO.getType()));
         }
         msg.setVmInstanceUuid(nicVO.getVmInstanceUuid());
@@ -1119,7 +1120,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         VmInstanceState state = t.get(1, VmInstanceState.class);
 
         if (!VmInstanceState.Running.equals(state) && !VmInstanceState.Stopped.equals(state)) {
-            throw new ApiMessageInterceptionException(operr("unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10179, "unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
                     vmUuid, state));
         }
 
@@ -1134,7 +1135,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
         VmInstanceState state = q.findValue();
         if (state != VmInstanceState.Stopped && state != VmInstanceState.Running) {
-            throw new ApiMessageInterceptionException(operr("vm[uuid:%s] can only attach volume when state is Running or Stopped, current state is %s", msg.getVmInstanceUuid(), state));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10180, "vm[uuid:%s] can only attach volume when state is Running or Stopped, current state is %s", msg.getVmInstanceUuid(), state));
         }
     }
 
@@ -1142,11 +1143,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (imgFormat == ImageMediaType.ISO) {
             if (msg.getRootDiskOfferingUuid() == null) {
                 if (msg.getRootDiskSize() == null) {
-                    throw new ApiMessageInterceptionException(argerr("image mediaType is ISO but missing root disk settings"));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10181, "image mediaType is ISO but missing root disk settings"));
                 }
 
                 if (msg.getRootDiskSize() <= 0) {
-                    throw new ApiMessageInterceptionException(operr("Unexpected root disk settings"));
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10182, "Unexpected root disk settings"));
                 }
             }
         }
@@ -1167,14 +1168,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         clusterUuidsForRootVolume.retainAll(clusterUuidsForDataVolume);
         if (clusterUuidsForRootVolume.isEmpty()) {
-            throw new ApiMessageInterceptionException(operr("the primary storage[%s] of the root volume and the primary storage[%s] of the data volume are not in the same cluster", msg.getPrimaryStorageUuidForRootVolume(), primaryStorageUuidForDataVolume));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10183, "the primary storage[%s] of the root volume and the primary storage[%s] of the data volume are not in the same cluster", msg.getPrimaryStorageUuidForRootVolume(), primaryStorageUuidForDataVolume));
         }
     }
 
     private void validateZoneOrClusterOrHostOrL3Exist(NewVmInstanceMessage2 msg) {
         if (CollectionUtils.isEmpty(msg.getL3NetworkUuids()) && StringUtils.isEmpty(msg.getZoneUuid())
                 && StringUtils.isEmpty(msg.getClusterUuid()) && StringUtils.isEmpty(msg.getHostUuid())) {
-            throw new ApiMessageInterceptionException(operr("could not create vm, because at least one of field (l3NetworkUuids,zoneUuid,clusterUuid,hostUuid) should be set"));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10184, "could not create vm, because at least one of field (l3NetworkUuids,zoneUuid,clusterUuid,hostUuid) should be set"));
         }
     }
 
@@ -1184,7 +1185,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
         msg.getDataDiskSizes().forEach(dataDiskSize -> {
             if (dataDiskSize <= 0) {
-                throw new ApiMessageInterceptionException(operr("Unexpected data disk settings. dataDiskSizes need to be greater than 0"));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10185, "Unexpected data disk settings. dataDiskSizes need to be greater than 0"));
             }
         });
     }
@@ -1196,7 +1197,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             APICreateVmInstanceMsg.DiskAO rootDiskAO = msg.getDiskAOs().stream()
                     .filter(APICreateVmInstanceMsg.DiskAO::isBoot).findFirst().orElse(null);
             if (rootDiskAO == null) {
-                throw new ApiMessageInterceptionException(argerr("missing root disk"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10186, "missing root disk"));
             }
             msg.setPlatform(rootDiskAO.getPlatform());
             msg.setGuestOsType(rootDiskAO.getGuestOsType());
@@ -1230,39 +1231,39 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
 
             if (!err.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr(String.format("when imageUuid is null, %s", err)));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10187, String.format("when imageUuid is null, %s", err)));
             }
         } else {
             ImageState imgState = image.getState();
             if (imgState == ImageState.Disabled) {
-                throw new ApiMessageInterceptionException(operr("image[uuid:%s] is Disabled, can't create vm from it", msg.getImageUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10188, "image[uuid:%s] is Disabled, can't create vm from it", msg.getImageUuid()));
             }
 
             ImageStatus imgStatus = image.getStatus();
             if (imgStatus != ImageStatus.Ready) {
-                throw new ApiMessageInterceptionException(operr("image[uuid:%s] is not ready yet, can't create vm from it", msg.getImageUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10189, "image[uuid:%s] is not ready yet, can't create vm from it", msg.getImageUuid()));
             }
 
             ImageMediaType imgFormat = image.getMediaType();
             if (imgFormat != ImageMediaType.RootVolumeTemplate && imgFormat != ImageMediaType.ISO) {
-                throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is of mediaType: %s, only RootVolumeTemplate and ISO can be used to create vm", msg.getImageUuid(), imgFormat));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10190, "image[uuid:%s] is of mediaType: %s, only RootVolumeTemplate and ISO can be used to create vm", msg.getImageUuid(), imgFormat));
             }
 
             boolean isSystemImage = image.isSystem();
             if (isSystemImage && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
-                throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is system image, can't be used to create user vm", msg.getImageUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10191, "image[uuid:%s] is system image, can't be used to create user vm", msg.getImageUuid()));
             }
 
             if (msg.getPlatform() == null && image.getPlatform() == null) {
-                throw new ApiMessageInterceptionException(operr("at least one of field platform in msg or image[uuid:%s] should be set", msg.getImageUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10192, "at least one of field platform in msg or image[uuid:%s] should be set", msg.getImageUuid()));
             }
 
             if (msg.getGuestOsType() == null && image.getGuestOsType() == null) {
-                throw new ApiMessageInterceptionException(operr("at least one of field guestOsType in msg or image[uuid:%s] should be set", msg.getImageUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10193, "at least one of field guestOsType in msg or image[uuid:%s] should be set", msg.getImageUuid()));
             }
 
             if (msg.getArchitecture() == null && image.getArchitecture() == null) {
-                throw new ApiMessageInterceptionException(operr("at least one of field architecture in msg or image[uuid:%s] should be set", msg.getImageUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10194, "at least one of field architecture in msg or image[uuid:%s] should be set", msg.getImageUuid()));
             }
 
             validateRootDiskOffering(imgFormat, msg);
@@ -1293,7 +1294,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             dq.add(DiskOfferingVO_.uuid, Op.IN, allDiskOfferingUuids);
             List<String> diskUuids = dq.listValue();
             if (!diskUuids.isEmpty()) {
-                throw new ApiMessageInterceptionException(operr("disk offerings[uuids:%s] are Disabled, can not create vm from it", diskUuids));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10195, "disk offerings[uuids:%s] are Disabled, can not create vm from it", diskUuids));
             }
         }
 
@@ -1329,7 +1330,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (count > 1) {
-            throw new ApiMessageInterceptionException(operr("Cannot set the following properties at the same time: %s", errorMsg));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10196, "Cannot set the following properties at the same time: %s", errorMsg));
         }
 
         if (count == 0) {
@@ -1337,7 +1338,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             for (String key : map.keySet()) {
                 properties.add(key);
             }
-            throw new ApiMessageInterceptionException(operr("Need to set one of the following properties, and can only be one of them: %s", properties));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10197, "Need to set one of the following properties, and can only be one of them: %s", properties));
         }
     }
 
@@ -1346,15 +1347,15 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         VolumeVO volume = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
         if (volume.isShareable()) {
-            throw new ApiMessageInterceptionException(operr("cannot create vm instance from a shareable volume."));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10198, "cannot create vm instance from a shareable volume."));
         }
 
         if (volume.isAttached()) {
-            throw new ApiMessageInterceptionException(operr("could not create vm instance from a attached volume."));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10199, "could not create vm instance from a attached volume."));
         }
 
         if (volume.getStatus() != VolumeStatus.Ready || volume.getState() != VolumeState.Enabled) {
-            throw new ApiMessageInterceptionException(operr("volume[uuid:%s] could not satisfy conditions[state:Enabled status:Ready]", msg.getVolumeUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10200, "volume[uuid:%s] could not satisfy conditions[state:Enabled status:Ready]", msg.getVolumeUuid()));
         }
     }
 
@@ -1371,7 +1372,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         boolean uniqueVmName = VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class);
         if (uniqueVmName && Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, msg.getName()).isExists()) {
-            throw new ApiMessageInterceptionException(operr("could not create vm, a vm with the name [%s] already exists",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10201, "could not create vm, a vm with the name [%s] already exists",
                     msg.getName()));
         }
 
@@ -1384,21 +1385,21 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     .findAny();
             if (duplicateMac.isPresent()){
                 throw new ApiMessageInterceptionException(operr(
-                        "Not allowed same mac [%s]", duplicateMac.get()));
+                ORG_ZSTACK_COMPUTE_VM_10202,         "Not allowed same mac [%s]", duplicateMac.get()));
             }
         }
 
         if (msg.getVmNicParams() != null && !msg.getVmNicParams().isEmpty()) {
             List<String> supportNicDriverTypes = nicManager.getSupportNicDriverTypes();
             if (msg.getL3NetworkUuids() == null || msg.getL3NetworkUuids().isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("l3NetworkUuids and vmNicInventories mustn't both be empty or both be set"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10203, "l3NetworkUuids and vmNicInventories mustn't both be empty or both be set"));
             }
 
             List<VmNicParam> vmNicInventories;
             try {
                 vmNicInventories = JSONObjectUtil.toCollection(msg.getVmNicParams(), ArrayList.class, VmNicParam.class);
             } catch (JsonSyntaxException e) {
-                throw new OperationFailureException(operr("invalid json format, causes: %s", e.getMessage()));
+                throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10204, "invalid json format, causes: %s", e.getMessage()));
             }
 
             VmNicUtils.validateVmParms(vmNicInventories, msg.getL3NetworkUuids(), supportNicDriverTypes);
@@ -1410,7 +1411,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             List<String> uuids = new ArrayList<>(msg.getL3NetworkUuids());
             List<String> duplicateElements = getDuplicateElementsOfList(uuids);
             if (duplicateElements.size() > 0) {
-                throw new ApiMessageInterceptionException(operr("Can't add same uuid in the l3Network,uuid: %s", duplicateElements.get(0)));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10205, "Can't add same uuid in the l3Network,uuid: %s", duplicateElements.get(0)));
             }
 
             l3q.add(L3NetworkVO_.uuid, Op.IN, msg.getL3NetworkUuids());
@@ -1420,10 +1421,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 Boolean system = t.get(1, Boolean.class);
                 L3NetworkState state = t.get(2, L3NetworkState.class);
                 if (state != L3NetworkState.Enabled) {
-                    throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is Disabled, can not create vm on it", l3Uuid));
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10206, "l3Network[uuid:%s] is Disabled, can not create vm on it", l3Uuid));
                 }
                 if (system && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
-                    throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is system network, can not create user vm on it", l3Uuid));
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10207, "l3Network[uuid:%s] is system network, can not create user vm on it", l3Uuid));
                 }
             }
         }
@@ -1442,7 +1443,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             zq.add(ZoneVO_.uuid, Op.EQ, msg.getZoneUuid());
             ZoneState zoneState = zq.findValue();
             if (zoneState == ZoneState.Disabled) {
-                throw new ApiMessageInterceptionException(operr("zone[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getZoneUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10208, "zone[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getZoneUuid()));
             }
         }
 
@@ -1452,7 +1453,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             cq.add(ClusterVO_.uuid, Op.EQ, msg.getClusterUuid());
             ClusterState clusterState = cq.findValue();
             if (clusterState == ClusterState.Disabled) {
-                throw new ApiMessageInterceptionException(operr("cluster[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getClusterUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10209, "cluster[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getClusterUuid()));
             }
         }
 
@@ -1463,12 +1464,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             Tuple t = hq.findTuple();
             HostState hostState = t.get(0, HostState.class);
             if (hostState == HostState.Disabled) {
-                throw new ApiMessageInterceptionException(operr("host[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getHostUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10210, "host[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getHostUuid()));
             }
 
             HostStatus connectionState = t.get(1, HostStatus.class);
             if (connectionState != HostStatus.Connected) {
-                throw new ApiMessageInterceptionException(operr("host[uuid:%s] is specified but it's connection status is %s, can not create vm from it", msg.getHostUuid(), connectionState));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10211, "host[uuid:%s] is specified but it's connection status is %s, can not create vm from it", msg.getHostUuid(), connectionState));
             }
         }
 
@@ -1478,11 +1479,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         if (VmInstanceConstant.USER_VM_TYPE.equals(msg.getType())) {
             if (msg.getDefaultL3NetworkUuid() == null && (!CollectionUtils.isEmpty(msg.getL3NetworkUuids()) && msg.getL3NetworkUuids().size() != 1)) {
-                throw new ApiMessageInterceptionException(argerr("there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10212, "there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null"));
             } else if (msg.getDefaultL3NetworkUuid() == null && (msg.getL3NetworkUuids()!= null &&msg.getL3NetworkUuids().size() == 1)) {
                 msg.setDefaultL3NetworkUuid(msg.getL3NetworkUuids().get(0));
             } else if (msg.getDefaultL3NetworkUuid() != null && !msg.getL3NetworkUuids().contains(msg.getDefaultL3NetworkUuid())) {
-                throw new ApiMessageInterceptionException(argerr("defaultL3NetworkUuid[uuid:%s] is not in l3NetworkUuids%s", msg.getDefaultL3NetworkUuid(), msg.getL3NetworkUuids()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10213, "defaultL3NetworkUuid[uuid:%s] is not in l3NetworkUuids%s", msg.getDefaultL3NetworkUuid(), msg.getL3NetworkUuids()));
             }
         }
 
@@ -1513,12 +1514,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         for (String cdRomIsoUuid : cdRoms) {
             ImageVO imageVO = dbf.findByUuid(cdRomIsoUuid, ImageVO.class);
             if (imageVO == null) {
-                throw new ApiMessageInterceptionException(argerr("The image[uuid=%s] does not exist", cdRomIsoUuid));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10214, "The image[uuid=%s] does not exist", cdRomIsoUuid));
             }
         }
 
         if (cdRoms.size() != new HashSet<>(cdRoms).size()) {
-            throw new ApiMessageInterceptionException(argerr("Do not allow to mount duplicate ISO"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10215, "Do not allow to mount duplicate ISO"));
         }
     }
 
@@ -1533,7 +1534,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private void validate(APISetVmConsolePasswordMsg msg) {
         String pwd = msg.getConsolePassword();
         if (pwd.startsWith("password")){
-            throw new ApiMessageInterceptionException(argerr("The console password cannot start with 'password' which may trigger a VNC security issue"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10216, "The console password cannot start with 'password' which may trigger a VNC security issue"));
         }
     }
 
@@ -1541,21 +1542,21 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         VmInstanceVO vm = dbf.findByUuid(msg.getUuid(), VmInstanceVO.class);
         if (vm.getState() != VmInstanceState.Running) {
             throw new ApiMessageInterceptionException(operr(
-                    "Cannot update console password for VM[uuid:%s] because it is not in 'Running' state. Current state is '%s'.",
+            ORG_ZSTACK_COMPUTE_VM_10217,         "Cannot update console password for VM[uuid:%s] because it is not in 'Running' state. Current state is '%s'.",
                     vm.getUuid(), vm.getState()
             ));
         }
         boolean hasPassword = VmSystemTags.CONSOLE_PASSWORD.hasTag(vm.getUuid());
         if (!hasPassword) {
             throw new ApiMessageInterceptionException(operr(
-                    "Cannot update the console password for VM[uuid:%s] because no console password is currently set. ",
+            ORG_ZSTACK_COMPUTE_VM_10218,         "Cannot update the console password for VM[uuid:%s] because no console password is currently set. ",
                     vm.getUuid()
             ));
         }
     }
 
     private void validate(APIAttachL3NetworkToVmNicMsg msg) {
-        throw new ApiMessageInterceptionException(argerr("can not call this api because it's Deprecated"));
+        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10219, "can not call this api because it's Deprecated"));
     }
 
     private void validate(APIDeleteVmCdRomMsg msg) {
@@ -1572,7 +1573,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         VmCdRomVO vmCdRomVO = dbf.findByUuid(msg.getUuid(), VmCdRomVO.class);
 
         if (vmCdRomVO.getDeviceId() == 0) {
-            throw new ApiMessageInterceptionException(argerr("The CdRom[%s] Already the default", vmCdRomVO.getUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10220, "The CdRom[%s] Already the default", vmCdRomVO.getUuid()));
         }
     }
 
@@ -1584,7 +1585,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         if (state != VmInstanceState.Running) {
             throw new ApiMessageInterceptionException(operr(
-                    "vm[uuid:%s] can only fstrim when state is Running, current state is %s", msg.getUuid(), state));
+            ORG_ZSTACK_COMPUTE_VM_10221,         "vm[uuid:%s] can only fstrim when state is Running, current state is %s", msg.getUuid(), state));
         }
         msg.setHostUuid(t.get(1, String.class));
     }

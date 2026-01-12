@@ -54,6 +54,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2016/11/19.
@@ -100,7 +101,7 @@ public class VipBase {
     protected void refresh() {
         VipVO vo = dbf.reload(self);
         if (vo == null) {
-            throw new OperationFailureException(err(SysErrors.RESOURCE_NOT_FOUND,
+            throw new OperationFailureException(err(ORG_ZSTACK_NETWORK_SERVICE_VIP_10011, SysErrors.RESOURCE_NOT_FOUND,
                     "cannot find the vip[name:%s, uuid:%s, ip:%s], it may have been deleted",
                     self.getName(), self.getUuid(), self.getIp()
             ));
@@ -153,7 +154,7 @@ public class VipBase {
         if (s.isServiceProvider()) {
             if (self.getServiceProvider() != null && s.getServiceProvider() != null
                     && !s.getServiceProvider().equals(self.getServiceProvider())) {
-                throw new OperationFailureException(operr("service provider of the vip[uuid:%s, name:%s, ip: %s] has been set to %s",
+                throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_VIP_10012, "service provider of the vip[uuid:%s, name:%s, ip: %s] has been set to %s",
                         self.getUuid(), self.getName(), self.getIp(), self.getServiceProvider()));
             }
             self.setServiceProvider(s.getServiceProvider());
@@ -165,7 +166,7 @@ public class VipBase {
                     s.getPeerL3NetworkUuids().forEach(this::addPeerL3NetworkUuid);
                 }
             } catch (CloudRuntimeException e) {
-                throw new OperationFailureException(operr(e.getMessage()));
+                throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_VIP_10013, e.getMessage()));
             }
         }
 
@@ -362,7 +363,7 @@ public class VipBase {
                     s.getPeerL3NetworkUuids().forEach(this::deletePeerL3Network);
                 }
             } catch (CloudRuntimeException e) {
-                throw new OperationFailureException(operr(e.getMessage()));
+                throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_VIP_10014, e.getMessage()));
             }
             /* no need to remove vip from backend */
             completion.success();
@@ -806,7 +807,7 @@ public class VipBase {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                        evt.setError(err(ORG_ZSTACK_NETWORK_SERVICE_VIP_10015, SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                         bus.publish(evt);
                     }
                 });

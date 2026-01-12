@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * @author shenjin
@@ -102,21 +103,21 @@ public class DirectoryApiInterceptor implements ApiMessageInterceptor {
         List<ResourceDirectoryRefVO> resources = Q.New(ResourceDirectoryRefVO.class).in(ResourceDirectoryRefVO_.resourceUuid, resourceUuids).list();
         if (!resources.isEmpty()) {
             List<String> list = resources.stream().map(ResourceDirectoryRefVO::getResourceUuid).collect(Collectors.toList());
-            throw new ApiMessageInterceptionException(argerr("resources %s has already been bound to directory uuid[%s] , multiple paths are not supported", list, msg.getDirectoryUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_DIRECTORY_10000, "resources %s has already been bound to directory uuid[%s] , multiple paths are not supported", list, msg.getDirectoryUuid()));
         }
     }
 
     private void checkType(List<String> types) {
         if (!ALLOW_RESOURCE_TYPES.containsAll(types)) {
             List<String> list = types.stream().filter(s -> !ALLOW_RESOURCE_TYPES.contains(s)).collect(Collectors.toList());
-            throw new ApiMessageInterceptionException(argerr("resource types %s are not supported by directory, allowed types are %s", list, ALLOW_RESOURCE_TYPES));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_DIRECTORY_10001, "resource types %s are not supported by directory, allowed types are %s", list, ALLOW_RESOURCE_TYPES));
         }
     }
 
     private void validate(APIUpdateDirectoryMsg msg) {
         boolean result = CharacterUtils.checkCharactersByRegex(regex, msg.getName());
         if (!result) {
-            throw new ApiMessageInterceptionException(argerr("name contains unsupported characters," +
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_DIRECTORY_10002, "name contains unsupported characters," +
                     " name can only contain Chinese characters, English letters, " +
                     "numbers, spaces, and the following characters: ()（）【】@._-+ "));
         }
@@ -126,7 +127,7 @@ public class DirectoryApiInterceptor implements ApiMessageInterceptor {
         //judge whether special characters are included
         boolean result = CharacterUtils.checkCharactersByRegex(regex, msg.getName());
         if (!result) {
-            throw new ApiMessageInterceptionException(argerr("name contains unsupported characters," +
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_DIRECTORY_10003, "name contains unsupported characters," +
                     " name can only contain Chinese characters, English letters, " +
                     "numbers, spaces, and the following characters: ()（）【】@._-+ "));
         }

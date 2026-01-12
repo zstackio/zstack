@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2017/3/3.
@@ -233,7 +234,7 @@ public abstract class GarbageCollector {
         } catch (Throwable t) {
             logger.warn(String.format("[GC] unhandled exception happened when" +
                     " running a GC job[name:%s, id:%s]", NAME, uuid), t);
-            fail(inerr(t.getMessage()));
+            fail(inerr(ORG_ZSTACK_CORE_GC_10000, t.getMessage()));
         }
     }
 

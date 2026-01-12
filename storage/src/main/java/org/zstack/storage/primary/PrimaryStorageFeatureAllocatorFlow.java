@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * @ Author : yh.w
@@ -40,7 +41,7 @@ public class PrimaryStorageFeatureAllocatorFlow extends NoRollbackFlow {
             }
 
             if (ret.isEmpty()) {
-                throw new OperationFailureException(operr("PrimaryStorageFeatureAllocatorFlow[%s] returns zero primary storage candidate", extp.getClass().getName()));
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_10035, "PrimaryStorageFeatureAllocatorFlow[%s] returns zero primary storage candidate", extp.getClass().getName()));
             }
 
             candidates = ret;

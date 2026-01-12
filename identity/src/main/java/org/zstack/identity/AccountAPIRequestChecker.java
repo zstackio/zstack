@@ -17,6 +17,7 @@ import static org.zstack.core.Platform.*;
 import javax.persistence.Tuple;
 import java.lang.reflect.Field;
 import java.util.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AccountAPIRequestChecker implements APIRequestChecker {
@@ -146,7 +147,7 @@ public class AccountAPIRequestChecker implements APIRequestChecker {
                     String resourceUuid = t.get(2, String.class);
                     String resourceType = t.get(3, String.class);
                     if (!session.getAccountUuid().equals(resourceOwnerAccountUuid)) {
-                        throw new OperationFailureException(err(IdentityErrors.PERMISSION_DENIED, "operation denied. The resource[uuid: %s, type: %s,ownerAccountName:%s, ownerAccountUuid:%s] doesn't belong to the account[uuid: %s]",
+                        throw new OperationFailureException(err(ORG_ZSTACK_IDENTITY_10018, IdentityErrors.PERMISSION_DENIED, "operation denied. The resource[uuid: %s, type: %s,ownerAccountName:%s, ownerAccountUuid:%s] doesn't belong to the account[uuid: %s]",
                                 resourceUuid, resourceType, resourceOwnerName, resourceOwnerAccountUuid, session.getAccountUuid()
                         ));
                     }

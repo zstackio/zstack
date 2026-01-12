@@ -25,6 +25,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.LinkedHashMap;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class ExternalPrimaryStorageManagerImpl extends AbstractService {
     private static final CLogger logger = Utils.getLogger(ExternalPrimaryStorageManagerImpl.class);
@@ -54,7 +55,7 @@ public class ExternalPrimaryStorageManagerImpl extends AbstractService {
     private void passThrough(PrimaryStorageMessage msg) {
         ExternalPrimaryStorageVO vo = dbf.findByUuid(msg.getPrimaryStorageUuid(), ExternalPrimaryStorageVO.class);
         if (vo == null) {
-            throw new OperationFailureException(operr("cannot find ExternalPrimaryStorage[uuid:%s]", msg.getPrimaryStorageUuid()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10000, "cannot find ExternalPrimaryStorage[uuid:%s]", msg.getPrimaryStorageUuid()));
         }
 
         PrimaryStorage ext = factory.getPrimaryStorage(vo);
@@ -121,7 +122,7 @@ public class ExternalPrimaryStorageManagerImpl extends AbstractService {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (event.getInventory() == null) {
-                    event.setError(operr(errorCodeList, "cannot connect any external storage"));
+                    event.setError(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10001, errorCodeList, "cannot connect any external storage"));
                 }
 
                 bus.publish(event);

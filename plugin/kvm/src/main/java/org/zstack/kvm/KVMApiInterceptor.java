@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -58,7 +59,7 @@ public class KVMApiInterceptor implements ApiMessageInterceptor, GlobalApiMessag
             List<String> vmUuids = refVOs.stream()
                     .map(XmlHookVmInstanceRefVO::getVmInstanceUuid)
                     .collect(Collectors.toList());
-            throw new ApiMessageInterceptionException(operr("the xml hook[%s] has been set to vm %s," +
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_KVM_10134, "the xml hook[%s] has been set to vm %s," +
                     " so unbind it before deleting it", msg.getUuid(), vmUuids));
         }
     }
@@ -70,14 +71,14 @@ public class KVMApiInterceptor implements ApiMessageInterceptor, GlobalApiMessag
                 .notEq(XmlHookVO_.uuid, msg.getUuid())
                 .findValue();
         if (StringUtils.isNotEmpty(name)) {
-            throw new ApiMessageInterceptionException(argerr("the xml hook name[%s] already exists", msg.getName()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_KVM_10135, "the xml hook name[%s] already exists", msg.getName()));
         }
     }
 
     private static void failIfChangeSystemDefinedHook(XmlHookMessage msg) {
         XmlHookVO vo = Q.New(XmlHookVO.class).eq(XmlHookVO_.uuid, msg.getXmlHookUuid()).find();
         if (XmlHookType.System.equals(vo.getType())) {
-            throw new ApiMessageInterceptionException(operr("System-type xml hooks are not allowed to be operated"));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_KVM_10136, "System-type xml hooks are not allowed to be operated"));
         }
     }
 
@@ -85,7 +86,7 @@ public class KVMApiInterceptor implements ApiMessageInterceptor, GlobalApiMessag
         String name = Q.New(XmlHookVO.class).select(XmlHookVO_.name)
                 .eq(XmlHookVO_.name, msg.getName()).findValue();
         if (StringUtils.isNotEmpty(name)) {
-            throw new ApiMessageInterceptionException(argerr("the xml hook name[%s] already exists", msg.getName()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_KVM_10137, "the xml hook name[%s] already exists", msg.getName()));
         }
     }
 
@@ -94,7 +95,7 @@ public class KVMApiInterceptor implements ApiMessageInterceptor, GlobalApiMessag
         SimpleQuery<KVMHostVO> q = dbf.createQuery(KVMHostVO.class);
         q.add(KVMHostVO_.managementIp, Op.EQ, msg.getManagementIp());
         if (q.isExists()) {
-            throw new ApiMessageInterceptionException(argerr("there has been a kvm host having management ip[%s]", msg.getManagementIp()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_KVM_10138, "there has been a kvm host having management ip[%s]", msg.getManagementIp()));
         }
     }
 
@@ -112,7 +113,7 @@ public class KVMApiInterceptor implements ApiMessageInterceptor, GlobalApiMessag
 
         if (NetworkUtils.generateVlanDeviceName(l2.getPhysicalInterface(), l2.getVlan()).length()
                 > L2NetworkConstant.LINUX_IF_NAME_MAX_SIZE) {
-            throw new ApiMessageInterceptionException(argerr("cannot create vlan-device on %s because it's too long"
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_KVM_10139, "cannot create vlan-device on %s because it's too long"
                     , l2.getPhysicalInterface()));
         }
     }

@@ -63,6 +63,7 @@ import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -106,7 +107,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     private void passThrough(VolumeSnapshotMessage msg) {
         VolumeSnapshotVO vo = dbf.findByUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class);
         if (vo == null) {
-            throw new OperationFailureException(err(SysErrors.RESOURCE_NOT_FOUND,
+            throw new OperationFailureException(err(ORG_ZSTACK_STORAGE_SNAPSHOT_10010, SysErrors.RESOURCE_NOT_FOUND,
                     "cannot find volume snapshot[uuid:%s]", msg.getSnapshotUuid()
             ));
         }
@@ -126,7 +127,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     private void passThrough(VolumeSnapshotGroupMessage msg) {
         VolumeSnapshotGroupVO vo = dbf.findByUuid(msg.getGroupUuid(), VolumeSnapshotGroupVO.class);
         if (vo == null) {
-            throw new OperationFailureException(err(SysErrors.RESOURCE_NOT_FOUND,
+            throw new OperationFailureException(err(ORG_ZSTACK_STORAGE_SNAPSHOT_10011, SysErrors.RESOURCE_NOT_FOUND,
                     "cannot find volume snapshot[uuid:%s]", msg.getGroupUuid()
             ));
         }
@@ -618,7 +619,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         final Integer maxIncrementalSnapshotNum = getMaxIncrementalSnapshotNum(vo.getVolumeUuid());
         if (!CoreGlobalProperty.UNIT_TEST_ON) {
             if (maxIncrementalSnapshotNum <= 1) {
-                throw new OperationFailureException(operr("Unsupported maximum snapshot number (%d) for volume [uuid:%s]",
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10012, "Unsupported maximum snapshot number (%d) for volume [uuid:%s]",
                         maxIncrementalSnapshotNum, vo.getVolumeUuid()
                 ));
             }
@@ -719,13 +720,13 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         bus.makeLocalServiceId(askMsg, PrimaryStorageConstant.SERVICE_ID);
         MessageReply reply = bus.call(askMsg);
         if (!reply.isSuccess()) {
-            throw new OperationFailureException(operr("cannot ask primary storage[uuid:%s] for volume snapshot capability, see detail [%s]", vol.getUuid(),reply.getError()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10013, "cannot ask primary storage[uuid:%s] for volume snapshot capability, see detail [%s]", vol.getUuid(),reply.getError()));
         }
 
         AskVolumeSnapshotCapabilityReply areply = reply.castReply();
         VolumeSnapshotCapability capability = areply.getCapability();
         if (!capability.isSupport()) {
-            throw new OperationFailureException(operr("primary storage[uuid:%s] doesn't support volume snapshot;" +
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10014, "primary storage[uuid:%s] doesn't support volume snapshot;" +
                     " cannot create snapshot for volume[uuid:%s]", primaryStorageUuid, vol.getUuid()));
         }
 
@@ -1050,7 +1051,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
         String psType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type).eq(PrimaryStorageVO_.uuid, vol.getPrimaryStorageUuid()).findValue();
         if (psType == null) {
-            ret.setError(operr("cannot find type for primaryStorage [%s]", vol.getPrimaryStorageUuid()));
+            ret.setError(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10015, "cannot find type for primaryStorage [%s]", vol.getPrimaryStorageUuid()));
             bus.reply(msg, ret);
             return;
         }
@@ -1073,7 +1074,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         bus.makeTargetServiceIdByResourceUuid(askMsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
                         MessageReply reply = bus.call(askMsg);
                         if (!reply.isSuccess()) {
-                            ret.setError(operr(reply.getError(),
+                            ret.setError(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10016, reply.getError(),
                                     "cannot ask primary storage[uuid:%s] for volume snapshot capability",
                                     vol.getUuid()));
                             bus.reply(msg, ret);
@@ -1084,7 +1085,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         AskVolumeSnapshotCapabilityReply areply = reply.castReply();
                         capability = areply.getCapability();
                         if (!capability.isSupport()) {
-                            ret.setError(operr("primary storage[uuid:%s] doesn't support volume snapshot;" +
+                            ret.setError(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10017, "primary storage[uuid:%s] doesn't support volume snapshot;" +
                                     " cannot create snapshot for volume[uuid:%s]", primaryStorageUuid, vol.getUuid()));
                             bus.reply(msg, ret);
                             trigger.fail(ret.getError());
@@ -1147,7 +1148,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         String uuid = vo.getUuid();
                         vo = dbf.findByUuid(uuid, VolumeSnapshotVO.class);
                         if (vo == null) {
-                            trigger.fail(operr("cannot find snapshot: %s", uuid));
+                            trigger.fail(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10018, "cannot find snapshot: %s", uuid));
                             return;
                         }
                         List<PostMarkRootVolumeAsSnapshotExtension> extensions = pluginRgty.getExtensionList(PostMarkRootVolumeAsSnapshotExtension.class);
@@ -1216,7 +1217,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             return;
         }
 
-        reply.setError(operr("this resource type %s does not support querying memory snapshot references", msg.getResourceType()));
+        reply.setError(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10019, "this resource type %s does not support querying memory snapshot references", msg.getResourceType()));
         bus.reply(msg, reply);
     }
 

@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ExponApiHelper implements SingleFlightExecutor {
@@ -152,7 +153,7 @@ public class ExponApiHelper implements SingleFlightExecutor {
             }
 
             if (!result.error.sessionExpired()) {
-                completion.fail(operr("expon request failed, code %s, message: %s.", result.error.getRetCode(), result.error.getMessage()));
+                completion.fail(operr(ORG_ZSTACK_EXPON_10000, "expon request failed, code %s, message: %s.", result.error.getRetCode(), result.error.getMessage()));
                 return;
             }
 
@@ -160,7 +161,7 @@ public class ExponApiHelper implements SingleFlightExecutor {
             req.setSessionId(sessionId);
             client.call(req, retryRes -> {
                 if (retryRes.error != null) {
-                    completion.fail(operr("expon request failed, code %s, message: %s.", retryRes.error.getRetCode(), retryRes.error.getMessage()));
+                    completion.fail(operr(ORG_ZSTACK_EXPON_10001, "expon request failed, code %s, message: %s.", retryRes.error.getRetCode(), retryRes.error.getMessage()));
                     return;
                 }
 
@@ -171,7 +172,7 @@ public class ExponApiHelper implements SingleFlightExecutor {
 
     public void errorOut(ExponResponse rsp) {
         if (!rsp.isSuccess()) {
-            throw new OperationFailureException(operr("expon request failed, code %s, message: %s.", rsp.getRetCode(), rsp.getMessage()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_EXPON_10002, "expon request failed, code %s, message: %s.", rsp.getRetCode(), rsp.getMessage()));
         }
     }
 
@@ -367,7 +368,7 @@ public class ExponApiHelper implements SingleFlightExecutor {
             public void success() {
                 VolumeModule vol = queryVolume(name);
                 if (vol == null) {
-                    completion.fail(operr("cannot find volume[name:%s] after copy snapshot", name));
+                    completion.fail(operr(ORG_ZSTACK_EXPON_10003, "cannot find volume[name:%s] after copy snapshot", name));
                     return;
                 }
 

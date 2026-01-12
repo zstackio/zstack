@@ -16,6 +16,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -33,7 +34,7 @@ public class TestFutureCompletion3 {
     }
 
     private void complete(Completion completion) {
-        throw new OperationFailureException(operr("on purpose"));
+        throw new OperationFailureException(operr(ORG_ZSTACK_TEST_AOP_10002, "on purpose"));
     }
 
     @Test

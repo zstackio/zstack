@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -124,7 +125,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         for (String uuid : msg.getUsedIpUuids()) {
             UsedIpVO vo = dbf.findByUuid(uuid, UsedIpVO.class);
             if (vo.getVmNicUuid() != null) {
-                throw new ApiMessageInterceptionException(argerr("could delete ip address, " +
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10000, "could delete ip address, " +
                         "because it's used by vmnic[uuid:%s]", vo.getVmNicUuid()));
             }
         }
@@ -133,27 +134,27 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIAddReservedIpRangeMsg msg) {
         L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         if (!NetworkUtils.isValidIPAddress(msg.getStartIp())) {
-            throw new ApiMessageInterceptionException(argerr("could not reserve ip range, " +
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10001, "could not reserve ip range, " +
                     "because start ip[%s] is not valid ip address", msg.getStartIp()));
         }
 
         if (!NetworkUtils.isValidIPAddress(msg.getEndIp())) {
-            throw new ApiMessageInterceptionException(argerr("could not reserve ip range, " +
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10002, "could not reserve ip range, " +
                     "because start ip[%s] is not valid ip address", msg.getStartIp()));
         }
 
         if (NetworkUtils.isIpv4Address(msg.getStartIp()) && !NetworkUtils.isIpv4Address(msg.getEndIp())) {
-            throw new ApiMessageInterceptionException(argerr("could not reserve ip range, " +
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10003, "could not reserve ip range, " +
                     "because end ip[%s] is not ipv4 address", msg.getEndIp()));
         }
 
         if (IPv6NetworkUtils.isIpv6Address(msg.getStartIp()) && !IPv6NetworkUtils.isIpv6Address(msg.getEndIp())) {
-            throw new ApiMessageInterceptionException(argerr("could not reserve ip range, " +
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10004, "could not reserve ip range, " +
                     "because end ip[%s] is not ipv6 address", msg.getEndIp()));
         }
 
         if (!IPv6NetworkUtils.isValidIpRange(msg.getStartIp(), msg.getEndIp())) {
-            throw new ApiMessageInterceptionException(argerr("could not reserve ip range, " +
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10005, "could not reserve ip range, " +
                     "because end ip[%s] is less than start ip[%s]", msg.getEndIp(), msg.getStartIp()));
         }
 
@@ -162,13 +163,13 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
                     .filter(ipr -> (ipr.getIpVersion() == IPv6Constants.IPv4))
                     .collect(Collectors.toList());
             if (ipv4Ranges.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("could not reserve ip range, " +
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10006, "could not reserve ip range, " +
                         "because there is no ipv4 range"));
             }
 
             if (!NetworkUtils.isIpv4InCidr(msg.getStartIp(), ipv4Ranges.get(0).getNetworkCidr()) ||
                     !NetworkUtils.isIpv4InCidr(msg.getEndIp(), ipv4Ranges.get(0).getNetworkCidr())) {
-                throw new ApiMessageInterceptionException(argerr("could not reserve ip range, " +
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10007, "could not reserve ip range, " +
                         "because reserve ip is not in ip range[%s]", ipv4Ranges.get(0).getNetworkCidr()));
             }
 
@@ -178,7 +179,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             for (ReservedIpRangeVO reserveRange : reservedIpv4Ranges) {
                 if (NetworkUtils.isIpv4RangeOverlap(msg.getStartIp(), msg.getEndIp(),
                         reserveRange.getStartIp(), reserveRange.getEndIp())) {
-                    throw new ApiMessageInterceptionException(argerr("could not reserve ip range, " +
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10008, "could not reserve ip range, " +
                             "because new range [%s:%s] is overlapped with old range",
                             msg.getStartIp(), msg.getEndIp(),
                             reserveRange.getStartIp(), reserveRange.getEndIp()));
@@ -191,13 +192,13 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
                     .filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6)
                     .collect(Collectors.toList());
             if (ipv6Ranges.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("could not reserve ip range, " +
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10009, "could not reserve ip range, " +
                         "because there is no ipv6 range"));
             }
 
             if (!IPv6NetworkUtils.isIpv6InCidrRange(msg.getStartIp(), ipv6Ranges.get(0).getNetworkCidr()) ||
                     !IPv6NetworkUtils.isIpv6InCidrRange(msg.getEndIp(), ipv6Ranges.get(0).getNetworkCidr())) {
-                throw new ApiMessageInterceptionException(argerr("could not reserve ip range, " +
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10010, "could not reserve ip range, " +
                         "because reserve ip is not in ip range[%s]", ipv6Ranges.get(0).getNetworkCidr()));
             }
 
@@ -207,7 +208,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             for (ReservedIpRangeVO reserveRange : reservedIpv6Ranges) {
                 if (IPv6NetworkUtils.isIpv6RangeOverlap(msg.getStartIp(), msg.getEndIp(),
                         reserveRange.getStartIp(), reserveRange.getEndIp())) {
-                    throw new ApiMessageInterceptionException(argerr("could not reserve ip range, " +
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10011, "could not reserve ip range, " +
                                     "because new range [%s:%s] is overlapped with old range",
                             msg.getStartIp(), msg.getEndIp(),
                             reserveRange.getStartIp(), reserveRange.getEndIp()));
@@ -230,7 +231,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         if (novlanL2Vos.isEmpty()) {
             Integer defaultMtu = NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value(Integer.class);
             if (msg.getMtu() > defaultMtu) {
-                throw new ApiMessageInterceptionException(argerr("could not set mtu because l2 network[uuid:%s] of " +
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10012, "could not set mtu because l2 network[uuid:%s] of " +
                         "l3 network [uuid:%s] mtu can not be bigger than the novlan network", l2VO.getUuid(), msg.getL3NetworkUuid()));
             }
         }
@@ -262,7 +263,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (noVlanMax != null && msg.getMtu() > noVlanMax) {
-            throw new ApiMessageInterceptionException(argerr("could not set mtu because l2 network[uuid:%s] of " +
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10013, "could not set mtu because l2 network[uuid:%s] of " +
                     "l3 network [uuid:%s] mtu can not be bigger than the novlan network", l2VO.getUuid(), msg.getL3NetworkUuid()));
         }
     }
@@ -278,7 +279,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
                 .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).count();
         long addressPoolCnt = Q.New(AddressPoolVO.class).eq(AddressPoolVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).count();
         if (addressPoolCnt > 0 && normaCnt == 1) {
-            throw new ApiMessageInterceptionException(argerr("can not delete the last normal ip range because there is still has address pool"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10014, "can not delete the last normal ip range because there is still has address pool"));
         }
     }
 
@@ -293,7 +294,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
                 .eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid())
                 .findValue();
         if (msg.getSystem() != null && msg.getCategory() == null && !msg.getSystem().equals(currentSystem)) {
-            throw new ApiMessageInterceptionException(argerr("you must update system and category both"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10015, "you must update system and category both"));
         }
 
         List<L3NetworkCategory> validNetworkCategory = Arrays.asList(L3NetworkCategory.values());
@@ -310,7 +311,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             if (L3NetworkCategory.checkSystemAndCategory(msg.getSystem(), L3NetworkCategory.valueOf(msg.getCategory()))) {
                 return;
             } else {
-                throw new ApiMessageInterceptionException(argerr("not valid combination of system and category," +
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10016, "not valid combination of system and category," +
                         "only %s are valid", L3NetworkCategory.validCombination));
             }
         }
@@ -318,21 +319,21 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APISetL3NetworkRouterInterfaceIpMsg msg) {
         if (!NetworkUtils.isIpv4Address(msg.getRouterInterfaceIp())) {
-            throw new ApiMessageInterceptionException(argerr("invalid IP[%s]", msg.getRouterInterfaceIp()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10017, "invalid IP[%s]", msg.getRouterInterfaceIp()));
         }
         /* this API only related ipv4 */
         List<NormalIpRangeVO> ipRangeVOS = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
                 .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).list();
         if (ipRangeVOS == null || ipRangeVOS.isEmpty()) {
-            throw new ApiMessageInterceptionException(argerr("no ip range in l3[%s]", msg.getL3NetworkUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10018, "no ip range in l3[%s]", msg.getL3NetworkUuid()));
         }
         for (NormalIpRangeVO ipr : ipRangeVOS) {
             if (!NetworkUtils.isIpv4InCidr(msg.getRouterInterfaceIp(), ipr.getNetworkCidr())) {
-                throw new ApiMessageInterceptionException(argerr("ip[%s] is not in the cidr of ip range[uuid:%s, cidr:%s] which l3 network[%s] attached",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10019, "ip[%s] is not in the cidr of ip range[uuid:%s, cidr:%s] which l3 network[%s] attached",
                         msg.getRouterInterfaceIp(), ipr.getUuid(), ipr.getNetworkCidr(), msg.getL3NetworkUuid()));
             }
             if (NetworkUtils.isInRange(msg.getRouterInterfaceIp(), ipr.getStartIp(), ipr.getEndIp())) {
-                throw new ApiMessageInterceptionException(argerr("ip[%s] in ip range[uuid:%s, startIp:%s, endIp:%s] which l3 network[%s] attached, this is not allowed",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10020, "ip[%s] in ip range[uuid:%s, startIp:%s, endIp:%s] which l3 network[%s] attached, this is not allowed",
                         msg.getRouterInterfaceIp(), ipr.getUuid(), ipr.getStartIp(), ipr.getEndIp(), msg.getL3NetworkUuid()));
             }
         }
@@ -340,14 +341,14 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APICheckIpAvailabilityMsg msg) {
         if (!NetworkUtils.isValidIPAddress(msg.getIp())) {
-            throw new ApiMessageInterceptionException(argerr("invalid IP[%s]", msg.getIp()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10021, "invalid IP[%s]", msg.getIp()));
         }
     }
 
     private void validate(APIGetFreeIpMsg msg) {
         if (msg.getIpRangeUuid() == null && msg.getL3NetworkUuid() == null) {
             throw new ApiMessageInterceptionException(argerr(
-                    "ipRangeUuid and l3NetworkUuid cannot both be null; you must set either one."
+            ORG_ZSTACK_NETWORK_L3_10022,         "ipRangeUuid and l3NetworkUuid cannot both be null; you must set either one."
             ));
         }
 
@@ -375,18 +376,18 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
         if (msg.getStart() != null) {
             if (msg.getIpVersion() == IPv6Constants.DUAL_STACK) {
-                throw new ApiMessageInterceptionException(argerr("could not get free ip with start[ip:%s],because l3Network[uuid:%s] is dual stack", msg.getStart(), msg.getL3NetworkUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10023, "could not get free ip with start[ip:%s],because l3Network[uuid:%s] is dual stack", msg.getStart(), msg.getL3NetworkUuid()));
             } else if (msg.getIpVersion() == IPv6Constants.IPv4 && !NetworkUtils.isIpv4Address(msg.getStart())) {
-                throw new ApiMessageInterceptionException(argerr("could not get free ip with start[ip:%s],because start[ip:%s] is not a correct ipv4 address", msg.getStart(), msg.getStart()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10024, "could not get free ip with start[ip:%s],because start[ip:%s] is not a correct ipv4 address", msg.getStart(), msg.getStart()));
             } else if (msg.getIpVersion() == IPv6Constants.IPv6 && !IPv6NetworkUtils.isIpv6Address(msg.getStart())) {
-                throw new ApiMessageInterceptionException(argerr("could not get free ip with start[ip:%s],because start[ip:%s] is not a correct ipv6 address", msg.getStart(), msg.getStart()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10025, "could not get free ip with start[ip:%s],because start[ip:%s] is not a correct ipv6 address", msg.getStart(), msg.getStart()));
             }
         }
     }
 
     private void validate(APIAddIpv6RangeByNetworkCidrMsg msg) {
         if (!IPv6NetworkUtils.isValidUnicastNetworkCidr(msg.getNetworkCidr())) {
-            throw new ApiMessageInterceptionException(argerr("%s is not a valid network cidr", msg.getNetworkCidr()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10026, "%s is not a valid network cidr", msg.getNetworkCidr()));
         }
 
         if (msg.getIpRangeType() == null) {
@@ -399,19 +400,19 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIAddIpv6RangeMsg msg) {
         if (!IPv6NetworkUtils.isIpv6UnicastAddress(msg.getStartIp())) {
-            throw new ApiMessageInterceptionException(argerr("%s is not a valid ipv6 address", msg.getStartIp()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10027, "%s is not a valid ipv6 address", msg.getStartIp()));
         }
 
         if (!IPv6NetworkUtils.isIpv6UnicastAddress(msg.getEndIp())) {
-            throw new ApiMessageInterceptionException(argerr("%s is not a valid ipv6 address", msg.getEndIp()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10028, "%s is not a valid ipv6 address", msg.getEndIp()));
         }
 
         if (!IPv6NetworkUtils.isIpv6UnicastAddress(msg.getGateway())) {
-            throw new ApiMessageInterceptionException(argerr("%s is not a valid ipv6 address", msg.getGateway()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10029, "%s is not a valid ipv6 address", msg.getGateway()));
         }
 
         if (!IPv6NetworkUtils.isValidUnicastIpv6Range(msg.getStartIp(), msg.getEndIp(), msg.getGateway(), msg.getPrefixLen())) {
-            throw new ApiMessageInterceptionException(argerr("[startIp %s, endIp %s, prefixLen %d, gateway %s] is not a valid ipv6 range",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10030, "[startIp %s, endIp %s, prefixLen %d, gateway %s] is not a valid ipv6 range",
                     msg.getStartIp(), msg.getEndIp(), msg.getPrefixLen(), msg.getGateway()));
         }
 
@@ -422,12 +423,12 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         /* normal ip range must has netmask and gateway */
         if (msg.getIpRangeType().equals(IpRangeType.Normal.toString())) {
             if (msg.getGateway() == null) {
-                throw new ApiMessageInterceptionException(argerr("adding normal ip range must specify gateway ip address"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10031, "adding normal ip range must specify gateway ip address"));
             }
         }
 
         if (msg.getIpRangeType().equals(IpRangeType.AddressPool.toString())) {
-            throw new ApiMessageInterceptionException(argerr("can not add ip range, because ipv6 address pool is not supported"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10032, "can not add ip range, because ipv6 address pool is not supported"));
             /* fake gateway
             msg.setGateway(msg.getStartIp()); */
         }
@@ -438,26 +439,26 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
     private void validateIpv6Range(IpRangeInventory ipr) {
         if (ipr.getPrefixLen() > IPv6Constants.IPV6_PREFIX_LEN_MAX || ipr.getPrefixLen() < IPv6Constants.IPV6_PREFIX_LEN_MIN) {
-            throw new ApiMessageInterceptionException(argerr("ip range prefix length is out of range [%d - %d] ",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10033, "ip range prefix length is out of range [%d - %d] ",
                     IPv6Constants.IPV6_PREFIX_LEN_MIN, IPv6Constants.IPV6_PREFIX_LEN_MAX));
         }
 
         L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, ipr.getL3NetworkUuid()).find();
 
         if (l3Vo.getCategory().equals(L3NetworkCategory.System)) {
-            throw new ApiMessageInterceptionException(argerr("can not add ip range, because system network doesn't support ipv6 yet"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10034, "can not add ip range, because system network doesn't support ipv6 yet"));
         }
 
         List<NormalIpRangeVO> rangeVOS = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
         if (rangeVOS != null && !rangeVOS.isEmpty()) {
             if (!rangeVOS.get(0).getAddressMode().equals(ipr.getAddressMode())) {
-                throw new ApiMessageInterceptionException(argerr("addressMode[%s] is different from L3Netowork address mode[%s]", ipr.getAddressMode(),
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10035, "addressMode[%s] is different from L3Netowork address mode[%s]", ipr.getAddressMode(),
                         rangeVOS.get(0).getAddressMode()));
             }
         }
 
         if (!ipr.getAddressMode().equals(IPv6Constants.Stateful_DHCP) && ipr.getPrefixLen() != IPv6Constants.IPV6_STATELESS_PREFIX_LEN) {
-            throw new ApiMessageInterceptionException(argerr("ipv6 prefix length must be %d for Stateless-DHCP or SLAAC", IPv6Constants.IPV6_STATELESS_PREFIX_LEN));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10036, "ipv6 prefix length must be %d for Stateless-DHCP or SLAAC", IPv6Constants.IPV6_STATELESS_PREFIX_LEN));
         }
 
         List<String> l3Uuids = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.l2NetworkUuid, l3Vo.getL2NetworkUuid()).select(L3NetworkVO_.uuid).listValues();
@@ -467,7 +468,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         List<NormalIpRangeVO> ranges = q.list();
         for (NormalIpRangeVO r : ranges) {
             if (IPv6NetworkUtils.isIpv6RangeOverlap(ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp())) {
-                throw new ApiMessageInterceptionException(argerr("new ip range [startip :%s, endip :%s] is overlaped with old ip range[startip :%s, endip :%s]",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10037, "new ip range [startip :%s, endip :%s] is overlaped with old ip range[startip :%s, endip :%s]",
                         ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp()));
             }
 
@@ -477,7 +478,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
             /* same l3 network can have only 1 cidr (exclude address pool iprange) */
             if ((ipr.getIpRangeType() != IpRangeType.AddressPool) && (!r.getNetworkCidr().equals(ipr.getNetworkCidr()))) {
-                throw new ApiMessageInterceptionException(argerr("new network CIDR [%s] is different from old network cidr [%s]",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10038, "new network CIDR [%s] is different from old network cidr [%s]",
                         r.getNetworkCidr(), ipr.getNetworkCidr()));
             }
         }
@@ -487,13 +488,13 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
                 .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
         for (NormalIpRangeVO r : l3IpRanges) {
             if (!r.getGateway().equals(ipr.getGateway())) {
-                throw new ApiMessageInterceptionException(argerr("new add ip range gateway %s is different from old gateway %s", ipr.getGateway(), r.getGateway()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10039, "new add ip range gateway %s is different from old gateway %s", ipr.getGateway(), r.getGateway()));
             }
         }
 
         if (ipr.getIpRangeType() == IpRangeType.Normal) {
             if (NetworkUtils.isInIpv6Range(ipr.getStartIp(), ipr.getEndIp(), ipr.getGateway())) {
-                throw new ApiMessageInterceptionException(argerr("gateway[%s] can not be part of range[%s, %s]", ipr.getGateway(), ipr.getStartIp(), ipr.getEndIp()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10040, "gateway[%s] can not be part of range[%s, %s]", ipr.getGateway(), ipr.getStartIp(), ipr.getEndIp()));
             }
         }
     }
@@ -504,13 +505,13 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             utils.setInclusiveHostCount(false);
             SubnetInfo subnet = utils.getInfo();
             if (subnet.getAddressCount() == 0) {
-                throw new ApiMessageInterceptionException(argerr("%s is not an allowed network cidr, because it doesn't have usable ip range", msg.getNetworkCidr()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10041, "%s is not an allowed network cidr, because it doesn't have usable ip range", msg.getNetworkCidr()));
             }
             if (msg.getGateway() != null && !subnet.isInRange(msg.getGateway())) {
-                throw new ApiMessageInterceptionException(argerr("the gateway[%s] is not in the subnet %s", msg.getGateway(), subnet.getCidrSignature()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10042, "the gateway[%s] is not in the subnet %s", msg.getGateway(), subnet.getCidrSignature()));
             }
         } catch (IllegalArgumentException e) {
-            throw new ApiMessageInterceptionException(argerr("%s is not a valid network cidr", msg.getNetworkCidr()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10043, "%s is not a valid network cidr", msg.getNetworkCidr()));
         }
 
         if (msg.getIpRangeType() == null) {
@@ -537,7 +538,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
         if (!pass && !msg.isAll()) {
             throw new ApiMessageInterceptionException(argerr(
-                    "ipRangeUuids, L3NetworkUuids, zoneUuids must have at least one be none-empty list, or all is set to true"
+            ORG_ZSTACK_NETWORK_L3_10044,         "ipRangeUuids, L3NetworkUuids, zoneUuids must have at least one be none-empty list, or all is set to true"
             ));
         }
 
@@ -557,13 +558,13 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APICreateL3NetworkMsg msg) {
         if (!L3NetworkType.hasType(msg.getType())) {
-            throw new ApiMessageInterceptionException(argerr("unsupported l3network type[%s]", msg.getType()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10045, "unsupported l3network type[%s]", msg.getType()));
         }
 
         if (msg.getDnsDomain() != null) {
             DomainValidator validator = DomainValidator.getInstance();
             if (!validator.isValid(msg.getDnsDomain())) {
-                throw new ApiMessageInterceptionException(argerr("%s is not a valid domain name", msg.getDnsDomain()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10046, "%s is not a valid domain name", msg.getDnsDomain()));
             }
         }
 
@@ -578,7 +579,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         if (L3NetworkCategory.checkSystemAndCategory(msg.isSystem(), L3NetworkCategory.valueOf(msg.getCategory()))) {
             return;
         } else {
-            throw new ApiMessageInterceptionException(argerr("not valid combination of system and category," +
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10047, "not valid combination of system and category," +
                     "only %s are valid", L3NetworkCategory.validCombination));
         }
     }
@@ -618,7 +619,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         List<AddressPoolVO> ranges = q.list();
         for (AddressPoolVO r : ranges) {
             if (NetworkUtils.isIpv4RangeOverlap(ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp())) {
-                throw new ApiMessageInterceptionException(argerr("overlap with ip range[uuid:%s, start ip:%s, end ip: %s]", r.getUuid(), r.getStartIp(), r.getEndIp()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10048, "overlap with ip range[uuid:%s, start ip:%s, end ip: %s]", r.getUuid(), r.getStartIp(), r.getEndIp()));
             }
         }
     }
@@ -627,53 +628,53 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, ipr.getL3NetworkUuid()).find();
 
         if (ipr.getIpRangeType() == IpRangeType.AddressPool && l3Vo.getCategory() != L3NetworkCategory.Public) {
-            throw new ApiMessageInterceptionException(argerr("l3 network [uuid %s: name %s] is not a public network, address pool range can not be added", l3Vo.getUuid(), l3Vo.getName()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10049, "l3 network [uuid %s: name %s] is not a public network, address pool range can not be added", l3Vo.getUuid(), l3Vo.getName()));
         }
 
         if (NetworkUtils.isIpv4RangeOverlap("224.0.0.0", "239.255.255.255", ipr.getStartIp(), ipr.getEndIp())) {
-            throw new ApiMessageInterceptionException(argerr("the IP range[%s ~ %s] contains D class addresses which are for multicast", ipr.getStartIp(), ipr.getEndIp()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10050, "the IP range[%s ~ %s] contains D class addresses which are for multicast", ipr.getStartIp(), ipr.getEndIp()));
         }
 
         if (NetworkUtils.isIpv4RangeOverlap("240.0.0.0", "255.255.255.255", ipr.getStartIp(), ipr.getEndIp())) {
-            throw new ApiMessageInterceptionException(argerr("the IP range[%s ~ %s] contains E class addresses which are reserved", ipr.getStartIp(), ipr.getEndIp()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10051, "the IP range[%s ~ %s] contains E class addresses which are reserved", ipr.getStartIp(), ipr.getEndIp()));
         }
 
         if (NetworkUtils.isIpv4RangeOverlap("169.254.1.0", "169.254.254.255", ipr.getStartIp(), ipr.getEndIp())) {
-            throw new ApiMessageInterceptionException(argerr("the IP range[%s ~ %s] contains link local addresses which are reserved", ipr.getStartIp(), ipr.getEndIp()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10052, "the IP range[%s ~ %s] contains link local addresses which are reserved", ipr.getStartIp(), ipr.getEndIp()));
         }
 
         SubnetUtils sub = new SubnetUtils(ipr.getStartIp(), ipr.getNetmask());
         SubnetInfo info = sub.getInfo();
         if (!info.isInRange(ipr.getGateway())) {
-            throw new ApiMessageInterceptionException(argerr("the gateway[%s] is not in the subnet %s/%s", ipr.getGateway(), ipr.getStartIp(), ipr.getNetmask()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10053, "the gateway[%s] is not in the subnet %s/%s", ipr.getGateway(), ipr.getStartIp(), ipr.getNetmask()));
         }
 
         if (ipr.getStartIp().equals(info.getNetworkAddress()) || ipr.getEndIp().equals(info.getBroadcastAddress())) {
             throw new ApiMessageInterceptionException(argerr(
-                    "ip allocation can not contain network address or broadcast address")
+            ORG_ZSTACK_NETWORK_L3_10054,         "ip allocation can not contain network address or broadcast address")
             );
         }
 
         if (!NetworkUtils.isIpv4Address(ipr.getStartIp())) {
-            throw new ApiMessageInterceptionException(argerr("start ip[%s] is not a IPv4 address", ipr.getStartIp()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10055, "start ip[%s] is not a IPv4 address", ipr.getStartIp()));
         }
 
         if (!NetworkUtils.isIpv4Address(ipr.getEndIp())) {
-            throw new ApiMessageInterceptionException(argerr("end ip[%s] is not a IPv4 address", ipr.getEndIp()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10056, "end ip[%s] is not a IPv4 address", ipr.getEndIp()));
         }
 
         if (!NetworkUtils.isIpv4Address(ipr.getGateway())) {
-            throw new ApiMessageInterceptionException(argerr("gateway[%s] is not a IPv4 address", ipr.getGateway()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10057, "gateway[%s] is not a IPv4 address", ipr.getGateway()));
         }
 
         if (!NetworkUtils.isNetmaskExcept(ipr.getNetmask(), "0.0.0.0")) {
-            throw new ApiMessageInterceptionException(argerr("netmask[%s] is not a netmask, and the IP range netmask cannot be 0.0.0.0", ipr.getNetmask()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10058, "netmask[%s] is not a netmask, and the IP range netmask cannot be 0.0.0.0", ipr.getNetmask()));
         }
 
         long startip = NetworkUtils.ipv4StringToLong(ipr.getStartIp());
         long endip = NetworkUtils.ipv4StringToLong(ipr.getEndIp());
         if (startip > endip) {
-            throw new ApiMessageInterceptionException(argerr("start ip[%s] is behind end ip[%s]", ipr.getStartIp(), ipr.getEndIp()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10059, "start ip[%s] is behind end ip[%s]", ipr.getStartIp(), ipr.getEndIp()));
         }
 
         String cidr = ipr.toSubnetUtils().getInfo().getCidrSignature();
@@ -684,7 +685,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         List<IpRangeVO> ranges = q.list();
         for (IpRangeVO r : ranges) {
             if (NetworkUtils.isIpv4RangeOverlap(ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp())) {
-                throw new ApiMessageInterceptionException(argerr("overlap with ip range[uuid:%s, start ip:%s, end ip: %s]", r.getUuid(), r.getStartIp(), r.getEndIp()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10060, "overlap with ip range[uuid:%s, start ip:%s, end ip: %s]", r.getUuid(), r.getStartIp(), r.getEndIp()));
             }
 
             if (!r.getL3NetworkUuid().equals(ipr.getL3NetworkUuid())) {
@@ -700,7 +701,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
                 /* same l3 network can have only 1 cidr */
                 String rcidr = IpRangeInventory.valueOf(r).toSubnetUtils().getInfo().getCidrSignature();
                 if (!cidr.equals(rcidr)) {
-                    throw new ApiMessageInterceptionException(argerr("multiple CIDR on the same L3 network is not allowed. There has been a IP" +
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10061, "multiple CIDR on the same L3 network is not allowed. There has been a IP" +
                                     " range[uuid:%s, CIDR:%s], the new IP range[CIDR:%s] is not in the CIDR with the existing one",
                             r.getUuid(), rcidr, cidr));
                 }
@@ -710,19 +711,19 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         /* normal ip ranges of same l3 network must have same gateway */
         if (ipr.getIpRangeType() == IpRangeType.Normal) {
             if (!info.isInRange(ipr.getEndIp())) {
-                throw new ApiMessageInterceptionException(argerr("the endip[%s] is not in the subnet %s/%s", ipr.getEndIp(), ipr.getStartIp(), ipr.getNetmask()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10062, "the endip[%s] is not in the subnet %s/%s", ipr.getEndIp(), ipr.getStartIp(), ipr.getNetmask()));
             }
 
             long gw = NetworkUtils.ipv4StringToLong(ipr.getGateway());
             if (startip <= gw && gw <= endip) {
-                throw new ApiMessageInterceptionException(argerr("gateway[%s] can not be part of range[%s, %s]", ipr.getGateway(), ipr.getStartIp(), ipr.getEndIp()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10063, "gateway[%s] can not be part of range[%s, %s]", ipr.getGateway(), ipr.getStartIp(), ipr.getEndIp()));
             }
 
             List<NormalIpRangeVO> l3IpRanges = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid())
                     .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).list();
             for (NormalIpRangeVO r : l3IpRanges) {
                 if (!r.getGateway().equals(ipr.getGateway())) {
-                    throw new ApiMessageInterceptionException(argerr("new add ip range gateway %s is different from old gateway %s", ipr.getGateway(), r.getGateway()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10064, "new add ip range gateway %s is different from old gateway %s", ipr.getGateway(), r.getGateway()));
                 }
             }
         } else if (ipr.getIpRangeType() == IpRangeType.AddressPool) {
@@ -737,7 +738,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         /* normal ip range must has netmask and gateway */
         if (msg.getIpRangeType().equals(IpRangeType.Normal.toString())) {
             if (msg.getGateway() == null) {
-                throw new ApiMessageInterceptionException(argerr("adding normal ip range must specify gateway ip address"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10065, "adding normal ip range must specify gateway ip address"));
             }
         }
 
@@ -752,7 +753,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIAddDnsToL3NetworkMsg msg) {
         if (!NetworkUtils.isIpAddress(msg.getDns())) {
-            throw new ApiMessageInterceptionException(argerr("dns[%s] is not a IP address", msg.getDns()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10066, "dns[%s] is not a IP address", msg.getDns()));
         }
 
         List<L3NetworkDnsVO> l3NetworkDnsVOS = Q.New(L3NetworkDnsVO.class).eq(L3NetworkDnsVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
@@ -763,7 +764,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         if (NetworkUtils.isIpv4Address(msg.getDns())) {
             boolean exist = l3NetworkDnsVOS.stream().anyMatch(l3NetworkDnsVO -> msg.getDns().equals(l3NetworkDnsVO.getDns()));
             if (exist) {
-                throw new ApiMessageInterceptionException(operr("there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_L3_10067, "there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
             }
         } else {
             for (L3NetworkDnsVO l3NetworkDnsVO : l3NetworkDnsVOS) {
@@ -771,7 +772,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
                     continue;
                 }
                 if (IPv6Address.fromString(msg.getDns()).toBigInteger().equals(IPv6Address.fromString(l3NetworkDnsVO.getDns()).toBigInteger())) {
-                    throw new ApiMessageInterceptionException(operr("there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_L3_10068, "there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
                 }
             }
         }
@@ -779,31 +780,31 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIAddHostRouteToL3NetworkMsg msg) {
         if (!NetworkUtils.isCidr(msg.getPrefix())) {
-            throw new ApiMessageInterceptionException(argerr("prefix [%s] is not a IPv4 network cidr", msg.getL3NetworkUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10069, "prefix [%s] is not a IPv4 network cidr", msg.getL3NetworkUuid()));
         }
 
         if (!NetworkUtils.isIpv4Address(msg.getNexthop())) {
-            throw new ApiMessageInterceptionException(argerr("nexthop[%s] is not a IPv4 address", msg.getNexthop()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10070, "nexthop[%s] is not a IPv4 address", msg.getNexthop()));
         }
 
         SimpleQuery<L3NetworkHostRouteVO> q = dbf.createQuery(L3NetworkHostRouteVO.class);
         q.add(L3NetworkHostRouteVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         q.add(L3NetworkHostRouteVO_.prefix, Op.EQ, msg.getPrefix());
         if (q.isExists()) {
-            throw new ApiMessageInterceptionException(operr("there has been a hostroute for prefix[%s] on L3 network[uuid:%s]", msg.getPrefix(), msg.getL3NetworkUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_L3_10071, "there has been a hostroute for prefix[%s] on L3 network[uuid:%s]", msg.getPrefix(), msg.getL3NetworkUuid()));
         }
     }
 
     private void validate(APIRemoveHostRouteFromL3NetworkMsg msg) {
         if (!NetworkUtils.isCidr(msg.getPrefix())) {
-            throw new ApiMessageInterceptionException(argerr("prefix [%s] is not a IPv4 network cidr", msg.getL3NetworkUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10072, "prefix [%s] is not a IPv4 network cidr", msg.getL3NetworkUuid()));
         }
 
         SimpleQuery<L3NetworkHostRouteVO> q = dbf.createQuery(L3NetworkHostRouteVO.class);
         q.add(L3NetworkHostRouteVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         q.add(L3NetworkHostRouteVO_.prefix, Op.EQ, msg.getPrefix());
         if (!q.isExists()) {
-            throw new ApiMessageInterceptionException(operr("there is no hostroute for prefix[%s] on L3 network[uuid:%s]", msg.getPrefix(), msg.getL3NetworkUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_L3_10073, "there is no hostroute for prefix[%s] on L3 network[uuid:%s]", msg.getPrefix(), msg.getL3NetworkUuid()));
         }
     }
 }

@@ -62,6 +62,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
@@ -155,7 +156,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 .eq(BlockVolumeVO_.uuid, msg.getVolumeUuid()).find();
         if (blockVolumeVO == null) {
             GetAccessPathReply reply = new GetAccessPathReply();
-            reply.setError(operr("can not found block volume, access path only for block volume"));
+            reply.setError(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10009, "can not found block volume, access path only for block volume"));
             return;
         }
         BlockExternalPrimaryStorageBackend backend = getBlockBackend(blockVolumeVO.getVendor());
@@ -469,7 +470,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         }
 
         if (CollectionUtils.isEmpty(preferBsTypes)) {
-            reply.setError(operr("no backup storage type specified support to primary storage[uuid:%s]", self.getUuid()));
+            reply.setError(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10010, "no backup storage type specified support to primary storage[uuid:%s]", self.getUuid()));
             bus.reply(msg, reply);
             return;
         }
@@ -1858,7 +1859,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     public void run(final FlowTrigger trigger, Map data) {
                         ImageVO ivo = dbf.findByUuid(msg.getVolume().getRootImageUuid(), ImageVO.class);
                         if (ivo == null) {
-                            throw new OperationFailureException(operr("cannot reinit rootvolume [%s] because image [%s] has been deleted and imagecache cannot be found",
+                            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10011, "cannot reinit rootvolume [%s] because image [%s] has been deleted and imagecache cannot be found",
                                     msg.getVolume().getUuid(), msg.getVolume().getRootImageUuid()));
                         }
 
@@ -1976,7 +1977,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         String volumePath = matcher.group();
                         reply.putOwningVolumePath(snapshotPath, volumePath);
                     } else {
-                        reply.setError(operr("cannot find owning volume path from internal snapshot path[%s], " +
+                        reply.setError(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10012, "cannot find owning volume path from internal snapshot path[%s], " +
                                 "because the regex[%s] does not match the snapshot path", snapshotPath, scap.getVolumePathFromInternalSnapshotRegex()));
                         break;
                     }
@@ -2057,7 +2058,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                                 }
 
                                 if (!ret.isSuccess()) {
-                                    trigger.fail(operr("ping external primary storage[%s] failed, %s", self.getUuid(), ret.getError()));
+                                    trigger.fail(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10013, "ping external primary storage[%s] failed, %s", self.getUuid(), ret.getError()));
                                     return;
                                 }
 
@@ -2109,7 +2110,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                                     new ExternalPrimaryStorageSpaceCapacityHelper(externalVO).updateStorageSpace(capacity);
                                     trigger.next();
                                 } else {
-                                    trigger.fail(operr("storage is not healthy:%s", capacity.getHealthy().toString()));
+                                    trigger.fail(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10014, "storage is not healthy:%s", capacity.getHealthy().toString()));
                                 }
                             }
 

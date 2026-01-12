@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -54,7 +55,7 @@ public class ValidationFacadeImpl implements ValidationFacade, Component {
                 for (Validator v : vs) {
                     String err = v.validate(obj);
                     if (err != null) {
-                        return inerr(err);
+                        return inerr(ORG_ZSTACK_CORE_VALIDATION_10000, err);
                     }
                 }
             }

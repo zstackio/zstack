@@ -31,6 +31,7 @@ import org.zstack.utils.logging.CLogger;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizationExtensionPoint, KVMCompleteNicInformationExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KVMRealizeHardwareVxlanNetworkBackend.class);
@@ -82,7 +83,7 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 CreateVlanBridgeResponse rsp = hreply.toResponse(CreateVlanBridgeResponse.class);
                 if (!rsp.isSuccess()) {
-                    ErrorCode err = operr("failed to create bridge[%s] for hardwareVxlan[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
+                    ErrorCode err = operr(ORG_ZSTACK_SDNCONTROLLER_HARDWAREVXLAN_10002, "failed to create bridge[%s] for hardwareVxlan[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
                             cmd.getBridgeName(), l2Network.getUuid(), l2Network.getType(), finalVlanId, hostUuid, rsp.getError());
                     completion.fail(err);
                     return;
@@ -141,7 +142,7 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 CheckVlanBridgeResponse rsp = hreply.toResponse(CheckVlanBridgeResponse.class);
                 if (!rsp.isSuccess()) {
-                    ErrorCode err = operr("failed to check bridge[%s] for hardwareVxlan[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
+                    ErrorCode err = operr(ORG_ZSTACK_SDNCONTROLLER_HARDWAREVXLAN_10003, "failed to check bridge[%s] for hardwareVxlan[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
                                     cmd.getBridgeName(), vxlan.getUuid(), vxlan.getName(), hostUuid, rsp.getError());
                     completion.fail(err);
                     return;
@@ -233,7 +234,7 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 KVMAgentCommands.DeleteVlanBridgeResponse rsp = hreply.toResponse(KVMAgentCommands.DeleteVlanBridgeResponse.class);
                 if (!rsp.isSuccess()) {
-                    ErrorCode err = operr("failed to delete bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
+                    ErrorCode err = operr(ORG_ZSTACK_SDNCONTROLLER_HARDWAREVXLAN_10004, "failed to delete bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
                             cmd.getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2Vxlan.getVlan(), hostUuid, rsp.getError());
                     completion.fail(err);
                     return;

@@ -42,6 +42,7 @@ import java.util.List;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class SshKeyPairManagerImpl extends AbstractService implements
         SshKeyPairManager,
@@ -84,7 +85,7 @@ public class SshKeyPairManagerImpl extends AbstractService implements
     public void passThrough(SshKeyPairMessage msg) {
         SshKeyPairVO vo = dbf.findByUuid(msg.getSshKeyPairUuid(), SshKeyPairVO.class);
         if (vo == null) {
-            bus.replyErrorByMessageType((Message) msg, err(SysErrors.RESOURCE_NOT_FOUND, "unable to find sshKeyPair[uuid=%s]", msg.getSshKeyPairUuid()));
+            bus.replyErrorByMessageType((Message) msg, err(ORG_ZSTACK_SSHKEYPAIR_10000, SysErrors.RESOURCE_NOT_FOUND, "unable to find sshKeyPair[uuid=%s]", msg.getSshKeyPairUuid()));
             return;
         }
 
@@ -139,7 +140,7 @@ public class SshKeyPairManagerImpl extends AbstractService implements
             jschKeyPair.writePublicKey(pubKey, null);
         } catch (JSchException e) {
             bus.replyErrorByMessageType((Message) msg, err(
-                    SysErrors.INTERNAL,
+            ORG_ZSTACK_SSHKEYPAIR_10001,         SysErrors.INTERNAL,
                     "Cannot generate sshKeyPair, error: %s", e.toString()));
         }
 
@@ -169,7 +170,7 @@ public class SshKeyPairManagerImpl extends AbstractService implements
             KeyPair publicKey = KeyPair.load(jsch, null, keyContent.getBytes());
             String fg = publicKey.getFingerPrint();
         } catch (Exception e) {
-            completion.fail(operr("failed to load the public key: %s, err: %s", keyContent, e.toString()));
+            completion.fail(operr(ORG_ZSTACK_SSHKEYPAIR_10002, "failed to load the public key: %s, err: %s", keyContent, e.toString()));
             return;
         }
 
@@ -226,7 +227,7 @@ public class SshKeyPairManagerImpl extends AbstractService implements
                     .eq(SshKeyPairVO_.uuid, uuid)
                     .isExists();
             if(!isExist) {
-                return operr("ssh key pair[uuid:%s] can not associated to vm[uuid:%s] due to the key not found",
+                return operr(ORG_ZSTACK_SSHKEYPAIR_10003, "ssh key pair[uuid:%s] can not associated to vm[uuid:%s] due to the key not found",
                         uuid, vmUuid);
             }
             SshKeyPairRefVO refVo = new SshKeyPairRefVO();

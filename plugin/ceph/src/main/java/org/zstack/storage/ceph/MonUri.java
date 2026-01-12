@@ -13,6 +13,7 @@ import java.util.List;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 7/27/2015.
@@ -56,27 +57,27 @@ public class MonUri {
     private static final String MON_URL_FORMAT = "sshUsername:sshPassword@hostname:[sshPort]/?[monPort=]";
 
     private ErrorCode errorCode(String err) {
-        return argerr(err);
+        return argerr(ORG_ZSTACK_STORAGE_CEPH_10000, err);
     }
 
     public MonUri(String url) {
         try {
             int at = url.lastIndexOf("@");
             if (at == -1) {
-                throw new OperationFailureException(operr("invalid monUrl[%s], the sshUsername:sshPassword part is invalid. A valid monUrl is" +
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_10001, "invalid monUrl[%s], the sshUsername:sshPassword part is invalid. A valid monUrl is" +
                         " in format of %s", url, MON_URL_FORMAT));
             }
 
             String userInfo = url.substring(0, at);
             if (!userInfo.contains(":")) {
-                throw new OperationFailureException(operr("invalid monUrl[%s], the sshUsername:sshPassword part is invalid. A valid monUrl is" +
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_10002, "invalid monUrl[%s], the sshUsername:sshPassword part is invalid. A valid monUrl is" +
                         " in format of %s", url, MON_URL_FORMAT));
             }
 
             String rest = url.substring(at+1);
             String[] ssh = userInfo.split(":", 2);
             if (ssh.length != 2 || ssh[0].isEmpty() || ssh[1].isEmpty()) {
-                throw new OperationFailureException(operr("invalid monUrl[%s]. SSH username and password must be separated by ':' and cannot be empty. A valid monUrl format is %s", url, MON_URL_FORMAT));
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_10003, "invalid monUrl[%s]. SSH username and password must be separated by ':' and cannot be empty. A valid monUrl format is %s", url, MON_URL_FORMAT));
             }
 
             sshUsername = ssh[0];
@@ -85,14 +86,14 @@ public class MonUri {
             URI uri = new URI(String.format("ssh://%s", rest));
             hostname = uri.getHost();
             if (hostname == null) {
-                throw new OperationFailureException(operr("invalid monUrl[%s], hostname cannot be null. A valid monUrl is" +
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_10004, "invalid monUrl[%s], hostname cannot be null. A valid monUrl is" +
                                 " in format of %s", url, MON_URL_FORMAT)
                 );
             }
 
             sshPort = uri.getPort() == -1 ? sshPort : uri.getPort();
             if (sshPort < 1 || sshPort > 65535) {
-                throw new OperationFailureException(operr("invalid monUrl[%s], the ssh port is greater than 65535 or smaller than 1. A valid monUrl is" +
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_10005, "invalid monUrl[%s], the ssh port is greater than 65535 or smaller than 1. A valid monUrl is" +
                                 " in format of %s", url, MON_URL_FORMAT)
                 );
             }

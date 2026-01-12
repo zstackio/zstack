@@ -26,6 +26,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class AuthorizationManager implements GlobalApiMessageInterceptor, Component, ZQLQueryExtensionPoint {
     private static final CLogger logger = Utils.getLogger(AuthorizationManager.class);
@@ -62,12 +63,12 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
 
     private SessionInventory evaluateSession(APIMessage msg) {
         if (msg.getSession() == null) {
-            throw new ApiMessageInterceptionException(err(IdentityErrors.INVALID_SESSION,
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_IDENTITY_10012, IdentityErrors.INVALID_SESSION,
                     "session of message[%s] is null", msg.getMessageName()));
         }
 
         if (msg.getSession().getUuid() == null) {
-            throw new ApiMessageInterceptionException(err(IdentityErrors.INVALID_SESSION,
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_IDENTITY_10013, IdentityErrors.INVALID_SESSION,
                     "session uuid is null"));
         }
 
@@ -155,6 +156,6 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
         Arrays.asList(authentications).forEach(authArray::add);
         o.add("authentications", authArray);
         properties.forEach(o::addProperty);
-        return err(IdentityErrors.NEED_ADDITION_AUTHENTICATION, "%s", o.toString());
+        return err(ORG_ZSTACK_IDENTITY_10014, IdentityErrors.NEED_ADDITION_AUTHENTICATION, "%s", o.toString());
     }
 }

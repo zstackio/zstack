@@ -11,6 +11,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 /*
@@ -59,7 +60,7 @@ public class TestSimpleFlow13 {
             @Override
             public void run(FlowTrigger chain, Map data) {
                 count[0] = count[0] + 1;
-                throw new OperationFailureException(operr("on purpose"));
+                throw new OperationFailureException(operr(ORG_ZSTACK_TEST_CORE_WORKFLOW_10000, "on purpose"));
             }
 
             @Override

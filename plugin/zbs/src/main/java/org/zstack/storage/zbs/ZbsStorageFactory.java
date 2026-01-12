@@ -14,6 +14,7 @@ import org.zstack.utils.ssh.SshResult;
 import java.util.List;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * @author Xingwei Yu
@@ -42,7 +43,7 @@ public class ZbsStorageFactory implements ExternalPrimaryStorageSvcBuilder, Back
         Config conf = JSONObjectUtil.toObject(config, Config.class);
 
         if (CollectionUtils.isEmpty(conf.getMdsUrls())) {
-            completion.fail(operr("mdsUrls cannot be null or empty"));
+            completion.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10037, "mdsUrls cannot be null or empty"));
             return;
         }
 
@@ -83,7 +84,7 @@ public class ZbsStorageFactory implements ExternalPrimaryStorageSvcBuilder, Back
             }
         }
 
-        completion.fail(operr("unable to discover logical pools from all MDSs, details: %s", errInfo));
+        completion.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10038, "unable to discover logical pools from all MDSs, details: %s", errInfo));
     }
 
     public void setPreferBackupStorageTypes(List<String> preferBackupStorageTypes) {

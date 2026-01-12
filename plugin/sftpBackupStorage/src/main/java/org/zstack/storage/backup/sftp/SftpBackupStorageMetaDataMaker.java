@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.header.storage.backup.BackupStorageConstant.IMPORT_IMAGES_FAKE_RESOURCE_UUID;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by Mei Lei <meilei007@gmail.com> on 11/3/16.
@@ -352,7 +353,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                                     public void success(SftpBackupStorageCommands.CheckImageMetaDataFileExistRsp rsp) {
                                         if (!rsp.isSuccess()) {
                                             logger.error(String.format("check image metadata file: %s failed", rsp.getBackupStorageMetaFileName()));
-                                            ErrorCode ec = operr("check image metadata file: %s failed", rsp.getBackupStorageMetaFileName());
+                                            ErrorCode ec = operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10015, "check image metadata file: %s failed", rsp.getBackupStorageMetaFileName());
                                             trigger.fail(ec);
                                         } else {
                                             if (!rsp.getExist()) {
@@ -396,7 +397,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                                         @Override
                                         public void success(SftpBackupStorageCommands.GenerateImageMetaDataFileRsp rsp) {
                                             if (!rsp.isSuccess()) {
-                                                ErrorCode ec = operr("create image metadata file : %s failed", rsp.getBackupStorageMetaFileName());
+                                                ErrorCode ec = operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10016, "create image metadata file : %s failed", rsp.getBackupStorageMetaFileName());
                                                 trigger.fail(ec);
                                             } else {
                                                 logger.info("create image metadata file successfully");
@@ -551,12 +552,12 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                                     public void success(SftpBackupStorageCommands.CheckImageMetaDataFileExistRsp rsp) {
                                         if (!rsp.isSuccess()) {
                                             logger.error(String.format("check image metadata file: %s failed", rsp.getBackupStorageMetaFileName()));
-                                            ErrorCode ec = operr("check image metadata file: %s failed", rsp.getBackupStorageMetaFileName());
+                                            ErrorCode ec = operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10017, "check image metadata file: %s failed", rsp.getBackupStorageMetaFileName());
                                             trigger.fail(ec);
                                         } else {
                                             if (!rsp.getExist()) {
                                                 logger.info(String.format("image metadata file %s is not exist", rsp.getBackupStorageMetaFileName()));
-                                                ErrorCode ec = operr("image metadata file: %s is not exist", rsp.getBackupStorageMetaFileName());
+                                                ErrorCode ec = operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10018, "image metadata file: %s is not exist", rsp.getBackupStorageMetaFileName());
                                                 trigger.fail(ec);
                                             } else {
                                                 logger.info(String.format("image metadata file %s exist", rsp.getBackupStorageMetaFileName()));
@@ -593,7 +594,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                                     @Override
                                     public void success(SftpBackupStorageCommands.DeleteImageInfoFromMetaDataFileRsp rsp) {
                                         if (!rsp.isSuccess()) {
-                                            ErrorCode ec = operr("delete image metadata file failed: %s", rsp.getError());
+                                            ErrorCode ec = operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10019, "delete image metadata file failed: %s", rsp.getError());
                                             trigger.fail(ec);
                                         } else {
                                             if (rsp.getRet() != 0) {

@@ -1,5 +1,7 @@
 package org.zstack.test.integration.kvm.vm
 
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.DeleteVolumeGC
 import org.zstack.core.cloudbus.CloudBus
@@ -149,7 +151,7 @@ class VmVolumeGCCase extends SubCase {
 
             DeleteVolumeReply reply = new DeleteVolumeReply()
             reply.success = false
-            reply.setError(operr("ase mock error"))
+            reply.setError(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_KVM_VM_10003, "ase mock error"))
             bus.reply(msg, reply)
         }
 

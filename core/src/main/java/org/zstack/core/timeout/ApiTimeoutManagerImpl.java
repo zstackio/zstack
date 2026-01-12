@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 2/17/2016.
@@ -73,7 +74,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
         GlobalConfigValidatorExtensionPoint validator = (category, name, oldValue, newValue) -> {
             long minimal = parseTimeout(ApiTimeoutGlobalProperty.MINIMAL_TIMEOUT);
             if (parseTimeout(newValue) < minimal) {
-                throw new OperationFailureException(argerr("api timeout cannot be set smaller than %s", ApiTimeoutGlobalProperty.MINIMAL_TIMEOUT));
+                throw new OperationFailureException(argerr(ORG_ZSTACK_CORE_TIMEOUT_10000, "api timeout cannot be set smaller than %s", ApiTimeoutGlobalProperty.MINIMAL_TIMEOUT));
             }
         };
 

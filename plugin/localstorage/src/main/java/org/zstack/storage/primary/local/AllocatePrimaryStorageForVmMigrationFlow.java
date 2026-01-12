@@ -20,6 +20,7 @@ import org.zstack.utils.function.Function;
 
 import java.util.ArrayList;
 import java.util.List;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 10/24/2015.
@@ -82,7 +83,7 @@ public class AllocatePrimaryStorageForVmMigrationFlow  extends AbstractHostAlloc
         });
 
         if (candidates.isEmpty()) {
-            fail(Platform.operr("no hosts can provide %s bytes for all volumes of the vm[uuid:%s]", volumeSize, spec.getVmInstance().getUuid()));
+            fail(Platform.operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10000, "no hosts can provide %s bytes for all volumes of the vm[uuid:%s]", volumeSize, spec.getVmInstance().getUuid()));
         } else {
             next(candidates);
         }

@@ -62,6 +62,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 8/8/2015.
@@ -98,7 +99,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     private void passThrough(LoadBalancerMessage msg) {
         LoadBalancerVO vo = dbf.findByUuid(msg.getLoadBalancerUuid(), LoadBalancerVO.class);
         if (vo == null) {
-            throw new OperationFailureException(operr("cannot find the load balancer[uuid:%s]", msg.getLoadBalancerUuid()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10000, "cannot find the load balancer[uuid:%s]", msg.getLoadBalancerUuid()));
         }
 
         LoadBalancerBase base = new LoadBalancerBase(vo);
@@ -503,7 +504,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         AbstractSystemTagOperationJudger judger = new AbstractSystemTagOperationJudger() {
             @Override
             public void tagPreDeleted(SystemTagInventory tag) {
-                throw new OperationFailureException(operr("cannot delete the system tag[%s]. The load balancer plugin relies on it, you can only update it", tag.getTag()));
+                throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10001, "cannot delete the system tag[%s]. The load balancer plugin relies on it, you can only update it", tag.getTag()));
             }
         };
         LoadBalancerSystemTags.BALANCER_ALGORITHM.installJudger(judger);
@@ -522,7 +523,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 Map<String, String> tokens = LoadBalancerSystemTags.BALANCER_WEIGHT.getTokensByTag(systemTag);
                 String nicUuid = tokens.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN);
                 if (!dbf.isExist(nicUuid, VmNicVO.class)) {
-                    throw new ApiMessageInterceptionException(argerr("nic[uuid:%s] not found. Please correct your system tag[%s] of loadbalancer",
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10002, "nic[uuid:%s] not found. Please correct your system tag[%s] of loadbalancer",
                             nicUuid, systemTag));
                 }
 
@@ -530,11 +531,11 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 try {
                     long weight = Long.parseLong(s);
                     if (weight < LoadBalancerConstants.BALANCER_WEIGHT_MIN || weight > LoadBalancerConstants.BALANCER_WEIGHT_MAX) {
-                        throw new OperationFailureException(argerr("invalid balancer weight[%s], %s is not in the range [%d, %d]",
+                        throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10003, "invalid balancer weight[%s], %s is not in the range [%d, %d]",
                                 systemTag, s, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
                     }
                 } catch (NumberFormatException e) {
-                    throw new OperationFailureException(argerr("invalid balancer weight[%s], %s is not a number", systemTag, s));
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10004, "invalid balancer weight[%s], %s is not a number", systemTag, s));
                 }
             }
         });
@@ -546,7 +547,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN);
 
                 if (!LoadBalancerConstants.BALANCE_ALGORITHMS.contains(algorithm)) {
-                    throw new OperationFailureException(argerr("invalid balance algorithm[%s], valid algorithms are %s", algorithm, LoadBalancerConstants.BALANCE_ALGORITHMS));
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10005, "invalid balance algorithm[%s], valid algorithms are %s", algorithm, LoadBalancerConstants.BALANCE_ALGORITHMS));
                 }
             }
         });
@@ -622,7 +623,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 try {
                     Long.parseLong(s);
                 } catch (NumberFormatException e) {
-                    throw new OperationFailureException(argerr("invalid unhealthy threshold[%s], %s is not a number", systemTag, s));
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10006, "invalid unhealthy threshold[%s], %s is not a number", systemTag, s));
                 }
             }
         });
@@ -636,7 +637,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 try {
                     Long.parseLong(s);
                 } catch (NumberFormatException e) {
-                    throw new OperationFailureException(argerr("invalid healthy threshold[%s], %s is not a number", systemTag, s));
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10007, "invalid healthy threshold[%s], %s is not a number", systemTag, s));
                 }
             }
         });
@@ -650,7 +651,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 try {
                     Long.parseLong(s);
                 } catch (NumberFormatException e) {
-                    throw new OperationFailureException(argerr("invalid healthy timeout[%s], %s is not a number", systemTag, s));
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10008, "invalid healthy timeout[%s], %s is not a number", systemTag, s));
                 }
             }
         });
@@ -664,7 +665,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 try {
                     Long.parseLong(s);
                 } catch (NumberFormatException e) {
-                    throw new OperationFailureException(argerr("invalid connection idle timeout[%s], %s is not a number", systemTag, s));
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10009, "invalid connection idle timeout[%s], %s is not a number", systemTag, s));
                 }
             }
         });
@@ -678,7 +679,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 try {
                     Long.parseLong(s);
                 } catch (NumberFormatException e) {
-                    throw new OperationFailureException(argerr("invalid health check interval[%s], %s is not a number", systemTag, s));
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10010, "invalid health check interval[%s], %s is not a number", systemTag, s));
                 }
             }
         });
@@ -692,7 +693,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 try {
                     Long.parseLong(s);
                 } catch (NumberFormatException e) {
-                    throw new OperationFailureException(argerr("invalid max connection[%s], %s is not a number", systemTag, s));
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10011, "invalid max connection[%s], %s is not a number", systemTag, s));
                 }
             }
         });
@@ -706,7 +707,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 try {
                     Long.parseLong(s);
                 } catch (NumberFormatException e) {
-                    throw new OperationFailureException(argerr("invalid process number[%s], %s is not a number", systemTag, s));
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10012, "invalid process number[%s], %s is not a number", systemTag, s));
                 }
             }
         });
@@ -719,12 +720,12 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
                 String[] ts = target.split(":");
                 if (ts.length != 2) {
-                    throw new OperationFailureException(argerr("invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default", systemTag));
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10013, "invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default", systemTag));
                 }
 
                 String protocol = ts[0];
                 if (!LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCOLS.contains(protocol)) {
-                    throw new OperationFailureException(argerr("invalid health target[%s], the target checking protocol[%s] is invalid, valid protocols are %s",
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10014, "invalid health target[%s], the target checking protocol[%s] is invalid, valid protocols are %s",
                             systemTag, protocol, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCOLS));
                 }
 
@@ -733,10 +734,10 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                     try {
                         int p = Integer.parseInt(port);
                         if (p < 1 || p > 65535) {
-                            throw new OperationFailureException(argerr("invalid invalid health target[%s], port[%s] is not in the range of [1, 65535]", systemTag, port));
+                            throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10015, "invalid invalid health target[%s], port[%s] is not in the range of [1, 65535]", systemTag, port));
                         }
                     } catch (NumberFormatException e) {
-                        throw new OperationFailureException(argerr("invalid invalid health target[%s], port[%s] is not a number", systemTag, port));
+                        throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10016, "invalid invalid health target[%s], port[%s] is not a number", systemTag, port));
                     }
                 }
             }

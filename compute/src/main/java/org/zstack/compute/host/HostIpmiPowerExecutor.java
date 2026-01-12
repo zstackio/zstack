@@ -19,6 +19,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * @Author : jingwang
@@ -59,7 +60,7 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
     private ErrorCode powerOff(HostVO host, Boolean force) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             if (mockFail) {
-                return operr("mock power off host[%s] by ipmi failed.", host.getUuid());
+                return operr(ORG_ZSTACK_COMPUTE_HOST_10090, "mock power off host[%s] by ipmi failed.", host.getUuid());
             }
             return null;
         }
@@ -75,7 +76,7 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
         if (0 == ret) {
             return null;
         } else {
-            return operr("power off host[%s] by ipmi failed.", host.getUuid());
+            return operr(ORG_ZSTACK_COMPUTE_HOST_10091, "power off host[%s] by ipmi failed.", host.getUuid());
         }
     }
 
@@ -117,7 +118,7 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
     private ErrorCode powerOn(HostVO host) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             if (mockFail) {
-                return operr("mock power on host[%s] by ipmi failed.", host.getUuid());
+                return operr(ORG_ZSTACK_COMPUTE_HOST_10092, "mock power on host[%s] by ipmi failed.", host.getUuid());
             }
             return null;
         }
@@ -127,14 +128,14 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
         if (0 == ret) {
             return null;
         } else {
-            return operr("power on host[%s] by ipmi failed.", host.getUuid());
+            return operr(ORG_ZSTACK_COMPUTE_HOST_10093, "power on host[%s] by ipmi failed.", host.getUuid());
         }
     }
 
     @Override
     public void powerReset(HostVO host, Completion completion, boolean returnEarly) {
         if (HostPowerStatus.POWER_OFF.equals(refreshHostPowerStatus(host).getIpmiPowerStatus())) {
-            ErrorCode err = operr(String.format("reboot host[%s:%d] failed. because host is already powered off",
+            ErrorCode err = operr(ORG_ZSTACK_COMPUTE_HOST_10094, String.format("reboot host[%s:%d] failed. because host is already powered off",
                     host.getIpmi().getIpmiAddress(), host.getIpmi().getIpmiPort()));
             completion.fail(err);
             return;
@@ -157,7 +158,7 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
     private ErrorCode powerReset(HostVO host) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             if (mockFail) {
-                return operr("mock power reset host[%s] by ipmi failed.", host.getUuid());
+                return operr(ORG_ZSTACK_COMPUTE_HOST_10095, "mock power reset host[%s] by ipmi failed.", host.getUuid());
             }
             return null;
         }
@@ -167,7 +168,7 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
         if (0 == ret) {
             return null;
         } else {
-            return operr("power reset host[%s] by ipmi failed.", host.getUuid());
+            return operr(ORG_ZSTACK_COMPUTE_HOST_10096, "power reset host[%s] by ipmi failed.", host.getUuid());
         }
     }
 
@@ -188,7 +189,7 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
 
         if (isIpmiUnConfigured(ipmi)) {
             return new Pair(HostPowerStatus.UN_CONFIGURED,
-                    operr("ipmi information is not complete."));
+                    operr(ORG_ZSTACK_COMPUTE_HOST_10097, "ipmi information is not complete."));
         }
 
         ShellResult rst = IPMIToolCaller.fromHostIpmiVo(ipmi).status();
@@ -198,10 +199,10 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
             } else if (rst.getStdout().trim().equals("Chassis Power is off")) {
                 return new Pair(HostPowerStatus.POWER_OFF, null);
             } else {
-                return new Pair(HostPowerStatus.POWER_UNKNOWN, operr("host[%s] got unexpected return value", ipmi.getUuid()));
+                return new Pair(HostPowerStatus.POWER_UNKNOWN, operr(ORG_ZSTACK_COMPUTE_HOST_10098, "host[%s] got unexpected return value", ipmi.getUuid()));
             }
         } else {
-            return new Pair(HostPowerStatus.POWER_UNKNOWN, operr("host[%s] can not connect ipmi[%s], because:%s",
+            return new Pair(HostPowerStatus.POWER_UNKNOWN, operr(ORG_ZSTACK_COMPUTE_HOST_10099, "host[%s] can not connect ipmi[%s], because:%s",
                     ipmi.getUuid(),
                     ipmi.getIpmiAddress(),
                     rst.getStderr()));
@@ -219,7 +220,7 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
         if (rst.getRetCode() == 0) {
             return null;
         } else {
-            return operr("host ipmi[%s] is not reachable.because %s",
+            return operr(ORG_ZSTACK_COMPUTE_HOST_10100, "host ipmi[%s] is not reachable.because %s",
                     ipmi.getIpmiAddress(),
                     rst.getStderr());
         }

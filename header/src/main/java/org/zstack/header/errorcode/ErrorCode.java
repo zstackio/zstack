@@ -23,6 +23,15 @@ public class ErrorCode implements Serializable, Cloneable {
     private ErrorCode cause;
     @NoJsonSchema
     private LinkedHashMap opaque;
+    private String globalErrorCode;
+
+    public String getGlobalErrorCode() {
+        return globalErrorCode;
+    }
+
+    public void setGlobalErrorCode(String globalErrorCode) {
+        this.globalErrorCode = globalErrorCode;
+    }
 
     public LinkedHashMap getOpaque() {
         return opaque;

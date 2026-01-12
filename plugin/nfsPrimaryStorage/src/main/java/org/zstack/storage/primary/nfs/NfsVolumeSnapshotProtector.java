@@ -11,6 +11,7 @@ import static org.zstack.core.Platform.operr;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class NfsVolumeSnapshotProtector implements VolumeSnapshotDeletionProtector {
     @Override
@@ -22,7 +23,7 @@ public class NfsVolumeSnapshotProtector implements VolumeSnapshotDeletionProtect
     public void protect(VolumeSnapshotInventory snapshot, Completion completion) {
         Path path = Paths.get(snapshot.getPrimaryStorageInstallPath());
         if (!path.getParent().toString().contains(snapshot.getVolumeUuid())) {
-            completion.fail(inerr("the snapshot[name:%s, uuid:%s, path: %s] seems not belong to the volume[uuid:%s]",
+            completion.fail(inerr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10012, "the snapshot[name:%s, uuid:%s, path: %s] seems not belong to the volume[uuid:%s]",
                     snapshot.getName(), snapshot.getUuid(), snapshot.getPrimaryStorageInstallPath(), snapshot.getVolumeUuid()));
             return;
         }

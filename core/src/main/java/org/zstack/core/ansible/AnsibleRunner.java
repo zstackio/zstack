@@ -33,6 +33,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.StringDSL.ln;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -407,7 +408,7 @@ public class AnsibleRunner {
 
             callAnsible(completion);
         } catch (SshException e) {
-            throw new OperationFailureException(operr("User name or password or port number may be problematic"));
+            throw new OperationFailureException(operr(ORG_ZSTACK_CORE_ANSIBLE_10000, "User name or password or port number may be problematic"));
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }

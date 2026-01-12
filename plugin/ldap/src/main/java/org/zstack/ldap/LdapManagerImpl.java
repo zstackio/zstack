@@ -49,6 +49,7 @@ import java.util.*;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by miao on 16-9-6.
@@ -180,7 +181,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         if (Q.New(LdapServerVO.class)
                 .eq(LdapServerVO_.scope, msg.getScope())
                 .count() == 1) {
-            evt.setError(err(LdapErrors.MORE_THAN_ONE_LDAP_SERVER,
+            evt.setError(err(ORG_ZSTACK_LDAP_10000, LdapErrors.MORE_THAN_ONE_LDAP_SERVER,
                     "There has been a LDAP/AD server record. " +
                             "You'd better remove it before adding a new one!"));
             bus.publish(evt);
@@ -385,7 +386,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         sq.add(AccountVO_.uuid, SimpleQuery.Op.EQ, msg.getAccountUuid());
         AccountVO avo = sq.find();
         if (avo == null) {
-            evt.setError(err(LdapErrors.CANNOT_FIND_ACCOUNT,
+            evt.setError(err(ORG_ZSTACK_LDAP_10001, LdapErrors.CANNOT_FIND_ACCOUNT,
                     String.format("cannot find the specified account[uuid:%s]", msg.getAccountUuid())));
             bus.publish(evt);
             return;
@@ -397,7 +398,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         LdapTemplateContextSource ldapTemplateContextSource = ldapUtil.readLdapServerConfiguration();
         String fullDn = msg.getLdapUid();
         if (!ldapUtil.validateDnExist(ldapTemplateContextSource, fullDn)) {
-            throw new OperationFailureException(err(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
+            throw new OperationFailureException(err(ORG_ZSTACK_LDAP_10002, LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
                     "cannot find dn[%s] on LDAP/AD server[Address:%s, BaseDN:%s].", fullDn,
                     String.join(", ", ldapTemplateContextSource.getLdapContextSource().getUrls()),
                     ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString()));
@@ -407,7 +408,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
             logger.info(String.format("create ldap binding[ldapUid=%s, ldapUseAsLoginName=%s] success", fullDn, ldapUseAsLoginName));
         } catch (PersistenceException e) {
             if (ExceptionDSL.isCausedBy(e, SQLIntegrityConstraintViolationException.class)) {
-                evt.setError(err(LdapErrors.BIND_SAME_LDAP_UID_TO_MULTI_ACCOUNT,
+                evt.setError(err(ORG_ZSTACK_LDAP_10003, LdapErrors.BIND_SAME_LDAP_UID_TO_MULTI_ACCOUNT,
                         "The ldap uid has been bound to an account. "));
             } else {
                 throw e;
@@ -485,7 +486,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
 
         LdapServerVO ldapServerVO = dbf.findByUuid(msg.getLdapServerUuid(), LdapServerVO.class);
         if (ldapServerVO == null) {
-            evt.setError(err(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_SERVER_RECORD,
+            evt.setError(err(ORG_ZSTACK_LDAP_10004, LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_SERVER_RECORD,
                     "Cannot find the specified LDAP/AD server[uuid:%s] in database.",
                     msg.getLdapServerUuid()));
             bus.publish(evt);
@@ -538,7 +539,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
     public void login(LoginContext loginContext, ReturnValueCompletion<LoginSessionInfo> completion) {
         String ldapLoginName = loginContext.getUsername();
         if (!isValid(ldapLoginName, loginContext.getPassword())) {
-            completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR,
+            completion.fail(err(ORG_ZSTACK_LDAP_10005, IdentityErrors.AUTHENTICATION_ERROR,
                     "Login validation failed in LDAP"));
             return;
         }
@@ -548,7 +549,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         LdapAccountRefVO vo = ldapUtil.findLdapAccountRefVO(dn);
 
         if (vo == null) {
-            completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR,
+            completion.fail(err(ORG_ZSTACK_LDAP_10006, IdentityErrors.AUTHENTICATION_ERROR,
                     "The ldapUid does not have a binding account."));
             return;
         }
@@ -558,7 +559,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         AccountVO avo = sq.find();
         if (avo == null) {
             completion.fail(operr(
-                    "Account[uuid:%s] Not Found!!!", vo.getAccountUuid()));
+            ORG_ZSTACK_LDAP_10007,         "Account[uuid:%s] Not Found!!!", vo.getAccountUuid()));
             return;
         }
 

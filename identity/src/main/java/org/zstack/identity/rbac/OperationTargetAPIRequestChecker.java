@@ -18,6 +18,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class OperationTargetAPIRequestChecker implements APIRequestChecker {
@@ -161,7 +162,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 String accountUuid = rbacEntity.getApiMessage().getSession().getAccountUuid();
 
                 if (uuids.isEmpty()) {
-                    throw new OperationFailureException(operr("permission denied, the account[uuid:%s] is not the owner of the resource[uuid:%s, type:%s]",
+                    throw new OperationFailureException(operr(ORG_ZSTACK_IDENTITY_RBAC_10006, "permission denied, the account[uuid:%s] is not the owner of the resource[uuid:%s, type:%s]",
                             accountUuid, accountUuid, resourceType.getSimpleName()));
                 }
             }
@@ -177,7 +178,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 uuids.forEach(uuid -> {
                     Optional<AccountResourceBundle> opt = bundles.stream().filter(b -> b.accountUuid.equals(rbacEntity.getApiMessage().getSession().getAccountUuid()) && b.resourceUuid.equals(uuid)).findFirst();
                     if (!opt.isPresent()) {
-                        throw new OperationFailureException(operr("permission denied, the account[uuid:%s] is not the owner of the resource[uuid:%s, type:%s]",
+                        throw new OperationFailureException(operr(ORG_ZSTACK_IDENTITY_RBAC_10007, "permission denied, the account[uuid:%s] is not the owner of the resource[uuid:%s, type:%s]",
                                 rbacEntity.getApiMessage().getSession().getAccountUuid(), uuid, resourceType.getSimpleName()));
                     }
                 });
@@ -225,7 +226,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                             .filter(b -> b.accountUuid.equals(rbacEntity.getApiMessage().getSession().getAccountUuid()) && b.resourceUuid.equals(uuid))
                             .findFirst();
                     if (!opt.isPresent()) {
-                        throw new OperationFailureException(operr("permission denied, the account[uuid:%s] is not the owner of the tagged resource[uuid:%s, type:%s]",
+                        throw new OperationFailureException(operr(ORG_ZSTACK_IDENTITY_RBAC_10008, "permission denied, the account[uuid:%s] is not the owner of the tagged resource[uuid:%s, type:%s]",
                                 rbacEntity.getApiMessage().getSession().getAccountUuid(), uuid, type));
                     }
                 });
@@ -248,7 +249,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
 
                 List<String> resourceWithNoAccess = CheckIfAccountCanAccessResource.check(uuids, rbacEntity.getApiMessage().getSession().getAccountUuid());
                 if (!resourceWithNoAccess.isEmpty()) {
-                    throw new OperationFailureException(operr("the account[uuid:%s] has no access to the resources[uuid:%s, type:%s]",
+                    throw new OperationFailureException(operr(ORG_ZSTACK_IDENTITY_RBAC_10009, "the account[uuid:%s] has no access to the resources[uuid:%s, type:%s]",
                             rbacEntity.getApiMessage().getSession().getAccountUuid(), resourceWithNoAccess, resourceType.getSimpleName()));
                 }
 

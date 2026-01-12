@@ -30,6 +30,7 @@ import org.zstack.utils.CollectionUtils;
 import java.util.*;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class XmlHookBase {
@@ -197,7 +198,7 @@ public class XmlHookBase {
                         @Override
                         public void run(MessageReply reply) {
                             if (!reply.isSuccess()) {
-                                errs.add(operr("xml hook[uuid: %s] updated successfully, but failed to restart vm[uuid:%s]. details is: %s",
+                                errs.add(operr(ORG_ZSTACK_KVM_XMLHOOK_10001, "xml hook[uuid: %s] updated successfully, but failed to restart vm[uuid:%s]. details is: %s",
                                         msg.getXmlHookUuid(), vmUuid, reply.getError().getDetails()));
                                 wcompl.allDone();
                             } else {

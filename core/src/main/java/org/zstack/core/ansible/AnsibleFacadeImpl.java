@@ -40,6 +40,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -103,7 +104,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             }
 
             if (!invFile.exists() && !invFile.createNewFile()) {
-                throw new OperationFailureException(operr("fail to create new File[%s]", invFile));
+                throw new OperationFailureException(operr(ORG_ZSTACK_CORE_ANSIBLE_10005, "fail to create new File[%s]", invFile));
             }
             Wini ini = new Wini(invFile);
             Map<String, String> cfgs = Platform.getGlobalPropertiesStartWith("Ansible.cfg.");
@@ -269,13 +270,13 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                     }
 
                     if (output.contains("skipping: no hosts matched")) {
-                        throw new OperationFailureException(operr(output));
+                        throw new OperationFailureException(operr(ORG_ZSTACK_CORE_ANSIBLE_10006, output));
                     }
 
                 } catch (ShellException se) {
                     String errMsg = hidePassword(se.getMessage());
                     logger.warn(errMsg, se);
-                    throw new OperationFailureException(operr(errMsg));
+                    throw new OperationFailureException(operr(ORG_ZSTACK_CORE_ANSIBLE_10007, errMsg));
                 }
 
                 completion.success();

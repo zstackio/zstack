@@ -17,6 +17,7 @@ import java.util.List;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by MaJin on 2019/7/4.
@@ -43,7 +44,7 @@ public class AccountInterceptor implements GlobalApiMessageInterceptor {
     private void validate(APICheckPasswordMessage msg) {
         SessionInventory session = Session.getSession(msg.getSession().getUuid());
         if (session == null) {
-            throw new ApiMessageInterceptionException(err(IdentityErrors.INVALID_SESSION,
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_IDENTITY_10000, IdentityErrors.INVALID_SESSION,
                     "Session expired"));
         }
 
@@ -52,7 +53,7 @@ public class AccountInterceptor implements GlobalApiMessageInterceptor {
                 .eq(AccountVO_.password, msg.getPassword())
                 .isExists();
         if (!correct) {
-            throw new ApiMessageInterceptionException(argerr("wrong password"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_IDENTITY_10001, "wrong password"));
         }
     }
 }

@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2016/3/26.
@@ -111,7 +112,7 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
                 }
 
                 if (!q(PrimaryStorageClusterRefVO.class).eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, psUuid).isExists()) {
-                    throw new OperationFailureException(operr("the SMP primary storage[uuid:%s] is not attached" +
+                    throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10001, "the SMP primary storage[uuid:%s] is not attached" +
                             " to any clusters, and cannot expunge the root volume[uuid:%s] of the VM[uuid:%s]", psUuid, vmUuid, volumeUuid));
                 }
             }
@@ -305,7 +306,7 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
     @Transactional
     public List<HostInventory> getConnectedHostForOperation(PrimaryStorageInventory pri, int startPage, int pageLimit) {
         if (pri.getAttachedClusterUuids().isEmpty()) {
-            throw new OperationFailureException(operr("cannot find a Connected host to execute command for smp primary storage[uuid:%s]", pri.getUuid()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10002, "cannot find a Connected host to execute command for smp primary storage[uuid:%s]", pri.getUuid()));
         }
 
         String sql = "select h from HostVO h " +
@@ -326,7 +327,7 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
         List<HostVO> ret = q.getResultList();
         if (ret.isEmpty() && startPage == 0) { //check is first page
             throw new OperationFailureException(operr(
-                    "cannot find a host which has Connected host-SMP connection to execute command for smp primary storage[uuid:%s]",
+            ORG_ZSTACK_STORAGE_PRIMARY_SMP_10003,         "cannot find a host which has Connected host-SMP connection to execute command for smp primary storage[uuid:%s]",
                     pri.getUuid()));
         } else {
             Collections.shuffle(ret);

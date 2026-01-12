@@ -8,6 +8,7 @@ import org.zstack.header.vm.VmInstanceVO_;
 import java.util.List;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * @author shenjin
@@ -24,7 +25,7 @@ public class VmDirectoryChecker implements DirectoryChecker{
         if(zoneUuids.stream().allMatch(s -> s.equals(vo.getZoneUuid()))) {
             return null;
         } else {
-            return argerr("all resources zoneUuid must be consistent with the directory zoneUuid[%s]", vo.getZoneUuid());
+            return argerr(ORG_ZSTACK_DIRECTORY_10004, "all resources zoneUuid must be consistent with the directory zoneUuid[%s]", vo.getZoneUuid());
         }
     }
 

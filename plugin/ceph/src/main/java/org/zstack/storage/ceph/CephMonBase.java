@@ -17,6 +17,7 @@ import org.zstack.utils.ssh.SshResult;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 7/27/2015.
@@ -52,7 +53,7 @@ public abstract class CephMonBase {
             ssh.setHostname(self.getHostname()).setUsername(self.getSshUsername()).setPassword(self.getSshPassword()).setPort(self.getSshPort())
                     .checkTool("ceph", "rbd").setTimeout(60).runErrorByExceptionAndClose();
         } catch (SshException e) {
-            throw new OperationFailureException(operr("The problem may be caused by an incorrect user name or password or SSH port or unstable network environment"));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_10022, "The problem may be caused by an incorrect user name or password or SSH port or unstable network environment"));
         }
     }
 
@@ -63,7 +64,7 @@ public abstract class CephMonBase {
             ret = ssh.setHostname(self.getHostname()).setUsername(self.getSshUsername()).setPassword(self.getSshPassword()).setPort(self.getSshPort())
                     .shell("ceph health").setTimeout(60).runAndClose();
         } catch (SshException e) {
-            throw new OperationFailureException(operr("The problem may be caused by an incorrect user name or password or SSH port or unstable network environment"));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_10023, "The problem may be caused by an incorrect user name or password or SSH port or unstable network environment"));
         }
 
         if(ret.getReturnCode() != 0){
@@ -138,7 +139,7 @@ public abstract class CephMonBase {
             if (success) {
                 return null;
             }
-            return operr("operation error, because:%s", error);
+            return operr(ORG_ZSTACK_STORAGE_CEPH_10024, "operation error, because:%s", error);
         }
     }
 
@@ -154,7 +155,7 @@ public abstract class CephMonBase {
                 if (ret.isSuccess()) {
                     completion.success();
                 } else {
-                    completion.fail(Platform.operr("operation error, because:%s", ret.getError()));
+                    completion.fail(Platform.operr(ORG_ZSTACK_STORAGE_CEPH_10025, "operation error, because:%s", ret.getError()));
                 }
             }
 

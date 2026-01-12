@@ -72,6 +72,7 @@ import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 8/9/2015.
@@ -174,7 +175,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         }
         if (!valid) {
             throw new ApiMessageInterceptionException(argerr(
-                    "new add vm nics[uuids:%s] and attached vmnics are not on the same vrouter, " +
+            ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_LB_10000,         "new add vm nics[uuids:%s] and attached vmnics are not on the same vrouter, " +
                             "they are on vrouters[uuids:%s]", msg.getVmNicUuids(), vrUuids));
         }
 
@@ -204,7 +205,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         if (vrUuids.size() > 1 && !isVirtualRouterHaPair(new ArrayList<>(vrUuids))) {
             throw new ApiMessageInterceptionException(argerr(
-                    "new add vm nics[uuids:%s] and peer l3s[uuids:%s] of loadbalancer[uuid: %s]'s vip are not on the same vrouter, " +
+            ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_LB_10001,         "new add vm nics[uuids:%s] and peer l3s[uuids:%s] of loadbalancer[uuid: %s]'s vip are not on the same vrouter, " +
                             "they are on vrouters[uuids:%s]", msg.getVmNicUuids(), peerL3NetworkUuids, msg.getLoadBalancerUuid(), vrUuids));
         }
     }
@@ -1086,7 +1087,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         if (rsp.isSuccess()) {
                             wcmpl.done();
                         } else {
-                            errors.add(operr("operation error, because:%s", rsp.getError()));
+                            errors.add(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_LB_10002, "operation error, because:%s", rsp.getError()));
                             wcmpl.allDone();
                         }
                     } else {
@@ -1160,7 +1161,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         new VirtualRouterRoleManager().makeLoadBalancerRole(vr.getUuid());
                         completion.success();
                     } else {
-                        completion.fail(operr("operation error, because:%s", rsp.getError()));
+                        completion.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_LB_10003, "operation error, because:%s", rsp.getError()));
                     }
                 } else {
                     completion.fail(reply.getError());
@@ -1304,7 +1305,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             if (rsp.isSuccess()) {
                                 trigger.next();
                             } else {
-                                trigger.fail(operr("refresh load balancer certificate, because:%s", rsp.getError()));
+                                trigger.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_LB_10004, "refresh load balancer certificate, because:%s", rsp.getError()));
                             }
                         } else {
                             trigger.fail(reply.getError());
@@ -1339,7 +1340,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             if (rsp.isSuccess()) {
                                 trigger.next();
                             } else {
-                                trigger.fail(operr("refresh load balancer listener, because:%s", rsp.getError()));
+                                trigger.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_LB_10005, "refresh load balancer listener, because:%s", rsp.getError()));
                             }
                         } else {
                             trigger.fail(reply.getError());
@@ -1689,7 +1690,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     @Override
     public void addVmNics(final LoadBalancerStruct struct, List<VmNicInventory> nics, final Completion completion) {
         if (struct.getLb().getType().equals(LoadBalancerType.Shared.toString()) && nics.isEmpty()) {
-            completion.fail(operr("vmnic must be specified for share loadbalancer"));
+            completion.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_LB_10006, "vmnic must be specified for share loadbalancer"));
             return;
         }
 
@@ -2156,7 +2157,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     public void addListener(LoadBalancerStruct struct, LoadBalancerListenerInventory listener, Completion completion) {
         VirtualRouterVmInventory vr = findVirtualRouterVm(struct.getLb().getUuid());
         if (vr == null) {
-            throw new OperationFailureException(operr("cannot find virtual router for load balancer [uuid:%s]", struct.getLb().getUuid()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_LB_10007, "cannot find virtual router for load balancer [uuid:%s]", struct.getLb().getUuid()));
         }
 
         startVrIfNeededAndRefresh(vr, struct, completion);
@@ -2414,7 +2415,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                                     if (rsp.isSuccess()) {
                                         trigger.next();
                                     } else {
-                                        trigger.fail(operr("operation error, because:%s", rsp.getError()));
+                                        trigger.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_LB_10008, "operation error, because:%s", rsp.getError()));
                                     }
                                 } else {
                                     trigger.fail(reply.getError());
@@ -2477,7 +2478,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     if (rsp.isSuccess()) {
                         completion.success();
                     } else {
-                        completion.fail(operr("operation error, because:%s", rsp.getError()));
+                        completion.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_LB_10009, "operation error, because:%s", rsp.getError()));
                     }
                 } else {
                     completion.fail(reply.getError());
@@ -2507,7 +2508,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     if (rsp.isSuccess()) {
                         completion.success();
                     } else {
-                        completion.fail(operr("operation error, because:%s", rsp.getError()));
+                        completion.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_LB_10010, "operation error, because:%s", rsp.getError()));
                     }
                 } else {
                     completion.fail(reply.getError());

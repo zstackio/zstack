@@ -45,6 +45,7 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class BackupStorageManagerImpl extends AbstractService implements BackupStorageManager,
         ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint {
@@ -198,7 +199,7 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
 
                 } else {
                     dbf.removeByPrimaryKey(inv.getUuid(), BackupStorageVO.class);
-                    evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, reply.getError(), reply.getError().getDetails()));
+                    evt.setError(err(ORG_ZSTACK_STORAGE_BACKUP_10009, SysErrors.CREATE_RESOURCE_ERROR, reply.getError(), reply.getError().getDetails()));
                     bus.publish(evt);
                 }
             }
@@ -273,7 +274,7 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
             }
 
             if (target == null) {
-                reply.setError(operr("capacity reservation on all backup storage failed"));
+                reply.setError(operr(ORG_ZSTACK_STORAGE_BACKUP_10010, "capacity reservation on all backup storage failed"));
             } else {
                 reply.setInventory(target);
             }
@@ -317,7 +318,7 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
                 }
 
                 if (backupStorageDataNetworkTags.size() > 1) {
-                    throw new ApiMessageInterceptionException(argerr("only one backup storage data network system tag is allowed, but %s got", backupStorageDataNetworkTags.size()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_BACKUP_10011, "only one backup storage data network system tag is allowed, but %s got", backupStorageDataNetworkTags.size()));
                 }
 
                 validateDataNetworkSystemTag(backupStorageDataNetworkTags.get(0));
@@ -333,7 +334,7 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
                         BackupStorageSystemTags.BACKUP_STORAGE_DATA_NETWORK_TOKEN);
                 String fmtCidr = NetworkUtils.fmtCidr(cidr);
                 if (!fmtCidr.equals(cidr)) {
-                    throw new ApiMessageInterceptionException(argerr("[%s] is not a standard cidr, do you mean [%s]?", cidr, fmtCidr));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_BACKUP_10012, "[%s] is not a standard cidr, do you mean [%s]?", cidr, fmtCidr));
                 }
             }
         }

@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -385,7 +386,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             logger.warn(String.format("unhandled exception call backtrace %s", DebugUtils.getStackTrace(t)));
             logger.warn(String.format("[FlowChain(%s): %s] unhandled exception when executing flow[%s], start to rollback",
                     id, name, flow.getClass().getName()), t);
-            fail(inerr(t.getMessage()));
+            fail(inerr(ORG_ZSTACK_CORE_WORKFLOW_10001, t.getMessage()));
         }
     }
 

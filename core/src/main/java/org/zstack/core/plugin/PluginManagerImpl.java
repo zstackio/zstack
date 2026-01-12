@@ -47,6 +47,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * PluginManagerImpl implementation of PluginManager.
@@ -190,14 +191,14 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
     private void verifyPluginProduct(PluginDriver pluginDriver) {
         if (!PluginGlobalConfig.ALLOW_UNKNOWN_PRODUCT_PLUGIN.value(Boolean.class)
                 && pluginDriver.uuid() == null) {
-            throw new OperationFailureException(operr("unknown product plugin name: %s",
+            throw new OperationFailureException(operr(ORG_ZSTACK_CORE_PLUGIN_10000, "unknown product plugin name: %s",
                     pluginDriver.name()));
         }
 
         if (pluginDriver.name() == null
                 || pluginDriver.uuid() == null
                 || pluginDriver.vendor() == null) {
-            throw new OperationFailureException(operr("plugin[%s] name," +
+            throw new OperationFailureException(operr(ORG_ZSTACK_CORE_PLUGIN_10001, "plugin[%s] name," +
                     " productKey and vendor cannot be null",
                     pluginDriver.getClass()));
         }

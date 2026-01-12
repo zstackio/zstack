@@ -37,6 +37,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by weiwang on 20/03/2017.
@@ -103,7 +104,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                         KVMHostAsyncHttpCallReply hreply = reply.castReply();
                         VxlanKvmAgentCommands.CheckVxlanCidrResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.CheckVxlanCidrResponse.class);
                         if (!rsp.isSuccess()) {
-                            ErrorCode err = operr("failed to check cidr[%s] for l2VxlanNetworkPool[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
+                            ErrorCode err = operr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10008, "failed to check cidr[%s] for l2VxlanNetworkPool[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
                                     cmd.getCidr(), vxlanPool.getUuid(), vxlanPool.getName(), hostUuid, rsp.getError());
                             completion.fail(err);
                             return;
@@ -262,7 +263,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                         KVMHostAsyncHttpCallReply hreply = reply.castReply();
                         VxlanKvmAgentCommands.CreateVxlanBridgeResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.CreateVxlanBridgeResponse.class);
                         if (!rsp.isSuccess()) {
-                            ErrorCode err = operr("failed to realize vxlan network pool[uuid:%s, type:%s] on kvm host[uuid:%s], because %s",
+                            ErrorCode err = operr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10009, "failed to realize vxlan network pool[uuid:%s, type:%s] on kvm host[uuid:%s], because %s",
                                     l2Network.getUuid(), l2Network.getType(), hostUuid, rsp.getError());
                             trigger.fail(err);
                             return;

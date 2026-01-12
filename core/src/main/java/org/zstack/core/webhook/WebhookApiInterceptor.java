@@ -7,6 +7,7 @@ import org.zstack.header.core.webhooks.APICreateWebhookMsg;
 import org.zstack.header.core.webhooks.APIUpdateWebhookMsg;
 import org.zstack.header.message.APIMessage;
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2017/5/7.
@@ -25,7 +26,7 @@ public class WebhookApiInterceptor implements ApiMessageInterceptor {
 
     private void validateUrl(String url) {
         if (!new UrlValidator().isValid(url)) {
-            throw new ApiMessageInterceptionException(argerr("Invalid url[%s]", url));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_CORE_WEBHOOK_10000, "Invalid url[%s]", url));
         }
     }
 

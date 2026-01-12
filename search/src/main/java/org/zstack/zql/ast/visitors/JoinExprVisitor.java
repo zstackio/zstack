@@ -7,6 +7,7 @@ import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.ASTVisitor;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.zql.ast.ZQLMetadata;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class JoinExprVisitor implements ASTVisitor<String, ASTNode.JoinExpr> {
     @Override
@@ -22,10 +23,10 @@ public class JoinExprVisitor implements ASTVisitor<String, ASTNode.JoinExpr> {
             @Override
             public String visit(ASTNode.QueryTarget queryTarget) {
                 if (StringUtils.isBlank(queryTarget.getEntity())) {
-                    throw new OperationFailureException(Platform.operr("entity is empty, cannot get columnName"));
+                    throw new OperationFailureException(Platform.operr(ORG_ZSTACK_ZQL_AST_VISITORS_10002, "entity is empty, cannot get columnName"));
                 }
                 if (CollectionUtils.isEmpty(queryTarget.getFields())) {
-                    throw new OperationFailureException(Platform.operr("fieldList is empty, cannot get columnName"));
+                    throw new OperationFailureException(Platform.operr(ORG_ZSTACK_ZQL_AST_VISITORS_10003, "fieldList is empty, cannot get columnName"));
                 }
                 String entity = queryTarget.getEntity();
                 String field = queryTarget.getFields().get(0);

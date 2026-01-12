@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * @ Author : yh.w
@@ -173,7 +174,7 @@ public class CephOsdGroupCapacityHelper {
         CephOsdGroupVO osdGroupVO = dbf.findByUuid(pool.getOsdGroup().getUuid(), CephOsdGroupVO.class);
         long originAvailableCapacity = osdGroupVO.getAvailableCapacity();
         if (originAvailableCapacity < size) {
-            throw new OperationFailureException(operr("required ceph pool[uuid:%s] cannot satisfy conditions [availableSize > %s bytes], " +
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_CAPACITY_10000, "required ceph pool[uuid:%s] cannot satisfy conditions [availableSize > %s bytes], " +
                     "current available size %s", poolUuid, size, originAvailableCapacity));
         }
 
@@ -201,7 +202,7 @@ public class CephOsdGroupCapacityHelper {
     public boolean checkVirtualSizeByRatio(String poolUuid, long requiredSize) {
         CephPrimaryStoragePoolVO pool = dbf.findByUuid(poolUuid, CephPrimaryStoragePoolVO.class);
         if (pool.getOsdGroup() == null) {
-            throw new OperationFailureException(operr("cannot find ceph pool [%s] related osdgroup", poolUuid));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_CAPACITY_10001, "cannot find ceph pool [%s] related osdgroup", poolUuid));
         }
 
         CephOsdGroupVO osdGroupVO = dbf.findByUuid(pool.getOsdGroup().getUuid(), CephOsdGroupVO.class);

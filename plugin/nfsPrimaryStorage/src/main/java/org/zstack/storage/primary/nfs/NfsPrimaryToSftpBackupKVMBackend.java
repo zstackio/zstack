@@ -30,6 +30,7 @@ import java.util.List;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStorageMediator {
     private static final CLogger logger = Utils.getLogger(NfsPrimaryToSftpBackupKVMBackend.class);
@@ -106,7 +107,7 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
 
                         DownloadBitsFromSftpBackupStorageResponse rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(DownloadBitsFromSftpBackupStorageResponse.class);
                         if (!rsp.isSuccess()) {
-                            completion.fail(operr("failed to download[%s] from SftpBackupStorage[hostname:%s] to nfs primary storage[uuid:%s, path:%s], %s",
+                            completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10013, "failed to download[%s] from SftpBackupStorage[hostname:%s] to nfs primary storage[uuid:%s, path:%s], %s",
                                             backupStorageInstallPath, greply.getHostname(), pinv.getUuid(), primaryStorageInstallPath, rsp.getError()));
                             return;
                         }
@@ -162,7 +163,7 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
 
                         UploadToSftpResponse rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(UploadToSftpResponse.class);
                         if (!rsp.isSuccess()) {
-                            completion.fail(operr("failed to upload bits from nfs primary storage[uuid:%s, path:%s] to SFTP backup storage[hostname:%s, path: %s], %s",
+                            completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10014, "failed to upload bits from nfs primary storage[uuid:%s, path:%s] to SFTP backup storage[hostname:%s, path: %s], %s",
                                     pinv.getUuid(), primaryStorageInstallPath, hostname,  backupStorageInstallPath, rsp.getError()));
                             return;
                         }

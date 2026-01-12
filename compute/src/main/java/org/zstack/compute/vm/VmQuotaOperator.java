@@ -29,6 +29,7 @@ import java.util.Map;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmQuotaOperator implements Quota.QuotaOperator {
@@ -320,7 +321,7 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
                     && !vmInstanceVO.getState().equals(VmInstanceState.Running)
                     && !vmInstanceVO.getState().equals(VmInstanceState.Paused)
                     && !vmInstanceVO.getState().equals(VmInstanceState.Starting)) {
-                throw new ApiMessageInterceptionException(err(VmErrors.NOT_IN_CORRECT_STATE,
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_COMPUTE_VM_10229, VmErrors.NOT_IN_CORRECT_STATE,
                         "Incorrect VM State.VM[uuid:%s] current state:%s. ",
                         msg.getResourceUuid(), vmInstanceVO.getState()
                 ));
@@ -534,7 +535,7 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
             } else if (msg.getRootDiskSize() != null) {
                 allVolumeSizeAsked += msg.getRootDiskSize();
             } else {
-                throw new ApiMessageInterceptionException(argerr("rootDiskOfferingUuid cannot be null when image mediaType is ISO"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10230, "rootDiskOfferingUuid cannot be null when image mediaType is ISO"));
             }
         } else {
             if (msg.getRootDiskOfferingUuid() != null) {
@@ -542,7 +543,7 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
             } else if (msg.getRootDiskSize() != null) {
                 allVolumeSizeAsked += msg.getRootDiskSize();
             } else {
-                throw new ApiMessageInterceptionException(argerr("rootDiskOfferingUuid cannot be null when create vm without image"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10231, "rootDiskOfferingUuid cannot be null when create vm without image"));
             }
         }
 

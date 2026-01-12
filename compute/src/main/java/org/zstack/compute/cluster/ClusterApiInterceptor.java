@@ -14,6 +14,7 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.APIMessage;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -53,7 +54,7 @@ public class ClusterApiInterceptor implements ApiMessageInterceptor {
         if ((msg.getType() != null && msg.getType().equals("baremetal") && !msg.getHypervisorType().equals("baremetal")) ||
                 (msg.getHypervisorType().equals("baremetal") && msg.getType() != null && !msg.getType().equals("baremetal"))) {
             throw new ApiMessageInterceptionException(Platform.argerr(
-                    "if cluster type is baremetal, then hypervisorType must be baremetal too, or vice versa"
+            ORG_ZSTACK_COMPUTE_CLUSTER_10005,         "if cluster type is baremetal, then hypervisorType must be baremetal too, or vice versa"
             ));
         }
     }
@@ -69,7 +70,7 @@ public class ClusterApiInterceptor implements ApiMessageInterceptor {
                         .findValue();
                 if (type != null && !type.equals("KVM")) {
                     throw new ApiMessageInterceptionException(Platform.argerr(
-                            "only kvm hosts' operating system can be updated, for now"
+                    ORG_ZSTACK_COMPUTE_CLUSTER_10006,         "only kvm hosts' operating system can be updated, for now"
                     ));
                 }
 
@@ -79,7 +80,7 @@ public class ClusterApiInterceptor implements ApiMessageInterceptor {
                         .eq(HostVO_.uuid, msg.getHostUuid())
                         .isExists()) {
                     throw new ApiMessageInterceptionException(Platform.argerr(
-                            "The host[uuid: %s] is not part of the cluster[uuid: %s]. Please verify the host uuid and ensure it belongs to this cluster.",
+                    ORG_ZSTACK_COMPUTE_CLUSTER_10007,         "The host[uuid: %s] is not part of the cluster[uuid: %s]. Please verify the host uuid and ensure it belongs to this cluster.",
                             msg.getHostUuid(),
                             msg.getUuid()
                     ));
@@ -92,7 +93,7 @@ public class ClusterApiInterceptor implements ApiMessageInterceptor {
                         .count();
                 if (premaintain != 0) {
                     throw new ApiMessageInterceptionException(Platform.argerr(
-                            "there are hosts in cluster[uuid:%s] in the PreMaintenance state, cannot update cluster os right now",
+                    ORG_ZSTACK_COMPUTE_CLUSTER_10008,         "there are hosts in cluster[uuid:%s] in the PreMaintenance state, cannot update cluster os right now",
                             msg.getUuid()
                     ));
                 }
@@ -104,7 +105,7 @@ public class ClusterApiInterceptor implements ApiMessageInterceptor {
                         .count();
                 if (notConnected != 0) {
                     throw new ApiMessageInterceptionException(Platform.argerr(
-                            "not all hosts in cluster[uuid:%s] are in the Connected status, cannot update cluster os right now",
+                    ORG_ZSTACK_COMPUTE_CLUSTER_10009,         "not all hosts in cluster[uuid:%s] are in the Connected status, cannot update cluster os right now",
                             msg.getUuid()
                     ));
                 }

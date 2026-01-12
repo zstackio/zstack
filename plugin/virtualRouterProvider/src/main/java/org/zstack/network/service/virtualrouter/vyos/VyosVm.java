@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2016/10/31.
@@ -129,7 +130,7 @@ public class VyosVm extends VirtualRouter {
                 VirtualRouterAsyncHttpCallReply re = reply.castReply();
                 VyosKeepalivedCommands.VyosHaEnableRsp ret = re.toResponse(VyosKeepalivedCommands.VyosHaEnableRsp.class);
                 if (!ret.isSuccess()) {
-                    ErrorCode err = operr("failed to enable ha on virtual router[uuid:%s], %s",
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_VYOS_10008, "failed to enable ha on virtual router[uuid:%s], %s",
                             vr.getUuid(), ret.getError());
                     completion.fail(err);
                 } else {

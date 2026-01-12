@@ -26,6 +26,7 @@ import org.zstack.utils.network.NetworkUtils;
 import java.io.IOException;
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.network.NetworkUtils.getSubnetInfo;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * @description:
@@ -112,13 +113,13 @@ public class TfL3Network extends L3BasicNetwork {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                    evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10000, SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
                     bus.publish(evt);
                 }
             });
 
         } else{
-            evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, "L3 Network is missing"));
+            evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10001, SysErrors.DELETE_RESOURCE_ERROR, "L3 Network is missing"));
             bus.publish(evt);
         }
     }
@@ -137,13 +138,13 @@ public class TfL3Network extends L3BasicNetwork {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                    evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10002, SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
                     bus.publish(evt);
                 }
             });
 
         } else{
-            evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, "L3 Network is missing"));
+            evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10003, SysErrors.DELETE_RESOURCE_ERROR, "L3 Network is missing"));
             bus.publish(evt);
         }
 
@@ -164,12 +165,12 @@ public class TfL3Network extends L3BasicNetwork {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                    evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10004, SysErrors.CREATE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
                     bus.publish(evt);
                 }
             });
         } else{
-            evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, "L3 Network is missing"));
+            evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10005, SysErrors.CREATE_RESOURCE_ERROR, "L3 Network is missing"));
             bus.publish(evt);
         }
     }
@@ -188,13 +189,13 @@ public class TfL3Network extends L3BasicNetwork {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                    evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10006, SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
                     bus.publish(evt);
                 }
             });
 
         } else{
-            evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, "L3 Network is missing"));
+            evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10007, SysErrors.DELETE_RESOURCE_ERROR, "L3 Network is missing"));
             bus.publish(evt);
         }
     }
@@ -213,13 +214,13 @@ public class TfL3Network extends L3BasicNetwork {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                    evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10008, SysErrors.CREATE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
                     bus.publish(evt);
                 }
             });
 
         } else{
-            evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, "L3 Network is missing"));
+            evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10009, SysErrors.CREATE_RESOURCE_ERROR, "L3 Network is missing"));
             bus.publish(evt);
         }
     }
@@ -238,13 +239,13 @@ public class TfL3Network extends L3BasicNetwork {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                    evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10010, SysErrors.CREATE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
                     bus.publish(evt);
                 }
             });
 
         } else{
-            evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, "L3 Network is missing"));
+            evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10011, SysErrors.CREATE_RESOURCE_ERROR, "L3 Network is missing"));
             bus.publish(evt);
         }
     }
@@ -263,13 +264,13 @@ public class TfL3Network extends L3BasicNetwork {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                    evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10012, SysErrors.CREATE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
                     bus.publish(evt);
                 }
             });
 
         } else{
-            evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, "L3 Network is missing"));
+            evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10013, SysErrors.CREATE_RESOURCE_ERROR, "L3 Network is missing"));
             bus.publish(evt);
         }
     }
@@ -289,13 +290,13 @@ public class TfL3Network extends L3BasicNetwork {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                    evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10014, SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
                     bus.publish(evt);
                 }
             });
 
         } else{
-            evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, "L3 Network is missing"));
+            evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10015, SysErrors.DELETE_RESOURCE_ERROR, "L3 Network is missing"));
             bus.publish(evt);
         }
     }

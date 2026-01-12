@@ -20,6 +20,7 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by Wenhao.Zhang on 22/03/10
@@ -94,7 +95,7 @@ public class VmInstanceUtils {
         } else if (vm.getLastHostUuid() != null) {
             spec.setHostUuid(vm.getLastHostUuid());
         } else {
-            throw new OperationFailureException(Platform.operr("failed to find host of vm[uuid=%s]", vmUuid));
+            throw new OperationFailureException(Platform.operr(ORG_ZSTACK_COMPUTE_VM_10070, "failed to find host of vm[uuid=%s]", vmUuid));
         }
 
         if (!Objects.equals(vm.getName(), message.getName())) {
@@ -127,7 +128,7 @@ public class VmInstanceUtils {
         } else if (vm.getLastHostUuid() != null) {
             spec.setHostUuid(vm.getLastHostUuid());
         } else {
-            throw new OperationFailureException(Platform.operr("failed to find host of vm[uuid=%s]", vmUuid));
+            throw new OperationFailureException(Platform.operr(ORG_ZSTACK_COMPUTE_VM_10071, "failed to find host of vm[uuid=%s]", vmUuid));
         }
 
         if (!Objects.equals(vm.getCpuNum(), inv.getCpuNum())) {
@@ -145,16 +146,16 @@ public class VmInstanceUtils {
 
         if (instanceOfferingUuid == null) {
             if (msg.getCpuNum() == null || msg.getMemorySize() == null) {
-                throw new ApiMessageInterceptionException(operr("Missing CPU/memory settings"));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10072, "Missing CPU/memory settings"));
             }
 
             if (msg.getCpuNum() <= 0 || msg.getMemorySize() <= 0) {
-                throw new ApiMessageInterceptionException(operr("Unexpected CPU/memory settings"));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10073, "Unexpected CPU/memory settings"));
             }
 
             if (msg.getReservedMemorySize() != null) {
                 if (msg.getReservedMemorySize() > msg.getMemorySize()) {
-                    throw new ApiMessageInterceptionException(operr("reserved memory[%s] is greater than memory size[%s]", msg.getReservedMemorySize(), msg.getMemorySize()));
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10074, "reserved memory[%s] is greater than memory size[%s]", msg.getReservedMemorySize(), msg.getMemorySize()));
                 }
             } else {
                 msg.setReservedMemorySize(0L);
@@ -167,11 +168,11 @@ public class VmInstanceUtils {
         InstanceOfferingVO ivo = Q.New(InstanceOfferingVO.class).eq(InstanceOfferingVO_.uuid, instanceOfferingUuid).find();
 
         if (ivo.getState() == InstanceOfferingState.Disabled) {
-            throw new ApiMessageInterceptionException(operr("instance offering[uuid:%s] is Disabled, can't create vm from it", instanceOfferingUuid));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10075, "instance offering[uuid:%s] is Disabled, can't create vm from it", instanceOfferingUuid));
         }
 
         if (!ivo.getType().equals(VmInstanceConstant.USER_VM_TYPE)){
-            throw new ApiMessageInterceptionException(operr("instance offering[uuid:%s, type:%s] is not UserVm type, can't create vm from it", instanceOfferingUuid, ivo.getType()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10076, "instance offering[uuid:%s, type:%s] is not UserVm type, can't create vm from it", instanceOfferingUuid, ivo.getType()));
         }
 
         msg.setCpuNum(ivo.getCpuNum());

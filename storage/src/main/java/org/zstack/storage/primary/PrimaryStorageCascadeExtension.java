@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -142,7 +143,7 @@ public class PrimaryStorageCascadeExtension extends AbstractAsyncCascadeExtensio
 
             completion.success();
         } catch (PrimaryStorageException e) {
-            completion.fail(inerr(e.getMessage()));
+            completion.fail(inerr(ORG_ZSTACK_STORAGE_PRIMARY_10025, e.getMessage()));
         }
     }
 

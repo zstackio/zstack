@@ -13,6 +13,7 @@ import org.zstack.header.storage.addon.backup.ExternalBackupStorageVO;
 import org.zstack.header.storage.backup.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class ExternalBackupStorageFactory implements BackupStorageFactory, Component {
     private static final CLogger logger = Utils.getLogger(ExternalBackupStorageFactory.class);
@@ -37,7 +38,7 @@ public class ExternalBackupStorageFactory implements BackupStorageFactory, Compo
         APIAddExternalBackupStorageMsg amsg = (APIAddExternalBackupStorageMsg) msg;
         if (findBackupStorageController(amsg.getIdentity()) == null) {
             throw new OperationFailureException(
-                    Platform.operr("No backup storage plugin registered with identity: %s", amsg.getIdentity())
+                    Platform.operr(ORG_ZSTACK_STORAGE_ADDON_BACKUP_10002, "No backup storage plugin registered with identity: %s", amsg.getIdentity())
             );
         }
 
@@ -53,7 +54,7 @@ public class ExternalBackupStorageFactory implements BackupStorageFactory, Compo
         BackupStorageController c = findBackupStorageController(lvo.getIdentity());
         if (c == null) {
             throw new OperationFailureException(
-                    Platform.operr("No backup storage plugin registered with identity: %s", vo.getType())
+                    Platform.operr(ORG_ZSTACK_STORAGE_ADDON_BACKUP_10003, "No backup storage plugin registered with identity: %s", vo.getType())
             );
         }
         return new ExternalBackupStorage(lvo, c);

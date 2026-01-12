@@ -27,6 +27,7 @@ import javax.persistence.TypedQuery;
 import java.util.List;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by lining on 2017/11/26.
@@ -115,7 +116,7 @@ public class LocalStorageUtils {
                 self.getUuid(),
                 ref.getTotalPhysicalCapacity(),
                 ref.getAvailablePhysicalCapacity())) {
-            throw new OperationFailureException(operr("cannot reserve enough space for primary storage[uuid: %s] on host[uuid: %s], not enough physical capacity", self.getUuid(), hostUuid));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10056, "cannot reserve enough space for primary storage[uuid: %s] on host[uuid: %s], not enough physical capacity", self.getUuid(), hostUuid));
         }
 
         LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
@@ -134,7 +135,7 @@ public class LocalStorageUtils {
             if (ignoreError) {
                 avail = 0;
             } else {
-                throw new OperationFailureException(operr("host[uuid: %s] of local primary storage[uuid: %s] doesn't have enough capacity" +
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10057, "host[uuid: %s] of local primary storage[uuid: %s] doesn't have enough capacity" +
                         "[current: %s bytes, needed: %s]", hostUuid, self.getUuid(), ref.getAvailableCapacity(), size));
             }
 
@@ -201,10 +202,10 @@ public class LocalStorageUtils {
                         .param("resUuid", resUuid)
                         .find();
                 if (uuid == null) {
-                    throw new OperationFailureException(operr("cannot find any host which has resource[uuid:%s]", resUuid));
+                    throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10058, "cannot find any host which has resource[uuid:%s]", resUuid));
                 } else if (findHostByUuid(uuid) == null) {
                     throw new OperationFailureException(
-                            operr("Resource[uuid:%s] can only be operated on host[uuid:%s], but the host has been deleted",
+                            operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10059, "Resource[uuid:%s] can only be operated on host[uuid:%s], but the host has been deleted",
                                     resUuid, uuid));
                 }
                 return uuid;

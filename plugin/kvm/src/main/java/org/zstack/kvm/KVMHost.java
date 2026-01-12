@@ -119,6 +119,7 @@ import static org.zstack.header.host.GetVirtualizerInfoReply.VmVirtualizerInfo;
 import static org.zstack.kvm.KvmHostUpdateOsExtensionPoint.UPDATE_OS_RSP;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
@@ -510,7 +511,7 @@ public class KVMHost extends HostBase implements Host {
                         if (dbf.isExist(self.getUuid(), HostVO.class)) {
                             completion.success(ret);
                         } else {
-                            completion.fail(operr("host[uuid:%s] has been deleted", self.getUuid()));
+                            completion.fail(operr(ORG_ZSTACK_KVM_10012, "host[uuid:%s] has been deleted", self.getUuid()));
                         }
                     }
 
@@ -531,7 +532,7 @@ public class KVMHost extends HostBase implements Host {
                         if (dbf.isExist(self.getUuid(), HostVO.class)) {
                             completion.success(ret);
                         } else {
-                            completion.fail(operr("host[uuid:%s] has been deleted", self.getUuid()));
+                            completion.fail(operr(ORG_ZSTACK_KVM_10013, "host[uuid:%s] has been deleted", self.getUuid()));
                         }
                     }
 
@@ -712,7 +713,7 @@ public class KVMHost extends HostBase implements Host {
                 .setSyncSignature(String.format("restart-kvmagent-on-host-%s", msg.getHostUuid()))
                 .run(completion -> {
                     if (!destMaker.isManagedByUs(msg.getHostUuid())) {
-                        completion.fail(operr("host %s is not managed by current mn node", msg.getHostUuid()));
+                        completion.fail(operr(ORG_ZSTACK_KVM_10014, "host %s is not managed by current mn node", msg.getHostUuid()));
                         return;
                     }
 
@@ -794,7 +795,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 if (self.getStatus() != HostStatus.Connected) {
-                    trigger.fail(operr("host %s is not connected, skip to restart kvmagent", self.getUuid()));
+                    trigger.fail(operr(ORG_ZSTACK_KVM_10015, "host %s is not connected, skip to restart kvmagent", self.getUuid()));
                     return;
                 }
                 changeConnectionState(HostStatusEvent.connecting);
@@ -823,7 +824,7 @@ public class KVMHost extends HostBase implements Host {
                         if (noTask) {
                             trigger.next();
                         } else {
-                            trigger.fail(operr("running task exists on host %s", self.getUuid()));
+                            trigger.fail(operr(ORG_ZSTACK_KVM_10016, "running task exists on host %s", self.getUuid()));
                         }
                     }
 
@@ -850,7 +851,7 @@ public class KVMHost extends HostBase implements Host {
                 SshResult ret = sshShell.runCommand("sudo service zstack-kvmagent restart");
 
                 if (ret.isSshFailure() || ret.getReturnCode() != 0) {
-                    trigger.fail(operr(ret.getExitErrorMessage()));
+                    trigger.fail(operr(ORG_ZSTACK_KVM_10017, ret.getExitErrorMessage()));
                 } else {
                     trigger.next();
                 }
@@ -971,7 +972,7 @@ public class KVMHost extends HostBase implements Host {
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 TakeVmConsoleScreenshotRsp rsp = r.toResponse(TakeVmConsoleScreenshotRsp.class);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr(rsp.getError()));
+                    completion.fail(operr(ORG_ZSTACK_KVM_10018, rsp.getError()));
                 } else {
                     completion.success(r.toResponse(TakeVmConsoleScreenshotRsp.class));
                 }
@@ -1034,7 +1035,7 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void success(BlockCommitResponse ret) {
                                 if (!ret.isSuccess()) {
-                                    ErrorCode err = operr("operation error, because:%s", ret.getError());
+                                    ErrorCode err = operr(ORG_ZSTACK_KVM_10019, "operation error, because:%s", ret.getError());
                                     extEmitter.failedToCommitVolume((KVMHostInventory) getSelfInventory(), msg, cmd, ret, err);
                                     trigger.fail(err);
                                     return;
@@ -1146,7 +1147,7 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void success(BlockPullResponse ret) {
                                 if (!ret.isSuccess()) {
-                                    ErrorCode err = operr("operation error, because:%s", ret.getError());
+                                    ErrorCode err = operr(ORG_ZSTACK_KVM_10020, "operation error, because:%s", ret.getError());
                                     extEmitter.failedToPullVolume((KVMHostInventory) getSelfInventory(), msg, cmd, ret, err);
                                     trigger.fail(err);
                                     return;
@@ -1255,7 +1256,7 @@ public class KVMHost extends HostBase implements Host {
         try (Response r = hb.callWithException()) {
             // 1. webssh maybe is not running
             if (!r.isSuccessful()) {
-                reply.setError(inerr("webssh server is unreachable for %s", r.message()));
+                reply.setError(inerr(ORG_ZSTACK_KVM_10021, "webssh server is unreachable for %s", r.message()));
                 reply.setSuccess(false);
                 bus.reply(msg, reply);
                 return;
@@ -1264,7 +1265,7 @@ public class KVMHost extends HostBase implements Host {
             WebSshResponseStruct webSsh = JSONObjectUtil.toObject(Objects.requireNonNull(r.body()).string(), WebSshResponseStruct.class);
             // 2. return id is null, because authentication fail or connections is full
             if (null == webSsh.id) {
-                reply.setError(operr("ssh connect to host[%s] username[%s] on port[%s] failed, because %s", host.getUuid(), host.getUsername(), host.getPort(), webSsh.status));
+                reply.setError(operr(ORG_ZSTACK_KVM_10022, "ssh connect to host[%s] username[%s] on port[%s] failed, because %s", host.getUuid(), host.getUsername(), host.getPort(), webSsh.status));
                 reply.setSuccess(false);
                 bus.reply(msg, reply);
                 return;
@@ -1335,7 +1336,7 @@ public class KVMHost extends HostBase implements Host {
                     @Override
                     public boolean run() {
                         if (timeHelper.getCurrentTimeMillis() > deadline) {
-                            reply.setError(operr(String.format("Host[%s] has not been power on within %d seconds for an unknown reason. Please check host status in BMC[%s]", msg.getHostUuid(), timeoutInSec, host.getIpmi().getIpmiAddress())));
+                            reply.setError(operr(ORG_ZSTACK_KVM_10023, String.format("Host[%s] has not been power on within %d seconds for an unknown reason. Please check host status in BMC[%s]", msg.getHostUuid(), timeoutInSec, host.getIpmi().getIpmiAddress())));
                             reply.setSuccess(false);
                             bus.reply(msg, reply);
                             HostIpmiVO ipmi = host.getIpmi();
@@ -1421,7 +1422,7 @@ public class KVMHost extends HostBase implements Host {
                             HostIpmiVO ipmi = host.getIpmi();
                             kvmHostIpmiPowerExecutor.updateIpmiPowerStatusInDB(ipmi, HostPowerStatus.POWER_ON);
                             if (!msg.isReturnEarly()) {
-                                reply.setError(operr(String.format("Host[%s] has not been shut down within %d seconds for an unknown reason. Please check host status in BMC[%s]", msg.getHostUuid(), timeoutInSec, host.getIpmi().getIpmiAddress())));
+                                reply.setError(operr(ORG_ZSTACK_KVM_10024, String.format("Host[%s] has not been shut down within %d seconds for an unknown reason. Please check host status in BMC[%s]", msg.getHostUuid(), timeoutInSec, host.getIpmi().getIpmiAddress())));
                                 reply.setSuccess(false);
                                 bus.reply(msg, reply);
                             }
@@ -1504,7 +1505,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(RebootHostResponse returnValue) {
                 if (!returnValue.isSuccess()) {
-                    reply.setError(operr("operation error, because:%s", returnValue.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10025, "operation error, because:%s", returnValue.getError()));
                     bus.reply(msg, reply);
                     completion.done();
                     return;
@@ -1533,7 +1534,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(SyncVmDeviceInfoResponse ret) {
                 if (!ret.isSuccess()) {
-                    ErrorCode err = Platform.err(SysErrors.OPERATION_ERROR, ret.getError());
+                    ErrorCode err = Platform.err(ORG_ZSTACK_KVM_10026, SysErrors.OPERATION_ERROR, ret.getError());
                     reply.setError(err);
                 }
 
@@ -1561,7 +1562,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(GetHostNUMATopologyResponse ret) {
                 if (!ret.isSuccess()) {
-                    ErrorCode err = Platform.err(SysErrors.OPERATION_ERROR, ret.getError());
+                    ErrorCode err = Platform.err(ORG_ZSTACK_KVM_10027, SysErrors.OPERATION_ERROR, ret.getError());
                     reply.setError(err);
                 } else {
                     reply.setNuma(ret.getTopology());
@@ -1612,7 +1613,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(VmCompareCpuFunctionResponse ret) {
                 if (!ret.isSuccess()) {
-                    completion.fail(operr(ret.getError()));
+                    completion.fail(operr(ORG_ZSTACK_KVM_10028, ret.getError()));
                     return;
                 }
                 completion.success(ret);
@@ -1636,7 +1637,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(VmGetCpuXmlResponse ret) {
                 if (!ret.isSuccess()) {
-                    completion.fail(operr(ret.getError()));
+                    completion.fail(operr(ORG_ZSTACK_KVM_10029, ret.getError()));
                     return;
                 }
                 reply.setCpuXml(ret.getCpuXml());
@@ -1769,18 +1770,18 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    throw new OperationFailureException(operr("check host capacity failed, because:%s", reply.getError()));
+                    throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10030, "check host capacity failed, because:%s", reply.getError()));
                 }
 
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 HostCapacityResponse rsp = r.toResponse(HostCapacityResponse.class);
                 if (!rsp.isSuccess()) {
-                    throw new OperationFailureException(operr("operation error, because:%s", rsp.getError()));
+                    throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10031, "operation error, because:%s", rsp.getError()));
                 }
 
                 long reservedSize = SizeUtils.sizeStringToBytes(rcf.getResourceConfigValue(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY, msg.getHostUuid(), String.class));
                 if (rsp.getTotalMemory() < reservedSize) {
-                    throw new OperationFailureException(operr("The host[uuid:%s]'s available memory capacity[%s] is lower than the reserved capacity[%s]",
+                    throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10032, "The host[uuid:%s]'s available memory capacity[%s] is lower than the reserved capacity[%s]",
                             msg.getHostUuid(), rsp.getTotalMemory(), reservedSize));
                 }
 
@@ -1836,7 +1837,7 @@ public class KVMHost extends HostBase implements Host {
             public void success(AgentResponse ret) {
                 final StartColoSyncReply reply = new StartColoSyncReply();
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("unable to register colo heartbeat for vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
+                    reply.setError(operr(ORG_ZSTACK_KVM_10033, "unable to register colo heartbeat for vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
                             msg.getVmInstanceUuid(), self.getUuid(), self.getManagementIp(), ret.getError()));
                 } else {
                     logger.debug(String.format("unable to register colo heartbeat for vm[uuid:%s] on kvm host[uuid:%s] success", msg.getVmInstanceUuid(), self.getUuid()));
@@ -1894,7 +1895,7 @@ public class KVMHost extends HostBase implements Host {
             public void success(AgentResponse ret) {
                 final StartColoSyncReply reply = new StartColoSyncReply();
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("unable to start colo sync vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
+                    reply.setError(operr(ORG_ZSTACK_KVM_10034, "unable to start colo sync vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
                             msg.getVmInstanceUuid(), self.getUuid(), self.getManagementIp(), ret.getError()));
                 } else {
                     logger.debug(String.format("unable to start colo sync vm[uuid:%s] on kvm host[uuid:%s] success", msg.getVmInstanceUuid(), self.getUuid()));
@@ -1949,7 +1950,7 @@ public class KVMHost extends HostBase implements Host {
             public void success(AgentResponse ret) {
                 final ConfigPrimaryVmReply reply = new ConfigPrimaryVmReply();
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("unable to config secondary vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
+                    reply.setError(operr(ORG_ZSTACK_KVM_10035, "unable to config secondary vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
                             msg.getVmInstanceUuid(), self.getUuid(), self.getManagementIp(), ret.getError()));
                 } else {
                     logger.debug(String.format("config secondary vm[uuid:%s] on kvm host[uuid:%s] success", msg.getVmInstanceUuid(), self.getUuid()));
@@ -1981,7 +1982,7 @@ public class KVMHost extends HostBase implements Host {
             public void success(AgentResponse ret) {
                 final ConfigPrimaryVmReply reply = new ConfigPrimaryVmReply();
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("unable to config primary vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
+                    reply.setError(operr(ORG_ZSTACK_KVM_10036, "unable to config primary vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
                             msg.getVmInstanceUuid(), self.getUuid(), self.getManagementIp(), ret.getError()));
                 } else {
                     logger.debug(String.format("config primary vm[uuid:%s] on kvm host[uuid:%s] success", msg.getVmInstanceUuid(), self.getUuid()));
@@ -2022,7 +2023,7 @@ public class KVMHost extends HostBase implements Host {
             public void success(GetVmFirstBootDeviceResponse ret) {
                 final GetVmFirstBootDeviceOnHypervisorReply reply = new GetVmFirstBootDeviceOnHypervisorReply();
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("unable to get first boot dev of vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
+                    reply.setError(operr(ORG_ZSTACK_KVM_10037, "unable to get first boot dev of vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
                             msg.getVmInstanceUuid(), self.getUuid(), self.getManagementIp(), ret.getError()));
                 } else {
                     reply.setFirstBootDevice(ret.getFirstBootDevice());
@@ -2071,7 +2072,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(GetVmDeviceAddressRsp rsp) {
                 if (!rsp.isSuccess()) {
-                    reply.setError(operr("failed to get vm[uuid:%s] device address, because:%s", msg.getVmInstanceUuid(), rsp.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10038, "failed to get vm[uuid:%s] device address, because:%s", msg.getVmInstanceUuid(), rsp.getError()));
                     bus.reply(msg, reply);
                     completion.done();
                     return;
@@ -2126,7 +2127,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(GetVirtualizerInfoRsp rsp) {
                 if (!rsp.isSuccess()) {
-                    reply.setError(operr("failed to get host[uuid:%s] virtualizer info, because:%s", msg.getHostUuid(), rsp.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10039, "failed to get host[uuid:%s] virtualizer info, because:%s", msg.getHostUuid(), rsp.getError()));
                     bus.reply(msg, reply);
                     completion.done();
                     return;
@@ -2208,7 +2209,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(IncreaseCpuResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("failed to increase vm cpu, error details: %s", ret.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10040, "failed to increase vm cpu, error details: %s", ret.getError()));
                 } else {
                     reply.setCpuNum(ret.getCpuNum());
                 }
@@ -2233,7 +2234,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(IncreaseMemoryResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10041, "operation error, because:%s", ret.getError()));
                 } else {
                     reply.setMemorySize(ret.getMemorySize());
                 }
@@ -2260,7 +2261,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(DestroyVmResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(err(HostErrors.FAILED_TO_DESTROY_VM_ON_HYPERVISOR, ret.getError()));
+                    reply.setError(err(ORG_ZSTACK_KVM_10042, HostErrors.FAILED_TO_DESTROY_VM_ON_HYPERVISOR, ret.getError()));
                 }
 
                 bus.reply(msg, reply);
@@ -2310,7 +2311,7 @@ public class KVMHost extends HostBase implements Host {
 
         KvmRunShellReply reply = new KvmRunShellReply();
         if (result.isSshFailure()) {
-            reply.setError(operr("unable to connect to KVM[ip:%s, username:%s, sshPort:%d ] to do DNS check," +
+            reply.setError(operr(ORG_ZSTACK_KVM_10043, "unable to connect to KVM[ip:%s, username:%s, sshPort:%d ] to do DNS check," +
                             " please check if username/password is wrong; %s",
                     self.getManagementIp(), getSelf().getUsername(),
                     getSelf().getPort(), result.getExitErrorMessage()));
@@ -2332,7 +2333,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(GetVncPortResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10044, "operation error, because:%s", ret.getError()));
                 } else {
                     reply.setHostIp(self.getManagementIp());
                     reply.setProtocol(ret.getProtocol());
@@ -2364,7 +2365,7 @@ public class KVMHost extends HostBase implements Host {
     private void handle(final UpdateVmPriorityMsg msg) {
         final UpdateVmPriorityReply reply = new UpdateVmPriorityReply();
         if (self.getStatus() != HostStatus.Connected) {
-            reply.setError(operr("the host[uuid:%s, status:%s] is not Connected", self.getUuid(), self.getStatus()));
+            reply.setError(operr(ORG_ZSTACK_KVM_10045, "the host[uuid:%s, status:%s] is not Connected", self.getUuid(), self.getStatus()));
             bus.reply(msg, reply);
             return;
         }
@@ -2375,7 +2376,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(UpdateVmPriorityRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10046, "operation error, because:%s", ret.getError()));
                 }
 
                 bus.reply(msg, reply);
@@ -2392,7 +2393,7 @@ public class KVMHost extends HostBase implements Host {
     protected void handle(final CheckVmStateOnHypervisorMsg msg) {
         final CheckVmStateOnHypervisorReply reply = new CheckVmStateOnHypervisorReply();
         if (self.getStatus() != HostStatus.Connected) {
-            reply.setError(operr("the host[uuid:%s, status:%s] is not Connected", self.getUuid(), self.getStatus()));
+            reply.setError(operr(ORG_ZSTACK_KVM_10047, "the host[uuid:%s, status:%s] is not Connected", self.getUuid(), self.getStatus()));
             bus.reply(msg, reply);
             return;
         }
@@ -2410,7 +2411,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(CheckVmStateRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10048, "operation error, because:%s", ret.getError()));
                 } else {
                     Map<String, String> m = new HashMap<>();
                     for (Map.Entry<String, String> e : ret.states.entrySet()) {
@@ -2462,7 +2463,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(DetachIsoRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10049, "operation error, because:%s", ret.getError()));
                 }
 
                 bus.reply(msg, reply);
@@ -2514,7 +2515,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(AttachIsoRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10050, "operation error, because:%s", ret.getError()));
                 }
 
                 bus.reply(msg, reply);
@@ -2553,7 +2554,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(ChangeVmNicStateRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10051, "operation error, because:%s", ret.getError()));
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -2616,7 +2617,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(DetachNicRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10052, "operation error, because:%s", ret.getError()));
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -2724,7 +2725,7 @@ public class KVMHost extends HostBase implements Host {
             public void fail(ErrorCode err) {
                 KVMHostAsyncHttpCallReply reply = new KVMHostAsyncHttpCallReply();
                 if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)) {
-                    reply.setError(err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, err, "cannot do the operation on the KVM host"));
+                    reply.setError(err(ORG_ZSTACK_KVM_10053, HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, err, "cannot do the operation on the KVM host"));
                 } else {
                     reply.setError(err);
                 }
@@ -2759,14 +2760,14 @@ public class KVMHost extends HostBase implements Host {
             q.add(VmInstanceVO_.uuid, Op.EQ, volume.getVmInstanceUuid());
             VmInstanceState state = q.findValue();
             if (state != VmInstanceState.Stopped && state != VmInstanceState.Running && state != VmInstanceState.Paused && state != VmInstanceState.Destroyed) {
-                throw new OperationFailureException(operr("cannot do volume snapshot merge when vm[uuid:%s] is in state of %s." +
+                throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10054, "cannot do volume snapshot merge when vm[uuid:%s] is in state of %s." +
                                 " The operation is only allowed when vm is Running or Stopped", volume.getUuid(), state));
             }
 
             if (state == VmInstanceState.Running) {
                 String libvirtVersion = KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN);
                 if (new VersionComparator(KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION).compare(libvirtVersion) > 0) {
-                    throw new OperationFailureException(operr("live volume snapshot merge needs libvirt version greater than %s," +
+                    throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10055, "live volume snapshot merge needs libvirt version greater than %s," +
                                     " current libvirt version is %s. Please stop vm and redo the operation or detach the volume if it's data volume",
                             KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION, libvirtVersion));
                 }
@@ -2786,7 +2787,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(MergeSnapshotRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10056, "operation error, because:%s", ret.getError()));
                     extEmitter.afterMergeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, reply.getError());
                 }
                 extEmitter.afterMergeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd);
@@ -2861,7 +2862,7 @@ public class KVMHost extends HostBase implements Host {
             q.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, msg.getVmUuid());
             VmInstanceState vmState = q.findValue();
             if (vmState != VmInstanceState.Running && vmState != VmInstanceState.Stopped && vmState != VmInstanceState.Paused) {
-                throw new OperationFailureException(operr("vm[uuid:%s] is not Running or Stopped, current state[%s]", msg.getVmUuid(), vmState));
+                throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10057, "vm[uuid:%s] is not Running or Stopped, current state[%s]", msg.getVmUuid(), vmState));
             }
         }
 
@@ -2898,7 +2899,7 @@ public class KVMHost extends HostBase implements Host {
                     @Override
                     public void success(CheckSnapshotResponse ret) {
                         if (!ret.isSuccess()) {
-                            trigger.fail(operr("operation error, because:%s", ret.getError()));
+                            trigger.fail(operr(ORG_ZSTACK_KVM_10058, "operation error, because:%s", ret.getError()));
                             return;
                         }
 
@@ -2978,12 +2979,12 @@ public class KVMHost extends HostBase implements Host {
             q.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, msg.getVmUuid());
             VmInstanceState vmState = q.findValue();
             if (vmState != VmInstanceState.Running && vmState != VmInstanceState.Stopped && vmState != VmInstanceState.Paused) {
-                throw new OperationFailureException(operr("vm[uuid:%s] is not Running or Stopped, current state[%s]", msg.getVmUuid(), vmState));
+                throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10059, "vm[uuid:%s] is not Running or Stopped, current state[%s]", msg.getVmUuid(), vmState));
             }
 
             if (!HostSystemTags.LIVE_SNAPSHOT.hasTag(self.getUuid())) {
                 if (vmState != VmInstanceState.Stopped) {
-                    reply.setError(err(SysErrors.NO_CAPABILITY_ERROR,
+                    reply.setError(err(ORG_ZSTACK_KVM_10060, SysErrors.NO_CAPABILITY_ERROR,
                             "kvm host[uuid:%s, name:%s, ip:%s] doesn't not support live snapshot. please stop vm[uuid:%s] and try again",
                                     self.getUuid(), self.getName(), self.getManagementIp(), msg.getVmUuid()
                     ));
@@ -3036,7 +3037,7 @@ public class KVMHost extends HostBase implements Host {
                     public void success(TakeSnapshotResponse ret) {
                         if (ret.isSuccess()) {
                             if (Objects.equals(ret.getNewVolumeInstallPath(), ret.getSnapshotInstallPath())) {
-                                throw new OperationFailureException(Platform.inerr("SERIOUS BUG: the agent returns the " +
+                                throw new OperationFailureException(Platform.inerr(ORG_ZSTACK_KVM_10061, "SERIOUS BUG: the agent returns the " +
                                         "same newVolumeInstallPath and snapshotInstallPath [%s], call for support immediately otherwise" +
                                         " data corruption may happen", ret.getNewVolumeInstallPath()));
                             }
@@ -3046,7 +3047,7 @@ public class KVMHost extends HostBase implements Host {
                             reply.setSnapshotInstallPath(ret.getSnapshotInstallPath());
                             reply.setSize(ret.getSize());
                         } else {
-                            ErrorCode err = operr("operation error, because:%s", ret.getError());
+                            ErrorCode err = operr(ORG_ZSTACK_KVM_10062, "operation error, because:%s", ret.getError());
                             extEmitter.afterTakeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, ret, err);
                             reply.setError(err);
                         }
@@ -3196,7 +3197,7 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void success(MigrateVmResponse ret) {
                                 if (!ret.isSuccess()) {
-                                    ErrorCode err = err(HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR,
+                                    ErrorCode err = err(ORG_ZSTACK_KVM_10063, HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR,
                                             "failed to migrate vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s], %s",
                                             vmUuid, srcHostUuid, srcHostMigrateIp, dstHostMigrateIp, ret.getError()
                                     );
@@ -3434,7 +3435,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(AttachNicResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("failed to update nic[vm:%s] on kvm host[uuid:%s, ip:%s]," +
+                    reply.setError(operr(ORG_ZSTACK_KVM_10064, "failed to update nic[vm:%s] on kvm host[uuid:%s, ip:%s]," +
                                     "because %s", msg.getVmInstanceUuid(), self.getUuid(), self.getManagementIp(), ret.getError()));
                 }
 
@@ -3496,11 +3497,11 @@ public class KVMHost extends HostBase implements Host {
             public void success(AttachNicResponse ret) {
                 if (!ret.isSuccess()) {
                     if (ret.getError().contains("Device or resource busy")) {
-                        reply.setError(operr("failed to attach nic[uuid:%s, vm:%s] on kvm host[uuid:%s, ip:%s]," +
+                        reply.setError(operr(ORG_ZSTACK_KVM_10065, "failed to attach nic[uuid:%s, vm:%s] on kvm host[uuid:%s, ip:%s]," +
                                         "because %s, please try again or delete device[%s] by yourself", msg.getNicInventory().getUuid(), msg.getNicInventory().getVmInstanceUuid(),
                                 self.getUuid(), self.getManagementIp(), ret.getError(), msg.getNicInventory().getInternalName()));
                     } else {
-                        reply.setError(operr("failed to attach nic[uuid:%s, vm:%s] on kvm host[uuid:%s, ip:%s]," +
+                        reply.setError(operr(ORG_ZSTACK_KVM_10066, "failed to attach nic[uuid:%s, vm:%s] on kvm host[uuid:%s, ip:%s]," +
                                         "because %s", msg.getNicInventory().getUuid(), msg.getNicInventory().getVmInstanceUuid(),
                                 self.getUuid(), self.getManagementIp(), ret.getError()));
                     }
@@ -3566,7 +3567,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(DetachDataVolumeResponse ret) {
                 if (!ret.isSuccess()) {
-                    ErrorCode err = operr("failed to detach data volume[uuid:%s, installPath:%s] from vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+                    ErrorCode err = operr(ORG_ZSTACK_KVM_10067, "failed to detach data volume[uuid:%s, installPath:%s] from vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because %s",
                             vol.getUuid(), vol.getInstallPath(), vm.getUuid(), vm.getName(), getSelf().getUuid(), getSelf().getManagementIp(), ret.getError());
                     reply.setError(err);
                     extEmitter.detachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, reply.getError());
@@ -3617,7 +3618,7 @@ public class KVMHost extends HostBase implements Host {
 
         boolean allowed = allowedOperations.isOperationAllowed(msg.getClass().getName(), state);
         if (!allowed) {
-            ErrorCode errorCode = err(VmErrors.ATTACH_VOLUME_ERROR,
+            ErrorCode errorCode = err(ORG_ZSTACK_KVM_10068, VmErrors.ATTACH_VOLUME_ERROR,
                         "In the hypervisorType[%s], attach volume is not allowed in the current vm instance state[%s].",
                         self.getHypervisorType(), state);
             throw new OperationFailureException(errorCode);
@@ -3679,7 +3680,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(AttachDataVolumeResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("failed to attach data volume[uuid:%s, installPath:%s] to vm[uuid:%s, name:%s]" +
+                    reply.setError(operr(ORG_ZSTACK_KVM_10069, "failed to attach data volume[uuid:%s, installPath:%s] to vm[uuid:%s, name:%s]" +
                                     " on kvm host[uuid:%s, ip:%s], because %s", vol.getUuid(), vol.getInstallPath(), vm.getUuid(), vm.getName(),
                             getSelf().getUuid(), getSelf().getManagementIp(), ret.getError()));
                     extEmitter.attachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, reply.getError(), data);
@@ -3724,7 +3725,7 @@ public class KVMHost extends HostBase implements Host {
         try {
             extEmitter.beforeDestroyVmOnKvm(KVMHostInventory.valueOf(getSelf()), vminv, cmd);
         } catch (KVMException e) {
-            ErrorCode err = operr("failed to destroy vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(), vminv.getName(),
+            ErrorCode err = operr(ORG_ZSTACK_KVM_10070, "failed to destroy vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(), vminv.getName(),
                     self.getUuid(), self.getManagementIp(), e.getMessage());
             throw new OperationFailureException(err);
         }
@@ -3734,7 +3735,7 @@ public class KVMHost extends HostBase implements Host {
             public void success(DestroyVmResponse ret) {
                 DestroyVmOnHypervisorReply reply = new DestroyVmOnHypervisorReply();
                 if (!ret.isSuccess()) {
-                    reply.setError(err(HostErrors.FAILED_TO_DESTROY_VM_ON_HYPERVISOR, "unable to destroy vm[uuid:%s,  name:%s] on kvm host [uuid:%s, ip:%s], because %s", vminv.getUuid(),
+                    reply.setError(err(ORG_ZSTACK_KVM_10071, HostErrors.FAILED_TO_DESTROY_VM_ON_HYPERVISOR, "unable to destroy vm[uuid:%s,  name:%s] on kvm host [uuid:%s, ip:%s], because %s", vminv.getUuid(),
                             vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError()));
                     extEmitter.destroyVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, reply.getError());
                 } else {
@@ -3750,7 +3751,7 @@ public class KVMHost extends HostBase implements Host {
                 DestroyVmOnHypervisorReply reply = new DestroyVmOnHypervisorReply();
 
                 if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR, SysErrors.TIMEOUT)) {
-                    err = err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, err, "unable to destroy a vm");
+                    err = err(ORG_ZSTACK_KVM_10072, HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, err, "unable to destroy a vm");
                 }
 
                 reply.setError(err);
@@ -3799,7 +3800,7 @@ public class KVMHost extends HostBase implements Host {
             String err = String.format("failed to reboot vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(), vminv.getName(),
                     self.getUuid(), self.getManagementIp(), e.getMessage());
             logger.warn(err, e);
-            throw new OperationFailureException(operr(err));
+            throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10073, err));
         }
 
         RebootVmCmd cmd = new RebootVmCmd();
@@ -3812,7 +3813,7 @@ public class KVMHost extends HostBase implements Host {
             public void success(RebootVmResponse ret) {
                 RebootVmOnHypervisorReply reply = new RebootVmOnHypervisorReply();
                 if (!ret.isSuccess()) {
-                    reply.setError(err(HostErrors.FAILED_TO_REBOOT_VM_ON_HYPERVISOR, "unable to reboot vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
+                    reply.setError(err(ORG_ZSTACK_KVM_10074, HostErrors.FAILED_TO_REBOOT_VM_ON_HYPERVISOR, "unable to reboot vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
                             vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError()));
                     extEmitter.rebootVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, reply.getError());
                 } else {
@@ -3857,7 +3858,7 @@ public class KVMHost extends HostBase implements Host {
         try {
             extEmitter.beforeStopVmOnKvm(KVMHostInventory.valueOf(getSelf()), vminv, cmd);
         } catch (KVMException e) {
-            ErrorCode err = operr("failed to stop vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(), vminv.getName(),
+            ErrorCode err = operr(ORG_ZSTACK_KVM_10075, "failed to stop vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(), vminv.getName(),
                     self.getUuid(), self.getManagementIp(), e.getMessage());
             throw new OperationFailureException(err);
         }
@@ -3867,7 +3868,7 @@ public class KVMHost extends HostBase implements Host {
             public void success(StopVmResponse ret) {
                 StopVmOnHypervisorReply reply = new StopVmOnHypervisorReply();
                 if (!ret.isSuccess()) {
-                    reply.setError(err(HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, "unable to stop vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
+                    reply.setError(err(ORG_ZSTACK_KVM_10076, HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, "unable to stop vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
                             vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError()));
                     logger.warn(reply.getError().getDetails());
                     extEmitter.stopVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, reply.getError());
@@ -3882,7 +3883,7 @@ public class KVMHost extends HostBase implements Host {
             public void fail(ErrorCode err) {
                 StopVmOnHypervisorReply reply = new StopVmOnHypervisorReply();
                 if (err.isError(SysErrors.IO_ERROR, SysErrors.HTTP_ERROR)) {
-                    err = err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, err, "unable to stop a vm");
+                    err = err(ORG_ZSTACK_KVM_10077, HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, err, "unable to stop a vm");
                 }
 
                 reply.setError(err);
@@ -4039,7 +4040,7 @@ public class KVMHost extends HostBase implements Host {
                     @Override
                     public void run(MessageReply reply) {
                         if (!reply.isSuccess()) {
-                            ErrorCode err = operr("host[uuid:%s] capacity is not enough to offer cpu[%s], memory[%s bytes]",
+                            ErrorCode err = operr(ORG_ZSTACK_KVM_10078, "host[uuid:%s] capacity is not enough to offer cpu[%s], memory[%s bytes]",
                                     vm.getUuid(), cpuChangeTo - oldCpuNum, alignedMemory.get() - oldMemorySize);
                             err.setCause(reply.getError());
                             chain.fail(err);
@@ -4147,7 +4148,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(UpdateSpiceChannelConfigResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("Host[%s] update spice channel config faild, because %s", msg.getHostUuid(), ret.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10079, "Host[%s] update spice channel config faild, because %s", msg.getHostUuid(), ret.getError()));
                     logger.warn(reply.getError().getDetails());
                 }
                 reply.setRestartLibvirt(ret.restartLibvirt);
@@ -4275,7 +4276,7 @@ public class KVMHost extends HostBase implements Host {
     private void checkPlatformWithOther(VmInstanceSpec spec) {
         int total = spec.getDestDataVolumes().size() + spec.getDestCacheVolumes().size() + spec.getCdRomSpecs().size();
         if (total > 3) {
-            throw new OperationFailureException(operr("when the vm platform is Other, the number of dataVolumes and cdroms cannot exceed 3, currently %s", total));
+            throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10080, "when the vm platform is Other, the number of dataVolumes and cdroms cannot exceed 3, currently %s", total));
         }
     }
 
@@ -4594,7 +4595,7 @@ public class KVMHost extends HostBase implements Host {
                     logger.debug(info);
                     extEmitter.startVmOnKvmSuccess(KVMHostInventory.valueOf(getSelf()), spec);
                 } else {
-                    reply.setError(err(HostErrors.FAILED_TO_START_VM_ON_HYPERVISOR, "failed to start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+                    reply.setError(err(ORG_ZSTACK_KVM_10081, HostErrors.FAILED_TO_START_VM_ON_HYPERVISOR, "failed to start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
                             spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
                             self.getUuid(), self.getManagementIp(), ret.getError()));
                     logger.warn(reply.getError().getDetails());
@@ -4627,7 +4628,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void fail(ErrorCode err) {
                 StartVmOnHypervisorReply reply = new StartVmOnHypervisorReply();
-                reply.setError(err(HostErrors.FAILED_TO_START_VM_ON_HYPERVISOR, "failed to start vm[uuid: %s] on kvm host[uuid: %s], because %s",
+                reply.setError(err(ORG_ZSTACK_KVM_10082, HostErrors.FAILED_TO_START_VM_ON_HYPERVISOR, "failed to start vm[uuid: %s] on kvm host[uuid: %s], because %s",
                         spec.getVmInventory().getUuid(), self.getUuid(), err));
                 extEmitter.startVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), spec, err);
                 bus.reply(msg, reply);
@@ -4718,7 +4719,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(PauseVmResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(err(HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, "unable to pause vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
+                    reply.setError(err(ORG_ZSTACK_KVM_10083, HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, "unable to pause vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
                             vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError()));
                     logger.warn(reply.getError().getDetails());
                 }
@@ -4769,7 +4770,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(ResumeVmResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(err(HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, "unable to resume vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
+                    reply.setError(err(ORG_ZSTACK_KVM_10084, HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, "unable to resume vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
                             vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError()));
                     logger.warn(reply.getError().getDetails());
                 }
@@ -4794,9 +4795,9 @@ public class KVMHost extends HostBase implements Host {
         CheckPhysicalNetworkInterfaceResponse rsp = restf.syncJsonPost(checkPhysicalNetworkInterfacePath, cmd, CheckPhysicalNetworkInterfaceResponse.class);
         if (!rsp.isSuccess()) {
             if (rsp.getFailedInterfaceNames().isEmpty()) {
-                reply.setError(operr("operation error, because:%s", rsp.getError()));
+                reply.setError(operr(ORG_ZSTACK_KVM_10085, "operation error, because:%s", rsp.getError()));
             } else {
-                reply.setError(operr("failed to check physical network interfaces[names : %s] on kvm host[uuid:%s, ip:%s]",
+                reply.setError(operr(ORG_ZSTACK_KVM_10086, "failed to check physical network interfaces[names : %s] on kvm host[uuid:%s, ip:%s]",
                         rsp.getFailedInterfaceNames(), context.getInventory().getUuid(), context.getInventory().getManagementIp()));
             }
         }
@@ -4812,9 +4813,9 @@ public class KVMHost extends HostBase implements Host {
         CheckPhysicalNetworkInterfaceResponse rsp = restf.syncJsonPost(checkPhysicalNetworkInterfacePath, cmd, CheckPhysicalNetworkInterfaceResponse.class);
         if (!rsp.isSuccess()) {
             if (rsp.getFailedInterfaceNames().isEmpty()) {
-                reply.setError(operr("operation error, because:%s", rsp.getError()));
+                reply.setError(operr(ORG_ZSTACK_KVM_10087, "operation error, because:%s", rsp.getError()));
             } else {
-                reply.setError(operr("failed to check physical network interfaces[names : %s] on kvm host[uuid:%s, ip:%s]",
+                reply.setError(operr(ORG_ZSTACK_KVM_10088, "failed to check physical network interfaces[names : %s] on kvm host[uuid:%s, ip:%s]",
                         msg.getPhysicalInterface(), context.getInventory().getUuid(), context.getInventory().getManagementIp()));
             }
         }
@@ -4873,7 +4874,7 @@ public class KVMHost extends HostBase implements Host {
         }
 
         changeConnectionState(HostStatusEvent.disconnected);
-        new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(info)).fire();
+        new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(ORG_ZSTACK_KVM_10089, info)).fire();
 
         ReconnectHostMsg rmsg = new ReconnectHostMsg();
         rmsg.setHostUuid(self.getUuid());
@@ -4900,7 +4901,7 @@ public class KVMHost extends HostBase implements Host {
                         logger.warn(info);
 
                         changeConnectionState(HostStatusEvent.disconnected);
-                        new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(info)).fire();
+                        new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(ORG_ZSTACK_KVM_10090, info)).fire();
 
                         ReconnectHostMsg rmsg = new ReconnectHostMsg();
                         rmsg.setHostUuid(self.getUuid());
@@ -5004,7 +5005,7 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void success(PingResponse ret) {
                                 if (!ret.isSuccess()) {
-                                    trigger.fail(operr("%s", ret.getError()));
+                                    trigger.fail(operr(ORG_ZSTACK_KVM_10091, "%s", ret.getError()));
                                     return;
                                 }
 
@@ -5138,7 +5139,7 @@ public class KVMHost extends HostBase implements Host {
         sshShell.setPort(getSelf().getPort());
         SshResult ret = sshShell.runCommand(String.format("sudo /bin/sh -c \"rm -rf %s\"", hostTakeOverFlagPath));
         if (ret.isSshFailure() || ret.getReturnCode() != 0) {
-            completion.fail(operr(ret.getExitErrorMessage()));
+            completion.fail(operr(ORG_ZSTACK_KVM_10092, ret.getExitErrorMessage()));
             return;
         }
         completion.success();
@@ -5165,7 +5166,7 @@ public class KVMHost extends HostBase implements Host {
             }
             ConnectResponse rsp = restf.syncJsonPost(connectPath, cmd, ConnectResponse.class);
             if (!rsp.isSuccess()) {
-                errCode = operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
+                errCode = operr(ORG_ZSTACK_KVM_10093, "unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
                         self.getUuid(), self.getManagementIp(), connectPath, rsp.getError());
             } else {
                 VersionComparator libvirtVersion = new VersionComparator(rsp.getLibvirtVersion());
@@ -5185,11 +5186,11 @@ public class KVMHost extends HostBase implements Host {
                 }
             }
         } catch (RestClientException e) {
-            errCode = operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s", self.getUuid(), self.getManagementIp(),
+            errCode = operr(ORG_ZSTACK_KVM_10094, "unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s", self.getUuid(), self.getManagementIp(),
                     connectPath, e.getMessage());
         } catch (Throwable t) {
             logger.warn(t.getMessage(), t);
-            errCode = inerr(t.getMessage());
+            errCode = inerr(ORG_ZSTACK_KVM_10095, t.getMessage());
         }
 
         return errCode;
@@ -5224,7 +5225,7 @@ public class KVMHost extends HostBase implements Host {
             public void handle(Map data) {
                 if (noStorageAccessible()) {
                     ErrorCodeList errorCodeList = (ErrorCodeList) data.get(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR);
-                    completion.fail(operr("host can not access any primary storage, %s", errorCodeList != null && StringUtils.isNotEmpty(errorCodeList.getReadableDetails()) ? errorCodeList.getReadableDetails() : "please check network"));
+                    completion.fail(operr(ORG_ZSTACK_KVM_10096, "host can not access any primary storage, %s", errorCodeList != null && StringUtils.isNotEmpty(errorCodeList.getReadableDetails()) ? errorCodeList.getReadableDetails() : "please check network"));
                 } else {
                     if (CoreGlobalProperty.UNIT_TEST_ON) {
                         completion.success();
@@ -5239,7 +5240,7 @@ public class KVMHost extends HostBase implements Host {
                     SshResult ret = sshShell.runCommand(String.format("sudo /bin/sh -c \"echo uuid:%s > %s\"", self.getUuid(), hostTakeOverFlagPath));
 
                     if (ret.isSshFailure() || ret.getReturnCode() != 0) {
-                        completion.fail(operr(ret.getExitErrorMessage()));
+                        completion.fail(operr(ORG_ZSTACK_KVM_10097, ret.getExitErrorMessage()));
                         return;
                     }
                     completion.success();
@@ -5248,7 +5249,7 @@ public class KVMHost extends HostBase implements Host {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                completion.fail(err(HostErrors.CONNECTION_ERROR, errCode, "connection error for KVM host[uuid:%s, ip:%s]", self.getUuid(),
+                completion.fail(err(ORG_ZSTACK_KVM_10098, HostErrors.CONNECTION_ERROR, errCode, "connection error for KVM host[uuid:%s, ip:%s]", self.getUuid(),
                         self.getManagementIp()));
             }
         }).start();
@@ -5351,7 +5352,7 @@ public class KVMHost extends HostBase implements Host {
 
                     private boolean ifTimeout() {
                         if (System.currentTimeMillis() > timeout) {
-                            trigger.fail(operr("the host[%s] ssh port[%s] not open after %s seconds, connect timeout", getSelf().getManagementIp(), getSelf().getPort(), TimeUnit.MILLISECONDS.toSeconds(sshTimeout)));
+                            trigger.fail(operr(ORG_ZSTACK_KVM_10099, "the host[%s] ssh port[%s] not open after %s seconds, connect timeout", getSelf().getManagementIp(), getSelf().getPort(), TimeUnit.MILLISECONDS.toSeconds(sshTimeout)));
                             return true;
                         } else {
                             return false;
@@ -5391,7 +5392,7 @@ public class KVMHost extends HostBase implements Host {
 
                 final ErrorCode privateKeyError = connectWithPrivateKey();
                 if (privateKeyError == null) {
-                    trigger.fail(err(HostErrors.HOST_PASSWORD_HAS_BEEN_CHANGED,
+                    trigger.fail(err(ORG_ZSTACK_KVM_10100, HostErrors.HOST_PASSWORD_HAS_BEEN_CHANGED,
                             "host password has been changed. " +
                             "Please update host password in management node by UpdateKVMHostAction with host UUID[%s]",
                                     self.getUuid()));
@@ -5410,7 +5411,7 @@ public class KVMHost extends HostBase implements Host {
                 final String cmd = "echo hello";
                 SshResult ret = sshShell.runCommand(cmd);
                 if (ret.isSshFailure()) {
-                    return err(HostErrors.UNABLE_TO_RECONNECT_HOST,
+                    return err(ORG_ZSTACK_KVM_10101, HostErrors.UNABLE_TO_RECONNECT_HOST,
                             "failed to connect host[UUID=%s] with SSH password", self.getUuid());
                 }
                 return null;
@@ -5426,7 +5427,7 @@ public class KVMHost extends HostBase implements Host {
                 final String cmd = "echo hello";
                 SshResult ret = sshShell.runCommand(cmd);
                 if (ret.isSshFailure()) {
-                    return err(HostErrors.UNABLE_TO_RECONNECT_HOST,
+                    return err(ORG_ZSTACK_KVM_10102, HostErrors.UNABLE_TO_RECONNECT_HOST,
                             "failed to connect host[UUID=%s] with private key", self.getUuid());
                 }
                 return null;
@@ -5469,9 +5470,9 @@ public class KVMHost extends HostBase implements Host {
                         map(e("dnsCheckList", checkList)));
 
                 if (ret.isSshFailure()) {
-                    trigger.fail(operr("unable to connect to KVM[ip:%s, username:%s, sshPort: %d, ] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
+                    trigger.fail(operr(ORG_ZSTACK_KVM_10103, "unable to connect to KVM[ip:%s, username:%s, sshPort: %d, ] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
                 } else if (ret.getReturnCode() != 0) {
-                    trigger.fail(operr("failed to ping all DNS/IP in %s; please check /etc/resolv.conf to make sure your host is able to reach public internet", checkList));
+                    trigger.fail(operr(ORG_ZSTACK_KVM_10104, "failed to ping all DNS/IP in %s; please check /etc/resolv.conf to make sure your host is able to reach public internet", checkList));
                 } else {
                     trigger.next();
                 }
@@ -5506,10 +5507,10 @@ public class KVMHost extends HostBase implements Host {
                 }
 
                 if (ret.isSshFailure()) {
-                    throw new OperationFailureException(operr("unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity," +
+                    throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10105, "unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity," +
                                     "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
                 } else if (ret.getReturnCode() != 0) {
-                    throw new OperationFailureException(operr("the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
+                    throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10106, "the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
                                     " that the KVM host cannot reach the management IP[%s]. %s %s", restf.getHostName(), self.getManagementIp(),
                             ret.getStderr(), ret.getExitErrorMessage()));
                 }
@@ -5561,7 +5562,7 @@ public class KVMHost extends HostBase implements Host {
                             ssh.command(String.format("grep -i ^uuid %s | sed 's/uuid://g'", hostTakeOverFlagPath));
                             SshResult hostRet = ssh.run();
                             if (hostRet.isSshFailure() || hostRet.getReturnCode() != 0) {
-                                trigger.fail(operr("unable to Check whether the host is taken over,  because %s", hostRet.getExitErrorMessage()));
+                                trigger.fail(operr(ORG_ZSTACK_KVM_10107, "unable to Check whether the host is taken over,  because %s", hostRet.getExitErrorMessage()));
                                 return;
                             }
                             String hostOutput = hostRet.getStdout().replaceAll("\r|\n","");
@@ -5575,7 +5576,7 @@ public class KVMHost extends HostBase implements Host {
                             SshResult timeRet = ssh.run();
                             logger.debug(String.format("Timestamp of the flag is %s ", timeRet.getStdout()));
                             if (timeRet.isSshFailure() || timeRet.getReturnCode() != 0) {
-                                trigger.fail(operr("Unable to get the timestamp of the flag,  because %s", timeRet.getExitErrorMessage()));
+                                trigger.fail(operr(ORG_ZSTACK_KVM_10108, "Unable to get the timestamp of the flag,  because %s", timeRet.getExitErrorMessage()));
                                 return;
                             }
                             String timestampOutput = timeRet.getStdout().replaceAll("\r|\n","");
@@ -5590,7 +5591,7 @@ public class KVMHost extends HostBase implements Host {
                             logger.debug(String.format("hostOutput is %s ,The time difference is %d(s) ", hostOutput, diff));
 
                             if (diff < HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)) {
-                                trigger.fail(operr("the host[ip:%s] has been taken over, because the takeover flag[HostUuid:%s] already exists and utime[%d] has not exceeded host ping interval[%d]",
+                                trigger.fail(operr(ORG_ZSTACK_KVM_10109, "the host[ip:%s] has been taken over, because the takeover flag[HostUuid:%s] already exists and utime[%d] has not exceeded host ping interval[%d]",
                                         self.getManagementIp(), hostOutput, diff, HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)));
                                 return;
                             }
@@ -5599,7 +5600,7 @@ public class KVMHost extends HostBase implements Host {
                             if (lastHostInv == null) {
                                 trigger.next();
                             } else {
-                                trigger.fail(operr("the host[ip:%s] has been taken over, because flag[HostUuid:%s] exists in the database",
+                                trigger.fail(operr(ORG_ZSTACK_KVM_10110, "the host[ip:%s] has been taken over, because flag[HostUuid:%s] exists in the database",
                                         self.getManagementIp(), lastHostInv.getUuid()));
                             }
                         } catch (Exception e) {
@@ -5622,7 +5623,7 @@ public class KVMHost extends HostBase implements Host {
                         SshResult ret = sshShell.runCommand("uname -m");
 
                         if (ret.isSshFailure() || ret.getReturnCode() != 0) {
-                            return operr("unable to get host cpu architecture, please check if username/password is wrong; %s", ret.getExitErrorMessage());
+                            return operr(ORG_ZSTACK_KVM_10111, "unable to get host cpu architecture, please check if username/password is wrong; %s", ret.getExitErrorMessage());
                         }
                         return ret.getStdout().trim();
                     }
@@ -5649,7 +5650,7 @@ public class KVMHost extends HostBase implements Host {
                         dbf.update(host);
                         self.setArchitecture(hostArchitecture);
                         if (cluster.getArchitecture() != null && !hostArchitecture.equals(cluster.getArchitecture()) && !cluster.getHypervisorType().equals("baremetal2")) {
-                            trigger.fail(operr("host cpu architecture[%s] is not matched the cluster[%s]", hostArchitecture, cluster.getArchitecture()));
+                            trigger.fail(operr(ORG_ZSTACK_KVM_10112, "host cpu architecture[%s] is not matched the cluster[%s]", hostArchitecture, cluster.getArchitecture()));
                             return;
                         }
 
@@ -5866,7 +5867,7 @@ public class KVMHost extends HostBase implements Host {
                                     .sudoCommand(builder.toString())
                                     .runErrorByExceptionAndClose();
                         } catch (SshException ex) {
-                            throw new OperationFailureException(operr(ex.toString()));
+                            throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10113, ex.toString()));
                         }
 
                         trigger.next();
@@ -5970,7 +5971,7 @@ public class KVMHost extends HostBase implements Host {
                                         if (ret.isSuccess()) {
                                             trigger.next();
                                         } else {
-                                            trigger.fail(Platform.operr("%s", ret.getError()));
+                                            trigger.fail(Platform.operr(ORG_ZSTACK_KVM_10114, "%s", ret.getError()));
                                         }
                                     }
 
@@ -5991,7 +5992,7 @@ public class KVMHost extends HostBase implements Host {
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
                             if (!checkQemuLibvirtVersionOfHost()) {
-                                trigger.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because qemu/libvirt version does not match",
+                                trigger.fail(operr(ORG_ZSTACK_KVM_10115, "host [uuid:%s] cannot be added to cluster [uuid:%s] because qemu/libvirt version does not match",
                                         self.getUuid(), self.getClusterUuid()));
                                 return;
                             }
@@ -6001,7 +6002,7 @@ public class KVMHost extends HostBase implements Host {
                                         .getTokenByResourceUuid(self.getClusterUuid(), KVMSystemTags.CHECK_CLUSTER_CPU_MODEL_TOKEN)
                                         .equals("true")
                                         && !checkCpuModelOfHost()) {
-                                    trigger.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
+                                    trigger.fail(operr(ORG_ZSTACK_KVM_10116, "host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
                                             self.getUuid(), self.getClusterUuid()));
                                     return;
                                 }
@@ -6011,7 +6012,7 @@ public class KVMHost extends HostBase implements Host {
                             }
 
                             if (KVMGlobalConfig.CHECK_HOST_CPU_MODEL_NAME.value(Boolean.class) && !checkCpuModelOfHost()) {
-                                trigger.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
+                                trigger.fail(operr(ORG_ZSTACK_KVM_10117, "host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
                                         self.getUuid(), self.getClusterUuid()));
                                 return;
                             }
@@ -6066,12 +6067,12 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void success(HostFactResponse ret) {
                                 if (!ret.isSuccess()) {
-                                    trigger.fail(operr("operation error, because:%s", ret.getError()));
+                                    trigger.fail(operr(ORG_ZSTACK_KVM_10118, "operation error, because:%s", ret.getError()));
                                     return;
                                 }
 
                                 if (!checkVirtualizationEnabled(ret)) {
-                                    trigger.fail(operr("cannot find either 'vmx' or 'svm' in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting"));
+                                    trigger.fail(operr(ORG_ZSTACK_KVM_10119, "cannot find either 'vmx' or 'svm' in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting"));
                                     return;
                                 }
 
@@ -6106,7 +6107,7 @@ public class KVMHost extends HostBase implements Host {
                     return;
                 }
 
-                errorCodeList.getCauses().add(operr("host[uuid:%s]'s %s changed, old:%s, new:%s",
+                errorCodeList.getCauses().add(operr(ORG_ZSTACK_KVM_10120, "host[uuid:%s]'s %s changed, old:%s, new:%s",
                         self.getUuid(),
                         systemTag.getTagFormat(),
                         oldValue, newValue));
@@ -6223,7 +6224,7 @@ public class KVMHost extends HostBase implements Host {
                 .run(chain -> handleShutdownHost(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
-                        new HostBase.HostDisconnectedCanonicalEvent(msg.getHostUuid(), operr("host[uuid:%s] becomes power off, send notify",
+                        new HostBase.HostDisconnectedCanonicalEvent(msg.getHostUuid(), operr(ORG_ZSTACK_KVM_10121, "host[uuid:%s] becomes power off, send notify",
                                 msg.getHostUuid())).fire();
                         chain.next();
                     }
@@ -6262,7 +6263,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(KVMAgentCommands.ShutdownHostResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10122, "operation error, because:%s", ret.getError()));
                     bus.reply(msg, reply);
                     completion.done();
                     return;
@@ -6301,7 +6302,7 @@ public class KVMHost extends HostBase implements Host {
                         if (isTimeout()) {
                             if (!msg.isReturnEarly()) {
                                 reply.setSuccess(false);
-                                reply.setError(operr("host[%s] not shutdown in %d seconds", msg.getHostUuid(), ctimeout));
+                                reply.setError(operr(ORG_ZSTACK_KVM_10123, "host[%s] not shutdown in %d seconds", msg.getHostUuid(), ctimeout));
                                 bus.reply(msg, reply);
                                 noErrorCompletion.done();
                             }
@@ -6377,7 +6378,7 @@ public class KVMHost extends HostBase implements Host {
                 if (ret.isSuccess()) {
                     completion.success();
                 } else {
-                    completion.fail(Platform.operr("%s", ret.getError()));
+                    completion.fail(Platform.operr(ORG_ZSTACK_KVM_10124, "%s", ret.getError()));
                 }
             }
 
@@ -6401,7 +6402,7 @@ public class KVMHost extends HostBase implements Host {
                         reply.setExistPaths(response.existPaths == null ? Collections.emptyMap() : new HashMap<>(response.existPaths));
                     } else {
                         logger.warn(String.format("failed to check file %s on host[uuid:%s]", msg.getPaths(), msg.getHostUuid()));
-                        reply.setError(Platform.operr(response.getError(),
+                        reply.setError(Platform.operr(ORG_ZSTACK_KVM_10125, response.getError(),
                                 "fail to check file %s on host[uuid:%s]", msg.getPaths(), msg.getHostUuid()));
                     }
                     bus.reply(msg, reply);
@@ -6465,9 +6466,9 @@ public class KVMHost extends HostBase implements Host {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         if (self.getState() == HostState.PreMaintenance) {
-                            trigger.fail(Platform.operr("host is in the premaintenance state, cannot update os"));
+                            trigger.fail(Platform.operr(ORG_ZSTACK_KVM_10126, "host is in the premaintenance state, cannot update os"));
                         } else if (self.getStatus() != HostStatus.Connected) {
-                            trigger.fail(Platform.operr("host is not in the connected status, cannot update os"));
+                            trigger.fail(Platform.operr(ORG_ZSTACK_KVM_10127, "host is not in the connected status, cannot update os"));
                         } else {
                             trigger.next();
                         }
@@ -6538,7 +6539,7 @@ public class KVMHost extends HostBase implements Host {
                                     data.put(UPDATE_OS_RSP, ret);
                                     trigger.next();
                                 } else {
-                                    trigger.fail(Platform.operr("%s", ret.getError()));
+                                    trigger.fail(Platform.operr(ORG_ZSTACK_KVM_10128, "%s", ret.getError()));
                                 }
                             }
 
@@ -6735,7 +6736,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(ScanVmPortResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10129, "operation error, because:%s", ret.getError()));
                 } else {
                     reply.setStatus(ret.getPortStatus());
                 }
@@ -6773,7 +6774,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(AttachVolumeRsp rsp) {
                 if (!rsp.isSuccess()) {
-                    reply.setError(operr("failed to attach volume to host, because:%s", rsp.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10130, "failed to attach volume to host, because:%s", rsp.getError()));
                     bus.reply(msg, reply);
                     completion.done();
                     return;
@@ -6834,7 +6835,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(DetachVolumeRsp rsp) {
                 if (!rsp.isSuccess()) {
-                    reply.setError(operr("failed to detach volume from host, because:%s", rsp.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10131, "failed to detach volume from host, because:%s", rsp.getError()));
                 } else {
                     new SQLBatch() {
                         @Override
@@ -6900,7 +6901,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(VmFstrimRsp rsp) {
                 if (!rsp.isSuccess()) {
-                    reply.setError(operr("vm[%s] failed to fstrim, because:%s", msg.getVmUuid(), rsp.getError()));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10132, "vm[%s] failed to fstrim, because:%s", msg.getVmUuid(), rsp.getError()));
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -6972,7 +6973,7 @@ public class KVMHost extends HostBase implements Host {
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 AgentResponse rsp = r.toResponse(AgentResponse.class);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr(rsp.getError()));
+                    completion.fail(operr(ORG_ZSTACK_KVM_10133, rsp.getError()));
                 } else {
                     completion.success(new UpdateVmConsolePasswordOnHypervisorReply());
                 }

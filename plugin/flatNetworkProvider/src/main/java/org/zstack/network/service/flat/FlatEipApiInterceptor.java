@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by MaJin on 2017/12/21.
@@ -75,7 +76,7 @@ public class FlatEipApiInterceptor implements GlobalApiMessageInterceptor {
         }
 
         if (StringUtils.isEmpty(gateway)) {
-            throw new ApiMessageInterceptionException(argerr("could not attach eip because there is no gateway for nic[uuid:%s]", nicUuid));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10000, "could not attach eip because there is no gateway for nic[uuid:%s]", nicUuid));
         }
     }
 
@@ -138,7 +139,7 @@ public class FlatEipApiInterceptor implements GlobalApiMessageInterceptor {
                 .param("publicL3Uuid", pubL3Uuid)
                 .find() > 0;
         if (!isPublicL2NetworkAttachedVmCluster){
-            throw new ApiMessageInterceptionException(argerr("L2Network where vip's L3Network based hasn't attached" +
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10001, "L2Network where vip's L3Network based hasn't attached" +
                     " the cluster where vmNic[uuid:%s] located", vmNicUuid));
         }
     }
@@ -163,7 +164,7 @@ public class FlatEipApiInterceptor implements GlobalApiMessageInterceptor {
             boolean oldVipVersion = NetworkUtils.isIpv4Address(oldVipIp);
             if (oldVipVersion == newVipVersion) {
                 String version = oldVipVersion ? "ipv4" : "ipv6";
-                throw new ApiMessageInterceptionException(argerr("can not bound more than 1 %s eip to a vm nic[uuid:%s] of flat ",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10002, "can not bound more than 1 %s eip to a vm nic[uuid:%s] of flat ",
                         version, vmNicUuid));
             }
         }

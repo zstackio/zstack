@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -117,7 +118,7 @@ public class ExternalPrimaryStorageSpaceCapacityHelper extends ExternalPrimarySt
     private ExternalPrimaryStorageSpaceVO getSpaceFromInstallUrl(String installPath) {
         Map<String, ExternalPrimaryStorageSpaceVO> spacesByUrl = getStorageSpacesByUrl();
         String spaceUrl = spacesByUrl.keySet().stream().filter(installPath::startsWith)
-                .findFirst().orElseThrow(() -> new OperationFailureException(operr("cannot find storage space for installPath[%s]", installPath)));
+                .findFirst().orElseThrow(() -> new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10002, "cannot find storage space for installPath[%s]", installPath)));
         return spacesByUrl.get(spaceUrl);
     }
 
@@ -168,7 +169,7 @@ public class ExternalPrimaryStorageSpaceCapacityHelper extends ExternalPrimarySt
         ExternalPrimaryStorageSpaceVO space = getSpaceFromInstallUrl(installPath);
         long originAvailableCapacity = space.getAvailableCapacity();
         if (originAvailableCapacity < size) {
-            throw new OperationFailureException(operr("required space[locationUrl:%s] cannot satisfy conditions [availableSize > %s bytes], " +
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10003, "required space[locationUrl:%s] cannot satisfy conditions [availableSize > %s bytes], " +
                     "current available size %s", space.getLocationUrl(), size, originAvailableCapacity));
         }
 

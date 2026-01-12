@@ -25,6 +25,7 @@ import org.zstack.header.volume.VolumeInventory;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmInstantiateAttachingVolumeFlow extends NoRollbackFlow {
@@ -51,7 +52,7 @@ public class VmInstantiateAttachingVolumeFlow extends NoRollbackFlow {
                 .select(PrimaryStorageHostRefVO_.status)
                 .findValue();
         if (status != null && !PrimaryStorageHostStatus.Connected.equals(status)) {
-            chain.fail(operr("Failed to instantiate volume. Because vm's" +
+            chain.fail(operr(ORG_ZSTACK_COMPUTE_VM_10090, "Failed to instantiate volume. Because vm's" +
                     " host[uuid: %s] and allocated primary storage[uuid: %s] is not connected.",
                     spec.getDestHost().getUuid(), pinv.getUuid()));
             return;

@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -101,10 +102,10 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         // in case a wrong flow returns an empty result set
         if (result.isEmpty()) {
             if (isDryRun) {
-                dryRunCompletion.fail(err(HostAllocatorError.NO_AVAILABLE_HOST,
+                dryRunCompletion.fail(err(ORG_ZSTACK_COMPUTE_ALLOCATOR_10017, HostAllocatorError.NO_AVAILABLE_HOST,
                         "host allocation flow doesn't indicate any details"));
             } else {
-                completion.fail(err(HostAllocatorError.NO_AVAILABLE_HOST,
+                completion.fail(err(ORG_ZSTACK_COMPUTE_ALLOCATOR_10018, HostAllocatorError.NO_AVAILABLE_HOST,
                         "host allocation flow doesn't indicate any details"));
             }
             return;
@@ -145,7 +146,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
             }
         } catch (Throwable t) {
             logger.warn("unhandled throwable", t);
-            completion.fail(inerr(t.toString()));
+            completion.fail(inerr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10019, t.toString()));
         }
     }
 
@@ -228,7 +229,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
                     lastFlow.getClass().getName(), errorCode.getDetails()));
             this.errorCode = errorCode;
         } else {
-            this.errorCode = err(HostAllocatorError.NO_AVAILABLE_HOST, seriesErrorWhenPagination.iterator().next(), "unable to allocate hosts; due to pagination is enabled, " +
+            this.errorCode = err(ORG_ZSTACK_COMPUTE_ALLOCATOR_10020, HostAllocatorError.NO_AVAILABLE_HOST, seriesErrorWhenPagination.iterator().next(), "unable to allocate hosts; due to pagination is enabled, " +
                     "there might be several allocation failures happened before;" +
                     " the error list is %s", seriesErrorWhenPagination.stream().map(ErrorCode::getDetails).collect(Collectors.toList()));
             logger.debug(this.errorCode.getDetails());

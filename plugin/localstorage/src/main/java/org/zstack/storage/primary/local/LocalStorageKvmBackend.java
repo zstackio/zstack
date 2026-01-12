@@ -73,6 +73,7 @@ import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 6/30/2015.
@@ -140,7 +141,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             if (success) {
                 return null;
             }
-            return operr("operation error, because:%s", error);
+            return operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10069, "operation error, because:%s", error);
         }
     }
 
@@ -382,7 +383,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public boolean inUse;
         public ErrorCode buildErrorCode() {
             if (inUse) {
-                return Platform.err(VolumeErrors.VOLUME_IN_USE, getError());
+                return Platform.err(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10070, VolumeErrors.VOLUME_IN_USE, getError());
             }
             return super.buildErrorCode();
         }
@@ -1259,7 +1260,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                completion.fail(operr("unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s]",
+                completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10071, "unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s]",
                         volume.getUuid(), volume.getName(), msg.getDestHost().getUuid()).causedBy(errorCode));
             }
         });
@@ -1287,7 +1288,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             final String bsUuid = selector.select();
             if (bsUuid == null) {
                 throw new OperationFailureException(operr(
-                        "the image[uuid:%s, name: %s] is not available to download on any backup storage:\n" +
+                ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10072,         "the image[uuid:%s, name: %s] is not available to download on any backup storage:\n" +
                                 "1. check if image is in status of Deleted\n" +
                                 "2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:%s]",
                         ispec.getInventory().getUuid(), ispec.getInventory().getName(), self.getZoneUuid()));
@@ -1394,7 +1395,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                completion.fail(operr("unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s]",
+                completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10073, "unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s]",
                         volume.getUuid(), volume.getName(), hostUuid).causedBy(errorCode));
             }
         });
@@ -2189,12 +2190,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             public void run(FlowTrigger trigger, Map data) {
                 ReinitImageCmd cmd = new ReinitImageCmd();
                 if (msg.getVolume().getRootImageUuid() == null) {
-                    completion.fail(operr("root image has been deleted, cannot reimage now"));
+                    completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10074, "root image has been deleted, cannot reimage now"));
                     return;
                 }
 
                 if (!dbf.isExist(msg.getVolume().getRootImageUuid(), ImageVO.class)) {
-                    completion.fail(operr("root image has been deleted, cannot reimage now"));
+                    completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10075, "root image has been deleted, cannot reimage now"));
                     return;
                 }
                 cmd.imagePath = makeCachedImageInstallUrlFromImageUuidForTemplate(msg.getVolume().getRootImageUuid());
@@ -2337,7 +2338,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             if (state != VmInstanceState.Stopped && state != VmInstanceState.Running
                     && state != VmInstanceState.Destroyed && state != VmInstanceState.Paused) {
-                throw new OperationFailureException(operr("the volume[uuid;%s] is attached to a VM[uuid:%s] which is in state of %s, cannot do the snapshot merge",
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10076, "the volume[uuid;%s] is attached to a VM[uuid:%s] which is in state of %s, cannot do the snapshot merge",
                         volume.getUuid(), volume.getVmInstanceUuid(), state));
             }
 
@@ -2454,7 +2455,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 GetVolumeSizeRsp rsp = wrapper.getResponse(GetVolumeSizeRsp.class);
-                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
+                return rsp.isSuccess() ? null : operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10077, "operation error, because:%s", rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -2665,7 +2666,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             @Override
                             public ErrorCode getError(KvmResponseWrapper wrapper) {
                                 GetQCOW2ReferenceRsp rsp = wrapper.getResponse(GetQCOW2ReferenceRsp.class);
-                                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
+                                return rsp.isSuccess() ? null : operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10078, "operation error, because:%s", rsp.getError());
                             }
                         }, new ReturnValueCompletion<KvmResponseWrapper>(trigger) {
                             @Override
@@ -2674,7 +2675,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 if (rsp.referencePaths == null || rsp.referencePaths.isEmpty()) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(inerr("[THIS IS A BUG NEEDED TO BE FIXED RIGHT NOW, PLEASE REPORT TO US ASAP] the image cache file[%s] is still referenced by" +
+                                    trigger.fail(inerr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10079, "[THIS IS A BUG NEEDED TO BE FIXED RIGHT NOW, PLEASE REPORT TO US ASAP] the image cache file[%s] is still referenced by" +
                                             " below QCOW2 files:\n%s", msg.getInstallPath(), StringUtils.join(rsp.referencePaths, "\n")));
                                 }
                             }
@@ -3728,7 +3729,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cmd.volumeUuid = msg.getVolume().getUuid();
 
         if (!msg.getVolume().getInstallPath().startsWith(cmd.srcDir)) {
-             completion.fail(operr("why volume[uuid:%s, installPath:%s] not in directory %s",
+             completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10080, "why volume[uuid:%s, installPath:%s] not in directory %s",
                      cmd.volumeUuid, msg.getVolume().getInstallPath(), cmd.srcDir));
              return;
         }
@@ -3796,7 +3797,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                completion.fail(operr("cannot find flag file [%s] on host [%s], because: %s", makeInitializedFilePath(), hostUuid, errorCode.getCause().getDetails()));
+                completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10081, "cannot find flag file [%s] on host [%s], because: %s", makeInitializedFilePath(), hostUuid, errorCode.getCause().getDetails()));
             }
         });
     }
@@ -3817,7 +3818,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                completion.fail(operr("cannot create flag file [%s] on host [%s], because: %s", makeInitializedFilePath(), hostUuid, errorCode.getCause().getDetails()));
+                completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10082, "cannot create flag file [%s] on host [%s], because: %s", makeInitializedFilePath(), hostUuid, errorCode.getCause().getDetails()));
             }
         });
     }

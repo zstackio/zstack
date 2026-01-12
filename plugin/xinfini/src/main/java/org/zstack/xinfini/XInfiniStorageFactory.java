@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class XInfiniStorageFactory implements ExternalPrimaryStorageSvcBuilder, BackupStorageSelector, VolumeAfterExpungeExtensionPoint {
 
@@ -39,7 +40,7 @@ public class XInfiniStorageFactory implements ExternalPrimaryStorageSvcBuilder, 
     public void discover(String url, String config, ReturnValueCompletion<AddonInfo> completion) {
         // xinfini must set config
         if (StringUtils.isEmpty(config)) {
-            completion.fail(operr("empty config, cannot discover xinfini"));
+            completion.fail(operr(ORG_ZSTACK_XINFINI_10010, "empty config, cannot discover xinfini"));
             return;
         }
 

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
         KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint {
@@ -115,12 +116,12 @@ public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
 
         if (!volumeTO.isUseVirtio()) {
             throw new OperationFailureException(
-                    argerr("vhostuser disk only support virtio mode, check image platform has virtio driver or not"));
+                    argerr(ORG_ZSTACK_VHOST_KVM_10000, "vhostuser disk only support virtio mode, check image platform has virtio driver or not"));
         }
 
         if (volumeTO.isUseVirtioSCSI()) {
             throw new OperationFailureException(
-                    argerr("vhostuser disk not support virtio-scsi mode, please turn off virtio-scsi mode"));
+                    argerr(ORG_ZSTACK_VHOST_KVM_10001, "vhostuser disk not support virtio-scsi mode, please turn off virtio-scsi mode"));
         }
 
         PrimaryStorageNodeSvc nodeSvc = getNodeService(volumeInventory);

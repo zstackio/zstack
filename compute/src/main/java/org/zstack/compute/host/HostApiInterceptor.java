@@ -19,6 +19,7 @@ import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -69,20 +70,20 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIDeleteHostNetworkServiceTypeMsg msg) {
         if (Q.New(HostNetworkLabelVO.class).eq(HostNetworkLabelVO_.uuid, msg.getUuid())
                 .eq(HostNetworkLabelVO_.system, Boolean.TRUE).isExists()) {
-            throw new ApiMessageInterceptionException(argerr("system host network service type[%s] cannot be deleted", msg.getUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_HOST_10108, "system host network service type[%s] cannot be deleted", msg.getUuid()));
         }
     }
 
     private void validate(APIUpdateHostNetworkServiceTypeMsg msg) {
         if (Q.New(HostNetworkLabelVO.class).eq(HostNetworkLabelVO_.uuid, msg.getUuid())
                 .eq(HostNetworkLabelVO_.system, Boolean.TRUE).isExists()) {
-            throw new ApiMessageInterceptionException(argerr("system host network service type[%s] cannot be updated", msg.getUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_HOST_10109, "system host network service type[%s] cannot be updated", msg.getUuid()));
         }
     }
 
     private void validate(APICreateHostNetworkServiceTypeMsg msg) {
         if (Q.New(HostNetworkLabelVO.class).eq(HostNetworkLabelVO_.serviceType, msg.getServiceType()).isExists()) {
-            throw new ApiMessageInterceptionException(argerr("there has been a host network service type[%s]", msg.getServiceType()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_HOST_10110, "there has been a host network service type[%s]", msg.getServiceType()));
         }
     }
 
@@ -97,7 +98,7 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             ret.setRetCode(0);
         }
         if (!ret.isReturnCode(0)) {
-            throw new ApiMessageInterceptionException(operr("webssh server is not running."));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_HOST_10111, "webssh server is not running."));
         }
     }
 
@@ -114,14 +115,14 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
             q.add(HostVO_.managementIp, Op.EQ, msg.getManagementIp());
             if (q.isExists()) {
-                throw new ApiMessageInterceptionException(argerr("there has been a host having managementIp[%s]", msg.getManagementIp()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_HOST_10112, "there has been a host having managementIp[%s]", msg.getManagementIp()));
             }
         }
     }
 
     private void validate(APIAddHostMsg msg) {
         if (!NetworkUtils.isIpv4Address(msg.getManagementIp()) && !NetworkUtils.isHostname(msg.getManagementIp())) {
-            throw new ApiMessageInterceptionException(argerr("managementIp[%s] is neither an IPv4 address nor a valid hostname", msg.getManagementIp()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_HOST_10113, "managementIp[%s] is neither an IPv4 address nor a valid hostname", msg.getManagementIp()));
         }
     }
 
@@ -131,7 +132,7 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
                 .eq(HostVO_.uuid,msg.getHostUuid())
                 .findValue();
         if (hostStatus != HostStatus.Connected && msg.getStateEvent().equals(HostStateEvent.maintain.toString())){
-            throw new ApiMessageInterceptionException(operr("can not maintain host[uuid:%s, status:%s]which is not Connected", msg.getHostUuid(), hostStatus));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_HOST_10114, "can not maintain host[uuid:%s, status:%s]which is not Connected", msg.getHostUuid(), hostStatus));
         }
     }
 }

@@ -20,6 +20,7 @@ import static org.zstack.core.Platform.inerr;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AsyncWorkFlowChain {
     protected static final CLogger logger = Utils.getLogger(WorkFlowChain.class);
@@ -151,7 +152,7 @@ public class AsyncWorkFlowChain {
             }
         } catch (Throwable t) {
             logger.warn(String.format("workflow[%s] in chain[%s] failed because of an unhandle exception", flow.getName(), getName()), t);
-            ErrorCode err = inerr(t.getMessage());
+            ErrorCode err = inerr(ORG_ZSTACK_CORE_WORKFLOW_10002, t.getMessage());
             try {
                 fail(vo, err);
             } catch (Throwable t1) {

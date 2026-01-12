@@ -18,6 +18,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.LockModeType;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2016/4/28.
@@ -136,7 +137,7 @@ public class BackupStorageCapacityUpdater {
             if (!exceptionOnFailure) {
                 return false;
             } else {
-                throw new OperationFailureException(operr("cannot reserve %s on the backup storage[uuid:%s], it only has %s available",
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_BACKUP_10015, "cannot reserve %s on the backup storage[uuid:%s], it only has %s available",
                                 size, backupStorageUuid, capacityVO.getAvailableCapacity()));
             }
         }

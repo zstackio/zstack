@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class XmlHookManagerImpl extends AbstractService implements XmlHookManager, Component,
         PrepareDbInitialValueExtensionPoint, VmInstanceBeforeStartExtensionPoint, ClusterUpdateOSExtensionPoint {
@@ -71,7 +72,7 @@ public class XmlHookManagerImpl extends AbstractService implements XmlHookManage
     private void passThrough(XmlHookMessage msg) {
         XmlHookVO vo = dbf.findByUuid(msg.getXmlHookUuid(), XmlHookVO.class);
         if (vo == null) {
-            bus.replyErrorByMessageType((Message) msg, err(SysErrors.RESOURCE_NOT_FOUND, "unable to find xmlHook[uuid=%s]", msg.getXmlHookUuid()));
+            bus.replyErrorByMessageType((Message) msg, err(ORG_ZSTACK_KVM_XMLHOOK_10000, SysErrors.RESOURCE_NOT_FOUND, "unable to find xmlHook[uuid=%s]", msg.getXmlHookUuid()));
             return;
         }
 

@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by miao on 12/19/16.
@@ -453,7 +454,7 @@ public class LdapUtil {
                         }
                     } catch (javax.naming.NamingException e){
                         logger.error("query ldap entry attributes fail", e.getCause());
-                        throw new OperationFailureException(operr("query ldap entry fail, %s", e.toString()));
+                        throw new OperationFailureException(operr(ORG_ZSTACK_LDAP_10015, "query ldap entry fail, %s", e.toString()));
                     }
 
                     return result;
@@ -503,7 +504,7 @@ public class LdapUtil {
                             }
                         } catch (javax.naming.NamingException e){
                             logger.error("query ldap entry attributes fail", e.getCause());
-                            throw new OperationFailureException(operr("query ldap entry fail, %s", e.toString()));
+                            throw new OperationFailureException(operr(ORG_ZSTACK_LDAP_10016, "query ldap entry fail, %s", e.toString()));
                         }
 
                         return result;
@@ -586,7 +587,7 @@ public class LdapUtil {
             }
         }
 
-        throw new OperationFailureException(operr("query ldap entry[filter: %s] fail, because %s", filter, errorMessage));
+        throw new OperationFailureException(operr(ORG_ZSTACK_LDAP_10017, "query ldap entry[filter: %s] fail, because %s", filter, errorMessage));
     }
 
     /**
@@ -799,7 +800,7 @@ public class LdapUtil {
                 dn = result.get(0).toString();
             } else if (result.size() > 1) {
                 throw new OperationFailureException(err(
-                        LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, "More than one ldap search result"));
+                ORG_ZSTACK_LDAP_10018,         LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, "More than one ldap search result"));
             } else {
                 return "";
             }
@@ -807,7 +808,7 @@ public class LdapUtil {
         } catch (NamingException e) {
             LdapServerVO ldapServerVO = getLdapServer();
             throw new OperationFailureException(err(
-                    LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, "You'd better check the LDAP/AD server[url:%s, baseDN:%s, encryption:%s, username:%s, password:******]" +
+            ORG_ZSTACK_LDAP_10019,         LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, "You'd better check the LDAP/AD server[url:%s, baseDN:%s, encryption:%s, username:%s, password:******]" +
                             " configuration and test connection first.getDn error filter:%s",
                     ldapServerVO.getUrl(), ldapServerVO.getBase(),
                     ldapServerVO.getEncryption(), ldapServerVO.getUsername(), filter));

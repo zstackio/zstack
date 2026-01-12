@@ -13,6 +13,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.List;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 class ClusterExtensionPointEmitter implements Component {
 	private static final CLogger logger = Utils.getLogger(ClusterExtensionPointEmitter.class);
@@ -108,7 +109,7 @@ class ClusterExtensionPointEmitter implements Component {
         for (ClusterUpdateOSExtensionPoint ext : updateOSExts) {
             String error = ext.preUpdateClusterOS(updateClusterOSStruct);
             if (error != null) {
-                return operr(error);
+                return operr(ORG_ZSTACK_COMPUTE_CLUSTER_10010, error);
             }
         }
         return null;

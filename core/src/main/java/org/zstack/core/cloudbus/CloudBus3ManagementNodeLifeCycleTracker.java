@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class CloudBus3ManagementNodeLifeCycleTracker implements BeforeSendMessageInterceptor, BeforeDeliveryMessageInterceptor,
         ManagementNodeChangeListener, Component {
@@ -100,7 +101,7 @@ public class CloudBus3ManagementNodeLifeCycleTracker implements BeforeSendMessag
                 return false;
             }
 
-            ErrorCode err = err(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
+            ErrorCode err = err(ORG_ZSTACK_CORE_CLOUDBUS_10000, SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
                     "management node[uuid:%s] is unavailable", nodeUUID);
 
             if (message instanceof APISyncCallMessage) {

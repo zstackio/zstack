@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -101,7 +102,7 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
         }
 
         if (ipr == null) {
-            throw new OperationFailureException(err(L3Errors.ALLOCATE_IP_ERROR,
+            throw new OperationFailureException(err(ORG_ZSTACK_NETWORK_L3_10074, L3Errors.ALLOCATE_IP_ERROR,
                     "cannot find ip range that has ip[%s] in l3Network[uuid:%s]", msg.getRequiredIp(), msg.getL3NetworkUuid()
             ));
         }
@@ -132,7 +133,7 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
         }
 
         if (ipr == null) {
-            throw new OperationFailureException(err(L3Errors.ALLOCATE_IP_ERROR,
+            throw new OperationFailureException(err(ORG_ZSTACK_NETWORK_L3_10075, L3Errors.ALLOCATE_IP_ERROR,
                     "cannot find ip range that has ip[%s] in l3Network[uuid:%s]", msg.getRequiredIp(), msg.getL3NetworkUuid()
             ));
         }

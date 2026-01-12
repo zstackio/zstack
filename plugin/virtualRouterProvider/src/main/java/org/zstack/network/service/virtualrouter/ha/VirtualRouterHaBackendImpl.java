@@ -20,6 +20,7 @@ import static org.zstack.core.Platform.operr;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Component {
     @Autowired
@@ -60,7 +61,7 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
     public void virtualRouterOverlayMsgHandle(OverlayMessage message, Completion completion) {
         List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
         if (exps.isEmpty()) {
-            completion.fail(operr("ha group extension point nil"));
+            completion.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_HA_10000, "ha group extension point nil"));
             return;
         }
 

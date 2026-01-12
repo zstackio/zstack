@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 7/29/2015.
@@ -79,7 +80,7 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
 
     private void validate(APIAddCephPrimaryStoragePoolMsg msg) {
         if (!CharacterUtils.checkCharacter(msg.getPoolName())){
-            throw new ApiMessageInterceptionException(argerr("operation failure, because the poolName[poolName:%s] can not include unprintable ascii characters.", msg.getPoolName()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_CEPH_10006, "operation failure, because the poolName[poolName:%s] can not include unprintable ascii characters.", msg.getPoolName()));
         }
 
         String duplicatePoolUuid = Q.New(CephPrimaryStoragePoolVO.class)
@@ -89,12 +90,12 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
                 .select(CephPrimaryStoragePoolVO_.uuid).findValue();
         if (duplicatePoolUuid != null && msg.isCreate()) {
             throw new ApiMessageInterceptionException(argerr(
-                    "creation failure, duplicate poolName[%s]. There has been a pool[uuid:%s] with the same name existing.",
+            ORG_ZSTACK_STORAGE_CEPH_10007,         "creation failure, duplicate poolName[%s]. There has been a pool[uuid:%s] with the same name existing.",
                     msg.getPoolName(), duplicatePoolUuid));
 
         } else if (duplicatePoolUuid != null && !msg.isCreate()) {
             throw new ApiMessageInterceptionException(argerr(
-                    "Ceph pool[uuid:%s] with this name is already added into ZStack and used elsewhere, cannot reuse the ceph pool.",
+            ORG_ZSTACK_STORAGE_CEPH_10008,         "Ceph pool[uuid:%s] with this name is already added into ZStack and used elsewhere, cannot reuse the ceph pool.",
                     duplicatePoolUuid));
         }
 
@@ -121,7 +122,7 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
         q.add(CephPrimaryStorageMonVO_.hostname, Op.IN, hostnames);
         List<String> existing = q.listValue();
         if (!existing.isEmpty()) {
-            throw new ApiMessageInterceptionException(argerr("cannot add ceph primary storage, there has been some ceph primary storage using mon[hostnames:%s]", existing));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_CEPH_10009, "cannot add ceph primary storage, there has been some ceph primary storage using mon[hostnames:%s]", existing));
         }
     }
 
@@ -132,7 +133,7 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
             if (!monUrls.contains(uri.getHostname())) {
                 monUrls.add(uri.getHostname());
             } else {
-                throw new ApiMessageInterceptionException(argerr("Cannot add same host[%s] in mons", uri.getHostname()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_CEPH_10010, "Cannot add same host[%s] in mons", uri.getHostname()));
             }
         }
     }
@@ -145,7 +146,7 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
                 .collect(Collectors.toList());
 
         if (Q.New(CephPrimaryStorageMonVO.class).in(CephPrimaryStorageMonVO_.hostname, hostnames).isExists()){
-            throw new ApiMessageInterceptionException(argerr("Adding the same Mon node is not allowed"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_CEPH_10011, "Adding the same Mon node is not allowed"));
         }
     }
 
@@ -158,12 +159,12 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
                 .collect(Collectors.toList());
 
         if (Q.New(CephBackupStorageMonVO.class).in(CephBackupStorageMonVO_.hostname, hostnames).isExists()){
-            throw new ApiMessageInterceptionException(argerr("Adding the same Mon node is not allowed"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_CEPH_10012, "Adding the same Mon node is not allowed"));
         }
     }
     private void validate(APIUpdateCephBackupStorageMonMsg msg) {
         if (msg.getHostname() != null && !NetworkUtils.isIpv4Address(msg.getHostname()) && !NetworkUtils.isHostname(msg.getHostname())) {
-            throw new ApiMessageInterceptionException(argerr("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_CEPH_10013, "hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname()));
         }
         SimpleQuery<CephBackupStorageMonVO> q = dbf.createQuery(CephBackupStorageMonVO.class);
         q.select(CephBackupStorageMonVO_.backupStorageUuid);
@@ -175,7 +176,7 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
     private void validate(APIUpdateCephPrimaryStorageMonMsg msg) {
         if (msg.getHostname() != null && !NetworkUtils.isIpv4Address(msg.getHostname()) && !NetworkUtils.isHostname(msg.getHostname())) {
             throw new ApiMessageInterceptionException(argerr(
-                    String.format("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname())
+            ORG_ZSTACK_STORAGE_CEPH_10014,         String.format("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname())
             ));
         }
 
@@ -197,7 +198,7 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
                 throw new ApiMessageInterceptionException(ae.getErrorCode());
             } catch (Exception e) {
                 logger.warn(e.getMessage(), e);
-                throw new ApiMessageInterceptionException(argerr("invalid monUrl[%s]. A valid url is in format of %s", monUrl, MON_URL_FORMAT));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_CEPH_10015, "invalid monUrl[%s]. A valid url is in format of %s", monUrl, MON_URL_FORMAT));
             }
         }
     }
@@ -205,17 +206,17 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
     private void validate(APIAddCephPrimaryStorageMsg msg) {
         if (msg.getDataVolumePoolName() != null && msg.getDataVolumePoolName().isEmpty()) {
             throw new ApiMessageInterceptionException(argerr(
-                    "dataVolumePoolName can be null but cannot be an empty string"
+            ORG_ZSTACK_STORAGE_CEPH_10016,         "dataVolumePoolName can be null but cannot be an empty string"
             ));
         }
         if (msg.getRootVolumePoolName() != null && msg.getRootVolumePoolName().isEmpty()) {
             throw new ApiMessageInterceptionException(argerr(
-                    "rootVolumePoolName can be null but cannot be an empty string"
+            ORG_ZSTACK_STORAGE_CEPH_10017,         "rootVolumePoolName can be null but cannot be an empty string"
             ));
         }
         if (msg.getImageCachePoolName() != null && msg.getImageCachePoolName().isEmpty()) {
             throw new ApiMessageInterceptionException(argerr(
-                    "imageCachePoolName can be null but cannot be an empty string"
+            ORG_ZSTACK_STORAGE_CEPH_10018,         "imageCachePoolName can be null but cannot be an empty string"
             ));
         }
 
@@ -237,15 +238,15 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
         q.add(CephBackupStorageMonVO_.hostname, Op.IN, hostnames);
         List<String> existing = q.listValue();
         if (!existing.isEmpty()) {
-            throw new ApiMessageInterceptionException(argerr("cannot add ceph backup storage, there has been some ceph backup storage using mon[hostnames:%s]", existing));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_CEPH_10019, "cannot add ceph backup storage, there has been some ceph backup storage using mon[hostnames:%s]", existing));
         }
     }
 
     private void validate(APIAddCephBackupStorageMsg msg) {
         if (msg.getPoolName() != null && msg.getPoolName().isEmpty()) {
-            throw new ApiMessageInterceptionException(argerr("poolName can be null but cannot be an empty string"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_CEPH_10020, "poolName can be null but cannot be an empty string"));
         }else if(msg.isImportImages() && msg.getPoolName() == null){
-            throw new ApiMessageInterceptionException(argerr("poolName is required when importImages is true"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_CEPH_10021, "poolName is required when importImages is true"));
         }
 
         checkMonUrls(msg.getMonUrls());

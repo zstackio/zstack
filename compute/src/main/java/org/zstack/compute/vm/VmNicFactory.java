@@ -16,6 +16,7 @@ import javax.persistence.PersistenceException;
 import java.sql.SQLIntegrityConstraintViolationException;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VmNicFactory implements VmInstanceNicFactory {
     private static final CLogger logger = Utils.getLogger(VmNicFactory.class);
@@ -42,7 +43,7 @@ public class VmNicFactory implements VmInstanceNicFactory {
         vnic.setAccountUuid(acntUuid);
         vnic = persistAndRetryIfMacCollision(vnic);
         if (vnic == null) {
-            throw new FlowException(err(VmErrors.ALLOCATE_MAC_ERROR, "unable to find an available mac address after re-try 5 times, too many collisions"));
+            throw new FlowException(err(ORG_ZSTACK_COMPUTE_VM_10089, VmErrors.ALLOCATE_MAC_ERROR, "unable to find an available mac address after re-try 5 times, too many collisions"));
         }
         vnic = dbf.reload(vnic);
         spec.getDestNics().add(VmNicInventory.valueOf(vnic));

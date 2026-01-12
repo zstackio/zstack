@@ -8,6 +8,7 @@ import org.zstack.core.gc.TimeBasedGarbageCollector;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2017/3/5.
@@ -32,7 +33,7 @@ public class BackupStorageDeleteBitGC extends TimeBasedGarbageCollector {
         }
 
         if (bsStatus != BackupStorageStatus.Connected) {
-            completion.fail(operr("the backup storage[uuid:%s] is not in status of" +
+            completion.fail(operr(ORG_ZSTACK_IMAGE_10021, "the backup storage[uuid:%s] is not in status of" +
                     " Connected, current status is %s", backupStorageUuid, bsStatus));
             return;
         }

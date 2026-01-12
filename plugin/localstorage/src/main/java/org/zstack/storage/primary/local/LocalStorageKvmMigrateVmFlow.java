@@ -58,6 +58,7 @@ import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 10/24/2015.
@@ -939,7 +940,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 T rsp = r.toResponse(rspType);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr("operation error, because:%s", rsp.getError()));
+                    completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10041, "operation error, because:%s", rsp.getError()));
                     return;
                 }
 
@@ -1206,7 +1207,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                                 @Override
                                 public void fail(ErrorCode errorCode) {
-                                    trigger.fail(operr("unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s]",
+                                    trigger.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10042, "unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s]",
                                                     p.volume.getUuid(), p.volume.getName(), dstHostUuid).causedBy(errorCode));
                                 }
                             });

@@ -12,6 +12,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by kayo on 2018/7/10.
@@ -58,7 +59,7 @@ public class AccountLoginBackend implements LoginBackend {
         }
 
         if (info.getUserUuid() == null) {
-            completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR, "wrong account name or password"));
+            completion.fail(err(ORG_ZSTACK_IDENTITY_10015, IdentityErrors.AUTHENTICATION_ERROR, "wrong account name or password"));
             return;
         }
 

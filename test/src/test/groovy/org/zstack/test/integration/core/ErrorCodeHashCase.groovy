@@ -1,5 +1,7 @@
 package org.zstack.test.integration.core
 
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+
 import org.springframework.beans.factory.annotation.Autowired
 import org.zstack.core.errorcode.ErrorFacade
 import org.zstack.core.errorcode.ErrorFacadeImpl
@@ -29,9 +31,9 @@ class ErrorCodeHashCase extends SubCase{
         ErrorFacade errf = bean(ErrorFacade.class)
         ErrorCode err1, err2, err3
         ErrorCodeList errl1, errl2, errl3, errl4
-        err1 = operr("test error")
-        err2 = operr("test error")
-        err3 = argerr("test error")
+        err1 = org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_CORE_10001, "test error")
+        err2 = org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_CORE_10002, "test error")
+        err3 = org.zstack.core.Platform.argerr(ORG_ZSTACK_TEST_INTEGRATION_CORE_10003, "test error")
 
         assert err1.hashCode() == err1.hashCode()
         assert err1.hashCode() == err2.hashCode()

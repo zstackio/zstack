@@ -1,5 +1,7 @@
 package org.zstack.test.integration.core
 
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+
 import org.zstack.core.Platform
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.errorcode.ErrorCodeList
@@ -37,7 +39,7 @@ class DistanceElaborationCase extends SubCase {
     }
 
     void testElaboration1() {
-        def err = Platform.operr("arg 'startTime' should format like 'yyyy-MM-dd HH:mm:ss' or '1545380003000'") as ErrorCode
+        def err = org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_CORE_10000, "arg 'startTime' should format like 'yyyy-MM-dd HH:mm:ss' or '1545380003000'") as ErrorCode
         assert err.messages != null
         assert err.messages.method == ElaborationSearchMethod.distance
         assert err.messages.message_cn == "输入参数中 'startTime' 的格式应该类似 'yyyy-MM-dd HH:mm:ss' 或 '1545380003000'。"

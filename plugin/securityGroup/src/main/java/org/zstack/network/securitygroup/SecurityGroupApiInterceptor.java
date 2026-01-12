@@ -49,6 +49,7 @@ import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -145,19 +146,19 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                     .param("vmUuid", ref.getResourceUuid())
                     .list();
             if (!nics.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("could not change resource owner, because the resource[uuid:%s, type:VmInstance] has already attached security group", msg.getResourceUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10000, "could not change resource owner, because the resource[uuid:%s, type:VmInstance] has already attached security group", msg.getResourceUuid()));
             }
         }
     }
 
     private void validate(APIValidateSecurityGroupRuleMsg msg) {
         if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, msg.getSecurityGroupUuid()).isExists()) {
-            throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RESOURCE_NOT_EXIST_ERROR, "invalid security group rule, because security group[uuid:%s] not found", msg.getSecurityGroupUuid()));
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10001, SecurityGroupErrors.RESOURCE_NOT_EXIST_ERROR, "invalid security group rule, because security group[uuid:%s] not found", msg.getSecurityGroupUuid()));
         }
 
         if (msg.getRemoteSecurityGroupUuid() != null) {
             if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, msg.getRemoteSecurityGroupUuid()).isExists()) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RESOURCE_NOT_EXIST_ERROR, "invalid security group rule, because remote security group[uuid:%s] not found", msg.getRemoteSecurityGroupUuid()));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10002, SecurityGroupErrors.RESOURCE_NOT_EXIST_ERROR, "invalid security group rule, because remote security group[uuid:%s] not found", msg.getRemoteSecurityGroupUuid()));
             }
         }
 
@@ -201,48 +202,48 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
         if (SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol())) {
             if (msg.getStartPort() != -1 || msg.getEndPort() != -1) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid security group rule, because startPort and endPort must be -1 when protocol is ALL or ICMP"));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10003, SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid security group rule, because startPort and endPort must be -1 when protocol is ALL or ICMP"));
             }
         } else {
             if (msg.getStartPort() > msg.getEndPort()) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid security group rule, because invalid endPort[%d], endPort must be greater than or equal to startPort[%d]", msg.getEndPort(), msg.getStartPort()));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10004, SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid security group rule, because invalid endPort[%d], endPort must be greater than or equal to startPort[%d]", msg.getEndPort(), msg.getStartPort()));
             }
             if (msg.getStartPort() > 65535) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid security group rule, because startPort[%d] must less than 65535 when protocol is[%s]", msg.getStartPort(), msg.getProtocol()));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10005, SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid security group rule, because startPort[%d] must less than 65535 when protocol is[%s]", msg.getStartPort(), msg.getProtocol()));
             }
         }
 
         if (msg.getRemoteSecurityGroupUuid() != null) {
             if (msg.getSrcIpRange() != null || msg.getDstIpRange() != null) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR, "remoteSecurityGroupUuid[%s] and srcIpRange/dstIpRange cannot be set at the same time", msg.getRemoteSecurityGroupUuid()));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10006, SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR, "remoteSecurityGroupUuid[%s] and srcIpRange/dstIpRange cannot be set at the same time", msg.getRemoteSecurityGroupUuid()));
             }
             if (!SecurityGroupConstant.WORLD_OPEN_CIDR.equals(msg.getAllowedCidr()) && !SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6.equals(msg.getAllowedCidr())) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR, "remoteSecurityGroupUuid[%s] and allowedCidr[%s] cannot be set at the same time", msg.getRemoteSecurityGroupUuid(), msg.getAllowedCidr()));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10007, SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR, "remoteSecurityGroupUuid[%s] and allowedCidr[%s] cannot be set at the same time", msg.getRemoteSecurityGroupUuid(), msg.getAllowedCidr()));
             }
         }
 
         if (msg.getSrcIpRange() != null) {
             if (msg.getDstIpRange() != null) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR, "srcIpRange[%s] and dstIpRange[%s] cannot be set at the same time", msg.getSrcIpRange(), msg.getDstIpRange()));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10008, SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR, "srcIpRange[%s] and dstIpRange[%s] cannot be set at the same time", msg.getSrcIpRange(), msg.getDstIpRange()));
             }
             if (SecurityGroupRuleType.Egress.toString().equals(msg.getType())) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_FILED_NOT_SUPPORT_ERROR, "srcIpRange cannot be set in Egress rule"));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10009, SecurityGroupErrors.RULE_FILED_NOT_SUPPORT_ERROR, "srcIpRange cannot be set in Egress rule"));
             }
         }
 
         if (msg.getDstIpRange() != null) {
             if (SecurityGroupRuleType.Ingress.toString().equals(msg.getType())) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_FILED_NOT_SUPPORT_ERROR, "dstIpRange cannot be set in Ingress rule"));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10010, SecurityGroupErrors.RULE_FILED_NOT_SUPPORT_ERROR, "dstIpRange cannot be set in Ingress rule"));
             }
         }
 
         if (msg.getDstPortRange() != null) {
             if (SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol())) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_FILED_NOT_SUPPORT_ERROR, "dstPortRange cannot be set when rule protocol is ALL or ICMP"));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10011, SecurityGroupErrors.RULE_FILED_NOT_SUPPORT_ERROR, "dstPortRange cannot be set when rule protocol is ALL or ICMP"));
             }
 
             if (msg.getStartPort() != -1 || msg.getEndPort() != -1) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR, "dstPortRange and startPort/endPort cannot be set at the same time"));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10012, SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR, "dstPortRange and startPort/endPort cannot be set at the same time"));
             }
         } else if (msg.getStartPort() >= 0) {
             if (msg.getStartPort().equals(msg.getEndPort())) {
@@ -254,7 +255,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
         if (!SecurityGroupConstant.WORLD_OPEN_CIDR.equals(msg.getAllowedCidr()) && !SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6.equals(msg.getAllowedCidr())) {
             if (msg.getSrcIpRange() != null || msg.getDstIpRange() != null) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR, "allowCidr and srcIpRange/dstIpRange cannot be set at the same time"));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10013, SecurityGroupErrors.RULE_FILED_CONFLICT_ERROR, "allowCidr and srcIpRange/dstIpRange cannot be set at the same time"));
             }
 
             if (SecurityGroupRuleType.Ingress.toString().equals(msg.getType())) {
@@ -288,7 +289,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             ao.setDstIpRange(vo.getDstIpRange());
             ao.setDstPortRange(vo.getDstPortRange());
             if (ao.equals(targetRule)) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_DUPLICATE_ERROR, "duplicated to rule[uuid:%s] in datebase", vo.getUuid()));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10014, SecurityGroupErrors.RULE_DUPLICATE_ERROR, "duplicated to rule[uuid:%s] in datebase", vo.getUuid()));
             }
         }
     }
@@ -296,13 +297,13 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
     private void validate(APISetVmNicSecurityGroupMsg msg) {
         VmNicVO nic = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
         if (nic == null) {
-            throw new ApiMessageInterceptionException(argerr("could no set vm nic security group, because vm nic[uuid:%s] not found", msg.getVmNicUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10015, "could no set vm nic security group, because vm nic[uuid:%s] not found", msg.getVmNicUuid()));
         }
 
         List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, msg.getVmNicUuid()).list();
 
         if (msg.getRefs().isEmpty() && refs.isEmpty()) {
-            throw new ApiMessageInterceptionException(argerr("could no set vm nic security group, because the vm nic[uuid:%s] not attached to any security group", msg.getVmNicUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10016, "could no set vm nic security group, because the vm nic[uuid:%s] not attached to any security group", msg.getVmNicUuid()));
         }
 
         Map<Integer, String> aoMap = new HashMap<Integer, String>();
@@ -311,19 +312,19 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         for (APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO ao : msg.getRefs()) {
 
             if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, ao.getSecurityGroupUuid()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr("could no set vm nic security group, because security group[uuid:%s] not found", ao.getSecurityGroupUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10017, "could no set vm nic security group, because security group[uuid:%s] not found", ao.getSecurityGroupUuid()));
             }
 
             Integer priority = ao.getPriority();
             if (priority < 1) {
-                throw new ApiMessageInterceptionException(argerr("could no set vm nic security group, because invalid priority, priority[%d] cannot be less than 1", priority));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10018, "could no set vm nic security group, because invalid priority, priority[%d] cannot be less than 1", priority));
             }
             
             if (aoMap.containsKey(priority)) {
-                throw new ApiMessageInterceptionException(argerr("could no set vm nic security group, because duplicate priority, both security group %s and %s have priority[%d]", aoMap.get(priority), ao.getSecurityGroupUuid(), priority));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10019, "could no set vm nic security group, because duplicate priority, both security group %s and %s have priority[%d]", aoMap.get(priority), ao.getSecurityGroupUuid(), priority));
             }
             if (aoMap.containsValue(ao.getSecurityGroupUuid())) {
-                throw new ApiMessageInterceptionException(argerr("could no set vm nic security group, because duplicate security group[uuid:%s]", ao.getSecurityGroupUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10020, "could no set vm nic security group, because duplicate security group[uuid:%s]", ao.getSecurityGroupUuid()));
             }
             aoMap.put(priority, ao.getSecurityGroupUuid());
 
@@ -333,7 +334,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
             String sgOwnerAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(ao.getSecurityGroupUuid());
             if (!AccountConstant.isAdminPermission(sgOwnerAccountUuid) && !AccountConstant.isAdminPermission(vmAccountUuid) && !sgOwnerAccountUuid.equals(vmAccountUuid)) {
-                throw new ApiMessageInterceptionException(argerr("could no set vm nic security group, because security group[uuid:%s] is not owned by account[uuid:%s] or admin", ao.getSecurityGroupUuid(), vmAccountUuid));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10021, "could no set vm nic security group, because security group[uuid:%s] is not owned by account[uuid:%s] or admin", ao.getSecurityGroupUuid(), vmAccountUuid));
             }
             if (AccountConstant.isAdminPermission(sgOwnerAccountUuid)) {
                 adminIntegers.add(priority);
@@ -343,11 +344,11 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             Integer[] priorities = aoMap.keySet().toArray(new Integer[aoMap.size()]);
             Arrays.sort(priorities);
             if (priorities[0] != 1) {
-                throw new ApiMessageInterceptionException(argerr("could no set vm nic security group, because invalid priority, priority expects to start at 1, but [%d]", priorities[0]));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10022, "could no set vm nic security group, because invalid priority, priority expects to start at 1, but [%d]", priorities[0]));
             }
             for (int i = 0; i < priorities.length - 1; i++) {
                 if (priorities[i] + 1 != priorities[i + 1]) {
-                    throw new ApiMessageInterceptionException(argerr("could no set vm nic security group, because invalid priority, priority[%d] and priority[%d] expected to be consecutive", priorities[i], priorities[i + 1]));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10023, "could no set vm nic security group, because invalid priority, priority[%d] and priority[%d] expected to be consecutive", priorities[i], priorities[i + 1]));
                 }
             }
         }
@@ -390,11 +391,11 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                 Integer[] priorities = adminIntegers.toArray(new Integer[adminIntegers.size()]);
                 Arrays.sort(priorities);
                 if (priorities[0] != 1) {
-                    throw new ApiMessageInterceptionException(argerr("could no set vm nic security group, because admin security group priority[%d] must be higher than users", priorities[0]));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10024, "could no set vm nic security group, because admin security group priority[%d] must be higher than users", priorities[0]));
                 }
                 for (int i = 0; i < priorities.length - 1; i++) {
                     if (priorities[i] + 1 != priorities[i + 1]) {
-                        throw new ApiMessageInterceptionException(argerr("could no set vm nic security group, because admin security group priority[%d] must be higher than users", priorities[i + 1]));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10025, "could no set vm nic security group, because admin security group priority[%d] must be higher than users", priorities[i + 1]));
                     }
                 }
             }
@@ -403,11 +404,11 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
     private void validate(APIChangeSecurityGroupRuleStateMsg msg) {
         if (msg.getRuleUuids().isEmpty()) {
-            throw new ApiMessageInterceptionException(argerr("could no change security group rule state, because ruleUuids is empty"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10026, "could no change security group rule state, because ruleUuids is empty"));
         }
 
         if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, msg.getSecurityGroupUuid()).isExists()) {
-            throw new ApiMessageInterceptionException(argerr("could no change security group rule state, because security group[uuid:%s] not found", msg.getSecurityGroupUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10027, "could no change security group rule state, because security group[uuid:%s] not found", msg.getSecurityGroupUuid()));
         }
 
         List<String> toChange = new ArrayList<>();
@@ -415,7 +416,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         msg.getRuleUuids().stream().forEach(r -> {
             SecurityGroupRuleVO vo = rvos.stream().filter(rvo -> rvo.getUuid().equals(r)).findAny().get();
             if (vo == null) {
-                throw new ApiMessageInterceptionException(argerr("could no change security group rule state, because security group rule[uuid:%s] not found", r));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10028, "could no change security group rule state, because security group rule[uuid:%s] not found", r));
             }
 
             if (!vo.getState().toString().equals(msg.getState())) {
@@ -424,7 +425,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         });
 
         if (toChange.isEmpty()) {
-            throw new ApiMessageInterceptionException(argerr("could no change security group rule state, because no security group rule state need to change"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10029, "could no change security group rule state, because no security group rule state need to change"));
         } else {
             msg.setRuleUuids(toChange);
         }
@@ -432,23 +433,23 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
     private void validate(APIChangeVmNicSecurityPolicyMsg msg) {
         if (msg.getIngressPolicy() == null && msg.getEgressPolicy() == null) {
-            throw new ApiMessageInterceptionException(argerr("could no change vm nic security policy, because ingress policy and egress policy cannot be both null"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10030, "could no change vm nic security policy, because ingress policy and egress policy cannot be both null"));
         }
         if (msg.getIngressPolicy() != null && !VmNicSecurityPolicy.isValid(msg.getIngressPolicy())) {
-            throw new ApiMessageInterceptionException(argerr("could no change vm nic security policy, because invalid ingress policy[%s]", msg.getIngressPolicy()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10031, "could no change vm nic security policy, because invalid ingress policy[%s]", msg.getIngressPolicy()));
         }
 
         if (msg.getEgressPolicy() != null && !VmNicSecurityPolicy.isValid(msg.getEgressPolicy())) {
-            throw new ApiMessageInterceptionException(argerr("could no change vm nic security policy, because invalid egress policy[%s]", msg.getEgressPolicy()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10032, "could no change vm nic security policy, because invalid egress policy[%s]", msg.getEgressPolicy()));
         }
 
         if (!Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).isExists()) {
-            throw new ApiMessageInterceptionException(argerr("could no change vm nic security policy, because vm nic[uuid:%s] not found", msg.getVmNicUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10033, "could no change vm nic security policy, because vm nic[uuid:%s] not found", msg.getVmNicUuid()));
         }
 
         VmNicSecurityPolicyVO policy = Q.New(VmNicSecurityPolicyVO.class).eq(VmNicSecurityPolicyVO_.vmNicUuid, msg.getVmNicUuid()).find();
         if (policy == null) {
-            throw new ApiMessageInterceptionException(argerr("could no change vm nic security policy, because vm nic[uuid:%s] has no security policy", msg.getVmNicUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10034, "could no change vm nic security policy, because vm nic[uuid:%s] has no security policy", msg.getVmNicUuid()));
         }
         
         if (policy.getIngressPolicy().equals(msg.getIngressPolicy())) {
@@ -462,16 +463,16 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
     private void validate(APIUpdateSecurityGroupRulePriorityMsg msg) {
         if (!SecurityGroupRuleType.isValid(msg.getType())) {
-            throw new ApiMessageInterceptionException(argerr("could not update security group rule priority, because invalid type[%s]", msg.getType()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10035, "could not update security group rule priority, because invalid type[%s]", msg.getType()));
         }
 
         SecurityGroupVO sgvo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
         if (sgvo == null) {
-            throw new ApiMessageInterceptionException(argerr("could not update security group rule priority, because security group[uuid:%s] is not exist", msg.getSecurityGroupUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10036, "could not update security group rule priority, because security group[uuid:%s] is not exist", msg.getSecurityGroupUuid()));
         }
 
         if (msg.getRules().isEmpty()) {
-            throw new ApiMessageInterceptionException(argerr("could not update security group rule priority, because rules is empty"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10037, "could not update security group rule priority, because rules is empty"));
         }
 
         HashMap<Integer, String> priorityMap = new HashMap<Integer, String>();
@@ -481,48 +482,48 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                 .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
                 .list();
         if (rvos.size() != msg.getRules().size()) {
-            throw new ApiMessageInterceptionException(argerr("could not update security group rule priority, because security group[uuid:%s] rules size not match", msg.getSecurityGroupUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10038, "could not update security group rule priority, because security group[uuid:%s] rules size not match", msg.getSecurityGroupUuid()));
         }
 
         for (APIUpdateSecurityGroupRulePriorityMsg.SecurityGroupRulePriorityAO ao : msg.getRules()) {
             if (ao.getPriority() == SecurityGroupConstant.DEFAULT_RULE_PRIORITY) {
-                throw new ApiMessageInterceptionException(argerr("could not update security group rule priority, because rule priority[%d] is invalid", ao.getPriority()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10039, "could not update security group rule priority, because rule priority[%d] is invalid", ao.getPriority()));
             }
             if (priorityMap.containsKey(ao.getPriority())) {
-                throw new ApiMessageInterceptionException(argerr("could not update security group rule priority, because priority[%d] has duplicate", ao.getPriority()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10040, "could not update security group rule priority, because priority[%d] has duplicate", ao.getPriority()));
             } else {
                 priorityMap.put(ao.getPriority(), ao.getRuleUuid());
             }
 
             rvos.stream().filter(rvo -> rvo.getUuid().equals(ao.getRuleUuid())).findFirst().orElseThrow(() ->
-                    new ApiMessageInterceptionException(argerr("could not update security group rule priority, because rule[uuid:%s] not in security group[uuid:%s]", ao.getRuleUuid(), msg.getSecurityGroupUuid())));
+                    new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10041, "could not update security group rule priority, because rule[uuid:%s] not in security group[uuid:%s]", ao.getRuleUuid(), msg.getSecurityGroupUuid())));
 
             rvos.stream().filter(rvo -> rvo.getPriority() == ao.getPriority()).findFirst().orElseThrow(() ->
-                    new ApiMessageInterceptionException(argerr("could not update security group rule priority, because priority[%d] not in security group[uuid:%s]", ao.getPriority(), msg.getSecurityGroupUuid())));
+                    new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10042, "could not update security group rule priority, because priority[%d] not in security group[uuid:%s]", ao.getPriority(), msg.getSecurityGroupUuid())));
         }
 
         List<String> uuidList = new ArrayList<>(priorityMap.values());
         if ((int)uuidList.stream().distinct().count() != uuidList.size()) {
-            throw new ApiMessageInterceptionException(argerr("could not update security group rule priority, because rule uuid duplicate"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10043, "could not update security group rule priority, because rule uuid duplicate"));
         }
     }
 
     private void validate(APIChangeSecurityGroupRuleMsg msg) {
         SecurityGroupRuleVO vo = Q.New(SecurityGroupRuleVO.class).eq((SecurityGroupRuleVO_.uuid), msg.getUuid()).find();
         if (vo == null) {
-            throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule uuid[%s] is not exist", msg.getUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10044, "could not change security group rule, because security group rule uuid[%s] is not exist", msg.getUuid()));
         }
 
         if (vo.getPriority() == 0) {
             if (msg.getProtocol() != null || msg.getAction() != null || msg.getRemoteSecurityGroupUuid() != null || msg.getSrcIpRange() != null
                 || msg.getDstIpRange() != null || msg.getDstPortRange() != null || msg.getPriority() != null) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule[%s] is default rule, only the description and status can be set", msg.getUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10045, "could not change security group rule, because security group rule[%s] is default rule, only the description and status can be set", msg.getUuid()));
                 }
         }
 
         if (msg.getPriority() != null) {
             if (msg.getPriority() == SecurityGroupConstant.DEFAULT_RULE_PRIORITY) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule[%s] priority cannot be set to default rule priority[%d]", msg.getUuid(), SecurityGroupConstant.DEFAULT_RULE_PRIORITY));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10046, "could not change security group rule, because security group rule[%s] priority cannot be set to default rule priority[%d]", msg.getUuid(), SecurityGroupConstant.DEFAULT_RULE_PRIORITY));
             }
 
             Long count = Q.New(SecurityGroupRuleVO.class)
@@ -531,10 +532,10 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                     .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
                     .count();
             if (count.intValue() > SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group %s rules number[%d] is out of max limit[%d]", vo.getType(), count.intValue(), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10047, "could not change security group rule, because security group %s rules number[%d] is out of max limit[%d]", vo.getType(), count.intValue(), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
             }
             if (msg.getPriority() > count.intValue()) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because the maximum priority of %s rule is [%d]", vo.getType().toString(), count.intValue()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10048, "could not change security group rule, because the maximum priority of %s rule is [%d]", vo.getType().toString(), count.intValue()));
             }
             if (msg.getPriority() < 0) {
                 msg.setPriority(SecurityGroupConstant.LOWEST_RULE_PRIORITY);
@@ -543,7 +544,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
         if (msg.getState() != null) {
             if (!SecurityGroupRuleState.isValid(msg.getState())) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because invalid state[%s]", msg.getState()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10049, "could not change security group rule, because invalid state[%s]", msg.getState()));
             }
         } else {
             msg.setState(vo.getState().toString());
@@ -551,7 +552,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
         if (msg.getAction() != null) {
             if (!SecurityGroupRuleAction.isValid(msg.getAction())) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because invalid action[%s]", msg.getAction()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10050, "could not change security group rule, because invalid action[%s]", msg.getAction()));
             }
         } else {
             msg.setAction(vo.getAction());
@@ -559,7 +560,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
         if (msg.getProtocol() != null) {
             if (!SecurityGroupRuleProtocolType.isValid(msg.getProtocol())) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because invalid protocol[%s]", msg.getProtocol()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10051, "could not change security group rule, because invalid protocol[%s]", msg.getProtocol()));
             }
         } else {
             msg.setProtocol(vo.getProtocol().toString());
@@ -575,13 +576,13 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
         if (StringUtils.isNotEmpty(msg.getSrcIpRange())) {
             if (SecurityGroupRuleType.Egress.equals(vo.getType())) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule[%s] type is Egress, srcIpRange[%s] cannot be set", msg.getUuid(),  msg.getSrcIpRange()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10052, "could not change security group rule, because security group rule[%s] type is Egress, srcIpRange[%s] cannot be set", msg.getUuid(),  msg.getSrcIpRange()));
             }
             if (StringUtils.isNotEmpty(msg.getDstIpRange())) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule[%s] type is Ingress, dstIpRange[%s] cannot be set", msg.getUuid(), msg.getDstIpRange()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10053, "could not change security group rule, because security group rule[%s] type is Ingress, dstIpRange[%s] cannot be set", msg.getUuid(), msg.getDstIpRange()));
             }
             if (StringUtils.isNotEmpty(msg.getRemoteSecurityGroupUuid())) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because srcIpRange[%s] is set, remoteSecurityGroupUuid[%s] must be empty", msg.getSrcIpRange(), msg.getRemoteSecurityGroupUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10054, "could not change security group rule, because srcIpRange[%s] is set, remoteSecurityGroupUuid[%s] must be empty", msg.getSrcIpRange(), msg.getRemoteSecurityGroupUuid()));
             }
 
             msg.setSrcIpRange(normalizeIpOrPort(msg.getSrcIpRange()));
@@ -590,13 +591,13 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
         if (StringUtils.isNotEmpty(msg.getDstIpRange())) {
             if (SecurityGroupRuleType.Ingress.equals(vo.getType())) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule[%s] type is Ingress, dstIpRange[%s] cannot be set", msg.getUuid(), msg.getDstIpRange()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10055, "could not change security group rule, because security group rule[%s] type is Ingress, dstIpRange[%s] cannot be set", msg.getUuid(), msg.getDstIpRange()));
             }
             if (StringUtils.isNotEmpty(msg.getSrcIpRange())) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group rule[%s] type is Egress, srcIpRange[%s] cannot be set", msg.getUuid(), msg.getSrcIpRange()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10056, "could not change security group rule, because security group rule[%s] type is Egress, srcIpRange[%s] cannot be set", msg.getUuid(), msg.getSrcIpRange()));
             }
             if (StringUtils.isNotEmpty(msg.getRemoteSecurityGroupUuid())) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because dstIpRange[%s] is set, remoteSecurityGroupUuid[%s] must be empty", msg.getDstIpRange(), msg.getRemoteSecurityGroupUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10057, "could not change security group rule, because dstIpRange[%s] is set, remoteSecurityGroupUuid[%s] must be empty", msg.getDstIpRange(), msg.getRemoteSecurityGroupUuid()));
             }
 
             msg.setDstIpRange(normalizeIpOrPort(msg.getDstIpRange()));
@@ -605,10 +606,10 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
         if (StringUtils.isNotEmpty(msg.getRemoteSecurityGroupUuid())) {
             if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, msg.getRemoteSecurityGroupUuid()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because remote security group[uuid:%s] not found", msg.getRemoteSecurityGroupUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10058, "could not change security group rule, because remote security group[uuid:%s] not found", msg.getRemoteSecurityGroupUuid()));
             }
             if (StringUtils.isNotEmpty(msg.getSrcIpRange()) || StringUtils.isNotEmpty(msg.getDstIpRange())) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because remote security group[uuid:%s] is set, srcIpRange and dstIpRange must be empty", msg.getRemoteSecurityGroupUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10059, "could not change security group rule, because remote security group[uuid:%s] is set, srcIpRange and dstIpRange must be empty", msg.getRemoteSecurityGroupUuid()));
             }
         }
 
@@ -648,13 +649,13 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
         if (StringUtils.isNotEmpty(msg.getDstPortRange())) {
             if (SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol())) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because rule protocol is [%s], dstPortRange cannot be set", msg.getProtocol()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10060, "could not change security group rule, because rule protocol is [%s], dstPortRange cannot be set", msg.getProtocol()));
             }
             msg.setDstPortRange(normalizeIpOrPort(msg.getDstPortRange()));
             validatePorts(msg.getDstPortRange());
         } else if (msg.getDstPortRange() != null) {
             if (SecurityGroupRuleProtocolType.TCP.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.UDP.toString().equals(msg.getProtocol())) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because rule protocol is [%s], dstPortRange cannot be empty", msg.getProtocol()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10061, "could not change security group rule, because rule protocol is [%s], dstPortRange cannot be empty", msg.getProtocol()));
             }
             msg.setDstPortRange(null);
         } else {
@@ -662,7 +663,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                 msg.setDstPortRange(null);
             } else {
                 if (vo.getDstPortRange() == null) {
-                    throw new ApiMessageInterceptionException(argerr("could not change security group rule, because rule protocol is [%s], dstPortRange must be set", msg.getProtocol()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10062, "could not change security group rule, because rule protocol is [%s], dstPortRange must be set", msg.getProtocol()));
                 }
                 msg.setDstPortRange(vo.getDstPortRange());
             }
@@ -693,27 +694,27 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             ao.setDstIpRange(o.getDstIpRange());
             ao.setDstPortRange(o.getDstPortRange());
             if (sao.equals(ao)) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because rule[%s] is duplicated to rule[uuid:%s] in datebase", JSONObjectUtil.toJsonString(sao), o.getUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10063, "could not change security group rule, because rule[%s] is duplicated to rule[uuid:%s] in datebase", JSONObjectUtil.toJsonString(sao), o.getUuid()));
             }
         }
     }
 
     private void validatePorts(String ports) {
         if (ports.isEmpty() || ports.startsWith(SecurityGroupConstant.IP_SPLIT) || ports.endsWith(SecurityGroupConstant.IP_SPLIT)) {
-            throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid ports[%s]", ports));
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10064, SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid ports[%s]", ports));
         }
         String portArray[];
         if (ports.contains(SecurityGroupConstant.IP_SPLIT)) {
             // The port range in iptables, such as 10-20, will occupy the number of two multiports
             String[] tmpPorts = ports.split(String.format("%s|%s", SecurityGroupConstant.IP_SPLIT, SecurityGroupConstant.RANGE_SPLIT));
             if (tmpPorts.length > SecurityGroupGlobalProperty.PORT_GROUP_NUMBER_LIMIT) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid ports[%s], port range[%s] number[%d] is out of max limit[%d]", ports, Arrays.toString(tmpPorts), tmpPorts.length, SecurityGroupGlobalProperty.PORT_GROUP_NUMBER_LIMIT));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10065, SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid ports[%s], port range[%s] number[%d] is out of max limit[%d]", ports, Arrays.toString(tmpPorts), tmpPorts.length, SecurityGroupGlobalProperty.PORT_GROUP_NUMBER_LIMIT));
             }
 
             portArray = ports.split(SecurityGroupConstant.IP_SPLIT);
             Stream<String> stream = Stream.of(portArray).distinct();
             if (portArray.length != stream.count()) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid ports[%s], port duplicate", ports));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10066, SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid ports[%s], port duplicate", ports));
             }
         } else {
             portArray = new String[]{ports};
@@ -721,12 +722,12 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
         for (String port : portArray) {
             if (port.isEmpty()) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid ports[%s]", ports));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10067, SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid ports[%s]", ports));
             }
             if (port.contains(SecurityGroupConstant.RANGE_SPLIT)) {
                 String portRange[] = port.split(SecurityGroupConstant.RANGE_SPLIT);
                 if (portRange.length != 2) {
-                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid port range[%s]", port));
+                    throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10068, SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid port range[%s]", port));
                 }
 
                 try {
@@ -734,20 +735,20 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                     Integer endPort = Integer.valueOf(portRange[1]);
                     if (startPort >= endPort || startPort < SecurityGroupConstant.PORT_NUMBER_MIN
                         || endPort > SecurityGroupConstant.PORT_NUMBER_MAX) {
-                        throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid port range[%s]", port));
+                        throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10069, SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid port range[%s]", port));
                     }
                 } catch (NumberFormatException e) {
-                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid port range[%s]", port));
+                    throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10070, SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid port range[%s]", port));
                 }
             } else {
                 try {
                     Integer.valueOf(port);
                     if (Integer.valueOf(port) < SecurityGroupConstant.PORT_NUMBER_MIN
                         || Integer.valueOf(port) > SecurityGroupConstant.PORT_NUMBER_MAX) {
-                        throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid port[%s]", port));
+                        throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10071, SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid port[%s]", port));
                     }
                 } catch (NumberFormatException e) {
-                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid port[%s]", port));
+                    throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10072, SecurityGroupErrors.RULE_PORT_FIELD_ERROR, "invalid port[%s]", port));
                 }
             }
         }
@@ -755,22 +756,22 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
     private void validateIps(String ips, Integer ipVersion) {
         if (ips.isEmpty() || ips.startsWith(SecurityGroupConstant.IP_SPLIT) || ips.endsWith(SecurityGroupConstant.IP_SPLIT)) {
-            throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s]", ips));
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10073, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s]", ips));
         }
         String ipArray[];
         if (ips.contains(SecurityGroupConstant.IP_SPLIT)) {
             ipArray = ips.split(SecurityGroupConstant.IP_SPLIT);
             if (ipArray.length > SecurityGroupGlobalProperty.IP_GROUP_NUMBER_LIMIT) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s], ip number[%d] is out of max limit[%d]", ips, ipArray.length, SecurityGroupGlobalProperty.IP_GROUP_NUMBER_LIMIT));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10074, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s], ip number[%d] is out of max limit[%d]", ips, ipArray.length, SecurityGroupGlobalProperty.IP_GROUP_NUMBER_LIMIT));
             }
             Stream<String> stream = Stream.of(ipArray).distinct();
             if (ipArray.length != stream.count()) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s], ip duplicate", ips));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10075, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s], ip duplicate", ips));
             }
             if (ipVersion == IPv6Constants.IPv6) {
                 List<String> ipv6List = Stream.of(ipArray).filter(ip -> ip.contains(SecurityGroupConstant.RANGE_SPLIT)).collect(Collectors.toList());
                 if (!ipv6List.isEmpty()) {
-                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s], ip range cannot be used when specifying multiple ipv6 addresses", ips));
+                    throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10076, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s], ip range cannot be used when specifying multiple ipv6 addresses", ips));
                 }
             }
         } else {
@@ -779,23 +780,23 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
         for (String ip : ipArray) {
             if (ip.isEmpty()) {
-                throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s]", ips));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10077, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s]", ips));
             }
             if (ip.contains(SecurityGroupConstant.CIDR_SPLIT)) {
                 if (!NetworkUtils.isCidr(ip, ipVersion)) {
-                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid cidr[%s], ipVersion[%d]", ip, ipVersion));
+                    throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10078, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid cidr[%s], ipVersion[%d]", ip, ipVersion));
                 }
                 if (ipVersion == IPv6Constants.IPv4 && NetworkUtils.isFullCidr(ip)) {
-                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "ipv4 cidr can not be 0.0.0.0/0"));
+                    throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10079, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "ipv4 cidr can not be 0.0.0.0/0"));
                 } if (ipVersion == IPv6Constants.IPv6 && IPv6NetworkUtils.isFullCidr(ip)) {
-                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "ipv6 cidr can not be ::/0"));
+                    throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10080, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "ipv6 cidr can not be ::/0"));
                 }
                 continue;
             }
             if (ip.contains(SecurityGroupConstant.RANGE_SPLIT)) {
                 String[] ipRangeArray = ip.split(SecurityGroupConstant.RANGE_SPLIT);
                 if (ipRangeArray.length != 2) {
-                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ip range[%s]", ip));
+                    throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10081, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ip range[%s]", ip));
                 }
                 String startIp = ipRangeArray[0];
                 String endIp = ipRangeArray[1];
@@ -803,18 +804,18 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                     NetworkUtils.validateIpRange(startIp, endIp);
                 } else {
                     if (!IPv6NetworkUtils.isIpv6Address(startIp) || !IPv6NetworkUtils.isIpv6Address(endIp) || startIp.compareTo(endIp) > 0) {
-                        throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ip range[%s]", ip));
+                        throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10082, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ip range[%s]", ip));
                     }
                 }
                 continue;
             }
             if (ipVersion == IPv6Constants.IPv4) {
                 if (!NetworkUtils.isIpv4Address(ip)) {
-                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ip[%s], ipVersion[%d]", ip, ipVersion));
+                    throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10083, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ip[%s], ipVersion[%d]", ip, ipVersion));
                 }
             } else {
                 if (!IPv6NetworkUtils.isValidIpv6(ip)) {
-                    throw new ApiMessageInterceptionException(err(SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ip[%s], ipVersion[%d]", ip, ipVersion));
+                    throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10084, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ip[%s], ipVersion[%d]", ip, ipVersion));
                 }
             }
         }
@@ -825,7 +826,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         q.add(SecurityGroupL3NetworkRefVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         q.add(SecurityGroupL3NetworkRefVO_.securityGroupUuid, Op.EQ, msg.getSecurityGroupUuid());
         if (!q.isExists()) {
-            throw new ApiMessageInterceptionException(operr("security group[uuid:%s] has not attached to l3Network[uuid:%s], can't detach",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10085, "security group[uuid:%s] has not attached to l3Network[uuid:%s], can't detach",
                             msg.getSecurityGroupUuid(), msg.getL3NetworkUuid()));
         }
     }
@@ -861,10 +862,10 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         String sguuid = vos.get(0).getSecurityGroupUuid();
         vos.stream().forEach(vo -> {
             if (!sguuid.equals(vo.getSecurityGroupUuid())) {
-                throw new ApiMessageInterceptionException(argerr("can't delete rules of different security group"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10086, "can't delete rules of different security group"));
             }
             if (vo.getPriority() == SecurityGroupConstant.DEFAULT_RULE_PRIORITY) {
-                throw new ApiMessageInterceptionException(argerr("can't delete default rule[uuid:%s]", vo.getUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10087, "can't delete default rule[uuid:%s]", vo.getUuid()));
             }
         });
 
@@ -884,7 +885,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         q.add(SecurityGroupL3NetworkRefVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         q.add(SecurityGroupL3NetworkRefVO_.securityGroupUuid, Op.EQ, msg.getSecurityGroupUuid());
         if (q.isExists()) {
-            throw new ApiMessageInterceptionException(operr("security group[uuid:%s] has attached to l3Network[uuid:%s], can't attach again",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10088, "security group[uuid:%s] has attached to l3Network[uuid:%s], can't attach again",
                             msg.getSecurityGroupUuid(), msg.getL3NetworkUuid()));
         }
 
@@ -892,7 +893,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         nq.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         nq.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.EQ, SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE);
         if (!nq.isExists()) {
-            throw new ApiMessageInterceptionException(argerr("the L3 network[uuid:%s] doesn't have the network service type[%s] enabled", msg.getL3NetworkUuid(), SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10089, "the L3 network[uuid:%s] doesn't have the network service type[%s] enabled", msg.getL3NetworkUuid(), SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE));
         }
     }
 
@@ -903,7 +904,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         List<String> uuids = q.listValue();
         if (!uuids.containsAll(msg.getVmNicUuids())) {
             msg.getVmNicUuids().removeAll(uuids);
-            throw new ApiMessageInterceptionException(err(SysErrors.RESOURCE_NOT_FOUND,
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10090, SysErrors.RESOURCE_NOT_FOUND,
                     "cannot find vm nics[uuids:%s]", msg.getVmNicUuids()
             ));
         }
@@ -912,7 +913,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         if (!refs.isEmpty()) {
             refs.stream().forEach(ref -> {
                 if (uuids.contains(ref.getVmNicUuid())) {
-                    throw new ApiMessageInterceptionException(argerr("vm nic[uuid:%s] has been attach to security group[uuid:%s]", ref.getVmNicUuid(), msg.getSecurityGroupUuid()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10091, "vm nic[uuid:%s] has been attach to security group[uuid:%s]", ref.getVmNicUuid(), msg.getSecurityGroupUuid()));
                 }
             });
         }
@@ -932,7 +933,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         for(VmNicVO nic : nics) {
             if (!Q.New(NetworkServiceL3NetworkRefVO.class).eq(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, nic.getL3NetworkUuid())
                     .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE).isExists()) {
-                throw new ApiMessageInterceptionException(argerr("the netwotk service[type:%s] not enabled on the l3Network[uuid:%s] of nic[uuid:%s]", SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE, nic.getL3NetworkUuid(), nic.getUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10092, "the netwotk service[type:%s] not enabled on the l3Network[uuid:%s] of nic[uuid:%s]", SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE, nic.getL3NetworkUuid(), nic.getUuid()));
             }
         }
     }
@@ -954,7 +955,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         }
 
         if (!wrongUuids.isEmpty()) {
-            throw new ApiMessageInterceptionException(argerr("VM nics[uuids:%s] are not on L3 networks that have been attached to the security group[uuid:%s]",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10093, "VM nics[uuids:%s] are not on L3 networks that have been attached to the security group[uuid:%s]",
                             wrongUuids, securityGroupUuid));
         }
     }
@@ -977,26 +978,26 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         List<APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO> rules = msg.getRules();
 
         if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, sgUuid).isExists()) {
-            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because security group[uuid:%s] does not exist", sgUuid));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10094, "could not add security group rule, because security group[uuid:%s] does not exist", sgUuid));
         }
         if (rules.isEmpty() || rules.size() > SecurityGroupConstant.ONE_API_RULES_MAX_NUM) {
-            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the rules cannot be empty or exceed the max number %d",  SecurityGroupConstant.ONE_API_RULES_MAX_NUM));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10095, "could not add security group rule, because the rules cannot be empty or exceed the max number %d",  SecurityGroupConstant.ONE_API_RULES_MAX_NUM));
         }
 
         if (msg.getRemoteSecurityGroupUuids() != null && !msg.getRemoteSecurityGroupUuids().isEmpty()) {
             if (msg.getRemoteSecurityGroupUuids().stream().distinct().count() != msg.getRemoteSecurityGroupUuids().size()) {
-                throw new ApiMessageInterceptionException(argerr("could not add security group rule, because duplicate uuid in remoteSecurityGroupUuids: %s", msg.getRemoteSecurityGroupUuids()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10096, "could not add security group rule, because duplicate uuid in remoteSecurityGroupUuids: %s", msg.getRemoteSecurityGroupUuids()));
             }
 
             List<String> sgUuids = Q.New(SecurityGroupVO.class).select(SecurityGroupVO_.uuid).in(SecurityGroupVO_.uuid, msg.getRemoteSecurityGroupUuids()).listValues();
             msg.getRemoteSecurityGroupUuids().stream().forEach(uuid -> {
                 sgUuids.stream().filter(s -> s.equals(uuid)).findFirst().orElseThrow(() ->
-                        new ApiMessageInterceptionException(argerr("could not add security group rule, because security group[uuid:%s] does not exist", uuid)));
+                        new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10097, "could not add security group rule, because security group[uuid:%s] does not exist", uuid)));
             });
 
             rules.stream().forEach(r -> {
                 if (r.getRemoteSecurityGroupUuid() != null) {
-                    throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the remote security group uuid is conflict"));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10098, "could not add security group rule, because the remote security group uuid is conflict"));
                 }
             });
 
@@ -1032,7 +1033,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         }
 
         if (msg.getPriority() == SecurityGroupConstant.DEFAULT_RULE_PRIORITY) {
-            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because rule priority must greater than %d or equals %d", SecurityGroupConstant.DEFAULT_RULE_PRIORITY, SecurityGroupConstant.LOWEST_RULE_PRIORITY));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10099, "could not add security group rule, because rule priority must greater than %d or equals %d", SecurityGroupConstant.DEFAULT_RULE_PRIORITY, SecurityGroupConstant.LOWEST_RULE_PRIORITY));
         }
 
         List<APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO> newRules = msg.getRules();
@@ -1040,14 +1041,14 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         // Basic check
         for (APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO ao : newRules) {
             if (!SecurityGroupRuleProtocolType.isValid(ao.getProtocol())) {
-                throw new ApiMessageInterceptionException(argerr("could not add security group rule, because invalid rule protocol[%s], valid protocols are %s", ao.getProtocol(), SecurityGroupRuleProtocolType.getAllProtocol()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10100, "could not add security group rule, because invalid rule protocol[%s], valid protocols are %s", ao.getProtocol(), SecurityGroupRuleProtocolType.getAllProtocol()));
             }
 
             if (ao.getAction() == null) {
                 ao.setAction(SecurityGroupRuleAction.ACCEPT.toString());
             } else {
                 if (!SecurityGroupRuleAction.isValid(ao.getAction())) {
-                    throw new ApiMessageInterceptionException(argerr("could not add security group rule, because invalid rule action[%s], valid actions are %s", ao.getAction(), SecurityGroupRuleAction.getAllAction()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10101, "could not add security group rule, because invalid rule action[%s], valid actions are %s", ao.getAction(), SecurityGroupRuleAction.getAllAction()));
                 }
             }
 
@@ -1055,7 +1056,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                 ao.setIpVersion(IPv6Constants.IPv4);
             } else {
                 if (ao.getIpVersion() != IPv6Constants.IPv4 && ao.getIpVersion() != IPv6Constants.IPv6) {
-                    throw new ApiMessageInterceptionException(argerr("could not add security group rule, because invalid rule ipVersion[%d], valid ipVersions are %d/%d", ao.getIpVersion(), IPv6Constants.IPv4, IPv6Constants.IPv6));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10102, "could not add security group rule, because invalid rule ipVersion[%d], valid ipVersions are %d/%d", ao.getIpVersion(), IPv6Constants.IPv4, IPv6Constants.IPv6));
                 }
             }
 
@@ -1065,38 +1066,38 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
             if (SecurityGroupRuleType.Egress.toString().equals(ao.getType())) {
                 if (ao.getSrcIpRange() != null) {
-                    throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the srcIpRange[%s] is not allowed to set for egress rule", ao.getSrcIpRange()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10103, "could not add security group rule, because the srcIpRange[%s] is not allowed to set for egress rule", ao.getSrcIpRange()));
                 }
 
                 if (checkAllowedCidrValid(ao.getAllowedCidr())) {
                     if (ao.getDstIpRange() != null) {
-                        throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the allowedCidr[%s] and dstIpRange[%s] are in conflict", ao.getAllowedCidr(), ao.getDstIpRange()));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10104, "could not add security group rule, because the allowedCidr[%s] and dstIpRange[%s] are in conflict", ao.getAllowedCidr(), ao.getDstIpRange()));
                     }
                     ao.setDstIpRange(ao.getAllowedCidr());
                 }
 
                 if (ao.getDstIpRange() != null) {
                     if (ao.getRemoteSecurityGroupUuid() != null) {
-                        throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the ip range[%s] and remoteSecurityGroupUuid[%s] are in conflict", ao.getDstIpRange(), ao.getRemoteSecurityGroupUuid()));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10105, "could not add security group rule, because the ip range[%s] and remoteSecurityGroupUuid[%s] are in conflict", ao.getDstIpRange(), ao.getRemoteSecurityGroupUuid()));
                     }
                     ao.setDstIpRange(normalizeIpOrPort(ao.getDstIpRange()));
                     validateIps(ao.getDstIpRange(), ao.getIpVersion());
                 }
             } else {
                 if (ao.getDstIpRange() != null) {
-                    throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the dstIpRange[%s] is not allowed to set for ingress rule", ao.getDstIpRange()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10106, "could not add security group rule, because the dstIpRange[%s] is not allowed to set for ingress rule", ao.getDstIpRange()));
                 }
 
                 if (checkAllowedCidrValid(ao.getAllowedCidr())) {
                     if (ao.getSrcIpRange() != null) {
-                        throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the allowedCidr[%s] and srcIpRange[%s] are in conflict", ao.getAllowedCidr(), ao.getSrcIpRange()));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10107, "could not add security group rule, because the allowedCidr[%s] and srcIpRange[%s] are in conflict", ao.getAllowedCidr(), ao.getSrcIpRange()));
                     }
                     ao.setSrcIpRange(ao.getAllowedCidr());
                 }
 
                 if (ao.getSrcIpRange() != null) {
                     if (ao.getRemoteSecurityGroupUuid() != null) {
-                        throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the ip range[%s] and remoteSecurityGroupUuid[%s] are in conflict", ao.getSrcIpRange(), ao.getRemoteSecurityGroupUuid()));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10108, "could not add security group rule, because the ip range[%s] and remoteSecurityGroupUuid[%s] are in conflict", ao.getSrcIpRange(), ao.getRemoteSecurityGroupUuid()));
                     }
                     ao.setSrcIpRange(normalizeIpOrPort(ao.getSrcIpRange()));
                     validateIps(ao.getSrcIpRange(), ao.getIpVersion());
@@ -1113,18 +1114,18 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
             if (SecurityGroupRuleProtocolType.ALL.toString().equals(ao.getProtocol()) || SecurityGroupRuleProtocolType.ICMP.toString().equals(ao.getProtocol())) {
                 if (ao.getDstPortRange() != null) {
-                    throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the protocol type ALL or ICMP cant not set dstPortRange[%s]", ao.getDstPortRange()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10109, "could not add security group rule, because the protocol type ALL or ICMP cant not set dstPortRange[%s]", ao.getDstPortRange()));
                 }
                 if (ao.getStartPort() != -1 || ao.getEndPort() != -1) {
-                    throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the protocol type ALL or ICMP cant not set startPort or endPort"));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10110, "could not add security group rule, because the protocol type ALL or ICMP cant not set startPort or endPort"));
                 }
             } else {
                 if (ao.getStartPort() >= SecurityGroupConstant.PORT_NUMBER_MIN && ao.getEndPort() <= SecurityGroupConstant.PORT_NUMBER_MAX) {
                     if (ao.getStartPort() > ao.getEndPort()) {
-                        throw new ApiMessageInterceptionException(argerr("could not add security group rule, because invalid rule endPort[%d], endPort must be greater than or equal to startPort[%d]", ao.getEndPort(), ao.getStartPort()));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10111, "could not add security group rule, because invalid rule endPort[%d], endPort must be greater than or equal to startPort[%d]", ao.getEndPort(), ao.getStartPort()));
                     }
                     if (ao.getDstPortRange() != null) {
-                        throw new ApiMessageInterceptionException(argerr("could not add security group rule, because dstPortRange[%s] and starPort[%s] are in conflict", ao.getDstPortRange(), ao.getStartPort()));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10112, "could not add security group rule, because dstPortRange[%s] and starPort[%s] are in conflict", ao.getDstPortRange(), ao.getStartPort()));
                     }
 
 
@@ -1136,7 +1137,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                 }
 
                 if (ao.getDstPortRange() == null) {
-                    throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the protocol type TCP/UDP must set dstPortRange"));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10113, "could not add security group rule, because the protocol type TCP/UDP must set dstPortRange"));
                 }
                 ao.setDstPortRange(normalizeIpOrPort(ao.getDstPortRange()));
                 validatePorts(ao.getDstPortRange());
@@ -1147,7 +1148,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         for (int i = 0; i < newRules.size() - 1; i++) {
             for (int j = newRules.size() - 1; j > i; j--) {
                 if (newRules.get(i).equals(newRules.get(j))) {
-                    throw new ApiMessageInterceptionException(argerr("could not add security group rule, because rule[%s] and rule[%s] are dupilicated",
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10114, "could not add security group rule, because rule[%s] and rule[%s] are dupilicated",
                             JSONObjectUtil.toJsonString(newRules.get(i)), JSONObjectUtil.toJsonString(newRules.get(j))));
                 }
             }
@@ -1171,7 +1172,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             ao.setDstPortRange(vo.getDstPortRange());
             for (APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO sao : newRules) {
                 if (ao.equals(sao)) {
-                    throw new ApiMessageInterceptionException(argerr("could not add security group rule, because rule[%s] is duplicated to rule[uuid:%s] in datebase", JSONObjectUtil.toJsonString(sao), vo.getUuid()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10115, "could not add security group rule, because rule[%s] is duplicated to rule[uuid:%s] in datebase", JSONObjectUtil.toJsonString(sao), vo.getUuid()));
                 }
             }
         }
@@ -1182,26 +1183,26 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         int toCreateEgressRuleCount = newRules.stream().filter(ao -> SecurityGroupRuleType.Egress.toString().equals(ao.getType())).collect(Collectors.toList()).size();
 
         if (ingressRuleCount >= SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class) && toCreateIngressRuleCount > 0) {
-            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because security group %s rules has reached the maximum limit[%d]",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10116, "could not add security group rule, because security group %s rules has reached the maximum limit[%d]",
                     SecurityGroupRuleType.Ingress, SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
         }
         if (egressRuleCount >= SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class) && toCreateEgressRuleCount > 0) {
-            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because security group %s rules has reached the maximum limit[%d]",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10117, "could not add security group rule, because security group %s rules has reached the maximum limit[%d]",
                     SecurityGroupRuleType.Egress, SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
         }
         if ((ingressRuleCount + toCreateIngressRuleCount) > SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)) {
-            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because security group %s rules number[%d] is out of max limit[%d]",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10118, "could not add security group rule, because security group %s rules number[%d] is out of max limit[%d]",
                     SecurityGroupRuleType.Ingress, (ingressRuleCount + toCreateIngressRuleCount), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
         }
         if ((egressRuleCount + toCreateEgressRuleCount) > SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)) {
-            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because security group %s rules number[%d] is out of max limit[%d]",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10119, "could not add security group rule, because security group %s rules number[%d] is out of max limit[%d]",
                     SecurityGroupRuleType.Egress, (egressRuleCount + toCreateEgressRuleCount), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
         }
         if (msg.getPriority() > (ingressRuleCount + 1) && toCreateIngressRuleCount > 0) {
-            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because priority[%d] must be consecutive, the ingress rule maximum priority is [%d]", msg.getPriority(), ingressRuleCount));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10120, "could not add security group rule, because priority[%d] must be consecutive, the ingress rule maximum priority is [%d]", msg.getPriority(), ingressRuleCount));
         }
         if (msg.getPriority() > (egressRuleCount + 1) && toCreateEgressRuleCount > 0) {
-            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because priority[%d] must be consecutive, the egress rule maximum priority is [%d]", msg.getPriority(), egressRuleCount));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10121, "could not add security group rule, because priority[%d] must be consecutive, the egress rule maximum priority is [%d]", msg.getPriority(), egressRuleCount));
         }
     }
 

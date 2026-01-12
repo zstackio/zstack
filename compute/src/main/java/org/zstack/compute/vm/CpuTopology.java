@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.zstack.header.errorcode.OperationFailureException;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class CpuTopology {
     int cpuNum;
@@ -68,7 +69,7 @@ public class CpuTopology {
         }
 
         if (throwException) {
-            throw new OperationFailureException(operr("cpu topology is not correct, cpuNum[%s], configured cpuSockets[%s], cpuCores[%s], cpuThreads[%s];" +
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10224, "cpu topology is not correct, cpuNum[%s], configured cpuSockets[%s], cpuCores[%s], cpuThreads[%s];" +
                             " Calculated cpuSockets[%s], cpuCores[%s], cpuThreads[%s]",
                     cpuNum, cpuSockets, cpuCores, cpuThreads, socketNum, coreNum, threadNum));
         } else {

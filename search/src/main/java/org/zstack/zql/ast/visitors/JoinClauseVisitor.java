@@ -10,12 +10,13 @@ import org.zstack.zql.ast.ZQLMetadata;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class JoinClauseVisitor implements ASTVisitor<String, ASTNode.JoinClause> {
     @Override
     public String visit(ASTNode.JoinClause node) {
         if (node.getConditions() == null) {
-            throw new OperationFailureException(Platform.operr("join condition is missing"));
+            throw new OperationFailureException(Platform.operr(ORG_ZSTACK_ZQL_AST_VISITORS_10000, "join condition is missing"));
         }
 
         String tableNameAndAlias = (String) node.getQueryTarget().accept(tableNameVisitor());
@@ -45,7 +46,7 @@ public class JoinClauseVisitor implements ASTVisitor<String, ASTNode.JoinClause>
             @Override
             public String visit(ASTNode.QueryTarget queryTarget) {
                 if (StringUtils.isBlank(queryTarget.getEntity())) {
-                    throw new OperationFailureException(Platform.operr("entity is empty, cannot get TableName"));
+                    throw new OperationFailureException(Platform.operr(ORG_ZSTACK_ZQL_AST_VISITORS_10001, "entity is empty, cannot get TableName"));
                 }
 
                 String entity = queryTarget.getEntity();

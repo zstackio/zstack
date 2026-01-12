@@ -8,6 +8,7 @@ import static org.zstack.core.Platform.argerr;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class SumPlugin extends AbstractQueryVisitorPlugin {
     public SumPlugin() {
@@ -28,7 +29,7 @@ public class SumPlugin extends AbstractQueryVisitorPlugin {
 
         List<String> fields = targetFields();
         if (fields.isEmpty()) {
-            throw new OperationFailureException(argerr("the field to sum must be specified"));
+            throw new OperationFailureException(argerr(ORG_ZSTACK_ZQL_AST_VISITORS_PLUGIN_10000, "the field to sum must be specified"));
         }
 
         String sumFields = StringUtils.join(fields.stream().map(f->String.format("SUM(%s.%s) as %s", entityAlias, f, f)).collect(Collectors.toList()), ",");

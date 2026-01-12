@@ -1,5 +1,7 @@
 package org.zstack.test.integration.core.gc
 
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+
 import org.apache.commons.collections.map.HashedMap
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.EventFacade
@@ -114,7 +116,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
             if (ret == EventBasedGCInDbBehavior.SUCCESS) {
                 completion.success()
             } else if (ret == EventBasedGCInDbBehavior.FAIL) {
-                completion.fail(operr("on purpose"))
+                completion.fail(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_CORE_GC_10007, "on purpose"))
             } else if (ret == EventBasedGCInDbBehavior.CANCEL) {
                 completion.cancel()
             } else {
@@ -154,7 +156,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
             if (ret == EventBasedGCInDbBehavior.SUCCESS) {
                 completion.success()
             } else if (ret == EventBasedGCInDbBehavior.FAIL) {
-                completion.fail(operr("on purpose"))
+                completion.fail(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_CORE_GC_10008, "on purpose"))
             } else if (ret == EventBasedGCInDbBehavior.CANCEL) {
                 completion.cancel()
             } else {
@@ -214,7 +216,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
 
         def gc = new EventBasedGC1()
         gc.testLogic = { GCCompletion completion ->
-            completion.fail(operr("testEventBasedGCFailure"))
+            completion.fail(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_CORE_GC_10009, "testEventBasedGCFailure"))
             latch.countDown()
         }
         gc.NAME = "testEventBasedGCFailure"
@@ -336,7 +338,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
         gc.testLogic = { GCCompletion completion ->
             count ++
             if (count == 1) {
-                completion.fail(operr("testTwoEventsTriggeredGC"))
+                completion.fail(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_CORE_GC_10010, "testTwoEventsTriggeredGC"))
             } else {
                 completion.success()
             }
@@ -562,7 +564,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
         gc.testLogic = { GCCompletion completion ->
             if (count == 0) {
                 assert !TaskContext.getTaskContextItem("test")
-                completion.fail(operr("mock failure"))
+                completion.fail(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_CORE_GC_10011, "mock failure"))
                 count++
                 return
             }

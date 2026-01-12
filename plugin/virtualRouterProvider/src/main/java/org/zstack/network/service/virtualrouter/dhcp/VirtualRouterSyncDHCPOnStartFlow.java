@@ -40,6 +40,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterSyncDHCPOnStartFlow implements Flow {
@@ -205,7 +206,7 @@ public class VirtualRouterSyncDHCPOnStartFlow implements Flow {
                 VirtualRouterAsyncHttpCallReply re = reply.castReply();
                 AddDhcpEntryRsp ret =  re.toResponse(AddDhcpEntryRsp.class);
                 if (!ret.isSuccess()) {
-                    ErrorCode err = operr("unable to program dhcp entries served by virtual router[uuid:%s, ip:%s], %s", vr.getUuid(), vr.getManagementNic().getIp(), ret.getError());
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_DHCP_10000, "unable to program dhcp entries served by virtual router[uuid:%s, ip:%s], %s", vr.getUuid(), vr.getManagementNic().getIp(), ret.getError());
                     chain.fail(err);
                 } else {
                     logger.debug(String.format("successfully programmed dhcp entries served by virtual router[uuid:%s, ip:%s]", vr.getUuid(), vr.getManagementNic().getIp()));

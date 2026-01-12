@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by zhanyong.miao 2018/10/08
@@ -94,7 +95,7 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
                 try {
                     long now = System.currentTimeMillis();
                     if (now > timeout) {
-                        trigger.fail(err(ApplianceVmErrors.UNABLE_TO_START, "the SSH port is not" +
+                        trigger.fail(err(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_VYOS_10000, ApplianceVmErrors.UNABLE_TO_START, "the SSH port is not" +
                                 " open after %s seconds. Failed to login the virtual router[ip:%s]", timeoutInSeconds, mgmtNicIp));
                         return true;
                     }
@@ -153,7 +154,7 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
 
                     trigger.next();
                 } catch (Exception e) {
-                    trigger.fail(operr("unable to ssh in to the virtual router[%s] after configure ssh", mgmtNicIp));
+                    trigger.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_VYOS_10001, "unable to ssh in to the virtual router[%s] after configure ssh", mgmtNicIp));
                 }
 
             }

@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 7/22/2015.
@@ -34,7 +35,7 @@ public class PrepareAnsible {
     static {
         try {
             if (!hostsFile.exists() && !hostsFile.createNewFile()) {
-                throw new OperationFailureException(operr("fail to create new File[%s]", hostsFile));
+                throw new OperationFailureException(operr(ORG_ZSTACK_CORE_ANSIBLE_10001, "fail to create new File[%s]", hostsFile));
             }
 
             if (AnsibleGlobalProperty.KEEP_HOSTS_FILE_IN_MEMORY) {

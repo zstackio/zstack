@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * @author: zhanyong.miao
@@ -89,31 +90,31 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
         DebugUtils.Assert(acl != null, "the invalide null AccessControlListVO");
         Integer ipVer = acl.getIpVersion();
         if (!ipVer.equals(IPv6Constants.IPv4)) {
-            throw new ApiMessageInterceptionException(argerr("not support the ip version %d", ipVer));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_ACL_10000, "not support the ip version %d", ipVer));
         }
         try {
             RangeSet<Long> ipRanges = IpRangeSet.listAllRanges(ips);
             String[] ipcount = ips.split(IP_SPLIT);
             if (ipRanges.asRanges().size() < ipcount.length) {
-                throw new ApiMessageInterceptionException(argerr("%s duplicate/overlap ip entry with access-control-list group:%s", ips, acl.getUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_ACL_10001, "%s duplicate/overlap ip entry with access-control-list group:%s", ips, acl.getUuid()));
             }
             for (Range<Long> range : ipRanges.asRanges()) {
                 final Range<Long> frange = ContiguousSet.create(range, DiscreteDomain.longs()).range();
                 String startIp = NetworkUtils.longToIpv4String(frange.lowerEndpoint());
                 String endIp = NetworkUtils.longToIpv4String(frange.upperEndpoint());
                 if (!validateIpRange(startIp, endIp)) {
-                    throw new ApiMessageInterceptionException(argerr("ip format only supports ip/iprange/cidr, but find %s", ips));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_ACL_10002, "ip format only supports ip/iprange/cidr, but find %s", ips));
                 }
                 ipRanges.asRanges().stream().forEach(r -> {
                     if (!frange.equals(r) && NetworkUtils.isIpv4RangeOverlap(startIp, endIp, NetworkUtils.longToIpv4String(r.lowerEndpoint()), NetworkUtils.longToIpv4String(r.upperEndpoint()))) {
-                        throw new ApiMessageInterceptionException(argerr("ip range[%s, %s] is overlap with [%s, %s] in access-control-list group:%s",
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_ACL_10003, "ip range[%s, %s] is overlap with [%s, %s] in access-control-list group:%s",
                                 startIp, endIp, NetworkUtils.longToIpv4String(r.lowerEndpoint()), NetworkUtils.longToIpv4String(r.upperEndpoint()), acl.getUuid()));
                     }
                 });
             }
 
         } catch (IllegalArgumentException e) {
-            throw new ApiMessageInterceptionException(argerr("Invalid rule expression, the detail: %s", e.getMessage()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_ACL_10004, "Invalid rule expression, the detail: %s", e.getMessage()));
         }
 
     }
@@ -124,18 +125,18 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
         boolean redirectRuleExisted = acl.getEntries().stream().anyMatch(entry -> entry.getType().equals(AclEntryType.RedirectRule.toString()));
 
         if (redirectRuleExisted) {
-            throw new ApiMessageInterceptionException(operr("the access-control-list groups[%s] already own redirect rule, can not add IP Entry", acl.getUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_ACL_10005, "the access-control-list groups[%s] already own redirect rule, can not add IP Entry", acl.getUuid()));
         }
 
         /*check if the entry is exist*/
         if (acl.getEntries()!= null && !acl.getEntries().isEmpty()) {
             if (acl.getEntries().size() >= AccessControlListConstants.MAX_ENTRY_COUNT_PER_GROUP) {
-                throw new ApiMessageInterceptionException(argerr("the access-control-list groups[%s] can't be added more than %d ip entries", acl.getUuid(), AccessControlListConstants.MAX_ENTRY_COUNT_PER_GROUP));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_ACL_10006, "the access-control-list groups[%s] can't be added more than %d ip entries", acl.getUuid(), AccessControlListConstants.MAX_ENTRY_COUNT_PER_GROUP));
             }
 
             boolean redirectRuleExsit = acl.getEntries().stream().anyMatch(entry -> entry.getType().equals(AclEntryType.RedirectRule.toString()));
             if (redirectRuleExsit) {
-                throw new ApiMessageInterceptionException(operr("the access-control-list groups[%s] already own redirect rule, can not add ip entry", acl.getUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_ACL_10007, "the access-control-list groups[%s] already own redirect rule, can not add ip entry", acl.getUuid()));
             }
             List<String> ipentries = acl.getEntries().stream().map(entry -> entry.getIpEntries()).collect(Collectors.toList());
             ipentries.add(msg.getEntries());
@@ -151,20 +152,20 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
         boolean ipEntryExisted = acl.getEntries().stream().anyMatch(entry -> entry.getType().equals(AclEntryType.IpEntry.toString()));
         boolean redirectRuleExisted = acl.getEntries().stream().anyMatch(entry -> entry.getType().equals(AclEntryType.RedirectRule.toString()));
         if (ipEntryExisted) {
-            throw new ApiMessageInterceptionException(operr("the access-control-list groups[%s] already own ip entry, can not add redirect rule", acl.getUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_ACL_10008, "the access-control-list groups[%s] already own ip entry, can not add redirect rule", acl.getUuid()));
         }
 
         if (redirectRuleExisted) {
-            throw new ApiMessageInterceptionException(operr("the access-control-list groups[%s] already own one redirect rule, can not add redirect rule", acl.getUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_ACL_10009, "the access-control-list groups[%s] already own one redirect rule, can not add redirect rule", acl.getUuid()));
         }
 
         if (StringUtils.isBlank(msg.getDomain()) && (StringUtils.isBlank(msg.getUrl()) || msg.getUrl().length() == 1)) {
-            throw new ApiMessageInterceptionException(operr("domain and url can not both empty"));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_ACL_10010, "domain and url can not both empty"));
         }
 
         if (StringUtils.isNotBlank(msg.getDomain())) {
             if (!AccessControlListUtils.isValidateDomain(msg.getDomain())) {
-                throw new ApiMessageInterceptionException(argerr("domain[%s] is not validate domain", msg.getDomain()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_ACL_10011, "domain[%s] is not validate domain", msg.getDomain()));
             }
 
             if (msg.getDomain().contains("*")) {
@@ -175,19 +176,19 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
 
             if (StringUtils.isNotBlank(msg.getUrl()) && msg.getUrl().length() > 1) {
                 if (!AccessControlListUtils.isValidateUrl(msg.getUrl())) {
-                    throw new ApiMessageInterceptionException(argerr("url[%s] is not validate url", msg.getUrl()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_ACL_10012, "url[%s] is not validate url", msg.getUrl()));
                 }
                 msg.setMatchMethod("DomainAndUrl");
             } else {
                 if (msg.getUrl().length() == 1 && !msg.getUrl().equals("/")) {
-                    throw new ApiMessageInterceptionException(argerr("url[%s] is not validate url", msg.getUrl()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_ACL_10013, "url[%s] is not validate url", msg.getUrl()));
                 }
                 msg.setUrl("/");
                 msg.setMatchMethod("Domain");
             }
         } else {
             if (!AccessControlListUtils.isValidateUrl(msg.getUrl())) {
-                throw new ApiMessageInterceptionException(argerr("url[%s] is not validate url", msg.getDomain()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_ACL_10014, "url[%s] is not validate url", msg.getDomain()));
             }
             msg.setMatchMethod("Url");
         }

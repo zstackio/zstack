@@ -18,6 +18,7 @@ import org.zstack.resourceconfig.ResourceConfigFacade;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * @ Author : yh.w
@@ -113,7 +114,7 @@ public class ResourceBindingAllocatorFlow extends AbstractHostAllocatorFlow {
         for (Map.Entry<String, List<String>> entry : resources.entrySet()) {
             ResourceBindingCollector collector = collectors.get(entry.getKey());
             if (collector == null) {
-                fail(Platform.operr("resource binding not support type %s yet", entry.getKey()));
+                fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10004, "resource binding not support type %s yet", entry.getKey()));
                 return;
             }
             availableHost.addAll(collector.collect(entry.getValue()));
@@ -132,7 +133,7 @@ public class ResourceBindingAllocatorFlow extends AbstractHostAllocatorFlow {
                 .equals(ResourceBindingStrategy.Soft.toString())) {
             next(candidates);
         } else {
-            fail(Platform.operr("no available host found with binded resource %s", resources));
+            fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10005, "no available host found with binded resource %s", resources));
         }
     }
 }

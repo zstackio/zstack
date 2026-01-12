@@ -19,6 +19,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 import java.util.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -38,7 +39,7 @@ public class AttachedVolumePrimaryStorageAllocatorFlow extends AbstractHostAlloc
 
         VmInstanceInventory vm = spec.getVmInstance();
         if (vm.getRootVolume() == null || !VolumeStatus.Ready.toString().equals(vm.getRootVolume().getStatus())) {
-            fail(Platform.operr("cannot find root volume of vm[uuid:%s]", vm.getUuid()));
+            fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10022, "cannot find root volume of vm[uuid:%s]", vm.getUuid()));
         }
 
         List<String> requiredPsUuids = CollectionUtils.transformToList(vm.getAllVolumes(), new Function<String, VolumeInventory>() {
@@ -81,7 +82,7 @@ public class AttachedVolumePrimaryStorageAllocatorFlow extends AbstractHostAlloc
         }
 
         if (candidates.isEmpty()) {
-            fail(Platform.operr("no host found in clusters which have attached to all primary storage %s where vm[uuid:%s]'s volumes locate",
+            fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10023, "no host found in clusters which have attached to all primary storage %s where vm[uuid:%s]'s volumes locate",
                     requiredPsUuids, vm.getUuid()));
         } else {
             next(candidates);

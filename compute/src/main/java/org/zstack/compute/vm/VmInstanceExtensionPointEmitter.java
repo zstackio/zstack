@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VmInstanceExtensionPointEmitter implements Component {
     private static final CLogger logger = Utils.getLogger(VmInstanceExtensionPointEmitter.class);
@@ -67,7 +68,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
             try {
                 String err = ext.preStartNewCreatedVm(inv);
                 if (err != null) {
-                    return operr("VmInstanceStartNewCreatedVmExtensionPoint[%s] refuses to create vm[uuid:%s] because %s",
+                    return operr(ORG_ZSTACK_COMPUTE_VM_10317, "VmInstanceStartNewCreatedVmExtensionPoint[%s] refuses to create vm[uuid:%s] because %s",
                             ext.getClass().getName(), inv.getUuid(), err);
                 }
             } catch (Exception e) {
@@ -194,7 +195,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
             try {
                 String err = ext.preRebootVm(inv);
                 if (err != null) {
-                    return operr("VmInstanceRebootExtensionPoint[%s] refuses to reboot vm[uuid:%s] because %s", ext.getClass().getName(),
+                    return operr(ORG_ZSTACK_COMPUTE_VM_10318, "VmInstanceRebootExtensionPoint[%s] refuses to reboot vm[uuid:%s] because %s", ext.getClass().getName(),
                             inv.getUuid(), err);
                 }
             } catch (Exception e) {
@@ -236,7 +237,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
             try {
                 String err = ext.preDestroyVm(inv);
                 if (err != null) {
-                    return operr("VmInstanceDestroyVmExtensionPoint[%s] refuses to destroy vm[uuid:%s] because %s", ext.getClass().getName(), inv.getUuid(), err);
+                    return operr(ORG_ZSTACK_COMPUTE_VM_10319, "VmInstanceDestroyVmExtensionPoint[%s] refuses to destroy vm[uuid:%s] because %s", ext.getClass().getName(), inv.getUuid(), err);
                 }
             } catch (Exception e) {
                 logger.warn(String.format("Unhandled exception while calling %s", ext.getClass().getName()), e);
@@ -286,7 +287,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
             try {
                 String err = ext.preStartVm(inv);
                 if (err != null) {
-                    return operr("VmInstanceStartExtensionPoint[%s] refuses to start vm[uuid:%s] because %s", ext.getClass().getName(),
+                    return operr(ORG_ZSTACK_COMPUTE_VM_10320, "VmInstanceStartExtensionPoint[%s] refuses to start vm[uuid:%s] because %s", ext.getClass().getName(),
                             inv.getUuid(), err);
                 }
             } catch (Exception e) {

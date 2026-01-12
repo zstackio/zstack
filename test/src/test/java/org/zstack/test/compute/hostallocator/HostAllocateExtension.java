@@ -4,6 +4,7 @@ import org.zstack.core.Platform;
 import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostAllocateExtensionPoint;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class HostAllocateExtension implements HostAllocateExtensionPoint {
     private boolean errorOut = false;
@@ -19,7 +20,7 @@ public class HostAllocateExtension implements HostAllocateExtensionPoint {
     @Override
     public void beforeAllocateHostSuccessReply(HostAllocatorSpec spec, String replyHostUuid) {
         if (isErrorOut()) {
-            throw new OperationFailureException(Platform.operr("On purpose"));
+            throw new OperationFailureException(Platform.operr(ORG_ZSTACK_TEST_COMPUTE_HOSTALLOCATOR_10000, "On purpose"));
         }
     }
 }

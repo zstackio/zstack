@@ -12,6 +12,7 @@ import org.zstack.header.message.APIMessage;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.StringDSL.isApiId;
 import static org.zstack.utils.StringDSL.isZStackUuid;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by miao on 17-5-16.
@@ -35,7 +36,7 @@ public class ProgressApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIGetTaskProgressMsg msg) {
         if (!isApiId(msg.getApiId())) {
-            throw new ApiMessageInterceptionException(argerr("parameter apiId[%s] is not a valid uuid.", msg.getApiId()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_CORE_PROGRESS_10000, "parameter apiId[%s] is not a valid uuid.", msg.getApiId()));
         }
     }
 }

@@ -6,6 +6,7 @@ import org.zstack.core.ansible.SyncTimeRequestedDeployArguments;
 import org.zstack.header.errorcode.OperationFailureException;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
     @SerializedName("pkg_kvmagent")
@@ -169,7 +170,7 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
     public void enableForceRunWithReason(String reason) {
         this.forceRun = true;
         if (StringUtils.isEmpty(reason)) {
-            throw new OperationFailureException(operr("the reason must be stated when setting force run"));
+            throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10011, "the reason must be stated when setting force run"));
         }
         logger.info(String.format("set ansible to force run, because %s", reason));
     }

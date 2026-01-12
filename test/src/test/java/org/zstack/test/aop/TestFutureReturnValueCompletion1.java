@@ -14,6 +14,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -32,7 +33,7 @@ public class TestFutureReturnValueCompletion1 {
     }
 
     private void complete(ReturnValueCompletion completion) {
-        completion.fail(operr("on purpose"));
+        completion.fail(operr(ORG_ZSTACK_TEST_AOP_10000, "on purpose"));
     }
 
     @Test

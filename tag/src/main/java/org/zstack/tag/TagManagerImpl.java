@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.removeDuplicateFromList;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class TagManagerImpl extends AbstractService implements TagManager,
         SoftDeleteEntityExtensionPoint, GlobalApiMessageInterceptor, SystemTagLifeCycleExtension,
@@ -242,7 +243,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         }
 
         if (isTagExisting(resourceUuid, tag, type, resourceType)) {
-            throw new OperationFailureException(operr("Duplicated Tag[tag:%s, type:%s, resourceType:%s, resourceUuid:%s]",
+            throw new OperationFailureException(operr(ORG_ZSTACK_TAG_10000, "Duplicated Tag[tag:%s, type:%s, resourceType:%s, resourceUuid:%s]",
                     tag, type, resourceType, resourceUuid));
         }
 
@@ -283,7 +284,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             resourceConfigSystemTag.newResourceConfig(resourceUuid, tag);
         } catch (GlobalConfigException e) {
             logger.debug(String.format("Failed to create resource config, because %s", e.getMessage()));
-            throw new ApiMessageInterceptionException(argerr(e.getMessage()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_TAG_10001, e.getMessage()));
         }
 
         return null;
@@ -657,7 +658,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
             if (resourceConfigSystemTag.isMatch(tag)) {
                 throw new ApiMessageInterceptionException(
-                        argerr("no system tag matches[%s] for resourceType[%s]", tag, msg.getResourceType()));
+                        argerr(ORG_ZSTACK_TAG_10002, "no system tag matches[%s] for resourceType[%s]", tag, msg.getResourceType()));
             }
         }
 
@@ -695,7 +696,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
         if (resourceConfigSystemTag.isMatch(msg.getTag())) {
             throw new ApiMessageInterceptionException(
-                    argerr("no system tag matches[%s] for resourceType[%s]", msg.getTag(), msg.getResourceType()));
+                    argerr(ORG_ZSTACK_TAG_10003, "no system tag matches[%s] for resourceType[%s]", msg.getTag(), msg.getResourceType()));
         }
 
         SystemTagInventory inv = createNonInherentSystemTag(msg.getResourceUuid(), msg.getTag(), msg.getResourceType());
@@ -758,13 +759,13 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     public void validateSystemTag(String resourceUuid, String resourceType, String tag) {
         if (!isValidSystemTag(resourceUuid, resourceType, tag)) {
             throw new ApiMessageInterceptionException(
-                    argerr("no system tag matches[%s] for resourceType[%s]", tag, resourceType));
+                    argerr(ORG_ZSTACK_TAG_10004, "no system tag matches[%s] for resourceType[%s]", tag, resourceType));
         }
 
         for (ValidateSystemTagExtensionPoint exp: pluginRgty.getExtensionList(ValidateSystemTagExtensionPoint.class)) {
             if (!exp.validateSystemTag(resourceUuid, resourceType, tag)) {
                 throw new ApiMessageInterceptionException(
-                        argerr("validate system tag [%s] for resourceType[%s] failed", tag, resourceType));
+                        argerr(ORG_ZSTACK_TAG_10005, "validate system tag [%s] for resourceType[%s] failed", tag, resourceType));
             }
         }
     }
@@ -947,7 +948,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                 }
 
                 if (!matchSystemTag && !matchResourceTag) {
-                    throw new ApiMessageInterceptionException(argerr("no system tag matches %s", tag));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_TAG_10006, "no system tag matches %s", tag));
                 }
 
                 // resource config system tag will create new resource config
@@ -960,7 +961,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             Class resourceType = resourceTypeCreateMessageMap.get(cmsg.getClass());
             if (resourceType == null) {
                 throw new ApiMessageInterceptionException(inerr(
-                        "API message[%s] doesn't define resource type by @TagResourceType",
+                ORG_ZSTACK_TAG_10007,         "API message[%s] doesn't define resource type by @TagResourceType",
                         cmsg.getClass().getName()
                 ));
             }
@@ -982,7 +983,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         }
 
         if (adminOnlySystemTags.stream().anyMatch(it -> it.isMatch(tag))) {
-            return operr("tag[%s] is only for admin", tag);
+            return operr(ORG_ZSTACK_TAG_10008, "tag[%s] is only for admin", tag);
         }
         return null;
     }

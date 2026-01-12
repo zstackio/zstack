@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by Wenhao.Zhang on 21/12/22
@@ -29,7 +30,7 @@ public class AccountQuotaUpdateChecker implements QuotaUpdateChecker {
     @Override
     public ErrorCode check(QuotaVO quota, long updatedValue) {
         if (updatedValue < 0) {
-            return argerr("the quota[name:%s] of account[uuid:%s] can not be %d",
+            return argerr(ORG_ZSTACK_IDENTITY_10016, "the quota[name:%s] of account[uuid:%s] can not be %d",
                     quota.getName(), quota.getIdentityUuid(), updatedValue);
         }
         return checkQuotaChangeForAccount(quota.getIdentityUuid(), quota.getName(), updatedValue);
@@ -51,7 +52,7 @@ public class AccountQuotaUpdateChecker implements QuotaUpdateChecker {
         }
 
         if (used > updatedValue) {
-            return argerr("the account[uuid:%s] used [name:%s, usedValue:%s] exceeds request quota: %d",
+            return argerr(ORG_ZSTACK_IDENTITY_10017, "the account[uuid:%s] used [name:%s, usedValue:%s] exceeds request quota: %d",
                     accountUuid, quotaName, used, updatedValue);
         }
 

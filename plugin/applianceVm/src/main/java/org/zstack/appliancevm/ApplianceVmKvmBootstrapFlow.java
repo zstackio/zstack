@@ -20,6 +20,7 @@ import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import static org.zstack.core.Platform.operr;
 
 import java.util.Map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -61,7 +62,7 @@ public class ApplianceVmKvmBootstrapFlow extends NoRollbackFlow {
                     if (rsp.isSuccess()) {
                         chain.next();
                     } else {
-                        chain.fail(operr("set appliance bootstrapinfo error, because:%s", rsp.getError()));
+                        chain.fail(operr(ORG_ZSTACK_APPLIANCEVM_10000, "set appliance bootstrapinfo error, because:%s", rsp.getError()));
                     }
                 }
             }

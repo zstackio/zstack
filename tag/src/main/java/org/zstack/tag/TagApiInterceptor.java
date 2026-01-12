@@ -17,6 +17,7 @@ import org.zstack.identity.QuotaUtil;
 import javax.persistence.TypedQuery;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -45,7 +46,7 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APICreateSystemTagsMsg msg) {
         if (!tagMgr.getManagedEntityNames().contains(msg.getResourceType())) {
-            throw new ApiMessageInterceptionException(argerr("no resource type[%s] found in tag system", msg.getResourceType()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_TAG_10009, "no resource type[%s] found in tag system", msg.getResourceType()));
         }
 
         for (String tag : msg.getTags()) {
@@ -76,7 +77,7 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIAbstractCreateTagMsg msg) {
         if (!tagMgr.getManagedEntityNames().contains(msg.getResourceType())) {
-            throw new ApiMessageInterceptionException(argerr("no resource type[%s] found in tag system", msg.getResourceType()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_TAG_10010, "no resource type[%s] found in tag system", msg.getResourceType()));
         }
 
         if (msg instanceof APICreateSystemTagMsg) {
@@ -99,7 +100,7 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
         q.add(SystemTagVO_.uuid, Op.EQ, msg.getUuid());
         q.add(SystemTagVO_.inherent, Op.EQ, true);
         if (q.isExists()) {
-            throw new ApiMessageInterceptionException(operr("tag[uuid:%s] is an inherent system tag, can not be removed", msg.getUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_TAG_10011, "tag[uuid:%s] is an inherent system tag, can not be removed", msg.getUuid()));
         }
 
         boolean userTag = dbf.isExist(msg.getUuid(), UserTagVO.class);
@@ -125,7 +126,7 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
 
         Long size = q.getSingleResult();
         if (size <= 0) {
-            throw new ApiMessageInterceptionException(argerr("The argument :'resourceType' doesn't match uuid"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_TAG_10012, "The argument :'resourceType' doesn't match uuid"));
         }
 
     }
@@ -140,7 +141,7 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
         q.setParameter("tuuid", msg.getUuid());
         String accountUuid = q.getSingleResult();
         if (!msg.getSession().getAccountUuid().equals(accountUuid)) {
-            throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_TAG_10013, IdentityErrors.PERMISSION_DENIED,
                     "permission denied. The system tag[uuid: %s] refer to a resource not belonging to the account[uuid: %s]",
                     msg.getUuid(), msg.getSession().getAccountUuid()
             ));
@@ -154,7 +155,7 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
         q.setParameter("tuuid", msg.getUuid());
         String accountUuid = q.getSingleResult();
         if (!msg.getSession().getAccountUuid().equals(accountUuid)) {
-            throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_TAG_10014, IdentityErrors.PERMISSION_DENIED,
                     "permission denied. The user tag[uuid: %s] refer to a resource not belonging to the account[uuid: %s]",
                     msg.getUuid(), msg.getSession().getAccountUuid()
             ));
@@ -167,7 +168,7 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
         q.setParameter("tuuid", msg.getUuid());
         String accountUuid = q.getSingleResult();
         if (!msg.getSession().getAccountUuid().equals(accountUuid)) {
-            throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_TAG_10015, IdentityErrors.PERMISSION_DENIED,
                     "permission denied. The tag pattern[uuid: %s] refer to a resource not belonging to the account[uuid: %s]",
                     msg.getUuid(), msg.getSession().getAccountUuid()
             ));

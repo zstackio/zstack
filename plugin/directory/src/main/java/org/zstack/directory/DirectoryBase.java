@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * @author shenjin
@@ -271,7 +272,7 @@ public class DirectoryBase {
                 .filter(s -> s.getName().equals(msg.getName()) && s.getType().equals(vo.getType()))
                 .collect(Collectors.toList());
         if (!list.isEmpty()) {
-            completion.fail(operr("duplicate directory name, directory[uuid: %s] with name %s already exists", list.get(0).getUuid(), msg.getName()));
+            completion.fail(operr(ORG_ZSTACK_DIRECTORY_10005, "duplicate directory name, directory[uuid: %s] with name %s already exists", list.get(0).getUuid(), msg.getName()));
             return;
         }
         updateGroupName(msg, vo);
@@ -353,7 +354,7 @@ public class DirectoryBase {
             findSubUuids(uuids, list);
         }
         if (list.contains(msg.getTargetParentUuid())) {
-            completion.fail(operr("circular dependency detected, directory %s and directory %s will cause circular dependency", msg.getDirectoryUuid(), msg.getTargetParentUuid()));
+            completion.fail(operr(ORG_ZSTACK_DIRECTORY_10006, "circular dependency detected, directory %s and directory %s will cause circular dependency", msg.getDirectoryUuid(), msg.getTargetParentUuid()));
             return;
         }
         vo.setParentUuid(msg.getTargetParentUuid());

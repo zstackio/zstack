@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implements VirtualRouterHaGetCallbackExtensionPoint,
         VipBackend, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint, PreVipReleaseExtensionPoint,
@@ -114,7 +115,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                 VirtualRouterAsyncHttpCallReply re = reply.castReply();
                 CreateVipRsp ret = re.toResponse(CreateVipRsp.class);
                 if (!ret.isSuccess()) {
-                    ErrorCode err = operr("failed to create vip%s on virtual router[uuid:%s], because %s", tos, vr.getUuid(), ret.getError());
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_VIP_10000, "failed to create vip%s on virtual router[uuid:%s], because %s", tos, vr.getUuid(), ret.getError());
                     completion.fail(err);
                 } else {
                     completion.success();
@@ -168,7 +169,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                 if (ret.isSuccess()) {
                     completion.success();
                 } else {
-                    ErrorCode err = operr("failed to remove vip%s, because %s", tos, ret.getError());
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_VIP_10001, "failed to remove vip%s, because %s", tos, ret.getError());
                     completion.fail(err);
                 }
             }
@@ -234,7 +235,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                 VirtualRouterAsyncHttpCallReply re = reply.castReply();
                 CreateVipRsp ret = re.toResponse(CreateVipRsp.class);
                 if (!ret.isSuccess()) {
-                    ErrorCode err = operr("failed to sync vips[ips: %s] on virtual router[uuid:%s]" +
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_VIP_10002, "failed to sync vips[ips: %s] on virtual router[uuid:%s]" +
                             " for attaching nic[uuid: %s, ip: %s], because %s",
                             vips.stream().map(VipTO::getIp).collect(Collectors.toList()),
                             nic.getVmInstanceUuid(), nic.getUuid(), nic.getIp(), ret.getError());

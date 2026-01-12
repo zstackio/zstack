@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class LoginPluginBackend implements LoginBackend {
     LoginType loginType = new LoginType("plugin");
@@ -51,17 +52,17 @@ public class LoginPluginBackend implements LoginBackend {
     @Override
     public void login(LoginContext loginContext, ReturnValueCompletion<LoginSessionInfo> completion) {
         if (loginContext.getLoginPluginName() == null) {
-            throw new OperationFailureException(operr("missing loginPluginName"));
+            throw new OperationFailureException(operr(ORG_ZSTACK_LOGIN_PLUGIN_10000, "missing loginPluginName"));
         }
 
         LoginPluginExtension ext = loginPluginExtensionMap.get(loginContext.getLoginPluginName());
         if (ext == null) {
-            throw new OperationFailureException(operr("no login plugin named %s", loginContext.getLoginPluginName()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_LOGIN_PLUGIN_10001, "no login plugin named %s", loginContext.getLoginPluginName()));
         }
 
         LoginUserInfo info = ext.login(loginContext.getUsername(), loginContext.getPassword());
         if (info == null || info.getUsername() == null) {
-            completion.fail(operr("missing LoginUserInfo when use plugin login", loginContext.getLoginPluginName()));
+            completion.fail(operr(ORG_ZSTACK_LOGIN_PLUGIN_10002, "missing LoginUserInfo when use plugin login", loginContext.getLoginPluginName()));
             return;
         }
 

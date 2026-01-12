@@ -20,6 +20,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionUtils.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Filter out hosts that do not match the operating system of the specific host
@@ -69,7 +70,7 @@ public class HostOsVersionAllocatorFlow  extends AbstractHostAllocatorFlow {
                 .collect(Collectors.toList());
 
         if (matchedHosts.isEmpty()) {
-            fail(Platform.operr("no candidate host has version[%s]", currentHostOs));
+            fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10000, "no candidate host has version[%s]", currentHostOs));
         } else {
             next(matchedHosts);
         }

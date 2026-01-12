@@ -63,6 +63,7 @@ import static java.util.Arrays.stream;
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 8/8/2015.
@@ -764,17 +765,17 @@ public class LoadBalancerBase {
 
                 VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, msg.getVipUuid()).find();
                 if (StringUtils.isEmpty(vipVO.getIp())) {
-                    throw new OperationFailureException(operr("fail to attach vip to lb , because vip[%s] has no ip", vipVO.getUuid()));
+                    throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10017, "fail to attach vip to lb , because vip[%s] has no ip", vipVO.getUuid()));
                 }
 
                 if (NetworkUtils.isIpv4Address(vipVO.getIp())) {
                     if (!StringUtils.isEmpty(self.getVipUuid())) {
-                        throw new OperationFailureException(operr("fail to attach ipv4 vip to lb , because lb[%s] has ipv4 vip[%s]", self.getUuid(), self.getVipUuid()));
+                        throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10018, "fail to attach ipv4 vip to lb , because lb[%s] has ipv4 vip[%s]", self.getUuid(), self.getVipUuid()));
                     }
                     self.setVipUuid(vipVO.getUuid());
                 } else {
                     if (!StringUtils.isEmpty(self.getIpv6VipUuid())) {
-                        throw new OperationFailureException(operr("fail to attach ipv6 vip to lb , because lb[%s] has ipv6 vip[%s]", self.getUuid(), self.getVipUuid()));
+                        throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10019, "fail to attach ipv6 vip to lb , because lb[%s] has ipv6 vip[%s]", self.getUuid(), self.getVipUuid()));
                     }
                     self.setIpv6VipUuid(vipVO.getUuid());
                 }
@@ -851,7 +852,7 @@ public class LoadBalancerBase {
 
                 if (bkd != null) {
                     if (!bkd.canDetachVipFromLb(lbStruct, vipVO)) {
-                        reply.setError(operr("cloud not delete vip[%s]", vipVO.getUuid()));
+                        reply.setError(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10020, "cloud not delete vip[%s]", vipVO.getUuid()));
                         bus.reply(msg, reply);
                         chain.next();
                         return;
@@ -1175,7 +1176,7 @@ public class LoadBalancerBase {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                        evt.setError(err(ORG_ZSTACK_NETWORK_SERVICE_LB_10021, SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                         bus.publish(evt);
                     }
                 });
@@ -1652,7 +1653,7 @@ public class LoadBalancerBase {
         List<String> nicUuids = new ArrayList<>(struct.getVmNicWeight().keySet());
         final String providerType = f.getProviderTypeByVmNicUuid(nicUuids.isEmpty() ? null : nicUuids.get(0));
         if (providerType == null) {
-            throw new OperationFailureException(operr("can not get service providerType for load balancer listener [uuid:%s]", struct.listenerUuid));
+            throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10022, "can not get service providerType for load balancer listener [uuid:%s]", struct.listenerUuid));
         }
 
         final List<VmNicInventory> nics = new ArrayList<>();
@@ -1681,7 +1682,7 @@ public class LoadBalancerBase {
                             init = true;
                         } else {
                             if (!providerType.equals(self.getProviderType())) {
-                                throw new OperationFailureException(operr("service provider type mismatching. The load balancer[uuid:%s] is provided by the service provider[type:%s]," +
+                                throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10023, "service provider type mismatching. The load balancer[uuid:%s] is provided by the service provider[type:%s]," +
                                                 " but new service provider is [type: %s]", self.getUuid(), self.getProviderType(),providerType));
                             }
                         }
@@ -1783,7 +1784,7 @@ public class LoadBalancerBase {
                         .eq(LoadBalancerListenerVO_.protocol, msg.getProtocol())
                         .eq(LoadBalancerListenerVO_.loadBalancerPort, msg.getLoadBalancerPort()).isExists()) {
                     APICreateLoadBalancerListenerEvent evt = new APICreateLoadBalancerListenerEvent(msg.getId());
-                    evt.setError(argerr("there is listener with same port [%s] and same load balancer [uuid:%s]",
+                    evt.setError(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10024, "there is listener with same port [%s] and same load balancer [uuid:%s]",
                             msg.getLoadBalancerPort(), msg.getLoadBalancerUuid()));
                     bus.publish(evt);
 
@@ -2169,7 +2170,7 @@ public class LoadBalancerBase {
 
         String[] ts = target.split(":");
         if (ts.length != 2) {
-            throw new OperationFailureException(argerr("invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default", target));
+            throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10025, "invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default", target));
         }
         return ts;
     }
@@ -2341,7 +2342,7 @@ public class LoadBalancerBase {
                                 LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN);
                         String[] pm = param.split(":");
                         if (pm.length != 3) {
-                            throw new OperationFailureException(argerr("invalid health checking parameters[%s], the format is method:URI:code, for example, GET:/index.html:http_2xx", param));
+                            throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10026, "invalid health checking parameters[%s], the format is method:URI:code, for example, GET:/index.html:http_2xx", param));
                         }
 
                         if (msg.getHealthCheckMethod() != null) {

@@ -11,6 +11,7 @@ import java.util.List;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2016/5/26.
@@ -37,7 +38,7 @@ public class IsoOperator {
         List<String> isoList = getIsoUuidByVmUuid(vmUuid);
 
         if (isoList.contains(isoUuid)) {
-            throw new OperationFailureException(operr("VM[uuid:%s] has attached ISO[uuid:%s]", vmUuid, isoUuid));
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10077, "VM[uuid:%s] has attached ISO[uuid:%s]", vmUuid, isoUuid));
         }
 
         long emptyCdRomNum = Q.New(VmCdRomVO.class)
@@ -45,7 +46,7 @@ public class IsoOperator {
                 .isNull(VmCdRomVO_.isoUuid)
                 .count();
         if (emptyCdRomNum == 0) {
-            throw new OperationFailureException(operr("All vm[uuid:%s] CD-ROMs have mounted ISO", vmUuid));
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10078, "All vm[uuid:%s] CD-ROMs have mounted ISO", vmUuid));
         }
     }
 

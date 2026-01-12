@@ -58,6 +58,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.longjob.LongJobUtils.noncancelableErr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class HostManagerImpl extends AbstractService implements HostManager, ManagementNodeChangeListener,
         ManagementNodeReadyExtensionPoint, FindSameNodeExtensionPoint {
@@ -267,7 +268,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }
 
         if (vo == null) {
-            ErrorCode err = Platform.err(SysErrors.RESOURCE_NOT_FOUND, "cannot find host[uuid:%s], it may have been deleted", msg.getHostUuid());
+            ErrorCode err = Platform.err(ORG_ZSTACK_COMPUTE_HOST_10101, SysErrors.RESOURCE_NOT_FOUND, "cannot find host[uuid:%s], it may have been deleted", msg.getHostUuid());
             throw new OperationFailureException(err);
         }
 
@@ -372,13 +373,13 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private void doAddHost(final AddHostMessage msg, ReturnValueCompletion<HostInventory > completion) {
         final ClusterVO cluster = findClusterByUuid(msg.getClusterUuid());
         if (cluster == null) {
-            completion.fail(argerr("cluster[uuid:%s] is not existing", msg.getClusterUuid()));
+            completion.fail(argerr(ORG_ZSTACK_COMPUTE_HOST_10102, "cluster[uuid:%s] is not existing", msg.getClusterUuid()));
             return;
         }
 
         String hvType = cluster.getHypervisorType();
         if (hvType == null) {
-            completion.fail(argerr("cluster[uuid:%s] has null hypervisorType", msg.getClusterUuid()));
+            completion.fail(argerr(ORG_ZSTACK_COMPUTE_HOST_10103, "cluster[uuid:%s] has null hypervisorType", msg.getClusterUuid()));
             return;
         }
 
@@ -386,7 +387,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 .eq(HostVO_.managementIp, msg.getManagementIp())
                 .eq(HostVO_.hypervisorType, hvType)
                 .isExists()) {
-            completion.fail(argerr("there has been a host having managementIp[%s] for hypervisor[%s]",
+            completion.fail(argerr(ORG_ZSTACK_COMPUTE_HOST_10104, "there has been a host having managementIp[%s] for hypervisor[%s]",
                     msg.getManagementIp(), hvType));
             return;
         }
@@ -481,7 +482,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 inv.setArchitecture(arch);
 
                 if (arch == null) {
-                    trigger.fail(operr("after connecting, host[name:%s, ip:%s] returns a null architecture", vo.getName(), vo.getManagementIp()));
+                    trigger.fail(operr(ORG_ZSTACK_COMPUTE_HOST_10105, "after connecting, host[name:%s, ip:%s] returns a null architecture", vo.getName(), vo.getManagementIp()));
                     return;
                 }
 
@@ -496,7 +497,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 }
 
                 if (!arch.equals(cluster.getArchitecture())) {
-                    trigger.fail(operr("cluster[uuid:%s]'s architecture is %s, not match the host[name:%s, ip:%s] architecture %s",
+                    trigger.fail(operr(ORG_ZSTACK_COMPUTE_HOST_10106, "cluster[uuid:%s]'s architecture is %s, not match the host[name:%s, ip:%s] architecture %s",
                             vo.getClusterUuid(), cluster.getArchitecture(), vo.getName(), vo.getManagementIp(), arch));
                     return;
                 }
@@ -854,7 +855,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     bus.send(msg);
 
                     new HostBase.HostDisconnectedCanonicalEvent(d.getHostUuid(),
-                            operr("primary storage[uuid:%s] becomes disconnected, the host has no connected primary storage attached",
+                            operr(ORG_ZSTACK_COMPUTE_HOST_10107, "primary storage[uuid:%s] becomes disconnected, the host has no connected primary storage attached",
                                     d.getPrimaryStorageUuid())).fire();
                 }
             }

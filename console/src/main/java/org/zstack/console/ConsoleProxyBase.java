@@ -24,6 +24,7 @@ import java.net.URI;
 import java.sql.Timestamp;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -65,7 +66,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
         final int targetPort = uri.getPort();
 
         if (targetHostname == null || targetPort < 0) {
-            completion.fail(operr("establish VNC: unexpected uri: %s", uri.toString()));
+            completion.fail(operr(ORG_ZSTACK_CONSOLE_10005, "establish VNC: unexpected uri: %s", uri.toString()));
             return;
         }
 
@@ -113,7 +114,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
                     self.setExpiredDate(new Timestamp(expiredDate));
                     completion.success(self);
                 } else {
-                    completion.fail(operr("operation error, because:%s", ret.getError()));
+                    completion.fail(operr(ORG_ZSTACK_CONSOLE_10006, "operation error, because:%s", ret.getError()));
                 }
             }
 
@@ -133,7 +134,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
         final int targetPort = uri.getPort();
 
         if (targetHostname == null || targetPort < 0) {
-            completion.fail(operr("establish VNC: unexpected uri: %s", uri.toString()));
+            completion.fail(operr(ORG_ZSTACK_CONSOLE_10007, "establish VNC: unexpected uri: %s", uri.toString()));
             return;
         }
 
@@ -198,7 +199,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
                 if (ret.isSuccess()) {
                     completion.success(ret.getAvailable());
                 } else {
-                    completion.fail(operr("unable to check console proxy availability, because %s", ret.getError()));
+                    completion.fail(operr(ORG_ZSTACK_CONSOLE_10008, "unable to check console proxy availability, because %s", ret.getError()));
                 }
             }
 
@@ -237,7 +238,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
                         if (ret.isSuccess()) {
                             completion.success();
                         } else {
-                            completion.fail(operr("operation error, because:%s", ret.getError()));
+                            completion.fail(operr(ORG_ZSTACK_CONSOLE_10009, "operation error, because:%s", ret.getError()));
                         }
                     }
 

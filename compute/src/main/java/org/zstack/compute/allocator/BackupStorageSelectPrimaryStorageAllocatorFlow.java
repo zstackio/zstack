@@ -23,6 +23,7 @@ import java.util.List;
 
 import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2016/8/17.
@@ -59,7 +60,7 @@ public class BackupStorageSelectPrimaryStorageAllocatorFlow extends AbstractHost
             List<String> possiblePrimaryStorageTypes = spec.getBackupStoragePrimaryStorageMetrics().get(type);
             if (possiblePrimaryStorageTypes == null) {
                 throw new OperationFailureException(inerr(
-                        "the image[uuid:%s] is on the backup storage[uuid:%s, type:%s] that doesn't have metrics defined" +
+                ORG_ZSTACK_COMPUTE_ALLOCATOR_10006,         "the image[uuid:%s] is on the backup storage[uuid:%s, type:%s] that doesn't have metrics defined" +
                                 " in conf/springConfigXml/HostAllocatorManager.xml. The developer should add its primary storage metrics",
                         spec.getImage().getUuid(), spec.getRequiredBackupStorageUuid(), type
                 ));
@@ -69,7 +70,7 @@ public class BackupStorageSelectPrimaryStorageAllocatorFlow extends AbstractHost
             if (result.isEmpty()) {
                 String name = spec.getImage().getName();
                 throw new OperationFailureException(operr(
-                        "The image[uuid:%s, name:%s] is on the backup storage[uuid:%s, type:%s] that requires to work with primary storage[types:%s]," +
+                ORG_ZSTACK_COMPUTE_ALLOCATOR_10007,         "The image[uuid:%s, name:%s] is on the backup storage[uuid:%s, type:%s] that requires to work with primary storage[types:%s]," +
                                 "however, no host found suitable to work with those primary storage", spec.getImage().getUuid(), name,
                         spec.getRequiredBackupStorageUuid(),spec.getImage().getType(), possiblePrimaryStorageTypes
                 ));
@@ -78,13 +79,13 @@ public class BackupStorageSelectPrimaryStorageAllocatorFlow extends AbstractHost
             result = findHostsByPrimaryStorageUuids(psUuids);
             if (result.isEmpty()) {
                 throw new OperationFailureException(operr(
-                        "The image[uuid:%s] is on the backup storage[uuid:%s, type:%s] that requires to work with primary storage[uuids:%s]," +
+                ORG_ZSTACK_COMPUTE_ALLOCATOR_10008,         "The image[uuid:%s] is on the backup storage[uuid:%s, type:%s] that requires to work with primary storage[uuids:%s]," +
                                 "however, no host found suitable to work with those primary storage", spec.getImage().getUuid(),
                         spec.getRequiredBackupStorageUuid(), type, psUuids)
                 );
             }
         } else {
-            throw new OperationFailureException(operr("the backup storage[uuid:%s, type:%s] requires bound" +
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10009, "the backup storage[uuid:%s, type:%s] requires bound" +
                     " primary storage, however, the primary storage has not been added", spec.getRequiredBackupStorageUuid(), bsType));
         }
 

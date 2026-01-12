@@ -86,6 +86,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static org.zstack.utils.ExceptionDSL.throwableSafe;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class ManagementNodeManagerImpl extends AbstractService implements ManagementNodeManager, FindSameNodeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ManagementNodeManager.class);
@@ -616,7 +617,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             try {
                 lock.unlock();
             } catch (Exception e) {
-                ErrorCode errCode = Platform.inerr(e.getMessage());
+                ErrorCode errCode = Platform.inerr(ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000, e.getMessage());
                 new BootErrorLog().write(errCode.toString());
                 ret.success = false;
             }

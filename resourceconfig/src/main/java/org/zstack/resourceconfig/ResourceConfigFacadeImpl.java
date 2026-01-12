@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class ResourceConfigFacadeImpl extends AbstractService implements ResourceConfigFacade {
     private static final CLogger logger = Utils.getLogger(ResourceConfigFacadeImpl.class);
@@ -79,7 +80,7 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
             rc.updateValue(msg.getResourceUuid(), msg.getValue());
             evt.setInventory(ResourceConfigInventory.valueOf(rc.loadConfig(msg.getResourceUuid())));
         } catch (GlobalConfigException e) {
-            evt.setError(operr(e.getMessage()));
+            evt.setError(operr(ORG_ZSTACK_RESOURCECONFIG_10003, e.getMessage()));
         }
 
         bus.publish(evt);

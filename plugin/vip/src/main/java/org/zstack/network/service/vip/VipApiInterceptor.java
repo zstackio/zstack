@@ -30,8 +30,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
-/**
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;/**
  */
+
 public class VipApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
     @Autowired
     private ErrorFacade errf;
@@ -78,10 +79,10 @@ public class VipApiInterceptor implements ApiMessageInterceptor, GlobalApiMessag
             List<String> accessibleUuids = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, VipVO.class);
 
             if (accessibleUuids == null || accessibleUuids.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("account have no vips"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIP_10001, "account have no vips"));
             }
             if (!accessibleUuids.contains(vipUuid)) {
-                throw new ApiMessageInterceptionException(argerr("vip can not be accessed by this account"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIP_10002, "vip can not be accessed by this account"));
             }
         }
     }
@@ -101,7 +102,7 @@ public class VipApiInterceptor implements ApiMessageInterceptor, GlobalApiMessag
             UsedIpVO ip = dbf.findByUuid(uuid, UsedIpVO.class);
             if (Q.New(VipVO.class).eq(VipVO_.l3NetworkUuid, ip.getL3NetworkUuid())
                     .eq(VipVO_.ip, ip.getIp()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr("could delete ip, because ip[uuid:%s] is a vip", ip.getIp()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIP_10003, "could delete ip, because ip[uuid:%s] is a vip", ip.getIp()));
             }
         }
     }
@@ -109,35 +110,35 @@ public class VipApiInterceptor implements ApiMessageInterceptor, GlobalApiMessag
     private void validate(APIDeleteVipMsg msg) {
         VipVO vipVO = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
         if (vipMgr.isSystemVip(vipVO)) {
-            throw new ApiMessageInterceptionException(argerr("system vip can not be deleted by API message"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIP_10004, "system vip can not be deleted by API message"));
         }
     }
 
     private void validate(APICreateVipMsg msg) {
         if (msg.getAllocatorStrategy() != null && !IpAllocatorType.hasType(msg.getAllocatorStrategy())) {
-            throw new ApiMessageInterceptionException(argerr("unsupported ip allocation strategy[%s]", msg.getAllocatorStrategy()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIP_10005, "unsupported ip allocation strategy[%s]", msg.getAllocatorStrategy()));
         }
 
         L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         if (msg.getRequiredIp() != null) {
             if (NetworkUtils.isIpv4Address(msg.getRequiredIp()) && !l3NetworkVO.getIpVersions().contains(IPv6Constants.IPv4)) {
-                throw new ApiMessageInterceptionException(argerr("requiredIp[%s] is not in valid IPv4 mediaType", msg.getRequiredIp()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIP_10006, "requiredIp[%s] is not in valid IPv4 mediaType", msg.getRequiredIp()));
             }
             if (IPv6NetworkUtils.isIpv6Address(msg.getRequiredIp()) && !l3NetworkVO.getIpVersions().contains(IPv6Constants.IPv6)) {
-                throw new ApiMessageInterceptionException(argerr("requiredIp[%s] is not in valid IPv4 mediaType", msg.getRequiredIp()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIP_10007, "requiredIp[%s] is not in valid IPv4 mediaType", msg.getRequiredIp()));
             }
 
             SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
             q.add(VipVO_.ip, Op.EQ, msg.getRequiredIp());
             q.add(VipVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
             if (q.isExists()) {
-                throw new ApiMessageInterceptionException(operr("there is already a vip[%s] on l3Network[uuid:%s]", msg.getRequiredIp(), msg.getL3NetworkUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_VIP_10008, "there is already a vip[%s] on l3Network[uuid:%s]", msg.getRequiredIp(), msg.getL3NetworkUuid()));
             }
 
             UsedIpVO usedIpVO = Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, msg.getRequiredIp())
                     .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid()).find();
             if (usedIpVO != null && !msg.isSystem()) {
-                throw new ApiMessageInterceptionException(operr("required ip address [%s] is already used", msg.getRequiredIp()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_VIP_10009, "required ip address [%s] is already used", msg.getRequiredIp()));
             }
 
             if (NetworkUtils.isIpv4Address(msg.getRequiredIp())) {
@@ -161,7 +162,7 @@ public class VipApiInterceptor implements ApiMessageInterceptor, GlobalApiMessag
         }
 
         if (msg.getIpVersion() == null) {
-            throw new ApiMessageInterceptionException(operr("could not create vip, because can not determine the vip version"));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_VIP_10010, "could not create vip, because can not determine the vip version"));
         }
     }
 }
