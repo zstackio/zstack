@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class L2NetworkManagerImpl extends AbstractService implements L2NetworkManager {
     private static final CLogger logger = Utils.getLogger(L2NetworkManagerImpl.class);
@@ -405,7 +406,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         }
 
         if (vo == null) {
-            ErrorCode errCode = err(SysErrors.RESOURCE_NOT_FOUND, "unable to find L2Network[uuid:%s], it may have been deleted", msg.getL2NetworkUuid());
+            ErrorCode errCode = err(ORG_ZSTACK_NETWORK_L2_10001, SysErrors.RESOURCE_NOT_FOUND, "unable to find L2Network[uuid:%s], it may have been deleted", msg.getL2NetworkUuid());
             bus.replyErrorByMessageType((Message)msg, errCode);
             return;
         }
@@ -421,7 +422,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
 				extp.beforeCreateL2Network(msg);
 			} catch (NetworkException e) {
 				APICreateL2NetworkEvent evt = new APICreateL2NetworkEvent(msg.getId());
-                evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, "unable to create l2network[name:%s, type:%s], %s", msg.getName(), msg.getType(), e.getMessage()));
+                evt.setError(err(ORG_ZSTACK_NETWORK_L2_10002, SysErrors.CREATE_RESOURCE_ERROR, "unable to create l2network[name:%s, type:%s], %s", msg.getName(), msg.getType(), e.getMessage()));
                 logger.warn(evt.getError().getDetails(), e);
 				bus.publish(evt);
 				return;

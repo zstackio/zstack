@@ -9,6 +9,7 @@ import org.zstack.kvm.KVMHostInventory;
 import org.zstack.kvm.KVMPingAgentExtensionPoint;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2016/8/6.
@@ -24,7 +25,7 @@ public class KVMPingAgentExtensionForTest implements KVMPingAgentExtensionPoint 
         if (success) {
             completion.success();
         } else {
-            ErrorCode err = operr("on purpose");
+            ErrorCode err = operr(ORG_ZSTACK_TEST_KVM_10000, "on purpose");
             err.putToOpaque(Opaque.NO_RECONNECT_AFTER_PING_FAILURE.toString(), true);
             completion.fail(err);
         }

@@ -18,9 +18,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
-/**
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;/**
  * Created by MaJin on 2020/7/30.
  */
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class BackupStoragePrimaryStorageAllocatorFlow extends NoRollbackFlow {
 
@@ -43,7 +44,7 @@ public class BackupStoragePrimaryStorageAllocatorFlow extends NoRollbackFlow {
         candidates.removeIf(it -> !supportBsUuids.contains(it.getUuid()));
 
         if (candidates.isEmpty()) {
-            trigger.fail(operr("required primary storage[uuid:%s, type:%s] could not support any backup storage.",
+            trigger.fail(operr(ORG_ZSTACK_STORAGE_BACKUP_10013, "required primary storage[uuid:%s, type:%s] could not support any backup storage.",
                     spec.getRequiredPrimaryStorageUuid(), psTypeName));
             return;
         }

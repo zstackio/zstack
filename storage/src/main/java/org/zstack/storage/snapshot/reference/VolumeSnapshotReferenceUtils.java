@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VolumeSnapshotReferenceUtils {
     private static final CLogger logger = Utils.getLogger(VolumeSnapshotReferenceUtils.class);
@@ -423,7 +424,7 @@ public class VolumeSnapshotReferenceUtils {
         List<VolumeInventory> refVols = getReferenceVolume(volumeUuid);
         if (!refVols.isEmpty()) {
             List<String> infos = refVols.stream().map(v -> String.format("uuid:%s, name:%s", v.getUuid(), v.getName())).collect(Collectors.toList());
-            throw new OperationFailureException(operr(" volume[uuid: %s] has been referenced by other volumes [%s], " +
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_REFERENCE_10000, " volume[uuid: %s] has been referenced by other volumes [%s], " +
                     "can not change install path before flatten them and their descendants ", volumeUuid, infos.toString()));
         }
 

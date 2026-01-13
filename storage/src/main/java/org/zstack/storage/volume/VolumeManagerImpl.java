@@ -68,6 +68,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.header.host.HostStatus.Connected;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VolumeManagerImpl extends AbstractService implements VolumeManager, ManagementNodeReadyExtensionPoint,
         ResourceOwnerAfterChangeExtensionPoint, VmStateChangedExtensionPoint, VmDetachVolumeExtensionPoint,
@@ -168,11 +169,11 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     .findValue();
 
             if (StringUtils.isEmpty(psType)) {
-                throw new OperationFailureException(operr("get primaryStorage %s type failed", msg.getPrimaryStorageUuid()));
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_VOLUME_10085, "get primaryStorage %s type failed", msg.getPrimaryStorageUuid()));
             }
 
             if (!PrimaryStorageType.getSupportFeaturesTypes(PrimaryStorageType::isSupportSharedVolume).contains(psType)) {
-                throw new OperationFailureException(operr("primaryStorage type [%s] not support shared volume yet", psType));
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_VOLUME_10086, "primaryStorage type [%s] not support shared volume yet", psType));
             }
         }
 
@@ -299,7 +300,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                                 });
 
                                 if (bsUuids.isEmpty()) {
-                                    throw new OperationFailureException(operr("the image[uuid:%s, name:%s] has been deleted on all backup storage", template.getUuid(), template.getName()));
+                                    throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_VOLUME_10087, "the image[uuid:%s, name:%s] has been deleted on all backup storage", template.getUuid(), template.getName()));
                                 }
 
                                 String sql = "select bs.uuid from BackupStorageVO bs, BackupStorageZoneRefVO zref, PrimaryStorageVO ps where zref.zoneUuid = ps.zoneUuid and bs.status = :bsStatus and bs.state = :bsState and ps.uuid = :psUuid and zref.backupStorageUuid = bs.uuid and bs.uuid in (:bsUuids)";
@@ -316,7 +317,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
 
                         if (bsUuids.isEmpty()) {
-                            trigger.fail(operr("cannot find a backup storage on which the image[uuid:%s] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3 has attached to zone in which primary storage[uuid:%s] is",
+                            trigger.fail(operr(ORG_ZSTACK_STORAGE_VOLUME_10088, "cannot find a backup storage on which the image[uuid:%s] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3 has attached to zone in which primary storage[uuid:%s] is",
                                     template.getUuid(), msg.getPrimaryStorageUuid()));
                             return;
                         }
@@ -477,7 +478,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     public void run(FlowTrigger trigger, Map data) {
                         VolumeVO vo = dbf.reload(vol);
                         if (vo == null) {
-                            trigger.fail(operr("target volume is expunged during volume creation"));
+                            trigger.fail(operr(ORG_ZSTACK_STORAGE_VOLUME_10089, "target volume is expunged during volume creation"));
                             return;
                         }
                         vo.setInstallPath(primaryStorageInstallPath);
@@ -513,7 +514,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     public void handle(Map data) {
                         VolumeVO vo = dbf.reload(vol);
                         if (vo == null) {
-                            reply.setError(operr("target volume is expunged during volume creation"));
+                            reply.setError(operr(ORG_ZSTACK_STORAGE_VOLUME_10090, "target volume is expunged during volume creation"));
                             bus.reply(msg, reply);
                             return;
                         }
@@ -569,7 +570,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             List<String> requiredPrimaryStorageUuids = config.getAllocate().getAllPrimaryStorages().stream()
                     .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
             if (!requiredPrimaryStorageUuids.contains(msg.getPrimaryStorageUuid())) {
-                throw new OperationFailureException(operr("primary storage uuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_VOLUME_10091, "primary storage uuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
                         requiredPrimaryStorageUuids, msg.getPrimaryStorageUuid()));
             }
         }
@@ -899,7 +900,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             public void run(MessageReply reply) {
                 VolumeVO vvo = dbf.reload(vo);
                 if (vvo == null) {
-                    reply.setError(operr("target volume is expunged during volume creation"));
+                    reply.setError(operr(ORG_ZSTACK_STORAGE_VOLUME_10092, "target volume is expunged during volume creation"));
                 }
 
                 if (reply.isSuccess()) {
@@ -1179,7 +1180,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             List<VolumeFactory> exts = pluginRgty.getExtensionList(
                     VolumeFactory.class);
             if (exts.size() > 1) {
-                throw new OperationFailureException(operr("there should not be more than one %s implementation.",
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_VOLUME_10093, "there should not be more than one %s implementation.",
                         VolumeFactory.class.getSimpleName()));
             }
         }

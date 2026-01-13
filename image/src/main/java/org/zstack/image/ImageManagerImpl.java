@@ -97,6 +97,7 @@ import static org.zstack.core.progress.ProgressReportService.markTaskStage;
 import static org.zstack.longjob.LongJobUtils.buildErrIfCanceled;
 import static org.zstack.longjob.LongJobUtils.noncancelableErr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class ImageManagerImpl extends AbstractService implements ImageManager, ManagementNodeReadyExtensionPoint,
         ReportQuotaExtensionPoint, ResourceOwnerPreChangeExtensionPoint, HostAllocatorFilterExtensionPoint {
@@ -889,7 +890,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     public void run(FlowTrigger trigger, Map data) {
                         List<VolumeVO> volumes = Q.New(VolumeVO.class).eq(VolumeVO_.vmInstanceUuid, vmUuid).list();
                         if (CollectionUtils.isEmpty(volumes)) {
-                            trigger.fail(operr("vm instance[uuid:%s] has no volume", vmUuid));
+                            trigger.fail(operr(ORG_ZSTACK_IMAGE_10022, "vm instance[uuid:%s] has no volume", vmUuid));
                             return;
                         }
 
@@ -902,7 +903,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         }
 
                         if (rootVolumeUuid == null) {
-                            trigger.fail(operr("vm instance[uuid:%s] has no root volume", vmUuid));
+                            trigger.fail(operr(ORG_ZSTACK_IMAGE_10023, "vm instance[uuid:%s] has no root volume", vmUuid));
                             return;
                         }
 
@@ -1351,7 +1352,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         }
 
         if (vo == null) {
-            ErrorCode err = err(SysErrors.RESOURCE_NOT_FOUND, "Cannot find image[uuid:%s], it may have been deleted", msg.getImageUuid());
+            ErrorCode err = err(ORG_ZSTACK_IMAGE_10024, SysErrors.RESOURCE_NOT_FOUND, "Cannot find image[uuid:%s], it may have been deleted", msg.getImageUuid());
             logger.warn(err.getDetails());
             bus.replyErrorByMessageType((Message) msg, err);
             return;
@@ -1396,10 +1397,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         Set<ImageBackupStorageRefVO> copiedRefs;
         ImageVO sourceImage = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
         if (sourceImage == null) {
-            throw new OperationFailureException(operr("source image [%s] not existed", msg.getImageUuid()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_IMAGE_10025, "source image [%s] not existed", msg.getImageUuid()));
         }
         if (sourceImage.getStatus() != ImageStatus.Ready) {
-            throw new OperationFailureException(operr("cannot clone image, because image [%s] status is not ready", msg.getImageUuid()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_IMAGE_10026, "cannot clone image, because image [%s] status is not ready", msg.getImageUuid()));
         }
 
         ImageVO vo = new ImageVO();
@@ -1526,7 +1527,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 for (String systemTag : msg.getSystemTags()) {
                     if (ImageSystemTags.BOOT_MODE.isMatch(systemTag)) {
                         if (++bootModeCount > 1) {
-                            throw new ApiMessageInterceptionException(argerr("only one bootMode system tag is allowed, but %d got", bootModeCount));
+                            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_IMAGE_10027, "only one bootMode system tag is allowed, but %d got", bootModeCount));
                         }
 
                         String bootMode = ImageSystemTags.BOOT_MODE.getTokenByTag(systemTag, ImageSystemTags.BOOT_MODE_TOKEN);
@@ -1545,7 +1546,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 }
                 if (!valid) {
                     throw new ApiMessageInterceptionException(argerr(
-                            "[%s] specified in system tag [%s] is not a valid boot mode", bootMode, systemTag)
+                    ORG_ZSTACK_IMAGE_10028,         "[%s] specified in system tag [%s] is not a valid boot mode", bootMode, systemTag)
                     );
                 }
             }
@@ -1993,7 +1994,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 ImageVO vo = dbf.reload(ivo);
                 InnerEvent event = new InnerEvent();
                 if (vo == null) {
-                    event.error = (operr("image [uuid:%s] has been deleted", ivo.getUuid()));
+                    event.error = (operr(ORG_ZSTACK_IMAGE_10029, "image [uuid:%s] has been deleted", ivo.getUuid()));
                     SQL.New("delete from ImageBackupStorageRefVO where imageUuid = :uuid")
                             .param("uuid", ivo.getUuid())
                             .execute();
@@ -2013,10 +2014,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 } else {
                     final ErrorCode err;
                     if (errors.isEmpty()) {
-                        err = err(SysErrors.CREATE_RESOURCE_ERROR, "Failed to download image[name:%s] on all backup storage%s.",
+                        err = err(ORG_ZSTACK_IMAGE_10030, SysErrors.CREATE_RESOURCE_ERROR, "Failed to download image[name:%s] on all backup storage%s.",
                                 inv.getName(), msgData.getBackupStorageUuids());
                     } else {
-                        err = err(SysErrors.CREATE_RESOURCE_ERROR, errors.get(0), "Failed to download image[name:%s] on all backup storage%s.",
+                        err = err(ORG_ZSTACK_IMAGE_10031, SysErrors.CREATE_RESOURCE_ERROR, errors.get(0), "Failed to download image[name:%s] on all backup storage%s.",
                                 inv.getName(), msgData.getBackupStorageUuids());
                     }
 
@@ -2166,7 +2167,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     }
 
                                     if (targetBackupStorages.isEmpty()) {
-                                        trigger.fail(operr("unable to allocate backup storage specified by uuids%s, list errors are: %s",
+                                        trigger.fail(operr(ORG_ZSTACK_IMAGE_10032, "unable to allocate backup storage specified by uuids%s, list errors are: %s",
                                                 msgData.getBackupStorageUuids(), JSONObjectUtil.toJsonString(errs)));
                                     } else {
                                         saveRefVOByBsInventorys(targetBackupStorages, imageVO.getUuid());
@@ -2261,7 +2262,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         SQL.New("delete from ImageBackupStorageRefVO where imageUuid = :uuid")
                                                 .param("uuid", imageVO.getUuid())
                                                 .execute();
-                                        trigger.fail(operr("image [uuid:%s] has been deleted", imageVO.getUuid()));
+                                        trigger.fail(operr(ORG_ZSTACK_IMAGE_10033, "image [uuid:%s] has been deleted", imageVO.getUuid()));
                                         return;
                                     }
 
@@ -2292,7 +2293,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 if (success) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(operr("failed to create image from root volume[uuid:%s] on all backup storage, see cause for one of errors",
+                                    trigger.fail(operr(ORG_ZSTACK_IMAGE_10034, "failed to create image from root volume[uuid:%s] on all backup storage, see cause for one of errors",
                                             rootVolumeUuid).causedBy(err));
                                 }
                             }
@@ -2490,7 +2491,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         saveRefVOByBsInventorys(backupStorages, image.getUuid());
                                         trigger.next();
                                     } else {
-                                        trigger.fail(operr("cannot find proper backup storage").causedBy(reply.getError()));
+                                        trigger.fail(operr(ORG_ZSTACK_IMAGE_10035, "cannot find proper backup storage").causedBy(reply.getError()));
                                     }
                                 }
                             });
@@ -2520,7 +2521,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     }
 
                                     if (backupStorages.isEmpty()) {
-                                        trigger.fail(operr("failed to allocate all backup storage[uuid:%s], a list of error: %s",
+                                        trigger.fail(operr(ORG_ZSTACK_IMAGE_10036, "failed to allocate all backup storage[uuid:%s], a list of error: %s",
                                                 msgData.getBackupStorageUuids(), JSONObjectUtil.toJsonString(errs)));
                                     } else {
                                         saveRefVOByBsInventorys(backupStorages, image.getUuid());
@@ -2633,7 +2634,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 int backupStorageNum = msgData.getBackupStorageUuids() == null ? 1 : msgData.getBackupStorageUuids().size();
 
                                 if (fail == backupStorageNum) {
-                                    ErrorCode errCode = operr("failed to create data volume template from volume[uuid:%s] on all backup storage%s. See cause for one of errors",
+                                    ErrorCode errCode = operr(ORG_ZSTACK_IMAGE_10037, "failed to create data volume template from volume[uuid:%s] on all backup storage%s. See cause for one of errors",
                                             volumeUuid, msgData.getBackupStorageUuids()).causedBy(err);
 
                                     trigger.fail(errCode);

@@ -1,5 +1,7 @@
 package org.zstack.test.integration.networkservice.provider.flat.eip
 
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+
 import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.header.network.service.NetworkServiceType
@@ -213,7 +215,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
 
         env.message(StopVipMsg.class) { StopVipMsg msg, CloudBus bus ->
             def reply = new StopVipReply()
-            reply.setError(operr("on purpose"))
+            reply.setError(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_NETWORKSERVICE_PROVIDER_FLAT_EIP_10000, "on purpose"))
             bus.reply(msg, reply)
         }
 

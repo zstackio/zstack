@@ -31,6 +31,7 @@ import java.util.*;
 
 import static org.zstack.core.Platform.err;
 import static java.util.Arrays.asList;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 public class ZoneManagerImpl extends AbstractService implements ZoneManager {
@@ -108,7 +109,7 @@ public class ZoneManagerImpl extends AbstractService implements ZoneManager {
         }
 
         if (vo == null) {
-            ErrorCode err = err(SysErrors.RESOURCE_NOT_FOUND, "unable to find zone[uuid:%s], it may have been deleted", msg.getZoneUuid());
+            ErrorCode err = err(ORG_ZSTACK_COMPUTE_ZONE_10000, SysErrors.RESOURCE_NOT_FOUND, "unable to find zone[uuid:%s], it may have been deleted", msg.getZoneUuid());
             bus.replyErrorByMessageType((Message)msg, err);
             return;
         }

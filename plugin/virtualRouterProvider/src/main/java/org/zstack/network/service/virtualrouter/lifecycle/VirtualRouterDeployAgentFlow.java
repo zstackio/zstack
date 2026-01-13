@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
@@ -120,7 +121,7 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
                                     if (ret.isSuccess()) {
                                         trigger.next();
                                     } else {
-                                        trigger.fail(operr("operation error, because:%s", ret.getError()));
+                                        trigger.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_LIFECYCLE_10000, "operation error, because:%s", ret.getError()));
                                     }
                                 }
 
@@ -141,7 +142,7 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
                                     if (ret.isSuccess()) {
                                         trigger.next();
                                     } else {
-                                        trigger.fail(operr("operation error, because:%s", ret.getError()));
+                                        trigger.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_LIFECYCLE_10001, "operation error, because:%s", ret.getError()));
                                     }
                                 }
 

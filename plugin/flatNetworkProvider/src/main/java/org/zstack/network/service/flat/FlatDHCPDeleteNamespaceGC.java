@@ -11,6 +11,7 @@ import org.zstack.header.host.HostVO;
 import org.zstack.kvm.KvmCommandSender;
 import org.zstack.kvm.KvmResponseWrapper;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2017/3/6.
@@ -34,7 +35,7 @@ public class FlatDHCPDeleteNamespaceGC extends EventBasedGarbageCollector {
         new KvmCommandSender(hostUuid).send(command, path,
                 wrapper -> {
                     FlatDhcpBackend.DeleteNamespaceRsp rsp = wrapper.getResponse(FlatDhcpBackend.DeleteNamespaceRsp.class);
-                    return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
+                    return rsp.isSuccess() ? null : operr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10013, "operation error, because:%s", rsp.getError());
                 },
 
                 new ReturnValueCompletion<KvmResponseWrapper>(completion) {

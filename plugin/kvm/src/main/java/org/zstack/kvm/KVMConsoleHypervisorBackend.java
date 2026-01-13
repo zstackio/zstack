@@ -22,6 +22,7 @@ import java.net.URISyntaxException;
 
 import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -62,12 +63,12 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
                 KVMHostAsyncHttpCallReply kreply = reply.castReply();
                 GetVncPortResponse rsp = kreply.toResponse(GetVncPortResponse.class);
                 if (!rsp.isSuccess()) {
-                    complete.fail(operr("operation error, because:%s", rsp.getError()));
+                    complete.fail(operr(ORG_ZSTACK_KVM_10160, "operation error, because:%s", rsp.getError()));
                     return;
                 }
 
                 if (rsp.getPort() < 0) {
-                    complete.fail(operr("unexpected VNC port number[%d] for VM [uuid:%s]", rsp.getPort(), vm.getUuid()));
+                    complete.fail(operr(ORG_ZSTACK_KVM_10161, "unexpected VNC port number[%d] for VM [uuid:%s]", rsp.getPort(), vm.getUuid()));
                     return;
                 }
 
@@ -83,7 +84,7 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
                     consoleUrl.setVersion(dbf.getDbVersion());
                     complete.success(consoleUrl);
                 } catch (URISyntaxException e) {
-                    complete.fail(inerr(e.getMessage()));
+                    complete.fail(inerr(ORG_ZSTACK_KVM_10162, e.getMessage()));
                 }
             }
         });

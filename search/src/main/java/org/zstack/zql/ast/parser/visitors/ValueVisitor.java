@@ -21,6 +21,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
     private static final CLogger logger = Utils.getLogger(ValueVisitor.class);
@@ -137,7 +138,7 @@ public class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
     private Object callAction(String apiStr, String outputStr, Map<String, Object> params) {
         List<String> o = Arrays.asList(outputStr.split("\\."));
         if (o.isEmpty()) {
-            throw new OperationFailureException(Platform.operr("output from [%s] is empty", apiStr));
+            throw new OperationFailureException(Platform.operr(ORG_ZSTACK_ZQL_AST_PARSER_VISITORS_10000, "output from [%s] is empty", apiStr));
         }
 
         String apiName = "org.zstack.sdk." + apiStr + "Action";
@@ -156,7 +157,7 @@ public class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
             err.setAccessible(true);
             Object ob = err.get(result);
             if (ob != null) {
-                throw new OperationFailureException(operr("call action[%s] failed, cause: %s", apiName, JSONObjectUtil.toJsonString(ob)));
+                throw new OperationFailureException(operr(ORG_ZSTACK_ZQL_AST_PARSER_VISITORS_10001, "call action[%s] failed, cause: %s", apiName, JSONObjectUtil.toJsonString(ob)));
             } else {
                 Field field = result.getClass().getField("value");
                 field.setAccessible(true);
@@ -168,10 +169,10 @@ public class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
             // InvocationTargetException contains actual exception in its target
             // but no error message in itself
             if (e instanceof InvocationTargetException) {
-                throw new OperationFailureException(operr(((InvocationTargetException) e).getTargetException().getMessage()));
+                throw new OperationFailureException(operr(ORG_ZSTACK_ZQL_AST_PARSER_VISITORS_10002, ((InvocationTargetException) e).getTargetException().getMessage()));
             }
 
-            throw new OperationFailureException(operr(e.getMessage()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_ZQL_AST_PARSER_VISITORS_10003, e.getMessage()));
         }
     }
 
@@ -207,7 +208,7 @@ public class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
                 f.set(o, value);
             }
         } catch (Exception e) {
-            throw new OperationFailureException(operr(e.getMessage()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_ZQL_AST_PARSER_VISITORS_10004, e.getMessage()));
         }
     }
 

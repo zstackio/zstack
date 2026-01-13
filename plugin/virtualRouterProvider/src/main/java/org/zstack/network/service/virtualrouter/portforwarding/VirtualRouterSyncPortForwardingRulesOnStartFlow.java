@@ -31,6 +31,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
@@ -207,7 +208,7 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
                     logger.debug(info);
                     chain.next();
                 } else {
-                    ErrorCode err = operr("failed to sync port forwarding rules served by virtual router[name: %s, uuid: %s], because %s",
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_PORTFORWARDING_10002, "failed to sync port forwarding rules served by virtual router[name: %s, uuid: %s], because %s",
                             vr.getName(), vr.getUuid(), ret.getError());
                     chain.fail(err);
                 }

@@ -37,6 +37,7 @@ import java.util.Map;
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2016/5/25.
@@ -91,7 +92,7 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                 } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
                     ret.get(l3Uuid).ipv6Address = ip;
                 } else {
-                    throw new ApiMessageInterceptionException(argerr("the static IP[%s] format error", ip));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10307, "the static IP[%s] format error", ip));
                 }
             }
         }
@@ -303,12 +304,12 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
         bus.makeLocalServiceId(cmsg, L3NetworkConstant.SERVICE_ID);
         MessageReply r = bus.call(cmsg);
         if (!r.isSuccess()) {
-            throw new ApiMessageInterceptionException(argerr(r.getError().getDetails()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10308, r.getError().getDetails()));
         }
 
         CheckIpAvailabilityReply cr = r.castReply();
         if (!cr.isAvailable()) {
-            throw new ApiMessageInterceptionException(argerr("IP[%s] is not available on the L3 network[uuid:%s] because: %s", ip, l3Uuid, cr.getReason()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10309, "IP[%s] is not available on the L3 network[uuid:%s] because: %s", ip, l3Uuid, cr.getReason()));
         }
     }
 
@@ -339,7 +340,7 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                         .limit(1).find();
                 if (ipRangeVO == null) {
                     if (StringUtils.isEmpty(nicIp.ipv4Netmask)) {
-                        throw new ApiMessageInterceptionException(operr("netmask must be set"));
+                        throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10310, "netmask must be set"));
                     }
                 } else {
                     if (StringUtils.isEmpty(nicIp.ipv4Netmask)) {
@@ -348,7 +349,7 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                                         e(VmSystemTags.IPV4_NETMASK_TOKEN, ipRangeVO.getNetmask()))
                         ));
                     } else if (!nicIp.ipv4Netmask.equals(ipRangeVO.getNetmask())) {
-                        throw new ApiMessageInterceptionException(operr("netmask error, expect: %s, got: %s",
+                        throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10311, "netmask error, expect: %s, got: %s",
                                 ipRangeVO.getNetmask(), nicIp.ipv4Netmask));
                     }
 
@@ -358,7 +359,7 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                                         e(VmSystemTags.IPV4_GATEWAY_TOKEN, ipRangeVO.getGateway()))
                         ));
                     } else if (!nicIp.ipv4Gateway.equals(ipRangeVO.getGateway())) {
-                        throw new ApiMessageInterceptionException(operr("gateway error, expect: %s, got: %s",
+                        throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10312, "gateway error, expect: %s, got: %s",
                                 ipRangeVO.getGateway(), nicIp.ipv4Gateway));
                     }
                 }
@@ -371,7 +372,7 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                         .limit(1).find();
                 if (ipRangeVO == null) {
                     if (StringUtils.isEmpty(nicIp.ipv6Prefix)) {
-                        throw new ApiMessageInterceptionException(operr("ipv6 prefix length must be set"));
+                        throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10313, "ipv6 prefix length must be set"));
                     }
                 } else {
                     if (StringUtils.isEmpty(nicIp.ipv6Prefix)) {
@@ -380,7 +381,7 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                                         e(VmSystemTags.IPV6_PREFIX_TOKEN, ipRangeVO.getPrefixLen()))
                         ));
                     } else if (!nicIp.ipv6Prefix.equals(ipRangeVO.getPrefixLen().toString())) {
-                        throw new ApiMessageInterceptionException(operr("ipv6 prefix length error, expect: %s, got: %s",
+                        throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10314, "ipv6 prefix length error, expect: %s, got: %s",
                                 ipRangeVO.getPrefixLen(), nicIp.ipv6Prefix));
                     }
 
@@ -391,7 +392,7 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                                                 IPv6NetworkUtils.ipv6AddressToTagValue(ipRangeVO.getGateway())))
                         ));
                     } else if (!nicIp.ipv6Gateway.equals(ipRangeVO.getGateway())) {
-                        throw new ApiMessageInterceptionException(operr("gateway error, expect: %s, got: %s",
+                        throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10315, "gateway error, expect: %s, got: %s",
                                 ipRangeVO.getGateway(), nicIp.ipv6Gateway));
                     }
                 }

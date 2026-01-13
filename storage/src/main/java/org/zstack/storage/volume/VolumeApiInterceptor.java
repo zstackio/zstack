@@ -90,6 +90,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -172,7 +173,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
             List<String> requiredPrimaryStorageUuids = config.getAllocate().getAllPrimaryStorages().stream()
                     .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
             if (msg.getPrimaryStorageUuid() != null && !requiredPrimaryStorageUuids.contains(msg.getPrimaryStorageUuid())) {
-                throw new ApiMessageInterceptionException(operr("primary storage uuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10039, "primary storage uuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
                         requiredPrimaryStorageUuids, msg.getPrimaryStorageUuid()));
             }
         }
@@ -185,17 +186,17 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
         Tuple tuple = q.findTuple();
         VolumeStatus status = (VolumeStatus) tuple.get(0);
         if (status != VolumeStatus.Ready) {
-            throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is not in status Ready, current is %s, can't create snapshot", msg.getVolumeUuid(), status));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10040, "volume[uuid:%s] is not in status Ready, current is %s, can't create snapshot", msg.getVolumeUuid(), status));
         }
 
         VolumeType type = (VolumeType) tuple.get(1);
         if (type != VolumeType.Root && type != VolumeType.Data) {
-            throw new ApiMessageInterceptionException(operr("volume[uuid:%s, type:%s], can't create snapshot", msg.getVolumeUuid(), type));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10041, "volume[uuid:%s, type:%s], can't create snapshot", msg.getVolumeUuid(), type));
         }
 
         VolumeState state = (VolumeState) tuple.get(2);
         if (state != VolumeState.Enabled) {
-            throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is not in state Enabled, " +
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10042, "volume[uuid:%s] is not in state Enabled, " +
                     "current is %s, can't create snapshot", msg.getVolumeUuid(), state));
         }
     }
@@ -210,17 +211,17 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
                 .find();
 
         if (vmvo == null) {
-            throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] is not root volume", msg.getRootVolumeUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10043, "volume[uuid:%s] is not root volume", msg.getRootVolumeUuid()));
         }
 
         if (msg.isWithMemory() && !(vmvo.getState().equals(VmInstanceState.Running) || (vmvo.getState().equals(VmInstanceState.Paused)))) {
-            throw new ApiMessageInterceptionException(argerr("Can not take memory snapshot, vm current state[%s], but expect state are [%s, %s]",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10044, "Can not take memory snapshot, vm current state[%s], but expect state are [%s, %s]",
                     vmvo.getState().toString(), VmInstanceState.Running.toString(), VmInstanceState.Paused.toString()));
         }
 
         for (VolumeVO vol : vmvo.getAllVolumes()) {
             if (vol.getStatus() != VolumeStatus.Ready) {
-                throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is not in status Ready, " +
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10045, "volume[uuid:%s] is not in status Ready, " +
                         "current is %s, can't create snapshot", vol.getUuid(), vol.getStatus()));
             }
         }
@@ -247,7 +248,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
         q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
         q.add(VolumeVO_.status, Op.EQ, VolumeStatus.Deleted);
         if (!q.isExists()) {
-            throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is not in status of deleted. This is operation is to recover a deleted data volume",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10046, "the volume[uuid:%s] is not in status of deleted. This is operation is to recover a deleted data volume",
                     msg.getVolumeUuid()));
         }
     }
@@ -257,7 +258,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
         q.add(VolumeVO_.uuid, Op.EQ, volumeUuid);
         q.add(VolumeVO_.status, Op.EQ, VolumeStatus.Deleted);
         if (q.isExists()) {
-            throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is in status of deleted, cannot do the operation", volumeUuid));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10047, "the volume[uuid:%s] is in status of deleted, cannot do the operation", volumeUuid));
         }
     }
 
@@ -265,15 +266,15 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
         ImageVO img = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
         ImageMediaType type = img.getMediaType();
         if (ImageMediaType.DataVolumeTemplate != type) {
-            throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is not %s, it's %s", msg.getImageUuid(), ImageMediaType.DataVolumeTemplate, type));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10048, "image[uuid:%s] is not %s, it's %s", msg.getImageUuid(), ImageMediaType.DataVolumeTemplate, type));
         }
 
         if (ImageState.Enabled != img.getState()) {
-            throw new ApiMessageInterceptionException(operr("image[uuid:%s] is not Enabled, it's %s", img.getUuid(), img.getState()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10049, "image[uuid:%s] is not Enabled, it's %s", img.getUuid(), img.getState()));
         }
 
         if (ImageStatus.Ready != img.getStatus()) {
-            throw new ApiMessageInterceptionException(operr("image[uuid:%s] is not Ready, it's %s", img.getUuid(), img.getStatus()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10050, "image[uuid:%s] is not Ready, it's %s", img.getUuid(), img.getStatus()));
         }
     }
 
@@ -285,35 +286,35 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
 
         VolumeType type = t.get(3, VolumeType.class);
         if (type == VolumeType.Root) {
-            throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] is Root volume, can not be attach to vm", msg.getVolumeUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10051, "volume[uuid:%s] is Root volume, can not be attach to vm", msg.getVolumeUuid()));
         }
 
         // As per issue #1696, we do not report error if the volume has been attached.
         // Instead, an empty list will be returned later when handling this message.
         VolumeState state = t.get(1, VolumeState.class);
         if (state != VolumeState.Enabled) {
-            throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] is in state[%s], data volume can only be attached when state is %s", msg.getVolumeUuid(), state, VolumeState.Enabled));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10052, "volume[uuid:%s] is in state[%s], data volume can only be attached when state is %s", msg.getVolumeUuid(), state, VolumeState.Enabled));
         }
 
         VolumeStatus status = t.get(2, VolumeStatus.class);
         if (status != VolumeStatus.Ready && status != VolumeStatus.NotInstantiated) {
-            throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] is in status[%s], data volume can only be attached when status is %s or %S", msg.getVolumeUuid(), status, VolumeStatus.Ready, VolumeStatus.NotInstantiated));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10053, "volume[uuid:%s] is in status[%s], data volume can only be attached when status is %s or %S", msg.getVolumeUuid(), status, VolumeStatus.Ready, VolumeStatus.NotInstantiated));
         }
     }
 
     private void validate(APIDetachDataVolumeFromVmMsg msg) {
         VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
         if (!vol.isShareable() && vol.getVmInstanceUuid() == null) {
-            throw new ApiMessageInterceptionException(operr("data volume[uuid:%s] is not attached to any vm, can't detach", msg.getVolumeUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10054, "data volume[uuid:%s] is not attached to any vm, can't detach", msg.getVolumeUuid()));
         }
 
         if (vol.isShareable() && msg.getVmUuid() == null) {
-            throw new ApiMessageInterceptionException(operr("to detach shareable data volume[uuid:%s], vm uuid is needed.", msg.getVolumeUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10055, "to detach shareable data volume[uuid:%s], vm uuid is needed.", msg.getVolumeUuid()));
         }
 
 
         if (vol.getType() != VolumeType.Data) {
-            throw new ApiMessageInterceptionException(operr("the volume[uuid:%s, name:%s, type:%s] can't detach it",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10056, "the volume[uuid:%s, name:%s, type:%s] can't detach it",
                     vol.getUuid(), vol.getName(), vol.getType()));
         }
     }
@@ -351,7 +352,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
                         .param("vmState", VmInstanceState.Stopped)
                         .param("platformType", ImagePlatform.Other.toString()).find();
                 if (count > 0) {
-                    throw new ApiMessageInterceptionException(operr("the vm[uuid:%s] doesn't support to online attach volume[%s] on the basis of that the image platform type of the vm is other ", msg.getVmInstanceUuid(), msg.getVolumeUuid()));
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10057, "the vm[uuid:%s] doesn't support to online attach volume[%s] on the basis of that the image platform type of the vm is other ", msg.getVmInstanceUuid(), msg.getVolumeUuid()));
                 }
 
                 String hvType = q(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).select(VmInstanceVO_.hypervisorType).findValue();
@@ -379,23 +380,23 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
 
     private ErrorCode checkDataVolume(VolumeVO volumeVO, String hvType, long attachedDataVolumeNum) {
         if (volumeVO.getType() == VolumeType.Root) {
-            return operr("the volume[uuid:%s, name:%s] is Root Volume, can't attach it", volumeVO.getUuid(), volumeVO.getName());
+            return operr(ORG_ZSTACK_STORAGE_VOLUME_10058, "the volume[uuid:%s, name:%s] is Root Volume, can't attach it", volumeVO.getUuid(), volumeVO.getName());
         }
 
         if (volumeVO.getState() == VolumeState.Disabled) {
-            return operr("data volume[uuid:%s] is Disabled, can't attach", volumeVO.getUuid());
+            return operr(ORG_ZSTACK_STORAGE_VOLUME_10059, "data volume[uuid:%s] is Disabled, can't attach", volumeVO.getUuid());
         }
 
         if (volumeVO.getStatus() == VolumeStatus.Deleted) {
-            return operr("the volume[uuid:%s] is in status of deleted, cannot do the operation", volumeVO.getUuid());
+            return operr(ORG_ZSTACK_STORAGE_VOLUME_10060, "the volume[uuid:%s] is in status of deleted, cannot do the operation", volumeVO.getUuid());
         }
 
         if (volumeVO.isAttached() && !volumeVO.isShareable()) {
-            return operr("data volume[uuid:%s] has been attached to some vm, can't attach again", volumeVO.getUuid());
+            return operr(ORG_ZSTACK_STORAGE_VOLUME_10061, "data volume[uuid:%s] has been attached to some vm, can't attach again", volumeVO.getUuid());
         }
 
         if (VolumeStatus.Ready != volumeVO.getStatus() && VolumeStatus.NotInstantiated != volumeVO.getStatus()) {
-            return operr("data volume can only be attached when status is [%s, %s], current is %s",
+            return operr(ORG_ZSTACK_STORAGE_VOLUME_10062, "data volume can only be attached when status is [%s, %s], current is %s",
                     VolumeStatus.Ready, VolumeStatus.NotInstantiated, volumeVO.getStatus());
         }
 
@@ -403,11 +404,11 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
             List<String> hvTypes = VolumeFormat.valueOf(volumeVO.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
 
             if (hvTypes.isEmpty()) {
-                return operr("data volume[uuid:%s] of format[%s] is not supported for attach to any hypervisor.", volumeVO.getUuid(), volumeVO.getFormat());
+                return operr(ORG_ZSTACK_STORAGE_VOLUME_10063, "data volume[uuid:%s] of format[%s] is not supported for attach to any hypervisor.", volumeVO.getUuid(), volumeVO.getFormat());
             }
 
             if (!hvTypes.contains(hvType)) {
-                return operr("data volume[uuid:%s] has format[%s] that can only be attached to hypervisor[%s], " +
+                return operr(ORG_ZSTACK_STORAGE_VOLUME_10064, "data volume[uuid:%s] has format[%s] that can only be attached to hypervisor[%s], " +
                         "but vm has hypervisor type[%s]. Can't attach", volumeVO.getUuid(), volumeVO.getFormat(), hvTypes, hvType);
             }
         }
@@ -429,7 +430,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
 
         // if there is no cluster contains both vm root volume and data volume, the data volume won't be attachable
         if (vmInstanceClusterUuids.isEmpty() && !volumeClusterUuids.isEmpty()) {
-            return operr("Can't attach volume to VM, no qualified cluster");
+            return operr(ORG_ZSTACK_STORAGE_VOLUME_10065, "Can't attach volume to VM, no qualified cluster");
         }
 
         return null;
@@ -446,7 +447,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
                 .select(PrimaryStorageHostRefVO_.status)
                 .findValue();
         if (primaryStorageHostStatus == PrimaryStorageHostStatus.Disconnected) {
-            return operr("Can not attach volume to vm runs on host[uuid: %s] which is disconnected " +
+            return operr(ORG_ZSTACK_STORAGE_VOLUME_10066, "Can not attach volume to vm runs on host[uuid: %s] which is disconnected " +
                     "with volume's storage[uuid: %s]", hostUuid, volumeVO.getPrimaryStorageUuid());
         }
 
@@ -455,7 +456,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
 
     private void validate(APIBackupDataVolumeMsg msg) {
         if (isRootVolume(msg.getUuid())) {
-            throw new ApiMessageInterceptionException(operr("it's not allowed to backup root volume, uuid:%s", msg.getUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10067, "it's not allowed to backup root volume, uuid:%s", msg.getUuid()));
         }
 
         exceptionIsVolumeIsDeleted(msg.getVolumeUuid());
@@ -464,7 +465,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
     private void validate(APICreateDataVolumeMsg msg) {
         if (msg.getDiskOfferingUuid() == null) {
             if (msg.getDiskSize() < 0) {
-                throw new ApiMessageInterceptionException(argerr("unexpected disk size settings"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10068, "unexpected disk size settings"));
             }
         } else {
             Long diskSize = Q.New(DiskOfferingVO.class).eq(DiskOfferingVO_.uuid, msg.getDiskOfferingUuid()).select(DiskOfferingVO_.diskSize).findValue();
@@ -485,18 +486,18 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
         Tuple t = q.findTuple();
         VolumeType type = t.get(0, VolumeType.class);
         if (type != VolumeType.Data) {
-            throw new ApiMessageInterceptionException(argerr("volume[uuid:%s, type:%s] can't be deleted", msg.getVolumeUuid(), type));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10069, "volume[uuid:%s, type:%s] can't be deleted", msg.getVolumeUuid(), type));
         }
 
         VolumeStatus status = t.get(1, VolumeStatus.class);
         if (status == VolumeStatus.Deleted) {
-            throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is already in status of deleted", msg.getVolumeUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10070, "volume[uuid:%s] is already in status of deleted", msg.getVolumeUuid()));
         }
 
         String hostUuid = Q.New(VolumeHostRefVO.class).select(VolumeHostRefVO_.hostUuid)
                 .eq(VolumeHostRefVO_.volumeUuid, msg.getUuid()).findValue();
         if (hostUuid != null) {
-            throw new ApiMessageInterceptionException(argerr("can not delete volume[%s], " +
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10071, "can not delete volume[%s], " +
                     "because volume attach to host[%s]", msg.getVolumeUuid(), hostUuid));
         }
     }
@@ -511,7 +512,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
 
     private void validate(APIChangeVolumeStateMsg msg) {
         if (isRootVolume(msg.getUuid())) {
-            throw new ApiMessageInterceptionException(operr("it's not allowed to change state of root volume, uuid:%s", msg.getUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10072, "it's not allowed to change state of root volume, uuid:%s", msg.getUuid()));
         }
 
         exceptionIsVolumeIsDeleted(msg.getVolumeUuid());
@@ -519,7 +520,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
         String hostUuid = Q.New(VolumeHostRefVO.class).select(VolumeHostRefVO_.hostUuid)
                 .eq(VolumeHostRefVO_.volumeUuid, msg.getUuid()).findValue();
         if (hostUuid != null) {
-            throw new ApiMessageInterceptionException(argerr("can not change volume[%s] state, " +
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10073, "can not change volume[%s] state, " +
                     "because volume attach to host[%s]", msg.getVolumeUuid(), hostUuid));
         }
     }
@@ -527,12 +528,12 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
     private void validate(APIAttachDataVolumeToHostMsg msg) {
         HostStatus hostStatus = Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, msg.getHostUuid()).findValue();
         if (hostStatus != HostStatus.Connected) {
-            throw new ApiMessageInterceptionException(operr("can not attach volume[%s] to host[%s], because host[status:%s] is not connected",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10074, "can not attach volume[%s] to host[%s], because host[status:%s] is not connected",
                     msg.getVolumeUuid(), msg.getHostUuid(), hostStatus));
         }
 
         if (!msg.getMountPath().startsWith("/")) {
-            throw new ApiMessageInterceptionException(argerr("mount path must be absolute path"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10075, "mount path must be absolute path"));
         }
 
         Tuple hostAndMountPath = Q.New(VolumeHostRefVO.class)
@@ -549,11 +550,11 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
         String hostUuid = hostAndMountPath.get(0, String.class);
         String mountPath = hostAndMountPath.get(1, String.class);
         if (!hostUuid.equals(msg.getHostUuid())) {
-            throw new ApiMessageInterceptionException(operr("can not attach volume[%s] to host[%s], because volume is attaching to host[%s]",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10076, "can not attach volume[%s] to host[%s], because volume is attaching to host[%s]",
                     msg.getVolumeUuid(), msg.getHostUuid(), hostUuid));
         }
         if (!mountPath.equals(msg.getMountPath())) {
-            throw new ApiMessageInterceptionException(operr("can not attach volume[%s] to host[%s], because the volume[%s] occupies the mount path[%s] on host[%s]",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10077, "can not attach volume[%s] to host[%s], because the volume[%s] occupies the mount path[%s] on host[%s]",
                     msg.getVolumeUuid(), msg.getHostUuid(), msg.getVolumeUuid(), mountPath, hostUuid));
         }
     }
@@ -563,14 +564,14 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
                 .eq(VolumeHostRefVO_.hostUuid, msg.getHostUuid())
                 .select(VolumeHostRefVO_.mountPath).listValues();
         if (mountPaths.contains(msg.getMountPath())) {
-            throw new ApiMessageInterceptionException(operr("can not attach volume[%s] to host[%s], because the another volume occupies the mount path[%s]",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10078, "can not attach volume[%s] to host[%s], because the another volume occupies the mount path[%s]",
                     msg.getVolumeUuid(), msg.getHostUuid(), msg.getMountPath()));
         }
     }
 
     private void validate(APIDetachDataVolumeFromHostMsg msg) {
         if (!Q.New(VolumeHostRefVO.class).eq(VolumeHostRefVO_.volumeUuid, msg.getVolumeUuid()).isExists()) {
-            throw new ApiMessageInterceptionException(operr("can not detach volume[%s] from host. " +
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10079, "can not detach volume[%s] from host. " +
                     "it may have been detached", msg.getVolumeUuid()));
         }
     }
@@ -578,7 +579,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
     private void validate(APIFlattenVolumeMsg msg) {
         boolean isShareable = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).select(VolumeVO_.isShareable).findValue();
         if (isShareable) {
-            throw new ApiMessageInterceptionException(argerr("cannot flatten a shareable volume[uuid:%s]", msg.getVolumeUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10080, "cannot flatten a shareable volume[uuid:%s]", msg.getVolumeUuid()));
         }
     }
 
@@ -589,7 +590,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
                 .eq(VolumeSnapshotTreeVO_.volumeUuid, msg.getUuid())
                 .findValue();
         if (currentTreeUuid == null) {
-            throw new ApiMessageInterceptionException(operr("can not found in used snapshot tree of volume[uuid: %s]", msg.getUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10081, "can not found in used snapshot tree of volume[uuid: %s]", msg.getUuid()));
         }
 
         boolean isLatest = Q.New(VolumeSnapshotVO.class)
@@ -599,7 +600,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
                 .isExists();
 
         if (!isLatest) {
-            throw new ApiMessageInterceptionException(argerr("cannot undo not latest snapshot"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10082, "cannot undo not latest snapshot"));
         }
     }
 
@@ -620,7 +621,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
                 .entrySet().stream().filter(entry -> entry.getValue() > 1).map(Map.Entry::getKey).collect(Collectors.toList());
         if (!CollectionUtils.isEmpty(duplicateVolumeUuids)) {
-            throw new ApiMessageInterceptionException(operr("duplicate volume uuids: %s", duplicateVolumeUuids.toString()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10083, "duplicate volume uuids: %s", duplicateVolumeUuids.toString()));
         }
 
         List<String> clusterUuids = new ArrayList<>();
@@ -657,7 +658,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
         }
 
         if (!errors.isEmpty()) {
-            throw new ApiMessageInterceptionException(argerr(errors.toString()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10084, errors.toString()));
         }
     }
 

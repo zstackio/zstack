@@ -40,6 +40,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Create by lining at 2020/08/17
@@ -69,7 +70,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                     .eq(ImageCacheVO_.imageUuid, imageUuid)
                     .listValues();
             if (!CollectionUtils.isEmpty(requirdPsUuids) && Collections.disjoint(requirdPsUuids, cachedPsUuids)) {
-                trigger.fail(operr("creation rely on image cache[uuid:%s, locate ps uuids: [%s]], cannot create other places.", imageUuid, cachedPsUuids));
+                trigger.fail(operr(ORG_ZSTACK_COMPUTE_VM_10081, "creation rely on image cache[uuid:%s, locate ps uuids: [%s]], cannot create other places.", imageUuid, cachedPsUuids));
                 return;
             } else if (!CollectionUtils.isEmpty(requirdPsUuids)) {
                 requirdPsUuids.retainAll(cachedPsUuids);
@@ -143,7 +144,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         if (!CollectionUtils.isEmpty(spec.getCandidatePrimaryStorageUuidsForRootVolume())) {
             List<String> filterPsUuids = spec.getCandidatePrimaryStorageUuidsForRootVolume().stream().filter(availablePsUuids::contains).collect(Collectors.toList());
             if (filterPsUuids.isEmpty()) {
-                trigger.fail(Platform.operr(String.format("none of the specified primary storages%s are available",  spec.getCandidatePrimaryStorageUuidsForRootVolume())));
+                trigger.fail(Platform.operr(ORG_ZSTACK_COMPUTE_VM_10082, String.format("none of the specified primary storages%s are available",  spec.getCandidatePrimaryStorageUuidsForRootVolume())));
                 return;
             }
             spec.setCandidatePrimaryStorageUuidsForRootVolume(filterPsUuids);
@@ -151,7 +152,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         if (needCreateDataVolume(spec) && !CollectionUtils.isEmpty(spec.getCandidatePrimaryStorageUuidsForDataVolume())) {
             List<String> filterPsUuids = spec.getCandidatePrimaryStorageUuidsForDataVolume().stream().filter(availablePsUuids::contains).collect(Collectors.toList());
             if (filterPsUuids.isEmpty()) {
-                trigger.fail(Platform.operr(String.format("none of the specified primary storages%s are available",  spec.getCandidatePrimaryStorageUuidsForDataVolume())));
+                trigger.fail(Platform.operr(ORG_ZSTACK_COMPUTE_VM_10083, String.format("none of the specified primary storages%s are available",  spec.getCandidatePrimaryStorageUuidsForDataVolume())));
                 return;
             }
             spec.setCandidatePrimaryStorageUuidsForDataVolume(filterPsUuids);

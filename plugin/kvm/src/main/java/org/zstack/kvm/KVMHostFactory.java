@@ -112,6 +112,7 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.kvm.KVMAgentCommands.*;
 import static org.zstack.kvm.KVMConstant.CPU_MODE_NONE;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class KVMHostFactory extends AbstractService implements HypervisorFactory,
         Component,
@@ -171,7 +172,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     @Override
     public HostVO createHost(HostVO vo, AddHostMessage msg) {
         if (!(msg instanceof AddKVMHostMessage)) {
-            throw new OperationFailureException(operr("cluster[uuid:%s] hypervisorType is not %s", msg.getClusterUuid(), KVMConstant.KVM_HYPERVISOR_TYPE));
+            throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10000, "cluster[uuid:%s] hypervisorType is not %s", msg.getClusterUuid(), KVMConstant.KVM_HYPERVISOR_TYPE));
         }
 
         AddKVMHostMessage amsg = (AddKVMHostMessage) msg;
@@ -190,7 +191,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             return prepareMsgHostName(msgs);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-            throw new OperationFailureException(operr("fail to load host info from file. because\n%s", e.getMessage()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10001, "fail to load host info from file. because\n%s", e.getMessage()));
         }
     }
 
@@ -325,7 +326,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     public ErrorCode checkNewAddedHost(HostVO vo) {
         final HostOperationSystem os = getHostOS(vo.getUuid());
         if (!os.isValid()) {
-            return operr("the operation system[%s] of host[name:%s, ip:%s] is invalid",
+            return operr(ORG_ZSTACK_KVM_10002, "the operation system[%s] of host[name:%s, ip:%s] is invalid",
                     os, vo.getName(), vo.getManagementIp());
         }
 
@@ -351,7 +352,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             return null;
         }
 
-        return operr("cluster[uuid:%s] already has host with os version[%s], but new added host[name:%s ip:%s] has different host os version[%s]",
+        return operr(ORG_ZSTACK_KVM_10003, "cluster[uuid:%s] already has host with os version[%s], but new added host[name:%s ip:%s] has different host os version[%s]",
                 vo.getClusterUuid(), otherOs, vo.getName(), vo.getManagementIp(), os);
     }
 
@@ -613,7 +614,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             }
             VmCanonicalEvents.VmCrashReportData cData = new VmCanonicalEvents.VmCrashReportData();
             cData.setVmUuid(cmd.vmUuid);
-            cData.setReason(operr("vm[uuid:%s] crashes due to kernel error", cmd.vmUuid));
+            cData.setReason(operr(ORG_ZSTACK_KVM_10004, "vm[uuid:%s] crashes due to kernel error", cmd.vmUuid));
             evf.fire(VmCanonicalEvents.VM_LIBVIRT_REPORT_CRASH, cData);
             return null;
         });
@@ -747,7 +748,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
 
         restf.registerSyncHttpCallHandler(KVMConstant.HOST_PHYSICAL_MEMORY_ECC_ERROR_ALARM_EVENT, PhysicalMemoryEccErrorAlarmEventCmd.class, cmd -> {
             HostCanonicalEvents.HostPhysicalMemoryEccErrorData cdata = new HostCanonicalEvents.HostPhysicalMemoryEccErrorData();
-            cdata.setDetail(operr("host[uuid: %s] memory ecc triggered, detail: %s", cmd.host, cmd.detail));
+            cdata.setDetail(operr(ORG_ZSTACK_KVM_10005, "host[uuid: %s] memory ecc triggered, detail: %s", cmd.host, cmd.detail));
             cdata.setHostUuid(cmd.host);
             evf.fire(HostCanonicalEvents.HOST_PHYSICAL_MEMORY_ECC_ERROR_TRIGGERED, cdata);
             return null;
@@ -772,7 +773,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                     str.append(String.format("host[uuid:%s]'s cpu model is %s ;\n", entry.getKey(), entry.getValue()));
                 }
 
-                throw new OperationFailureException(operr("there are still hosts not have the same cpu model, details: %s", str.toString()));
+                throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10006, "there are still hosts not have the same cpu model, details: %s", str.toString()));
             }
         }));
 
@@ -782,11 +783,11 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             try {
                 num = Integer.parseInt(check);
             } catch (Exception e) {
-                throw new ApiMessageInterceptionException(argerr("%s must be a number", KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_KVM_10007, "%s must be a number", KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN));
             }
 
             if (num <= 0 || num > 31) {
-                throw new ApiMessageInterceptionException(argerr("pci bridge need a value greater than 0 and lower than 32", KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_KVM_10008, "pci bridge need a value greater than 0 and lower than 32", KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN));
             }
         }));
 
@@ -829,7 +830,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                         .find();
 
                 if (vm != null && (vm.getState() == VmInstanceState.Running || vm.getState() == VmInstanceState.Unknown)) {
-                    throw new OperationFailureException(argerr("vm current state[%s], " +
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_KVM_10009, "vm current state[%s], " +
                             "modify virtioSCSI requires the vm state[%s]", vm.getState(), VmInstanceState.Stopped));
                 }
 
@@ -989,7 +990,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             String hostCpuModel = KVMSystemTags.CPU_MODEL_NAME.getTokenByResourceUuid(hostUuid, KVMSystemTags.CPU_MODEL_NAME_TOKEN);
 
             if (hostCpuModel == null) {
-                throw new OperationFailureException(operr("host[uuid:%s] does not have cpu model information, you can reconnect the host to fix it", hostUuid));
+                throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10010, "host[uuid:%s] does not have cpu model information, you can reconnect the host to fix it", hostUuid));
             }
 
             if (diffMap.values().stream().distinct().noneMatch(model -> model.equals(hostCpuModel))) {

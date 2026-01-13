@@ -45,6 +45,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class GlobalConfigFacadeImpl extends AbstractService implements GlobalConfigFacade {
     private static final CLogger logger = Utils.getLogger(GlobalConfigFacadeImpl.class);
@@ -175,7 +176,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         APIUpdateGlobalConfigEvent evt = new APIUpdateGlobalConfigEvent(msg.getId());
         GlobalConfig globalConfig = allConfig.get(msg.getIdentity());
         if (globalConfig == null) {
-            ErrorCode err = argerr("Unable to find GlobalConfig[category: %s, name: %s]", msg.getCategory(), msg.getName());
+            ErrorCode err = argerr(ORG_ZSTACK_CORE_CONFIG_10000, "Unable to find GlobalConfig[category: %s, name: %s]", msg.getCategory(), msg.getName());
             evt.setError(err);
             bus.publish(evt);
             return;
@@ -188,7 +189,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             pluginRgty.getExtensionList(AfterUpdateClobalConfigExtensionPoint.class).forEach(point -> point.saveSaveEncryptAfterUpdateClobalConfig(inv));
             evt.setInventory(inv);
         } catch (GlobalConfigException e) {
-            evt.setError(argerr(e.getMessage()));
+            evt.setError(argerr(ORG_ZSTACK_CORE_CONFIG_10001, e.getMessage()));
             logger.warn(e.getMessage(), e);
         }
         
@@ -199,7 +200,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         APIGetGlobalConfigOptionsReply reply = new APIGetGlobalConfigOptionsReply();
         GlobalConfig globalConfig = allConfig.get(msg.getIdentity());
         if (globalConfig == null) {
-            ErrorCode err = argerr("Unable to find GlobalConfig[category: %s, name: %s]", msg.getCategory(), msg.getName());
+            ErrorCode err = argerr(ORG_ZSTACK_CORE_CONFIG_10002, "Unable to find GlobalConfig[category: %s, name: %s]", msg.getCategory(), msg.getName());
             reply.setError(err);
             bus.reply(msg, reply);
             return;
@@ -208,7 +209,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         try {
             reply.setOptions(globalConfig.getOptions());
         } catch (GlobalConfigException e) {
-            reply.setError(argerr(e.getMessage()));
+            reply.setError(argerr(ORG_ZSTACK_CORE_CONFIG_10003, e.getMessage()));
             logger.warn(e.getMessage(), e);
         }
 

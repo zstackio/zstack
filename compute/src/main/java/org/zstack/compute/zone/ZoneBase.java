@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
@@ -66,7 +67,7 @@ public class ZoneBase extends AbstractZone {
         try {
             extpEmitter.preChange(self, stateEvt);
         } catch (ZoneException e) {
-            evt.setError(err(SysErrors.CHANGE_RESOURCE_STATE_ERROR, e.getMessage()));
+            evt.setError(err(ORG_ZSTACK_COMPUTE_ZONE_10001, SysErrors.CHANGE_RESOURCE_STATE_ERROR, e.getMessage()));
             bus.publish(evt);
             return;
         }
@@ -239,7 +240,7 @@ public class ZoneBase extends AbstractZone {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                evt.setError(err(ORG_ZSTACK_COMPUTE_ZONE_10002, SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                 bus.publish(evt);
             }
         }).start();

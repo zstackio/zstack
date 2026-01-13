@@ -39,6 +39,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.Constants.THREAD_CONTEXT_API;
 import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -72,7 +73,7 @@ public class UploadImageTracker {
         try {
             addTrackTask(image.getName(), image.getUuid(), ref.getBackupStorageUuid(), new URI(ref.getInstallPath()).getHost());
         } catch (URISyntaxException e) {
-            throw new OperationFailureException(operr(e.getMessage()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_IMAGE_10017, e.getMessage()));
         }
     }
 
@@ -95,7 +96,7 @@ public class UploadImageTracker {
         try {
             trackUpload(image.getName(), image.getUuid(), ref.getBackupStorageUuid(), new URI(ref.getInstallPath()).getHost());
         } catch (URISyntaxException e) {
-            throw new OperationFailureException(operr(e.getMessage()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_IMAGE_10018, e.getMessage()));
         }
     }
 
@@ -195,7 +196,7 @@ public class UploadImageTracker {
                 }
 
                 if (ivo.getActualSize() == 0 && overMaxIdleTime(createdTime)) {
-                    markFailure(operr("upload session expired"));
+                    markFailure(operr(ORG_ZSTACK_IMAGE_10019, "upload session expired"));
                     return true;
                 }
 
@@ -211,7 +212,7 @@ public class UploadImageTracker {
 
                 boolean downloadingImageSuspendedTooLong = !reply.isDownloadComplete() && overMaxIdleTime(reply.getLastOpTime()) ;
                 if (downloadingImageSuspendedTooLong && reply.isSupportSuspend()) {
-                    markFailure(err(ImageErrors.UPLOAD_IMAGE_INTERRUPTED, reply.getError(),
+                    markFailure(err(ORG_ZSTACK_IMAGE_10020, ImageErrors.UPLOAD_IMAGE_INTERRUPTED, reply.getError(),
                             "uploading has been inactive more than %d sec", maxIdleSecond));
                     return true;
                 }

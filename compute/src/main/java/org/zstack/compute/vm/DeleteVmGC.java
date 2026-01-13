@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2017/3/3.
@@ -47,7 +48,7 @@ public class DeleteVmGC extends EventBasedGarbageCollector {
         }
 
         if (status != HostStatus.Connected) {
-            completion.fail(operr("the host[uuid:%s] is not connected", hostUuid));
+            completion.fail(operr(ORG_ZSTACK_COMPUTE_VM_10222, "the host[uuid:%s] is not connected", hostUuid));
             return;
         }
 

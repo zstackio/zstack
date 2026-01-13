@@ -53,6 +53,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -1171,7 +1172,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             @Override
             public void run(SyncTaskChain chain) {
                 if (!dbf.isExist(struct.getEip().getUuid(), EipVO.class)) {
-                    completion.fail(operr("eip [uuid:%s] is deleted", struct.getEip().getUuid()));
+                    completion.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_EIP_10000, "eip [uuid:%s] is deleted", struct.getEip().getUuid()));
                     chain.next();
                     return;
                 }
@@ -1319,7 +1320,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         if (guestIp == null) {
             /* fix http://jira.zstack.io/browse/ZSTAC-16343 */
             List<String> nicIps = nic.getUsedIps().stream().map(UsedIpInventory::getIp).collect(Collectors.toList());
-            completion.fail(operr("cannot find Eip guest ip: %s in vmNic ips :%s", eip.getGuestIp(), nicIps));
+            completion.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_EIP_10001, "cannot find Eip guest ip: %s in vmNic ips :%s", eip.getGuestIp(), nicIps));
             return;
         }
 
@@ -1466,7 +1467,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             @Override
             public void run(SyncTaskChain chain) {
                 if (!dbf.isExist(struct.getEip().getUuid(), EipVO.class)) {
-                    completion.fail(operr("eip [uuid:%s] is deleted", struct.getEip().getUuid()));
+                    completion.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_EIP_10002, "eip [uuid:%s] is deleted", struct.getEip().getUuid()));
                     chain.next();
                     return;
                 }
@@ -1625,7 +1626,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 q.setParameter("nicUuids", nicUuids);
                 Long count = q.getSingleResult();
                 if (count > 0) {
-                    throw new OperationFailureException(operr("unable to attach the L3 network[uuid:%s, name:%s] to the vm[uuid:%s, name:%s]," +
+                    throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_EIP_10003, "unable to attach the L3 network[uuid:%s, name:%s] to the vm[uuid:%s, name:%s]," +
                                     " because the L3 network is providing EIP to one of the vm's nic",
                             l3.getUuid(), l3.getName(), vm.getUuid(), vm.getName()));
                 }

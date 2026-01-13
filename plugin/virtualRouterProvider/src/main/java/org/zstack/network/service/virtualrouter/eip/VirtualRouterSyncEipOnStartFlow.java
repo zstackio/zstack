@@ -39,6 +39,7 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -213,7 +214,7 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
                 VirtualRouterAsyncHttpCallReply re = reply.castReply();
                 SyncEipRsp ret = re.toResponse(SyncEipRsp.class);
                 if (!ret.isSuccess()) {
-                    ErrorCode err = operr("failed to sync eip on virtual router[uuid:%s], %s",
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_EIP_10004, "failed to sync eip on virtual router[uuid:%s], %s",
                             vr.getUuid(), ret.getError());
                     trigger.fail(err);
                 } else {

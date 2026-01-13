@@ -24,6 +24,7 @@ import java.util.List;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -50,7 +51,7 @@ public class PrimaryStorageTagAllocatorExtension implements InstanceOfferingTagA
         candidates = q.getResultList();
 
         if (candidates.isEmpty()) {
-            throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
+            throw new OperationFailureException(err(ORG_ZSTACK_STORAGE_PRIMARY_10031, HostAllocatorError.NO_AVAILABLE_HOST,
                     "cannot find host whose cluster has attached to primary storage[uuid:%s]. The primary storage uuid is specified in instance offering tag", psUuid
             ));
         }
@@ -101,7 +102,7 @@ public class PrimaryStorageTagAllocatorExtension implements InstanceOfferingTagA
         List<HostVO> vos = q.getResultList();
 
         if (vos.isEmpty() && required) {
-            throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
+            throw new OperationFailureException(err(ORG_ZSTACK_STORAGE_PRIMARY_10032, HostAllocatorError.NO_AVAILABLE_HOST,
                     "cannot find host whose cluster has attached to primary storage having user tag[%s]. The user tag is specified in instance offering tag", tag
             ));
         } else if (vos.isEmpty()) {
@@ -124,7 +125,7 @@ public class PrimaryStorageTagAllocatorExtension implements InstanceOfferingTagA
                 });
 
                 if (pvo == null) {
-                    throw new OperationFailureException(operr("cannot find primary storage[uuid:%s], the uuid is specified in instance offering or disk offering", uuid));
+                    throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_10033, "cannot find primary storage[uuid:%s], the uuid is specified in instance offering or disk offering", uuid));
                 }
 
                 List<PrimaryStorageVO> psvos = new ArrayList<PrimaryStorageVO>();
@@ -164,7 +165,7 @@ public class PrimaryStorageTagAllocatorExtension implements InstanceOfferingTagA
         List<PrimaryStorageVO> vos = q.getResultList();
 
         if (vos.isEmpty() && required) {
-            throw new OperationFailureException(operr("cannot find primary storage having user tag[%s]. The user tag is specified in instance offering or disk offering", tag));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_10034, "cannot find primary storage having user tag[%s]. The user tag is specified in instance offering or disk offering", tag));
         } else if (vos.isEmpty()) {
             return candidates;
         } else {

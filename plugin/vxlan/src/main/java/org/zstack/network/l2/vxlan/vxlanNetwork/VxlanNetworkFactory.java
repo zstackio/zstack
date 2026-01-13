@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by weiwang on 02/03/2017.
@@ -220,7 +221,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (!errList.getCauses().isEmpty()) {
-                    completion.fail(operr("cannot configure vxlan network for vm[uuid:%s] on the destination host[uuid:%s]",
+                    completion.fail(operr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORK_10000, "cannot configure vxlan network for vm[uuid:%s] on the destination host[uuid:%s]",
                             inv.getUuid(), destHostUuid).causedBy(errList.getCauses()));
                     return;
                 }

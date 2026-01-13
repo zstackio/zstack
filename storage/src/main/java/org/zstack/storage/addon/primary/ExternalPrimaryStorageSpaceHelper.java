@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class ExternalPrimaryStorageSpaceHelper {
     protected String primaryStorageUuid;
@@ -51,6 +52,6 @@ public class ExternalPrimaryStorageSpaceHelper {
     public String getLocationSpaceUrl(String installUrl) {
         Set<String> spaceUrls = getStorageSpacesByUrl().keySet();
         return spaceUrls.stream().filter(installUrl::startsWith).findFirst()
-                .orElseThrow(() -> new OperationFailureException(operr("cannot find storage space for installUrl[%s]", installUrl)));
+                .orElseThrow(() -> new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10008, "cannot find storage space for installUrl[%s]", installUrl)));
     }
 }

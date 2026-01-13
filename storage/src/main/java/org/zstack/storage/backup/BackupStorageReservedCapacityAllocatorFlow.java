@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -52,7 +53,7 @@ public class BackupStorageReservedCapacityAllocatorFlow extends NoRollbackFlow {
         }
 
         if (ret.isEmpty()) {
-            throw new OperationFailureException(operr("after subtracting reserved capacity, no backup storage has required capacity[%s bytes]", spec.getSize()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_BACKUP_10008, "after subtracting reserved capacity, no backup storage has required capacity[%s bytes]", spec.getSize()));
         }
 
         data.put(AllocatorParams.CANDIDATES, ret);

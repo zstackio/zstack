@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.touterr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ApiSender {
@@ -82,7 +83,7 @@ public class ApiSender {
                 bus.send(dmsg);
                 TimeUnit.SECONDS.sleep(2);
 
-                throw new ApiSenderException(touterr("%s[uuid:%s] timeout after %s seconds", msg.getMessageName(), msg.getId(), timeout));
+                throw new ApiSenderException(touterr(ORG_ZSTACK_TEST_10000, "%s[uuid:%s] timeout after %s seconds", msg.getMessageName(), msg.getId(), timeout));
             }
         } catch (InterruptedException e1) {
             throw new CloudRuntimeException("", e1);

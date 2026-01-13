@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2016/10/31.
@@ -149,7 +150,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                     boolean forceReboot = false;
                     long now = System.currentTimeMillis();
                     if (now > timeout) {
-                        trigger.fail(err(ApplianceVmErrors.UNABLE_TO_START, "virtual router deploy agent failed, because %s",
+                        trigger.fail(err(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_VYOS_10004, ApplianceVmErrors.UNABLE_TO_START, "virtual router deploy agent failed, because %s",
                                 errors.get(errors.size() -1)));
                         return true;
                     }

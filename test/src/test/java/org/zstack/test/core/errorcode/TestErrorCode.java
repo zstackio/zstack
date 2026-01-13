@@ -11,6 +11,7 @@ import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.touterr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class TestErrorCode {
     CLogger logger = Utils.getLogger(TestErrorCode.class);
@@ -26,9 +27,9 @@ public class TestErrorCode {
 
     @Test
     public void test() {
-        ErrorCode err = inerr("on purpose");
+        ErrorCode err = inerr(ORG_ZSTACK_TEST_CORE_ERRORCODE_10000, "on purpose");
         logger.debug(err.toString());
-        err = touterr("on purpose");
+        err = touterr(ORG_ZSTACK_TEST_CORE_ERRORCODE_10001, "on purpose");
         logger.debug(err.toString());
     }
 }

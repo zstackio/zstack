@@ -60,6 +60,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Component, PSCapacityExtensionPoint,
         PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
@@ -221,7 +222,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
             String volumePath = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volUuid).select(VolumeVO_.installPath).findValue();
             if (volumePath == null) {
                 throw new OperationFailureException(
-                        Platform.operr("cannot find volume[uuid:%s] install path", volUuid)
+                        Platform.operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10004, "cannot find volume[uuid:%s] install path", volUuid)
                 );
             }
 
@@ -305,7 +306,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         ExternalPrimaryStorageSvcBuilder builder = getSvcBuilder(identity);
         if (builder == null) {
             throw new OperationFailureException(
-                    Platform.operr("No primary storage plugin registered with identity: %s", identity)
+                    Platform.operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10005, "No primary storage plugin registered with identity: %s", identity)
             );
         }
 
@@ -355,7 +356,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     @Override
     public void validateStorageProtocol(String protocol) {
         if (!SUPPORT_PROTOCOL.contains(protocol)) {
-            throw new ApiMessageInterceptionException(argerr("not support protocol[%s] " +
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10006, "not support protocol[%s] " +
                     "on type[%s] primary storage", protocol, getPrimaryStorageType()));
         }
     }
@@ -648,7 +649,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
             flowData.put(VolumeSnapshotConstant.NEED_BLOCK_STREAM_ON_HYPERVISOR, false);
             flowData.put(VolumeSnapshotConstant.NEED_TAKE_SNAPSHOTS_ON_HYPERVISOR, false);
         } else if (msg.getConsistentType() != ConsistentType.None) {
-            completion.fail(operr("not support take volumes snapshots " +
+            completion.fail(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10007, "not support take volumes snapshots " +
                     "on multiple ps when including storage snapshot"));
             return;
         }

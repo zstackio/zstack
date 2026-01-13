@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by kayo on 2018/9/7.
@@ -217,7 +218,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                                 ErrorableValue<String> encrypt = encrypt(decryptedString, key);
                                 if (encrypt.error != null) {
                                     logger.error(String.format("Encryption error : %s", encrypt.error));
-                                    throw new OperationFailureException(operr("Encryption error : %s", encrypt.error));
+                                    throw new OperationFailureException(operr(ORG_ZSTACK_CORE_ENCRYPT_10000, "Encryption error : %s", encrypt.error));
                                 }
 
                                 String sql = String.format("update %s set %s = :encrypted where uuid = :uuid", className, field.getName());

@@ -27,6 +27,7 @@ import static org.zstack.core.Platform.operr;
 
 import java.util.*;
 import javax.persistence.Tuple;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -119,7 +120,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
                 VirtualRouterAsyncHttpCallReply r = reply.castReply();
                 SetDnsRsp rsp = r.toResponse(SetDnsRsp.class);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr("operation error, because:%s", rsp.getError()));
+                    completion.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_DNS_10001, "operation error, because:%s", rsp.getError()));
                     return;
                 }
 
@@ -158,7 +159,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
                 VirtualRouterAsyncHttpCallReply r = reply.castReply();
                 RemoveDnsRsp rsp = r.toResponse(RemoveDnsRsp.class);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr("operation error, because:%s", rsp.getError()));
+                    completion.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_DNS_10002, "operation error, because:%s", rsp.getError()));
                     return;
                 }
 
@@ -207,7 +208,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
                                     .getIp()));
                             applyDns(it, spec, completion);
                         } else {
-                            ErrorCode err = operr("virtual router[uuid:%s, ip:%s] failed to configure dns%s for L3Network[uuid:%s, name:%s], %s",
+                            ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_DNS_10003, "virtual router[uuid:%s, ip:%s] failed to configure dns%s for L3Network[uuid:%s, name:%s], %s",
                                     vr.getUuid(), vr.getManagementNic().getIp(), struct, l3.getUuid(), l3.getName(), ret.getError());
                             completion.fail(err);
                         }

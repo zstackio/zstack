@@ -8,6 +8,7 @@ import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 7/2/2015.
@@ -33,7 +34,7 @@ public class FilterFlow extends AbstractHostAllocatorFlow {
             logger.debug(String.format("after being filtered by HostAllocatorFilterExtensionPoint[%s], candidates num: %s", filter.getClass(), candidates.size()));
 
             if (candidates.isEmpty()) {
-                fail(Platform.operr("after filtering, HostAllocatorFilterExtensionPoint[%s] returns zero candidate host, it means: %s", filter.getClass().getSimpleName(), filter.filterErrorReason()));
+                fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10037, "after filtering, HostAllocatorFilterExtensionPoint[%s] returns zero candidate host, it means: %s", filter.getClass().getSimpleName(), filter.filterErrorReason()));
             }
         }
 

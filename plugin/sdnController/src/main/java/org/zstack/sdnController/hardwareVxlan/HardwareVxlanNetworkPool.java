@@ -34,6 +34,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by shixin.ruan on 09/17/2019.
@@ -90,7 +91,7 @@ public class HardwareVxlanNetworkPool extends VxlanNetworkPool {
         SdnControllerVO vo = dbf.findByUuid(getSelf1().getSdnControllerUuid(), SdnControllerVO.class);
         SdnControllerFactory factory = sdnControllerManager.getSdnControllerFactory(vo.getVendorType());
         if (factory == null) {
-            completion.fail(operr("there is no sdn controller factory for sdn controller type:%s", vo.getVendorType()));
+            completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_HARDWAREVXLAN_10001, "there is no sdn controller factory for sdn controller type:%s", vo.getVendorType()));
             return;
         }
 

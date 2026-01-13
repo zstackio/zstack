@@ -9,6 +9,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import java.util.LinkedHashMap;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -39,19 +40,19 @@ public class KVMHostAsyncHttpCallReply extends MessageReply {
 
         if (!(reply instanceof KVMHostAsyncHttpCallReply)) {
             return ErrorableValue.ofErrorCode(
-                    operr("reply[%s] is not a KVMHostAsyncHttpCallReply", reply.getClass().getSimpleName()));
+                    operr(ORG_ZSTACK_KVM_10157, "reply[%s] is not a KVMHostAsyncHttpCallReply", reply.getClass().getSimpleName()));
         }
 
         final KVMHostAsyncHttpCallReply castReply = (KVMHostAsyncHttpCallReply) reply;
         if (castReply.response == null) {
             return ErrorableValue.ofErrorCode(
-                    operr("reply[%s] return with empty response", reply.getClass().getSimpleName()));
+                    operr(ORG_ZSTACK_KVM_10158, "reply[%s] return with empty response", reply.getClass().getSimpleName()));
         }
 
         final T response = castReply.toResponse(responseClass);
         if (!response.isSuccess()) {
             return ErrorableValue.ofErrorCode(
-                    operr("%s operation failed: %s", response.getClass().getSimpleName(), response.getError()));
+                    operr(ORG_ZSTACK_KVM_10159, "%s operation failed: %s", response.getClass().getSimpleName(), response.getError()));
         }
         return ErrorableValue.of(response);
     }

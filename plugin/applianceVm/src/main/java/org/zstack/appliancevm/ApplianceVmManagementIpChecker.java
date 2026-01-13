@@ -15,6 +15,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -53,7 +54,7 @@ public class ApplianceVmManagementIpChecker implements VmBeforeCreateOnHyperviso
 
         ShellResult ret = ShellUtils.runAndReturn(String.format("ping -c 1 -W 1 %s", mgmtNic.getIp()));
         if (ret.isReturnCode(0) || NetworkUtils.isReachable(mgmtNic.getIp(), 1000)) {
-            throw new OperationFailureException(err(ApplianceVmErrors.MANAGEMENT_IP_OCCUPIED,
+            throw new OperationFailureException(err(ORG_ZSTACK_APPLIANCEVM_10002, ApplianceVmErrors.MANAGEMENT_IP_OCCUPIED,
                     "the management nic IP[%s] has been occupied by another device in the data center, we can ping it", mgmtNic.getIp()
             ));
         }

@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by GuoYi on 11/14/17.
@@ -36,7 +37,7 @@ public class LongJobFactoryImpl implements LongJobFactory, Component {
     public LongJob getLongJob(String jobName) {
         LongJob job = allLongJob.get(jobName);
         if (null == job) {
-            throw new OperationFailureException(operr("%s has no corresponding longjob", jobName));
+            throw new OperationFailureException(operr(ORG_ZSTACK_LONGJOB_10012, "%s has no corresponding longjob", jobName));
         }
         return ObjectUtils.newAndCopy(job, job.getClass());
     }

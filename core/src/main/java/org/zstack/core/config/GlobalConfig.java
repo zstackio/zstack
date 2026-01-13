@@ -32,6 +32,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.StringDSL.s;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -427,7 +428,7 @@ public class GlobalConfig {
 
     public void updateValueSkipValidation(Object val) {
         if (!CoreGlobalProperty.UNIT_TEST_ON) {
-            throw new OperationFailureException(operr("do not allow skip verification"));
+            throw new OperationFailureException(operr(ORG_ZSTACK_CORE_CONFIG_10004, "do not allow skip verification"));
         }
 
         if (TypeUtils.nullSafeEquals(value, val)) {

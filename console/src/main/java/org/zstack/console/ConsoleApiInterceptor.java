@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -57,7 +58,7 @@ public class ConsoleApiInterceptor implements ApiMessageInterceptor {
         q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
         VmInstanceState state = q.findValue();
         if (!consoleAvailableStates.contains(state)) {
-            throw new ApiMessageInterceptionException(operr("vm[uuid:%s] is not in state of %s, current state is %s",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_CONSOLE_10010, "vm[uuid:%s] is not in state of %s, current state is %s",
                     msg.getVmInstanceUuid(), consoleAvailableStates, state));
         }
         bus.makeTargetServiceIdByResourceUuid(msg, ConsoleConstants.SERVICE_ID, msg.getVmInstanceUuid());

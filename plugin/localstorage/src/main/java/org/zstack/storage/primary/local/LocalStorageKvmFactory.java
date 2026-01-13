@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 6/30/2015.
@@ -111,7 +112,7 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    trigger.fail(operr("KVM host[uuid: %s] fails to be added into local primary storage[uuid: %s], %s",
+                    trigger.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10060, "KVM host[uuid: %s] fails to be added into local primary storage[uuid: %s], %s",
                             context.getInventory().getUuid(), priUuid, reply.getError()));
                 } else {
                     initLocalStorage(iterator, trigger, data, context);
@@ -203,7 +204,7 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
 
             @Override
             public void fail(ErrorCode errorCode) {
-                ErrorCode err = operr("unable to create empty snapshot volume[name:%s, installpath: %s] on kvm host[uuid:%s, ip:%s], because %s",
+                ErrorCode err = operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10061, "unable to create empty snapshot volume[name:%s, installpath: %s] on kvm host[uuid:%s, ip:%s], because %s",
                         msg.getSnapshotName(), msg.getInstallPath(), host.getUuid(), host.getManagementIp(), errorCode);
                 completion.fail(err);
             }

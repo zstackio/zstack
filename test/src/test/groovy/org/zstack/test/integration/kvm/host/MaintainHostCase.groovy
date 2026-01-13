@@ -1,5 +1,7 @@
 package org.zstack.test.integration.kvm.host
 
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
@@ -227,7 +229,7 @@ class MaintainHostCase extends SubCase{
 
         env.message(StopVmInstanceMsg){ StopVmInstanceMsg msg, CloudBus bus ->
             def r = new StopVmInstanceReply()
-            r.setError(operr("on purpose"))
+            r.setError(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_KVM_HOST_10000, "on purpose"))
             bus.reply(msg, r)
         }
 

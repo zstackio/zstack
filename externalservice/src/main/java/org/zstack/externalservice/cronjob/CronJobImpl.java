@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class CronJobImpl extends AbstractLocalExternalService implements CronJob {
     ExternalServiceCapabilities capabilities = ExternalServiceCapabilitiesBuilder
@@ -62,7 +63,7 @@ public class CronJobImpl extends AbstractLocalExternalService implements CronJob
     @Override
     public void reload() {
         if (!isAlive()) {
-            throw new OperationFailureException(operr("crond is not running"));
+            throw new OperationFailureException(operr(ORG_ZSTACK_EXTERNALSERVICE_CRONJOB_10000, "crond is not running"));
         }
 
         new Bash() {
@@ -78,7 +79,7 @@ public class CronJobImpl extends AbstractLocalExternalService implements CronJob
     @Override
     public void addJob(String job) {
         if (!isAlive()) {
-            throw new OperationFailureException(operr("crond is not running"));
+            throw new OperationFailureException(operr(ORG_ZSTACK_EXTERNALSERVICE_CRONJOB_10001, "crond is not running"));
         }
 
         new Bash() {

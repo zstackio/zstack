@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class DefaultAuthorizationBackend implements AuthorizationBackend {
     private static final CLogger logger = Utils.getLogger(DefaultAuthorizationBackend.class);
@@ -63,7 +64,7 @@ public class DefaultAuthorizationBackend implements AuthorizationBackend {
 
         List<String> deniedApis = permissionResult.entrySet().stream().filter(entry -> !entry.getValue()).map(Map.Entry::getKey).collect(Collectors.toList());
         if (!deniedApis.isEmpty()) {
-            throw new OperationFailureException(operr("the operations[%s] is denied", deniedApis));
+            throw new OperationFailureException(operr(ORG_ZSTACK_IDENTITY_10005, "the operations[%s] is denied", deniedApis));
         }
     }
 }

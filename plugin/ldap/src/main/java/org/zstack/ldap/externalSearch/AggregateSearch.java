@@ -18,6 +18,7 @@ import javax.naming.directory.SearchControls;
 import java.util.*;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class AggregateSearch implements LdapExternalSearchExtensionPoint {
     private static final CLogger logger = Utils.getLogger(AggregateSearch.class);
@@ -49,7 +50,7 @@ public class AggregateSearch implements LdapExternalSearchExtensionPoint {
                         }
                     } catch (javax.naming.NamingException e){
                         logger.error("query ldap entry attributes fail", e.getCause());
-                        throw new OperationFailureException(operr("query ldap entry fail, %s", e.toString()));
+                        throw new OperationFailureException(operr(ORG_ZSTACK_LDAP_EXTERNALSEARCH_10000, "query ldap entry fail, %s", e.toString()));
                     }
 
                     return result;

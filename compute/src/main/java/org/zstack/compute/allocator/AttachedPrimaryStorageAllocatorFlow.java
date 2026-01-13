@@ -20,6 +20,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Set;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AttachedPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
     private static final CLogger logger = Utils.getLogger(AttachedPrimaryStorageAllocatorFlow.class);
@@ -76,7 +77,7 @@ public class AttachedPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFl
         candidates = allocate(psuuids, vm);
 
         if (candidates.isEmpty()) {
-            fail(Platform.operr("no host found in clusters that have attached to primary storage %s", psuuids));
+            fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10014, "no host found in clusters that have attached to primary storage %s", psuuids));
         }  else {
             next(candidates);
         }

@@ -66,6 +66,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2016/3/26.
@@ -103,7 +104,7 @@ public class KvmBackend extends HypervisorBackend {
             if (success) {
                 return null;
             }
-            return operr("operation error, because:%s", error);
+            return operr(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10014, "operation error, because:%s", error);
         }
     }
 
@@ -156,7 +157,7 @@ public class KvmBackend extends HypervisorBackend {
         public boolean inUse;
         public ErrorCode buildErrorCode() {
             if (inUse) {
-                return Platform.err(VolumeErrors.VOLUME_IN_USE, error);
+                return Platform.err(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10015, VolumeErrors.VOLUME_IN_USE, error);
             }
             return super.buildErrorCode();
         }
@@ -531,7 +532,7 @@ public class KvmBackend extends HypervisorBackend {
         q.add(HostVO_.status, Op.EQ, HostStatus.Connected);
         List<String> hostUuids = q.listValue();
         if (hostUuids.isEmpty() && exceptionOnNotFound) {
-            throw new OperationFailureException(operr("no connected host found in the cluster[uuid:%s]", clusterUuid));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10016, "no connected host found in the cluster[uuid:%s]", clusterUuid));
         }
 
         return hostUuids;
@@ -1202,7 +1203,7 @@ public class KvmBackend extends HypervisorBackend {
             List<HostInventory> hinvs = primaryStorageFactory.getConnectedHostForOperation(getSelfInventory(),0,50);
             hinvs.forEach(it -> hostUuids.add(it.getUuid()));
             if (hostUuids.isEmpty()) {
-                throw new OperationFailureException(operr("cannot find any connected host to perform the operation, it seems all KVM hosts" +
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10017, "cannot find any connected host to perform the operation, it seems all KVM hosts" +
                                 " in the clusters attached with the shared mount point storage[uuid:%s] are disconnected",
                         self.getUuid()));
             }
@@ -1380,7 +1381,7 @@ public class KvmBackend extends HypervisorBackend {
             } else if (state == VmInstanceState.Stopped){
                 hostUuid = connectedHostUuid;
             } else {
-                completion.fail(operr("vm[uuid:%s] is not Running, Paused or Stopped, current state[%s]",
+                completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10018, "vm[uuid:%s] is not Running, Paused or Stopped, current state[%s]",
                         vol.getVmInstanceUuid(), state));
                 return;
             }
@@ -1444,7 +1445,7 @@ public class KvmBackend extends HypervisorBackend {
             } else if (state == VmInstanceState.Stopped){
                 hostUuid = connectedHostUuid;
             } else {
-                completion.fail(operr("vm[uuid:%s] is not Running, Paused or Stopped, current state[%s]",
+                completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10019, "vm[uuid:%s] is not Running, Paused or Stopped, current state[%s]",
                         vol.getVmInstanceUuid(), state));
                 return;
             }
@@ -1649,7 +1650,7 @@ public class KvmBackend extends HypervisorBackend {
 
             if (state != VmInstanceState.Stopped && state != VmInstanceState.Running
                     && state != VmInstanceState.Destroyed && state != VmInstanceState.Paused) {
-                throw new OperationFailureException(operr("the volume[uuid;%s] is attached to a VM[uuid:%s] which is in state of %s, cannot do the snapshot merge",
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10020, "the volume[uuid;%s] is attached to a VM[uuid:%s] which is in state of %s, cannot do the snapshot merge",
                                 volume.getUuid(), volume.getVmInstanceUuid(), state));
             }
 
@@ -1775,7 +1776,7 @@ public class KvmBackend extends HypervisorBackend {
             bsUuid = selector.select();
             if (bsUuid == null) {
                 throw new OperationFailureException(operr(
-                        "the image[uuid:%s, name: %s] is not available to download on any backup storage:\n" +
+                ORG_ZSTACK_STORAGE_PRIMARY_SMP_10021,         "the image[uuid:%s, name: %s] is not available to download on any backup storage:\n" +
                                 "1. check if image is in status of Deleted\n" +
                                 "2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:%s]",
                         imgInv.getUuid(), imgInv.getName(), self.getZoneUuid()
@@ -1822,7 +1823,7 @@ public class KvmBackend extends HypervisorBackend {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 GetQcow2HashValueRsp rsp = wrapper.getResponse(GetQcow2HashValueRsp.class);
-                return rsp.success ? null : operr("operation error, because:%s", rsp.error);
+                return rsp.success ? null : operr(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10022, "operation error, because:%s", rsp.error);
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -2166,7 +2167,7 @@ public class KvmBackend extends HypervisorBackend {
         String bsType = q.findValue();
 
         if (bsType == null) {
-            throw new OperationFailureException(operr("cannot find backup storage[uuid:%s]", backupStorageUuid));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10023, "cannot find backup storage[uuid:%s]", backupStorageUuid));
         }
 
 
@@ -2239,7 +2240,7 @@ public class KvmBackend extends HypervisorBackend {
                 if(ret.firstAccessHostUuids.size() > 1){
                     ret.huuids.addAll(ret.firstAccessHostUuids);
                     ret.errorCodes.add(operr(
-                            "hosts[uuid:%s] have the same mount path, but actually mount different storage.",
+                    ORG_ZSTACK_STORAGE_PRIMARY_SMP_10024,         "hosts[uuid:%s] have the same mount path, but actually mount different storage.",
                             ret.firstAccessHostUuids
                     ));
                 }
@@ -2298,7 +2299,7 @@ public class KvmBackend extends HypervisorBackend {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 GetVolumeSizeRsp rsp = wrapper.getResponse(GetVolumeSizeRsp.class);
-                return rsp.success ? null : operr("operation error, because:%s", rsp.error);
+                return rsp.success ? null : operr(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10025, "operation error, because:%s", rsp.error);
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -2426,7 +2427,7 @@ public class KvmBackend extends HypervisorBackend {
                     @Override
                     public void success(Boolean isFirst) {
                         if (isFirst && !isFirstAccessPS) {
-                            reply.setError(argerr("host[uuid:%s] might mount storage which is different from SMP[uuid:%s], please check it", msg.getHostUuid(), msg.getPrimaryStorageUuid()));
+                            reply.setError(argerr(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10026, "host[uuid:%s] might mount storage which is different from SMP[uuid:%s], please check it", msg.getHostUuid(), msg.getPrimaryStorageUuid()));
                             cleanInvalidIdFile(Collections.singletonList(msg.getHostUuid()));
                         }
                         bus.reply(msg, reply);
@@ -2469,7 +2470,7 @@ public class KvmBackend extends HypervisorBackend {
         cmd.volumeUuid = msg.getVolume().getUuid();
 
         if (!msg.getVolume().getInstallPath().startsWith(cmd.srcDir)) {
-            completion.fail(operr("why volume[uuid:%s, installPath:%s] not in directory %s",
+            completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10027, "why volume[uuid:%s, installPath:%s] not in directory %s",
                     cmd.volumeUuid, msg.getVolume().getInstallPath(), cmd.srcDir));
             return;
         }

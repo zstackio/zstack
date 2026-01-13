@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class LldpManagerImpl extends AbstractService implements HostAfterConnectedExtensionPoint, HostDeleteExtensionPoint,
         KVMPingAgentNoFailureExtensionPoint {
@@ -267,7 +268,7 @@ select name,ethTrunkName,switchUuid from PhysicalSwitchPortVO limit 1;
                     LldpKvmAgentCommands.GetLldpInfoResponse rsp = r.toResponse(LldpKvmAgentCommands.GetLldpInfoResponse.class);
                     getNeighbourStateMap.put(interfaceUuid, LLDPGetNeighbourState.Done);
                     if (!rsp.isSuccess()) {
-                        completion.fail(operr("operation error, because %s", rsp.getError()));
+                        completion.fail(operr(ORG_ZSTACK_NETWORK_HOSTNETWORKINTERFACE_LLDP_10002, "operation error, because %s", rsp.getError()));
                     } else {
                         HostNetworkInterfaceLldpVO vo = Q.New(HostNetworkInterfaceLldpVO.class)
                                 .eq(HostNetworkInterfaceLldpVO_.interfaceUuid, interfaceUuid).find();
@@ -278,7 +279,7 @@ select name,ethTrunkName,switchUuid from PhysicalSwitchPortVO limit 1;
                         if (lldpRefVO != null) {
                             completion.success(HostNetworkInterfaceLldpRefInventory.valueOf(lldpRefVO));
                         } else {
-                            completion.fail(operr("get lldp ref for[%s] failed", interfaceUuid));
+                            completion.fail(operr(ORG_ZSTACK_NETWORK_HOSTNETWORKINTERFACE_LLDP_10003, "get lldp ref for[%s] failed", interfaceUuid));
                         }
                     }
                 }

@@ -18,6 +18,7 @@ import java.util.*;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class RBACAPIRequestChecker implements APIRequestChecker {
     protected static final CLogger logger = Utils.getLogger(RBACAPIRequestChecker.class);
@@ -37,7 +38,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         }
 
         if (!AccountConstant.isAdminPermission(entity.getApiMessage().getSession()) && PolicyUtils.isAdminOnlyAction(entity.getApiName())) {
-            throw new OperationFailureException(err(IdentityErrors.PERMISSION_DENIED,
+            throw new OperationFailureException(err(ORG_ZSTACK_IDENTITY_RBAC_10010, IdentityErrors.PERMISSION_DENIED,
                     "request api[name: %s] is admin only, can not be executed by current user",
                     entity.getApiName()));
         }
@@ -77,7 +78,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         }
 
         // no polices applied to the operation, deny by default
-        throw new OperationFailureException(operr("operation[API:%s] is denied by default, please contact admin to correct it", rbacEntity.getApiMessage().getClass().getName()));
+        throw new OperationFailureException(operr(ORG_ZSTACK_IDENTITY_RBAC_10011, "operation[API:%s] is denied by default, please contact admin to correct it", rbacEntity.getApiMessage().getClass().getName()));
     }
 
     private String jsonMessage() {
@@ -184,7 +185,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                                 p.getUuid(), statement, jsonMessage()));
                     }
 
-                    throw new OperationFailureException(operr("the operation is denied by the policy[name:%s uuid:%s]", p.getName(), p.getUuid()));
+                    throw new OperationFailureException(operr(ORG_ZSTACK_IDENTITY_RBAC_10012, "the operation is denied by the policy[name:%s uuid:%s]", p.getName(), p.getUuid()));
                 }
 
                 Entity entity = Entity.getEntity(rbacEntity.getApiMessage().getClass());
@@ -197,7 +198,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                                 logger.trace(String.format("[RBAC] policy[name:%s, uuid:%s]'s statement[%s] denies the API:\n%s", p.getName(),
                                         p.getUuid(), statement, jsonMessage()));
                             }
-                            throw new OperationFailureException(operr("the operation is denied by the policy[name:%s, uuid:%s], field[%s] is not permitted to set", p.getName(), p.getUuid(), fname));
+                            throw new OperationFailureException(operr(ORG_ZSTACK_IDENTITY_RBAC_10013, "the operation is denied by the policy[name:%s, uuid:%s], field[%s] is not permitted to set", p.getName(), p.getUuid(), fname));
                         }
                     } catch (IllegalAccessException e) {
                         throw new CloudRuntimeException(e);

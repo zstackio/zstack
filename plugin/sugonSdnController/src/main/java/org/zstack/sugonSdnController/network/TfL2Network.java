@@ -19,6 +19,7 @@ import org.zstack.header.network.sdncontroller.SdnControllerVO_;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class TfL2Network extends L2NoVlanNetwork implements TfL2NetworkExtensionPoint{
 
@@ -80,7 +81,7 @@ public class TfL2Network extends L2NoVlanNetwork implements TfL2NetworkExtension
 
             @Override
             public void fail(ErrorCode errorCode) {
-                reply.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                reply.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10016, SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
                 bus.reply(msg, reply);
             }
         });
@@ -117,7 +118,7 @@ public class TfL2Network extends L2NoVlanNetwork implements TfL2NetworkExtension
 
             @Override
             public void fail(ErrorCode errorCode) {
-                reply.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                reply.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10017, SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
                 bus.reply(msg, reply);
             }
         });
@@ -200,7 +201,7 @@ public class TfL2Network extends L2NoVlanNetwork implements TfL2NetworkExtension
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(err(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10018, SysErrors.DELETE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
             }
         });

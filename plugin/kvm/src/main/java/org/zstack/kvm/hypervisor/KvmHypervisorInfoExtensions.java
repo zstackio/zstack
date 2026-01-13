@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by Wenhao.Zhang on 23/02/27
@@ -121,7 +122,7 @@ public class KvmHypervisorInfoExtensions implements
                         if (reply.isSuccess()) {
                             trigger.next();
                         } else {
-                            trigger.fail(operr(reply.getError(), "failed to collect host virtualizer info"));
+                            trigger.fail(operr(ORG_ZSTACK_KVM_HYPERVISOR_10000, reply.getError(), "failed to collect host virtualizer info"));
                         }
                     }
                 });

@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2016/10/31.
@@ -241,7 +242,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
                                         errs.clear();
                                         wcompl.allDone();
                                     } else {
-                                        errs.add(operr("vyos init command failed, because:%s", ret.getError()));
+                                        errs.add(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_VYOS_10002, "vyos init command failed, because:%s", ret.getError()));
                                         wcompl.done();
                                     }
                                 }

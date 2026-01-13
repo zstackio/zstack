@@ -29,8 +29,9 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.inerr;
-/**
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;/**
  */
+
 public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
     private static final CLogger logger = Utils.getLogger(L3NetworkCascadeExtension.class);
 
@@ -129,7 +130,7 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
 
             completion.success();
         } catch (L3NetworkException e) {
-            completion.fail(inerr(e.getMessage()));
+            completion.fail(inerr(ORG_ZSTACK_NETWORK_L3_10077, e.getMessage()));
         }
     }
 

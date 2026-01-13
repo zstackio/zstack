@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2016/6/25.
@@ -124,7 +125,7 @@ public class FlatDhcpUpgradeExtension implements Component {
 
                     new KvmCommandSender(l3Host.hostUuid).send(cmd, FlatDhcpBackend.DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
                         DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
-                        return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
+                        return rsp.isSuccess() ? null : operr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10020, "operation error, because:%s", rsp.getError());
                     }, new SteppingSendCallback<KvmResponseWrapper>() {
                         @Override
                         public void success(KvmResponseWrapper w) {

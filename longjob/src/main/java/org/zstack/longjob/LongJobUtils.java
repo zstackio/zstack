@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class LongJobUtils {
@@ -38,16 +39,16 @@ public class LongJobUtils {
     private static List<LongJobState> canceledStates = Arrays.asList(LongJobState.Canceled, LongJobState.Canceling);
 
     public static ErrorCode cancelErr(String longJobUuid) {
-        return Platform.err(LongJobErrors.CANCELED, "long job[uuid:%s] has been canceled", longJobUuid);
+        return Platform.err(ORG_ZSTACK_LONGJOB_10013, LongJobErrors.CANCELED, "long job[uuid:%s] has been canceled", longJobUuid);
     }
 
     public static ErrorCode cancelErr(String longJobUuid, ErrorCode cause) {
-        return err(LongJobErrors.CANCELED, cause,
+        return err(ORG_ZSTACK_LONGJOB_10014, LongJobErrors.CANCELED, cause,
                 "long job[uuid:%s] has been canceled", longJobUuid);
     }
 
     public static ErrorCode noncancelableErr(String error) {
-        return err(LongJobErrors.NONCANCELABLE, error);
+        return err(ORG_ZSTACK_LONGJOB_10015, LongJobErrors.NONCANCELABLE, error);
     }
 
     public static ErrorCode noncancelableErr(String error, List<ErrorCode> causes) {
@@ -59,7 +60,7 @@ public class LongJobUtils {
     }
 
     public static ErrorCode interruptedErr(String longJobUuid, ErrorCode cause) {
-        return err(LongJobErrors.INTERRUPTED, cause, "some error interrupt long job[uuid:%s]," +
+        return err(ORG_ZSTACK_LONGJOB_10016, LongJobErrors.INTERRUPTED, cause, "some error interrupt long job[uuid:%s]," +
                 " analysis the cause to fix it and resume long job if you want to continue.", longJobUuid);
     }
 

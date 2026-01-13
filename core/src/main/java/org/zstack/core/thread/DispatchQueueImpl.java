@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
 class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
@@ -511,7 +512,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
         void singleFlightRun(final ReturnValueCompletion<Object> completion) {
             if (isCancelled()) {
-                completion.fail(err(SysErrors.CANCEL_ERROR, "task failed due to cancelled"));
+                completion.fail(err(ORG_ZSTACK_CORE_THREAD_10000, SysErrors.CANCEL_ERROR, "task failed due to cancelled"));
                 return;
             }
 
@@ -526,9 +527,9 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                     done();
                 } finally {
                     if (t instanceof OperationFailureException) {
-                        completion.fail(operr(t.getMessage()));
+                        completion.fail(operr(ORG_ZSTACK_CORE_THREAD_10001, t.getMessage()));
                     } else {
-                        completion.fail(inerr(t.getMessage()));
+                        completion.fail(inerr(ORG_ZSTACK_CORE_THREAD_10002, t.getMessage()));
                     }
                 }
             }

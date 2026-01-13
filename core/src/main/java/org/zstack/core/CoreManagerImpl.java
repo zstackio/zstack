@@ -29,6 +29,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class CoreManagerImpl extends AbstractService implements CoreManager {
     private static final CLogger logger = Utils.getLogger(CoreManagerImpl.class);
@@ -68,7 +69,7 @@ public class CoreManagerImpl extends AbstractService implements CoreManager {
     private void handle(ExternalSingleFlightMsg msg) {
         SingleFlightExecutor executor = MultiNodeSingleFlightImpl.getExecutor(msg.getResourceUuid());
         if (executor == null) {
-            bus.replyErrorByMessageType(msg, operr("no executor found for resourceUuid[%s]", msg.getResourceUuid()));
+            bus.replyErrorByMessageType(msg, operr(ORG_ZSTACK_CORE_10000, "no executor found for resourceUuid[%s]", msg.getResourceUuid()));
             return;
         }
 

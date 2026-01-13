@@ -14,6 +14,7 @@ import java.util.Set;
 
 import static org.zstack.core.Platform.canerr;
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public abstract class AbstractVmInstance implements VmInstance {
@@ -221,10 +222,10 @@ public abstract class AbstractVmInstance implements VmInstance {
         if (checker.isOperationAllowed(msg.getMessageName(), currentState.toString())) {
             return null;
         } else {
-            ErrorCode cause = err(VmErrors.NOT_IN_CORRECT_STATE, "current vm instance state[%s] doesn't allow to proceed message[%s], allowed states are %s", currentState,
+            ErrorCode cause = err(ORG_ZSTACK_COMPUTE_VM_10019, VmErrors.NOT_IN_CORRECT_STATE, "current vm instance state[%s] doesn't allow to proceed message[%s], allowed states are %s", currentState,
                     msg.getMessageName(), checker.getStatesForOperation(msg.getMessageName()));
             if (errorCode != null) {
-                return err(errorCode, cause, cause.getDetails());
+                return err(ORG_ZSTACK_COMPUTE_VM_10021, errorCode, cause, cause.getDetails());
             } else {
                 return cause;
             }

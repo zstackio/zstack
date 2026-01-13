@@ -59,6 +59,7 @@ import java.util.function.Consumer;
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public abstract class HostBase extends AbstractHost {
@@ -150,14 +151,14 @@ public abstract class HostBase extends AbstractHost {
 
     protected void checkStatus() {
         if (HostStatus.Connected != self.getStatus()) {
-            ErrorCode cause = err(HostErrors.HOST_IS_DISCONNECTED, "host[uuid:%s, name:%s] is in status[%s], cannot perform required operation", self.getUuid(), self.getName(), self.getStatus());
-            throw new OperationFailureException(err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, cause, "unable to do the operation because the host is in status of Disconnected"));
+            ErrorCode cause = err(ORG_ZSTACK_COMPUTE_HOST_10116, HostErrors.HOST_IS_DISCONNECTED, "host[uuid:%s, name:%s] is in status[%s], cannot perform required operation", self.getUuid(), self.getName(), self.getStatus());
+            throw new OperationFailureException(err(ORG_ZSTACK_COMPUTE_HOST_10117, HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, cause, "unable to do the operation because the host is in status of Disconnected"));
         }
     }
 
     protected void checkState() {
         if (HostState.PreMaintenance == self.getState() || HostState.Maintenance == self.getState()) {
-            throw new OperationFailureException(operr("host[uuid:%s, name:%s] is in state[%s], cannot perform required operation", self.getUuid(), self.getName(), self.getState()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_HOST_10118, "host[uuid:%s, name:%s] is in state[%s], cannot perform required operation", self.getUuid(), self.getName(), self.getState()));
         }
     }
 
@@ -287,7 +288,7 @@ public abstract class HostBase extends AbstractHost {
         HostIpmiVO ipmi = dbf.findByUuid(msg.getHostUuid(), HostIpmiVO.class);
         if (null == ipmi.getIpmiAddress()) {
             event.setSuccess(false);
-            event.setError(operr("host[%s] does not have ipmi device or ipmi does not have address." +
+            event.setError(operr(ORG_ZSTACK_COMPUTE_HOST_10119, "host[%s] does not have ipmi device or ipmi does not have address." +
                     "After config ipmi address, please reconnect host to refresh " +
                     "host ipmi information", msg.getHostUuid()));
             bus.publish(event);
@@ -453,7 +454,7 @@ public abstract class HostBase extends AbstractHost {
                             public void done(ErrorCodeList errorCodeList) {
                                 if (!vmFailedToMigrate.isEmpty()) {
                                     if (HostMaintenancePolicyManager.HostMaintenancePolicy.JustMigrate.equals(hostMaintenancePolicyMgr.getHostMaintenancePolicy(self.getUuid()))) {
-                                        trigger.fail(operr("failed to migrate vm[uuids:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it.",
+                                        trigger.fail(operr(ORG_ZSTACK_COMPUTE_HOST_10120, "failed to migrate vm[uuids:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it.",
                                                 vmFailedToMigrate.keySet(), self.getUuid(), self.getName(), self.getManagementIp()));
                                         return;
                                     }
@@ -596,7 +597,7 @@ public abstract class HostBase extends AbstractHost {
             public void run(MessageReply reply) {
                 APIReconnectHostEvent evt = new APIReconnectHostEvent(msg.getId());
                 if (!reply.isSuccess()) {
-                    evt.setError(err(HostErrors.UNABLE_TO_RECONNECT_HOST, reply.getError(), reply.getError().getDetails()));
+                    evt.setError(err(ORG_ZSTACK_COMPUTE_HOST_10121, HostErrors.UNABLE_TO_RECONNECT_HOST, reply.getError(), reply.getError().getDetails()));
                     logger.debug(String.format("failed to reconnect host[uuid:%s] because %s", self.getUuid(), reply.getError()));
                 } else {
                     self = dbf.reload(self);
@@ -714,7 +715,7 @@ public abstract class HostBase extends AbstractHost {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                evt.setError(err(ORG_ZSTACK_COMPUTE_HOST_10122, SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                 bus.publish(evt);
             }
         }).start();
@@ -752,7 +753,7 @@ public abstract class HostBase extends AbstractHost {
         try {
             extpEmitter.preChange(self, stateEvent);
         } catch (HostException he) {
-            evt.setError(err(SysErrors.CHANGE_RESOURCE_STATE_ERROR, he.getMessage()));
+            evt.setError(err(ORG_ZSTACK_COMPUTE_HOST_10123, SysErrors.CHANGE_RESOURCE_STATE_ERROR, he.getMessage()));
             bus.publish(evt);
             return;
         }
@@ -884,7 +885,7 @@ public abstract class HostBase extends AbstractHost {
     private void doPingHost(final PingHostMsg msg, ReturnValueCompletion<PingHostReply> completion) {
         final PingHostReply reply = new PingHostReply();
         if (self.getStatus() == HostStatus.Connecting) {
-            completion.fail(operr("host is connecting, ping failed"));
+            completion.fail(operr(ORG_ZSTACK_COMPUTE_HOST_10124, "host is connecting, ping failed"));
             return;
         }
 
@@ -1071,7 +1072,7 @@ public abstract class HostBase extends AbstractHost {
                         if (reply.isSuccess()) {
                             logger.debug(String.format("Successfully reconnect host[uuid:%s]", self.getUuid()));
                         } else {
-                            r.setError(err(HostErrors.UNABLE_TO_RECONNECT_HOST, reply.getError(), reply.getError().getDetails()));
+                            r.setError(err(ORG_ZSTACK_COMPUTE_HOST_10125, HostErrors.UNABLE_TO_RECONNECT_HOST, reply.getError(), reply.getError().getDetails()));
                             logger.debug(String.format("Failed to reconnect host[uuid:%s] because %s",
                                     self.getUuid(), reply.getError()));
                         }
@@ -1151,7 +1152,7 @@ public abstract class HostBase extends AbstractHost {
                 try {
                     extpEmitter.connectionReestablished(HypervisorType.valueOf(self.getHypervisorType()), getSelfInventory());
                 } catch (HostException e) {
-                    throw new OperationFailureException(operr(e.getMessage()));
+                    throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_HOST_10126, e.getMessage()));
                 }
             }
 
@@ -1510,7 +1511,7 @@ public abstract class HostBase extends AbstractHost {
                     HostStateEvent rollbackEvent = dbf.reload(self).getState().getTargetStateDrivenEvent(originState);
                     DebugUtils.Assert(rollbackEvent != null, "rollbackEvent not found!");
                     changeState(rollbackEvent);
-                    completion.fail(err(HostErrors.UNABLE_TO_ENTER_MAINTENANCE_MODE, errorCode, errorCode.getDetails()));
+                    completion.fail(err(ORG_ZSTACK_COMPUTE_HOST_10127, HostErrors.UNABLE_TO_ENTER_MAINTENANCE_MODE, errorCode, errorCode.getDetails()));
                 }
             });
         } else {

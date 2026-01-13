@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2017/3/1.
@@ -312,7 +313,7 @@ public class GarbageCollectorManagerImpl extends AbstractService
         } else {
             GarbageCollectorVO vo = dbf.findByUuid(gcUuid, GarbageCollectorVO.class);
             if (vo.getStatus() == GCStatus.Done) {
-                throw new OperationFailureException(operr("cannot trigger a finished GC job[uuid:%s, name:%s]",
+                throw new OperationFailureException(operr(ORG_ZSTACK_CORE_GC_10001, "cannot trigger a finished GC job[uuid:%s, name:%s]",
                         vo.getUuid(), vo.getName()));
             }
 

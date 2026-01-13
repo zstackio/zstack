@@ -7,6 +7,7 @@ import org.zstack.zql.antlr4.ZQLBaseVisitor;
 import org.zstack.zql.antlr4.ZQLParser;
 
 import java.util.stream.Collectors;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class JoinClauseVisitor extends ZQLBaseVisitor<ASTNode.JoinClause> {
 
@@ -20,7 +21,7 @@ public class JoinClauseVisitor extends ZQLBaseVisitor<ASTNode.JoinClause> {
         } else if (ctx.RIGHT() != null) {
             joinType = ctx.RIGHT().getText();
         } else {
-            throw new OperationFailureException(Platform.operr("can not find JoinType"));
+            throw new OperationFailureException(Platform.operr(ORG_ZSTACK_ZQL_AST_PARSER_VISITORS_10005, "can not find JoinType"));
         }
 
         ASTNode.JoinClause outerJoin = new ASTNode.JoinClause();

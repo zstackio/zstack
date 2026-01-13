@@ -31,6 +31,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import javax.persistence.Query;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -194,7 +195,7 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
                         if (reply.isSuccess()) {
                             trigger.next();
                         } else {
-                            trigger.fail(operr("Failed to apply security group rules to current VM[uuid:%s]",
+                            trigger.fail(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10122, "Failed to apply security group rules to current VM[uuid:%s]",
                                     servedVm.getVmInventory().getUuid())
                                     .causedBy(reply.getError()));
                         }
@@ -252,7 +253,7 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
                                 if (errs.isEmpty()) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(operr("Failed to apply security group rules to some VMs"));
+                                    trigger.fail(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10123, "Failed to apply security group rules to some VMs"));
                                 }
                             }
                         });

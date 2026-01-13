@@ -25,6 +25,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class LoginManagerImpl extends AbstractService implements LoginManager {
     private static final CLogger logger = Utils.getLogger(LoginManagerImpl.class);
@@ -43,7 +44,7 @@ public class LoginManagerImpl extends AbstractService implements LoginManager {
         LoginBackend loginBackend = loginBackends.get(loginType);
 
         if (loginBackend == null) {
-            throw new OperationFailureException(operr("unsupported login type %s", loginType));
+            throw new OperationFailureException(operr(ORG_ZSTACK_IDENTITY_LOGIN_10000, "unsupported login type %s", loginType));
         }
 
         return loginBackend;

@@ -13,6 +13,7 @@ import org.zstack.utils.logging.CLogger;
 
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 public class TfVmNicFactory extends VmNicFactory {
@@ -41,7 +42,7 @@ public class TfVmNicFactory extends VmNicFactory {
         vnic.setAccountUuid(acntUuid);
         vnic = persistAndRetryIfMacCollision(vnic);
         if (vnic == null) {
-            throw new FlowException(err(VmErrors.ALLOCATE_MAC_ERROR, "unable to find an available mac address after re-try 5 times, too many collisions"));
+            throw new FlowException(err(ORG_ZSTACK_COMPUTE_VM_10091, VmErrors.ALLOCATE_MAC_ERROR, "unable to find an available mac address after re-try 5 times, too many collisions"));
         }
 
         vnic = dbf.reload(vnic);

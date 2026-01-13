@@ -54,6 +54,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.zql.ast.visitors.constants.MySqlKeyword.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ZQL {
@@ -403,7 +404,7 @@ public class ZQL {
                 clean.run();
             } else if (ctx instanceof ZQLParser.SearchGrammarContext) {
                 if (!SearchGlobalProperty.SearchAutoRegister) {
-                    throw new OperationFailureException(err(SearchErrors.SEARCH_MODULE_DISABLED, "search module disabled"));
+                    throw new OperationFailureException(err(ORG_ZSTACK_ZQL_10000, SearchErrors.SEARCH_MODULE_DISABLED, "search module disabled"));
                 }
 
                 ASTNode.Search search = ((ZQLParser.SearchGrammarContext) ctx).search().accept(new SearchVisitor());

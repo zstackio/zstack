@@ -39,6 +39,7 @@ import java.util.*;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -124,7 +125,7 @@ public class JobQueueFacadeImpl2 implements JobQueueFacade, CloudBusEventListene
             if (e.getState() == JobState.Processing && !e.isRestartable()) {
                 dbf.remove(e);
                 JobEvent evt = new JobEvent();
-                evt.setErrorCode(err(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
+                evt.setErrorCode(err(ORG_ZSTACK_CORE_JOB_10000, SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
                         "management node[id:%s] becomes unavailable, job[name:%s, id:%s] is not restartable", mgmtId, e.getName(), e.getId()));
                 bus.publish(evt);
                 logger.debug(String.format("[Job Removed]: job[id:%s, name:%s] because it's not restartable",
@@ -290,7 +291,7 @@ public class JobQueueFacadeImpl2 implements JobQueueFacade, CloudBusEventListene
                             jobe = dbf.updateAndRefresh(jobe);
                             return Bucket.newBucket(jobe, theJob);
                         } catch (Exception e1) {
-                            ErrorCode ierr = inerr("[Job de-serialize failed, the job will be marked as Error] queue name: %s, job id: %s, %s", qvo.getName(),
+                            ErrorCode ierr = inerr(ORG_ZSTACK_CORE_JOB_10001, "[Job de-serialize failed, the job will be marked as Error] queue name: %s, job id: %s, %s", qvo.getName(),
                                     jobe.getId(), e1.getMessage());
                             jobFail(jobe, ierr);
                             logger.warn(ierr.getDetails(), e1);
@@ -326,7 +327,7 @@ public class JobQueueFacadeImpl2 implements JobQueueFacade, CloudBusEventListene
                             logger.debug(String.format("[Job Success] job[id:%s, name:%s] succeed", e.getId(), e.getName()));
                         } catch (Throwable t){
                             logger.warn(String.format("unhandled exception happened when calling %s", job.getClass().getName()), t);
-                            jobFail(e, inerr(t.getMessage()));
+                            jobFail(e, inerr(ORG_ZSTACK_CORE_JOB_10002, t.getMessage()));
                         } finally {
                             process(qvo);
                         }
@@ -339,7 +340,7 @@ public class JobQueueFacadeImpl2 implements JobQueueFacade, CloudBusEventListene
                             logger.debug(String.format("[Job Failure] job[id:%s, name:%s] failed", e.getId(), e.getName()));
                         } catch (Throwable t){
                             logger.warn(String.format("unhandled exception happened when calling %s", job.getClass().getName()), t);
-                            jobFail(e, inerr(t.getMessage()));
+                            jobFail(e, inerr(ORG_ZSTACK_CORE_JOB_10003, t.getMessage()));
                         } finally {
                             process(qvo);
                         }

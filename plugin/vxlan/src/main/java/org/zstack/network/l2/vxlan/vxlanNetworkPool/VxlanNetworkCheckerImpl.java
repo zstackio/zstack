@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by weiwang on 02/05/2017.
@@ -41,11 +42,11 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
             return;
         }
         if (!NetworkUtils.isValidVni(msg.getVlan())) {
-            throw new ApiMessageInterceptionException(argerr("vlan[%s] is not a valid vni", msg.getVlan()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10024, "vlan[%s] is not a valid vni", msg.getVlan()));
         }
         VxlanNetworkVO vxlanVO = Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.uuid, msg.getL2NetworkUuid()).find();
         if (vxlanVO == null || !vxlanVO.getType().equals(VxlanNetworkConstant.VXLAN_NETWORK_TYPE)) {
-            throw new ApiMessageInterceptionException(argerr("L2Network[uuid:%s] is not L2VxlanNetwork type",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10025, "L2Network[uuid:%s] is not L2VxlanNetwork type",
                     msg.getL2NetworkUuid()));
         }
 
@@ -53,7 +54,7 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
                 .eq(VxlanNetworkVO_.vni, msg.getVlan()).eq(VxlanNetworkVO_.poolUuid, vxlanVO.getPoolUuid()).listValues();
         duplicate = duplicate.stream().filter(d -> !d.equals(msg.getL2NetworkUuid())).collect(Collectors.toList());
         if (!duplicate.isEmpty()) {
-            throw new OperationFailureException(Platform.err(L2Errors.ALLOCATE_VNI_ERROR,
+            throw new OperationFailureException(Platform.err(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10026, L2Errors.ALLOCATE_VNI_ERROR,
                     "cannot allocate vni[%s] in l2Network[uuid:%s], duplicate with l2Network[uuid:%s]",
                     msg.getVlan(), msg.getL2NetworkUuid(), duplicate.get(0)));
         }
@@ -66,7 +67,7 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
         }
 
         if (msg.getSystemTags() == null) {
-            throw new ApiMessageInterceptionException(argerr("need to input one system tag like : [%s]",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10027, "need to input one system tag like : [%s]",
                     VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTagFormat()));
         }
 
@@ -78,13 +79,13 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
     public void validateSystemTagFormat(List<String> systemTags) {
         for (String tag : systemTags) {
             if (!VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.isMatch(tag)) {
-                throw new ApiMessageInterceptionException(argerr("wrong system tag [%s], should be like : [%s]",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10028, "wrong system tag [%s], should be like : [%s]",
                         tag, VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTagFormat()));
             }
             List<String> cidr = Arrays.asList(VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTokenByTag(tag, VxlanSystemTags.VTEP_CIDR_TOKEN).split("[{}]"));
             boolean isCidr = cidr.size() > 1 && NetworkUtils.isCidr(cidr.get(1));
             if (!isCidr) {
-                throw new ApiMessageInterceptionException(argerr("wrong cidr format in system tag [%s]", tag));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10029, "wrong cidr format in system tag [%s]", tag));
             }
         }
     }
@@ -93,7 +94,7 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
     public void validateVniRangeOverlap(L2NetworkInventory inv, String clusterUuid) {
         String overlappedPool = getOverlapVniRangePool(inv, clusterUuid);
         if (overlappedPool != null) {
-            throw new ApiMessageInterceptionException(argerr("overlap vni range with %s [%s]", inv.getType(), overlappedPool));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10030, "overlap vni range with %s [%s]", inv.getType(), overlappedPool));
         }
     }
 
@@ -128,7 +129,7 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
     private void validate(APICreateL3NetworkMsg msg) {
         String type = Q.New(L2NetworkVO.class).select(L2NetworkVO_.type).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).findValue();
         if (type.equals(VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE)) {
-            throw new ApiMessageInterceptionException(argerr("vxlan network pool doesn't support create l3 network"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10031, "vxlan network pool doesn't support create l3 network"));
         }
     }
 }

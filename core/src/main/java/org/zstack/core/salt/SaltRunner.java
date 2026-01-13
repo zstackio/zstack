@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.DebugUtils.Assert;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -294,7 +295,7 @@ public class SaltRunner {
                     }
 
                     if (!ret) {
-                        completion.fail(operr("failed to run salt state[%s] on system[%s], failed after %s retries", stateName, targetIp, retry));
+                        completion.fail(operr(ORG_ZSTACK_CORE_SALT_10003, "failed to run salt state[%s] on system[%s], failed after %s retries", stateName, targetIp, retry));
                         return;
                     }
 
@@ -302,7 +303,7 @@ public class SaltRunner {
                     completion.success();
                 } catch (Exception e) {
                     logger.warn(String.format("failed to run salt state[%s] on system[%s], %s", stateName, targetIp, e.getMessage()));
-                    completion.fail(operr(e.getMessage()));
+                    completion.fail(operr(ORG_ZSTACK_CORE_SALT_10004, e.getMessage()));
                     Thread.currentThread().interrupt();
                 }
             }

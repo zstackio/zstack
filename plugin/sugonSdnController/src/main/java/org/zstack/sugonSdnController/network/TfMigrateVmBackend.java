@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 public class TfMigrateVmBackend implements VmInstanceMigrateExtensionPoint, VmPreMigrationExtensionPoint {
@@ -153,7 +154,7 @@ public class TfMigrateVmBackend implements VmInstanceMigrateExtensionPoint, VmPr
         if (!reply.isSuccess()) {
             logger.error(String.format("notifySugonSdn: failed to notify sugon sdn to %s vrouter for vm [uuid:%s], %s", operate, inv.getUuid(),
                     reply.getError()));
-            throw new OperationFailureException(operr("notifySugonSdn: failed to notify sugon sdn to %s vrouter for vm [uuid:%s], on the destination host[uuid:%s]",
+            throw new OperationFailureException(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10019, "notifySugonSdn: failed to notify sugon sdn to %s vrouter for vm [uuid:%s], on the destination host[uuid:%s]",
                     operate, inv.getUuid(), destHostUuid).causedBy(reply.getError()));
         }
 
@@ -162,7 +163,7 @@ public class TfMigrateVmBackend implements VmInstanceMigrateExtensionPoint, VmPr
         if (!rsp.isSuccess()) {
             logger.error(String.format("notifySugonSdn: failed to notify sugon sdn to %s vrouter for vm [uuid:%s], %s", operate, inv.getUuid(),
                     rsp.getError()));
-            throw new OperationFailureException(operr("notifySugonSdn: failed to notify sugon sdn to %s vrouter for vm [uuid:%s], on the destination host[uuid:%s], error is:%s",
+            throw new OperationFailureException(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_NETWORK_10020, "notifySugonSdn: failed to notify sugon sdn to %s vrouter for vm [uuid:%s], on the destination host[uuid:%s], error is:%s",
                     operate, inv.getUuid(), destHostUuid, rsp.getError()));
         }
         logger.info(String.format("notifySugonSdn: successfully to notify sugon sdn to %s vrouter for vm[uuid:%s]", operate, inv.getUuid()));

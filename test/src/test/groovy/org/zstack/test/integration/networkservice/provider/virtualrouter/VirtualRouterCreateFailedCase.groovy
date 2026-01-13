@@ -1,5 +1,7 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter
 
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+
 import org.zstack.appliancevm.ApplianceVmVO
 import org.zstack.appliancevm.StartNewCreatedApplianceVmMsg
 import org.zstack.core.cloudbus.CloudBus
@@ -51,7 +53,7 @@ class VirtualRouterCreateFailedCase extends SubCase {
 
         env.message(StartNewCreatedApplianceVmMsg.class) { StartNewCreatedApplianceVmMsg msg, CloudBus bus ->
             InstantiateNewCreatedVmInstanceReply reply = new InstantiateNewCreatedVmInstanceReply()
-            reply.setError(operr("on purpose"))
+            reply.setError(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_NETWORKSERVICE_PROVIDER_VIRTUALROUTER_10000, "on purpose"))
             bus.reply(msg, reply)
         }
 

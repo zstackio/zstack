@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -66,7 +67,7 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
         }
 
         if (msg.getOpaque() == null) {
-            throw new ApiMessageInterceptionException(argerr("for webhooks with type[%s], the field opaque cannot be null", EventFacade.WEBHOOK_TYPE));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_CORE_CLOUDBUS_10001, "for webhooks with type[%s], the field opaque cannot be null", EventFacade.WEBHOOK_TYPE));
         }
     }
 

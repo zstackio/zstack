@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * @author shenjin
@@ -76,7 +77,7 @@ public class DirectoryManagerImpl extends AbstractService implements DirectoryMa
     private void passThrough(DirectoryMessage msg) {
         DirectoryVO vo = dbf.findByUuid(msg.getDirectoryUuid(), DirectoryVO.class);
         if (vo == null) {
-            bus.replyErrorByMessageType((Message) msg, err(SysErrors.RESOURCE_NOT_FOUND, "unable to find directory[uuid=%s]", msg.getDirectoryUuid()));
+            bus.replyErrorByMessageType((Message) msg, err(ORG_ZSTACK_DIRECTORY_10007, SysErrors.RESOURCE_NOT_FOUND, "unable to find directory[uuid=%s]", msg.getDirectoryUuid()));
             return;
         }
 
@@ -144,18 +145,18 @@ public class DirectoryManagerImpl extends AbstractService implements DirectoryMa
                 .filter(s -> s.getName().equals(name) && s.getType().equals(msg.getType()))
                 .collect(Collectors.toList());
         if (!list.isEmpty()) {
-            completion.fail(operr("duplicate directory name, directory[uuid: %s] with name %s already exists", list.get(0).getUuid(), msg.getName()));
+            completion.fail(operr(ORG_ZSTACK_DIRECTORY_10008, "duplicate directory name, directory[uuid: %s] with name %s already exists", list.get(0).getUuid(), msg.getName()));
             return;
         }
         //judge whether the maximum level is exceeded
         String[] split = vo.getGroupName().split("/");
         // the directory cannot exceed 4 floors (contains the default directory)
         if(split.length > 3) {
-            completion.fail(operr("fail to create directory, directories are up to four levels"));
+            completion.fail(operr(ORG_ZSTACK_DIRECTORY_10009, "fail to create directory, directories are up to four levels"));
             return;
         }
         if (!DIRECTORY_TYPES.contains(msg.getType())) {
-            completion.fail(operr("the type of directory %s is not supported, the supported directory types are %s", msg.getType(), DIRECTORY_TYPES));
+            completion.fail(operr(ORG_ZSTACK_DIRECTORY_10010, "the type of directory %s is not supported, the supported directory types are %s", msg.getType(), DIRECTORY_TYPES));
             return;
         }
         vo.setType(msg.getType());

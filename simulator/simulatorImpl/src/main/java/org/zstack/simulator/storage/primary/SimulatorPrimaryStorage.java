@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 public class SimulatorPrimaryStorage extends PrimaryStorageBase {
@@ -267,7 +268,7 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
                     .param("vmUuid", msg.getVmInstanceUuid())
                     .find();
             if (hostStatus != HostStatus.Connected && hostStatus != null) {
-                reply.setError(err(HostErrors.HOST_IS_DISCONNECTED, "host where vm[uuid:%s] locate is not Connected.", msg.getVmInstanceUuid()));
+                reply.setError(err(ORG_ZSTACK_SIMULATOR_STORAGE_PRIMARY_10000, HostErrors.HOST_IS_DISCONNECTED, "host where vm[uuid:%s] locate is not Connected.", msg.getVmInstanceUuid()));
             }
         }
 

@@ -1,5 +1,7 @@
 package org.zstack.test.integration.kvm.host
 
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.header.host.ConnectHostMsg
@@ -39,7 +41,7 @@ class BatchAddHostCase extends SubCase {
             while (!over) {
                 sleep(1000)
             }
-            reply.setError(operr("on purpose"))
+            reply.setError(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_KVM_HOST_10001, "on purpose"))
             bus.reply(msg, reply)
         }
 

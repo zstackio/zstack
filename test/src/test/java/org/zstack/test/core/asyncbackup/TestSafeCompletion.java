@@ -10,6 +10,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by MaJin on 2021/11/1.
@@ -64,7 +65,7 @@ public class TestSafeCompletion {
             @Override
             public void run(MessageReply reply) {
                 haCompletion.success(null);
-                throw new OperationFailureException(operr("on purpose 3"));
+                throw new OperationFailureException(operr(ORG_ZSTACK_TEST_CORE_ASYNCBACKUP_10000, "on purpose 3"));
             }
         }.run(null);
         assert succCount == 1;
@@ -72,7 +73,7 @@ public class TestSafeCompletion {
     }
 
     private void throwException(HaCheckerCompletion completion) {
-        throw new OperationFailureException(operr("on purpose 1"));
+        throw new OperationFailureException(operr(ORG_ZSTACK_TEST_CORE_ASYNCBACKUP_10001, "on purpose 1"));
     }
 
     private void throwExceptionAndCallSucc(HaCheckerCompletion completion) {
@@ -80,7 +81,7 @@ public class TestSafeCompletion {
         completion.noWay();
         completion.fail(null);
         completion.notStable();
-        throw new OperationFailureException(operr("on purpose 2"));
+        throw new OperationFailureException(operr(ORG_ZSTACK_TEST_CORE_ASYNCBACKUP_10002, "on purpose 2"));
     }
 
     private void reset() {

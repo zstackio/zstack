@@ -23,6 +23,7 @@ import java.util.*;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by shixin.ruan on 09/19/2019.
@@ -50,7 +51,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     public void deleteVxlanNetworkOnSdnController(VxlanNetworkVO vo, Completion completion) {
         HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
         if (poolVO == null || poolVO.getSdnControllerUuid() == null) {
-            completion.fail(argerr("there is no sdn controller for vxlan pool [uuid:%s]", vo.getPoolUuid()));
+            completion.fail(argerr(ORG_ZSTACK_SDNCONTROLLER_HARDWAREVXLAN_10000, "there is no sdn controller for vxlan pool [uuid:%s]", vo.getPoolUuid()));
             return;
         }
 

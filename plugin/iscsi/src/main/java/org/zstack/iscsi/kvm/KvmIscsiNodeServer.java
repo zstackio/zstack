@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, VmInstanceMigrateExtensionPoint,
         KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint,
@@ -345,7 +346,7 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, 
                 KVMHostAsyncHttpCallReply rep = reply.castReply();
                 final T rsp = rep.toResponse(respType);
                 if (!rsp.success) {
-                    completion.fail(operr("operation error, because:%s", rsp.error));
+                    completion.fail(operr(ORG_ZSTACK_ISCSI_KVM_10000, "operation error, because:%s", (String) rsp.error));
                     return;
                 }
                 completion.success(rsp);

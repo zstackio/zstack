@@ -40,6 +40,7 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import static org.zstack.utils.StringDSL.s;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -429,12 +430,12 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
 
             if (!skipInventoryCheck) {
                 if (inventoryField == null || inventoryField.isAnnotationPresent(APINoSee.class)) {
-                    throw new OperationFailureException(argerr("condition name[%s] is invalid, no such field on inventory class[%s]",
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_QUERY_10018, "condition name[%s] is invalid, no such field on inventory class[%s]",
                                     attr, inventoryClass.getName()));
                 }
 
                 if (inventoryField.isAnnotationPresent(Unqueryable.class)) {
-                    throw new OperationFailureException(argerr("condition name[%s] is invalid, field[%s] of inventory[%s] is annotated as @Unqueryable field",
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_QUERY_10019, "condition name[%s] is invalid, field[%s] of inventory[%s] is annotated as @Unqueryable field",
                                     attr, attr, inventoryClass.getName()));
                 }
             }
@@ -445,7 +446,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             if (at == null) {
                 Field metaField = FieldUtils.getField(attr, info.jpaMetaClass);
                 if (metaField == null) {
-                    throw new OperationFailureException(argerr("entity meta class[%s] has no field[%s]",
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_QUERY_10020, "entity meta class[%s] has no field[%s]",
                             info.jpaMetaClass.getName(), attr));
                 }
 
@@ -997,7 +998,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             EntityInfo info = entityInfos.get(inventoryClass);
             for (String f : msg.getFields()) {
                 if (!info.premitiveFieldNames.contains(f)) {
-                    throw new OperationFailureException(argerr("field[%s] is not a primitive of the inventory %s; you cannot specify it in the parameter 'fields';" +
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_QUERY_10021, "field[%s] is not a primitive of the inventory %s; you cannot specify it in the parameter 'fields';" +
                                     "valid fields are %s", f, info.inventoryClass.getSimpleName(), info.premitiveFieldNames));
                 }
             }

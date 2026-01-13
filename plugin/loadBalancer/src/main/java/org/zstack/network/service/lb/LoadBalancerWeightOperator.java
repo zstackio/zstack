@@ -23,6 +23,7 @@ import java.util.Map;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * @author: zhanyong.miao
@@ -109,7 +110,7 @@ public class LoadBalancerWeightOperator {
         DebugUtils.Assert(listenerUuid != null && nicUuid != null, String.format("invalid parameter listener uuid:%s nicUuid:%s", listenerUuid, nicUuid));
 
         if ( weight < LoadBalancerConstants.BALANCER_WEIGHT_MIN || weight > LoadBalancerConstants.BALANCER_WEIGHT_MAX) {
-            throw new OperationFailureException(argerr("invalid balancer weight for nic:%s, %d is not in the range [%d, %d]", nicUuid, weight, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
+            throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10027, "invalid balancer weight for nic:%s, %d is not in the range [%d, %d]", nicUuid, weight, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
 
         }
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);

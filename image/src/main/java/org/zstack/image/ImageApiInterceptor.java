@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -98,29 +99,29 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         ImageVO vo = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
         if (ImageBootMode.Legacy.toString().equals(msg.getBootMode())
                 && ImageArchitecture.aarch64.toString().equals(vo.getArchitecture())) {
-            throw new ApiMessageInterceptionException(argerr("The aarch64 architecture does not support legacy."));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_IMAGE_10002, "The aarch64 architecture does not support legacy."));
         }
     }
 
     private void validate(APICreateDataVolumeTemplateFromVolumeMsg msg) {
         VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
         if (VolumeStatus.Ready != vol.getStatus()) {
-            throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is not Ready, it's %s", vol.getUuid(), vol.getStatus()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_IMAGE_10003, "volume[uuid:%s] is not Ready, it's %s", vol.getUuid(), vol.getStatus()));
         }
 
         if (VolumeState.Enabled != vol.getState()) {
-            throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is not Enabled, it's %s", vol.getUuid(), vol.getState()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_IMAGE_10004, "volume[uuid:%s] is not Enabled, it's %s", vol.getUuid(), vol.getState()));
         }
     }
 
     private void validate(APICreateDataVolumeTemplateFromVolumeSnapshotMsg msg) {
         VolumeSnapshotVO vsvo = dbf.findByUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class);
         if (VolumeSnapshotStatus.Ready != vsvo.getStatus()) {
-            throw new ApiMessageInterceptionException(operr("volume snapshot[uuid:%s] is not Ready, it's %s", vsvo.getUuid(), vsvo.getStatus()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_IMAGE_10005, "volume snapshot[uuid:%s] is not Ready, it's %s", vsvo.getUuid(), vsvo.getStatus()));
         }
 
         if (VolumeSnapshotState.Enabled != vsvo.getState()) {
-            throw new ApiMessageInterceptionException(operr("volume snapshot[uuid:%s] is not Enabled, it's %s", vsvo.getUuid(), vsvo.getState()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_IMAGE_10006, "volume snapshot[uuid:%s] is not Enabled, it's %s", vsvo.getUuid(), vsvo.getState()));
         }
     }
 
@@ -140,16 +141,16 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
 
         if (msg.isSystem() && (ImageMediaType.ISO.toString().equals(msg.getMediaType()) || ImageConstant.ISO_FORMAT_STRING.equals(msg.getFormat()))) {
             throw new ApiMessageInterceptionException(argerr(
-                    "ISO cannot be used as system image"
+            ORG_ZSTACK_IMAGE_10007,         "ISO cannot be used as system image"
             ));
         }
 
         if (!VolumeFormat.hasType(msg.getFormat())) {
-            throw new ApiMessageInterceptionException(argerr("unknown format[%s]", msg.getFormat()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_IMAGE_10008, "unknown format[%s]", msg.getFormat()));
         }
 
         if (msg.getType() != null && !ImageType.hasType(msg.getType())) {
-            throw new ApiMessageInterceptionException(argerr("unsupported image type[%s]", msg.getType()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_IMAGE_10009, "unsupported image type[%s]", msg.getType()));
         }
 
         if (msg.getMediaType() == null) {
@@ -166,7 +167,7 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
             q.add(BackupStorageVO_.uuid, Op.IN, msg.getBackupStorageUuids());
             List<String> bsUuids = q.listValue();
             if (bsUuids.isEmpty()) {
-                throw new ApiMessageInterceptionException(operr("no backup storage specified in uuids%s is available for adding this image; they are not in status %s or not in state %s, or the uuid is invalid backup storage uuid",
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_IMAGE_10010, "no backup storage specified in uuids%s is available for adding this image; they are not in status %s or not in state %s, or the uuid is invalid backup storage uuid",
                                 msg.getBackupStorageUuids(), BackupStorageStatus.Connected, BackupStorageState.Enabled));
             }
             isValidBS(bsUuids);
@@ -177,7 +178,7 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         if (msg.getUrl().startsWith("/")) {
             msg.setUrl(String.format("file://%s", msg.getUrl()));
         } else if (!isValidProtocol(msg.getUrl())) {
-            throw new ApiMessageInterceptionException(argerr("url must starts with 'file:///', 'http://', 'https://'， 'ftp://', 'sftp://' or '/'"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_IMAGE_10011, "url must starts with 'file:///', 'http://', 'https://'， 'ftp://', 'sftp://' or '/'"));
         }
 
         if (msg.getUrl().startsWith("file://")) {
@@ -188,7 +189,7 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
     private void validateLocalPath(String url) {
         String path = url.substring("file://".length());
         if (!path.startsWith("/")) {
-            throw new ApiMessageInterceptionException(argerr("absolute path must be used", path));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_IMAGE_10012, "absolute path must be used", path));
         }
 
         for (String filterName : ImageGlobalConfig.DOWNLOAD_LOCALPATH_CUSTOMFILTER.value().split(";")) {
@@ -211,7 +212,7 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
                 String[] bl = blackList.value().split(";");
                 boolean inBlackList = Arrays.stream(bl).anyMatch(pattern -> antPathMatcher.match(pattern, path));
                 if (inBlackList) {
-                    throw new ApiMessageInterceptionException(argerr("image path [%s] is in black list %s", path, blackList.value()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_IMAGE_10013, "image path [%s] is in black list %s", path, blackList.value()));
                 }
             }
         };
@@ -220,12 +221,12 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
             void validate(String path) {
                 GlobalConfig whiteList = ImageGlobalConfig.DOWNLOAD_LOCALPATH_WHITELIST;
                 if (StringUtils.isBlank(whiteList.value())) {
-                    throw new ApiMessageInterceptionException(argerr("all images on this server cannot be used"));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_IMAGE_10014, "all images on this server cannot be used"));
                 }
                 String[] wl = whiteList.value().split(";");
                 boolean inWhiteList = Arrays.stream(wl).anyMatch(pattern -> antPathMatcher.match(pattern, path));
                 if (!inWhiteList) {
-                    throw new ApiMessageInterceptionException(argerr("image path is not in white list: %s", whiteList.value()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_IMAGE_10015, "image path is not in white list: %s", whiteList.value()));
                 }
             }
         };

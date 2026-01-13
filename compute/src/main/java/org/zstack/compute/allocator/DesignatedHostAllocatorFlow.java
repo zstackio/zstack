@@ -18,6 +18,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class DesignatedHostAllocatorFlow extends AbstractHostAllocatorFlow {
     private static final CLogger logger = Utils.getLogger(DesignatedHostAllocatorFlow.class);
@@ -105,7 +106,7 @@ public class DesignatedHostAllocatorFlow extends AbstractHostAllocatorFlow {
             if (spec.getHypervisorType() != null) {
                 args.append(String.format("hypervisorType=%s", spec.getHypervisorType())).append(" ");
             }
-            fail(Platform.operr("No host with %s found", args));
+            fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10036, "No host with %s found", args));
         } else {
             next(candidates);
         }

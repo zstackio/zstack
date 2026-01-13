@@ -35,6 +35,7 @@ import java.util.*;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.network.NetworkUtils.getSubnetInfo;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SugonSdnController implements TfSdnController, SdnController, SdnControllerL2 {
@@ -87,19 +88,19 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
         try {
             long count = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).count();
             if(count > 0) {
-                completion.fail(operr("tf sdn controller already exists."));
+                completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10000, "tf sdn controller already exists."));
                 return;
             }
             AccountVO accountVO = Q.New(AccountVO.class).eq(AccountVO_.name, SugonSdnControllerConstant.ZSTACK_DEFAULT_ACCOUNT).find();
             if(accountVO == null) {
-                completion.fail(operr("get default admin account from zstack db failed"));
+                completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10001, "get default admin account from zstack db failed"));
                 return;
             }
             String accountUuid = StringDSL.transToTfUuid(accountVO.getUuid());
             client = new TfHttpClient(msg.getIp());
             Domain domain = (Domain) client.getDomain();
             if(domain == null){
-                completion.fail(operr("get default domain on tf controller failed"));
+                completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10002, "get default domain on tf controller failed"));
                 return;
             }
             Project defaultProject = (Project) client.findById(Project.class, accountUuid);
@@ -114,7 +115,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
                     logger.info("create tf project for zstack admin success");
                     completion.success();
                 }else{
-                    completion.fail(operr("create tf project for zstack admin on tf controller failed"));
+                    completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10003, "create tf project for zstack admin on tf controller failed"));
                 }
             }else{
                 logger.warn("tf project for zstack admin already exists: " + accountUuid);
@@ -123,7 +124,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
         } catch (Exception e) {
             String message = String.format("create tf project for zstack admin on tf controller failed due to: %s", e.getMessage());
             logger.error(message, e);
-            completion.fail(operr(message));
+            completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10004, message));
         }
     }
 
@@ -188,7 +189,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
             APICreateL2TfNetworkMsg l2TfNetworkMsg = (APICreateL2TfNetworkMsg) msg;
             Project project = (Project) client.findById(Project.class, accountUuid);
             if(project == null) {
-                completion.fail(operr("get project[uuid:%s] on tf controller failed ", accountUuid));
+                completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10005, "get project[uuid:%s] on tf controller failed ", accountUuid));
             }else{
                 VirtualNetwork virtualNetwork = new VirtualNetwork();
                 virtualNetwork.setParent(project);
@@ -204,13 +205,13 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
                     logger.info("create tf l2 network success, name:" + name);
                     completion.success();
                 }else{
-                    completion.fail(operr("create tf l2 network[name:%s] on tf controller failed ", name));
+                    completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10006, "create tf l2 network[name:%s] on tf controller failed ", name));
                 }
             }
         } catch (Exception e) {
             String message = String.format("create tf l2 network[name:%s] on tf controller failed due to: %s", name, e.getMessage());
             logger.error(message, e);
-            completion.fail(operr(message));
+            completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10007, message));
         }
     }
 
@@ -221,7 +222,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
         try {
             VirtualNetwork virtualNetwork = (VirtualNetwork) client.findById(VirtualNetwork.class, uuid);
             if(virtualNetwork == null){
-                completion.fail(operr("get virtual network[uuid:%s] on tf controller failed ", uuid));
+                completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10008, "get virtual network[uuid:%s] on tf controller failed ", uuid));
             }else{
                 virtualNetwork.setDisplayName(name);
                 Status status = client.update(virtualNetwork);
@@ -229,13 +230,13 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
                     logger.info("update tf l2 network success, name:" + name);
                     completion.success();
                 }else{
-                    completion.fail(operr("update tf l2 network[name:%s] on tf controller failed ", name));
+                    completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10009, "update tf l2 network[name:%s] on tf controller failed ", name));
                 }
             }
         } catch (Exception e) {
             String message = String.format("update tf l2 network[name:%s] on tf controller failed due to: %s ", name, e.getMessage());
             logger.error(message, e);
-            completion.fail(operr(message));
+            completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10010, message));
         }
     }
 
@@ -248,12 +249,12 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
                 logger.info("delete tf l2 network success, uuid:" + uuid);
                 completion.success();
             }else{
-                completion.fail(operr("delete tf l2 network[uuid:%s] on tf controller failed ", uuid));
+                completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10011, "delete tf l2 network[uuid:%s] on tf controller failed ", uuid));
             }
         } catch (Exception e) {
             String message = String.format("delete tf l2 network[uuid:%s] on tf controller failed due to: %s", uuid, e.getMessage());
             logger.error(message, e);
-            completion.fail(operr(message));
+            completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10012, message));
         }
     }
 
@@ -362,7 +363,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
                     // 更新 tf 网络信息
                     Status status = client.update(vn);
                     if(!status.isSuccess()){
-                        completion.fail(operr("delete tf l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
+                        completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10013, "delete tf l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
 //                        completion.fail(operr("delete tf l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
                     } else{
                         completion.success();
@@ -375,12 +376,12 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
             } else{
                 String message = String.format("delete tf l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), "tf virtual network is missing");
                 logger.error(message);
-                completion.fail(operr(message));
+                completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10014, message));
             }
         } catch (Exception e){
             String message = String.format("delete tf l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), e.getMessage());
             logger.error(message, e);
-            completion.fail(operr(message));
+            completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10015, message));
         }
 
     }
@@ -410,7 +411,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
                         // 更新 tf 网络信息
                         Status status = client.update(vn);
                         if(!status.isSuccess()){
-                            completion.fail(operr("update tf l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
+                            completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10016, "update tf l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
                         } else{
                             completion.success();
                         }
@@ -425,12 +426,12 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
             } else{
                 String message = String.format("update tf l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), "tf virtual network is missing");
                 logger.error(message);
-                completion.fail(operr(message));
+                completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10017, message));
             }
         } catch (Exception e){
             String message = String.format("update tf l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), e.getMessage());
             logger.error(message, e);
-            completion.fail(operr(message));
+            completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10018, message));
         }
     }
 
@@ -494,7 +495,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
                 // 更新 tf 网络信息
                 Status status = client.update(vn);
                 if(!status.isSuccess()){
-                    completion.fail(operr("add tf l3 subnet[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
+                    completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10019, "add tf l3 subnet[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
 //                    completion.fail(operr("add tf l3 subnet[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
                 } else{
                     completion.success();
@@ -502,12 +503,12 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
             } else{
                 String message = String.format("add tf l3 subnet[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), "tf virtual network is missing");
                 logger.error(message);
-                completion.fail(operr(message));
+                completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10020, message));
             }
         } catch (Exception e){
             String message = String.format("add tf l3 subnet[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), e.getMessage());
             logger.error(message, e);
-            completion.fail(operr(message));
+            completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10021, message));
         }
     }
 
@@ -538,7 +539,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
                         // 更新 tf 网络信息
                         Status status = client.update(vn);
                         if(!status.isSuccess()){
-                            completion.fail(operr("add host router to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
+                            completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10022, "add host router to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
 //                            completion.fail(operr("add host router to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
                         } else{
                             completion.success();
@@ -554,12 +555,12 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
             } else{
                 String message = String.format("add host router to l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), "tf virtual network is missing");
                 logger.error(message);
-                completion.fail(operr(message));
+                completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10023, message));
             }
         } catch (Exception e){
             String message = String.format("add host router to l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), e.getMessage());
             logger.error(message, e);
-            completion.fail(operr(message));
+            completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10024, message));
         }
     }
 
@@ -591,7 +592,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
                         // 更新 tf 网络信息
                         Status status = client.update(vn);
                         if(!status.isSuccess()){
-                            completion.fail(operr("delete host route from l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
+                            completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10025, "delete host route from l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
 //                            completion.fail(operr("delete host route from l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
                         } else{
                             completion.success();
@@ -607,12 +608,12 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
             } else{
                 String message = String.format("delete host route from l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), "tf virtual network is missing");
                 logger.error(message);
-                completion.fail(operr(message));
+                completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10026, message));
             }
         } catch (Exception e){
             String message = String.format("delete host route from l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), e.getMessage());
             logger.error(message, e);
-            completion.fail(operr(message));
+            completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10027, message));
         }
     }
 
@@ -648,7 +649,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
                         // 更新 tf 网络信息
                         Status status = client.update(vn);
                         if(!status.isSuccess()){
-                            completion.fail(operr("add dns to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
+                            completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10028, "add dns to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
 //                            completion.fail(operr("add dns to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
                         } else{
                             completion.success();
@@ -664,12 +665,12 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
             } else{
                 String message = String.format("add dns to l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), "tf virtual network is missing");
                 logger.error(message);
-                completion.fail(operr(message));
+                completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10029, message));
             }
         } catch (Exception e){
             String message = String.format("add dns to l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), e.getMessage());
             logger.error(message, e);
-            completion.fail(operr(message));
+            completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10030, message));
         }
     }
 
@@ -693,7 +694,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
                         // 更新 tf 网络信息
                         Status status = client.update(vn);
                         if (!status.isSuccess()) {
-                            completion.fail(operr("delete dns from to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
+                            completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10031, "delete dns from to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),status.getMsg()));
 //                            completion.fail(operr("delete dns from to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
                         } else {
                             completion.success();
@@ -709,12 +710,12 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
             } else{
                 String message = String.format("delete dns from to l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), "tf virtual network is missing");
                 logger.error(message);
-                completion.fail(operr(message));
+                completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10032, message));
             }
         } catch (Exception e){
             String message = String.format("delete dns from l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), e.getMessage());
             logger.error(message, e);
-            completion.fail(operr(message));
+            completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10033, message));
         }
     }
 

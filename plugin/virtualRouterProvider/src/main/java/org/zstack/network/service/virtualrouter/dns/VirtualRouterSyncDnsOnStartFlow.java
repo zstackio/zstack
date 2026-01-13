@@ -33,6 +33,7 @@ import org.zstack.utils.logging.CLogger;
 import static org.zstack.core.Platform.operr;
 
 import java.util.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
@@ -124,7 +125,7 @@ public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
                 if (ret.isSuccess()) {
                     chain.next();
                 } else {
-                    ErrorCode err = operr("virtual router[name: %s, uuid: %s] failed to configure dns%s, %s ",
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_DNS_10000, "virtual router[name: %s, uuid: %s] failed to configure dns%s, %s ",
                             vr.getName(), vr.getUuid(), JSONObjectUtil.toJsonString(dns), ret.getError());
                     chain.fail(err);
                 }

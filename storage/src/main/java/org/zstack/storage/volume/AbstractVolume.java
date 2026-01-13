@@ -16,6 +16,7 @@ import org.zstack.header.volume.*;
 import org.zstack.utils.message.OperationChecker;
 
 import java.util.Set;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public abstract class AbstractVolume {
@@ -89,10 +90,10 @@ public abstract class AbstractVolume {
             return null;
         }
 
-        ErrorCode cause = Platform.err(VmErrors.NOT_IN_CORRECT_STATE, "current volume state[%s] doesn't allow to proceed message[%s]", currentState,
+        ErrorCode cause = Platform.err(ORG_ZSTACK_STORAGE_VOLUME_10094, VmErrors.NOT_IN_CORRECT_STATE, "current volume state[%s] doesn't allow to proceed message[%s]", currentState,
                 msg.getMessageName());
         if (errorCode != null) {
-            return Platform.err(errorCode, cause, cause.getDetails());
+            return Platform.err(ORG_ZSTACK_STORAGE_VOLUME_10095, errorCode, cause, cause.getDetails());
         }
         return cause;
     }

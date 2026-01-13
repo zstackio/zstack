@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateNicFlow implements Flow {
@@ -110,7 +111,7 @@ public class VmAllocateNicFlow implements Flow {
             // choose vnic factory based on enableSRIOV system tag & enableVhostUser globalConfig
             VmNicType type = nicManager.getVmNicType(spec.getVmInventory().getUuid(), nw);
             if (type == null) {
-                errs.add(Platform.operr("there is no available nicType on L3 network [%s]", nw.getUuid()));
+                errs.add(Platform.operr(ORG_ZSTACK_COMPUTE_VM_10068, "there is no available nicType on L3 network [%s]", nw.getUuid()));
                 wcomp.allDone();
             }
             VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(type);
@@ -129,7 +130,7 @@ public class VmAllocateNicFlow implements Flow {
             nic.setHypervisorType(spec.getDestHost() == null ?
                     spec.getVmInventory().getHypervisorType() : spec.getDestHost().getHypervisorType());
             if (mo.checkDuplicateMac(nic.getHypervisorType(), nic.getL3NetworkUuid(), nic.getMac())) {
-                trigger.fail(operr("Duplicate mac address [%s]", nic.getMac()));
+                trigger.fail(operr(ORG_ZSTACK_COMPUTE_VM_10069, "Duplicate mac address [%s]", nic.getMac()));
                 return;
             }
 

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -64,7 +65,7 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIAddLdapServerMsg msg) {
         if (!LdapEffectiveScope.hasScope(msg.getScope())) {
-            throw new ApiMessageInterceptionException(argerr("unsupported LDAP/AD server scope"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_LDAP_10008, "unsupported LDAP/AD server scope"));
         }
 
         LdapServerInventory inv = new LdapServerInventory();
@@ -104,7 +105,7 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
         ErrorCode errorCode = testAddLdapServerConnection(inv);
         if (errorCode != null) {
             throw new ApiMessageInterceptionException(
-                    err(LdapErrors.TEST_LDAP_CONNECTION_FAILED,
+                    err(ORG_ZSTACK_LDAP_10009, LdapErrors.TEST_LDAP_CONNECTION_FAILED,
                             errorCode.getDetails()));
         }
     }
@@ -125,14 +126,14 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
 
         if(!(LdapConstant.OpenLdap.TYPE.equals(type) || LdapConstant.WindowsAD.TYPE.equals(type))){
             throw new ApiMessageInterceptionException(
-                    argerr("Wrong LdapServerType[%s], valid values: [%,%s]", type, LdapConstant.OpenLdap.TYPE, LdapConstant.WindowsAD.TYPE)
+                    argerr(ORG_ZSTACK_LDAP_10010, "Wrong LdapServerType[%s], valid values: [%,%s]", type, LdapConstant.OpenLdap.TYPE, LdapConstant.WindowsAD.TYPE)
             );
         }
     }
 
     private void validateLdapServerExist(){
         if(!Q.New(LdapServerVO.class).isExists()){
-            throw new ApiMessageInterceptionException(argerr("There is no LDAP/AD server in the system, Please add a LDAP/AD server first."));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_LDAP_10011, "There is no LDAP/AD server in the system, Please add a LDAP/AD server first."));
         }
     }
 
@@ -150,13 +151,13 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
             logger.info("LDAP connection was successful");
         } catch (AuthenticationException e) {
             logger.debug("Cannot connect to LDAP/AD server, Invalid Credentials, please checkout User DN and password", e);
-            return operr("Cannot connect to LDAP/AD server, Invalid Credentials, please checkout User DN and password");
+            return operr(ORG_ZSTACK_LDAP_10012, "Cannot connect to LDAP/AD server, Invalid Credentials, please checkout User DN and password");
         } catch (CommunicationException e) {
             logger.debug("Cannot connect to LDAP/AD server, communication false, please checkout IP, port and Base DN", e);
-            return operr("Cannot connect to LDAP/AD server, communication false, please checkout IP, port and Base DN");
+            return operr(ORG_ZSTACK_LDAP_10013, "Cannot connect to LDAP/AD server, communication false, please checkout IP, port and Base DN");
         } catch (Exception e) {
             logger.debug("Cannot connect to LDAP/AD server", e);
-            return operr("Cannot connect to LDAP/AD server, %s", e.toString());
+            return operr(ORG_ZSTACK_LDAP_10014, "Cannot connect to LDAP/AD server, %s", e.toString());
         }
 
         return null;

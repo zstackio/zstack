@@ -32,6 +32,7 @@ import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -68,7 +69,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         PortForwardingRuleState state = t.get(0, PortForwardingRuleState.class);
 
         if (state != PortForwardingRuleState.Enabled) {
-            throw new ApiMessageInterceptionException(operr("Port forwarding rule[uuid:%s] is not in state of Enabled, current state is %s", msg.getRuleUuid(), state));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10006, "Port forwarding rule[uuid:%s] is not in state of Enabled, current state is %s", msg.getRuleUuid(), state));
         }
 
         String vmNicUuid = t.get(1, String.class);
@@ -83,7 +84,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         q.add(PortForwardingRuleVO_.uuid, Op.EQ, msg.getUuid());
         String vmNicUuid = q.findValue();
         if (vmNicUuid == null) {
-            throw new ApiMessageInterceptionException(operr("port forwarding rule rule[uuid:%s] has not been attached to any vm nic, can't detach", msg.getUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10007, "port forwarding rule rule[uuid:%s] has not been attached to any vm nic, can't detach", msg.getUuid()));
         }
 
         msg.vmNicUuid = vmNicUuid;
@@ -99,12 +100,12 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
 
         String vmNicUuid = t.get(0, String.class);
         if (vmNicUuid != null) {
-            throw new ApiMessageInterceptionException(operr("port forwarding rule[uuid:%s] has been attached to vm nic[uuid:%s], can't attach again", msg.getRuleUuid(), vmNicUuid));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10008, "port forwarding rule[uuid:%s] has been attached to vm nic[uuid:%s], can't attach again", msg.getRuleUuid(), vmNicUuid));
         }
 
         PortForwardingRuleState state = t.get(1, PortForwardingRuleState.class);
         if (state != PortForwardingRuleState.Enabled) {
-            throw new ApiMessageInterceptionException(operr("port forwarding rule[uuid:%s] is not in state of Enabled,  current state is %s. A rule can only be attached when its state is Enabled", msg.getRuleUuid(), state));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10009, "port forwarding rule[uuid:%s] is not in state of Enabled,  current state is %s. A rule can only be attached when its state is Enabled", msg.getRuleUuid(), state));
         }
 
         VipVO vip = new Callable<VipVO>() {
@@ -123,7 +124,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         vq.add(VmNicVO_.uuid, Op.EQ, msg.getVmNicUuid());
         String guestL3Uuid = vq.findValue();
         if (guestL3Uuid.equals(vip.getL3NetworkUuid())) {
-            throw new ApiMessageInterceptionException(argerr("guest l3Network of vm nic[uuid:%s] and vip l3Network of port forwarding rule[uuid:%s] are the same network",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10010, "guest l3Network of vm nic[uuid:%s] and vip l3Network of port forwarding rule[uuid:%s] are the same network",
                             msg.getVmNicUuid(), msg.getRuleUuid()));
         }
 
@@ -144,7 +145,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         try {
             vipBase.checkPeerL3Additive(guestL3Uuid);
         } catch (CloudRuntimeException e) {
-            throw new ApiMessageInterceptionException(operr(e.getMessage()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10011, e.getMessage()));
         }
     }
 
@@ -167,7 +168,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
             msg.setPrivatePortEnd(msg.getPrivatePortStart());
         }
         if (msg.getVipPortEnd()-msg.getVipPortStart() != msg.getPrivatePortEnd()-msg.getPrivatePortStart()) {
-            throw new ApiMessageInterceptionException(argerr("could not create port forwarding rule, because vip port range[vipStartPort:%s, vipEndPort:%s] is incompatible with private port range[privateStartPort:%s, privateEndPort:%s]",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10012, "could not create port forwarding rule, because vip port range[vipStartPort:%s, vipEndPort:%s] is incompatible with private port range[privateStartPort:%s, privateEndPort:%s]",
                     msg.getVipPortStart(), msg.getVipPortEnd(), msg.getPrivatePortStart(), msg.getPrivatePortEnd()));
         }
 
@@ -184,16 +185,16 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         if (!msg.getVipPortStart().equals(msg.getVipPortEnd())) {
             // it's a port range
             if (msg.getVipPortEnd() - msg.getVipPortStart() != msg.getPrivatePortEnd() - msg.getPrivatePortStart()) {
-                throw new ApiMessageInterceptionException(argerr("for range port forwarding, the port range size must match; vip range[%s, %s]'s size doesn't match range[%s, %s]'s size",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10013, "for range port forwarding, the port range size must match; vip range[%s, %s]'s size doesn't match range[%s, %s]'s size",
                                 msg.getVipPortStart(), msg.getVipPortEnd(), msg.getPrivatePortStart(), msg.getPrivatePortEnd()));
             }
         }
 
         if (msg.getAllowedCidr() != null) {
             if (!NetworkUtils.isCidr(msg.getAllowedCidr())) {
-                throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s]", msg.getAllowedCidr()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10014, "invalid CIDR[%s]", msg.getAllowedCidr()));
             } else if (!NetworkUtils.isCidr(msg.getAllowedCidr(), IPv6Constants.IPv4)) {
-                throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s], only ipv4 is supported", msg.getAllowedCidr()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10015, "invalid CIDR[%s], only ipv4 is supported", msg.getAllowedCidr()));
             }
         }
 
@@ -201,7 +202,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         if(useFor != null && !useFor.isEmpty()){
             VipUseForList useForList = new VipUseForList(useFor);
             if(!useForList.validateNewAdded(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE)){
-                throw new ApiMessageInterceptionException(argerr("the vip[uuid:%s] has been occupied other network service entity[%s]", msg.getVipUuid(), useForList.toString()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10016, "the vip[uuid:%s] has been occupied other network service entity[%s]", msg.getVipUuid(), useForList.toString()));
             }
         }
 
@@ -211,7 +212,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         for (PortForwardingRuleVO vo : vos) {
             if (vo.getProtocolType().toString().equals(msg.getProtocolType())) {
                 if (rangeOverlap(vipStart, vipEnd, vo.getVipPortStart(), vo.getVipPortEnd())) {
-                    throw new ApiMessageInterceptionException(argerr("vip port range[vipStartPort:%s, vipEndPort:%s] overlaps with rule[uuid:%s, vipStartPort:%s, vipEndPort:%s]",
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10017, "vip port range[vipStartPort:%s, vipEndPort:%s] overlaps with rule[uuid:%s, vipStartPort:%s, vipEndPort:%s]",
                                     vipStart, vipEnd, vo.getUuid(), vo.getVipPortStart(), vo.getVipPortEnd()));
                 }
             }
@@ -226,7 +227,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
             nicq.add(VmNicVO_.uuid, Op.EQ, msg.getVmNicUuid());
             String nicL3Uuid = nicq.findValue();
             if (nicL3Uuid.equals(vipL3Uuid)) {
-                throw new ApiMessageInterceptionException(argerr("guest l3Network of vm nic[uuid:%s] and vip l3Network of vip[uuid: %s] are the same network", msg.getVmNicUuid(), msg.getVipUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10018, "guest l3Network of vm nic[uuid:%s] and vip l3Network of vip[uuid: %s] are the same network", msg.getVmNicUuid(), msg.getVipUuid()));
             }
 
             if (vipVO.getPeerL3NetworkUuids() != null && !vipVO.getPeerL3NetworkUuids().contains(nicL3Uuid)) {
@@ -235,7 +236,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
                 try {
                     vipBase.checkPeerL3Additive(nicL3Uuid);
                 } catch (CloudRuntimeException e) {
-                    throw new ApiMessageInterceptionException(operr(e.getMessage()));
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10019, e.getMessage()));
                 }
             }
 
@@ -270,12 +271,12 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         if (StringUtils.isNotEmpty(vmUuid)) {
             VmInstanceVO vm = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid).find();
 
-            throw new ApiMessageInterceptionException(operr("the VM[name:%s uuid:%s] already has port forwarding rules that have different VIPs than the one[uuid:%s]",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10020, "the VM[name:%s uuid:%s] already has port forwarding rules that have different VIPs than the one[uuid:%s]",
                     vm.getName(), vm.getUuid(), vipUuid));
         } else {
             VmNicVO vmNic = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, vmNicUuid).find();
 
-            throw new ApiMessageInterceptionException(operr("the VmNic[uuid:%s] already has port forwarding rules that have different VIPs than the one[uuid:%s]",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10021, "the VmNic[uuid:%s] already has port forwarding rules that have different VIPs than the one[uuid:%s]",
                     vmNic.getUuid(), vipUuid));
         }
     }
@@ -289,7 +290,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
 
         if (!uuids.isEmpty()) {
             throw new ApiMessageInterceptionException(operr(
-                    "vmNic uuid[%s] is not allowed add portForwarding with allowedCidr rule, because vmNic exist eip",
+            ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10022,         "vmNic uuid[%s] is not allowed add portForwarding with allowedCidr rule, because vmNic exist eip",
                     vmNicUuid));
         }
     }
@@ -313,7 +314,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         if (allowedCidr != null){
             if (q.isExists()) {
                 throw new ApiMessageInterceptionException(operr(
-                        "could not attach port forwarding rule with allowedCidr, because vmNic[uuid:%s] " +
+                ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10023,         "could not attach port forwarding rule with allowedCidr, because vmNic[uuid:%s] " +
                                 "already has rules that overlap the target private port ranges[%s, %s] " +
                                 "and have the same protocol type[%s]",
                         vmNicUuid, privatePortStart, privatePortEnd, protocolType));
@@ -323,7 +324,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
             q = q.notNull(PortForwardingRuleVO_.allowedCidr);
             if (q.isExists()) {
                 throw new ApiMessageInterceptionException(operr(
-                        "could not attach port forwarding rule, because vmNic[uuid:%s] already has a rule " +
+                ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10024,         "could not attach port forwarding rule, because vmNic[uuid:%s] already has a rule " +
                                 "that overlaps the target private port ranges[%s, %s], " +
                                 "has the same protocol type[%s] and has AllowedCidr",
                         vmNicUuid, privatePortStart, privatePortEnd, protocolType));

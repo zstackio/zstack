@@ -12,6 +12,7 @@ import org.zstack.identity.rbac.CheckIfAccountCanAccessResource;
 import java.util.Collections;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by Qi Le on 2019/9/9
@@ -36,11 +37,11 @@ public class FlatApiInterceptor implements ApiMessageInterceptor {
         }
         String accountUuid = msg.getSession().getAccountUuid();
         if (StringUtils.isBlank(accountUuid)) {
-            throw new ApiMessageInterceptionException(Platform.argerr("Session/account uuid is not valid."));
+            throw new ApiMessageInterceptionException(Platform.argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10021, "Session/account uuid is not valid."));
         }
         if (!CheckIfAccountCanAccessResource.check(Collections.singletonList(msg.getL3NetworkUuid()), accountUuid).isEmpty()) {
             throw new ApiMessageInterceptionException(
-                    operr("the account[uuid:%s] has no access to the resource[uuid:%s, type:L3NetworkVO]",
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10022, "the account[uuid:%s] has no access to the resource[uuid:%s, type:L3NetworkVO]",
                     accountUuid, msg.getL3NetworkUuid()));
         }
     }

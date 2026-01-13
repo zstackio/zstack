@@ -43,6 +43,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBackend implements
         PortForwardingBackend, Component, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint,
@@ -181,7 +182,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
             @Override
             public void validate(VirtualRouterOfferingInventory offering) throws OperationFailureException {
                 if (!offering.getPublicNetworkUuid().equals(struct.getVip().getL3NetworkUuid())) {
-                    throw new OperationFailureException(operr("found a virtual router offering[uuid:%s] for L3Network[uuid:%s] in zone[uuid:%s]; however, the network's public network[uuid:%s] is not the same to PortForwarding rule[uuid:%s]'s; you may need to use system tag" +
+                    throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_PORTFORWARDING_10003, "found a virtual router offering[uuid:%s] for L3Network[uuid:%s] in zone[uuid:%s]; however, the network's public network[uuid:%s] is not the same to PortForwarding rule[uuid:%s]'s; you may need to use system tag" +
                                     " guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network", offering.getUuid(), struct.getGuestL3Network().getUuid(), struct.getGuestL3Network().getZoneUuid(), struct.getVip().getL3NetworkUuid(), struct.getRule().getUuid()));
                 }
             }
@@ -246,7 +247,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
     public void applyPortForwardingRule(PortForwardingStruct struct, Completion completion) {
         PortForwardingRuleInventory rule = struct.getRule();
         if ((rule.getVipPortStart() != rule.getPrivatePortStart() || rule.getVipPortEnd() != rule.getPrivatePortEnd()) && (rule.getVipPortStart() != rule.getVipPortEnd()) && (rule.getPrivatePortStart() != rule.getPrivatePortEnd())) {
-            throw new OperationFailureException(operr("virtual router doesn't support port forwarding range redirection, the vipPortStart must be equals to privatePortStart and vipPortEnd must be equals to privatePortEnd;" +
+            throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_PORTFORWARDING_10004, "virtual router doesn't support port forwarding range redirection, the vipPortStart must be equals to privatePortStart and vipPortEnd must be equals to privatePortEnd;" +
                             "but this rule rule has a mismatching range: vip port[%s, %s], private port[%s, %s]", rule.getVipPortStart(), rule.getVipPortEnd(), rule.getPrivatePortStart(), rule.getPrivatePortEnd()));
         }
 
@@ -404,7 +405,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
                 VirtualRouterAsyncHttpCallReply re = reply.castReply();
                 VirtualRouterCommands.SyncEipRsp ret = re.toResponse(VirtualRouterCommands.SyncEipRsp.class);
                 if (!ret.isSuccess()) {
-                    ErrorCode err = operr("failed to add portforwardings on virtual router[uuid:%s], %s",
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_PORTFORWARDING_10005, "failed to add portforwardings on virtual router[uuid:%s], %s",
                             vrVO.getUuid(), ret.getError());
                     completion.fail(err);
                 } else {
@@ -480,7 +481,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
                 VirtualRouterAsyncHttpCallReply re = reply.castReply();
                 VirtualRouterCommands.RevokePortForwardingRuleRsp ret = re.toResponse(VirtualRouterCommands.RevokePortForwardingRuleRsp.class);
                 if (!ret.isSuccess()) {
-                    ErrorCode err = operr("failed to revoke port forwardings on virtual router[uuid:%s], %s",
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_PORTFORWARDING_10006, "failed to revoke port forwardings on virtual router[uuid:%s], %s",
                             vrVO.getUuid(), ret.getError());
                     completion.fail(err);
                 } else {

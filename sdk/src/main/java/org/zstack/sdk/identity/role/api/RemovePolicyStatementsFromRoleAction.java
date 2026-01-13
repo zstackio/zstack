@@ -17,7 +17,7 @@ public class RemovePolicyStatementsFromRoleAction extends AbstractAction {
         public Result throwExceptionIfError() {
             if (error != null) {
                 throw new ApiException(
-                    String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
+                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)    
                 );
             }
             

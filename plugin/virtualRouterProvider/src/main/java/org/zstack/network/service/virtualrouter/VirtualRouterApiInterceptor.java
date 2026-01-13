@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -102,7 +103,7 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
         if (msg.getVmNics().isEmpty()) {
             boolean vrExist = Q.New(VirtualRouterLoadBalancerRefVO.class).eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, msg.getLoadBalancerUuid()).isExists();
             if (!vrExist) {
-                throw new ApiMessageInterceptionException(argerr("could not add server ip to load balancer server group, because share lb has no service provider, please add vmnic first"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10021, "could not add server ip to load balancer server group, because share lb has no service provider, please add vmnic first"));
             }
         }
     }
@@ -111,7 +112,7 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
         VirtualRouterVmVO vrVO = dbf.findByUuid(msg.getVmInstanceUuid(), VirtualRouterVmVO.class);
 
         if (msg.getDefaultRouteL3NetworkUuid().equals(vrVO.getDefaultRouteL3NetworkUuid())) {
-            throw new ApiMessageInterceptionException(argerr("l3 uuid[:%s] is same to default network of virtual router [uuid:%s]",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10022, "l3 uuid[:%s] is same to default network of virtual router [uuid:%s]",
                     msg.getDefaultRouteL3NetworkUuid(), msg.getVmInstanceUuid()));
         }
 
@@ -124,14 +125,14 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
         }
 
         if (target == null) {
-            throw new ApiMessageInterceptionException(argerr("l3 uuid[:%s] is not attached to virtual router [uuid:%s]", msg.getDefaultRouteL3NetworkUuid(), msg.getVmInstanceUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10023, "l3 uuid[:%s] is not attached to virtual router [uuid:%s]", msg.getDefaultRouteL3NetworkUuid(), msg.getVmInstanceUuid()));
         }
 
         if (!VirtualRouterNicMetaData.isPublicNic(target) && !VirtualRouterNicMetaData.isAddinitionalPublicNic(target)) {
             if (VirtualRouterNicMetaData.isManagementNic(target)) {
-                throw new ApiMessageInterceptionException(argerr("could not set the default network, because l3 uuid[:%s] is management network", msg.getDefaultRouteL3NetworkUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10024, "could not set the default network, because l3 uuid[:%s] is management network", msg.getDefaultRouteL3NetworkUuid()));
             } else {
-                throw new ApiMessageInterceptionException(argerr("could not set the default network, because l3 uuid[:%s] is not public network", msg.getDefaultRouteL3NetworkUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10025, "could not set the default network, because l3 uuid[:%s] is not public network", msg.getDefaultRouteL3NetworkUuid()));
             }
         }
     }
@@ -139,7 +140,7 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
     private void validate(APIUpdateVirtualRouterOfferingMsg msg) {
         if (msg.getIsDefault() != null) {
             if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
-                throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10026, IdentityErrors.PERMISSION_DENIED,
                         "cannot change the default field of a virtual router offering; only admin can do the operation"
                 ));
             }
@@ -154,12 +155,12 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
             String format = t.get(1, String.class);
 
             if (type != ImageMediaType.RootVolumeTemplate) {
-                throw new ApiMessageInterceptionException(argerr("image[uuid:%s]'s mediaType is %s, the mediaType of a virtual router image must be %s",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10027, "image[uuid:%s]'s mediaType is %s, the mediaType of a virtual router image must be %s",
                                 msg.getImageUuid(), type, ImageMediaType.RootVolumeTemplate));
             }
 
             if (ImageConstant.ISO_FORMAT_STRING.equals(format)) {
-                throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is of format %s, cannot be used for virtual router", msg.getImageUuid(), format));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10028, "image[uuid:%s] is of format %s, cannot be used for virtual router", msg.getImageUuid(), format));
             }
         }
     }
@@ -196,7 +197,7 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
     private void validate(APICreateVirtualRouterOfferingMsg msg) {
         if (msg.isDefault() != null) {
             if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
-                throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10029, IdentityErrors.PERMISSION_DENIED,
                         "cannot create a virtual router offering with the default field set; only admin can do the operation"
                 ));
             }
@@ -208,12 +209,12 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
 
         L3NetworkVO mgtL3 = dbf.findByUuid(msg.getManagementNetworkUuid(), L3NetworkVO.class);
         if (!mgtL3.getZoneUuid().equals(msg.getZoneUuid()))  {
-            throw new ApiMessageInterceptionException(argerr("management network[uuid:%s] is not in the same zone[uuid:%s] this offering is going to create",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10030, "management network[uuid:%s] is not in the same zone[uuid:%s] this offering is going to create",
                             msg.getManagementNetworkUuid(), msg.getZoneUuid()));
         }
         /* mgt network does not support ipv6 yet, TODO, will be implemented soon */
         if (mgtL3.getIpVersions().contains(IPv6Constants.IPv6) && !mgtL3.getIpVersions().contains(IPv6Constants.IPv4)) {
-            throw new ApiMessageInterceptionException(argerr("can not create virtual router offering, because management network doesn't support ipv6 yet"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10031, "can not create virtual router offering, because management network doesn't support ipv6 yet"));
         }
 
         if (!CoreGlobalProperty.UNIT_TEST_ON) {
@@ -225,7 +226,7 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
         q.add(L3NetworkVO_.uuid, Op.EQ, msg.getPublicNetworkUuid());
         String zoneUuid = q.findValue();
         if (!zoneUuid.equals(msg.getZoneUuid()))  {
-            throw new ApiMessageInterceptionException(argerr("public network[uuid:%s] is not in the same zone[uuid:%s] this offering is going to create",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10032, "public network[uuid:%s] is not in the same zone[uuid:%s] this offering is going to create",
                             msg.getManagementNetworkUuid(), msg.getZoneUuid()));
         }
 
@@ -236,13 +237,13 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
 
         ImageMediaType type = t.get(0, ImageMediaType.class);
         if (type != ImageMediaType.RootVolumeTemplate) {
-            throw new ApiMessageInterceptionException(argerr("image[uuid:%s]'s mediaType is %s, the mediaType of a virtual router image must be %s",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10033, "image[uuid:%s]'s mediaType is %s, the mediaType of a virtual router image must be %s",
                             msg.getImageUuid(), type, ImageMediaType.RootVolumeTemplate));
         }
 
         String format = t.get(1, String.class);
         if (ImageConstant.ISO_FORMAT_STRING.equals(format)) {
-            throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is of format %s, cannot be used for virtual router", msg.getImageUuid(), format));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10034, "image[uuid:%s] is of format %s, cannot be used for virtual router", msg.getImageUuid(), format));
         }
 
         SimpleQuery<NetworkServiceL3NetworkRefVO> nq = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
@@ -251,16 +252,16 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
         for (NetworkServiceL3NetworkRefVO nref : nrefs) {
             if (NetworkServiceType.SNAT.toString().equals(nref.getNetworkServiceType())) {
                 if (nref.getL3NetworkUuid().equals(msg.getManagementNetworkUuid())) {
-                    throw new ApiMessageInterceptionException(argerr("the L3 network[uuid: %s] has the SNAT service enabled, it cannot be used as a management network", msg.getManagementNetworkUuid()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10035, "the L3 network[uuid: %s] has the SNAT service enabled, it cannot be used as a management network", msg.getManagementNetworkUuid()));
                 } else if (nref.getL3NetworkUuid().equals(msg.getPublicNetworkUuid())) {
-                    throw new ApiMessageInterceptionException(argerr("the L3 network[uuid: %s] has the SNAT service enabled, it cannot be used as a public network", msg.getPublicNetworkUuid()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10036, "the L3 network[uuid: %s] has the SNAT service enabled, it cannot be used as a public network", msg.getPublicNetworkUuid()));
                 }
             }
         }
 
         if (!msg.getManagementNetworkUuid().equals(msg.getPublicNetworkUuid())) {
             if (isNetworkAddressInCidr(msg.getManagementNetworkUuid(), msg.getPublicNetworkUuid())) {
-     throw new ApiMessageInterceptionException(argerr("the L3 network[uuid: %s] is same network address with [uuid: %s], it cannot be used for virtual router", msg.getManagementNetworkUuid(),msg.getPublicNetworkUuid()));
+     throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10037, "the L3 network[uuid: %s] is same network address with [uuid: %s], it cannot be used for virtual router", msg.getManagementNetworkUuid(),msg.getPublicNetworkUuid()));
             }
         }
     }
@@ -270,7 +271,7 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
         q.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, managementNetworkUuid);
         List<NormalIpRangeVO> iprs = q.list();
         if (iprs.isEmpty()) {
-            throw new ApiMessageInterceptionException(operr("the management network[uuid:%s] doesn't have any IP range", managementNetworkUuid));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10038, "the management network[uuid:%s] doesn't have any IP range", managementNetworkUuid));
         }
 
         String startIp = iprs.get(0).getStartIp();
@@ -291,7 +292,7 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
             }
         }
 
-        throw new ApiMessageInterceptionException(argerr("the management network[uuid:%s, gateway:%s] is not reachable", managementNetworkUuid, gateway));
+        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10039, "the management network[uuid:%s, gateway:%s] is not reachable", managementNetworkUuid, gateway));
     }
 
     private void validate(APIQueryVirtualRouterOfferingMsg msg) {

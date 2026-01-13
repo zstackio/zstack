@@ -16,6 +16,7 @@ import org.zstack.kvm.KvmResponseWrapper;
 import static org.zstack.core.Platform.operr;
 
 import java.util.List;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2017/3/6.
@@ -41,7 +42,7 @@ public class FlatEipGC extends EventBasedGarbageCollector {
                     @Override
                     public ErrorCode getError(KvmResponseWrapper wrapper) {
                         KVMAgentCommands.AgentResponse rsp = wrapper.getResponse(KVMAgentCommands.AgentResponse.class);
-                        return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
+                        return rsp.isSuccess() ? null : operr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10014, "operation error, because:%s", rsp.getError());
                     }
                 },
 

@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 7/1/2015.
@@ -152,7 +153,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 });
 
                 if (candidates.isEmpty()) {
-                    throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
+                    throw new OperationFailureException(err(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10020, HostAllocatorError.NO_AVAILABLE_HOST,
                             "the local primary storage has no hosts with enough disk capacity[%s bytes] required by the vm[uuid:%s]",
                             spec.getDiskSize(), spec.getVmInstance().getUuid()
                     ));
@@ -199,7 +200,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
             if (hostUuid != null) {
                 candidates.removeIf(h -> !hostUuid.equals(h.getUuid()));
                 if (candidates.isEmpty()) {
-                    throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
+                    throw new OperationFailureException(err(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10021, HostAllocatorError.NO_AVAILABLE_HOST,
                             "the vm[uuid: %s] using local primary storage can only be started on the host[uuid: %s], but the host is either not having enough CPU/memory/GPU/VFNIC or in" +
                                     " the state[Enabled] or status[Connected] to start the vm", vm.getUuid(), hostUuid
                     ));
@@ -350,7 +351,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         String hostUuid = getHostUuidFromAllocateMsg(msg);
 
         if (hostUuid == null) {
-            throw new OperationFailureException(argerr("To create volume on the local primary storage, " +
+            throw new OperationFailureException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10022, "To create volume on the local primary storage, " +
                             "you must specify the host that the volume is going to be created using the system tag [%s]",
                     LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat()));
         }
@@ -382,7 +383,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 protocol = new URI(msg.getRequiredInstallUri()).getScheme();
             } catch (URISyntaxException e) {
                 throw new OperationFailureException(
-                        argerr("invalid uri, correct example is file://$URL;hostUuid://$HOSTUUID or volume://$VOLUMEUUID "));
+                        argerr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10023, "invalid uri, correct example is file://$URL;hostUuid://$HOSTUUID or volume://$VOLUMEUUID "));
             }
             hostUuid = uriParsers.get(protocol).parseUri(msg.getRequiredInstallUri()).hostUuid;
         }

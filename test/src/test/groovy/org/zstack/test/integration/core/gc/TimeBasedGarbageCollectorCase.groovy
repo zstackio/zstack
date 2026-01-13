@@ -1,5 +1,7 @@
 package org.zstack.test.integration.core.gc
 
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.SQL
 import org.zstack.core.gc.GCCompletion
@@ -43,7 +45,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
             if (ret == Behavior.SUCCESS) {
                 completion.success()
             } else if (ret == Behavior.FAILURE) {
-                completion.fail(operr("failure"))
+                completion.fail(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_CORE_GC_10012, "failure"))
             } else if (ret == Behavior.CANCEL) {
                 completion.cancel()
             } else {
@@ -61,7 +63,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
             if (ret == Behavior.SUCCESS) {
                 completion.success()
             } else if (ret == Behavior.FAILURE) {
-                completion.fail(operr("failure"))
+                completion.fail(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_CORE_GC_10013, "failure"))
             } else if (ret == Behavior.CANCEL) {
                 completion.cancel()
             } else {

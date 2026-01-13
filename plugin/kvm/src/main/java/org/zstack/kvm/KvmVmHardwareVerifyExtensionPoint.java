@@ -9,6 +9,7 @@ import org.zstack.resourceconfig.ResourceConfigFacade;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.kvm.KVMConstant.CPU_MODE_NONE;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class KvmVmHardwareVerifyExtensionPoint implements VmBeforeStartOnHypervisorExtensionPoint {
     @Autowired
@@ -28,7 +29,7 @@ public class KvmVmHardwareVerifyExtensionPoint implements VmBeforeStartOnHypervi
 
         ResourceConfig cpuMode = rcf.getResourceConfig(KVMGlobalConfig.NESTED_VIRTUALIZATION.getIdentity());
         if (CPU_MODE_NONE.equals(cpuMode.getResourceConfigValue(spec.getVmInventory().getUuid(), String.class))) {
-            throw new OperationFailureException(operr("Failed to start vm," +
+            throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10144, "Failed to start vm," +
                     " because can not disable vm.cpu.hypervisor.feature with vm.cpuMode none"));
         }
     }

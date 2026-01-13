@@ -55,6 +55,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.zstack.core.Platform.err;
 import static org.zstack.header.Constants.THREAD_CONTEXT_API;
 import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ClusterBase extends AbstractCluster {
@@ -238,7 +239,7 @@ public class ClusterBase extends AbstractCluster {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                evt.setError(err(ORG_ZSTACK_COMPUTE_CLUSTER_10002, SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                 bus.publish(evt);
             }
         }).start();
@@ -250,7 +251,7 @@ public class ClusterBase extends AbstractCluster {
         try {
             extpEmitter.preChange(self, stateEvent);
         } catch (ClusterException e) {
-            evt.setError(err(SysErrors.CHANGE_RESOURCE_STATE_ERROR, e.getMessage()));
+            evt.setError(err(ORG_ZSTACK_COMPUTE_CLUSTER_10003, SysErrors.CHANGE_RESOURCE_STATE_ERROR, e.getMessage()));
             bus.publish(evt);
             return;
         }

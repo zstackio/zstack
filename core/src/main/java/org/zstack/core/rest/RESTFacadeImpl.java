@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class RESTFacadeImpl implements RESTFacade {
     private static final CLogger logger = Utils.getSafeLogger(RESTFacadeImpl.class);
@@ -309,7 +310,7 @@ public class RESTFacadeImpl implements RESTFacade {
         }
 
         if (unit.toMillis(timeout) <= 1) {
-            callback.fail(touterr("url: %s, current timeout: %s, api message timeout, skip post async call",
+            callback.fail(touterr(ORG_ZSTACK_CORE_REST_10000, "url: %s, current timeout: %s, api message timeout, skip post async call",
                     url, unit.toMillis(timeout)));
             return;
         }
@@ -350,7 +351,7 @@ public class RESTFacadeImpl implements RESTFacade {
                 @Override
                 public void run() {
                     self.fail(touterr(
-                            "[Async Http Timeout] url: %s, timeout after %s[%s], command: %s",
+                    ORG_ZSTACK_CORE_REST_10001,         "[Async Http Timeout] url: %s, timeout after %s[%s], command: %s",
                             url, timeout, unit.toString(), body
                     ));
                 }
@@ -402,7 +403,7 @@ public class RESTFacadeImpl implements RESTFacade {
                             }
                         } catch (Throwable t) {
                             logger.warn(t.getMessage(), t);
-                            callback.fail(inerr(t.getMessage()));
+                            callback.fail(inerr(ORG_ZSTACK_CORE_REST_10002, t.getMessage()));
                         }
                     } else {
                         callback.success(responseEntity);
@@ -446,10 +447,10 @@ public class RESTFacadeImpl implements RESTFacade {
             }
 
             ListenableFuture<ResponseEntity<String>> f = asyncRestTemplate.exchange(url, method, req, String.class);
-            f.addCallback(rsp -> {}, e -> wrapper.fail(err(SysErrors.HTTP_ERROR, e.getLocalizedMessage())));
+            f.addCallback(rsp -> {}, e -> wrapper.fail(err(ORG_ZSTACK_CORE_REST_10003, SysErrors.HTTP_ERROR, e.getLocalizedMessage())));
         } catch (RestClientException e) {
             logger.warn(String.format("Unable to %s to %s: %s", method.toString(), url, e.getMessage()));
-            wrapper.fail(ExceptionDSL.isCausedBy(e, ResourceAccessException.class) ? err(SysErrors.IO_ERROR, e.getMessage()) : inerr(e.getMessage()));
+            wrapper.fail(ExceptionDSL.isCausedBy(e, ResourceAccessException.class) ? err(ORG_ZSTACK_CORE_REST_10004, SysErrors.IO_ERROR, e.getMessage()) : inerr(ORG_ZSTACK_CORE_REST_10005, e.getMessage()));
         }
     }
 
@@ -532,15 +533,15 @@ public class RESTFacadeImpl implements RESTFacade {
 
         return http
                 .withHandler(this::syncJson)
-                .withErrorCodeBuilder((e, http2) -> {
+                .withErrorCodeBuilder((Exception e, RestHttp<T>http2) -> {
                     if (e instanceof HttpStatusCodeException) {
                         final HttpStatusCodeException exception = (HttpStatusCodeException) e;
-                        return operr("failed to %s to %s, status code: %s, response body: %s",
+                        return operr(ORG_ZSTACK_CORE_REST_10006, "failed to %s to %s, status code: %s, response body: %s",
                                 http2.getMethod().toString().toLowerCase(),
                                 http2.getPath(),
                                 exception.getStatusCode(), exception.getResponseBodyAsString());
                     } else if (e instanceof ResourceAccessException) {
-                        return operr("failed to %s to %s, IO Error: %s",
+                        return operr(ORG_ZSTACK_CORE_REST_10007, "failed to %s to %s, IO Error: %s",
                                 http2.getMethod().toString().toLowerCase(),
                                 http2.getPath(),
                                 e.getMessage());
@@ -618,7 +619,7 @@ public class RESTFacadeImpl implements RESTFacade {
         }
 
         if (!valid) {
-            throw new OperationFailureException(operr("failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, rsp.getStatusCode(), rsp.getBody()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_CORE_REST_10008, "failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, rsp.getStatusCode(), rsp.getBody()));
         }
 
         return rsp;
@@ -728,9 +729,9 @@ public class RESTFacadeImpl implements RESTFacade {
                 }.run();
             }
         } catch (HttpStatusCodeException e) {
-            throw new OperationFailureException(operr("failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, e.getStatusCode(), e.getResponseBodyAsString()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_CORE_REST_10009, "failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, e.getStatusCode(), e.getResponseBodyAsString()));
         } catch (ResourceAccessException e) {
-            throw new OperationFailureException(operr("failed to %s to %s, IO Error: %s", method.toString().toLowerCase(), url, e.getMessage()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_CORE_REST_10010, "failed to %s to %s, IO Error: %s", method.toString().toLowerCase(), url, e.getMessage()));
         }
 
         boolean valid = false;
@@ -745,7 +746,7 @@ public class RESTFacadeImpl implements RESTFacade {
         }
 
         if (!valid) {
-            throw new OperationFailureException(operr("failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, rsp.getStatusCode(), rsp.getBody()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_CORE_REST_10011, "failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, rsp.getStatusCode(), rsp.getBody()));
         }
 
         return rsp;
@@ -779,7 +780,7 @@ public class RESTFacadeImpl implements RESTFacade {
                     logger.debug(info);
 
                     if (now > expired) {
-                        completion.fail(operr("unable to echo %s in %sms", url, finalTimeout));
+                        completion.fail(operr(ORG_ZSTACK_CORE_REST_10012, "unable to echo %s in %sms", url, finalTimeout));
                         return true;
                     }
                 }

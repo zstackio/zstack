@@ -8,6 +8,7 @@ import org.zstack.header.zql.ASTVisitor;
 import java.util.Optional;
 
 import static org.zstack.zql.ast.visitors.constants.MySqlKeyword.keywordMap;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by MaJin on 2019/6/3.
@@ -16,7 +17,7 @@ public class FunctionVisitor implements ASTVisitor<String, ASTNode.Function> {
     @Override
     public String visit(ASTNode.Function function) {
         if (function == null) {
-            throw new OperationFailureException(Platform.operr("function cannot be null"));
+            throw new OperationFailureException(Platform.operr(ORG_ZSTACK_ZQL_AST_VISITORS_10004, "function cannot be null"));
         }
 
         Optional<String> result = keywordMap.keySet().stream()

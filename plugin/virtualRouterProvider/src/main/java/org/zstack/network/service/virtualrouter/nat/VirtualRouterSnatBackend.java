@@ -38,6 +38,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -89,7 +90,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
             @Override
             public void validate(VirtualRouterOfferingInventory offering) throws OperationFailureException {
                 if (offering.getPublicNetworkUuid().equals(guestL3.getUuid())) {
-                    throw new OperationFailureException(operr("guest l3Network[uuid:%s, name:%s] needs SNAT service provided by virtual router, but public l3Network[uuid:%s] of virtual router offering[uuid: %s, name:%s] is the same to this guest l3Network",
+                    throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_NAT_10001, "guest l3Network[uuid:%s, name:%s] needs SNAT service provided by virtual router, but public l3Network[uuid:%s] of virtual router offering[uuid: %s, name:%s] is the same to this guest l3Network",
                             guestL3.getUuid(), guestL3.getName(), offering.getPublicNetworkUuid(), offering.getUuid(), offering.getName()));
                 }
             }
@@ -423,7 +424,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 VirtualRouterAsyncHttpCallReply re = reply.castReply();
                 VirtualRouterCommands.SyncSNATRsp ret = re.toResponse(VirtualRouterCommands.SyncSNATRsp.class);
                 if (!ret.isSuccess()) {
-                    ErrorCode err = operr("virtual router[name: %s, uuid: %s] failed to sync snat%s, %s",
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_NAT_10002, "virtual router[name: %s, uuid: %s] failed to sync snat%s, %s",
                             vr.getName(), vr.getUuid(), JSONObjectUtil.toJsonString(snatInfo), ret.getError());
                     completion.fail(err);
                     return;

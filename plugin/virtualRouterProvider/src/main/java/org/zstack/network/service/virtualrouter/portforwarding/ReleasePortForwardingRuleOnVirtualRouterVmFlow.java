@@ -26,6 +26,7 @@ import static org.zstack.network.service.virtualrouter.VirtualRouterBootstrapIso
 
 import java.util.Arrays;
 import java.util.Map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ReleasePortForwardingRuleOnVirtualRouterVmFlow extends NoRollbackFlow {
@@ -79,7 +80,7 @@ public class ReleasePortForwardingRuleOnVirtualRouterVmFlow extends NoRollbackFl
                     data.setVirtualRouterUuid(vr.getUuid());
                     evtf.fire(FirewallCanonicalEvents.FIREWALL_RULE_CHANGED_PATH, data);
                 } else {
-                    ErrorCode err = operr("failed to revoke port forwarding rules %s, because %s", JSONObjectUtil.toJsonString(to), ret.getError());
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_PORTFORWARDING_10001, "failed to revoke port forwarding rules %s, because %s", JSONObjectUtil.toJsonString(to), ret.getError());
                     chain.fail(err);
                 }
             }

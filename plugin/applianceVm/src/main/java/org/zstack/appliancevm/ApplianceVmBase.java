@@ -44,6 +44,7 @@ import java.util.*;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public abstract class ApplianceVmBase extends VmInstanceBase implements ApplianceVm {
     @Autowired
@@ -137,7 +138,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             public void run(final SyncTaskChain chain) {
                 final ApplianceVmAsyncHttpCallReply reply = new ApplianceVmAsyncHttpCallReply();
                 if (msg.isCheckStatus() && getSelf().getStatus() != ApplianceVmStatus.Connected) {
-                    reply.setError(operr("appliance vm[uuid:%s] is in status of %s that cannot make http call to %s",
+                    reply.setError(operr(ORG_ZSTACK_APPLIANCEVM_10006, "appliance vm[uuid:%s] is in status of %s that cannot make http call to %s",
                             self.getUuid(), getSelf().getStatus(), msg.getPath()));
                     bus.reply(msg, reply);
                     chain.next();
@@ -375,7 +376,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                 if (!ret.isSuccess()) {
                     logger.warn(String.format("failed to refresh firewall rules on appliance vm[uuid:%s, name:%s], %s",
                             self.getUuid(), self.getName(), ret.getError()));
-                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                    reply.setError(operr(ORG_ZSTACK_APPLIANCEVM_10007, "operation error, because:%s", ret.getError()));
                 }
 
                 bus.reply(msg, reply);

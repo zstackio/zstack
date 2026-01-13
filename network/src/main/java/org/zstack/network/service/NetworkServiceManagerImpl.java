@@ -33,6 +33,7 @@ import java.util.*;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class NetworkServiceManagerImpl extends AbstractService implements NetworkServiceManager, PreVmInstantiateResourceExtensionPoint,
         VmReleaseResourceExtensionPoint, PostVmInstantiateResourceExtensionPoint, ReleaseNetworkServiceOnDetachingNicExtensionPoint,
@@ -143,7 +144,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 		try {
 			provider.detachFromL2Network(L2NetworkInventory.valueOf(l2vo), msg);
 		} catch (NetworkException e) {
-            evt.setError(err(NetworkServiceErrors.DETACH_NETWORK_SERVICE_PROVIDER_ERROR, "unable to detach network service provider[uuid:%s, name:%s, type:%s] to l2network[uuid:%s, name:%s, type:%s], %s",
+            evt.setError(err(ORG_ZSTACK_NETWORK_SERVICE_10002, NetworkServiceErrors.DETACH_NETWORK_SERVICE_PROVIDER_ERROR, "unable to detach network service provider[uuid:%s, name:%s, type:%s] to l2network[uuid:%s, name:%s, type:%s], %s",
                     vo.getUuid(), vo.getName(), vo.getType(), l2vo.getUuid(), l2vo.getName(), l2vo.getType(), e.getMessage()));
             logger.warn(evt.getError().getDetails(), e);
 			bus.publish(evt);
@@ -177,7 +178,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 		try {
 			provider.attachToL2Network(L2NetworkInventory.valueOf(l2vo), msg);
 		} catch (NetworkException e) {
-            evt.setError(err(NetworkServiceErrors.ATTACH_NETWORK_SERVICE_PROVIDER_ERROR, "unable to attach network service provider[uuid:%s, name:%s, type:%s] to l2network[uuid:%s, name:%s, type:%s], %s",
+            evt.setError(err(ORG_ZSTACK_NETWORK_SERVICE_10003, NetworkServiceErrors.ATTACH_NETWORK_SERVICE_PROVIDER_ERROR, "unable to attach network service provider[uuid:%s, name:%s, type:%s] to l2network[uuid:%s, name:%s, type:%s], %s",
                     vo.getUuid(), vo.getName(), vo.getType(), l2vo.getUuid(), l2vo.getName(), l2vo.getType(), e.getMessage()));
             logger.warn(evt.getError().getDetails(), e);
 			bus.publish(evt);
@@ -277,7 +278,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            chain.fail(operr("Failed to apply network service[%s] to vm[uuid: %s]",
+                            chain.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_10004, "Failed to apply network service[%s] to vm[uuid: %s]",
                                     ns.getNetworkServiceType(),
                                     spec.getVmInventory().getUuid())
                                     .causedBy(errorCode));
@@ -331,7 +332,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
         }
         
         if (targetRef == null) {
-            throw new OperationFailureException(operr("L3Network[uuid:%s] doesn't have network service[type:%s] enabled or no provider provides this network service",
+            throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_10005, "L3Network[uuid:%s] doesn't have network service[type:%s] enabled or no provider provides this network service",
                     l3NetworkUuid, serviceType));
         }
 

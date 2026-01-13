@@ -63,6 +63,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class ConfigurationManagerImpl extends AbstractService implements ConfigurationManager {
     private static final CLogger logger = Utils.getLogger(ConfigurationManagerImpl.class);
@@ -1043,7 +1044,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                 int existUserdataTagCount = InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.getTags(resourceUuid, InstanceOfferingVO.class).size();
                 if (existUserdataTagCount > 0) {
                     throw new OperationFailureException(argerr(
-                            "Already have one userdata systemTag for instanceOffering[uuid: %s].",
+                    ORG_ZSTACK_CONFIGURATION_10001,         "Already have one userdata systemTag for instanceOffering[uuid: %s].",
                             resourceUuid));
                 }
 
@@ -1066,7 +1067,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                     if (InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.isMatch(sysTag)) {
                         if (userdataTagCount > 0) {
                             throw new OperationFailureException(argerr(
-                                    "Shouldn't be more than one systemTag for one instanceOffering."));
+                            ORG_ZSTACK_CONFIGURATION_10002,         "Shouldn't be more than one systemTag for one instanceOffering."));
                         }
                         userdataTagCount++;
 
@@ -1085,7 +1086,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                 int existUserdataTagCount = DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.getTags(resourceUuid, DiskOfferingVO.class).size();
                 if (existUserdataTagCount > 0) {
                     throw new OperationFailureException(argerr(
-                            "Already have one userdata systemTag for diskOffering[uuid: %s].",
+                    ORG_ZSTACK_CONFIGURATION_10003,         "Already have one userdata systemTag for diskOffering[uuid: %s].",
                             resourceUuid));
                 }
 
@@ -1108,7 +1109,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                     if (InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.isMatch(sysTag)) {
                         if (userdataTagCount > 0) {
                             throw new OperationFailureException(argerr(
-                                    "Shouldn't be more than one systemTag for one instanceOffering."));
+                            ORG_ZSTACK_CONFIGURATION_10004,         "Shouldn't be more than one systemTag for one instanceOffering."));
                         }
                         userdataTagCount++;
 

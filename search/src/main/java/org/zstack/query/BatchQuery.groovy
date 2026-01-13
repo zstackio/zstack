@@ -1,5 +1,7 @@
 package org.zstack.query
 
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+
 import org.apache.commons.lang.StringUtils
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.reflection.ClassInfo
@@ -257,7 +259,7 @@ class BatchQuery {
     private Map syncApiCall(String apiname, String jstr) {
         Class msgClz = queryMessageClass[apiname]
         if (msgClz == null) {
-            throw new OperationFailureException(Platform.argerr("no query API found for %s", apiname))
+            throw new OperationFailureException(org.zstack.core.Platform.argerr(ORG_ZSTACK_QUERY_10006, "no query API found for %s", apiname))
         }
 
         APISyncCallMessage msg = JSONObjectUtil.toObject(jstr, msgClz)
@@ -290,13 +292,13 @@ class BatchQuery {
         List<String> words = qstr.split(" ")
         words = words.findAll { !it.isEmpty() }
         if (words.isEmpty()) {
-            throw new OperationFailureException(Platform.argerr("invalid query string: %s", qstr))
+            throw new OperationFailureException(org.zstack.core.Platform.argerr(ORG_ZSTACK_QUERY_10007, "invalid query string: %s", qstr))
         }
 
         String api = words[0].toLowerCase()
         Class msgClz = queryMessageClass[api]
         if (msgClz == null) {
-            throw new OperationFailureException(Platform.argerr("no query API found for %s", words[0]))
+            throw new OperationFailureException(org.zstack.core.Platform.argerr(ORG_ZSTACK_QUERY_10008, "no query API found for %s", words[0]))
         }
 
         APIQueryMessage msg = msgClz.newInstance() as APIQueryMessage
@@ -357,7 +359,7 @@ class BatchQuery {
                     }
 
                     if (OP == null) {
-                        throw new OperationFailureException(Platform.argerr("invalid query string[%s], word[%s] doesn't have a valid operator", qstr, word))
+                        throw new OperationFailureException(org.zstack.core.Platform.argerr(ORG_ZSTACK_QUERY_10009, "invalid query string[%s], word[%s] doesn't have a valid operator", qstr, word))
                     }
 
                     List<String> ks = word.split(Pattern.quote(delimiter), 2)
@@ -367,7 +369,7 @@ class BatchQuery {
                         cond.op = OP
                     } else {
                         if (ks.size() != 2) {
-                            throw new OperationFailureException(Platform.argerr("invalid query string[%s], word[%s] doesn't has key-value pair", qstr, word))
+                            throw new OperationFailureException(org.zstack.core.Platform.argerr(ORG_ZSTACK_QUERY_10010, "invalid query string[%s], word[%s] doesn't has key-value pair", qstr, word))
                         }
                         cond.name = ks[0]
                         cond.op = OP
@@ -463,7 +465,7 @@ class BatchQuery {
             } catch (Throwable t) {
                 logger.warn(t.message, t)
                 sandbox.unregister()
-                throw new OperationFailureException(Platform.operr("${errorLine(msg.script, t)}"))
+                throw new OperationFailureException(org.zstack.core.Platform.operr(ORG_ZSTACK_QUERY_10011, "${errorLine(msg.script, t)}"))
             } finally {
                 sandbox.unregister()
                 shell.resetLoadedClasses()

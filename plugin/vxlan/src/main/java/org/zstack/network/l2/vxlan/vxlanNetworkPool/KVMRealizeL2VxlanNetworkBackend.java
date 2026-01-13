@@ -48,6 +48,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by weiwang on 17/04/2017.
@@ -78,12 +79,12 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         final L2VxlanNetworkInventory l2vxlan = (L2VxlanNetworkInventory) l2Network;
         final List<String> vtepIps = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.hostUuid, hostUuid).eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid()).listValues();
         if (vtepIps.size() > 1) {
-            throw new OperationFailureException(operr("find multiple vtep ips[%s] for one host[uuid:%s], need to delete host and add again",
+            throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10002, "find multiple vtep ips[%s] for one host[uuid:%s], need to delete host and add again",
                     vtepIps, hostUuid));
         }
 
         if (vtepIps.size() == 0) {
-            ErrorCode err = operr("failed to find vtep on host[uuid: %s], please re-attach vxlanpool[uuid: %s] to cluster.",
+            ErrorCode err = operr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10003, "failed to find vtep on host[uuid: %s], please re-attach vxlanpool[uuid: %s] to cluster.",
                     hostUuid, l2vxlan.getPoolUuid());
             completion.fail(err);
             return;
@@ -145,7 +146,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 VxlanKvmAgentCommands.CreateVxlanBridgeResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.CreateVxlanBridgeResponse.class);
                 if (!rsp.isSuccess()) {
-                    ErrorCode err = operr("failed to create bridge[%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s], because %s",
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10004, "failed to create bridge[%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s], because %s",
                             cmd.getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vxlan.getVirtualNetworkId(), hostUuid, rsp.getError());
                     completion.fail(err);
                     return;
@@ -202,7 +203,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 KVMAgentCommands.UpdateL2NetworkResponse rsp = hreply.toResponse(KVMAgentCommands.UpdateL2NetworkResponse.class);
                 if (!rsp.isSuccess()) {
-                    ErrorCode err = operr("failed to update bridge[%s] for l2Network[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10005, "failed to update bridge[%s] for l2Network[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
                             cmd.getBridgeName(), newL2.getUuid(), newL2.getName(), hostUuid, rsp.getError());
                     completion.fail(err);
                     return;
@@ -259,7 +260,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                         KVMHostAsyncHttpCallReply hreply = reply.castReply();
                         VxlanKvmAgentCommands.CheckVxlanCidrResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.CheckVxlanCidrResponse.class);
                         if (!rsp.isSuccess()) {
-                            ErrorCode err = operr("failed to check cidr[%s] for l2VxlanNetwork[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
+                            ErrorCode err = operr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10006, "failed to check cidr[%s] for l2VxlanNetwork[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
                                     cmd.getCidr(), l2vxlan.getUuid(), l2vxlan.getName(), hostUuid, rsp.getError());
                             trigger.fail(err);
                             return;
@@ -547,7 +548,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 VxlanKvmAgentCommands.DeleteVxlanBridgeResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.DeleteVxlanBridgeResponse.class);
                 if (!rsp.isSuccess()) {
-                    ErrorCode err = operr("failed to delete bridge[%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s], because %s",
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10007, "failed to delete bridge[%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s], because %s",
                             cmd.getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vxlan.getVirtualNetworkId(), hostUuid, rsp.getError());
                     completion.fail(err);
                     return;

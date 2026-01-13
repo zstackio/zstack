@@ -11,6 +11,7 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * @ Author : yh.w
@@ -29,7 +30,7 @@ public class CephRequiredUrlParser {
             protocol = new URI(requiredUrl).getScheme();
         } catch (URISyntaxException e) {
             throw new OperationFailureException(
-                    argerr("invalid uri, correct example is ceph://$POOLNAME/$VOLUMEUUID or volume://$VOLUMEUUID"));
+                    argerr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10051, "invalid uri, correct example is ceph://$POOLNAME/$VOLUMEUUID or volume://$VOLUMEUUID"));
         }
 
         return uriParsers.get(protocol).parseUri(requiredUrl);

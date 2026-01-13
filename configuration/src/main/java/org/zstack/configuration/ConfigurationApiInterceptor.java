@@ -14,6 +14,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyType;
 import org.zstack.utils.data.SizeUnit;
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -65,35 +66,35 @@ public class ConfigurationApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APICreateInstanceOfferingMsg msg) {
         if (msg.getAllocatorStrategy() != null && !HostAllocatorStrategyType.hasType(msg.getAllocatorStrategy())) {
-            throw new ApiMessageInterceptionException(argerr("unsupported host allocation strategy[%s]", msg.getAllocatorStrategy()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_CONFIGURATION_10005, "unsupported host allocation strategy[%s]", msg.getAllocatorStrategy()));
         }
 
         if (msg.getType() != null && !InstanceOfferingType.hasType(msg.getType())) {
-            throw new ApiMessageInterceptionException(argerr("unsupported instance offering type[%s]", msg.getType()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_CONFIGURATION_10006, "unsupported instance offering type[%s]", msg.getType()));
         }
 
         if (msg.getCpuNum() < 1) {
-            throw new ApiMessageInterceptionException(argerr("cpu num[%s] is less than 1", msg.getCpuNum()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_CONFIGURATION_10007, "cpu num[%s] is less than 1", msg.getCpuNum()));
         }
 
         if (msg.getMemorySize() < SizeUnit.MEGABYTE.toByte(16)) {
-            throw new ApiMessageInterceptionException(argerr("memory size[%s bytes] is less than 16M, no modern operating system is likely able to boot with such small memory size", msg.getMemorySize()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_CONFIGURATION_10008, "memory size[%s bytes] is less than 16M, no modern operating system is likely able to boot with such small memory size", msg.getMemorySize()));
         }
 
         if (msg.getReservedMemorySize() > msg.getMemorySize()) {
-            throw new ApiMessageInterceptionException(argerr("reserved memory size[%s bytes] is greater than memory size[%s bytes]", msg.getReservedMemorySize(), msg.getMemorySize()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_CONFIGURATION_10009, "reserved memory size[%s bytes] is greater than memory size[%s bytes]", msg.getReservedMemorySize(), msg.getMemorySize()));
         }
     }
 
     private void validate(APIUpdateInstanceOfferingMsg msg) {
         if (msg.getAllocatorStrategy() != null && !HostAllocatorStrategyType.hasType(msg.getAllocatorStrategy())) {
-            throw new ApiMessageInterceptionException(argerr("unsupported host allocation strategy[%s]", msg.getAllocatorStrategy()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_CONFIGURATION_10010, "unsupported host allocation strategy[%s]", msg.getAllocatorStrategy()));
         }
     }
 
     private void validate(APICreateDiskOfferingMsg msg) {
         if (msg.getAllocationStrategy() != null && !PrimaryStorageAllocatorStrategyType.hasType(msg.getAllocationStrategy())) {
-            throw new ApiMessageInterceptionException(argerr("unsupported primary storage allocation strategy[%s]", msg.getAllocationStrategy()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_CONFIGURATION_10011, "unsupported primary storage allocation strategy[%s]", msg.getAllocationStrategy()));
         }
     }
 }

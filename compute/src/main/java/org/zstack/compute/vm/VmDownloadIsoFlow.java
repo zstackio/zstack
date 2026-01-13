@@ -27,6 +27,7 @@ import org.zstack.utils.function.Function;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 10/17/2015.
@@ -58,7 +59,7 @@ public class VmDownloadIsoFlow extends NoRollbackFlow {
         final String bsUuid = selector.select();
 
         if (bsUuid == null) {
-            throw new OperationFailureException(operr("cannot find the iso[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n" +
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10084, "cannot find the iso[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n" +
                                     "1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is running\n" +
                                     "2. if the backup storage is in connected status, if not, try reconnecting it",
                             iso.getUuid(), host.getZoneUuid(), spec.getVmInventory().getName(), spec.getVmInventory().getUuid())

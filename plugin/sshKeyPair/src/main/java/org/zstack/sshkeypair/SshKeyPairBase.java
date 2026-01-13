@@ -28,6 +28,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SshKeyPairBase {
@@ -188,7 +189,7 @@ public class SshKeyPairBase {
                             if (rsp.isSuccess()) {
                                 attachSshKeyPairToVmInDB();
                             } else {
-                                reply.setError(operr("operation error, because: %s", rsp.getError()));
+                                reply.setError(operr(ORG_ZSTACK_SSHKEYPAIR_10004, "operation error, because: %s", rsp.getError()));
                                 event.setError(reply.getError());
                             }
                         } else {
@@ -285,7 +286,7 @@ public class SshKeyPairBase {
                             if (rsp.isSuccess()) {
                                 detachSshKeyPairFromVmInDB();
                             } else {
-                                reply.setError(operr("operation error, because: %s", rsp.getError()));
+                                reply.setError(operr(ORG_ZSTACK_SSHKEYPAIR_10005, "operation error, because: %s", rsp.getError()));
                                 event.setError(reply.getError());
                             }
                         } else {

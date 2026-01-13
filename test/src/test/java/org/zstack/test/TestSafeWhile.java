@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by MaJin on 2021/1/27.
@@ -20,7 +21,7 @@ public class TestSafeWhile {
         // *(.., WhileCompletion, ..) will catch the exception, and call the addError.
         FutureCompletion fc = new FutureCompletion(null);
         new While<>(Arrays.asList(1, 2, 3)).each((item, completion) -> {
-            throw new OperationFailureException(operr("on purpose %d", item));
+            throw new OperationFailureException(operr(ORG_ZSTACK_TEST_10001, "on purpose %d", item));
         }).run(new WhileDoneCompletion(fc) {
             @Override
             public void done(ErrorCodeList errs) {
@@ -35,9 +36,9 @@ public class TestSafeWhile {
         // *(.., WhileCompletion, ..) will catch the exception, but addError will only be called once.
         FutureCompletion fc2 = new FutureCompletion(null);
         new While<>(Arrays.asList(1, 2, 3)).each((item, completion) -> {
-            completion.addError(operr("on purpose %d", item));
-            completion.addError(operr("I should not be in error list %d", item));
-            throw new OperationFailureException(operr("I should not be in error list either %d", item));
+            completion.addError(operr(ORG_ZSTACK_TEST_10002, "on purpose %d", item));
+            completion.addError(operr(ORG_ZSTACK_TEST_10003, "I should not be in error list %d", item));
+            throw new OperationFailureException(operr(ORG_ZSTACK_TEST_10004, "I should not be in error list either %d", item));
         }).run(new WhileDoneCompletion(fc2) {
             @Override
             public void done(ErrorCodeList errs) {
@@ -53,14 +54,14 @@ public class TestSafeWhile {
         // WhileDoneCompletion(asyncBackup async).done() will handle the exception and asyncBackup will be called.
         FutureCompletion fc3 = new FutureCompletion(null);
         new While<>(Arrays.asList(1, 2, 3)).each((item, completion) -> {
-            completion.addError(operr("on purpose %d", item));
+            completion.addError(operr(ORG_ZSTACK_TEST_10005, "on purpose %d", item));
             completion.done();
         }).run(new WhileDoneCompletion(fc3) {
             @Override
             public void done(ErrorCodeList errs) {
                 assert errs.getCauses().size() == 3 : "errors:" + errs.getCauses().toString();
                 assert errs.getCauses().stream().allMatch(it -> it.getDetails().startsWith("on purpose"));
-                throw new OperationFailureException(operr("done, on purpose"));
+                throw new OperationFailureException(operr(ORG_ZSTACK_TEST_10006, "done, on purpose"));
             }
         });
 
@@ -77,9 +78,9 @@ public class TestSafeWhile {
             }).run(new WhileDoneCompletion(completion) {
                 @Override
                 public void done(ErrorCodeList errorCodeList) {
-                    completion.addError(operr("on purpose"));
-                    completion.addError(operr("I should not be errs list"));
-                    throw new OperationFailureException(operr("I should not be errs list either."));
+                    completion.addError(operr(ORG_ZSTACK_TEST_10007, "on purpose"));
+                    completion.addError(operr(ORG_ZSTACK_TEST_10008, "I should not be errs list"));
+                    throw new OperationFailureException(operr(ORG_ZSTACK_TEST_10009, "I should not be errs list either."));
                 }
             });
         }).run(new WhileDoneCompletion(fc4) {

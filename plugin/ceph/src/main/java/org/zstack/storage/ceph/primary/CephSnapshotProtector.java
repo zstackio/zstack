@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class CephSnapshotProtector implements VolumeSnapshotDeletionProtector {
     @Override
@@ -29,7 +30,7 @@ public class CephSnapshotProtector implements VolumeSnapshotDeletionProtector {
         }
 
         if (volUuids.stream().noneMatch(it -> snapshot.getPrimaryStorageInstallPath().contains(it)) && !VolumeSystemTags.FAST_REVERT.hasTag(snapshot.getVolumeUuid())) {
-            completion.fail(inerr("the snapshot[name:%s, uuid:%s, path: %s] seems not belong to the volume[uuid:%s]",
+            completion.fail(inerr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10034, "the snapshot[name:%s, uuid:%s, path: %s] seems not belong to the volume[uuid:%s]",
                     snapshot.getName(), snapshot.getUuid(), snapshot.getPrimaryStorageInstallPath(), snapshot.getVolumeUuid()));
             return;
         }

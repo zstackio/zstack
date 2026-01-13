@@ -20,6 +20,7 @@ import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.StringDSL.ln;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 12/6/2015.
@@ -104,7 +105,7 @@ public class SshFolderMd5Checker implements AnsibleChecker {
         String srcScript = script.format(srcFolder);
         ShellResult srcRes = ShellUtils.runAndReturn(srcScript, false);
         if (!srcRes.isReturnCode(0)) {
-            throw new OperationFailureException(operr("cannot check md5sum of files in the folder[%s].\nstdout:%s\nstderr:%s", srcFolder,
+            throw new OperationFailureException(operr(ORG_ZSTACK_CORE_ANSIBLE_10002, "cannot check md5sum of files in the folder[%s].\nstdout:%s\nstderr:%s", srcFolder,
                             srcRes.getStdout(), srcRes.getStderr()));
         }
 
@@ -119,7 +120,7 @@ public class SshFolderMd5Checker implements AnsibleChecker {
             // dst folder doesn't existing
             return true;
         } else if (dstRes.getReturnCode() != 0) {
-            throw new OperationFailureException(operr("cannot check md5sum of files in the folder[%s] on the host[ip:%s].\nstdout:%s\nstderr:%s",
+            throw new OperationFailureException(operr(ORG_ZSTACK_CORE_ANSIBLE_10003, "cannot check md5sum of files in the folder[%s] on the host[ip:%s].\nstdout:%s\nstderr:%s",
                             dstFolder, hostname, dstRes.getStdout(), dstRes.getStderr()));
         }
 

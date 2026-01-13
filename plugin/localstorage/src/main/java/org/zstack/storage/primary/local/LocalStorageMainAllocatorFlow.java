@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 7/1/2015.
@@ -175,7 +176,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
                 LocalStorageHostRefVO ref = it.next();
                 if (!physicalCapacityMgr.checkCapacityByRatio(ref.getPrimaryStorageUuid(), ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity())
                         || !physicalCapacityMgr.checkRequiredCapacityByRatio(ref.getPrimaryStorageUuid(), ref.getTotalPhysicalCapacity(), spec.getTotalSize())) {
-                    ret.causes.add(operr("{the physical capacity usage of the host[uuid:%s] has exceeded the threshold[%s]}",
+                    ret.causes.add(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10064, "{the physical capacity usage of the host[uuid:%s] has exceeded the threshold[%s]}",
                             ref.getHostUuid(), physicalCapacityMgr.getRatio(ref.getPrimaryStorageUuid())));
                     it.remove();
                 }
@@ -291,8 +292,8 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             return;
         }
 
-        ErrorCode err = ret.causes.isEmpty() ? operr(ret.errStr) :
-                operr(new ErrorCodeList().causedBy(ret.causes), ret.errStr);
+        ErrorCode err = ret.causes.isEmpty() ? operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10065, ret.errStr) :
+                operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10066, new ErrorCodeList().causedBy(ret.causes), ret.errStr);
         trigger.fail(err);
     }
 }

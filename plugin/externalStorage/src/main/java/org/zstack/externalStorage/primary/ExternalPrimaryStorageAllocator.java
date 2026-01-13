@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class ExternalPrimaryStorageAllocator implements MarshalVmOperationFlowExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ExternalPrimaryStorageAllocator.class);
@@ -111,7 +112,7 @@ public class ExternalPrimaryStorageAllocator implements MarshalVmOperationFlowEx
                     return new NoRollbackFlow() {
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            trigger.fail(operr("creation relies on image cache[uuid:%s, locate urls: [%s]], cannot create other places.", spec.getImageSpec().getInventory().getUuid(), candidateUrls));
+                            trigger.fail(operr(ORG_ZSTACK_EXTERNALSTORAGE_PRIMARY_10000, "creation relies on image cache[uuid:%s, locate urls: [%s]], cannot create other places.", spec.getImageSpec().getInventory().getUuid(), candidateUrls));
 
                         }
                     };

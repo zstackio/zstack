@@ -66,6 +66,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class L3BasicNetwork implements L3Network {
@@ -547,7 +548,7 @@ public class L3BasicNetwork implements L3Network {
                     String reason = msg.getRequiredIp() == null ?
                             String.format("no ip is available in this l3Network[name:%s, uuid:%s]", self.getName(), self.getUuid()) :
                             String.format("IP[%s] is not available", msg.getRequiredIp());
-                    reply.setError(err(L3Errors.ALLOCATE_IP_ERROR,
+                    reply.setError(err(ORG_ZSTACK_NETWORK_L3_10078, L3Errors.ALLOCATE_IP_ERROR,
                             "IP allocator strategy[%s] failed, because %s", strategyType, reason));
                     bus.reply(msg, reply);
                     chain.next();

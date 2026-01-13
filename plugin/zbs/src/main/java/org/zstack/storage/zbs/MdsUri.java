@@ -13,6 +13,7 @@ import java.util.List;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * @author Xingwei Yu
@@ -52,27 +53,27 @@ public class MdsUri {
     }
 
     private ErrorCode errorCode(String err) {
-        return argerr(err);
+        return argerr(ORG_ZSTACK_STORAGE_ZBS_10000, err);
     }
 
     public MdsUri(String url) {
         try {
             int at = url.lastIndexOf("@");
             if (at == -1) {
-                throw new OperationFailureException(operr("invalid mdsUrl[%s], the sshUsername:sshPassword part is invalid. A valid mdsUrl is" +
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ZBS_10001, "invalid mdsUrl[%s], the sshUsername:sshPassword part is invalid. A valid mdsUrl is" +
                         " in format of %s", url, MDS_URL_FORMAT));
             }
 
             String userInfo = url.substring(0, at);
             if (!userInfo.contains(":")) {
-                throw new OperationFailureException(operr("invalid mdsUrl[%s], the sshUsername:sshPassword part is invalid. A valid mdsUrl is" +
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ZBS_10002, "invalid mdsUrl[%s], the sshUsername:sshPassword part is invalid. A valid mdsUrl is" +
                         " in format of %s", url, MDS_URL_FORMAT));
             }
 
             String rest = url.substring(at+1);
             String[] ssh = userInfo.split(":", 2);
             if (ssh.length != 2 || ssh[0].isEmpty() || ssh[1].isEmpty()) {
-                throw new OperationFailureException(operr("invalid mdsUrl[%s]. SSH username and password must be separated by ':' and cannot be empty. A valid monUrl format is %s", url, MDS_URL_FORMAT));
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ZBS_10003, "invalid mdsUrl[%s]. SSH username and password must be separated by ':' and cannot be empty. A valid monUrl format is %s", url, MDS_URL_FORMAT));
             }
 
             username = ssh[0];
@@ -81,14 +82,14 @@ public class MdsUri {
             URI uri = new URI(String.format("ssh://%s", rest));
             hostname = uri.getHost();
             if (hostname == null) {
-                throw new OperationFailureException(operr("invalid mdsUrl[%s], hostname cannot be null. A valid mdsUrl is" +
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ZBS_10004, "invalid mdsUrl[%s], hostname cannot be null. A valid mdsUrl is" +
                                 " in format of %s", url, MDS_URL_FORMAT)
                 );
             }
 
             sshPort = uri.getPort() == -1 ? sshPort : uri.getPort();
             if (sshPort < 1 || sshPort > 65535) {
-                throw new OperationFailureException(operr("invalid mdsUrl[%s], the ssh port is greater than 65535 or smaller than 1. A valid mdsUrl is" +
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ZBS_10005, "invalid mdsUrl[%s], the ssh port is greater than 65535 or smaller than 1. A valid mdsUrl is" +
                                 " in format of %s", url, MDS_URL_FORMAT)
                 );
             }

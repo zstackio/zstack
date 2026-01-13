@@ -32,6 +32,7 @@ import javax.persistence.Tuple;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 /**
@@ -98,7 +99,7 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
 
         if (!disabledSnapshotUuids.isEmpty()) {
             throw new ApiMessageInterceptionException(operr(
-                    "volume snapshot[uuids:%s] is in state Disabled, cannot revert volume to it", disabledSnapshotUuids)
+            ORG_ZSTACK_STORAGE_SNAPSHOT_10020,         "volume snapshot[uuids:%s] is in state Disabled, cannot revert volume to it", disabledSnapshotUuids)
             );
         }
 
@@ -118,7 +119,7 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
                 .eq(VmInstanceVO_.uuid, group.getVmInstanceUuid())
                 .in(VmInstanceVO_.state, Arrays.asList(VmInstanceState.Running, VmInstanceState.Paused))
                 .isExists()) {
-            throw new ApiMessageInterceptionException(argerr("Can not take memory snapshot, expected vm states are [%s, %s]",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_SNAPSHOT_10021, "Can not take memory snapshot, expected vm states are [%s, %s]",
                     VmInstanceState.Running.toString(), VmInstanceState.Paused.toString()));
         }
 
@@ -187,12 +188,12 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
         Tuple t = q.findTuple();
         VolumeSnapshotState state = t.get(0, VolumeSnapshotState.class);
         if (state != VolumeSnapshotState.Enabled) {
-            throw new ApiMessageInterceptionException(operr("volume snapshot[uuid:%s] is in state %s, cannot revert volume to it", msg.getUuid(), state));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10022, "volume snapshot[uuid:%s] is in state %s, cannot revert volume to it", msg.getUuid(), state));
         }
 
         String volUuid = t.get(1, String.class);
         if (volUuid == null) {
-            throw new ApiMessageInterceptionException(operr("original volume for snapshot[uuid:%s] has been deleted, cannot revert volume to it", msg.getUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10023, "original volume for snapshot[uuid:%s] has been deleted, cannot revert volume to it", msg.getUuid()));
         }
     }
 
@@ -210,11 +211,11 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             if (msg.getVolumeUuid() == null) {
                 msg.setVolumeUuid(snapshotVO.getVolumeUuid());
             } else if (!snapshotVO.getVolumeUuid().equals(msg.getVolumeUuid())) {
-                throw new ApiMessageInterceptionException(operr("not support delete snapshots on different volumes[uuid: %s, %s]", msg.getVolumeUuid(), snapshotVO.getVolumeUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10024, "not support delete snapshots on different volumes[uuid: %s, %s]", msg.getVolumeUuid(), snapshotVO.getVolumeUuid()));
             }
         }
         if (msg.getVolumeUuid() == null) {
-            throw new ApiMessageInterceptionException(operr("can not find volume uuid for snapshosts[uuid: %s]", msg.getUuids()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10025, "can not find volume uuid for snapshosts[uuid: %s]", msg.getUuids()));
         }
     }
 }

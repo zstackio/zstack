@@ -13,6 +13,7 @@ import org.zstack.utils.ssh.SshResult;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.StringDSL.ln;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by mingjian.deng on 2019/6/12.
@@ -70,7 +71,7 @@ public class CallBackNetworkChecker implements AnsibleChecker {
         try {
             return useNcatAndNmapToTestConnection(ssh);
         } catch (SshException e) {
-            return operr(e.getMessage());
+            return operr(ORG_ZSTACK_CORE_ANSIBLE_10004, e.getMessage());
         }
     }
 

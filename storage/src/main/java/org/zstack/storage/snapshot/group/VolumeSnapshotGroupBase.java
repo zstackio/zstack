@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.storage.snapshot.VolumeSnapshotMessageRouter.getResourceIdToRouteMsg;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by MaJin on 2019/7/9.
@@ -357,7 +358,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
 
         VolumeSnapshotGroupAvailability availability = VolumeSnapshotGroupChecker.getAvailability(self);
         if (!availability.isAvailable()) {
-            reply.setError(operr(availability.getReason()));
+            reply.setError(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10000, availability.getReason()));
             bus.reply(msg, reply);
             return;
         }

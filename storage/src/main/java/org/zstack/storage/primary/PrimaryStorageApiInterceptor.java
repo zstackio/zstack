@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -87,7 +88,7 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
                 .eq(PrimaryStorageOutputProtocolRefVO_.primaryStorageUuid, msg.getUuid())
                 .eq(PrimaryStorageOutputProtocolRefVO_.outputProtocol, msg.getOutputProtocol())
                 .isExists()) {
-            throw new ApiMessageInterceptionException(argerr("outputProtocol[%s] is exist on primary storage[%s]" +
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_10017, "outputProtocol[%s] is exist on primary storage[%s]" +
                     "no need to add again", msg.getOutputProtocol(), msg.getPrimaryStorageUuid()));
         }
         PrimaryStorageVO vo = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid()).find();
@@ -108,7 +109,7 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (!pass && !msg.isAll()) {
-            throw new ApiMessageInterceptionException(argerr("zoneUuids, clusterUuids, primaryStorageUuids must have at least one be none-empty list, or all is set to true"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_10018, "zoneUuids, clusterUuids, primaryStorageUuids must have at least one be none-empty list, or all is set to true"));
         }
 
         if (msg.isAll() && (msg.getZoneUuids() == null || msg.getZoneUuids().isEmpty())) {
@@ -130,7 +131,7 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
         q.add(PrimaryStorageClusterRefVO_.clusterUuid, Op.EQ, msg.getClusterUuid());
         q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
         if (!q.isExists()) {
-            throw new ApiMessageInterceptionException(argerr("primary storage[uuid:%s] has not been attached to cluster[uuid:%s] yet",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_10019, "primary storage[uuid:%s] has not been attached to cluster[uuid:%s] yet",
                             msg.getPrimaryStorageUuid(), msg.getClusterUuid()));
         }
     }
@@ -147,7 +148,7 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             q.setParameter("clusterUuid", msg.getClusterUuid());
             long count = q.getSingleResult();
             if (count != 0) {
-                throw new ApiMessageInterceptionException(operr("primary storage[uuid:%s] has been attached to cluster[uuid:%s]",
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_PRIMARY_10020, "primary storage[uuid:%s] has been attached to cluster[uuid:%s]",
                                 msg.getPrimaryStorageUuid(), msg.getClusterUuid()));
             }
         }
@@ -162,7 +163,7 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             jq.setParameter("clusterUuid", msg.getClusterUuid());
             long count = jq.getSingleResult();
             if (count == 0) {
-                throw new ApiMessageInterceptionException(argerr("primary storage[uuid:%s] and cluster[uuid:%s] are not in the same zone",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_10021, "primary storage[uuid:%s] and cluster[uuid:%s] are not in the same zone",
                                 msg.getPrimaryStorageUuid(), msg.getClusterUuid()));
             }
         }
@@ -184,7 +185,7 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
 
             if(count > 0){
                 throw new ApiMessageInterceptionException(
-                        argerr("url[%s] has been occupied, it cannot be duplicate in same cluster",
+                        argerr(ORG_ZSTACK_STORAGE_PRIMARY_10022, "url[%s] has been occupied, it cannot be duplicate in same cluster",
                         url));
             }
         }
@@ -219,7 +220,7 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(final APIGetTrashOnPrimaryStorageMsg msg) {
         if ((msg.getResourceType() != null) ^ (msg.getResourceUuid() != null)) {
-            throw new ApiMessageInterceptionException((argerr("'resourceUuid' and 'resourceType' must be set both or neither!")));
+            throw new ApiMessageInterceptionException((argerr(ORG_ZSTACK_STORAGE_PRIMARY_10023, "'resourceUuid' and 'resourceType' must be set both or neither!")));
         }
     }
 
@@ -236,7 +237,7 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
 
         psUuids.removeAll(allowedPsUuids);
         if (!psUuids.isEmpty()) {
-            throw new ApiMessageInterceptionException(operr("primary storage(s) [uuid: %s] where volume(s) locate" +
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_PRIMARY_10024, "primary storage(s) [uuid: %s] where volume(s) locate" +
                     " is not Enabled or Connected", psUuids));
         }
     }

@@ -56,6 +56,7 @@ import java.util.*;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public abstract class BackupStorageBase extends AbstractBackupStorage {
@@ -152,11 +153,11 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         try {
             header = restf.syncHead(url);
         } catch (Exception e) {
-            throw new OperationFailureException(operr("failed to get header of image url %s: %s", url, e.toString()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_BACKUP_10073, "failed to get header of image url %s: %s", url, e.toString()));
         }
 
         if (header == null) {
-            throw new OperationFailureException(operr("failed to get header of image url %s", url));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_BACKUP_10074, "failed to get header of image url %s", url));
         }
 
         return header.getContentLength();
@@ -178,10 +179,10 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         if (size == -1) {
             logger.error(String.format("failed to get image size from url %s, but ignore this error and proceed", url));
         } else if (size < ImageConstant.MINI_IMAGE_SIZE_IN_BYTE) {
-            throw new OperationFailureException(operr("the image size get from url %s is %d bytes, " +
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_BACKUP_10075, "the image size get from url %s is %d bytes, " +
                     "it's too small for an image, please check the url again.", url, size));
         } else if (size > available) {
-            throw new OperationFailureException(operr("the backup storage[uuid:%s, name:%s] has not enough capacity to download the image[%s]." +
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_BACKUP_10076, "the backup storage[uuid:%s, name:%s] has not enough capacity to download the image[%s]." +
                             "Required size:%s, available size:%s", self.getUuid(), self.getName(), url, size, available));
         }
     }
@@ -196,13 +197,13 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     protected void checkStatus(Message msg) {
         if (!statusChecker.isOperationAllowed(msg.getClass().getName(), self.getStatus().toString())) {
-            throw new OperationFailureException(operr("backup storage cannot proceed message[%s] because its status is %s", msg.getClass().getName(), self.getStatus()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_BACKUP_10077, "backup storage cannot proceed message[%s] because its status is %s", msg.getClass().getName(), self.getStatus()));
         }
     }
 
     protected void checkState(Message msg) {
         if (!stateChecker.isOperationAllowed(msg.getClass().getName(), self.getState().toString())) {
-            throw new OperationFailureException(operr("backup storage cannot proceed message[%s] because its state is %s", msg.getClass().getName(), self.getState()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_BACKUP_10078, "backup storage cannot proceed message[%s] because its state is %s", msg.getClass().getName(), self.getState()));
         }
     }
 
@@ -549,7 +550,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
         String details = trash.makeSureInstallPathNotUsed(inv);
         if (details != null) {
-            completion.success(new TrashCleanupResult(inv.getResourceUuid(), inv.getTrashId(), operr(details)));
+            completion.success(new TrashCleanupResult(inv.getResourceUuid(), inv.getTrashId(), operr(ORG_ZSTACK_STORAGE_BACKUP_10079, details)));
             return;
         }
 
@@ -608,7 +609,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         new While<>(trashs).all((inv, coml) -> {
             String details = trash.makeSureInstallPathNotUsed(inv);
             if (details != null) {
-                results.add(new TrashCleanupResult(inv.getResourceUuid(), inv.getTrashId(), operr(details)));
+                results.add(new TrashCleanupResult(inv.getResourceUuid(), inv.getTrashId(), operr(ORG_ZSTACK_STORAGE_BACKUP_10080, details)));
                 coml.done();
                 return;
             }
@@ -742,7 +743,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         try {
             extpEmitter.preDetach(self, msg.getZoneUuid());
         } catch (BackupStorageException e) {
-            evt.setError(err(BackupStorageErrors.DETACH_ERROR, e.getMessage()));
+            evt.setError(err(ORG_ZSTACK_STORAGE_BACKUP_10081, BackupStorageErrors.DETACH_ERROR, e.getMessage()));
             bus.publish(evt);
             return;
         }
@@ -775,7 +776,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             public void fail(ErrorCode errorCode) {
                 logger.warn(errorCode.getDetails());
                 extpEmitter.failToDetach(self, msg.getZoneUuid());
-                evt.setError(err(BackupStorageErrors.DETACH_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(err(ORG_ZSTACK_STORAGE_BACKUP_10082, BackupStorageErrors.DETACH_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
             }
         });
@@ -787,7 +788,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
         String errStr = extpEmitter.preAttach(svo, msg.getZoneUuid());
         if (errStr != null) {
-            evt.setError(err(BackupStorageErrors.ATTACH_ERROR, errStr));
+            evt.setError(err(ORG_ZSTACK_STORAGE_BACKUP_10083, BackupStorageErrors.ATTACH_ERROR, errStr));
             bus.publish(evt);
             return;
         }
@@ -813,7 +814,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             public void fail(ErrorCode errorCode) {
                 logger.warn(errorCode.toString());
                 extpEmitter.failToAttach(svo, msg.getZoneUuid());
-                evt.setError(err(BackupStorageErrors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(err(ORG_ZSTACK_STORAGE_BACKUP_10084, BackupStorageErrors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
             }
         });
@@ -829,7 +830,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         try {
             extpEmitter.preChange(self, event);
         } catch (BackupStorageException e) {
-            evt.setError(err(SysErrors.CHANGE_RESOURCE_STATE_ERROR, e.getMessage()));
+            evt.setError(err(ORG_ZSTACK_STORAGE_BACKUP_10085, SysErrors.CHANGE_RESOURCE_STATE_ERROR, e.getMessage()));
             bus.publish(evt);
             return;
         }
@@ -910,7 +911,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                evt.setError(err(ORG_ZSTACK_STORAGE_BACKUP_10086, SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                 bus.publish(evt);
             }
         }).start();

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ResourceConfigApiInterceptor implements ApiMessageInterceptor {
@@ -53,13 +54,13 @@ public class ResourceConfigApiInterceptor implements ApiMessageInterceptor {
 
             GlobalConfig gc = gcf.getAllConfig().get(identity);
             if (gc == null) {
-                throw new ApiMessageInterceptionException(argerr("no global config[category:%s, name:%s] found",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_RESOURCECONFIG_10004, "no global config[category:%s, name:%s] found",
                         resourceConfigAO.getCategory(), identity));
             }
 
             ResourceConfig rc = rcf.getResourceConfig(gc.getIdentity());
             if (rc == null) {
-                throw new ApiMessageInterceptionException(argerr("global config[category:%s, name:%s] cannot bind resource",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_RESOURCECONFIG_10005, "global config[category:%s, name:%s] cannot bind resource",
                         resourceConfigAO.getCategory(), identity));
             }
             rc.validateNewValue(msg.getResourceUuid(), resourceConfigAO.getValue());
@@ -82,13 +83,13 @@ public class ResourceConfigApiInterceptor implements ApiMessageInterceptor {
         for (String identity : identities) {
             GlobalConfig gc = gcf.getAllConfig().get(identity);
             if (gc == null) {
-                throw new ApiMessageInterceptionException(argerr("no global config[category:%s, name:%s] found",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_RESOURCECONFIG_10006, "no global config[category:%s, name:%s] found",
                         msg.getCategory(), identity));
             }
 
             ResourceConfig rc = rcf.getResourceConfig(gc.getIdentity());
             if (rc == null) {
-                throw new ApiMessageInterceptionException(argerr("global config[category:%s, name:%s] cannot bind resource",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_RESOURCECONFIG_10007, "global config[category:%s, name:%s] cannot bind resource",
                         msg.getCategory(), identity));
             }
         }
@@ -100,7 +101,7 @@ public class ResourceConfigApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (!CheckIfAccountCanAccessResource.check(Collections.singletonList(msg.getResourceUuid()), msg.getSession().getAccountUuid()).isEmpty()) {
-            throw new ApiMessageInterceptionException(argerr("account has no access to the resource[uuid: %s]",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_RESOURCECONFIG_10008, "account has no access to the resource[uuid: %s]",
                     msg.getResourceUuid()));
         }
     }
@@ -111,7 +112,7 @@ public class ResourceConfigApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (!CheckIfAccountCanAccessResource.check(Collections.singletonList(msg.getResourceUuid()), msg.getSession().getAccountUuid()).isEmpty()) {
-            throw new ApiMessageInterceptionException(argerr("account has no access to the resource[uuid: %s]",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_RESOURCECONFIG_10009, "account has no access to the resource[uuid: %s]",
                     msg.getResourceUuid()));
         }
     }

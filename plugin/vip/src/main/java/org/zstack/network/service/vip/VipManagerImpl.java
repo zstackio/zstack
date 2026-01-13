@@ -56,6 +56,7 @@ import java.util.Map;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -160,7 +161,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     private void passThrough(VipMessage msg) {
         VipVO vip = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
         if (vip == null) {
-            throw new OperationFailureException(err(SysErrors.RESOURCE_NOT_FOUND,
+            throw new OperationFailureException(err(ORG_ZSTACK_NETWORK_SERVICE_VIP_10000, SysErrors.RESOURCE_NOT_FOUND,
                     "cannot find the vip[uuid:%s], it may have been deleted", msg.getVipUuid()
             ));
         }

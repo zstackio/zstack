@@ -18,6 +18,7 @@ import java.util.Map;
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -59,7 +60,7 @@ public class DefaultBackupStorageAllocatorStrategy implements BackupStorageAlloc
         }).start();
 
         if (ret.errorCode != null) {
-            throw new BackupStorageException(err(BackupStorageErrors.ALLOCATE_ERROR, ret.errorCode, "unable to allocate a backup storage"));
+            throw new BackupStorageException(err(ORG_ZSTACK_STORAGE_BACKUP_10000, BackupStorageErrors.ALLOCATE_ERROR, ret.errorCode, "unable to allocate a backup storage"));
         } else {
             Collections.shuffle(ret.results);
             return BackupStorageInventory.valueOf(ret.results);

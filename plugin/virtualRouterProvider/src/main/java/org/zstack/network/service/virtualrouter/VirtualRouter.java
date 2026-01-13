@@ -60,6 +60,7 @@ import static org.zstack.core.Platform.*;
 import static org.zstack.network.service.virtualrouter.VirtualRouterConstant.VR_CHANGE_DEFAULT_ROUTE_JOB;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.ADDITIONAL_PUBLIC_NIC_MASK;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.GUEST_NIC_MASK;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -225,7 +226,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     reply.setConnected(connected);
                     reply.setHaStatus(ret.getHaStatus());
                     if ((ret.getHealthy() != null) && (!ret.getHealthy()) && (ret.getHealthDetail() != null)) {
-                        fireServiceUnhealthyCanonicalEvent(inerr("virtual router %s unhealthy, detail %s", getSelf().getUuid(), ret.getHealthDetail()));
+                        fireServiceUnhealthyCanonicalEvent(inerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10016, "virtual router %s unhealthy, detail %s", getSelf().getUuid(), ret.getHealthDetail()));
                     } else {
                         fireServicehealthyCanonicalEvent();
                     }
@@ -670,17 +671,17 @@ public class VirtualRouter extends ApplianceVmBase {
 
                 final VirtualRouterAsyncHttpCallReply reply = new VirtualRouterAsyncHttpCallReply();
                 if (msg.isCheckStatus() && getSelf().getState() != VmInstanceState.Running) {
-                    throw new OperationFailureException(operr("the virtual router[name:%s, uuid:%s, current state:%s] is not running," +
+                    throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10017, "the virtual router[name:%s, uuid:%s, current state:%s] is not running," +
                                     "and cannot perform required operation. Please retry your operation later once it is running", self.getName(), self.getUuid(), self.getState()));
                 }
 
                 if (msg.isCheckStatus() && getSelf().getStatus() != ApplianceVmStatus.Connected) {
-                    throw new OperationFailureException(operr("virtual router[uuid:%s] is in status of %s that cannot make http call to %s",
+                    throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10018, "virtual router[uuid:%s] is in status of %s that cannot make http call to %s",
                             self.getUuid(), getSelf().getStatus(), msg.getPath()));
                 }
 
                 if (vr.getManagementNic() == null) {
-                    throw new OperationFailureException(operr("virtual router[uuid:%s] has no management nic that cannot make http call to %s",
+                    throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10019, "virtual router[uuid:%s] has no management nic that cannot make http call to %s",
                             self.getUuid(), msg.getPath()));
                 }
 
@@ -1027,7 +1028,7 @@ public class VirtualRouter extends ApplianceVmBase {
                                 info.getIp(), info.getIp6(), info.getMac(), vr.getUuid(), vr.getManagementNic().getIp()));
                         trigger.next();
                     } else {
-                        ErrorCode err = operr("unable to add nic[ip:%s, ip6:%s, mac:%s] to virtual router vm[uuid:%s ip:%s], because %s",
+                        ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10020, "unable to add nic[ip:%s, ip6:%s, mac:%s] to virtual router vm[uuid:%s ip:%s], because %s",
                                 info.getIp(), info.getIp6(), info.getMac(), vr.getUuid(), vr.getManagementNic().getIp(), rsp.getError());
                         trigger.fail(err);
                     }

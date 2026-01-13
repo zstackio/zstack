@@ -52,6 +52,7 @@ import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class L2NoVlanNetwork implements L2Network {
@@ -217,7 +218,7 @@ public class L2NoVlanNetwork implements L2Network {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                reply.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                reply.setError(err(ORG_ZSTACK_NETWORK_L2_10003, SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                 bus.reply(msg, reply);
             }
         }).start();
@@ -808,7 +809,7 @@ public class L2NoVlanNetwork implements L2Network {
                     evt.setInventory(getSelfInventory());
                     bus.publish(evt);
                 } else {
-                    evt.setError(err(L2Errors.ATTACH_ERROR, reply.getError(),"attach l2 network failed:%s", reply.getError()));
+                    evt.setError(err(ORG_ZSTACK_NETWORK_L2_10004, L2Errors.ATTACH_ERROR, reply.getError(),"attach l2 network failed:%s", reply.getError()));
                     bus.publish(evt);
                 }
             }
@@ -917,7 +918,7 @@ public class L2NoVlanNetwork implements L2Network {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                evt.setError(err(ORG_ZSTACK_NETWORK_L2_10005, SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                 bus.publish(evt);
             }
         }).start();
@@ -969,7 +970,7 @@ public class L2NoVlanNetwork implements L2Network {
                     L2NetworkVO tl2 = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).find();
                     for (L2NetworkVO l2 : l2s) {
                         if (l2.getPhysicalInterface().equals(tl2.getPhysicalInterface())) {
-                            throw new ApiMessageInterceptionException(argerr("There has been a l2Network[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s]. Failed to attach l2Network[uuid:%s]",
+                            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10006, "There has been a l2Network[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s]. Failed to attach l2Network[uuid:%s]",
                                     l2.getUuid(), l2.getName(), msg.getClusterUuid(), l2.getPhysicalInterface(), tl2.getUuid()));
                         }
                     }
@@ -1002,7 +1003,7 @@ public class L2NoVlanNetwork implements L2Network {
 
                     for (L2VlanNetworkVO vl2 : l2s) {
                         if (vl2.getVlan() == tl2.getVlan() && vl2.getPhysicalInterface().equals(tl2.getPhysicalInterface())) {
-                            throw new OperationFailureException(argerr("There has been a L2VlanNetwork[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s], vlan[%s]. Failed to attach L2VlanNetwork[uuid:%s]",
+                            throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_L2_10007, "There has been a L2VlanNetwork[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s], vlan[%s]. Failed to attach L2VlanNetwork[uuid:%s]",
                                     vl2.getUuid(), vl2.getName(), msg.getClusterUuid(), vl2.getPhysicalInterface(), vl2.getVlan(), tl2.getUuid()));
                         }
                     }

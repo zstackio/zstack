@@ -15,6 +15,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by mingjian.deng on 2018/1/12.
@@ -42,7 +43,7 @@ public class PrimaryStorageDeleteBitGC extends TimeBasedGarbageCollector {
             return;
         }
         if (ps.getStatus() != PrimaryStorageStatus.Connected) {
-            completion.fail(operr("the primary storage[uuid:%s] is not in status of " +
+            completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_10037, "the primary storage[uuid:%s] is not in status of " +
                     "Connected, current status is %s", ps.getUuid(), ps.getStatus().toString()));
             return;
         }

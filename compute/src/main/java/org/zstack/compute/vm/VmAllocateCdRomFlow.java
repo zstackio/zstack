@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Create by lining at 2018/12/26
@@ -53,7 +54,7 @@ public class VmAllocateCdRomFlow implements Flow {
 
         List<Integer> deviceIds = cdRomSpecs.stream().map(CdRomSpec::getDeviceId).distinct().collect(Collectors.toList());
         if (deviceIds.size() < cdRomSpecs.size()) {
-            trigger.fail(operr("vm[uuid:%s] cdRom deviceId repetition",spec.getVmInventory().getUuid()));
+            trigger.fail(operr(ORG_ZSTACK_COMPUTE_VM_10080, "vm[uuid:%s] cdRom deviceId repetition",spec.getVmInventory().getUuid()));
             return;
         }
 

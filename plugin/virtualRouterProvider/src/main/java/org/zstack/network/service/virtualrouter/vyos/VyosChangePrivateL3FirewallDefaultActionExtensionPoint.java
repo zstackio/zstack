@@ -17,6 +17,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.Collections;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VyosChangePrivateL3FirewallDefaultActionExtensionPoint implements VirtualRouterAfterAttachNicExtensionPoint {
     @Autowired
@@ -64,7 +65,7 @@ public class VyosChangePrivateL3FirewallDefaultActionExtensionPoint implements V
                             nic.getIp(), nic.getMac(), nic.getVmInstanceUuid()));
                     completion.success();
                 } else {
-                    ErrorCode err = operr("failed to change nic[ip:%s, mac:%s] firewall default action of virtual router vm[uuid:%s], because %s",
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_VYOS_10003, "failed to change nic[ip:%s, mac:%s] firewall default action of virtual router vm[uuid:%s], because %s",
                             nic.getIp(), nic.getMac(), nic.getVmInstanceUuid(), rsp.getError());
                     completion.fail(err);
                 }

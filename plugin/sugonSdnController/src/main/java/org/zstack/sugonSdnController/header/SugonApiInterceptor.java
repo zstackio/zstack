@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 public class SugonApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
@@ -46,7 +47,7 @@ public class SugonApiInterceptor implements ApiMessageInterceptor, GlobalApiMess
                 .eq(L3NetworkVO_.type, SugonSdnControllerConstant.L3_TF_NETWORK_TYPE).count() > 0){
             String error = String.format("L2Network[%s] still has some L3Networks, please delete L3Networks first.",
                     msg.getL2NetworkUuid());
-            evt.setError(operr(error));
+            evt.setError(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_HEADER_10000, error));
             bus.publish(evt);
             throw new StopRoutingException();
         }
@@ -58,7 +59,7 @@ public class SugonApiInterceptor implements ApiMessageInterceptor, GlobalApiMess
                 .eq(VmNicVO_.type, VmInstanceConstant.TF_VIRTUAL_NIC_TYPE).count() > 0){
             String error = String.format("L3Network[%s] still has some Nics, please delete all Nics first.",
                     msg.getId());
-            evt.setError(operr(error));
+            evt.setError(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_HEADER_10001, error));
             bus.publish(evt);
             throw new StopRoutingException();
         }
@@ -69,7 +70,7 @@ public class SugonApiInterceptor implements ApiMessageInterceptor, GlobalApiMess
         if(Q.New(L2NetworkVO.class).eq(L2NetworkVO_.type, SugonSdnControllerConstant.L2_TF_NETWORK_TYPE).count() > 0){
             String error = String.format("There are some TfL2Networks exists, please delete all TfL2Networks first.",
                     msg.getId());
-            evt.setError(operr(error));
+            evt.setError(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_HEADER_10002, error));
             bus.publish(evt);
             throw new StopRoutingException();
         }

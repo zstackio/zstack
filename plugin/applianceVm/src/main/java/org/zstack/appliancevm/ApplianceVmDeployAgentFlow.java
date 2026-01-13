@@ -35,6 +35,7 @@ import org.zstack.utils.path.PathUtil;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -102,7 +103,7 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
                                 ApplianceVmAsyncHttpCallReply ar = reply.castReply();
                                 InitRsp rsp = ar.toResponse(InitRsp.class);
                                 if (!rsp.isSuccess()) {
-                                    trigger.fail(operr("operation error, because:%s", rsp.getError()));
+                                    trigger.fail(operr(ORG_ZSTACK_APPLIANCEVM_10001, "operation error, because:%s", rsp.getError()));
                                     return;
                                 }
 

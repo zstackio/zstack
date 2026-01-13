@@ -18,6 +18,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 // ExternalBackupStorage is an Addon Backup Storage Instance (`absi').
 //
@@ -50,7 +51,7 @@ public class ExternalBackupStorage extends BackupStorageBase {
             @Override
             public void success(ImageDescriptor d) {
                 if (d.getInstallPath() == null) {
-                    r.setError(Platform.operr("null installPath returned from driver: %s", controller.getIdentity()));
+                    r.setError(Platform.operr(ORG_ZSTACK_STORAGE_ADDON_BACKUP_10000, "null installPath returned from driver: %s", controller.getIdentity()));
                 } else {
                     r.setFormat(d.getFormat());
                     r.setInstallPath(d.getInstallPath());
@@ -108,7 +109,7 @@ public class ExternalBackupStorage extends BackupStorageBase {
                     return;
                 }
 
-                completion.fail(Platform.operr("%s: health state: %s", getSelf().getIdentity(), healthy));
+                completion.fail(Platform.operr(ORG_ZSTACK_STORAGE_ADDON_BACKUP_10001, "%s: health state: %s", getSelf().getIdentity(), healthy));
             }
 
             @Override

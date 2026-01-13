@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class DhcpApply {
     CloudBus bus;
@@ -70,11 +71,11 @@ public class DhcpApply {
                         }
                     }
                     if (!info4.isEmpty() && dhcp4Server == null) {
-                        completion.fail(operr("could not get dhcp4 server ip for l3 network [uuid:%s]", msg.getL3NetworkUuid()));
+                        completion.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10009, "could not get dhcp4 server ip for l3 network [uuid:%s]", msg.getL3NetworkUuid()));
                         return;
                     }
                     if (!info6.isEmpty() && dhcp6Server == null) {
-                        completion.fail(operr("could not get dhcp6 server ip for l3 network [uuid:%s]", msg.getL3NetworkUuid()));
+                        completion.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10010, "could not get dhcp6 server ip for l3 network [uuid:%s]", msg.getL3NetworkUuid()));
                         return;
                     }
 
@@ -211,7 +212,7 @@ public class DhcpApply {
                                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                                 FlatDhcpBackend.PrepareDhcpRsp rsp = ar.toResponse(FlatDhcpBackend.PrepareDhcpRsp.class);
                                 if (!rsp.isSuccess()) {
-                                    c.addError(operr("operation error, because:%s", rsp.getError()));
+                                    c.addError(operr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10011, "operation error, because:%s", rsp.getError()));
                                     c.allDone();
                                     return;
                                 }
@@ -269,7 +270,7 @@ public class DhcpApply {
                                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                                 FlatDhcpBackend.ApplyDhcpRsp rsp = ar.toResponse(FlatDhcpBackend.ApplyDhcpRsp.class);
                                 if (!rsp.isSuccess()) {
-                                    c.addError(operr("operation error, because:%s", rsp.getError()));
+                                    c.addError(operr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10012, "operation error, because:%s", rsp.getError()));
                                     c.allDone();
                                     return;
                                 }

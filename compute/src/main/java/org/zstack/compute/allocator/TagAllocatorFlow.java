@@ -24,6 +24,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -65,7 +66,7 @@ public class TagAllocatorFlow extends AbstractHostAllocatorFlow {
                     tmp = ret;
 
                     if (tmp.isEmpty()) {
-                        fail(Platform.operr("InstanceOfferingTagAllocatorExtensionPoint[%s] return zero candidate host", extp.getClass().getName()));
+                        fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10010, "InstanceOfferingTagAllocatorExtensionPoint[%s] return zero candidate host", extp.getClass().getName()));
                         return;
                     } else {
                         logger.debug(String.format("[Host Allocation]: InstanceOfferingTagAllocatorExtensionPoint[%s] successfully found %s candidate hosts for vm[uuid:%s, name:%s]",
@@ -101,7 +102,7 @@ public class TagAllocatorFlow extends AbstractHostAllocatorFlow {
                     tmp = ret;
 
                     if (tmp.isEmpty()) {
-                        fail(Platform.operr("DiskOfferingTagAllocatorExtensionPoint[%s] return zero candidate host", extp.getClass().getName()));
+                        fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10011, "DiskOfferingTagAllocatorExtensionPoint[%s] return zero candidate host", extp.getClass().getName()));
                         return;
                     } else {
                         logger.debug(String.format("[Host Allocation]: DiskOfferingTagAllocatorExtensionPoint[%s] successfully found %s candidate hosts for vm[uuid:%s, name:%s]",

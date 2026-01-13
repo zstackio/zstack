@@ -96,6 +96,7 @@ import static org.zstack.core.Platform.err;
 import static org.zstack.network.securitygroup.SecurityGroupConstant.Param.*;
 import static org.zstack.network.securitygroup.SecurityGroupMembersTO.ACTION_CODE_DELETE_GROUP;
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class SecurityGroupManagerImpl extends AbstractService implements SecurityGroupManager, ManagementNodeReadyExtensionPoint,
         VmInstanceMigrateExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, ValidateL3SecurityGroupExtensionPoint,
@@ -161,7 +162,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     public void validateSystemtagL3SecurityGroup(String l3Uuid, List<String> securityGroupUuids) {
         if (!Q.New(NetworkServiceL3NetworkRefVO.class).eq(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, l3Uuid)
                 .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE).isExists()) {
-            throw new ApiMessageInterceptionException(argerr("the netwotk service[type:%s] not enabled on the l3Network[uuid:%s]", SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE, l3Uuid));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10124, "the netwotk service[type:%s] not enabled on the l3Network[uuid:%s]", SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE, l3Uuid));
         }
     }
 
@@ -1549,7 +1550,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                         for (SecurityGroupRulePriorityAO ao : msg.getRules()) {
                             SecurityGroupRuleVO vo = rvos.stream().filter(r -> r.getUuid().equals(ao.getRuleUuid())).findFirst().orElse(null);
                             if (vo == null) {
-                                throw new OperationFailureException(operr("failed to chenge rule[uuid:%s] priority, beacuse it's not found", ao.getRuleUuid()));
+                                throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10125, "failed to chenge rule[uuid:%s] priority, beacuse it's not found", ao.getRuleUuid()));
                             }
                             if (ao.getPriority() != vo.getPriority()) {
                                 vo.setPriority(ao.getPriority());
@@ -2733,7 +2734,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 .listValues();
         if (!new HashSet<>(uuids).containsAll(msg.getVmNicUuids())) {
             msg.getVmNicUuids().removeAll(uuids);
-            throw new OperationFailureException(err(SysErrors.RESOURCE_NOT_FOUND,
+            throw new OperationFailureException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10126, SysErrors.RESOURCE_NOT_FOUND,
                     "cannot find vm nics[uuids:%s]", msg.getVmNicUuids()
             ));
         }
@@ -2742,7 +2743,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         if (!refs.isEmpty()) {
             refs.stream().forEach(ref -> {
                 if (uuids.contains(ref.getVmNicUuid())) {
-                    throw new OperationFailureException(argerr("vm nic[uuid:%s] has been attach to security group[uuid:%s]", ref.getVmNicUuid(), msg.getSecurityGroupUuid()));
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10127, "vm nic[uuid:%s] has been attach to security group[uuid:%s]", ref.getVmNicUuid(), msg.getSecurityGroupUuid()));
                 }
             });
         }
@@ -2752,12 +2753,12 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         for(VmNicVO nic : nics) {
             if (!Q.New(NetworkServiceL3NetworkRefVO.class).eq(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, nic.getL3NetworkUuid())
                     .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE).isExists()) {
-                throw new OperationFailureException(argerr("the netwotk service[type:%s] not enabled on the l3Network[uuid:%s] of nic[uuid:%s]", SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE, nic.getL3NetworkUuid(), nic.getUuid()));
+                throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10128, "the netwotk service[type:%s] not enabled on the l3Network[uuid:%s] of nic[uuid:%s]", SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE, nic.getL3NetworkUuid(), nic.getUuid()));
             }
 
             String vmAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(nic.getVmInstanceUuid());
             if (!AccountConstant.isAdminPermission(sgOwnerAccountUuid) && !AccountConstant.isAdminPermission(vmAccountUuid) && !sgOwnerAccountUuid.equals(vmAccountUuid)) {
-                throw new OperationFailureException(argerr("security group[uuid:%s] is not owned by account[uuid:%s] or admin", msg.getSecurityGroupUuid(), vmAccountUuid));
+                throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10129, "security group[uuid:%s] is not owned by account[uuid:%s] or admin", msg.getSecurityGroupUuid(), vmAccountUuid));
             }
         }
 

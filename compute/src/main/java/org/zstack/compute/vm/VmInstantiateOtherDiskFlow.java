@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -92,7 +93,7 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                 } else if (diskAO.getSourceUuid() != null && diskAO.getSourceType() != null) {
                     setupAttachOtherDiskFlows();
                 } else {
-                    trigger.fail(operr("the diskAO parameter is incorrect. need to set one of the following properties, " +
+                    trigger.fail(operr(ORG_ZSTACK_COMPUTE_VM_10060, "the diskAO parameter is incorrect. need to set one of the following properties, " +
                             "and can only be one of them: size, templateUuid, diskOfferingUuid, sourceUuid-sourceType"));
                 }
 
@@ -408,7 +409,7 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                         VmAttachOtherDiskExtensionPoint vmAttachOtherDiskExtensionPoint = pluginRgty
                                 .getExtensionFromMap(diskAO.getSourceType(), VmAttachOtherDiskExtensionPoint.class);
                         if (vmAttachOtherDiskExtensionPoint == null) {
-                            innerTrigger.fail(operr("the disk does not support attachment. disk type is %s", diskAO.getSourceType()));
+                            innerTrigger.fail(operr(ORG_ZSTACK_COMPUTE_VM_10061, "the disk does not support attachment. disk type is %s", diskAO.getSourceType()));
                             return;
                         }
                         vmAttachOtherDiskExtensionPoint.attachOtherDiskToVm(diskAO, vmUuid, new Completion(innerTrigger) {

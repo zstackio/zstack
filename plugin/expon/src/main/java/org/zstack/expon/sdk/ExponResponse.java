@@ -4,6 +4,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.expon.ExponError;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class ExponResponse {
     protected String retCode;
@@ -30,7 +31,7 @@ public class ExponResponse {
     }
 
     public ErrorCode getError() {
-        return operr(message);
+        return operr(ORG_ZSTACK_EXPON_SDK_10000, message);
     }
 
     public boolean sessionExpired() {

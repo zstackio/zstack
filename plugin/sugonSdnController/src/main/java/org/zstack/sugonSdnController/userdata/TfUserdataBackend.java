@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by fuwei on 11/15/2022.
@@ -188,7 +189,7 @@ public class TfUserdataBackend implements UserdataBackend, KVMHostConnectExtensi
                     @Override
                     public ErrorCode getError(KvmResponseWrapper wrapper) {
                         AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
-                        return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
+                        return rsp.isSuccess() ? null : operr(ORG_ZSTACK_SUGONSDNCONTROLLER_USERDATA_10000, "operation error, because:%s", rsp.getError());
                     }
                 }, new ReturnValueCompletion<KvmResponseWrapper>(trigger) {
                     @Override
@@ -263,7 +264,7 @@ public class TfUserdataBackend implements UserdataBackend, KVMHostConnectExtensi
             }
 
             if (status != HostStatus.Connected) {
-                completion.fail(operr("host[uuid:%s] is not connected", struct.getHostUuid()));
+                completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_USERDATA_10001, "host[uuid:%s] is not connected", struct.getHostUuid()));
                 return;
             }
 
@@ -288,7 +289,7 @@ public class TfUserdataBackend implements UserdataBackend, KVMHostConnectExtensi
                     KVMHostAsyncHttpCallReply r = reply.castReply();
                     ReleaseUserdataRsp rsp = r.toResponse(ReleaseUserdataRsp.class);
                     if (!rsp.isSuccess()) {
-                        completion.fail(operr("operation error, because:%s", rsp.getError()));
+                        completion.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_USERDATA_10002, "operation error, because:%s", rsp.getError()));
                         return;
                     }
 
@@ -469,7 +470,7 @@ public class TfUserdataBackend implements UserdataBackend, KVMHostConnectExtensi
                                 KVMHostAsyncHttpCallReply r = reply.castReply();
                                 ApplyUserdataRsp rsp = r.toResponse(ApplyUserdataRsp.class);
                                 if (!rsp.isSuccess()) {
-                                    trigger.fail(operr("operation error, because:%s", rsp.getError()));
+                                    trigger.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_USERDATA_10003, "operation error, because:%s", rsp.getError()));
                                     return;
                                 }
 
@@ -535,7 +536,7 @@ public class TfUserdataBackend implements UserdataBackend, KVMHostConnectExtensi
                                 KVMHostAsyncHttpCallReply r = reply.castReply();
                                 ReleaseUserdataRsp rsp = r.toResponse(ReleaseUserdataRsp.class);
                                 if (!rsp.isSuccess()) {
-                                    trigger.fail(operr("operation error, because:%s", rsp.getError()));
+                                    trigger.fail(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_USERDATA_10004, "operation error, because:%s", rsp.getError()));
                                     return;
                                 }
 

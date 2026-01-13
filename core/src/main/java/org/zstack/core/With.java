@@ -18,8 +18,9 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.inerr;
-/**
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;/**
  */
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class With {
     private static final CLogger logger = Utils.getLogger(With.class);
@@ -51,7 +52,7 @@ public class With {
             logger.warn(String.format("unhandled exception happened"), t);
         }
 
-        ErrorCode err = inerr(t.getMessage());
+        ErrorCode err = inerr(ORG_ZSTACK_CORE_10001, t.getMessage());
         if (backup instanceof Completion) {
             ((Completion)backup).fail(err);
         } else if (backup instanceof ReturnValueCompletion) {

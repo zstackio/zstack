@@ -80,6 +80,7 @@ import static org.zstack.core.progress.ProgressReportService.getTaskStage;
 import static org.zstack.core.progress.ProgressReportService.markTaskStage;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 7/28/2015.
@@ -334,7 +335,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
         if (cto.getMonInfo().isEmpty()) {
             throw new OperationFailureException(operr(
-                    "cannot find any Connected ceph mon for the primary storage[uuid:%s]", pri.getUuid()
+            ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10035,         "cannot find any Connected ceph mon for the primary storage[uuid:%s]", pri.getUuid()
             ));
         }
 
@@ -381,7 +382,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
         if (cto.getMonInfo().isEmpty()) {
             throw new OperationFailureException(operr(
-                    "cannot find any Connected ceph mon for the primary storage[uuid:%s]", pri.getUuid()
+            ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10036,         "cannot find any Connected ceph mon for the primary storage[uuid:%s]", pri.getUuid()
             ));
         }
 
@@ -401,7 +402,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
         if (ts.isEmpty() || ts.stream().noneMatch(t -> t.get(2, MonStatus.class) == MonStatus.Connected)) {
             throw new OperationFailureException(operr(
-                    "cannot find any Connected ceph mon for the primary storage[uuid:%s]", vol.getPrimaryStorageUuid())
+            ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10037,         "cannot find any Connected ceph mon for the primary storage[uuid:%s]", vol.getPrimaryStorageUuid())
             );
         }
 
@@ -747,7 +748,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             flowData.put(VolumeSnapshotConstant.NEED_BLOCK_STREAM_ON_HYPERVISOR, false);
             flowData.put(VolumeSnapshotConstant.NEED_TAKE_SNAPSHOTS_ON_HYPERVISOR, false);
         } else if (msg.getConsistentType() != ConsistentType.None) {
-            completion.fail(operr("not support take volumes snapshots " +
+            completion.fail(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10038, "not support take volumes snapshots " +
                     "on multiple ps when including ceph"));
             return;
         }
@@ -842,7 +843,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                     String cephPoolName = SystemTagUtils.findTagValue(msg.getRootVolumeSystemTags(), CephSystemTags.USE_CEPH_ROOT_POOL, CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN);
                     String targetCephPoolName = primaryStorageAllocateConfig.getPoolNames().get(0);
                     if (cephPoolName != null && !cephPoolName.equals(targetCephPoolName)) {
-                        throw new OperationFailureException(operr("ceph pool conflict, the ceph pool specified by the instance offering is %s, and the ceph pool specified in the creation parameter is %s"
+                        throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10039, "ceph pool conflict, the ceph pool specified by the instance offering is %s, and the ceph pool specified in the creation parameter is %s"
                                 ,targetCephPoolName, cephPoolName));
                     }
 
@@ -891,7 +892,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         String cephPoolName = SystemTagUtils.findTagValue(msg.getRootVolumeSystemTags(), CephSystemTags.USE_CEPH_ROOT_POOL, CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN);
         String targetCephPoolName = primaryStorageAllocateConfig.getPoolNames().get(0);
         if (cephPoolName != null && !cephPoolName.equals(targetCephPoolName)) {
-            throw new OperationFailureException(operr("ceph pool conflict, the ceph pool specified by the disk offering is %s, and the ceph pool specified in the creation parameter is %s"
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10040, "ceph pool conflict, the ceph pool specified by the disk offering is %s, and the ceph pool specified in the creation parameter is %s"
                     ,targetCephPoolName, cephPoolName));
         }
 
@@ -968,7 +969,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             String cephPoolName = SystemTagUtils.findTagValue(msg.getSystemTags(), CephSystemTags.USE_CEPH_ROOT_POOL, CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN);
             String targetCephPoolName = primaryStorageAllocateConfig.getPoolNames().get(0);
             if (cephPoolName != null && !cephPoolName.equals(targetCephPoolName)) {
-                throw new OperationFailureException(operr("ceph pool conflict, the ceph pool specified by the disk offering is %s, and the ceph pool specified in the creation parameter is %s"
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10041, "ceph pool conflict, the ceph pool specified by the disk offering is %s, and the ceph pool specified in the creation parameter is %s"
                         ,targetCephPoolName, cephPoolName));
             }
 
@@ -1221,7 +1222,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    completion.fail(operr("get rootVolume[%s] rbd image watchers fail, %s",
+                    completion.fail(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10042, "get rootVolume[%s] rbd image watchers fail, %s",
                             rootVolume.getInstallPath(), reply.getError().getDetails()));
                     return;
                 }
@@ -1237,7 +1238,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                         .eq(VolumeVO_.uuid, msg.getVolumeUuid())
                         .select(VolumeVO_.installPath)
                         .findValue();
-                completion.fail(operr("rootVolume[%s] is already in use(ceph rbd image[%s] already has watchers), in order to prevent brain splitting, Starting VM is prohibited.",
+                completion.fail(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10043, "rootVolume[%s] is already in use(ceph rbd image[%s] already has watchers), in order to prevent brain splitting, Starting VM is prohibited.",
                     msg.getVolumeUuid(), installPath));
             }
         });
@@ -1347,7 +1348,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         List<CephPrimaryStoragePoolVO> poolVOS = q.list();
 
         if (poolVOS.size() == 0) {
-            throw new OperationFailureException(operr("cannot find cephPrimaryStorage pool[poolName=%s]", poolName));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10044, "cannot find cephPrimaryStorage pool[poolName=%s]", poolName));
         }
 
         return poolVOS.get(0);
@@ -1357,7 +1358,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         CephPrimaryStoragePoolVO poolVO = getPoolFromPoolName(poolName, psUuid, null);
 
         if (!new CephOsdGroupCapacityHelper(psUuid).checkVirtualSizeByRatio(poolVO.getUuid(), volumeSize)) {
-            throw new OperationFailureException(operr("cephPrimaryStorage pool[poolName=%s] available virtual capacity not enough for size %s",
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10045, "cephPrimaryStorage pool[poolName=%s] available virtual capacity not enough for size %s",
                     poolName, volumeSize));
         }
     }
@@ -1405,7 +1406,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             return makePreAllocatedInstallUrl(getImageCachePoolTargetPoolName(psUuid, msg.getSize()));
         }
 
-        throw new OperationFailureException(operr("cannot allocate pool for primaryStorage[%s], purpose: %s", psUuid, purpose));
+        throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10046, "cannot allocate pool for primaryStorage[%s], purpose: %s", psUuid, purpose));
     }
 
     private String makePreAllocatedInstallUrl(String poolName) {

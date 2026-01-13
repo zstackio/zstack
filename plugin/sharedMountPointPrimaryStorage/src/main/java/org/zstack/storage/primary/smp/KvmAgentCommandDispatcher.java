@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by david on 7/22/16.
@@ -66,7 +67,7 @@ public class KvmAgentCommandDispatcher {
         this.primaryStorageUuid = psUuid;
         hostUuids = findConnectedHosts(50);
         if (hostUuids.isEmpty()) {
-            throw new OperationFailureException(operr("cannot find any connected host to perform the operation, it seems all KVM hosts" +
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10011, "cannot find any connected host to perform the operation, it seems all KVM hosts" +
                             " in the clusters attached with the shared mount point storage[uuid:%s] are disconnected",
                     this.primaryStorageUuid));
         }
@@ -99,7 +100,7 @@ public class KvmAgentCommandDispatcher {
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 final T rsp = r.toResponse(rspType);
                 if (!rsp.success) {
-                    completion.fail(operr("operation error, because:%s", rsp.error));
+                    completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10012, "operation error, because:%s", (String) rsp.error));
                     return;
                 }
 

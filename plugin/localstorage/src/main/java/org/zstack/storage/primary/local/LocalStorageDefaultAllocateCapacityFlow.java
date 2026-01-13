@@ -43,6 +43,7 @@ import java.util.*;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 7/2/2015.
@@ -97,7 +98,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
         if(result.isEmpty()){
             String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid)
                     .eq(HostVO_.uuid, hostUuid).findValue();
-            throw new OperationFailureException(operr("There is no LocalStorage primary storage[state=%s,status=%s] on the cluster[%s], when the cluster mounts multiple primary storage, the system uses the local primary storage by default. Check the state/status of primary storage and make sure they have been attached to clusters"
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10083, "There is no LocalStorage primary storage[state=%s,status=%s] on the cluster[%s], when the cluster mounts multiple primary storage, the system uses the local primary storage by default. Check the state/status of primary storage and make sure they have been attached to clusters"
                     , PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, clusterUuid));
         }
         return result.get(0);
@@ -116,7 +117,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
                 .eq(PrimaryStorageVO_.uuid, psUuid)
                 .eq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)
                 .isExists()){
-            throw new OperationFailureException(argerr("the type of primary storage[uuid:%s] chosen is not local storage, " +
+            throw new OperationFailureException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10084, "the type of primary storage[uuid:%s] chosen is not local storage, " +
                     "check if the resource can be created on other storage when cluster has attached local primary storage", psUuid));
         }else {
             return getMostFreeLocalStorageUuid(hostUuid);
@@ -184,7 +185,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
                     PrimaryStorageVO requiredPrimaryStorageUuidForDataVolume = dbf.findByUuid(spec.getRequiredPrimaryStorageUuidForDataVolume(), PrimaryStorageVO.class);
                     // data volume ps set local
                     if(requiredPrimaryStorageUuidForDataVolume.getType().equals(LocalStorageConstants.LOCAL_STORAGE_TYPE)){
-                        ErrorCode errorCode = operr("The cluster mounts multiple primary storage[%s(%s), other non-LocalStorage primary storage], primaryStorageUuidForDataVolume cannot be specified %s",
+                        ErrorCode errorCode = operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10085, "The cluster mounts multiple primary storage[%s(%s), other non-LocalStorage primary storage], primaryStorageUuidForDataVolume cannot be specified %s",
                                 requiredPrimaryStorageUuidForDataVolume.getUuid(), requiredPrimaryStorageUuidForDataVolume.getType(),
                                 LocalStorageConstants.LOCAL_STORAGE_TYPE);
                         trigger.fail(errorCode);

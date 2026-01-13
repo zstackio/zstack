@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
     private static final CLogger logger = Utils.getLogger(VmInstanceDeviceManagerImpl.class);
@@ -42,7 +43,7 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
         }
 
         if (resourceUuid == null || vmInstanceUuid == null) {
-            throw new OperationFailureException(operr("missing parameter, resourceUuid: %s, vmInstanceUuid: %s is requested", resourceUuid, vmInstanceUuid));
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10000, "missing parameter, resourceUuid: %s, vmInstanceUuid: %s is requested", resourceUuid, vmInstanceUuid));
         }
 
         ErrorCode errorCode = checkParams(vmInstanceUuid, resourceUuid);
@@ -114,7 +115,7 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
     @Override
     public ErrorCode deleteVmDeviceAddress(String resourceUuid, String vmInstanceUuid) {
         if (resourceUuid == null || vmInstanceUuid == null) {
-            return operr("missing parameter, resourceUuid: %s, vmInstanceUuid: %s is requested", resourceUuid, vmInstanceUuid);
+            return operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10001, "missing parameter, resourceUuid: %s, vmInstanceUuid: %s is requested", resourceUuid, vmInstanceUuid);
         }
 
         ErrorCode errorCode = checkParams(vmInstanceUuid, resourceUuid);
@@ -133,7 +134,7 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
     @Override
     public ErrorCode deleteVmDeviceAddress(String resourceUuid) {
         if (resourceUuid == null) {
-            return operr("missing parameter, resourceUuid is requested");
+            return operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10002, "missing parameter, resourceUuid is requested");
         }
 
         SQL.New(VmInstanceDeviceAddressVO.class)
@@ -146,11 +147,11 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
     @Override
     public ErrorCode deleteAllDeviceAddressesByVm(String vmInstanceUuid) {
         if (vmInstanceUuid == null) {
-            return operr("missing parameter, vmInstanceUuid: %s is requested", vmInstanceUuid);
+            return operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10003, "missing parameter, vmInstanceUuid: %s is requested", vmInstanceUuid);
         }
 
         if (!vmExists(vmInstanceUuid)) {
-            return operr("cannot find vm with uuid: %s", vmInstanceUuid);
+            return operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10004, "cannot find vm with uuid: %s", vmInstanceUuid);
         }
 
         SQL.New(VmInstanceDeviceAddressVO.class)
@@ -163,11 +164,11 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
     @Override
     public ErrorCode deleteDeviceAddressesByVmModifyVirtIO(String vmInstanceUuid) {
         if (vmInstanceUuid == null) {
-            return operr("missing parameter, vmInstanceUuid: %s is requested", vmInstanceUuid);
+            return operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10005, "missing parameter, vmInstanceUuid: %s is requested", vmInstanceUuid);
         }
 
         if (!vmExists(vmInstanceUuid)) {
-            return operr("cannot find vm with uuid: %s", vmInstanceUuid);
+            return operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10006, "cannot find vm with uuid: %s", vmInstanceUuid);
         }
 
         VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmInstanceUuid).find();
@@ -367,11 +368,11 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
         }
 
         if (!vmExists(vmInstanceUuid)) {
-            return operr("cannot find vm with uuid: %s", vmInstanceUuid);
+            return operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10007, "cannot find vm with uuid: %s", vmInstanceUuid);
         }
 
         if (!vmDeviceExists(resourceUuid)) {
-            return operr("cannot find vm device with uuid: %s", resourceUuid);
+            return operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10008, "cannot find vm device with uuid: %s", resourceUuid);
         }
 
         return null;

@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -97,7 +98,7 @@ public class ZoneCascadeExtension extends AbstractAsyncCascadeExtension {
 
             completion.success();
         } catch (ZoneException e) {
-            completion.fail(inerr(e.getMessage()));
+            completion.fail(inerr(ORG_ZSTACK_COMPUTE_ZONE_10003, e.getMessage()));
         }
     }
 

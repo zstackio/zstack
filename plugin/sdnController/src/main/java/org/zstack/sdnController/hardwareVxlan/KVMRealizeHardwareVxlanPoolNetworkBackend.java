@@ -25,6 +25,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class KVMRealizeHardwareVxlanPoolNetworkBackend implements L2NetworkRealizationExtensionPoint, KVMCompleteNicInformationExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KVMRealizeHardwareVxlanPoolNetworkBackend.class);
@@ -62,7 +63,7 @@ public class KVMRealizeHardwareVxlanPoolNetworkBackend implements L2NetworkReali
 
                 CheckNetworkPhysicalInterfaceReply rsp = reply.castReply();
                 if (!rsp.isSuccess()) {
-                    ErrorCode err = operr("failed to check physical interface for HardwareVxlanPool[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
+                    ErrorCode err = operr(ORG_ZSTACK_SDNCONTROLLER_HARDWAREVXLAN_10007, "failed to check physical interface for HardwareVxlanPool[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
                             l2Network.getUuid(), l2Network.getName(), hostUuid, rsp.getError());
                     completion.fail(err);
                     return;

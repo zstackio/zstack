@@ -22,6 +22,7 @@ import java.util.*;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 public class HostRouteExtension extends AbstractNetworkServiceExtension implements Component, Service {
@@ -85,7 +86,7 @@ public class HostRouteExtension extends AbstractNetworkServiceExtension implemen
         L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class));
         NetworkServiceProviderType ptype = getNetworkServiceProviderType(NetworkServiceType.HostRoute, l3);
         if (ptype == null) {
-            reply.setError(operr("L3Network [uuid: %s] provide type null", msg.getL3NetworkUuid()));
+            reply.setError(operr(ORG_ZSTACK_NETWORK_SERVICE_10000, "L3Network [uuid: %s] provide type null", msg.getL3NetworkUuid()));
             bus.reply(msg, reply);
             return;
         }
@@ -110,7 +111,7 @@ public class HostRouteExtension extends AbstractNetworkServiceExtension implemen
         L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class));
         NetworkServiceProviderType ptype = getNetworkServiceProviderType(NetworkServiceType.HostRoute, l3);
         if (ptype == null) {
-            reply.setError(operr("L3Network [uuid: %s] does not have host route service", msg.getL3NetworkUuid()));
+            reply.setError(operr(ORG_ZSTACK_NETWORK_SERVICE_10001, "L3Network [uuid: %s] does not have host route service", msg.getL3NetworkUuid()));
             bus.reply(msg, reply);
             return;
         }

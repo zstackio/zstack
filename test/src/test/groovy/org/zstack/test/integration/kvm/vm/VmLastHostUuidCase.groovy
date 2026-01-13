@@ -1,5 +1,7 @@
 package org.zstack.test.integration.kvm.vm
 
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.header.allocator.AllocateHostMsg
@@ -180,7 +182,7 @@ class VmLastHostUuidCase extends SubCase{
     void testStartVmAllocateHostFailHostUuid(){
         env.message(AllocateHostMsg.class) { AllocateHostMsg msg, CloudBus bus ->
             def reply = new AllocateHostReply()
-            reply.setError(operr("allocate host fail"))
+            reply.setError(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_KVM_VM_10001, "allocate host fail"))
             bus.reply(msg, reply)
         }
         testStartVmExpect(false, host1.uuid, null, host2.uuid)
@@ -210,7 +212,7 @@ class VmLastHostUuidCase extends SubCase{
     void testMigrateVmAllocateHostFailHostUuid(){
         env.message(AllocateHostMsg.class) { AllocateHostMsg msg, CloudBus bus ->
             def reply = new AllocateHostReply()
-            reply.setError(operr("allocate host fail"))
+            reply.setError(org.zstack.core.Platform.operr(ORG_ZSTACK_TEST_INTEGRATION_KVM_VM_10002, "allocate host fail"))
             bus.reply(msg, reply)
         }
         testMigrateVmExpect(false, host1.uuid, host2.uuid, host1.uuid)

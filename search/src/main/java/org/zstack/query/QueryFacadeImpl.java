@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class QueryFacadeImpl extends AbstractService implements QueryFacade, GlobalApiMessageInterceptor, MarshalReplyMessageExtensionPoint {
     private static CLogger logger = Utils.getLogger(QueryFacadeImpl.class);
@@ -331,7 +332,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                 setter = replyClass.getDeclaredMethod("setInventories", List.class);
                 if (setter == null) {
                     throw new OperationFailureException(inerr(
-                            "query reply[%s] has no method setInventories()", replyClass.getName()
+                    ORG_ZSTACK_QUERY_10012,         "query reply[%s] has no method setInventories()", replyClass.getName()
                     ));
                 }
                 setter.setAccessible(true);
@@ -343,7 +344,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             throw of;
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
-            throw new OperationFailureException(inerr(e.getMessage()));
+            throw new OperationFailureException(inerr(ORG_ZSTACK_QUERY_10013, e.getMessage()));
         }
     }
 
@@ -353,7 +354,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             at = msg.getClass().getAnnotation(AutoQuery.class);
             if (at == null) {
                 throw new OperationFailureException(inerr(
-                        "message[%s] is not annotated by @AutoQuery", msg.getClass()
+                ORG_ZSTACK_QUERY_10014,         "message[%s] is not annotated by @AutoQuery", msg.getClass()
                 ));
             }
             autoQueryMap.put(msg.getClass(), at);
@@ -516,7 +517,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
 
     private QueryBelongFilter validateFilterNameAndGetExp(String filterName) {
         if (filterName.split(":").length < 2) {
-            throw new OperationFailureException(argerr("filterName must be formatted as [filterType:condition(s)]"));
+            throw new OperationFailureException(argerr(ORG_ZSTACK_QUERY_10015, "filterName must be formatted as [filterType:condition(s)]"));
         }
         return getBelongFilter(filterName);
     }
@@ -652,11 +653,11 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             try {
                 QueryOp.valueOf(cond.getOp());
             } catch (IllegalArgumentException e) {
-                throw new ApiMessageInterceptionException(argerr(e.getMessage()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_QUERY_10016, e.getMessage()));
             }
 
             if (!QueryOp.NOT_NULL.equals(cond.getOp()) && !QueryOp.IS_NULL.equals(cond.getOp()) && cond.getValue() == null) {
-                throw new ApiMessageInterceptionException(argerr("'value' of query condition %s cannot be null",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_QUERY_10017, "'value' of query condition %s cannot be null",
                                 JSONObjectUtil.toJsonString(cond)));
             }
         }

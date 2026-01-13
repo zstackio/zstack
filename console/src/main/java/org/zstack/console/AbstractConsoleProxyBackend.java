@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -119,7 +120,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
     @Override
     public void grantConsoleAccess(final SessionInventory session, final VmInstanceInventory vm, final ReturnValueCompletion<ConsoleInventory> complete) {
         if (!isAgentConnected()) {
-            complete.fail(operr("the console agent is not connected; it's mostly like the management node just starts, " +
+            complete.fail(operr(ORG_ZSTACK_CONSOLE_10011, "the console agent is not connected; it's mostly like the management node just starts, " +
                     "please wait for the console agent connected, or you can reconnect it manually if disconnected for a long time."
             ));
             return;
@@ -146,7 +147,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
 
         String hostIp = getHostIp(vm);
         if (hostIp == null) {
-            throw new OperationFailureException(operr("cannot find host IP of the vm[uuid:%s], is the vm running???", vm.getUuid()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_CONSOLE_10012, "cannot find host IP of the vm[uuid:%s], is the vm running???", vm.getUuid()));
         }
 
         if (vo.getTargetHostname().equals(hostIp)) {

@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by camile on 2017/12/14.
@@ -74,7 +75,7 @@ public class MacOperator {
 
     private boolean isMulticastMac(String mac) {
         if (!pattern.matcher(mac.toLowerCase()).matches()){
-            throw new OperationFailureException(operr("This is not a valid MAC address [%s]", mac));
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10225, "This is not a valid MAC address [%s]", mac));
         }
         String binaryString = new BigInteger(mac.substring(0,2), 16).toString(2);
         return binaryString.substring(binaryString.length() - 1).equals("1");
@@ -84,13 +85,13 @@ public class MacOperator {
         String lowercaseMac = mac.toLowerCase();
         Matcher matcher = pattern.matcher(lowercaseMac);
         if (!matcher.matches()) {
-            throw new OperationFailureException(operr("Not a valid MAC address [%s]", mac));
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10226, "Not a valid MAC address [%s]", mac));
         }
         if ("00:00:00:00:00:00".equals(lowercaseMac) || "ff:ff:ff:ff:ff:ff".equals(lowercaseMac)) {
-            throw new OperationFailureException(operr("Disallowed address"));
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10227, "Disallowed address"));
         }
         if (isMulticastMac(lowercaseMac)){
-            throw new OperationFailureException(operr("Expected unicast mac address, found multicast MAC address [%s]", mac));
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10228, "Expected unicast mac address, found multicast MAC address [%s]", mac));
         }
     }
 

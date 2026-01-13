@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
     private static final CLogger logger = Utils.getLogger(UpgradeChecker.class);
@@ -207,7 +208,7 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
             if (className != null && grayScaleApiWhiteList
                     .stream()
                     .noneMatch(className::contains)) {
-                return operr("Api: %s is not allowed by allowedApiListGrayscaleUpgrading: %s.",
+                return operr(ORG_ZSTACK_CORE_UPGRADE_10000, "Api: %s is not allowed by allowedApiListGrayscaleUpgrading: %s.",
                         className,
                         grayScaleApiWhiteList);
             }
@@ -292,7 +293,7 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("This operation is not allowed on host[uuid:%s] during grayscale upgrade: \n", agentUuid));
             entries.forEach(entry -> sb.append(String.format("field: %s, current agent version %s, support version: %s\n", entry.getKey(), agentVersionVO.getCurrentVersion(), entry.getValue())));
-            return operr(sb.toString());
+            return operr(ORG_ZSTACK_CORE_UPGRADE_10001, sb.toString());
         }
 
         return null;
@@ -391,7 +392,7 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
 
         if (msg.getHostUuid() == null) {
             throw new ApiMessageInterceptionException(
-                    argerr("Disable grayscale upgrade by %s \n before you want to update whole cluster's hosts' os." +
+                    argerr(ORG_ZSTACK_CORE_UPGRADE_10002, "Disable grayscale upgrade by %s \n before you want to update whole cluster's hosts' os." +
                             " Or try update cluster os with specific hostUuid instead.", UpgradeGlobalConfig.GRAYSCALE_UPGRADE.toString())
             );
         }
@@ -402,7 +403,7 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
 
         if (agent == null) {
             throw new ApiMessageInterceptionException(
-                    argerr("Can not found agent version, upgrade cluster os is not supported during grayscale upgrade")
+                    argerr(ORG_ZSTACK_CORE_UPGRADE_10003, "Can not found agent version, upgrade cluster os is not supported during grayscale upgrade")
             );
         }
 
@@ -411,7 +412,7 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
         }
 
         throw new ApiMessageInterceptionException(
-                argerr("Host[uuid: %s] agent version is not upgraded, please reconnect host before update os", msg.getHostUuid())
+                argerr(ORG_ZSTACK_CORE_UPGRADE_10004, "Host[uuid: %s] agent version is not upgraded, please reconnect host before update os", msg.getHostUuid())
         );
     }
 

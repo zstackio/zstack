@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class ExternalServiceManagerImpl extends AbstractService implements ExternalServiceManager {
     @Autowired
@@ -29,7 +30,7 @@ public class ExternalServiceManagerImpl extends AbstractService implements Exter
     @Override
     public ExternalService registerService(ExternalService service) {
         if (services.containsKey(service.getName())) {
-            throw new OperationFailureException(operr("service[%s] has been registered", service.getName()));
+            throw new OperationFailureException(operr(ORG_ZSTACK_CORE_EXTERNALSERVICE_10000, "service[%s] has been registered", service.getName()));
         }
 
         services.put(service.getName(), service);
@@ -90,19 +91,19 @@ public class ExternalServiceManagerImpl extends AbstractService implements Exter
         APIReloadExternalServiceEvent event = new APIReloadExternalServiceEvent(msg.getId());
         ExternalService service = services.get(msg.getName());
         if (service == null) {
-            event.setError(operr("service[%s] is not registered", msg.getName()));
+            event.setError(operr(ORG_ZSTACK_CORE_EXTERNALSERVICE_10001, "service[%s] is not registered", msg.getName()));
             bus.publish(event);
             return;
         }
 
         if (!service.getExternalServiceCapabilities().isReloadConfig()) {
-            event.setError(operr("service[%s] does not support reload config", msg.getName()));
+            event.setError(operr(ORG_ZSTACK_CORE_EXTERNALSERVICE_10002, "service[%s] does not support reload config", msg.getName()));
         }
 
         if (service.isAlive()) {
             service.reload();
         } else {
-            event.setError(operr("service[%s] is not running", msg.getName()));
+            event.setError(operr(ORG_ZSTACK_CORE_EXTERNALSERVICE_10003, "service[%s] is not running", msg.getName()));
         }
 
         bus.publish(event);

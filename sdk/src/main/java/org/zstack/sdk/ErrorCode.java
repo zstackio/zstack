@@ -68,4 +68,12 @@ public class ErrorCode  {
         return this.opaque;
     }
 
+    public java.lang.String globalErrorCode;
+    public void setGlobalErrorCode(java.lang.String globalErrorCode) {
+        this.globalErrorCode = globalErrorCode;
+    }
+    public java.lang.String getGlobalErrorCode() {
+        return this.globalErrorCode;
+    }
+
 }

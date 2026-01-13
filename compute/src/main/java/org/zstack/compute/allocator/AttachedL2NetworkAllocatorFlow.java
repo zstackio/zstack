@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.Utils;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -172,7 +173,7 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
         }
 
         if (candidates.isEmpty()) {
-            fail(Platform.operr("no host found in clusters that has attached to L2Networks which have L3Networks%s", spec.getL3NetworkUuids()));
+            fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10027, "no host found in clusters that has attached to L2Networks which have L3Networks%s", spec.getL3NetworkUuids()));
         } else {
             next(candidates);
         }

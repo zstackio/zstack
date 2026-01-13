@@ -21,6 +21,7 @@ import static org.zstack.core.Platform.argerr;
 
 import java.util.ArrayList;
 import java.util.List;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class SftpBackupStorageFactory implements BackupStorageFactory, GlobalApiMessageInterceptor, Component {
     private static final CLogger logger = Utils.getLogger(SftpBackupStorageFactory.class);
@@ -81,7 +82,7 @@ public class SftpBackupStorageFactory implements BackupStorageFactory, GlobalApi
                 APIAddSftpBackupStorageMsg amsg = (APIAddSftpBackupStorageMsg) msg;
                 String url = amsg.getUrl();
                 if (!url.startsWith("/")) {
-                    ErrorCode err = argerr("invalid url[%s], the url must be an absolute path starting with '/'", amsg.getUrl());
+                    ErrorCode err = argerr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10013, "invalid url[%s], the url must be an absolute path starting with '/'", amsg.getUrl());
                     throw new ApiMessageInterceptionException(err);
                 }
 
@@ -90,7 +91,7 @@ public class SftpBackupStorageFactory implements BackupStorageFactory, GlobalApi
                 query.add(SftpBackupStorageVO_.hostname, Op.EQ, hostname);
                 long count = query.count();
                 if (count != 0) {
-                    ErrorCode err = argerr("existing SimpleHttpBackupStorage with hostname[%s] found", hostname);
+                    ErrorCode err = argerr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10014, "existing SimpleHttpBackupStorage with hostname[%s] found", hostname);
                     throw new ApiMessageInterceptionException(err);
                 }
             }

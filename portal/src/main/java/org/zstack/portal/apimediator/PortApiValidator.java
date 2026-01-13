@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class PortApiValidator implements ApiMessageValidator, Ordered {
     @Autowired
@@ -60,8 +61,8 @@ public class PortApiValidator implements ApiMessageValidator, Ordered {
                         }
 
                         if (!invalids.isEmpty()) {
-                            throw new ApiMessageInterceptionException(err(SysErrors.RESOURCE_NOT_FOUND,
-                                    "invalid field[%s], resource[uuids:%s, type:%s] not found", f.getName(), invalids, at.resourceType().getSimpleName()
+                            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_PORTAL_APIMEDIATOR_10000, SysErrors.RESOURCE_NOT_FOUND,
+                                    "invalid field[%s], resource[uuids:%s, type:%s] not found", f.getName(), invalids, (String) at.resourceType().getSimpleName()
                             ));
                         }
                     }
@@ -81,7 +82,7 @@ public class PortApiValidator implements ApiMessageValidator, Ordered {
                         Pattern p = Pattern.compile("[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}");
                         Matcher mt = p.matcher(value.toString());
                         if (!mt.matches()){
-                            throw new ApiMessageInterceptionException(err(SysErrors.RESOURCE_NOT_FOUND,
+                            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_PORTAL_APIMEDIATOR_10001, SysErrors.RESOURCE_NOT_FOUND,
                                     "invalid value[%s] of field [%s]", value, f.getName()));
                         }
 
@@ -95,8 +96,8 @@ public class PortApiValidator implements ApiMessageValidator, Ordered {
                         bus.publish(evt);
                         throw new StopRoutingException();
                     } else {
-                        throw new ApiMessageInterceptionException(err(SysErrors.RESOURCE_NOT_FOUND,
-                                "invalid field[%s], resource[uuid:%s, type:%s] not found", f.getName(), value, at.resourceType().getSimpleName()
+                        throw new ApiMessageInterceptionException(err(ORG_ZSTACK_PORTAL_APIMEDIATOR_10002, SysErrors.RESOURCE_NOT_FOUND,
+                                "invalid field[%s], resource[uuid:%s, type:%s] not found", f.getName(), value, (String) at.resourceType().getSimpleName()
                         ));
                     }
                 }

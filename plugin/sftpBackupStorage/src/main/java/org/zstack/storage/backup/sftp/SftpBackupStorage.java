@@ -43,6 +43,7 @@ import java.util.List;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.header.storage.backup.BackupStorageConstant.RESTORE_IMAGES_BACKUP_STORAGE_METADATA_TO_DATABASE;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class SftpBackupStorage extends BackupStorageBase {
     private static final CLogger logger = Utils.getLogger(SftpBackupStorage.class);
@@ -105,7 +106,7 @@ public class SftpBackupStorage extends BackupStorageBase {
             URI uri = new URI(url);
             String scheme = uri.getScheme();
             if (!SftpBackupStorageFactory.type.getSupportedSchemes().contains(scheme)) {
-                throw new OperationFailureException(operr("SftpBackupStorage doesn't support scheme[%s] in url[%s]", scheme, url));
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10000, "SftpBackupStorage doesn't support scheme[%s] in url[%s]", scheme, url));
             }
 
             DownloadCmd cmd = new DownloadCmd();
@@ -134,7 +135,7 @@ public class SftpBackupStorage extends BackupStorageBase {
                         completion.success(res);
                     } else {
                         completion.fail(
-                                operr("failed to download image[url: %s] on backup storage[uuid: %s], because: %s",
+                                operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10001, "failed to download image[url: %s] on backup storage[uuid: %s], because: %s",
                                         url, self.getUuid(), ret.getError())
                         );
                     }
@@ -170,7 +171,7 @@ public class SftpBackupStorage extends BackupStorageBase {
                     @Override
                     public void success(GetImageSizeRsp rsp) {
                         if (!rsp.isSuccess()) {
-                            reply.setError(operr("operation error, because:%s", rsp.getError()));
+                            reply.setError(operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10002, "operation error, because:%s", rsp.getError()));
                         } else {
                             reply.setSize(rsp.size);
                         }
@@ -236,7 +237,7 @@ public class SftpBackupStorage extends BackupStorageBase {
             @Override
             public void success(AgentResponse rsp) {
                 if (!rsp.isSuccess()) {
-                    reply.setError(operr("fail to cancel download image, because %s", rsp.getError()));
+                    reply.setError(operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10003, "fail to cancel download image, because %s", rsp.getError()));
                 }
                 bus.reply(msg, reply);
             }
@@ -310,14 +311,14 @@ public class SftpBackupStorage extends BackupStorageBase {
             @Override
             public void success(PingResponse ret) {
                 if (ret.isSuccess() && !self.getUuid().equals(ret.getUuid())) {
-                    ErrorCode err = operr("the uuid of sftpBackupStorage agent changed[expected:%s, actual:%s], it's most likely" +
+                    ErrorCode err = operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10004, "the uuid of sftpBackupStorage agent changed[expected:%s, actual:%s], it's most likely" +
                             " the agent was manually restarted. Issue a reconnect to sync the status", self.getUuid(), ret.getUuid());
 
                     completion.fail(err);
                 } else if (ret.isSuccess()) {
                     completion.success();
                 } else {
-                    completion.fail(operr("operation error, because:%s", ret.getError()));
+                    completion.fail(operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10005, "operation error, because:%s", ret.getError()));
                 }
             }
 
@@ -339,7 +340,7 @@ public class SftpBackupStorage extends BackupStorageBase {
                 cmd.setSendCommandUrl(restf.getSendCommandUrl());
                 ConnectResponse rsp = restf.syncJsonPost(url, cmd, ConnectResponse.class);
                 if (!rsp.isSuccess()) {
-                    ErrorCode err = operr("unable to connect to SimpleHttpBackupStorage[url:%s], because %s", url, rsp.getError());
+                    ErrorCode err = operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10006, "unable to connect to SimpleHttpBackupStorage[url:%s], because %s", url, rsp.getError());
                     complete.fail(err);
                     return;
                 }
@@ -429,7 +430,7 @@ public class SftpBackupStorage extends BackupStorageBase {
                             .setHostname(getSelf().getHostname())
                             .setPort(getSelf().getSshPort()).runErrorByExceptionAndClose();
                 } catch (SshException ex) {
-                    throw new OperationFailureException(operr(ex.toString()));
+                    throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10007, ex.toString()));
                 }
 
                 continueConnect(complete);
@@ -538,7 +539,7 @@ public class SftpBackupStorage extends BackupStorageBase {
             @Override
             public void success(GetImageSizeRsp rsp) {
                 if (!rsp.isSuccess()) {
-                    reply.setError(operr("operation error, because:%s", rsp.getError()));
+                    reply.setError(operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10008, "operation error, because:%s", rsp.getError()));
                 } else {
                     reply.setActualSize(rsp.actualSize);
                     reply.setSize(rsp.size);
@@ -570,7 +571,7 @@ public class SftpBackupStorage extends BackupStorageBase {
                     @Override
                     public void success(GetLocalFileSizeRsp rsp) {
                         if (!rsp.isSuccess()) {
-                            reply.setError(operr("operation error, because:%s", rsp.getError()));
+                            reply.setError(operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10009, "operation error, because:%s", rsp.getError()));
                         } else {
                             reply.setSize(rsp.size);
                         }
@@ -606,7 +607,7 @@ public class SftpBackupStorage extends BackupStorageBase {
             @Override
             public void success(GetImageHashRsp rsp) {
                 if (!rsp.isSuccess()) {
-                    reply.setError(operr("operation error, because:%s", rsp.getError()));
+                    reply.setError(operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10010, "operation error, because:%s", rsp.getError()));
                 } else {
                     reply.setEncrypted(rsp.hash);
                 }
@@ -650,7 +651,7 @@ public class SftpBackupStorage extends BackupStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setError(err(SftpBackupStorageErrors.RECONNECT_ERROR, errorCode, errorCode.getDetails()));
+                evt.setError(err(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10011, SftpBackupStorageErrors.RECONNECT_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
             }
         });
@@ -692,7 +693,7 @@ public class SftpBackupStorage extends BackupStorageBase {
     @Override
     protected void handle(CalculateImageHashOnBackupStorageMsg msg) {
         CalculateImageHashOnBackupStorageReply reply = new CalculateImageHashOnBackupStorageReply();
-        reply.setError(operr("sftp backup storage do not support calculate image hash"));
+        reply.setError(operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10012, "sftp backup storage do not support calculate image hash"));
     }
 
     protected void handle(GetBackupStorageManagerHostnameMsg msg) {

@@ -46,6 +46,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by mingjian.deng on 2019/9/19.
@@ -66,7 +67,7 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
     private String getResourceType(String resourceUuid) {
         ResourceVO vo = dbf.findByUuid(resourceUuid, ResourceVO.class);
         if (vo == null) {
-            throw new OperationFailureException(inerr("cannot find ResourceVO for resourceUuid: %s, maybe it has been deleted", resourceUuid));
+            throw new OperationFailureException(inerr(ORG_ZSTACK_CORE_TRASH_10000, "cannot find ResourceVO for resourceUuid: %s, maybe it has been deleted", resourceUuid));
         }
         return vo.getResourceType();
     }
@@ -142,7 +143,7 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
         } else if (o instanceof VolumeSnapshotInventory) {
             return createRecycleFromVolumeSnapshot(type, isFolder, (VolumeSnapshotInventory)o);
         } else {
-            throw new OperationFailureException(inerr("non support resourceType to create trash"));
+            throw new OperationFailureException(inerr(ORG_ZSTACK_CORE_TRASH_10001, "non support resourceType to create trash"));
         }
     }
 

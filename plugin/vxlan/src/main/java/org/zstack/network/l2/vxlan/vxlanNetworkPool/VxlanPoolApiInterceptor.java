@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.zstack.core.db.SimpleQuery;
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by weiwang on 02/05/2017.
@@ -57,7 +58,7 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     private void validate(APICreateVxlanPoolRemoteVtepMsg msg) {
         boolean isIpv4 = NetworkUtils.isIpv4Address(msg.getRemoteVtepIp());
         if (!isIpv4) {
-            throw new ApiMessageInterceptionException(argerr("%s:is not ipv4", msg.getRemoteVtepIp()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10015, "%s:is not ipv4", msg.getRemoteVtepIp()));
         }
 
         SimpleQuery<VtepVO> rqv = dbf.createQuery(VtepVO.class);
@@ -66,7 +67,7 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
         rqv.add(VtepVO_.vtepIp, SimpleQuery.Op.EQ, msg.getRemoteVtepIp());
         long count = rqv.count();
         if (count > 0) {
-            throw new ApiMessageInterceptionException(argerr("ip[%s] l2NetworkUuid[%s] clusterUuid[%s] ip exist in local vtep", msg.getRemoteVtepIp(), msg.getL2NetworkUuid(), msg.getClusterUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10016, "ip[%s] l2NetworkUuid[%s] clusterUuid[%s] ip exist in local vtep", msg.getRemoteVtepIp(), msg.getL2NetworkUuid(), msg.getClusterUuid()));
         }
 
     }
@@ -74,7 +75,7 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIDeleteVxlanPoolRemoteVtepMsg msg) {
         boolean isIpv4 = NetworkUtils.isIpv4Address(msg.getRemoteVtepIp());
         if (!isIpv4) {
-            throw new ApiMessageInterceptionException(argerr("%s:is not ipv4", msg.getRemoteVtepIp()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10017, "%s:is not ipv4", msg.getRemoteVtepIp()));
         }
 
     }
@@ -82,7 +83,7 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     private void validate(APICreateVxlanVtepMsg msg) {
         long count = Q.New(VtepVO.class).eq(VtepVO_.hostUuid, msg.getHostUuid()).eq(VtepVO_.poolUuid, msg.getPoolUuid()).count();
         if (count > 0) {
-            throw new ApiMessageInterceptionException(argerr("vxlan vtep address for host [uuid : %s] and pool [uuid : %s] pair already existed",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10018, "vxlan vtep address for host [uuid : %s] and pool [uuid : %s] pair already existed",
                             msg.getHostUuid(), msg.getPoolUuid())
             );
         }
@@ -101,7 +102,7 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     private void validate(APICreateL2VxlanNetworkMsg msg) {
         VxlanNetworkPoolVO vo = Q.New(VxlanNetworkPoolVO.class).eq(VxlanNetworkPoolVO_.uuid, msg.getPoolUuid()).find();
         if (msg.getZoneUuid() != null && !msg.getZoneUuid().equals(vo.getZoneUuid()))  {
-            throw new ApiMessageInterceptionException(Platform.err(SysErrors.INVALID_ARGUMENT_ERROR,
+            throw new ApiMessageInterceptionException(Platform.err(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10019, SysErrors.INVALID_ARGUMENT_ERROR,
                     String.format("the zone uuid provided not equals to zone uuid of pool [%s], please correct it or do not fill it",
                             msg.getPoolUuid())
             ));
@@ -112,7 +113,7 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APICreateVniRangeMsg msg) {
         if (msg.getStartVni() > msg.getEndVni()) {
-            throw new ApiMessageInterceptionException(Platform.err(SysErrors.INVALID_ARGUMENT_ERROR,
+            throw new ApiMessageInterceptionException(Platform.err(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10020, SysErrors.INVALID_ARGUMENT_ERROR,
                     String.format("start number [%s] of vni range is bigger than end number [%s]",
                             msg.getStartVni(), msg.getStartVni())
             ));
@@ -121,7 +122,7 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
         VxlanNetworkPoolVO pool = dbf.findByUuid(msg.getL2NetworkUuid(), VxlanNetworkPoolVO.class);
 
         if ( pool == null ) {
-            throw new ApiMessageInterceptionException(argerr("unable create vni range, because l2 uuid[%s] is not vxlan network pool",msg.getL2NetworkUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10021, "unable create vni range, because l2 uuid[%s] is not vxlan network pool",msg.getL2NetworkUuid()));
         }
 
         List<Map<String, String>> tokenList = VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTokensOfTagsByResourceUuid(msg.getL2NetworkUuid());
@@ -160,7 +161,7 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
 
                 for (VniRangeVO e : p.getAttachedVniRanges()) {
                     if (checkOverlap(msg.getStartVni(), msg.getEndVni(), e.getStartVni(), e.getEndVni()) == true) {
-                        throw new ApiMessageInterceptionException(Platform.err(SysErrors.INVALID_ARGUMENT_ERROR,
+                        throw new ApiMessageInterceptionException(Platform.err(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10022, SysErrors.INVALID_ARGUMENT_ERROR,
                                 String.format("this vni range[start:%s, end:%s] has overlapped with vni range [%s], which start vni is [%s], end vni is [%s]",
                                         msg.getStartVni(), msg.getEndVni(), e.getUuid(), e.getStartVni(), e.getEndVni())
                         ));
@@ -170,7 +171,7 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
         } else if (pool.getAttachedVniRanges() != null && !pool.getAttachedVniRanges().isEmpty()) {
             for (VniRangeVO e : pool.getAttachedVniRanges()) {
                 if (checkOverlap(msg.getStartVni(), msg.getEndVni(), e.getStartVni(), e.getEndVni()) == true) {
-                    throw new ApiMessageInterceptionException(Platform.err(SysErrors.INVALID_ARGUMENT_ERROR,
+                    throw new ApiMessageInterceptionException(Platform.err(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10023, SysErrors.INVALID_ARGUMENT_ERROR,
                             String.format("this vni range[start:%s, end:%s] has overlapped with vni range [%s], which start vni is [%s], end vni is [%s]",
                                     msg.getStartVni(), msg.getEndVni(), e.getUuid(), e.getStartVni(), e.getEndVni())
                     ));

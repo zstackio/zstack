@@ -15,6 +15,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class CephDeleteVolumeChainGC extends TimeBasedGarbageCollector {
     @GC
@@ -52,7 +53,7 @@ public class CephDeleteVolumeChainGC extends TimeBasedGarbageCollector {
                 } else {
                     installPaths = r.getUndeletedInstallPaths();
                     updateContext();
-                    completion.fail(Platform.operr("delete volume chain error, continue to delete"));
+                    completion.fail(Platform.operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10052, "delete volume chain error, continue to delete"));
                 }
             }
         });

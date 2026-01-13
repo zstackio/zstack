@@ -56,6 +56,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.network.service.lb.LoadBalancerConstants.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 8/12/2015.
@@ -177,7 +178,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             msg.setLoadBalancerUuid(groupVO.getLoadBalancerUuid());
         } else if (msg.getLoadBalancerUuid() == null) {
             throw new ApiMessageInterceptionException(
-                    operr("could not get candidate vmnic, because both load balancer uuid and server group uuid are not specified"));
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10028, "could not get candidate vmnic, because both load balancer uuid and server group uuid are not specified"));
         }
 
         if (msg.getIpVersion() == null) {
@@ -199,7 +200,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             msg.setLoadBalancerUuid(groupVO.getLoadBalancerUuid());
         } else if (msg.getLoadBalancerUuid() == null) {
             throw new ApiMessageInterceptionException(
-                    operr("could not get candidate l3 network, because both load balancer uuid and server group uuid are not specified"));
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10029, "could not get candidate l3 network, because both load balancer uuid and server group uuid are not specified"));
         }
     }
 
@@ -223,7 +224,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         LoadBalancerServerGroupVO groupVO = lbMgr.getDefaultServerGroup(listenerVO);
         if (groupVO == null) {
             throw new ApiMessageInterceptionException(
-                    operr("could not detach vm nic to load balancer listener[uuid:%s], because default server group for listener has been deleted",
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10030, "could not detach vm nic to load balancer listener[uuid:%s], because default server group for listener has been deleted",
                             msg.getListenerUuid()));
         }
 
@@ -232,13 +233,13 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
     private void validate(APICreateLoadBalancerMsg msg) {
         if (StringUtils.isEmpty(msg.getVipUuid()) && StringUtils.isEmpty(msg.getIpv6VipUuid())) {
-            throw new ApiMessageInterceptionException(argerr("could not create loadbalancer, because param of vip and ipv6 vip is empty"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10031, "could not create loadbalancer, because param of vip and ipv6 vip is empty"));
         }
 
         List<String> l3Uuids = Q.New(VipVO.class).select(VipVO_.l3NetworkUuid).in(VipVO_.uuid, Arrays.asList(msg.getIpv6VipUuid(), msg.getVipUuid())).listValues();
         int countOfL3 = l3Uuids.stream().distinct().collect(Collectors.toList()).size();
         if (countOfL3 > 1) {
-            throw new ApiMessageInterceptionException(argerr("could not create loadbalancer, because l3 network of vip and ipv6 vip are not the same l3 network"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10032, "could not create loadbalancer, because l3 network of vip and ipv6 vip are not the same l3 network"));
         }
 
         if (!StringUtils.isEmpty(msg.getVipUuid())) {
@@ -255,7 +256,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if(useFor != null && !useFor.isEmpty()){
             VipUseForList useForList = new VipUseForList(useFor);
             if(!useForList.validateNewAdded(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)){
-                throw new ApiMessageInterceptionException(argerr("the vip[uuid:%s] has been occupied other network service entity[%s]", vipUuid, useForList.toString()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10033, "the vip[uuid:%s] has been occupied other network service entity[%s]", vipUuid, useForList.toString()));
             }
         }
 
@@ -273,14 +274,14 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 String firstIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()) - 1);
                 String lastIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()) + 1);
                 if (vipVO.getIp().equals(firstIp) || vipVO.getIp().equals(lastIp)) {
-                    throw new ApiMessageInterceptionException(argerr("Load balancer VIP [%s] cannot be the first or the last IP of the CIDR with the public address pool type", vipVO.getIp()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10034, "Load balancer VIP [%s] cannot be the first or the last IP of the CIDR with the public address pool type", vipVO.getIp()));
                 }
             } else {
-                throw new ApiMessageInterceptionException(argerr("cloud not create loadbalancer, because param vipUuid point to VIP[%s] is not ipv4 VIP", vipVO.getUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10035, "cloud not create loadbalancer, because param vipUuid point to VIP[%s] is not ipv4 VIP", vipVO.getUuid()));
             }
         } else if (IPv6Constants.IPv6 == vipIpVersion) {
             if (!IPv6NetworkUtils.isIpv6Address(vipVO.getIp())) {
-                throw new ApiMessageInterceptionException(argerr("cloud not create loadbalancer, because param ipv6VipUuid point to VIP[%s] is not ipv6 VIP", vipVO.getUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10036, "cloud not create loadbalancer, because param ipv6VipUuid point to VIP[%s] is not ipv6 VIP", vipVO.getUuid()));
             }
         }
     }
@@ -310,31 +311,31 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         DebugUtils.Assert(acl != null, "the invalide null AccessControlListVO");
         Integer ipVer = acl.getIpVersion();
         if (!ipVer.equals(IPv6Constants.IPv4)) {
-            throw new ApiMessageInterceptionException(argerr("operation failure, not support the ip version %d", ipVer));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10037, "operation failure, not support the ip version %d", ipVer));
         }
         try {
             RangeSet<Long> ipRanges = IpRangeSet.listAllRanges(ips);
             String[] ipcount = ips.split(IP_SPLIT);
             if (ipRanges.asRanges().size() < ipcount.length) {
-                throw new ApiMessageInterceptionException(argerr("operation failure, duplicate/overlap ip entry in %s of accesscontrol list group:%s", ips, acl.getUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10038, "operation failure, duplicate/overlap ip entry in %s of accesscontrol list group:%s", ips, acl.getUuid()));
             }
             for (Range<Long> range : ipRanges.asRanges()) {
                 final Range<Long> frange = ContiguousSet.create(range, DiscreteDomain.longs()).range();
                 String startIp = NetworkUtils.longToIpv4String(frange.lowerEndpoint());
                 String endIp = NetworkUtils.longToIpv4String(frange.upperEndpoint());
                 if (!validateIpRange(startIp, endIp)) {
-                    throw new ApiMessageInterceptionException(argerr("operation failure, ip format only supports ip/iprange/cidr, but find %s", ips));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10039, "operation failure, ip format only supports ip/iprange/cidr, but find %s", ips));
                 }
                 ipRanges.asRanges().stream().forEach(r -> {
                     if (!frange.equals(r) && NetworkUtils.isIpv4RangeOverlap(startIp, endIp, NetworkUtils.longToIpv4String(r.lowerEndpoint()), NetworkUtils.longToIpv4String(r.upperEndpoint()))) {
-                        throw new ApiMessageInterceptionException(argerr("ip range[%s, %s] is overlap with start ip:%s, end ip: %s of access-control-list group:%s",
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10040, "ip range[%s, %s] is overlap with start ip:%s, end ip: %s of access-control-list group:%s",
                                 startIp, endIp, NetworkUtils.longToIpv4String(r.lowerEndpoint()), NetworkUtils.longToIpv4String(r.upperEndpoint()), acl.getUuid()));
                     }
                 });
             }
 
         } catch (IllegalArgumentException e) {
-            throw new ApiMessageInterceptionException(argerr("Invalid rule expression, the detail: %s", e.getMessage()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10041, "Invalid rule expression, the detail: %s", e.getMessage()));
         }
 
     }
@@ -349,7 +350,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             /*check if the ip version is same*/
             List<String> aclUuids = acls.stream().filter(acl -> !acl.getIpVersion().equals(NetworkUtils.getIpversion(vip.getIp()))).map(AccessControlListVO::getUuid).collect(Collectors.toList());
             if (!aclUuids.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("Can't attach the type access-control-list group[%s] whose ip version is different with LoadBalancer[%s]", aclUuids, lbUuid));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10042, "Can't attach the type access-control-list group[%s] whose ip version is different with LoadBalancer[%s]", aclUuids, lbUuid));
             }
 
             List<AccessControlListVO> allAcl = acls;
@@ -424,7 +425,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             for (AccessControlListEntryVO aclEntry : aclEntries) {
                 if (StringDSL.equals(msg.getDomain(), aclEntry.getDomain())) {
                     if (StringDSL.equals(msg.getUrl(), aclEntry.getUrl())) {
-                        throw new ApiMessageInterceptionException(argerr("domian[%s], url[%s] duplicate/overlap redirect rule with access-control-list group:%s", aclEntry.getDomain(), aclEntry.getUrl(), acl.getUuid()));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10043, "domian[%s], url[%s] duplicate/overlap redirect rule with access-control-list group:%s", aclEntry.getDomain(), aclEntry.getUrl(), acl.getUuid()));
                     }
                 }
             }
@@ -442,17 +443,17 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             if (!aclEntriesType.isEmpty()) {
                 boolean ipEntryExsit = aclEntriesType.stream().anyMatch(entry -> entry.equals(AclEntryType.IpEntry.toString()));
                 if (ipEntryExsit) {
-                    throw new ApiMessageInterceptionException(argerr("access-control-list groups[uuid:%s] use to redirect, but there some access-control-list not has redirect rule but ip entry", msg.getAclUuids()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10044, "access-control-list groups[uuid:%s] use to redirect, but there some access-control-list not has redirect rule but ip entry", msg.getAclUuids()));
                 }
             }
 
             if (msg.getServerGroupUuids() == null || msg.getServerGroupUuids().isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("redirect access-control-list groups[uuid:%s] cannot only attach to load balancer listener, must assign server group", msg.getAclUuids()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10045, "redirect access-control-list groups[uuid:%s] cannot only attach to load balancer listener, must assign server group", msg.getAclUuids()));
             }
 
             String protocol = Q.New(LoadBalancerListenerVO.class).select(LoadBalancerListenerVO_.protocol).eq(LoadBalancerListenerVO_.uuid, msg.getListenerUuid()).findValue();
             if (StringUtils.isBlank(protocol) || (!protocol.equals(LB_PROTOCOL_HTTPS) && !protocol.equals(LB_PROTOCOL_HTTP))) {
-                throw new ApiMessageInterceptionException(argerr("access-control-list groups[uuid:%s] attach to load balancer listener[uuid:%s] not https or http", msg.getAclUuids(), msg.getListenerUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10046, "access-control-list groups[uuid:%s] attach to load balancer listener[uuid:%s] not https or http", msg.getAclUuids(), msg.getListenerUuid()));
             }
 
             /*filter the server group own acl and server group not attach to listen*/
@@ -460,7 +461,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             List<String> sgUuids = Q.New(LoadBalancerListenerServerGroupRefVO.class).eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid()).select(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid).listValues();
             List<String> newSgUuids = msg.getServerGroupUuids().stream().filter(sg -> sgUuids.contains(sg)).collect(Collectors.toList());
             if (newSgUuids.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("server group[%s] not attach to load balancer listener[%s]", msg.getServerGroupUuids(), msg.getListenerUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10047, "server group[%s] not attach to load balancer listener[%s]", msg.getServerGroupUuids(), msg.getListenerUuid()));
             }
             msg.setServerGroupUuids(newSgUuids);
 
@@ -471,7 +472,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             List<String> aclTmp = Q.New(AccessControlListEntryVO.class).in(AccessControlListEntryVO_.aclUuid, msg.getAclUuids()).select(AccessControlListEntryVO_.aclUuid).eq(AccessControlListEntryVO_.type, AclEntryType.RedirectRule.toString()).listValues();
             List<String> aclOwnRedirectRuleUuids = msg.getAclUuids().stream().filter(aclUuid -> aclTmp.contains(aclUuid)).collect(Collectors.toList());
             if (aclOwnRedirectRuleUuids.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("access-control-list groups[uuid:%s] has no redirect rule", msg.getAclUuids()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10048, "access-control-list groups[uuid:%s] has no redirect rule", msg.getAclUuids()));
             }
             msg.setAclUuids(aclOwnRedirectRuleUuids);
 
@@ -484,7 +485,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
 
             if (msg.getAclUuids().isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("access-control-list groups[uuid:%s] has attach to another load balancer listener[uuid:%s]", msg.getAclUuids(), msg.getListenerUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10049, "access-control-list groups[uuid:%s] has attach to another load balancer listener[uuid:%s]", msg.getAclUuids(), msg.getListenerUuid()));
             }
 
             List<String> aclUuids = Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid())
@@ -496,7 +497,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 List<String> newAclUuids = msg.getAclUuids().stream().filter(aclUuid -> !aclUuids.contains(aclUuid)).collect(Collectors.toList());
                 if (!newAclUuids.isEmpty()) {
                     if (newAclUuids.size() + size > LoadBalancerGlobalConfig.ACL_REDIRECT_MAX_COUNT.value(Long.class)) {
-                        throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] can't  attach more than %d redirect rule access-control-list groups", msg.getListenerUuid(), LoadBalancerGlobalConfig.ACL_REDIRECT_MAX_COUNT.value(Long.class)));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10050, "the load balancer listener[uuid:%s] can't  attach more than %d redirect rule access-control-list groups", msg.getListenerUuid(), LoadBalancerGlobalConfig.ACL_REDIRECT_MAX_COUNT.value(Long.class)));
                     }
 
                     //check if exist duplicate rule
@@ -522,19 +523,19 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                         }
                     }
                     if (msg.getAclUuids().isEmpty()) {
-                        throw new ApiMessageInterceptionException(argerr("load balancer listener [uuid:%s] had redirect rule of access-control-list groups[uuid:%s]", msg.getListenerUuid(), redireRuleExistAclUuid));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10051, "load balancer listener [uuid:%s] had redirect rule of access-control-list groups[uuid:%s]", msg.getListenerUuid(), redireRuleExistAclUuid));
                     }
                 }
             } else {
                 if (msg.getAclUuids().size() + size > LoadBalancerGlobalConfig.ACL_REDIRECT_MAX_COUNT.value(Long.class)) {
-                    throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] can't  attach more than %d redirect rule access-control-list groups", msg.getListenerUuid(), LoadBalancerGlobalConfig.ACL_REDIRECT_MAX_COUNT.value(Long.class)));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10052, "the load balancer listener[uuid:%s] can't  attach more than %d redirect rule access-control-list groups", msg.getListenerUuid(), LoadBalancerGlobalConfig.ACL_REDIRECT_MAX_COUNT.value(Long.class)));
                 }
             }
         } else {
             if (!aclEntriesType.isEmpty()) {
                 boolean ipEntryExsit = aclEntriesType.stream().anyMatch(entry -> entry.equals(AclEntryType.RedirectRule.toString()));
                 if (ipEntryExsit) {
-                    throw new ApiMessageInterceptionException(argerr("access-control-list groups[uuid:%s] use to %s, but there some access-control-list not has ip entry but redirect rule", msg.getAclType(), msg.getAclUuids()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10053, "access-control-list groups[uuid:%s] use to %s, but there some access-control-list not has ip entry but redirect rule", msg.getAclType(), msg.getAclUuids()));
                 }
             }
 
@@ -543,18 +544,18 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 /*check if duplicated*/
                 List<String> existingAcls = refVOs.stream().filter(vo -> msg.getAclUuids().contains(vo.getAclUuid())).map(vo -> vo.getAclUuid()).collect(Collectors.toList());
                 if (!existingAcls.isEmpty()) {
-                    throw new ApiMessageInterceptionException(argerr("the access-control-list groups[uuid:%s] are already on the load balancer listener[uuid:%s]", existingAcls, msg.getListenerUuid()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10054, "the access-control-list groups[uuid:%s] are already on the load balancer listener[uuid:%s]", existingAcls, msg.getListenerUuid()));
                 }
 
                 /*when use for white list or black list, check if type is same*/
                 LoadBalancerAclType type = refVOs.get(0).getType();
                 if (!type.equals(LoadBalancerAclType.valueOf(msg.getAclType()))) {
-                    throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] just only attach the %s type access-control-list group", msg.getListenerUuid(), type.toString()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10055, "the load balancer listener[uuid:%s] just only attach the %s type access-control-list group", msg.getListenerUuid(), type.toString()));
                 }
             }
 
             if (msg.getAclUuids().size() + refVOs.size() > LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)) {
-                throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] can't  attach more than %d access-control-list groups", msg.getListenerUuid(), LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10056, "the load balancer listener[uuid:%s] can't  attach more than %d access-control-list groups", msg.getListenerUuid(), LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)));
             }
 
             String lbUuid = Q.New(LoadBalancerListenerVO.class).select(LoadBalancerListenerVO_.loadBalancerUuid).eq(LoadBalancerListenerVO_.uuid, msg.getListenerUuid()).findValue();
@@ -575,7 +576,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         List<String> newSgUuids = msg.getServerGroupUuids().stream().filter(sg -> sgUuids.contains(sg)).collect(Collectors.toList());
 
         if (newSgUuids.isEmpty()) {
-            throw new ApiMessageInterceptionException(argerr("server group[%s] not attach to load balancer listener[%s]", msg.getServerGroupUuids(), msg.getListenerUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10057, "server group[%s] not attach to load balancer listener[%s]", msg.getServerGroupUuids(), msg.getListenerUuid()));
         }
         msg.setServerGroupUuids(newSgUuids);
 
@@ -583,7 +584,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
         for (LoadBalancerListenerACLRefVO ref : refVOs) {
             if (!ref.getListenerUuid().equals(msg.getListenerUuid())) {
-                throw new ApiMessageInterceptionException(argerr("acl[%s] not attach to load balancer listener[%s]", msg.getAclUuid(), msg.getListenerUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10058, "acl[%s] not attach to load balancer listener[%s]", msg.getAclUuid(), msg.getListenerUuid()));
             }
         }
     }
@@ -605,7 +606,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         l3Uuids.removeAll(networksAttachedLbService);
         if (l3Uuids.size() > 0) {
             throw new ApiMessageInterceptionException(
-                    operr("L3 networks[uuids:%s] of the vm nics has no network service[%s] enabled",
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10059, "L3 networks[uuids:%s] of the vm nics has no network service[%s] enabled",
                             l3Uuids, LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING));
         }
 
@@ -615,7 +616,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             List<String> oldL3Uuids = groupVO.getLoadBalancerServerGroupVmNicRefs().stream().map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid).collect(Collectors.toList());
             for (String nicUuid : msg.getVmNicUuids()) {
                 if (oldL3Uuids.contains(nicUuid)) {
-                    throw new ApiMessageInterceptionException(operr("could not attach vm nic to load balancer listener, because the vm nic[uuid:%s] are already on the default server group [uuid:%s]", nicUuid, groupVO.getUuid()));
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10060, "could not attach vm nic to load balancer listener, because the vm nic[uuid:%s] are already on the default server group [uuid:%s]", nicUuid, groupVO.getUuid()));
                 }
             }
         }
@@ -687,7 +688,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (msg.getProtocol().equals(LB_PROTOCOL_UDP)) {
             if (!StringUtils.isEmpty(lbVO.getVipUuid()) && !StringUtils.isEmpty(lbVO.getIpv6VipUuid())) {
                 throw new ApiMessageInterceptionException(
-                        operr("can not create listener because udp listener can not have both ipv4 and ipv6 vip",
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10061, "can not create listener because udp listener can not have both ipv4 and ipv6 vip",
                                 msg.getProtocol(), msg.getHealthCheckProtocol()));
             }
         }
@@ -701,13 +702,13 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(msg.getProtocol()) && !LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP.equals(msg.getHealthCheckProtocol()) ||
                     !LoadBalancerConstants.LB_PROTOCOL_UDP.equals(msg.getProtocol()) && LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP.equals(msg.getHealthCheckProtocol())) {
                 throw new ApiMessageInterceptionException(
-                        operr("the listener with protocol [%s] doesn't support this health check:[%s]",
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10062, "the listener with protocol [%s] doesn't support this health check:[%s]",
                                 msg.getProtocol(), msg.getHealthCheckProtocol()));
             }
             if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
                 if (msg.getHealthCheckURI() == null) {
                     throw new ApiMessageInterceptionException(
-                            operr("the http health check protocol must be specified its healthy checking parameter healthCheckURI"));
+                            operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10063, "the http health check protocol must be specified its healthy checking parameter healthCheckURI"));
                 }
 
                 if (msg.getHealthCheckMethod() == null) {
@@ -716,7 +717,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
             if (msg.getHealthCheckHttpCode() != null && !verifyHttpCode(msg.getHealthCheckHttpCode())) {
                 throw new ApiMessageInterceptionException(
-                        operr("the http health check protocol's expecting code [%s] is invalidate", msg.getHealthCheckHttpCode()));
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10064, "the http health check protocol's expecting code [%s] is invalidate", msg.getHealthCheckHttpCode()));
             }
         }
 
@@ -735,7 +736,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
         if (msg.getAclUuids() != null) {
             if (msg.getAclUuids().size() > LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)) {
-                throw new ApiMessageInterceptionException(argerr("Can't attach more than %d access-control-list groups to a listener", LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10065, "Can't attach more than %d access-control-list groups to a listener", LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)));
             }
             validateAcl(msg.getAclUuids(),new ArrayList<>(), msg.getLoadBalancerUuid());
         }
@@ -824,7 +825,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(msg.getProtocol()) || LoadBalancerConstants.LB_PROTOCOL_TCP.equals(msg.getProtocol())) {
             for (String tag : msg.getSystemTags()) {
                 if (LoadBalancerSystemTags.SESSION_PERSISTENCE.isMatch(tag) || LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT.isMatch(tag) || LoadBalancerSystemTags.COOKIE_NAME.isMatch(tag)) {
-                    throw new ApiMessageInterceptionException(argerr("l4[%s] loadBalancer listener[%s] doesn't support assigning session persistence state", msg.getProtocol(),  msg.getName()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10066, "l4[%s] loadBalancer listener[%s] doesn't support assigning session persistence state", msg.getProtocol(),  msg.getName()));
                 }
             }
         }
@@ -854,22 +855,22 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         }
 
         if ((redirectPort != null || statusCode != null) && (httpRedirectHttps == null || HttpRedirectHttps.disable.toString().equals(httpRedirectHttps))) {
-            throw new ApiMessageInterceptionException(argerr("could not assign redirect port or status code without specifying http redirect https"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10067, "could not assign redirect port or status code without specifying http redirect https"));
         }
 
         List<String> validRedirectValues = Arrays.asList("disable", "enable");
         if (httpRedirectHttps != null && !validRedirectValues.contains(httpRedirectHttps)) {
-            throw new ApiMessageInterceptionException(argerr("invalid redirect status [%s], it only support %s", httpRedirectHttps, validRedirectValues));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10068, "invalid redirect status [%s], it only support %s", httpRedirectHttps, validRedirectValues));
         }
 
         List<String> validCodeValues = Arrays.asList("301", "302", "303", "307", "308");
         if (statusCode != null && !validCodeValues.contains(statusCode)) {
-            throw new ApiMessageInterceptionException(argerr("invalid status code [%s], it only support %s", statusCode, validCodeValues));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10069, "invalid status code [%s], it only support %s", statusCode, validCodeValues));
         }
 
         if (HttpRedirectHttps.enable.toString().equals(httpRedirectHttps)) {
             if (!LB_PROTOCOL_HTTP.equals(msg.getProtocol())) {
-                throw new ApiMessageInterceptionException(argerr("could not support protocols other than HTTP when specifying http redirect https"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10070, "could not support protocols other than HTTP when specifying http redirect https"));
             }
             if (redirectPort == null) {
                 insertTagIfNotExisting(
@@ -888,20 +889,20 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 );
             }
             if (seessionPersistence != null && !LoadBalancerSessionPersistence.disable.toString().equals(seessionPersistence)) {
-                throw new ApiMessageInterceptionException(argerr("could not support both HTTP redirect HTTPS and session persistence at the same time"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10071, "could not support both HTTP redirect HTTPS and session persistence at the same time"));
             }
         }
 
         List<String> validPersistenceValues = Arrays.asList("disable", "iphash", "insert", "rewrite");
         if (seessionPersistence != null && !validPersistenceValues.contains(seessionPersistence)) {
-            throw new ApiMessageInterceptionException(argerr("invalid session persistence status [%s], it only support %s", seessionPersistence, validPersistenceValues));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10072, "invalid session persistence status [%s], it only support %s", seessionPersistence, validPersistenceValues));
         }
 
         /*can not modify session persistence when the listener algorithm is leastconn except disable*/
         if (LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_CONN.equals(algorithm)) {
             for (String tag : msg.getSystemTags()) {
                 if ((!LoadBalancerSessionPersistence.disable.toString().equals(seessionPersistence) && seessionPersistence != null) || LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT.isMatch(tag) || LoadBalancerSystemTags.COOKIE_NAME.isMatch(tag)) {
-                    throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] %s algorithm doesn't support assigning session persistence state except assigning disable explicitly", msg.getLoadBalancerUuid(), msg.getName(), algorithm));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10073, "loadBalancer[%s] listener[%s] %s algorithm doesn't support assigning session persistence state except assigning disable explicitly", msg.getLoadBalancerUuid(), msg.getName(), algorithm));
                 }
             }
             insertTagIfNotExisting(
@@ -916,7 +917,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE.equals(algorithm)) {
             for (String tag : msg.getSystemTags()) {
                 if ((!LoadBalancerSessionPersistence.iphash.toString().equals(seessionPersistence) && seessionPersistence != null) || LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT.isMatch(tag) || LoadBalancerSystemTags.COOKIE_NAME.isMatch(tag)) {
-                    throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] %s algorithm doesn't support assigning session persistence state except assigning iphash explicitly", msg.getLoadBalancerUuid(), msg.getName(), algorithm));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10074, "loadBalancer[%s] listener[%s] %s algorithm doesn't support assigning session persistence state except assigning iphash explicitly", msg.getLoadBalancerUuid(), msg.getName(), algorithm));
                 }
             }
             insertTagIfNotExisting(
@@ -942,38 +943,38 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                         try {
                             LoadBalancerSessionPersistence.valueOf(LoadBalancerSessionPersistence.class, enableSession);
                         } catch (Exception e) {
-                            throw new ApiMessageInterceptionException(argerr("invalid session persistence type[%s], it only support %s", enableSession, Arrays.toString(LoadBalancerSessionPersistence.values())));
+                            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10075, "invalid session persistence type[%s], it only support %s", enableSession, Arrays.toString(LoadBalancerSessionPersistence.values())));
                         }
                     }
                     if (LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT.isMatch(tag)) {
                         timeout = LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT.getTokenByTag(tag,
                                 LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT_TOKEN);
                         if (Long.parseLong(timeout) < LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MIN || Long.parseLong(timeout) > LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MAX) {
-                            throw new ApiMessageInterceptionException(argerr("invalid session idle timeout[%s], it must be the number between[%s~%s] ", timeout, LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MIN, LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MAX));
+                            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10076, "invalid session idle timeout[%s], it must be the number between[%s~%s] ", timeout, LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MIN, LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MAX));
                         }
                     }
                     if (LoadBalancerSystemTags.COOKIE_NAME.isMatch(tag)) {
                         cookieName = LoadBalancerSystemTags.COOKIE_NAME.getTokenByTag(tag,
                                 LoadBalancerSystemTags.COOKIE_NAME_TOKEN);
                         if (cookieName.length() > 20) {
-                            throw new ApiMessageInterceptionException(argerr("invalid session cookie name[%s], it must be shorter than [%s] characters", cookieName, COOKIE_NAME_MAX));
+                            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10077, "invalid session cookie name[%s], it must be shorter than [%s] characters", cookieName, COOKIE_NAME_MAX));
                         }
                         if (!cookieName.matches(COOKIE_NAME_REGEX)) {
-                            throw new ApiMessageInterceptionException(argerr("invalid session cookie name[%s], it must only contains letters, numbers and underscores", cookieName));
+                            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10078, "invalid session cookie name[%s], it must only contains letters, numbers and underscores", cookieName));
                         }
                     }
                     if (enableSession != null && timeout != null && cookieName != null) {
-                        throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning idle timeout and cookie name at the same time", msg.getLoadBalancerUuid(), msg.getName()));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10079, "loadBalancer[%s] listener[%s] doesn't support assigning idle timeout and cookie name at the same time", msg.getLoadBalancerUuid(), msg.getName()));
                     }
                 }
 
                 /*can not assign session idle timeout and cookie name without specifying session persistence*/
                 if (enableSession == null && (timeout != null || cookieName != null)) {
-                    throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning idle timeout and cookie name, it must specify session persistence", msg.getLoadBalancerUuid(), msg.getName()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10080, "loadBalancer[%s] listener[%s] doesn't support assigning idle timeout and cookie name, it must specify session persistence", msg.getLoadBalancerUuid(), msg.getName()));
                 }
 
                 if (LoadBalancerSessionPersistence.disable.toString().equals(enableSession) && (timeout != null || cookieName != null)) {
-                    throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning idle timeout and cookie name when the session persistence is disabled", msg.getLoadBalancerUuid(), msg.getName()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10081, "loadBalancer[%s] listener[%s] doesn't support assigning idle timeout and cookie name when the session persistence is disabled", msg.getLoadBalancerUuid(), msg.getName()));
                 }
 
                 if (LoadBalancerSessionPersistence.insert.toString().equals(enableSession) && timeout == null) {
@@ -987,17 +988,17 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
                 /*can not assign session persistence rewrite without cookie name*/
                 if (LoadBalancerSessionPersistence.rewrite.toString().equals(enableSession) && cookieName == null) {
-                    throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning session persistence rewrite without assigning cookie name", msg.getLoadBalancerUuid(), msg.getName()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10082, "loadBalancer[%s] listener[%s] doesn't support assigning session persistence rewrite without assigning cookie name", msg.getLoadBalancerUuid(), msg.getName()));
                 }
 
                 /*can not assign session persistence idle timeout without insert mode*/
                 if (LoadBalancerSessionPersistence.rewrite.toString().equals(enableSession) && timeout != null) {
-                    throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning session persistence idle timeout without assigning rewrite mode", msg.getLoadBalancerUuid(), msg.getName()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10083, "loadBalancer[%s] listener[%s] doesn't support assigning session persistence idle timeout without assigning rewrite mode", msg.getLoadBalancerUuid(), msg.getName()));
                 }
 
                 /*can not assign session persistence cookie name without rewrite mode*/
                 if (LoadBalancerSessionPersistence.insert.toString().equals(enableSession) && cookieName != null) {
-                    throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning session persistence cookieName without assigning insert mode", msg.getLoadBalancerUuid(), msg.getName()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10084, "loadBalancer[%s] listener[%s] doesn't support assigning session persistence cookieName without assigning insert mode", msg.getLoadBalancerUuid(), msg.getName()));
                 }
 
             }
@@ -1008,7 +1009,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                                 LoadBalancerSystemTags.SESSION_PERSISTENCE_TOKEN);
                         if (!LoadBalancerSessionPersistence.iphash.toString().equals(enableSession)) {
                             /*can not assign other session persistence with source algorithm*/
-                            throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning other session persistence when the source balancer algorithm is source", msg.getLoadBalancerUuid(), msg.getName()));
+                            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10085, "loadBalancer[%s] listener[%s] doesn't support assigning other session persistence when the source balancer algorithm is source", msg.getLoadBalancerUuid(), msg.getName()));
                         }
                     }
                 }
@@ -1020,7 +1021,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     if (LoadBalancerSessionPersistence.iphash.toString().equals(enableSession)) {
                         if (!LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE.equals(algorithm)) {
                             /*can not assign session persistence iphash without source algorithm*/
-                            throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning session persistence iphash", msg.getLoadBalancerUuid(), msg.getName()));
+                            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10086, "loadBalancer[%s] listener[%s] doesn't support assigning session persistence iphash", msg.getLoadBalancerUuid(), msg.getName()));
                         }
                     }
                 }
@@ -1038,7 +1039,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     String s = LoadBalancerSystemTags.MAX_CONNECTION.getTokenByTag(tag,
                             LoadBalancerSystemTags.MAX_CONNECTION_TOKEN);
                     if (Long.parseLong(s) > LoadBalancerConstants.MAX_CONNECTION_LIMIT) {
-                        throw new OperationFailureException(argerr("invalid max connection[%s], %s is larger than upper threshold %d", tag, s, LoadBalancerConstants.MAX_CONNECTION_LIMIT));
+                        throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10087, "invalid max connection[%s], %s is larger than upper threshold %d", tag, s, LoadBalancerConstants.MAX_CONNECTION_LIMIT));
                     }
                 }
             } catch (OperationFailureException oe) {
@@ -1060,25 +1061,25 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         }
         String luuid = q.findValue();
         if (luuid != null) {
-            throw new ApiMessageInterceptionException(argerr("conflict loadBalancerPort[%s], a listener[uuid:%s] has used that port", msg.getLoadBalancerPort(), luuid));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10088, "conflict loadBalancerPort[%s], a listener[uuid:%s] has used that port", msg.getLoadBalancerPort(), luuid));
         }
 
         if (msg.getSecurityPolicyType() != null) {
             if (!msg.getProtocol().equals(LB_PROTOCOL_HTTPS)) {
-                throw new ApiMessageInterceptionException(operr("the listener with protocol [%s] doesn't support select security policy", msg.getProtocol(), msg.getHealthCheckProtocol()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10089, "the listener with protocol [%s] doesn't support select security policy", msg.getProtocol(), msg.getHealthCheckProtocol()));
             }
         }
 
         if (!CollectionUtils.isEmpty(msg.getHttpVersions())) {
             if (!LoadBalancerConstants.LB_PROTOCOL_HTTPS.equals(msg.getProtocol())) {
                 throw new ApiMessageInterceptionException(
-                        argerr("cloud not change the loadbalancer listener, because the listener with protocol [%s] doesn't support select http version:[%s]",
+                        argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10090, "cloud not change the loadbalancer listener, because the listener with protocol [%s] doesn't support select http version:[%s]",
                                 msg.getProtocol(), msg.getHttpVersions()));
             }
 
             if (hasNotSupportedHttpVersion(msg.getHttpVersions())) {
                 throw new ApiMessageInterceptionException(
-                        argerr("cloud not create the loadbalancer listener, because the listener with protocol https only support http version:[h1, h2]"));
+                        argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10091, "cloud not create the loadbalancer listener, because the listener with protocol https only support http version:[h1, h2]"));
             }
 
             String httpVersions = String.join(",", msg.getHttpVersions());
@@ -1093,12 +1094,12 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (!StringUtils.isEmpty(msg.getTcpProxyProtocol())) {
             if (!LoadBalancerConstants.LB_PROTOCOL_TCP.equals(msg.getProtocol())) {
                 throw new ApiMessageInterceptionException(
-                        argerr("cloud not create the loadbalancer listener, because the listener with protocol tcp only support tcp proxy protocol param"));
+                        argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10092, "cloud not create the loadbalancer listener, because the listener with protocol tcp only support tcp proxy protocol param"));
             }
 
             if (!LbSupportTcpProxyProtocol.contains(msg.getTcpProxyProtocol())) {
                 throw new ApiMessageInterceptionException(
-                        argerr("cloud not create the loadbalancer listener, because only support tcp proxy protocol %s", LbSupportTcpProxyProtocol));
+                        argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10093, "cloud not create the loadbalancer listener, because only support tcp proxy protocol %s", LbSupportTcpProxyProtocol));
             }
 
             if (!msg.getTcpProxyProtocol().equals(DisableLbSupportTcpProxyProtocol)) {
@@ -1114,13 +1115,13 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (!CollectionUtils.isEmpty(msg.getHttpCompressAlgos())) {
             if (!LoadBalancerConstants.LB_PROTOCOL_HTTPS.equals(msg.getProtocol()) && !LB_PROTOCOL_HTTP.equals(msg.getProtocol())) {
                 throw new ApiMessageInterceptionException(
-                        argerr("cloud not create the loadbalancer listener, because the listener with protocol [%s] doesn't support compress content",
+                        argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10094, "cloud not create the loadbalancer listener, because the listener with protocol [%s] doesn't support compress content",
                                 msg.getProtocol(), msg.getHttpVersions()));
             }
 
             if (hasNotSupportedHttpCompressAlgos(msg.getHttpCompressAlgos())) {
                 throw new ApiMessageInterceptionException(
-                        argerr("cloud not create the loadbalancer listener, because only support compress algos[%s]", LbSupportHttpCompressAlgos));
+                        argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10095, "cloud not create the loadbalancer listener, because only support compress algos[%s]", LbSupportHttpCompressAlgos));
             }
 
             if (!msg.getHttpCompressAlgos().contains(DisableLbSupportHttpCompressAlgos)) {
@@ -1157,11 +1158,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     private void validate(APIAddCertificateToLoadBalancerListenerMsg msg) {
         LoadBalancerListenerVO vo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
         if (!vo.getProtocol().equals(LoadBalancerConstants.LB_PROTOCOL_HTTPS)) {
-            throw new ApiMessageInterceptionException(argerr("loadbalancer listener with type %s does not need certificate", vo.getProtocol()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10096, "loadbalancer listener with type %s does not need certificate", vo.getProtocol()));
         }
 
         if (Q.New(LoadBalancerListenerCertificateRefVO.class).eq(LoadBalancerListenerCertificateRefVO_.listenerUuid, msg.getListenerUuid()).isExists()) {
-            throw new ApiMessageInterceptionException(argerr("loadbalancer listener [uuid:%s] already had certificate[uuid:%s]",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10097, "loadbalancer listener [uuid:%s] already had certificate[uuid:%s]",
                      msg.getListenerUuid(),msg.getCertificateUuid()));
         }
 
@@ -1171,7 +1172,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     private void validate(APIRemoveCertificateFromLoadBalancerListenerMsg msg) {
         if (!Q.New(LoadBalancerListenerCertificateRefVO.class).eq(LoadBalancerListenerCertificateRefVO_.listenerUuid, msg.getListenerUuid())
                 .eq(LoadBalancerListenerCertificateRefVO_.certificateUuid, msg.getCertificateUuid()).isExists()) {
-            throw new ApiMessageInterceptionException(argerr("certificate [uuid:%s] is not added to loadbalancer listener [uuid:%s]",
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10098, "certificate [uuid:%s] is not added to loadbalancer listener [uuid:%s]",
                     msg.getCertificateUuid(), msg.getListenerUuid()));
         }
 
@@ -1186,11 +1187,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 try {
                     int port = Integer.parseInt(target);
                     if (port < 1 || port > 65535) {
-                        throw new ApiMessageInterceptionException(argerr("healthCheck target [%s] error, it must be 'default' or number between[1~65535] ",
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10099, "healthCheck target [%s] error, it must be 'default' or number between[1~65535] ",
                                 target));
                     }
                 } catch (Exception e) {
-                    throw new ApiMessageInterceptionException(argerr("healthCheck target [%s] error, it must be 'default' or number between[1~65535] ",
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10100, "healthCheck target [%s] error, it must be 'default' or number between[1~65535] ",
                             target));
                 }
             }
@@ -1201,12 +1202,12 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 .find();
 
         if ((msg.getRedirectPort() != null || msg.getStatusCode() != null) && (msg.getHttpRedirectHttps() == null || HttpRedirectHttps.disable.toString().equals(msg.getHttpRedirectHttps()))) {
-            throw new ApiMessageInterceptionException(argerr("could not assign redirect port or status code without specifying http redirect https"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10101, "could not assign redirect port or status code without specifying http redirect https"));
         }
 
         if (HttpRedirectHttps.enable.toString().equals(msg.getHttpRedirectHttps())) {
             if (!LB_PROTOCOL_HTTP.equals(listener.getProtocol())) {
-                throw new ApiMessageInterceptionException(argerr("could not support protocols other than HTTP when specifying http redirect https"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10102, "could not support protocols other than HTTP when specifying http redirect https"));
             }
 
             if (msg.getRedirectPort() == null) {
@@ -1221,14 +1222,14 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     .in(SystemTagVO_.tag, Arrays.asList("sessionPersistence::rewrite", "sessionPersistence::insert", "sessionPersistence::iphash"))
                     .eq(SystemTagVO_.resourceUuid, listener.getUuid()).isExists();
             if (sessionPersistence || (msg.getSessionPersistence() != null && !LoadBalancerSessionPersistence.disable.toString().equals(msg.getSessionPersistence()))) {
-                throw new ApiMessageInterceptionException(argerr("could not support both HTTP redirect HTTPS and session persistence at the same time"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10103, "could not support both HTTP redirect HTTPS and session persistence at the same time"));
             }
         }
 
         /*can not modify l4's session persistence*/
         if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(listener.getProtocol()) || LoadBalancerConstants.LB_PROTOCOL_TCP.equals(listener.getProtocol())) {
             if (msg.getSessionPersistence() != null || msg.getSessionIdleTimeout() != null || msg.getCookieName() != null) {
-                throw new ApiMessageInterceptionException(argerr("l4[%s] loadBalancer listener[%s] doesn't support modifying session persistence state", listener.getProtocol(), listener.getName()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10104, "l4[%s] loadBalancer listener[%s] doesn't support modifying session persistence state", listener.getProtocol(), listener.getName()));
             }
         }
 
@@ -1238,32 +1239,32 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     .eq(SystemTagVO_.tag, "httpRedirectHttps::enable")
                     .eq(SystemTagVO_.resourceUuid, listener.getUuid()).isExists();
             if (httpRedirectHttps && (msg.getSessionPersistence() != null && !LoadBalancerSessionPersistence.disable.toString().equals(msg.getSessionPersistence()))) {
-                throw new ApiMessageInterceptionException(argerr("could not support both HTTP redirect HTTPS and session persistence at the same time"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10105, "could not support both HTTP redirect HTTPS and session persistence at the same time"));
             }
             if (LoadBalancerSessionPersistence.rewrite.toString().equals(msg.getSessionPersistence()) && msg.getHttpMode() == null) {
                 Boolean httpModeTunnel = Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName())
                         .eq(SystemTagVO_.tag, "httpMode::http-tunnel")
                         .eq(SystemTagVO_.resourceUuid, listener.getUuid()).isExists();
                 if (httpModeTunnel) {
-                    throw new ApiMessageInterceptionException(argerr("listener[%s] can not modifying session persistence rewrite when the http mode is http-tunnel", msg.getUuid()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10106, "listener[%s] can not modifying session persistence rewrite when the http mode is http-tunnel", msg.getUuid()));
                 }
             }
         }
 
         /*can not assign session persistence iphash without source algorithm*/
         if (!LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE.equals(msg.getBalancerAlgorithm()) && LoadBalancerSessionPersistence.iphash.toString().equals(msg.getSessionPersistence())) {
-            throw new ApiMessageInterceptionException(argerr("listener[%s] changes session persistence to iphash, it must specify source balancer algorithm", msg.getUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10107, "listener[%s] changes session persistence to iphash, it must specify source balancer algorithm", msg.getUuid()));
         }
 
         /*can not modify session persistence without specifying balancer algorithm*/
         if (msg.getBalancerAlgorithm() == null && (msg.getSessionPersistence() != null || msg.getSessionIdleTimeout() != null || msg.getCookieName() != null)) {
-            throw new ApiMessageInterceptionException(argerr("listener[%s] modifies session persistence, it must specify balancer algorithm", msg.getUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10108, "listener[%s] modifies session persistence, it must specify balancer algorithm", msg.getUuid()));
         }
 
         /*can not modify session persistence except iphash when the listener algorithm is source*/
         if (LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE.equals(msg.getBalancerAlgorithm())) {
             if ((!LoadBalancerSessionPersistence.iphash.toString().equals(msg.getSessionPersistence()) && msg.getSessionPersistence() != null) || msg.getSessionIdleTimeout() != null || msg.getCookieName() != null) {
-                throw new ApiMessageInterceptionException(argerr("listener[%s] %s algorithm doesn't support modifying session persistence except assigning iphash explicitly", msg.getUuid(), msg.getBalancerAlgorithm()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10109, "listener[%s] %s algorithm doesn't support modifying session persistence except assigning iphash explicitly", msg.getUuid(), msg.getBalancerAlgorithm()));
             }
             msg.setSessionPersistence(LoadBalancerSessionPersistence.iphash.toString());
         }
@@ -1271,7 +1272,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         /*can not modify session persistence except disable when the listener algorithm is leastconn*/
         if (LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_CONN.equals(msg.getBalancerAlgorithm())) {
             if ((!LoadBalancerSessionPersistence.disable.toString().equals(msg.getSessionPersistence()) && msg.getSessionPersistence() != null) || msg.getSessionIdleTimeout() != null || msg.getCookieName() != null) {
-                throw new ApiMessageInterceptionException(argerr("listener[%s] %s algorithm doesn't support modifying session persistence except assigning disable explicitly", msg.getUuid(), msg.getBalancerAlgorithm()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10110, "listener[%s] %s algorithm doesn't support modifying session persistence except assigning disable explicitly", msg.getUuid(), msg.getBalancerAlgorithm()));
             }
             msg.setSessionPersistence(LoadBalancerSessionPersistence.disable.toString());
         }
@@ -1279,19 +1280,19 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (BALANCE_ALGORITHM_ROUND_ROBIN.equals(msg.getBalancerAlgorithm()) || BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(msg.getBalancerAlgorithm())) {
             /*can not modify session idle timeout and cookie name without specifying session persistence*/
             if (msg.getSessionPersistence() == null && (msg.getSessionIdleTimeout() != null || msg.getCookieName() != null)) {
-                throw new ApiMessageInterceptionException(argerr("listener[%s] doesn't support modifying idle timeout and cookie name, it must specify session persistence", msg.getUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10111, "listener[%s] doesn't support modifying idle timeout and cookie name, it must specify session persistence", msg.getUuid()));
             }
             /*can not modify session idle timeout without specifying session persistence insert*/
             if (!LoadBalancerSessionPersistence.insert.toString().equals(msg.getSessionPersistence()) && msg.getSessionIdleTimeout() != null) {
-                throw new ApiMessageInterceptionException(argerr("listener[%s] doesn't support modifying idle timeout when the session persistence is not insert", msg.getUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10112, "listener[%s] doesn't support modifying idle timeout when the session persistence is not insert", msg.getUuid()));
             }
             /*can not modify session cookie name without specifying session persistence rewrite*/
             if (!LoadBalancerSessionPersistence.rewrite.toString().equals(msg.getSessionPersistence()) && msg.getCookieName() != null) {
-                throw new ApiMessageInterceptionException(argerr("listener[%s] doesn't support modifying cookie name when the session persistence is not rewrite", msg.getUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10113, "listener[%s] doesn't support modifying cookie name when the session persistence is not rewrite", msg.getUuid()));
             }
             /*can not modify session persistence rewrite without modifying session cookie name*/
             if (LoadBalancerSessionPersistence.rewrite.toString().equals(msg.getSessionPersistence()) && msg.getCookieName() == null) {
-                throw new ApiMessageInterceptionException(argerr("listener[%s] doesn't support modifying session rewrite without modifying cookie name", msg.getUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10114, "listener[%s] doesn't support modifying session rewrite without modifying cookie name", msg.getUuid()));
             }
             if (LoadBalancerSessionPersistence.insert.toString().equals(msg.getSessionPersistence()) && msg.getSessionIdleTimeout() == null) {
                 msg.setSessionIdleTimeout(LoadBalancerConstants.SESSION_IDLE_TIMEOUT_DEFAULT);
@@ -1305,7 +1306,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         Integer timeout = msg.getSessionIdleTimeout();
         if (timeout != null) {
             if (timeout < LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MIN || timeout > LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MAX) {
-                throw new ApiMessageInterceptionException(argerr("invalid session idle timeout[%s], it must be the number between[%s~%s]", timeout, LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MIN, LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MAX));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10115, "invalid session idle timeout[%s], it must be the number between[%s~%s]", timeout, LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MIN, LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MAX));
             }
         }
 
@@ -1318,14 +1319,14 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             String[] ts = tg.split(":");
             if (!msg.getHealthCheckProtocol().equals(ts[0]) && msg.getHealthCheckURI() == null) {
                 throw new ApiMessageInterceptionException(
-                        operr("the http health check protocol must be specified its healthy checking parameter healthCheckURI"));
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10116, "the http health check protocol must be specified its healthy checking parameter healthCheckURI"));
             }
         }
 
         if (msg.getHealthCheckHttpCode() != null) {
             if (!verifyHttpCode(msg.getHealthCheckHttpCode())) {
                 throw new ApiMessageInterceptionException(
-                        operr("the http health check protocol's expecting code [%s] is invalidate", msg.getHealthCheckHttpCode()));
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10117, "the http health check protocol's expecting code [%s] is invalidate", msg.getHealthCheckHttpCode()));
             }
         }
 
@@ -1334,7 +1335,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
         if (msg.getSecurityPolicyType() != null) {
             if (!listenerVO.getProtocol().equals(LB_PROTOCOL_HTTPS)) {
-                throw new ApiMessageInterceptionException(operr("the listener with protocol [%s] doesn't support select security policy", listenerVO.getProtocol(), msg.getHealthCheckProtocol()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10118, "the listener with protocol [%s] doesn't support select security policy", listenerVO.getProtocol(), msg.getHealthCheckProtocol()));
             }
         }
         if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
@@ -1343,56 +1344,56 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
             String[] ts = healthTarget.split(":");
             if (ts.length != 2) {
-                throw new OperationFailureException(argerr("invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default", target));
+                throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10119, "invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default", target));
             }
 
             if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(listenerVO.getProtocol()) && !LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP.equals(msg.getHealthCheckProtocol()) ||
                     !LoadBalancerConstants.LB_PROTOCOL_UDP.equals(listenerVO.getProtocol()) && LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP.equals(msg.getHealthCheckProtocol())) {
                 throw new ApiMessageInterceptionException(
-                        operr("the listener with protocol [%s] doesn't support this health check:[%s]",
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10120, "the listener with protocol [%s] doesn't support this health check:[%s]",
                                 listenerVO.getProtocol(), msg.getHealthCheckProtocol()));
             }
             if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(ts[0]) && (msg.getHealthCheckMethod() == null || msg.getHealthCheckURI() == null)) {
                 throw new ApiMessageInterceptionException(
-                        operr("the http health check protocol must be specified its healthy checking parameters including healthCheckMethod and healthCheckURI"));
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10121, "the http health check protocol must be specified its healthy checking parameters including healthCheckMethod and healthCheckURI"));
             }
         }
 
         if (!CollectionUtils.isEmpty(msg.getHttpVersions())) {
             if (!LoadBalancerConstants.LB_PROTOCOL_HTTPS.equals(listener.getProtocol())) {
                 throw new ApiMessageInterceptionException(
-                        argerr("cloud not change the loadbalancer listener, because the listener with protocol [%s] doesn't support select http version:[%s]",
+                        argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10122, "cloud not change the loadbalancer listener, because the listener with protocol [%s] doesn't support select http version:[%s]",
                                 listenerVO.getProtocol(), msg.getHttpVersions()));
             }
 
             if (hasNotSupportedHttpVersion(msg.getHttpVersions())) {
                 throw new ApiMessageInterceptionException(
-                        argerr("cloud not change the loadbalancer listener, because the listener with protocol https only support http version:[%s]", LbSupportHttpVersion));
+                        argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10123, "cloud not change the loadbalancer listener, because the listener with protocol https only support http version:[%s]", LbSupportHttpVersion));
             }
         }
 
         if (!StringUtils.isEmpty(msg.getTcpProxyProtocol())) {
             if (!LoadBalancerConstants.LB_PROTOCOL_TCP.equals(listener.getProtocol())) {
                 throw new ApiMessageInterceptionException(
-                        argerr("cloud not change the loadbalancer listener, because the listener with protocol tcp only support tcp proxy protocol for param"));
+                        argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10124, "cloud not change the loadbalancer listener, because the listener with protocol tcp only support tcp proxy protocol for param"));
             }
 
             if (!LbSupportTcpProxyProtocol.contains(msg.getTcpProxyProtocol())) {
                 throw new ApiMessageInterceptionException(
-                        argerr("cloud not change the loadbalancer listener, because only support tcp proxy protocol %s", LbSupportTcpProxyProtocol));
+                        argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10125, "cloud not change the loadbalancer listener, because only support tcp proxy protocol %s", LbSupportTcpProxyProtocol));
             }
         }
 
         if (!CollectionUtils.isEmpty(msg.getHttpCompressAlgos())) {
             if (!LoadBalancerConstants.LB_PROTOCOL_HTTPS.equals(listener.getProtocol()) && !LB_PROTOCOL_HTTP.equals(listener.getProtocol())) {
                 throw new ApiMessageInterceptionException(
-                        argerr("cloud not change the loadbalancer listener, because the listener with protocol [%s] doesn't support compress content",
+                        argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10126, "cloud not change the loadbalancer listener, because the listener with protocol [%s] doesn't support compress content",
                                 listenerVO.getProtocol(), msg.getHttpVersions()));
             }
 
             if (hasNotSupportedHttpCompressAlgos(msg.getHttpCompressAlgos())) {
                 throw new ApiMessageInterceptionException(
-                        argerr("cloud not change the loadbalancer listener, because only support compress algos[%s]", LbSupportHttpCompressAlgos));
+                        argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10127, "cloud not change the loadbalancer listener, because only support compress algos[%s]", LbSupportHttpCompressAlgos));
             }
         }
 
@@ -1422,7 +1423,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (msg.getIpVersion() == null) {
             msg.setIpVersion(IPv6Constants.IPv4);
         } else if (!msg.getIpVersion().equals(IPv6Constants.IPv4) && !msg.getIpVersion().equals(IPv6Constants.IPv6)) {
-            throw new ApiMessageInterceptionException(argerr("invalid ip version[%s], it must be %s or %s", msg.getIpVersion(), IPv6Constants.IPv4, IPv6Constants.IPv6));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10128, "invalid ip version[%s], it must be %s or %s", msg.getIpVersion(), IPv6Constants.IPv4, IPv6Constants.IPv6));
         }
     }
 
@@ -1436,7 +1437,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if(Q.New(LoadBalancerVO.class)
                 .eq(LoadBalancerVO_.serverGroupUuid,msg.getUuid())
                 .isExists()){
-            throw new ApiMessageInterceptionException(argerr("could not allow to delete default serverGroup[uuid:%s]",msg.getUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10129, "could not allow to delete default serverGroup[uuid:%s]",msg.getUuid()));
         }	
     }
 
@@ -1455,7 +1456,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 .eq(LoadBalancerServerGroupVO_.uuid, msg.getServerGroupUuid())
                 .findValue();
         if (loadBalancerUuid == null ) {
-            throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] is non-existent", msg.getServerGroupUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10130, "loadbalacerServerGroup [%s] is non-existent", msg.getServerGroupUuid()));
         }
         LoadBalancerVO lbVO = dbf.findByUuid(loadBalancerUuid, LoadBalancerVO.class);
 
@@ -1488,25 +1489,25 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 if(vmNic.containsKey("uuid")){
                     vmNicUuids.add(vmNic.get("uuid"));
                 }else{
-                    throw new ApiMessageInterceptionException(argerr("could not add backend server vmnic to serverGroup[uuid:%s],because vmnic uuid is null",msg.getServerGroupUuid()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10131, "could not add backend server vmnic to serverGroup[uuid:%s],because vmnic uuid is null",msg.getServerGroupUuid()));
                 }
 
                 boolean isVmNicExist = Q.New(VmNicVO.class)
                         .eq(VmNicVO_.uuid,vmNic.get("uuid"))
                         .isExists();
                 if(!isVmNicExist){
-                    throw new ApiMessageInterceptionException(argerr("could not add backend server vmnic[uuid:%s] to serverGroup[uuid:%s],because vmnic uuid is not exist",vmNic.get("uuid"),msg.getServerGroupUuid()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10132, "could not add backend server vmnic[uuid:%s] to serverGroup[uuid:%s],because vmnic uuid is not exist",vmNic.get("uuid"),msg.getServerGroupUuid()));
                 }
 
                 if(vmNic.containsKey("weight") && vmNic.get("weight")!=null){
                     try{
                         Long vmNicWeight = Long.valueOf(vmNic.get("weight"));
                         if (vmNicWeight < LoadBalancerConstants.BALANCER_WEIGHT_MIN || vmNicWeight > LoadBalancerConstants.BALANCER_WEIGHT_MAX) {
-                            throw new ApiMessageInterceptionException(argerr("invalid balancer weight[vimNic:%s,weight:%s], weight is not in the range [%d, %d]",
+                            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10133, "invalid balancer weight[vimNic:%s,weight:%s], weight is not in the range [%d, %d]",
                                     vmNic.get("uuid"), vmNicWeight, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
                         }
                     }catch (Exception e) {
-                        throw new ApiMessageInterceptionException(argerr("could not add backend server vmnic to serverGroup[uuid:%s] ,because vmnic weight[%s] not a correct number",vmNic.get("weight")));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10134, "could not add backend server vmnic to serverGroup[uuid:%s] ,because vmnic weight[%s] not a correct number",vmNic.get("weight")));
                     }
                 }
 
@@ -1526,7 +1527,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             l3Uuids.removeAll(networksAttachedLbService);
             if (l3Uuids.size() > 0) {
                 throw new ApiMessageInterceptionException(
-                        operr("L3 networks[uuids:%s] of the vm nics has no network service[%s] enabled",
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10135, "L3 networks[uuids:%s] of the vm nics has no network service[%s] enabled",
                                 l3Uuids, LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING));
             }
 
@@ -1536,7 +1537,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid,msg.getServerGroupUuid())
                     .listValues();
             if (!existingNics.isEmpty()) {
-                throw new ApiMessageInterceptionException(operr("the vm nics[uuid:%s] are already on the load balancer servegroup [uuid:%s]", existingNics, msg.getServerGroupUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10136, "the vm nics[uuid:%s] are already on the load balancer servegroup [uuid:%s]", existingNics, msg.getServerGroupUuid()));
             }
 
             List<String> vmNicIps = Q.New(UsedIpVO.class)
@@ -1545,7 +1546,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     .listValues();
 
             if(!Collections.disjoint(usedIps,vmNicIps)){
-                throw new ApiMessageInterceptionException(operr("could not add backend server vmnic to serverGroup [uuid:%s], because vmnic ip [ipAddress:%s] is repeated",msg.getServerGroupUuid(),vmNicIps));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10137, "could not add backend server vmnic to serverGroup [uuid:%s], because vmnic ip [ipAddress:%s] is repeated",msg.getServerGroupUuid(),vmNicIps));
             }else{
                 usedIps.addAll(vmNicIps);
             }
@@ -1557,7 +1558,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                         .in(LoadBalancerListenerVO_.uuid, listenerUuids).list();
                 for (LoadBalancerListenerVO listenerVO : listenerVOS) {
                     if (listenerVO.getAttachedVmNics().stream().anyMatch(uuid -> vmNicUuids.contains(uuid))) {
-                        throw new ApiMessageInterceptionException(operr("could not add vm nic [uuid:%s] to server group" +
+                        throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10138, "could not add vm nic [uuid:%s] to server group" +
                                         " [uuid:%s] because listener [uuid:%s] attached this server group already the nic to be added",
                                 vmNicUuids, msg.getServerGroupUuid(), listenerVO.getUuid()));
                     }
@@ -1573,22 +1574,22 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             for(Map<String,String> server:servers){
                 if(server.containsKey("ipAddress") && NetworkUtils.isIpAddress(server.get("ipAddress"))){
                     if(usedIps.contains(server.get("ipAddress"))){
-                        throw new ApiMessageInterceptionException(operr("could not add backend server ip to serverGroup [uuid:%s], because ip [ipAddress:%s] is repeated",msg.getServerGroupUuid(),server.get("ipAddress")));
+                        throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10139, "could not add backend server ip to serverGroup [uuid:%s], because ip [ipAddress:%s] is repeated",msg.getServerGroupUuid(),server.get("ipAddress")));
                     }
                     serverIps.add(server.get("ipAddress"));
                 }else{
-                    throw new ApiMessageInterceptionException(operr("could not add backend server ip to serverGroup [uuid:%s], because ip [ipAddress:%s] is invalid",msg.getServerGroupUuid(),serverIps));
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10140, "could not add backend server ip to serverGroup [uuid:%s], because ip [ipAddress:%s] is invalid",msg.getServerGroupUuid(),serverIps));
                 }
 
                 if(server.containsKey("weight") && server.get("weight")!=null){
                     try{
                         Long serverIpWeight = Long.valueOf(server.get("weight"));
                         if (serverIpWeight < LoadBalancerConstants.BALANCER_WEIGHT_MIN || serverIpWeight > LoadBalancerConstants.BALANCER_WEIGHT_MAX) {
-                            throw new ApiMessageInterceptionException(argerr("invalid  weight[serverIp:%s,weight:%s], weight is not in the range [%d, %d]",
+                            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10141, "invalid  weight[serverIp:%s,weight:%s], weight is not in the range [%d, %d]",
                                     server.get("ipAddress"), serverIpWeight, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
                         }
                     }catch (Exception e) {
-                        throw new ApiMessageInterceptionException(argerr("could not add backend server ip to serverGroup[uuid:%s] ,because vmnic weight[%s] not a correct number",server.get("weight")));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10142, "could not add backend server ip to serverGroup[uuid:%s] ,because vmnic weight[%s] not a correct number",server.get("weight")));
                     }
                 }
             }
@@ -1599,11 +1600,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     .eq(LoadBalancerServerGroupServerIpVO_.serverGroupUuid,msg.getServerGroupUuid())
                     .listValues());
             if (!existingServerIps.isEmpty()) {
-                throw new ApiMessageInterceptionException(operr("the server ips [uuid:%s] are already on the load balancer servegroup [uuid:%s]", existingServerIps, msg.getServerGroupUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10143, "the server ips [uuid:%s] are already on the load balancer servegroup [uuid:%s]", existingServerIps, msg.getServerGroupUuid()));
             }
 
             if (lbVO.getType() == LoadBalancerType.Shared) {
-                throw new ApiMessageInterceptionException(argerr("could not add server ip to share load balancer server group"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10144, "could not add server ip to share load balancer server group"));
             }
             canAddServerIp = true;
         }
@@ -1611,7 +1612,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if( canAddVmNic || canAddServerIp){
             msg.setLoadBalancerUuid(loadBalancerUuid);
         } else{
-            throw new ApiMessageInterceptionException(argerr("vmnic or ip is null"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10145, "vmnic or ip is null"));
         }
     }
 
@@ -1629,7 +1630,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             );
 
             if(existingNics.isEmpty()) {
-                throw new ApiMessageInterceptionException(operr("vmnics are all not in servergroup [%s]",msg.getServerGroupUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10146, "vmnics are all not in servergroup [%s]",msg.getServerGroupUuid()));
             }else{
                 isNicExist = true;
                 msg.setVmNicUuids(new ArrayList<>(existingNics));
@@ -1646,7 +1647,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid,msg.getServerGroupUuid())
                     .listValues());
             if(existingServerIps.isEmpty()){
-                throw new ApiMessageInterceptionException(operr("serverips are all not in servergroup [%s]", msg.getServerGroupUuid()));
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10147, "serverips are all not in servergroup [%s]", msg.getServerGroupUuid()));
             }else{
                 isIpExist = true;
                 msg.setServerIps(new ArrayList<>(existingServerIps));
@@ -1661,11 +1662,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     .eq(LoadBalancerServerGroupVO_.uuid,msg.getServerGroupUuid())
                     .findValue();
             if (loadBalancerUuid == null) {
-                throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] is non-existent", msg.getServerGroupUuid()));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10148, "loadbalacerServerGroup [%s] is non-existent", msg.getServerGroupUuid()));
             }
             msg.setLoadBalancerUuid(loadBalancerUuid);
         }else{
-            throw new ApiMessageInterceptionException(argerr("vmnic or ip is null"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10149, "vmnic or ip is null"));
         }
     }
 
@@ -1676,7 +1677,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getlistenerUuid())
                     .list();
         if(existingRefs != null && !existingRefs.isEmpty()){
-            throw new ApiMessageInterceptionException(operr("could not add server group[uuid:%s} to listener [uuid:%s] because it is already added ",
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10150, "could not add server group[uuid:%s} to listener [uuid:%s] because it is already added ",
                     msg.getServerGroupUuid(),msg.getlistenerUuid()));
         }
 
@@ -1693,7 +1694,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             if (!newVmNicUuids.isEmpty() && !oldVmNicUuids.isEmpty()) {
                 for (String nicUuid : newVmNicUuids) {
                     if (oldVmNicUuids.contains(nicUuid)) {
-                        throw new ApiMessageInterceptionException(operr("could not add server group[uuid:%s} to listener [uuid:%s] because nic [uuid:%s] is already added",
+                        throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10151, "could not add server group[uuid:%s} to listener [uuid:%s] because nic [uuid:%s] is already added",
                                 msg.getServerGroupUuid(),msg.getlistenerUuid(), nicUuid));
                     }
                 }
@@ -1708,7 +1709,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             if (!newServerIps.isEmpty() && !oldServerIps.isEmpty()) {
                 for (String ipAddress : newServerIps) {
                     if (oldServerIps.contains(ipAddress)) {
-                        throw new ApiMessageInterceptionException(operr("could not add server group[uuid:%s} to listener [uuid:%s] because server ip [%s] is already added",
+                        throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10152, "could not add server group[uuid:%s} to listener [uuid:%s] because server ip [%s] is already added",
                                 msg.getServerGroupUuid(),msg.getlistenerUuid(), ipAddress));
                     }
                 }
@@ -1730,21 +1731,21 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             if (!StringUtils.isEmpty(lbVO.getVipUuid()) &&
                     !StringUtils.isEmpty(lbVO.getIpv6VipUuid())) {
                 throw new ApiMessageInterceptionException(operr(
-                        "could not add server group[uuid:%s} to listener [uuid:%s], " +
+                ORG_ZSTACK_NETWORK_SERVICE_LB_10153,         "could not add server group[uuid:%s} to listener [uuid:%s], " +
                                 "because udp listener can not has both ipv4 and ipv6 vip",
                         msg.getServerGroupUuid(),msg.getlistenerUuid()));
             }
 
             if (groupVO.getIpVersion() == IPv6Constants.IPv4 && !StringUtils.isEmpty(lbVO.getIpv6VipUuid())) {
                 throw new ApiMessageInterceptionException(operr(
-                        "could not add server group[uuid:%s} to listener [uuid:%s], " +
+                ORG_ZSTACK_NETWORK_SERVICE_LB_10154,         "could not add server group[uuid:%s} to listener [uuid:%s], " +
                                 "because udp listener can not map ipv6 to ipv4 backend",
                         msg.getServerGroupUuid(),msg.getlistenerUuid()));
             }
 
             if (groupVO.getIpVersion() == IPv6Constants.IPv6 && !StringUtils.isEmpty(lbVO.getVipUuid())) {
                 throw new ApiMessageInterceptionException(operr(
-                        "could not add server group[uuid:%s} to listener [uuid:%s], " +
+                ORG_ZSTACK_NETWORK_SERVICE_LB_10155,         "could not add server group[uuid:%s} to listener [uuid:%s], " +
                                 "because udp listener can not map ipv4 to ipv6 backend",
                         msg.getServerGroupUuid(),msg.getlistenerUuid()));
             }
@@ -1757,7 +1758,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 .eq(SystemTagVO_.tag, "httpRedirectHttps::enable")
                 .eq(SystemTagVO_.resourceUuid, msg.getListenerUuid()).isExists();
         if (httpRedirectHttps) {
-            throw new ApiMessageInterceptionException(argerr("could not  remove server groups[uuid:%s} from listener [uuid:%s] because it has enable HTTP redirect HTTPS", msg.getServerGroupUuid(), msg.getListenerUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10156, "could not  remove server groups[uuid:%s} from listener [uuid:%s] because it has enable HTTP redirect HTTPS", msg.getServerGroupUuid(), msg.getListenerUuid()));
         }
 
         List<LoadBalancerListenerServerGroupRefVO> existingRefs
@@ -1766,7 +1767,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid())
                 .list();
         if(existingRefs == null || existingRefs.isEmpty()){
-            throw new ApiMessageInterceptionException(operr("could not remove server group[uuid:%s} from listener [uuid:%s] because it is not added",msg.getServerGroupUuid(),msg.getListenerUuid()));
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10157, "could not remove server group[uuid:%s} from listener [uuid:%s] because it is not added",msg.getServerGroupUuid(),msg.getListenerUuid()));
         }
 
         String loadBalancerUuid = Q.New(LoadBalancerServerGroupVO.class)
@@ -1781,7 +1782,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 .eq(LoadBalancerVO_.uuid,loadBalancerUuid)
                 .count();
         if(count == 0){
-            throw new ApiMessageInterceptionException(argerr("loadbalacerUuid [%s] is non-existent",loadBalancerUuid));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10158, "loadbalacerUuid [%s] is non-existent",loadBalancerUuid));
         }else{
             return true;
         }
@@ -1796,7 +1797,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 .eq(LoadBalancerServerGroupVO_.uuid, msg.getServerGroupUuid())
                 .findValue();
         if (loadBalancerUuid == null) {
-            throw new ApiMessageInterceptionException(argerr("could not find loadBalancer with serverGroup [uuid:%s]",msg.getServerGroupUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10159, "could not find loadBalancer with serverGroup [uuid:%s]",msg.getServerGroupUuid()));
         }
         LoadBalancerVO lbVO = dbf.findByUuid(loadBalancerUuid, LoadBalancerVO.class);
 
@@ -1812,7 +1813,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                             .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid,msg.getServerGroupUuid())
                             .find();
                     if(serverGroupVmNicRefVO == null){
-                        throw new ApiMessageInterceptionException(argerr("could not update backend server vmnic of serverGroup,because serverGroup[uuid:%s] don not have vmnic [uuid:%s] ",msg.getServerGroupUuid(),vmNic.containsKey("uuid")));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10160, "could not update backend server vmnic of serverGroup,because serverGroup[uuid:%s] don not have vmnic [uuid:%s] ",msg.getServerGroupUuid(),vmNic.containsKey("uuid")));
                     }
 
                     vmNicUuids.add(vmNic.get("uuid"));
@@ -1822,22 +1823,22 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                             try{
                                 Long vmNicWeight = Long.valueOf(vmNic.get("weight"));
                                 if (vmNicWeight < LoadBalancerConstants.BALANCER_WEIGHT_MIN || vmNicWeight > LoadBalancerConstants.BALANCER_WEIGHT_MAX) {
-                                    throw new ApiMessageInterceptionException(argerr("invalid balancer weight[vimNic:%s,weight:%s], weight is not in the range [%d, %d]",
+                                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10161, "invalid balancer weight[vimNic:%s,weight:%s], weight is not in the range [%d, %d]",
                                             vmNic.get("uuid"), vmNicWeight, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
                                 }
 
                                 canChangeVmNic = true;
 
                             }catch (Exception e) {
-                                throw new ApiMessageInterceptionException(argerr("could not change backend server vmnic to serverGroup[uuid:%s] ,because vmnic weight[%s] not a correct number",vmNic.get("weight")));
+                                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10162, "could not change backend server vmnic to serverGroup[uuid:%s] ,because vmnic weight[%s] not a correct number",vmNic.get("weight")));
                             }
                         }
 
                     }else{
-                        throw new ApiMessageInterceptionException(argerr("invalid balancer weight[vimNic:%s], weight is null",vmNic.get("uuid")));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10163, "invalid balancer weight[vimNic:%s], weight is null",vmNic.get("uuid")));
                     }
                 }else{
-                    throw new ApiMessageInterceptionException(argerr("could not update backend server vmnic of serverGroup[uuid:%s],because vmnic uuid is null",msg.getServerGroupUuid()));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10164, "could not update backend server vmnic of serverGroup[uuid:%s],because vmnic uuid is null",msg.getServerGroupUuid()));
                 }
             }
         }
@@ -1853,7 +1854,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                             .eq(LoadBalancerServerGroupServerIpVO_.serverGroupUuid,msg.getServerGroupUuid())
                             .find();
                     if(serverIpVO == null){
-                        throw new ApiMessageInterceptionException(argerr("could not update backend server ip of serverGroup,because serverGroup[uuid:%s] don not have ip [ipAddress:%s] ",msg.getServerGroupUuid(),ipAddress));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10165, "could not update backend server ip of serverGroup,because serverGroup[uuid:%s] don not have ip [ipAddress:%s] ",msg.getServerGroupUuid(),ipAddress));
                     }
 
                     serverIps.add(ipAddress);
@@ -1862,33 +1863,33 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                         try{
                             Long serverIpWeight = Long.valueOf(server.get("weight"));
                             if (serverIpWeight < LoadBalancerConstants.BALANCER_WEIGHT_MIN || serverIpWeight > LoadBalancerConstants.BALANCER_WEIGHT_MAX) {
-                                throw new ApiMessageInterceptionException(argerr("invalid balancer weight[serverIp:%s,weight:%s], weight is not in the range [%d, %d]",
+                                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10166, "invalid balancer weight[serverIp:%s,weight:%s], weight is not in the range [%d, %d]",
                                         server.get("ipAddress"), serverIpWeight, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
                             }
 
                             canChangeServerIp = true;
 
                         }catch (Exception e) {
-                            throw new ApiMessageInterceptionException(argerr("could not add backend server ip to serverGroup[uuid:%s] ,because vmnic weight[%s] not a correct number",server.get("weight")));
+                            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10167, "could not add backend server ip to serverGroup[uuid:%s] ,because vmnic weight[%s] not a correct number",server.get("weight")));
                         }
                     }else{
-                        throw new ApiMessageInterceptionException(argerr("invalid balancer weight[serverIp:%s], weight is null",server.get("ipAddress")));
+                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10168, "invalid balancer weight[serverIp:%s], weight is null",server.get("ipAddress")));
                     }
 
                 }else{
-                    throw new ApiMessageInterceptionException(operr("could not add backend server ip to serverGroup [uuid:%s], because ip [ipAddress:%s] is invalid",msg.getServerGroupUuid(),serverIps));
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10169, "could not add backend server ip to serverGroup [uuid:%s], because ip [ipAddress:%s] is invalid",msg.getServerGroupUuid(),serverIps));
                 }
             }
 
             if (lbVO.getType() == LoadBalancerType.Shared) {
-                throw new ApiMessageInterceptionException(argerr("could not add server ip to share load balancer server group"));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10170, "could not add server ip to share load balancer server group"));
             }
         }
 
         if( canChangeVmNic || canChangeServerIp){
             msg.setLoadBalancerUuid(loadBalancerUuid);
         }else{
-            throw new ApiMessageInterceptionException(argerr("could not change backendserver, beacause vmincs and serverips is null"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10171, "could not change backendserver, beacause vmincs and serverips is null"));
         }
     }
 

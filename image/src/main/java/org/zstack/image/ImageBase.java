@@ -50,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -238,7 +239,7 @@ public class ImageBase implements Image {
             });
 
             if (bsUuids.isEmpty()) {
-                throw new OperationFailureException(operr("the image[uuid:%s, name:%s] is not on any backup storage", self.getUuid(), self.getName()));
+                throw new OperationFailureException(operr(ORG_ZSTACK_IMAGE_10038, "the image[uuid:%s, name:%s] is not on any backup storage", self.getUuid(), self.getName()));
             }
 
             SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
@@ -248,7 +249,7 @@ public class ImageBase implements Image {
             q.setLimit(1);
             backupStorageUuid = q.findValue();
             if (backupStorageUuid == null) {
-                completion.fail(operr("No connected backup storage found for image[uuid:%s, name:%s]",
+                completion.fail(operr(ORG_ZSTACK_IMAGE_10039, "No connected backup storage found for image[uuid:%s, name:%s]",
                         self.getUuid(), self.getName()));
                 return;
             }
@@ -440,7 +441,7 @@ public class ImageBase implements Image {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
                         if (errors.size() != 0) {
-                            trigger.fail(operr("detach iso[uuid=%s] from vm failed, errors are %s"
+                            trigger.fail(operr(ORG_ZSTACK_IMAGE_10040, "detach iso[uuid=%s] from vm failed, errors are %s"
                                     ,msg.getImageUuid(), JSONObjectUtil.toJsonString(errors)));
                             return;
                         }
@@ -753,7 +754,7 @@ public class ImageBase implements Image {
             });
 
             if (toRecoverBsUuids.isEmpty()) {
-                throw new OperationFailureException(operr("the image[uuid:%s, name:%s] is not deleted on any backup storage",
+                throw new OperationFailureException(operr(ORG_ZSTACK_IMAGE_10041, "the image[uuid:%s, name:%s] is not deleted on any backup storage",
                                 self.getUuid(), self.getName()));
             }
         } else {
@@ -767,12 +768,12 @@ public class ImageBase implements Image {
                 });
 
                 if (ref == null) {
-                    throw new OperationFailureException(argerr("the image[uuid:%s, name:%s] is not on the backup storage[uuid:%s]",
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_IMAGE_10042, "the image[uuid:%s, name:%s] is not on the backup storage[uuid:%s]",
                                     self.getUuid(), self.getName(), bsUuid));
                 }
 
                 if (ref.getStatus() != ImageStatus.Deleted) {
-                    throw new OperationFailureException(argerr("the image[uuid:%s, name:%s]'s status[%s] is not Deleted on the backup storage[uuid:%s]",
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_IMAGE_10043, "the image[uuid:%s, name:%s]'s status[%s] is not Deleted on the backup storage[uuid:%s]",
                                     self.getUuid(), self.getName(), ref.getStatus(), bsUuid));
                 }
 
@@ -814,7 +815,7 @@ public class ImageBase implements Image {
             );
 
             if (bsUuids.isEmpty()) {
-                throw new OperationFailureException(operr("the image[uuid:%s, name:%s] is not deleted on any backup storage",
+                throw new OperationFailureException(operr(ORG_ZSTACK_IMAGE_10044, "the image[uuid:%s, name:%s] is not deleted on any backup storage",
                         self.getUuid(), self.getName()));
             }
         } else {
@@ -830,12 +831,12 @@ public class ImageBase implements Image {
                 );
 
                 if (ref == null) {
-                    throw new OperationFailureException(argerr("the image[uuid:%s, name:%s] is not on the backup storage[uuid:%s]",
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_IMAGE_10045, "the image[uuid:%s, name:%s] is not on the backup storage[uuid:%s]",
                             self.getUuid(), self.getName(), bsUuid));
                 }
 
                 if (ref.getStatus() != ImageStatus.Deleted) {
-                    throw new OperationFailureException(argerr("the image[uuid:%s, name:%s] is not deleted on the backup storage[uuid:%s]",
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_IMAGE_10046, "the image[uuid:%s, name:%s] is not deleted on the backup storage[uuid:%s]",
                             self.getUuid(), self.getName(), bsUuid));
                 }
 
@@ -1024,7 +1025,7 @@ public class ImageBase implements Image {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                evt.setError(err(ORG_ZSTACK_IMAGE_10047, SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                 bus.publish(evt);
             }
         }).start();

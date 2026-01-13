@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtensionPoint, KVMPingAgentNoFailureExtensionPoint,
         KvmVmActiveVolumeSyncExtensionPoint, KVMStartVmExtensionPoint {
@@ -200,8 +201,8 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                         status = PrimaryStorageHostStatus.Connected;
                     } else {
                         status = PrimaryStorageHostStatus.Disconnected;
-                        err = operr("external primary storage[uuid:%s, name:%s] returns unhealthy status: %s",
-                                extPs.getUuid(), extPs.getName(), returnValue.getHealthy());
+                        err = operr(ORG_ZSTACK_EXTERNALSTORAGE_PRIMARY_KVM_10000, "external primary storage[uuid:%s, name:%s] returns unhealthy status: %s",
+                                ((ExternalPrimaryStorageVO) extPs).getUuid(), ((ExternalPrimaryStorageVO) extPs).getName(), returnValue.getHealthy());
                         compl.addError(err);
                     }
 
@@ -346,7 +347,7 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                 if (!client.getManagerIp().equals(host.getManagementIp()) && !client.isInBlacklist()) {
                     // hard code for zbs, zbs not support deactive and blacklist yet
                     if (vol.getProtocol().equals(ExternalStorageConstant.CBD_PROTOCOL)) {
-                        throw new OperationFailureException(operr("find active clients for volume[uuid:%s, installPath %s, client:%s]",
+                        throw new OperationFailureException(operr(ORG_ZSTACK_EXTERNALSTORAGE_PRIMARY_KVM_10001, "find active clients for volume[uuid:%s, installPath %s, client:%s]",
                                 vol.getUuid(), vol.getInstallPath(), client.getManagerIp()));
                     }
                     // TODO use async call

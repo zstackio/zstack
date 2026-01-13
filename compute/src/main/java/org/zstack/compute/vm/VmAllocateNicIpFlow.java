@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateNicIpFlow implements Flow {
@@ -99,7 +100,7 @@ public class VmAllocateNicIpFlow implements Flow {
                     if (!Q.New(NormalIpRangeVO.class)
                             .eq(NormalIpRangeVO_.l3NetworkUuid, v.getL3Invs().get(0).getUuid())
                             .isExists()) {
-                        throw new OperationFailureException(Platform.operr("there is no available ipRange on L3 network [%s]", v.getL3Invs().get(0).getUuid()));
+                        throw new OperationFailureException(Platform.operr(ORG_ZSTACK_COMPUTE_VM_10079, "there is no available ipRange on L3 network [%s]", v.getL3Invs().get(0).getUuid()));
                     }
                 })
                 .collect(Collectors.toList());

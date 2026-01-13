@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.zstack.core.Platform.getReflections;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailureExtensionPoint, KVMHostConnectExtensionPoint,
         MarshalReplyMessageExtensionPoint, HostConnectionReestablishExtensionPoint, HostAfterConnectedExtensionPoint, Component,
@@ -92,7 +93,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                 if (msg instanceof VmInstanceMessage) {
                     vmUuid = ((VmInstanceMessage) msg).getVmInstanceUuid();
                 } else {
-                    throw new OperationFailureException(operr("cannot get vmUuid from msg %s", msg.getMessageName()));
+                    throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10150, "cannot get vmUuid from msg %s", msg.getMessageName()));
                 }
 
                 VmTracerCanonicalEvents.VmSkipTraceData data = new VmTracerCanonicalEvents.VmSkipTraceData();
@@ -259,7 +260,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                     reportVmState(host.getUuid(), states, vmsToSkipSetHostSide, mgmtSideStates);
                     completion.success();
                 } else {
-                    ErrorCode errorCode = operr("unable to do vm sync on host[uuid:%s, ip:%s] because %s", host.getUuid(), host.getManagementIp(), ret.getError());
+                    ErrorCode errorCode = operr(ORG_ZSTACK_KVM_10151, "unable to do vm sync on host[uuid:%s, ip:%s] because %s", host.getUuid(), host.getManagementIp(), ret.getError());
                     completion.fail(errorCode);
                 }
             }
@@ -288,7 +289,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
             } else {
                 VmTracerCanonicalEvents.VmStateInShutdownData data = new VmTracerCanonicalEvents.VmStateInShutdownData();
                 data.setVmUuid(vmUuid);
-                ErrorCode err = operr("The vm[%s] state is in shutdown for a long time, check whether the vm is normal", vmUuid);
+                ErrorCode err = operr(ORG_ZSTACK_KVM_10152, "The vm[%s] state is in shutdown for a long time, check whether the vm is normal", vmUuid);
                 data.setReason(err);
                 evtf.fire(VmTracerCanonicalEvents.VM_STATE_IN_SHUTDOWN_PATH, data);
                 vmInShutdownMap.remove(vmUuid);

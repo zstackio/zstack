@@ -58,6 +58,7 @@ import static org.zstack.core.db.DBSourceUtils.waitDBConnected;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.longjob.LongJobConstants.LongJobOperation;
 import static org.zstack.longjob.LongJobUtils.*;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by GuoYi on 11/14/17.
@@ -309,7 +310,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         }
 
         if (!longJobFactory.supportCancel(t.get(1, String.class))) {
-            completion.fail(err(LongJobErrors.NOT_SUPPORTED, "not supported"));
+            completion.fail(err(ORG_ZSTACK_LONGJOB_10000, LongJobErrors.NOT_SUPPORTED, "not supported"));
             return;
         }
 
@@ -361,7 +362,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 LongJobVO vo = Q.New(LongJobVO.class).eq(LongJobVO_.uuid, msg.getUuid()).find();
 
                 if (!longJobFactory.supportClean(vo.getJobName()) || vo.getState() != LongJobState.Canceling) {
-                    evt.setError(err(LongJobErrors.NOT_SUPPORTED, "not supported or state is not Canceling"));
+                    evt.setError(err(ORG_ZSTACK_LONGJOB_10001, LongJobErrors.NOT_SUPPORTED, "not supported or state is not Canceling"));
                     bus.publish(evt);
                     chain.next();
                     return;
@@ -465,7 +466,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         if (longJobFactory.supportResume(jobName)) {
             completion.success(doResumeJob(uuid, new NopeCompletion()));
         } else {
-            completion.fail(err(LongJobErrors.NOT_SUPPORTED, "not supported"));
+            completion.fail(err(ORG_ZSTACK_LONGJOB_10002, LongJobErrors.NOT_SUPPORTED, "not supported"));
         }
     }
 
@@ -865,7 +866,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
         if (!longJobFactory.supportClean(vo.getJobName())) {
             changeState(vo.getUuid(), LongJobStateEvent.fail);
-            runLongJobCallBack(vo, err(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
+            runLongJobCallBack(vo, err(ORG_ZSTACK_LONGJOB_10003, SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
                     "management node is unavailable"));
             return;
         }
@@ -873,13 +874,13 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         doCleanJob(vo, new Completion(null) {
             @Override
             public void success() {
-                runLongJobCallBack(vo, err(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
+                runLongJobCallBack(vo, err(ORG_ZSTACK_LONGJOB_10004, SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
                         "management node is unavailable"));
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                runLongJobCallBack(vo, err(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
+                runLongJobCallBack(vo, err(ORG_ZSTACK_LONGJOB_10005, SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
                         "management node is unavailable"));
             }
         });

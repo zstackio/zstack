@@ -29,6 +29,7 @@ import org.zstack.utils.network.NetworkUtils;
 import java.util.*;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by shixin.ruan on 09/17/2019.
@@ -127,13 +128,13 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
     private void validate(APICreateL3NetworkMsg msg) {
         String type = Q.New(L2NetworkVO.class).select(L2NetworkVO_.type).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).findValue();
         if (type.equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE)) {
-            throw new ApiMessageInterceptionException(argerr("hardware vxlan network pool doesn't support create l3 network"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_HARDWAREVXLAN_10008, "hardware vxlan network pool doesn't support create l3 network"));
         }
     }
 
     private void validate(APICreateL2HardwareVxlanNetworkPoolMsg msg) {
         if (msg.getPhysicalInterface() == null || msg.getPhysicalInterface().equals("")) {
-            throw new ApiMessageInterceptionException(argerr("hardware vxlan network pool must configure the physical interface"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_HARDWAREVXLAN_10009, "hardware vxlan network pool must configure the physical interface"));
         }
     }
 
@@ -141,19 +142,19 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
         VxlanNetworkPoolVO poolVO = dbf.findByUuid(msg.getPoolUuid(), VxlanNetworkPoolVO.class);
         if (poolVO.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE)
                 && !msg.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_TYPE)) {
-            throw new ApiMessageInterceptionException(argerr("ONLY hardware vxlan network can be created in hardware vxlan pool"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_HARDWAREVXLAN_10010, "ONLY hardware vxlan network can be created in hardware vxlan pool"));
         }
 
         if (!poolVO.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE)
                 && msg.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_TYPE)) {
-            throw new ApiMessageInterceptionException(argerr("hardware vxlan network can ONLY be created in hardware vxlan pool"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_HARDWAREVXLAN_10011, "hardware vxlan network can ONLY be created in hardware vxlan pool"));
         }
     }
 
     private void validate(APICreateL2HardwareVxlanNetworkMsg msg) {
         VxlanNetworkPoolVO poolVO = dbf.findByUuid(msg.getPoolUuid(), VxlanNetworkPoolVO.class);
         if (msg.getZoneUuid() != null && !msg.getZoneUuid().equals(poolVO.getZoneUuid())) {
-            throw new ApiMessageInterceptionException(Platform.err(SysErrors.INVALID_ARGUMENT_ERROR,
+            throw new ApiMessageInterceptionException(Platform.err(ORG_ZSTACK_SDNCONTROLLER_HARDWAREVXLAN_10012, SysErrors.INVALID_ARGUMENT_ERROR,
                     String.format("the zone uuid provided not equals to zone uuid of pool [%s], please correct it or do not fill it",
                             msg.getPoolUuid())
             ));
@@ -165,7 +166,7 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
         // check interface name length
         if (msg.getVni() != null && NetworkUtils.generateVlanDeviceName(
                 poolVO.getPhysicalInterface(), msg.getVni()).length() > L2NetworkConstant.LINUX_IF_NAME_MAX_SIZE) {
-            throw new ApiMessageInterceptionException(argerr("cannot create vlan-device on %s because it's too long"
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_HARDWAREVXLAN_10013, "cannot create vlan-device on %s because it's too long"
                     , msg.getPhysicalInterface()));
         }
     }

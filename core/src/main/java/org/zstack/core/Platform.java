@@ -975,11 +975,11 @@ public class Platform {
 
     private static List<Enum> allowCode = CollectionDSL.list(IdentityErrors.INVALID_SESSION);
 
-    public static ErrorCode err(Enum errCode, String fmt, Object...args) {
-        return err(errCode, null, fmt, args);
+    public static ErrorCode err(String globalErrorCode, Enum errCode, String fmt, Object...args) {
+        return err(globalErrorCode, errCode, null, fmt, args);
     }
 
-    public static ErrorCode err(Enum errCode, ErrorCode cause, String fmt, Object...args) {
+    public static ErrorCode err(String globalErrorCode, Enum errCode, ErrorCode cause, String fmt, Object...args) {
         ErrorFacade errf = getComponentLoader().getComponent(ErrorFacade.class);
         String details = null;
         if (fmt != null) {
@@ -995,6 +995,7 @@ public class Platform {
         ErrorCode result = errf.instantiateErrorCode(errCode, details, cause);
         handleErrorElaboration(errCode, fmt, result, cause, args);
         addErrorCounter(result);
+        result.setGlobalErrorCode(globalErrorCode);
 
         return result;
     }
@@ -1129,45 +1130,45 @@ public class Platform {
         return sb.append("are required").toString();
     }
 
-    public static ErrorCode inerr(String fmt, Object...args) {
-        return err(SysErrors.INTERNAL, fmt, args);
+    public static ErrorCode inerr(String globalErrorCode, String fmt, Object...args) {
+        return err(globalErrorCode, SysErrors.INTERNAL, fmt, args);
     }
 
     // format error code from expand components
-    public static ErrorCode experr(String fmt, String err, Object...args) {
-        return operr(fmt, err, args);
+    public static ErrorCode experr(String globalErrorCode, String fmt, String err, Object...args) {
+        return operr(globalErrorCode, fmt, err, args);
     }
 
-    public static ErrorCode operr(String fmt, Object...args) {
-        return err(SysErrors.OPERATION_ERROR, fmt, args);
+    public static ErrorCode operr(String globalErrorCode, String fmt, Object...args) {
+        return err(globalErrorCode, SysErrors.OPERATION_ERROR, fmt, args);
     }
 
-    public static ErrorCode operr(ErrorCode cause, String fmt, Object...args) {
-        return err(SysErrors.OPERATION_ERROR, cause, fmt, args);
+    public static ErrorCode operr(String globalErrorCode, ErrorCode cause, String fmt, Object...args) {
+        return err(globalErrorCode, SysErrors.OPERATION_ERROR, cause, fmt, args);
     }
 
-    public static ErrorCode canerr(String fmt, Object...args) {
-        return err(SysErrors.CANCEL_ERROR, fmt, args);
+    public static ErrorCode canerr(String globalErrorCode, String fmt, Object...args) {
+        return err(globalErrorCode, SysErrors.CANCEL_ERROR, fmt, args);
     }
 
-    public static ErrorCode argerr(String fmt, Object...args) {
-        return err(SysErrors.INVALID_ARGUMENT_ERROR, fmt, args);
+    public static ErrorCode argerr(String globalErrorCode, String fmt, Object...args) {
+        return err(globalErrorCode, SysErrors.INVALID_ARGUMENT_ERROR, fmt, args);
     }
 
-    public static ErrorCode touterr(String fmt, Object...args) {
-        return err(SysErrors.TIMEOUT, fmt, args);
+    public static ErrorCode touterr(String globalErrorCode, String fmt, Object...args) {
+        return err(globalErrorCode, SysErrors.TIMEOUT, fmt, args);
     }
 
-    public static ErrorCode touterr(ErrorCode cause, String fmt, Object...args) {
-        return err(SysErrors.TIMEOUT, cause, fmt, args);
+    public static ErrorCode touterr(String globalErrorCode, ErrorCode cause, String fmt, Object...args) {
+        return err(globalErrorCode, SysErrors.TIMEOUT, cause, fmt, args);
     }
 
-    public static ErrorCode ioerr(String fmt, Object...args) {
-        return err(SysErrors.IO_ERROR, fmt, args);
+    public static ErrorCode ioerr(String globalErrorCode, String fmt, Object...args) {
+        return err(globalErrorCode, SysErrors.IO_ERROR, fmt, args);
     }
 
-    public static ErrorCode httperr(String fmt, Object...args) {
-        return err(SysErrors.HTTP_ERROR, fmt, args);
+    public static ErrorCode httperr(String globalErrorCode, String fmt, Object...args) {
+        return err(globalErrorCode, SysErrors.HTTP_ERROR, fmt, args);
     }
 
     public static Function<Supplier, Object> functionForMockTestObject = (Supplier t) -> t.get();

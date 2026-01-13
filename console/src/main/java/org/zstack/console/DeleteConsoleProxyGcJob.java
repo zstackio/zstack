@@ -16,6 +16,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class DeleteConsoleProxyGcJob extends TimeBasedGarbageCollector {
     private static final CLogger logger = Utils.getLogger(DeleteConsoleProxyGcJob.class);
@@ -50,7 +51,7 @@ public class DeleteConsoleProxyGcJob extends TimeBasedGarbageCollector {
         }
 
         if (status != ConsoleProxyAgentStatus.Connected) {
-            completion.fail(operr("console proxy[uuid: %s, status: %s] on agent[ip: %s]" +
+            completion.fail(operr(ORG_ZSTACK_CONSOLE_10013, "console proxy[uuid: %s, status: %s] on agent[ip: %s]" +
                             " is not Connected, fail to delete it",
                     consoleProxy.getUuid(),
                     status,

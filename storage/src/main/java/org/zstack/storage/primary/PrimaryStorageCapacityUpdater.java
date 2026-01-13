@@ -23,6 +23,7 @@ import javax.persistence.TypedQuery;
 import java.util.List;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by frank on 10/19/2015.
@@ -281,7 +282,7 @@ public class PrimaryStorageCapacityUpdater {
 
         if (capacityVO.getAvailableCapacity() < size) {
             if (exceptionOnFailure) {
-                throw new OperationFailureException(operr("cannot reserve %s bytes on the primary storage[uuid:%s]," +
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_10029, "cannot reserve %s bytes on the primary storage[uuid:%s]," +
                         " it's short of available capacity", size, capacityVO.getUuid()));
             } else {
                 return false;

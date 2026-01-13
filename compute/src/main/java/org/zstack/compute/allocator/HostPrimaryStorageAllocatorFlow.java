@@ -22,6 +22,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
@@ -283,11 +284,11 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
 
         if (candidates.isEmpty()) {
             if (spec.getVmOperation().equals(VmOperation.NewCreate.toString())) {
-                fail(Platform.operr("cannot find available primary storage[state: %s, status: %s, available capacity %s bytes]." +
+                fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10015, "cannot find available primary storage[state: %s, status: %s, available capacity %s bytes]." +
                         " Check the state/status of primary storage and make sure they have been attached to clusters",
                         PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getDiskSize()));
             } else {
-                fail(Platform.operr("cannot find available primary storage[state: %s or %s, status: %s]." +
+                fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10016, "cannot find available primary storage[state: %s or %s, status: %s]." +
                         " Check the state/status of primary storage and make sure they have been attached to clusters",
                         PrimaryStorageState.Enabled, PrimaryStorageState.Disabled, PrimaryStorageStatus.Connected));
             }

@@ -33,6 +33,7 @@ import java.util.Set;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -108,7 +109,7 @@ public class ImageBackupStorageAllocatorFlow extends AbstractHostAllocatorFlow {
 
         if (bsUuids.isEmpty()) {
             throw new OperationFailureException(operr(
-                    "the image[uuid:%s, name:%s] is deleted on all backup storage", spec.getImage().getUuid(), spec.getImage().getName()
+            ORG_ZSTACK_COMPUTE_ALLOCATOR_10001,         "the image[uuid:%s, name:%s] is deleted on all backup storage", spec.getImage().getUuid(), spec.getImage().getName()
             ));
         }
 
@@ -119,7 +120,7 @@ public class ImageBackupStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         bsUuids = bq.listValue();
         if (bsUuids.isEmpty()) {
             // we stop allocation on purpose, to prevent further pagination proceeding
-            throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
+            throw new OperationFailureException(err(ORG_ZSTACK_COMPUTE_ALLOCATOR_10002, HostAllocatorError.NO_AVAILABLE_HOST,
                     "all backup storage that image[uuid:%s] is on can not satisfy conditions[status = %s]",
                     spec.getImage().getUuid(), BackupStorageStatus.Connected.toString()
             ));
@@ -141,7 +142,7 @@ public class ImageBackupStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         });
 
         if (candidates.isEmpty()) {
-            fail(Platform.operr("no host found in zones[uuids:%s] that attaches to backup storage where image[%s] is on", zoneUuids, spec.getImage().getUuid()));
+            fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10003, "no host found in zones[uuids:%s] that attaches to backup storage where image[%s] is on", zoneUuids, spec.getImage().getUuid()));
         } else {
             next(candidates);
         }

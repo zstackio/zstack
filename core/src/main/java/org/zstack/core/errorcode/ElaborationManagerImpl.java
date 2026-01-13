@@ -38,6 +38,7 @@ import java.util.*;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by mingjian.deng on 2018/12/1.
@@ -68,12 +69,12 @@ public class ElaborationManagerImpl extends AbstractService {
 
     private void preCheckElaborationContent(String filename, String jsonContent, ReturnValueCompletion<List<ElaborationCheckResult>> completion) {
         if (filename == null && jsonContent == null) {
-            completion.fail(argerr("non file or jsoncontent input"));
+            completion.fail(argerr(ORG_ZSTACK_CORE_ERRORCODE_10000, "non file or jsoncontent input"));
             return;
         }
 
         if (filename != null && jsonContent != null) {
-            completion.fail(argerr("file or jsoncontent cannot both nonempty"));
+            completion.fail(argerr(ORG_ZSTACK_CORE_ERRORCODE_10001, "file or jsoncontent cannot both nonempty"));
             return;
         }
 
@@ -105,11 +106,11 @@ public class ElaborationManagerImpl extends AbstractService {
                                     PathUtil.scanFolder(files, folder.getAbsolutePath());
                                 }
                             } catch (Exception e) {
-                                trigger.fail(operr("Unable to scan folder: %s", e.getMessage()));
+                                trigger.fail(operr(ORG_ZSTACK_CORE_ERRORCODE_10002, "Unable to scan folder: %s", e.getMessage()));
                                 return;
                             }
                             if (files.isEmpty()) {
-                                trigger.fail(argerr("%s is not existed or is empty folder", filename));
+                                trigger.fail(argerr(ORG_ZSTACK_CORE_ERRORCODE_10003, "%s is not existed or is empty folder", filename));
                             } else {
                                 trigger.next();
                             }
@@ -145,7 +146,7 @@ public class ElaborationManagerImpl extends AbstractService {
                                     List<ErrorCodeElaboration> errs = JSONObjectUtil.toCollection(content, ArrayList.class, ErrorCodeElaboration.class);
                                     contents.put(file, errs);
                                 } catch (IOException e) {
-                                    trigger.fail(Platform.operr(String.format("read error elaboration template files [%s] failed, due to: %s", templateFile, e.getMessage())));
+                                    trigger.fail(Platform.operr(ORG_ZSTACK_CORE_ERRORCODE_10004, String.format("read error elaboration template files [%s] failed, due to: %s", templateFile, e.getMessage())));
                                     return;
                                 } catch (JsonSyntaxException e) {
                                     results.add(new ElaborationCheckResult(file, null, ElaborationFailedReason.InValidJsonSchema.toString()));
@@ -246,7 +247,7 @@ public class ElaborationManagerImpl extends AbstractService {
                                 }
 
                                 if (!NumberUtils.isNumber(err.getCode())) {
-                                    trigger.fail(operr("elaboration code must be number!"));
+                                    trigger.fail(operr(ORG_ZSTACK_CORE_ERRORCODE_10005, "elaboration code must be number!"));
                                     return;
                                 }
                                 String code = err.getCategory() + "." + err.getCode();
@@ -315,7 +316,7 @@ public class ElaborationManagerImpl extends AbstractService {
                         if (returnValue.isEmpty()) {
                             trigger.next();
                         } else {
-                            trigger.fail(operr("%s: %s", returnValue.get(0).getContent(), returnValue.get(0).getReason()));
+                            trigger.fail(operr(ORG_ZSTACK_CORE_ERRORCODE_10006, "%s: %s", returnValue.get(0).getContent(), returnValue.get(0).getReason()));
                         }
                     }
 
@@ -412,7 +413,7 @@ public class ElaborationManagerImpl extends AbstractService {
 
 
         if (msg.getCategory() == null && msg.getRegex() == null){
-            throw new OperationFailureException(Platform.argerr("input args 'regex' or 'category' must be set"));
+            throw new OperationFailureException(Platform.argerr(ORG_ZSTACK_CORE_ERRORCODE_10007, "input args 'regex' or 'category' must be set"));
         }
 
         Collections.sort(reply.getContents());

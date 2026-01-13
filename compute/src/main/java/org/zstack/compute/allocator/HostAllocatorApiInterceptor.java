@@ -20,6 +20,7 @@ import org.zstack.header.zone.ZoneVO_;
 import static org.zstack.core.Platform.argerr;
 
 import java.util.List;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -54,7 +55,7 @@ public class HostAllocatorApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIGetCandidateBackupStorageForCreatingImageMsg msg) {
         if (msg.getVolumeSnapshotUuid() == null && msg.getVolumeUuid() == null) {
             throw new ApiMessageInterceptionException(argerr(
-                    "either volumeUuid or volumeSnapshotUuid must be set"
+            ORG_ZSTACK_COMPUTE_ALLOCATOR_10024,         "either volumeUuid or volumeSnapshotUuid must be set"
             ));
         }
     }
@@ -72,7 +73,7 @@ public class HostAllocatorApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (!pass && !msg.isAll()) {
-            throw new ApiMessageInterceptionException(argerr("zoneUuids, clusterUuids, hostUuids must at least have one be none-empty list, or all is set to true"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10025, "zoneUuids, clusterUuids, hostUuids must at least have one be none-empty list, or all is set to true"));
         }
 
         if (msg.isAll() && (msg.getZoneUuids() == null || msg.getZoneUuids().isEmpty())) {

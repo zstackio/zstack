@@ -30,6 +30,7 @@ import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -76,13 +77,13 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
         }
 
         if (spec.getVmInventory().getZoneUuid() != null) {
-            throw new OperationFailureException(operr("cannot find the image[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n" +
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10085, "cannot find the image[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n" +
                                     "1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\n" +
                                     "2. if the backup storage is in connected status, if not, try reconnecting it",
                             imageUuid, spec.getVmInventory().getZoneUuid(), spec.getVmInventory().getName(), spec.getVmInventory().getUuid())
             );
         } else {
-            throw new OperationFailureException(operr("cannot find the image[uuid:%s] in any connected backup storage. check below:\n" +
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10086, "cannot find the image[uuid:%s] in any connected backup storage. check below:\n" +
                                     "1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\n" +
                                     "2. if the backup storage is in connected status, if not, try reconnecting it",
                             imageUuid, spec.getVmInventory().getName(), spec.getVmInventory().getUuid())
@@ -125,7 +126,7 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
         q.setMaxResults(1);
         List<String> ret = q.getResultList();
         if (ret.isEmpty()) {
-            throw new OperationFailureException(operr("no backup storage attached to the zone[uuid:%s] contains the ISO[uuid:%s]",
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10087, "no backup storage attached to the zone[uuid:%s] contains the ISO[uuid:%s]",
                             zoneUuid, isoImageUuid));
         }
 

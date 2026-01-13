@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * Created by xing5 on 2016/10/31.
@@ -153,7 +154,7 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
                 if (rsp.isSuccess()) {
                     completion.success();
                 } else {
-                    ErrorCode err = operr("unable to start dhcp server on virtual router vm[uuid:%s], because %s", vrUuid, rsp.getError());
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_VYOS_10005, "unable to start dhcp server on virtual router vm[uuid:%s], because %s", vrUuid, rsp.getError());
                     completion.fail(err);
                 }
             }
@@ -243,7 +244,7 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
                 if (rsp.isSuccess()) {
                     completion.success();
                 } else {
-                    ErrorCode err = operr("unable to start dhcp server on virtual router vm[uuid:%s], because %s", nic.getVmInstanceUuid(), rsp.getError());
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_VYOS_10006, "unable to start dhcp server on virtual router vm[uuid:%s], because %s", nic.getVmInstanceUuid(), rsp.getError());
                     completion.fail(err);
                 }
             }
@@ -279,7 +280,7 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
                 if (rsp.isSuccess()) {
                     completion.success();
                 } else {
-                    ErrorCode err = operr("unable to stop dhcp server on virtual router vm[uuid:%s], because %s", nic.getVmInstanceUuid(), rsp.getError());
+                    ErrorCode err = operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_VYOS_10007, "unable to stop dhcp server on virtual router vm[uuid:%s], because %s", nic.getVmInstanceUuid(), rsp.getError());
                     completion.fail(err);
                 }
             }

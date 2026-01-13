@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionUtils.distinctByKey;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
@@ -215,7 +216,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
                         .listValues();
 
                 if (resultList.isEmpty()) {
-                    throw new OperationFailureException(operr("no way to get image size of %s, report exception.", spec.getImageUuid()));
+                    throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_10026, "no way to get image size of %s, report exception.", spec.getImageUuid()));
                 }
             }
         }
@@ -264,7 +265,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
     public void run(FlowTrigger trigger, Map data) {
         Result ret = allocate(data);
         if (ret.result.isEmpty()) {
-            throw new OperationFailureException(operr("%s", ret.error));
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_10027, "%s", ret.error));
         }
 
         logger.debug(String.format("PrimaryStorageMainAllocatorFlow: %s", ret.result.size()));

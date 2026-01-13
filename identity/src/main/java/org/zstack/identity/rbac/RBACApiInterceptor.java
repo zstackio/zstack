@@ -24,6 +24,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class RBACApiInterceptor implements ApiMessageInterceptor {
     @Autowired
@@ -63,13 +64,13 @@ public class RBACApiInterceptor implements ApiMessageInterceptor {
 
         for (PolicyStatement s : msg.getStatements()) {
             if (s.getEffect() == null) {
-                throw new ApiMessageInterceptionException(argerr("a statement must have effect field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s)));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_IDENTITY_RBAC_10000, "a statement must have effect field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s)));
             }
             if (s.getActions() == null) {
-                throw new ApiMessageInterceptionException(argerr("a statement must have action field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s)));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_IDENTITY_RBAC_10001, "a statement must have action field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s)));
             }
             if (s.getActions().isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("a statement must have a non-empty action field. Invalid statement[%s]",
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_IDENTITY_RBAC_10002, "a statement must have a non-empty action field. Invalid statement[%s]",
                         JSONObjectUtil.toJsonString(s)));
             }
 
@@ -80,7 +81,7 @@ public class RBACApiInterceptor implements ApiMessageInterceptor {
             if (s.getActions() != null) {
                 s.getActions().forEach(as -> {
                     if (PolicyUtils.isAdminOnlyAction(as)) {
-                        throw new OperationFailureException(err(IdentityErrors.PERMISSION_DENIED, "normal accounts can't create admin-only action polices[%s]", as));
+                        throw new OperationFailureException(err(ORG_ZSTACK_IDENTITY_RBAC_10003, IdentityErrors.PERMISSION_DENIED, "normal accounts can't create admin-only action polices[%s]", as));
                     }
                 });
             }
@@ -89,7 +90,7 @@ public class RBACApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIUpdateRoleMsg msg) {
         if (Q.New(RoleVO.class).in(RoleVO_.type, list(RoleType.Predefined, RoleType.System)).eq(RoleVO_.uuid, msg.getUuid()).isExists()) {
-            throw new ApiMessageInterceptionException(argerr("cannot update a system or predefined role"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_IDENTITY_RBAC_10004, "cannot update a system or predefined role"));
         }
 
         RoleVO vo = Q.New(RoleVO.class).eq(RoleVO_.uuid, msg.getRoleUuid()).find();
@@ -105,7 +106,7 @@ public class RBACApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIDeleteRoleMsg msg) {
         if (Q.New(RoleVO.class).in(RoleVO_.type, list(RoleType.Predefined, RoleType.System)).eq(RoleVO_.uuid, msg.getUuid()).isExists()) {
-            throw new ApiMessageInterceptionException(argerr("cannot delete a system or predefined role"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_IDENTITY_RBAC_10005, "cannot delete a system or predefined role"));
         }
     }
 }

@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  * @author Xingwei Yu
@@ -171,7 +172,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                                         .setHostname(getSelf().getAddr())
                                         .setPort(getSelf().getPort()).runErrorByExceptionAndClose();
                             } catch (SshException ex) {
-                                throw new OperationFailureException(operr(ex.toString()));
+                                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ZBS_10033, ex.toString()));
                             }
 
                             trigger.next();
@@ -212,7 +213,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                             @Override
                             public void success(SyncMetadataRsp ret) {
                                 if (!ret.isSuccess()) {
-                                    trigger.fail(operr("unable to sync metadata from ZBS primary storage MDS[%s], because %s",
+                                    trigger.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10034, "unable to sync metadata from ZBS primary storage MDS[%s], because %s",
                                             getSelf().getAddr(), ret.getError()));
                                     return;
                                 }
@@ -339,7 +340,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                                 return;
                             }
 
-                            comp.addError(operr("%s", rsp.getError()));
+                            comp.addError(operr(ORG_ZSTACK_STORAGE_ZBS_10035, "%s", rsp.getError()));
 
                             if (step.equals(MAX_PING_CNT)) {
                                 comp.allDone();
@@ -376,7 +377,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                 }
 
                 if (!dbf.getDbVersion().equals(version[0])) {
-                    completion.fail(operr("ZBS primary storage MDS[%s] version[%s] is different" +
+                    completion.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10036, "ZBS primary storage MDS[%s] version[%s] is different" +
                                     " from management node[%s], please reconnect the MDS and check SSH connection",
                             getSelf().getAddr(), version[0], dbf.getDbVersion()));
                     return;

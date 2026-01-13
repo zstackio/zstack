@@ -1,5 +1,7 @@
 package org.zstack.testlib.controller
 
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+
 import org.zstack.core.Platform
 import org.zstack.core.db.Q
 import org.zstack.header.core.Completion
@@ -31,7 +33,7 @@ class PrimaryStorageController {
             TProxy proxy = new TProxy(ps)
             proxy.mockMethod("connectHook") { Closure invokeSuper, PrimaryStorageBase.ConnectParam param, Completion completion ->
                 if (disconnectedUuids.contains(ps.self.uuid)) {
-                    completion.fail(Platform.operr("PrimaryStorageController puts it down"))
+                    completion.fail(org.zstack.core.Platform.operr(ORG_ZSTACK_TESTLIB_CONTROLLER_10003, "PrimaryStorageController puts it down"))
                 } else {
                     return invokeSuper()
                 }
