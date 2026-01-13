@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateClusterAction extends AbstractAction {
+public class AddBareMetal2DpuChassisAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateClusterResult value;
+        public org.zstack.sdk.AddBareMetal2ChassisResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,23 +25,26 @@ public class CreateClusterAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
+    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String url;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vendorType;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String config;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, validValues = {"KVM","Simulator","baremetal","baremetal2","xdragon","baremetal2Dpu"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hypervisorType;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String clusterUuid;
 
-    @Param(required = false, validValues = {"zstack","baremetal","baremetal2"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = false, validValues = {"x86_64","aarch64","mips64el","loongarch64"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String architecture;
+    @Param(required = false, validValues = {"Remote","Local","Direct"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String provisionType = "Remote";
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -81,8 +84,8 @@ public class CreateClusterAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateClusterResult value = res.getResult(org.zstack.sdk.CreateClusterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateClusterResult() : value; 
+        org.zstack.sdk.AddBareMetal2ChassisResult value = res.getResult(org.zstack.sdk.AddBareMetal2ChassisResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddBareMetal2ChassisResult() : value; 
 
         return ret;
     }
@@ -112,7 +115,7 @@ public class CreateClusterAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/clusters";
+        info.path = "/baremetal2/chassis/dpu";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
