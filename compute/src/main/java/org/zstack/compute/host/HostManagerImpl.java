@@ -102,6 +102,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private Future reportHostCapacityTask;
     private Future refreshHostPowerStatusTask;
 
+    private static final List<String> SKIP_ARCH_CHECK_HYPERVISOR_TYPES = Arrays.asList("baremetal2", "baremetal2Dpu");
+
     static {
         allowedMessageAfterSoftDeletion.add(HostDeletionMsg.class);
     }
@@ -472,7 +474,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             @Override
             public boolean skip(Map data) {
                 // no need to check baremetal2 gateway architecture with the cluster architecture
-                return vo.getHypervisorType().equals("baremetal2");
+                return SKIP_ARCH_CHECK_HYPERVISOR_TYPES.contains(cluster.getHypervisorType());
             }
 
             @Override
