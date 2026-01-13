@@ -2703,6 +2703,7 @@ public class KVMAgentCommands {
         private List<VirtualDeviceInfo> virtualDeviceInfoList;
         private VirtualDeviceInfo memBalloonInfo;
         private VirtualizerInfoTO virtualizerInfo;
+        private String edkRpm;
         @NoLogging
         private String vmXml;
 
@@ -2736,6 +2737,14 @@ public class KVMAgentCommands {
 
         public void setVirtualizerInfo(VirtualizerInfoTO virtualizerInfo) {
             this.virtualizerInfo = virtualizerInfo;
+        }
+
+        public String getEdkRpm() {
+            return edkRpm;
+        }
+
+        public void setEdkRpm(String edkRpm) {
+            this.edkRpm = edkRpm;
         }
 
         public String getVmXml() {
