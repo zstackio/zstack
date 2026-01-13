@@ -489,6 +489,7 @@ class KVMSimulator implements Simulator {
             rsp.virtualizerInfo.uuid = cmd.vmInstanceUuid
             rsp.virtualizerInfo.virtualizer = "qemu-kvm"
             rsp.virtualizerInfo.version = "4.2.0-632.g6a6222b.el7"
+            rsp.edkRpm = "edk2-ovmf-20220126gitbb1bba3d77-3.el8.noarch"
 
             return rsp
         }
