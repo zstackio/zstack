@@ -159,9 +159,10 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="BootOrderKvmStartVmExtension" class="org.zstack.kvm.BootOrderKvmStartVmExtension">
+    <bean id="BootOrderKvmStartVmExtension" class="org.zstack.kvm.BootKvmStartVmExtension">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint"/>
+            <zstack:extension interface="org.zstack.kvm.KVMSyncVmDeviceInfoExtensionPoint" />
         </zstack:plugin>
     </bean>
 
