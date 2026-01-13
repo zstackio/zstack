@@ -206,6 +206,12 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                         restf.asyncJsonPost(ZbsAgentUrl.primaryStorageUrl(getSelf().getAddr(), SYNC_METADATA_PATH), cmd, new JsonAsyncRESTCallback<SyncMetadataRsp>(trigger) {
                             @Override
                             public void success(SyncMetadataRsp ret) {
+                                if (!ret.isSuccess()) {
+                                    trigger.fail(operr("unable to sync metadata from ZBS primary storage MDS[%s], because %s",
+                                            getSelf().getAddr(), ret.getError()));
+                                    return;
+                                }
+
                                 getSelf().setExternalAddr(ret.getExternalAddr());
                                 trigger.next();
                             }
