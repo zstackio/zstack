@@ -3138,6 +3138,7 @@ public class KVMAgentCommands {
         private Map<String, String> pciDeviceInfos;
         @GrayVersion(value = "5.5.6")
         private Map<String, String> mdevDeviceInfos;
+        private String edkRpm;
 
         public VirtualDeviceInfo getMemBalloonInfo() {
             return memBalloonInfo;
@@ -3169,6 +3170,14 @@ public class KVMAgentCommands {
 
         public void setVirtualizerInfo(VirtualizerInfoTO virtualizerInfo) {
             this.virtualizerInfo = virtualizerInfo;
+        }
+
+        public String getEdkRpm() {
+            return edkRpm;
+        }
+
+        public void setEdkRpm(String edkRpm) {
+            this.edkRpm = edkRpm;
         }
 
         public Map<String, String> getPciDeviceInfos() {
