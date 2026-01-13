@@ -72,4 +72,8 @@ public class KVMSystemTags {
 
     public static final String LIBVIRT_CAPABILITIES_TOKEN = "libvirtCapabilities";
     public static PatternedSystemTag LIBVIRT_CAPABILITIES = new PatternedSystemTag(String.format("libvirtCapabilities::{%s}", LIBVIRT_CAPABILITIES_TOKEN), HostVO.class);
+
+    public static final String EDK_RPM_TOKEN = "edkRpm";
+    public static PatternedSystemTag VM_EDK =
+            new PatternedSystemTag(String.format("vm::edk::{%s}", EDK_RPM_TOKEN), VmInstanceVO.class);
 }
