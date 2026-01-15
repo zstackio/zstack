@@ -935,9 +935,25 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((APICleanUpStorageTrashOnPrimaryStorageMsg) msg);
         } else if (msg instanceof APIAddStorageProtocolMsg) {
             handle((APIAddStorageProtocolMsg) msg);
+        } else if (msg instanceof APITakeoverPrimaryStorageMsg) {
+            handle((APITakeoverPrimaryStorageMsg) msg);
+        } else if (msg instanceof APICheckPrimaryStorageConsistencyMsg) {
+            handle((APICheckPrimaryStorageConsistencyMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    protected void handle(APITakeoverPrimaryStorageMsg msg) {
+        APITakeoverPrimaryStorageEvent event = new APITakeoverPrimaryStorageEvent(msg.getId());
+        event.setError(operr("takeover not supported for primary storage type[%s]", self.getType()));
+        bus.publish(event);
+    }
+
+    protected void handle(APICheckPrimaryStorageConsistencyMsg msg) {
+        APICheckPrimaryStorageConsistencyReply reply = new APICheckPrimaryStorageConsistencyReply();
+        reply.setError(operr("consistency check not supported for primary storage type[%s]", self.getType()));
+        bus.reply(msg, reply);
     }
 
     private void handle(APIAddStorageProtocolMsg msg) {
