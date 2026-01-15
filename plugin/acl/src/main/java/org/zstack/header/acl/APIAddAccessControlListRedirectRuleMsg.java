@@ -44,6 +44,9 @@ public class APIAddAccessControlListRedirectRuleMsg extends APICreateMessage imp
     @APIParam(resourceType = AccessControlListVO.class, checkAccount = true, operationTarget = true)
     private String aclUuid;
 
+    @APIParam(required = false, numberRange = {1, 65535})
+    private Integer redirectPort;
+
     public String getName() {
         return name;
     }
@@ -101,6 +104,14 @@ public class APIAddAccessControlListRedirectRuleMsg extends APICreateMessage imp
         this.aclUuid = aclUuid;
     }
 
+    public Integer getRedirectPort() {
+        return redirectPort;
+    }
+
+    public void setRedirectPort(Integer redirectPort) {
+        this.redirectPort = redirectPort;
+    }
+
     public static APIAddAccessControlListRedirectRuleMsg __example__() {
         APIAddAccessControlListRedirectRuleMsg msg = new APIAddAccessControlListRedirectRuleMsg();
 
@@ -110,6 +121,7 @@ public class APIAddAccessControlListRedirectRuleMsg extends APICreateMessage imp
         msg.setDomain("zstack.io");
         msg.setMatchMethod("AccurateMatch");
         msg.setUrl("/cloud");
+        msg.setRedirectPort(8080);
         return msg;
     }
 

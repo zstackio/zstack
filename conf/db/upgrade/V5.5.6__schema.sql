@@ -111,3 +111,5 @@ FROM PodVO p
     LEFT JOIN PciDeviceVO pci ON pci.vmInstanceUuid = p.uuid
     LEFT JOIN GpuDeviceVO g ON g.uuid = pci.uuid
 GROUP BY p.uuid;
+
+ALTER TABLE `zstack`.`AccessControlListEntryVO` ADD COLUMN `redirectPort` int(10) DEFAULT NULL;

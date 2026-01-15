@@ -47,6 +47,7 @@ public class APIGetLoadBalancerListenerACLEntriesReply extends APIReply {
         private String ipEntries;
 
         private String description;
+        private Integer redirectPort;
 
         private Timestamp createDate;
 
@@ -63,6 +64,7 @@ public class APIGetLoadBalancerListenerACLEntriesReply extends APIReply {
             this.type = vo.getType();
             this.description = vo.getDescription();
             this.ipEntries = vo.getIpEntries();
+            this.redirectPort = vo.getRedirectPort();
             this.createDate = vo.getCreateDate();
             this.lastOpDate = vo.getLastOpDate();
         }
@@ -153,6 +155,14 @@ public class APIGetLoadBalancerListenerACLEntriesReply extends APIReply {
 
         public void setServerGroups(List<LoadBalancerServerGroupInventory> serverGroups) {
             this.serverGroups = serverGroups;
+        }
+
+        public Integer getRedirectPort() {
+            return redirectPort;
+        }
+
+        public void setRedirectPort(Integer redirectPort) {
+            this.redirectPort = redirectPort;
         }
     }
 }

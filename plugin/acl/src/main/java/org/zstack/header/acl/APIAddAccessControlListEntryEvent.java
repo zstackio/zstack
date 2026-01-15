@@ -31,6 +31,7 @@ public class APIAddAccessControlListEntryEvent extends APIEvent {
 
         inv.setAclUuid(uuid());
         inv.setIpEntries("192.168.48.0/24");
+        inv.setRedirectPort(8080);
 
         event.setInventory(inv);
         return event;

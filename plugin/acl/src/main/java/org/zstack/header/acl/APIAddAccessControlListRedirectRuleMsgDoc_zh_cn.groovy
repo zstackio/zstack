@@ -102,6 +102,15 @@ doc {
 					optional true
 					since "4.1.3"
 				}
+				column {
+					name "redirectPort"
+					enclosedIn "params"
+					desc "转发端口"
+					location "body"
+					type "Integer"
+					optional true
+					since "5.5.0"
+				}
 			}
         }
 

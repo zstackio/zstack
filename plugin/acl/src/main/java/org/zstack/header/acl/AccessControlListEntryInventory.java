@@ -25,6 +25,7 @@ public class AccessControlListEntryInventory {
     private String url;
 
     private String ipEntries;
+    private Integer redirectPort;
 
     private String description;
 
@@ -54,6 +55,7 @@ public class AccessControlListEntryInventory {
         this.url = vo.getUrl();
         this.name = vo.getName();
         this.type = vo.getType();
+        this.redirectPort = vo.getRedirectPort();
         this.description = vo.getDescription();
         this.ipEntries = vo.getIpEntries();
         this.createDate = vo.getCreateDate();
@@ -114,6 +116,14 @@ public class AccessControlListEntryInventory {
 
     public void setIpEntries(String ipEntries) {
         this.ipEntries = ipEntries;
+    }
+
+    public Integer getRedirectPort() {
+        return redirectPort;
+    }
+
+    public void setRedirectPort(Integer redirectPort) {
+        this.redirectPort = redirectPort;
     }
 
     public String getDescription() {
