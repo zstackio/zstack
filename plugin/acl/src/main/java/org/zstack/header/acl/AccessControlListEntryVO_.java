@@ -20,6 +20,7 @@ public class AccessControlListEntryVO_ {
     public static volatile SingularAttribute<AccessControlListEntryVO, String> domain;
     public static volatile SingularAttribute<AccessControlListEntryVO, String> url;
     public static volatile SingularAttribute<AccessControlListEntryVO, String> redirectRule;
+    public static volatile SingularAttribute<AccessControlListEntryVO, Integer> redirectPort;
     public static volatile SingularAttribute<AccessControlListEntryVO, String> ipEntries;
     public static volatile SingularAttribute<AccessControlListEntryVO, String> description;
     public static volatile SingularAttribute<AccessControlListEntryVO, TimeStamp> createDate;

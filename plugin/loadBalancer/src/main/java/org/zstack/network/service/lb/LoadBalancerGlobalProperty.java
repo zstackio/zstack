@@ -7,4 +7,6 @@ import org.zstack.core.GlobalPropertyDefinition;
 public class LoadBalancerGlobalProperty {
     @GlobalProperty(name="upgradeLoadBalancerServerGroup", defaultValue = "false")
     public static boolean UPGRADE_LB_SERVER_GROUP;
+    @GlobalProperty(name="upgradeLoadBalancerRedirectRule", defaultValue = "false")
+    public static boolean UPGRADE_LB_REDIRECT_RULE;
 }

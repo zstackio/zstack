@@ -348,6 +348,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             private String aclUuid;
             private String redirectRule;
             private String serverGroupUuid;
+            private Integer redirectPort;
 
             public String getRedirectRuleUuid() {
                 return redirectRuleUuid;
@@ -379,6 +380,13 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
             public void setServerGroupUuid(String serverGroupUuid) {
                 this.serverGroupUuid = serverGroupUuid;
+            }
+
+            public Integer getRedirectPort() {
+                return redirectPort;
+            }
+            public void setRedirectPort(Integer redirectPort) {
+                this.redirectPort = redirectPort;
             }
         }
 
@@ -774,11 +782,13 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         redirectRule.setRedirectRuleUuid(entry.getUuid());
                         redirectRule.setServerGroupUuid(serverGroupUuids.get(0));
                         redirectRule.setRedirectRule(entry.getRedirectRule());
+                        redirectRule.setRedirectPort(entry.getRedirectPort());
                     } else {
                         usedAggSgUuids.addAll(serverGroupUuids);
                         redirectRule.setAclUuid(entry.getAclUuid());
                         redirectRule.setRedirectRuleUuid(entry.getUuid());
                         redirectRule.setRedirectRule(entry.getRedirectRule());
+                        redirectRule.setRedirectPort(entry.getRedirectPort());
 
                         StringBuilder stringBuilder = new StringBuilder();
                         for (String sgUuid : serverGroupUuids) {

@@ -230,6 +230,7 @@ public class AccessControlListManagerImpl extends AbstractService implements Acc
                 entry.setDomain(msg.getDomain());
                 entry.setUrl(msg.getUrl());
                 entry.setDescription(msg.getDescription());
+                entry.setRedirectPort(msg.getRedirectPort());
                 String redirectRule = "";
                 if (entry.getMatchMethod().equals("Url")) {
                    redirectRule = "path_beg -i " + entry.getUrl();
