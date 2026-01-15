@@ -50,12 +50,16 @@ public class ExternalPrimaryStorageSpaceCapacityHelper extends ExternalPrimarySt
     private String spaceName;
     private Map<String, ExternalPrimaryStorageSpaceVO> storageSpacesByUrl;
 
+    // TODO: use factory to create helper, diff capabilities helper for diff types
+    @Deprecated
     public ExternalPrimaryStorageSpaceCapacityHelper(ExternalPrimaryStorageVO ps) {
         super(ps);
         this.primaryStorageUuid = ps.getUuid();
         this.spaceName = ps.getIdentity();
     }
 
+    // TODO: use factory to create helper, diff capabilities helper for diff types
+    @Deprecated
     public ExternalPrimaryStorageSpaceCapacityHelper(String psUuid, String identity) {
         super(psUuid, identity);
         this.primaryStorageUuid = psUuid;
@@ -115,10 +119,8 @@ public class ExternalPrimaryStorageSpaceCapacityHelper extends ExternalPrimarySt
     }
 
     private ExternalPrimaryStorageSpaceVO getSpaceFromInstallUrl(String installPath) {
-        Map<String, ExternalPrimaryStorageSpaceVO> spacesByUrl = getStorageSpacesByUrl();
-        String spaceUrl = spacesByUrl.keySet().stream().filter(installPath::startsWith)
-                .findFirst().orElseThrow(() -> new OperationFailureException(operr("cannot find storage space for installPath[%s]", installPath)));
-        return spacesByUrl.get(spaceUrl);
+        String spaceUrl = getLocationSpaceUrl(installPath);
+        return getStorageSpacesByUrl().get(spaceUrl);
     }
 
     @DeadlockAutoRestart

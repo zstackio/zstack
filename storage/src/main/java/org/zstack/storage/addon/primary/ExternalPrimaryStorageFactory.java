@@ -244,18 +244,16 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
             return psInv.getUrl();
         }
 
-        ExternalPrimaryStorageSpaceCapacityHelper helper = new ExternalPrimaryStorageSpaceCapacityHelper(psInv.getUuid(), controller.getIdentity());
-        String requiredUrl = getRequiredUrl(helper, msg);
-
         // TODO: remove it
         if (!controller.reportCapabilities().isSupportMultiSpace()) {
             AllocateSpaceSpec aspec = new AllocateSpaceSpec();
             aspec.setDryRun(true);
             aspec.setSize(msg.getSize());
-            aspec.setRequiredUrl(requiredUrl);
             return controller.allocateSpace(aspec);
         }
 
+        ExternalPrimaryStorageSpaceCapacityHelper helper = new ExternalPrimaryStorageSpaceCapacityHelper(psInv.getUuid(), controller.getIdentity());
+        String requiredUrl = getRequiredUrl(helper, msg);
         if (requiredUrl != null) {
             if (msg.isForce() || helper.checkVirtualSizeByRatio(requiredUrl, msg.getSize())) {
                 return requiredUrl;
