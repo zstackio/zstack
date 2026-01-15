@@ -193,6 +193,14 @@ public class PciDeviceInventory  {
         return this.dependentDevices;
     }
 
+    public java.lang.String vmPciDeviceAddress;
+    public void setVmPciDeviceAddress(java.lang.String vmPciDeviceAddress) {
+        this.vmPciDeviceAddress = vmPciDeviceAddress;
+    }
+    public java.lang.String getVmPciDeviceAddress() {
+        return this.vmPciDeviceAddress;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
