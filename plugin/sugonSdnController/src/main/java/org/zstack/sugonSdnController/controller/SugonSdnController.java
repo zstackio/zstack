@@ -88,7 +88,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
     }
 
     @Override
-    public void preInitSdnController(APIAddSdnControllerMsg msg, Completion completion) {
+    public void preInitSdnController(AddSdnControllerMsg msg, Completion completion) {
         try {
             long count = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).count();
             if(count > 0) {
@@ -101,7 +101,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
                 return;
             }
             String accountUuid = StringDSL.transToTfUuid(accountVO.getUuid());
-            client = new TfHttpClient(msg.getIp());
+            client = new TfHttpClient(msg.getSdnControllerVO().getIp());
             Domain domain = (Domain) client.getDomain();
             if(domain == null){
                 completion.fail(operr("get default domain on tf controller failed"));
@@ -133,7 +133,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
     }
 
     @Override
-    public void createSdnControllerDb(APIAddSdnControllerMsg msg, SdnControllerVO vo, Completion completion) {
+    public void createSdnControllerDb(AddSdnControllerMsg msg, SdnControllerVO vo, Completion completion) {
         dbf.persist(vo);
         completion.success();
     }
@@ -144,7 +144,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
     }
 
     @Override
-    public void initSdnController(APIAddSdnControllerMsg msg, Completion completion) {
+    public void initSdnController(AddSdnControllerMsg msg, Completion completion) {
         completion.success();
     }
 

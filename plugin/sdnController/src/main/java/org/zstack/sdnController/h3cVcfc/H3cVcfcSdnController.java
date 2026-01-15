@@ -160,7 +160,7 @@ public class H3cVcfcSdnController implements SdnController, SdnControllerL2 {
         }
     }
 
-    private void getH3cParameters(APIAddSdnControllerMsg msg, Completion completion) {
+    private void getH3cParameters(AddSdnControllerMsg msg, Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("get-h3c-parameters-%s", self.getIp()));
         chain.then(new NoRollbackFlow() {
@@ -228,12 +228,12 @@ public class H3cVcfcSdnController implements SdnController, SdnControllerL2 {
 
     @Override
     @SdnControllerLog
-    public void preInitSdnController(APIAddSdnControllerMsg msg, Completion completion) {
+    public void preInitSdnController(AddSdnControllerMsg msg, Completion completion) {
         completion.success();
     }
 
     @Override
-    public void createSdnControllerDb(APIAddSdnControllerMsg msg, SdnControllerVO vo, Completion completion) {
+    public void createSdnControllerDb(AddSdnControllerMsg msg, SdnControllerVO vo, Completion completion) {
         dbf.persist(vo);
         completion.success();
     }
@@ -245,7 +245,7 @@ public class H3cVcfcSdnController implements SdnController, SdnControllerL2 {
 
     @Override
     @SdnControllerLog
-    public void initSdnController(APIAddSdnControllerMsg msg, Completion completion) {
+    public void initSdnController(AddSdnControllerMsg msg, Completion completion) {
         getH3cControllerToken(new Completion(completion) {
             @Override
             public void success() {
