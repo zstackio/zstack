@@ -1,6 +1,7 @@
 package org.zstack.header.network.sdncontroller;
 
 import org.zstack.header.identity.OwnedByAccount;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.NoView;
 import org.zstack.header.vo.ResourceVO;
@@ -40,6 +41,7 @@ public class SdnControllerVO extends ResourceVO implements OwnedByAccount, ToInv
     private String username;
 
     @Column
+    @NoLogging
     private String password;
 
     @OneToMany(fetch=FetchType.EAGER)
