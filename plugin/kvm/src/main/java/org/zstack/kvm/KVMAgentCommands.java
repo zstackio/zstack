@@ -2914,6 +2914,10 @@ public class KVMAgentCommands {
         private VirtualDeviceInfo memBalloonInfo;
         @GrayVersion(value = "5.0.0")
         private VirtualizerInfoTO virtualizerInfo;
+        @GrayVersion(value = "5.5.6")
+        private Map<String, String> pciDeviceInfos;
+        @GrayVersion(value = "5.5.6")
+        private Map<String, String> mdevDeviceInfos;
 
         public VirtualDeviceInfo getMemBalloonInfo() {
             return memBalloonInfo;
@@ -2945,6 +2949,22 @@ public class KVMAgentCommands {
 
         public void setVirtualizerInfo(VirtualizerInfoTO virtualizerInfo) {
             this.virtualizerInfo = virtualizerInfo;
+        }
+
+        public Map<String, String> getPciDeviceInfos() {
+            return pciDeviceInfos;
+        }
+
+        public void setPciDeviceInfos(Map<String, String> pciDeviceInfos) {
+            this.pciDeviceInfos = pciDeviceInfos;
+        }
+
+        public Map<String, String> getMdevDeviceInfos() {
+            return mdevDeviceInfos;
+        }
+
+        public void setMdevDeviceInfos(Map<String, String> mdevDeviceInfos) {
+            this.mdevDeviceInfos = mdevDeviceInfos;
         }
     }
 
