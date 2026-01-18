@@ -16,4 +16,8 @@ public interface ExternalService {
     ExternalServiceCapabilities getExternalServiceCapabilities();
 
     void reload();
+
+    String getServiceType();
+
+    void externalConfig(String serviceType);
 }

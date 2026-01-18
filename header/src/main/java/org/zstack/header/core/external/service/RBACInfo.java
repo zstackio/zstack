@@ -9,7 +9,11 @@ public class RBACInfo implements RBACDescription {
         permissionBuilder()
                 .adminOnlyAPIs(
                         APIGetExternalServicesMsg.class,
-                        APIReloadExternalServiceMsg.class
+                        APIReloadExternalServiceMsg.class,
+                        APIAddExternalServiceConfigurationMsg.class,
+                        APIQueryExternalServiceConfigurationMsg.class,
+                        APIUpdateExternalServiceConfigurationMsg.class,
+                        APIDeleteExternalServiceConfigurationMsg.class
                 ).build();
     }
 
