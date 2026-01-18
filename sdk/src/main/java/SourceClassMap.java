@@ -245,6 +245,7 @@ public class SourceClassMap {
 			put("org.zstack.header.console.ConsoleProxyAgentInventory", "org.zstack.sdk.ConsoleProxyAgentInventory");
 			put("org.zstack.header.core.external.plugin.PluginDriverInventory", "org.zstack.sdk.PluginDriverInventory");
 			put("org.zstack.header.core.external.service.ExternalServiceCapabilities", "org.zstack.sdk.ExternalServiceCapabilities");
+			put("org.zstack.header.core.external.service.ExternalServiceConfigurationInventory", "org.zstack.sdk.ExternalServiceConfigurationInventory");
 			put("org.zstack.header.core.external.service.ExternalServiceInventory", "org.zstack.sdk.ExternalServiceInventory");
 			put("org.zstack.header.core.progress.ChainInfo", "org.zstack.sdk.ChainInfo");
 			put("org.zstack.header.core.progress.PendingTaskInfo", "org.zstack.sdk.PendingTaskInfo");
@@ -1064,6 +1065,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ExternalPrimaryStorageInventory", "org.zstack.header.storage.addon.primary.ExternalPrimaryStorageInventory");
 			put("org.zstack.sdk.ExternalServiceCapabilities", "org.zstack.header.core.external.service.ExternalServiceCapabilities");
 			put("org.zstack.sdk.ExternalServiceCapabilitiesBuilder", "org.zstack.core.externalservice.ExternalServiceCapabilitiesBuilder");
+			put("org.zstack.sdk.ExternalServiceConfigurationInventory", "org.zstack.header.core.external.service.ExternalServiceConfigurationInventory");
 			put("org.zstack.sdk.ExternalServiceInventory", "org.zstack.header.core.external.service.ExternalServiceInventory");
 			put("org.zstack.sdk.FaultToleranceVmGroupInventory", "org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory");
 			put("org.zstack.sdk.FcHbaDeviceInventory", "org.zstack.storage.device.hba.FcHbaDeviceInventory");

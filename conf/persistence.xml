@@ -223,5 +223,6 @@
         <class>org.zstack.header.network.l3.L3NetworkSequenceNumberVO</class>
         <class>org.zstack.network.hostNetworkInterface.PhysicalSwitchVO</class>
         <class>org.zstack.network.hostNetworkInterface.PhysicalSwitchPortVO</class>
+        <class>org.zstack.header.core.external.service.ExternalServiceConfigurationVO</class>
     </persistence-unit>
 </persistence>
