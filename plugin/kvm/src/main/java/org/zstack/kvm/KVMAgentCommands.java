@@ -521,6 +521,8 @@ public class KVMAgentCommands {
         @GrayVersion(value = "5.0.0")
         private VirtualizerInfoTO virtualizerInfo;
         private String iscsiInitiatorName;
+        @GrayVersion("5.5.6")
+        private String cpuFeatureMd5;
 
         public String getOsDistribution() {
             return osDistribution;
@@ -781,6 +783,14 @@ public class KVMAgentCommands {
 
         public void setDeployMode(String deployMode) {
             this.deployMode = deployMode;
+        }
+
+        public String getCpuFeatureMd5() {
+            return cpuFeatureMd5;
+        }
+
+        public void setCpuFeatureMd5(String cpuFeatureMd5) {
+            this.cpuFeatureMd5 = cpuFeatureMd5;
         }
     }
 
