@@ -19,6 +19,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.acl.AccessControlListEntryVO;
 import org.zstack.header.acl.AccessControlListEntryVO_;
+import org.zstack.header.acl.AclEntryType;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -480,6 +481,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         prepareSystemTags();
 
         upgradeLoadBalancerServerGroup();
+        upgradeLoadBalancerRedirectRule();
         return true;
     }
 
@@ -998,6 +1000,38 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 " and g.uuid = nicRef.serverGroupUuid and nicRef.vmNicUuid in (:vmNicUuids)")
                 .param("vmNicUuids", vmNicUuids).list();
         return listenerUuids;
+    }
+
+
+    public void upgradeLoadBalancerRedirectRule() {
+        if (!LoadBalancerGlobalProperty.UPGRADE_LB_REDIRECT_RULE) {
+            return;
+        }
+        List<AccessControlListEntryVO> redirectRules = Q.New(AccessControlListEntryVO.class)
+                .eq(AccessControlListEntryVO_.type, AclEntryType.RedirectRule.toString())
+                .isNull(AccessControlListEntryVO_.redirectPort)
+                .list();
+        if (redirectRules.isEmpty()) {
+            return;
+        }
+
+        List<AccessControlListEntryVO> toUpgradeRules = new ArrayList<>();
+        for (AccessControlListEntryVO rule : redirectRules) {
+            LoadBalancerListenerVO lbListenerVO = SQL.New("select lbListener from LoadBalancerListenerVO lbListener, LoadBalancerListenerACLRefVO ref, AccessControlListVO acl " +
+                    "where acl.uuid = ref.aclUuid and ref.listenerUuid = lbListener.uuid and acl.uuid = :aclUuid")
+                    .param("aclUuid", rule.getAclUuid())
+                    .find();
+            if (lbListenerVO == null) {
+                continue;
+            }
+
+            rule.setRedirectPort(lbListenerVO.getInstancePort());
+            toUpgradeRules.add(rule);
+        }
+
+        if (!toUpgradeRules.isEmpty()) {
+            dbf.updateCollection(toUpgradeRules);
+        }
     }
 
 

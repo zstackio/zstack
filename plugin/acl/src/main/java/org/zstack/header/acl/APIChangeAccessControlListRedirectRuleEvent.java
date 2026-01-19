@@ -30,6 +30,7 @@ public class APIChangeAccessControlListRedirectRuleEvent extends APIEvent {
         inv.setType("RedirectRule");
         inv.setDomain("zstack.io");
         inv.setUrl("/test");
+        inv.setRedirectPort(8080);
         event.setInventory(inv);
         return event;
     }

@@ -47,6 +47,8 @@ public class AccessControlListEntryVO implements ToInventory {
     private String url;
     @Column
     private String redirectRule;
+    @Column
+    private Integer redirectPort;
 
     @Column
     private String ipEntries;
@@ -164,5 +166,13 @@ public class AccessControlListEntryVO implements ToInventory {
 
     public void setRedirectRule(String redirectRule) {
         this.redirectRule = redirectRule;
+    }
+
+    public Integer getRedirectPort() {
+        return redirectPort;
+    }
+
+    public void setRedirectPort(Integer redirectPort) {
+        this.redirectPort = redirectPort;
     }
 }
