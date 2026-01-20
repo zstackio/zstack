@@ -89,8 +89,8 @@ public class SdnControllerPingTracker extends PingTracker implements
         }
 
         SdnControllerStatus oldStatus = vo.getStatus();
-        new SdnControllerBase(vo).changeSdnControllerStatus(SdnControllerStatus.Connected);
         if (oldStatus == SdnControllerStatus.Disconnected) {
+            // when reconnect successfully, it will fire event: SdnControllerStatus.Connected
             ReconnectSdnControllerMsg msg = new ReconnectSdnControllerMsg();
             msg.setControllerUuid(resourceUuid);
             bus.makeTargetServiceIdByResourceUuid(msg, SdnControllerConstant.SERVICE_ID, resourceUuid);
