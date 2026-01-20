@@ -185,6 +185,8 @@ class VirtualRouterLoadBalancerForwardRuleCase extends SubCase {
             testLoadBalancerForwardRule()
             LoadBalancerGlobalProperty.UPGRADE_LB_REDIRECT_RULE = true
             testUpgradeLoadBalancerForwardRule()
+            LoadBalancerGlobalProperty.UPGRADE_LB_REDIRECT_RULE = false
+            testLoadBalancerSpecialPortForwardRule()
         }
     }
 
@@ -289,11 +291,78 @@ class VirtualRouterLoadBalancerForwardRuleCase extends SubCase {
             aclType = "redirect"
         }
         
+        assert cmd != null
         lbTO =  cmd.lbs.find { it.lbUuid == lb1.uuid }
         assert lbTO != null
         redirectRuleTO = lbTO.redirectRules.find { it.redirectRuleUuid == aclRule2.uuid }
         assert redirectRuleTO != null
         assert redirectRuleTO.redirectPort == 9090
+    }
+
+    void testLoadBalancerSpecialPortForwardRule() {
+        // port 80 is a special port, test whether the redirect rule with port 80 works well
+        def lb2 = env.inventoryByName("lb2") as LoadBalancerInventory
+        def vm3 = env.inventoryByName("vm3") as VmInstanceInventory
+        def l3 = env.inventoryByName("l3") as L3NetworkInventory
+
+        def listener_2 = createLoadBalancerListener {
+            name = "listener-2"
+            loadBalancerUuid = lb2.uuid
+            protocol = "http"
+            loadBalancerPort = 8081
+            instancePort = 80
+        } as LoadBalancerListenerInventory
+        def serverGroup_2 = createLoadBalancerServerGroup {
+            name = "server-group-2"
+            loadBalancerUuid = lb2.uuid
+        } as LoadBalancerServerGroupInventory
+        addServerGroupToLoadBalancerListener {
+            serverGroupUuid = serverGroup_2.uuid
+            listenerUuid = listener_2.uuid
+        }
+        def vmNic3 = vm3.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid } as VmNicInventory
+        assert vmNic3 != null
+        VirtualRouterLoadBalancerBackend.RefreshLbCmd cmd = null
+        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, VirtualRouterLoadBalancerBackend.RefreshLbCmd.class)
+            return rsp
+        }
+
+        def acl3 = createAccessControlList {
+            name = "acl-3"
+        } as AccessControlListInventory
+        def aclRule3 = addAccessControlListRedirectRule {
+            name = "acl-rule-3"
+            aclUuid = acl3.uuid
+            domain = "zstack.local"
+            url = "/test3"
+            redirectPort = 2000
+        } as AccessControlListEntryInventory
+        addAccessControlListToLoadBalancer {
+            listenerUuid = listener_2.uuid
+            serverGroupUuids = [serverGroup_2.uuid]
+            aclUuids = [acl3.uuid]
+            aclType = "redirect"
+        }
+
+        addBackendServerToServerGroup {
+            serverGroupUuid = serverGroup_2.uuid
+            vmNics = [[
+                uuid: vmNic3.uuid,
+                ipVersion: "4"
+            ]]
+        }
+
+        assert cmd != null
+        def lbTO =  cmd.lbs.find { it.lbUuid == lb2.uuid }
+        assert lbTO != null
+        def redirectRuleTO = lbTO.redirectRules.find { it.redirectRuleUuid == aclRule3.uuid }
+        assert redirectRuleTO != null
+        assert redirectRuleTO.redirectPort == 2000
+
+        deleteAccessControlList {
+            uuid = acl3.uuid
+        }
     }
 
     void testUpgradeLoadBalancerForwardRule() {

@@ -2120,7 +2120,6 @@ public class LoadBalancerBase {
     }
 
     private void handle(APIAddAccessControlListToLoadBalancerMsg msg) {
-        DebugUtils.Assert(msg.getAclType() != null && msg.getAclUuids() != null, "parameters cannot be null");
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {

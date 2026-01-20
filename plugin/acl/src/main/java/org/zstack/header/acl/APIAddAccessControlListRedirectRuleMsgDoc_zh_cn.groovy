@@ -105,7 +105,7 @@ doc {
 				column {
 					name "redirectPort"
 					enclosedIn "params"
-					desc ""
+					desc "转发端口"
 					location "body"
 					type "Integer"
 					optional true
