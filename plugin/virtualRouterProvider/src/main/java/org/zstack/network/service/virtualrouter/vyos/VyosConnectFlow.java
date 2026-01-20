@@ -180,12 +180,9 @@ public class VyosConnectFlow extends NoRollbackFlow {
                             cmd.setLogLevel(rcf.getResourceConfigValue(VirtualRouterGlobalConfig.LOG_LEVEL, vrUuid, String.class));
                             Map <String,String> parms = new HashMap<>();
 
-                            long count = Q.New(VirtualRouterLoadBalancerRefVO.class)
-                                .eq(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, vrUuid)
-                                .notNull(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid)
-                                .count();
-                            if(count > 0){
-                                parms.put(VirtualRouterGlobalConfig.IPV4_LOCAL_PORT_RANGE.getName(),VirtualRouterGlobalConfig.IPV4_LOCAL_PORT_RANGE.value());
+                            if (!VirtualRouterGlobalConfig.IPV4_LOCAL_PORT_RANGE.value().equals(
+                                    VirtualRouterGlobalConfig.IPV4_LOCAL_PORT_RANGE.defaultValue(String.class))){
+                                parms.put(VirtualRouterGlobalConfig.IPV4_LOCAL_PORT_RANGE.getName(), VirtualRouterGlobalConfig.IPV4_LOCAL_PORT_RANGE.value());
                             }
                             cmd.setParms(parms);
 
