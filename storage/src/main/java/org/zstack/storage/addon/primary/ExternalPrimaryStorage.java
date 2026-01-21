@@ -1219,6 +1219,12 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 .eq(ImageCacheVO_.imageUuid, image.getUuid())
                 .list();
 
+        if (!controller.reportCapabilities().isSupportMultiSpace() && !caches.isEmpty()) {
+            // TODO check exists in ps
+            completion.success(caches.get(0).toInventory());
+            return;
+        }
+
         for (ImageCacheVO cache : caches) {
             ImageCacheInventory inv = cache.toInventory();
             // TODO: suppose that path always starts with allocatedUrl
