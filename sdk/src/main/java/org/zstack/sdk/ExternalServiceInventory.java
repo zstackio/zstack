@@ -28,4 +28,12 @@ public class ExternalServiceInventory  {
         return this.capabilities;
     }
 
+    public java.lang.String serviceType;
+    public void setServiceType(java.lang.String serviceType) {
+        this.serviceType = serviceType;
+    }
+    public java.lang.String getServiceType() {
+        return this.serviceType;
+    }
+
 }

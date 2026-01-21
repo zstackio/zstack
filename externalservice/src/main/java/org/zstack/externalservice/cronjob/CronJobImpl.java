@@ -33,6 +33,12 @@ public class CronJobImpl extends AbstractLocalExternalService implements CronJob
         return String.format("cron-job-on-machine-%s", Platform.getManagementServerIp());
     }
 
+
+    @Override
+    public String getServiceType() {
+        return "CronJob";
+    }
+
     @Override
     public void start() {
         if (isAlive()) {
@@ -103,4 +109,7 @@ public class CronJobImpl extends AbstractLocalExternalService implements CronJob
             }
         }.execute();
     }
+
+    @Override
+    public void externalConfig(String serviceType){}
 }
