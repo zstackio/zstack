@@ -1600,8 +1600,11 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         trashVolume(msg.getVolume().getInstallPath(), msg.getVolume().getProtocol(), force, new Completion(msg) {
             @Override
             public void success() {
-                ExternalPrimaryStorageSpaceCapacityHelper helper = new ExternalPrimaryStorageSpaceCapacityHelper(self.getUuid(), controller.getIdentity());
-                helper.releaseAvailableCapWithRatio(msg.getVolume().getInstallPath(), msg.getVolume().getSize());
+                if (controller.reportCapabilities().isSupportMultiSpace()) {
+                    ExternalPrimaryStorageSpaceCapacityHelper helper = new ExternalPrimaryStorageSpaceCapacityHelper(self.getUuid(), controller.getIdentity());
+                    helper.releaseAvailableCapWithRatio(msg.getVolume().getInstallPath(), msg.getVolume().getSize());
+                }
+
                 bus.reply(msg, reply);
             }
 
@@ -1814,8 +1817,11 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         controller.deleteSnapshot(msg.getSnapshot().getPrimaryStorageInstallPath(), new Completion(msg) {
             @Override
             public void success() {
-                ExternalPrimaryStorageSpaceCapacityHelper helper = new ExternalPrimaryStorageSpaceCapacityHelper(self.getUuid(), controller.getIdentity());
-                helper.releaseAvailableCapacity(msg.getSnapshot().getPrimaryStorageInstallPath(), msg.getSnapshot().getSize());
+                if (controller.reportCapabilities().isSupportMultiSpace()) {
+                    ExternalPrimaryStorageSpaceCapacityHelper helper = new ExternalPrimaryStorageSpaceCapacityHelper(self.getUuid(), controller.getIdentity());
+                    helper.releaseAvailableCapacity(msg.getSnapshot().getPrimaryStorageInstallPath(), msg.getSnapshot().getSize());
+                }
+
                 bus.reply(msg, reply);
             }
 
