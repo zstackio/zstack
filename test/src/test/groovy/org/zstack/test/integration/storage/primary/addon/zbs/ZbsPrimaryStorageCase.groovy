@@ -3,6 +3,7 @@ package org.zstack.test.integration.storage.primary.addon.zbs
 import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.EventCallback
 import org.zstack.core.cloudbus.EventFacade
+import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageSpaceVO
@@ -13,6 +14,7 @@ import org.zstack.header.storage.primary.PrimaryStorageCapacityVO_
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageStatus
+import org.zstack.storage.zbs.MdsStatus
 import org.zstack.storage.zbs.MdsUri
 import org.zstack.sdk.*
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageSystemTags
@@ -47,6 +49,7 @@ class ZbsPrimaryStorageCase extends SubCase {
     VolumeInventory vol, vol2
     KVMHostInventory kvm
     EventFacade evtf
+    DatabaseFacade dbf
 
     @Override
     void clean() {
@@ -165,7 +168,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
             kvm = env.inventoryByName("kvm-1") as KVMHostInventory
             evtf = bean(EventFacade.class)
-
+            dbf = bean(DatabaseFacade.class)
             testSyncPrimaryStorageCapacityConcurrently()
             testDefaultConfig()
             testUpdateExternalPrimaryStorage()
@@ -177,6 +180,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             testNegativeScenario()
             testDataVolumeNegativeScenario()
             testDecodeMdsUriWithSpecialPassword()
+            testMdsReconnectAfterMaximumPingFailures()
         }
     }
 
@@ -357,7 +361,7 @@ class ZbsPrimaryStorageCase extends SubCase {
         }
 
         AddonInfo addonInfo = JSONObjectUtil.toObject(
-                 Q.New(ExternalPrimaryStorageVO.class)
+                Q.New(ExternalPrimaryStorageVO.class)
                         .select(ExternalPrimaryStorageVO_.addonInfo)
                         .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
                         .findValue().toString(),
@@ -476,7 +480,19 @@ class ZbsPrimaryStorageCase extends SubCase {
             return rsp
         }
 
-        sleep(2000)
+        env.afterSimulator(ZbsPrimaryStorageMdsBase.SYNC_METADATA_PATH) { ZbsPrimaryStorageMdsBase.SyncMetadataRsp rsp, HttpEntity<String> e ->
+            ZbsPrimaryStorageMdsBase.PingCmd cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.PingCmd.class)
+            if (cmd.getAddr().equals("127.0.1.1")) {
+                rsp.setSuccess(false)
+                rsp.setError("on purpose")
+            }
+
+            return rsp
+        }
+
+        retryInSecs {
+            assert count == 1
+        }
 
         addonInfo = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
 
@@ -488,11 +504,11 @@ class ZbsPrimaryStorageCase extends SubCase {
                 "{\"physicalPoolID\":2,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":2,\"usedSize\":123456789,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":123456789,\"physicalPoolName\":\"pool2\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool2\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":987654321}]}"
 
         assert Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Connected
-        assert count == 1
         assert data.uuid == ps.uuid
 
         env.afterSimulator(ZbsPrimaryStorageMdsBase.PING_PATH) { rsp, HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.PingCmd.class)
+
             if (cmd.addr.equals("127.0.1.1")) {
                 rsp.success = false
                 rsp.error = "on purpose"
@@ -504,10 +520,28 @@ class ZbsPrimaryStorageCase extends SubCase {
                 rsp.error = "on purpose"
             }
 
-            return pingRsp
+            return rsp
         }
 
-        sleep(2500)
+        env.afterSimulator(ZbsPrimaryStorageMdsBase.SYNC_METADATA_PATH) { ZbsPrimaryStorageMdsBase.SyncMetadataRsp rsp, HttpEntity<String> e ->
+            ZbsPrimaryStorageMdsBase.PingCmd cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.PingCmd.class)
+            if (cmd.getAddr().equals("127.0.1.1")) {
+                rsp.setSuccess(false)
+                rsp.setError("on purpose")
+            } else if (cmd.getAddr().equals("127.0.1.2")) {
+                rsp.setSuccess(false)
+                rsp.setError("on purpose")
+            } else if (cmd.getAddr().equals("127.0.1.3")) {
+                rsp.setSuccess(false)
+                rsp.setError("on purpose")
+            }
+
+            return rsp
+        }
+
+        retryInSecs {
+            assert count == 2
+        }
 
         addonInfo = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
 
@@ -518,13 +552,16 @@ class ZbsPrimaryStorageCase extends SubCase {
                 "\"logicalPoolInfos\":[{\"physicalPoolID\":1,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":1,\"usedSize\":322961408,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":968884224,\"physicalPoolName\":\"pool1\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool1\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":3221225472}," +
                 "{\"physicalPoolID\":2,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":2,\"usedSize\":123456789,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":123456789,\"physicalPoolName\":\"pool2\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool2\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":987654321}]}"
 
-        assert Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Disconnected
-        assert count == 2
+        retryInSecs {
+            assert Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Disconnected
+        }
         assert data.uuid == ps.uuid
 
         env.cleanAfterSimulatorHandlers()
 
-        sleep(2000)
+        retryInSecs {
+            assert count >= 3
+        }
 
         Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.status).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue() == PrimaryStorageStatus.Connected
 
@@ -670,6 +707,59 @@ class ZbsPrimaryStorageCase extends SubCase {
         assert uri.password == specialPassword
     }
 
+    void testMdsReconnectAfterMaximumPingFailures() {
+        env.cleanSimulatorAndMessageHandlers()
+        Integer originalPingInterval = PrimaryStorageGlobalConfig.PING_INTERVAL.value().toInteger()
+        PrimaryStorageGlobalConfig.PING_INTERVAL.updateValue(1)
+        final String dbVersion = dbf.getDbVersion()
+        final Integer MAX_PING_CNT = ZbsConstants.PRIMARY_STORAGE_MDS_MAXIMUM_PING_FAILURE
+        AtomicInteger pingFailureCount = new AtomicInteger(0)
+        Boolean reconnectTriggered = false
+
+        env.simulator(ZbsPrimaryStorageMdsBase.PING_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            ZbsPrimaryStorageMdsBase.PingCmd cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.PingCmd.class)
+            ZbsPrimaryStorageMdsBase.PingRsp rsp = new ZbsPrimaryStorageMdsBase.PingRsp()
+            if (cmd.getAddr().equals("127.0.1.1") && !reconnectTriggered) {
+                rsp.success = false
+                rsp.error = "Mds ping failed on purpose"
+                pingFailureCount.incrementAndGet()
+                return rsp
+            }
+            rsp.setAgentVersion(dbVersion)
+            return rsp
+
+        }
+
+        env.simulator(ZbsPrimaryStorageMdsBase.SYNC_METADATA_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            ZbsPrimaryStorageMdsBase.SyncMetadataCmd cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.SyncMetadataCmd.class)
+            ZbsPrimaryStorageMdsBase.SyncMetadataRsp rsp = new ZbsPrimaryStorageMdsBase.SyncMetadataRsp()
+            rsp.setExternalAddr(cmd.getAddr())
+            if (cmd.getAddr().equals("127.0.1.1")) {
+                assert pingFailureCount.intValue().equals(MAX_PING_CNT)
+                reconnectTriggered = true
+            }
+            return rsp
+        }
+
+        sleep((MAX_PING_CNT + 1) * 1000 + 500)
+        retryInSecs {
+            assert reconnectTriggered
+        }
+        retryInSecs {
+            AddonInfo addonInfo = JSONObjectUtil.toObject(
+                    Q.New(ExternalPrimaryStorageVO.class)
+                            .select(ExternalPrimaryStorageVO_.addonInfo)
+                            .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                            .findValue()
+                            .toString(),
+                    AddonInfo.class
+            )
+            assert MdsStatus.Connected.equals(addonInfo.getMdsInfos().find { it.addr.equals("127.0.1.1") }.getStatus())
+        }
+
+        PrimaryStorageGlobalConfig.PING_INTERVAL.updateValue(originalPingInterval)
+        env.cleanAfterSimulatorHandlers()
+    }
 
     void deleteVolume(String volUuid) {
         deleteDataVolume {
