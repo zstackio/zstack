@@ -842,6 +842,7 @@ public abstract class AbstractAccountSourceBase {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 new While<>(splitAccountLists())
+                        .enableProgressReport("cleaning-stale-accounts-for-deleting-account-source")
                         .each(this::cleanStaleAccounts)
                         .run(new WhileDoneCompletion(trigger) {
                     @Override
