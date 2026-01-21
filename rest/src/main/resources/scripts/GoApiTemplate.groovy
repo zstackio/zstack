@@ -217,6 +217,35 @@ class GoApiTemplate implements SdkTemplate {
         return false
     }
 
+    /**
+     * Check if API class has valid parameter fields (excluding inherited base fields)
+     */
+    private boolean hasApiParams() {
+        if (apiMsgClazz == null) {
+            return false
+        }
+        try {
+            def fields = apiMsgClazz.getDeclaredFields()
+            // Filter out synthetic, static fields and common inherited fields
+            def validFields = fields.findAll { field ->
+                !java.lang.reflect.Modifier.isStatic(field.modifiers) &&
+                !field.synthetic &&
+                !field.name.startsWith('__') &&
+                field.name != 'session' &&
+                field.name != 'timeout' &&
+                field.name != 'commandTimeout'
+            }
+            boolean result = validFields.size() > 0
+            if (!result) {
+                logger.warn("[GoSDK] ${apiMsgClazz.simpleName} has NO valid parameter fields")
+            }
+            return result
+        } catch (Exception e) {
+            logger.warn("[GoSDK] Error checking params for ${apiMsgClazz.simpleName}: ${e.message}")
+            return true  // Default to true if can't determine
+        }
+    }
+
     private Class<?> findInventoryClass() {
         inventoryFieldName = null
         if (responseClass == null) return null
@@ -397,41 +426,32 @@ class GoApiTemplate implements SdkTemplate {
             }
         } else {
             if (!skipMain) {
-                switch (actionType) {
-                    case "Create":
-                    case "Add":
-                        // POST does not need unwrapping; return the Inventory View
-                        builder.append(generateCreateMethod(apiPath, viewStructName, false, responseStructName, goInventoryFieldName))
-                        break
-                    case "Get":
-                        // GET may require unwrapping
-                        builder.append(generateGetMethod(apiPath, viewStructName, unwrapForGet, responseStructName, goInventoryFieldName))
-                        break
-                    case "Update":
-                    case "Change":
-                        // PUT does not need unwrapping; return the Inventory View
-                        builder.append(generateUpdateMethod(apiPath, viewStructName, false, responseStructName, goInventoryFieldName))
-                        break
-                    case "Expunge":
-                        // Expunge uses PUT but only returns error
+                // CRITICAL: Prioritize @RestRequest.method over actionType derived from class name
+                // This fixes issues like APIGetVersionMsg (actionType="Get") with method=PUT
+                
+                // First check HTTP method from annotation, then fall back to actionType-based logic
+                if (httpMethod == "POST") {
+                    // POST operations (Create/Add)
+                    builder.append(generateCreateMethod(apiPath, viewStructName, false, responseStructName, goInventoryFieldName))
+                } else if (httpMethod == "GET") {
+                    // GET operations (Get/Query)
+                    builder.append(generateGetMethod(apiPath, viewStructName, unwrapForGet, responseStructName, goInventoryFieldName))
+                } else if (httpMethod == "PUT") {
+                    // PUT operations (Update/Change/Action)
+                    // Special case: Expunge actions return void
+                    if (actionType == "Expunge") {
                         builder.append(generateExpungeMethod(apiPath))
-                        break
-                    case "Delete":
-                    case "Destroy":
-                    case "Remove":
-                        // Handle real DELETE methods; Expunge uses PUT and falls through to default
-                        if (httpMethod == "DELETE") {
-                            builder.append(generateDeleteMethod(apiPath))
-                        } else {
-                            // Other HTTP methods (for example Expunge with PUT) use the generic path
-                            boolean unwrapGeneric = (httpMethod == "GET") ? unwrapForGet : false
-                            builder.append(generateGenericMethod(apiPath, httpMethod, viewStructName, unwrapGeneric, responseStructName, goInventoryFieldName))
-                        }
-                        break
-                    default:
-                        // Generic handling; unwrap is decided by the HTTP method
-                        boolean unwrapGeneric = (httpMethod == "GET") ? unwrapForGet : false
-                        builder.append(generateGenericMethod(apiPath, httpMethod, viewStructName, unwrapGeneric, responseStructName, goInventoryFieldName))
+                    } else {
+                        builder.append(generateUpdateMethod(apiPath, viewStructName, false, responseStructName, goInventoryFieldName))
+                    }
+                } else if (httpMethod == "DELETE") {
+                    // DELETE operations
+                    builder.append(generateDeleteMethod(apiPath))
+                } else {
+                    // Fallback for unknown HTTP methods (should rarely happen)
+                    logger.warn("[GoSDK] Unknown HTTP method ${httpMethod} for ${clzName}, using generic method")
+                    boolean unwrapGeneric = (httpMethod == "GET") ? unwrapForGet : false
+                    builder.append(generateGenericMethod(apiPath, httpMethod, viewStructName, unwrapGeneric, responseStructName, goInventoryFieldName))
                 }
             }
 
@@ -484,6 +504,32 @@ class GoApiTemplate implements SdkTemplate {
     }
 
     private String generateCreateMethod(String apiPath, String viewStructName, boolean unwrap, String responseStructName, String fieldName) {
+        boolean hasParams = hasApiParams()
+        
+        if (!hasParams) {
+            // No params: don't require user to pass params, use empty map internally
+            if (unwrap) {
+                return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
+\tvar resp view.${responseStructName}
+\tif err := cli.Post("${apiPath}", map[string]interface{}{}, &resp); err != nil {
+\t\treturn nil, err
+\t}
+\treturn &resp.${fieldName}, nil
+}
+"""
+            } else {
+                return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
+\tresp := view.${viewStructName}{}
+\tif err := cli.Post("${apiPath}", map[string]interface{}{}, &resp); err != nil {
+\t\treturn nil, err
+\t}
+\treturn &resp, nil
+}
+"""
+            }
+        }
+        
+        // Has params: require user to pass params
         if (unwrap) {
             return """func (cli *ZSClient) ${clzName}(params param.${clzName}Param) (*view.${viewStructName}, error) {
 \tvar resp view.${responseStructName}
@@ -589,15 +635,29 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 
         if (unwrap) {
             if (!useSpec) {
-                // Single or no placeholder: use the standard Get method
-                return """func (cli *ZSClient) ${clzName}(uuid string) (*view.${viewStructName}, error) {
+                // Check if there are any placeholders
+                if (placeholders.size() == 0) {
+                    // No placeholder: no uuid parameter needed
+                    // Use GetWithRespKey to extract the inventory field
+                    return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
 \tvar resp view.${responseStructName}
-\tif err := cli.Get("${cleanPath}", uuid, nil, &resp); err != nil {
+\tif err := cli.GetWithRespKey("${cleanPath}", "", "inventory", nil, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \treturn &resp.${fieldName}, nil
 }
 """
+                } else {
+                    // Single placeholder: use GetWithRespKey with uuid to extract inventory
+                    return """func (cli *ZSClient) ${clzName}(uuid string) (*view.${viewStructName}, error) {
+\tvar resp view.${responseStructName}
+\tif err := cli.GetWithRespKey("${cleanPath}", uuid, "inventory", nil, &resp); err != nil {
+\t\treturn nil, err
+\t}
+\treturn &resp.${fieldName}, nil
+}
+"""
+                }
             } else {
                 // Multiple placeholders: use GetWithSpec
                 // First placeholder is the resourceId; the rest form the spec
@@ -618,15 +678,29 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
             }
         } else {
             if (!useSpec) {
-                // Single or no placeholder: use the standard Get method
-                return """func (cli *ZSClient) ${clzName}(uuid string) (*view.${viewStructName}, error) {
+                // Check if there are any placeholders
+                if (placeholders.size() == 0) {
+                    // No placeholder: no uuid parameter needed
+                    // Use GetWithRespKey with empty responseKey to parse whole response
+                    return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
 \tvar resp view.${viewStructName}
-\tif err := cli.Get("${cleanPath}", uuid, nil, &resp); err != nil {
+\tif err := cli.GetWithRespKey("${cleanPath}", "", "", nil, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \treturn &resp, nil
 }
 """
+                } else {
+                    // Single placeholder: use GetWithRespKey with uuid
+                    return """func (cli *ZSClient) ${clzName}(uuid string) (*view.${viewStructName}, error) {
+\tvar resp view.${viewStructName}
+\tif err := cli.GetWithRespKey("${cleanPath}", uuid, "", nil, &resp); err != nil {
+\t\treturn nil, err
+\t}
+\treturn &resp, nil
+}
+"""
+                }
             } else {
                 // Multiple placeholders: use GetWithSpec
                 // First placeholder is the resourceId; the rest form the spec
@@ -658,6 +732,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 
         // Only use PutWithSpec when there are two or more placeholders
         boolean useSpec = placeholders.size() >= 2
+        
+        // Check if API has parameters
+        boolean hasParams = hasApiParams()
 
         // Resolve the action key (map key for Action APIs)
         // Prefer @RestRequest.parameterName, otherwise derive from class name
@@ -700,11 +777,34 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 """
                     }
                 } else {
-                    // No placeholder: use the standard Put method (uuid required)
-                    if (isActionApi) {
-                        return """func (cli *ZSClient) ${clzName}(uuid string, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                    // No placeholder: use the standard Put method
+                    if (!hasParams) {
+                        // No params: don't require user input
+                        if (isActionApi) {
+                            return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
 \tvar resp view.${responseStructName}
-\tif err := cli.Put("${cleanPath}", uuid, map[string]interface{}{
+\tif err := cli.Put("${cleanPath}", "", map[string]interface{}{
+\t\t"${actionKey}": map[string]interface{}{},
+\t}, &resp); err != nil {
+\t\treturn nil, err
+\t}
+\treturn &resp.${fieldName}, nil
+}
+"""
+                        } else {
+                            return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
+\tvar resp view.${responseStructName}
+\tif err := cli.Put("${cleanPath}", "", map[string]interface{}{}, &resp); err != nil {
+\t\treturn nil, err
+\t}
+\treturn &resp.${fieldName}, nil
+}
+"""
+                        }
+                    } else if (isActionApi) {
+                        return """func (cli *ZSClient) ${clzName}(params param.${clzName}Param) (*view.${viewStructName}, error) {
+\tvar resp view.${responseStructName}
+\tif err := cli.Put("${cleanPath}", "", map[string]interface{}{
 \t\t"${actionKey}": params.Params,
 \t}, &resp); err != nil {
 \t\treturn nil, err
@@ -752,7 +852,7 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                         // Action APIs wrap params.Params inside a map
                         return """func (cli *ZSClient) ${clzName}(${paramName} string, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \tresp := view.${viewStructName}{}
-\tif err := cli.Put("${cleanPath}", ${paramName}, map[string]interface{}{
+\tif err := cli.PutWithRespKey("${cleanPath}", ${paramName}, "", map[string]interface{}{
 \t\t"${actionKey}": params.Params,
 \t}, &resp); err != nil {
 \t\treturn nil, err
@@ -763,7 +863,7 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                     } else {
                         return """func (cli *ZSClient) ${clzName}(${paramName} string, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \tresp := view.${viewStructName}{}
-\tif err := cli.Put("${cleanPath}", ${paramName}, params, &resp); err != nil {
+\tif err := cli.PutWithRespKey("${cleanPath}", ${paramName}, "", params, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \treturn &resp, nil
@@ -771,11 +871,34 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 """
                     }
                 } else {
-                    // No placeholder: use the standard Put method (uuid required)
-                    if (isActionApi) {
-                        return """func (cli *ZSClient) ${clzName}(uuid string, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                    // No placeholder: use the standard Put method
+                    if (!hasParams) {
+                        // No params: don't require user input
+                        if (isActionApi) {
+                            return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
 \tresp := view.${viewStructName}{}
-\tif err := cli.Put("${cleanPath}", uuid, map[string]interface{}{
+\tif err := cli.PutWithRespKey("${cleanPath}", "", "", map[string]interface{}{
+\t\t"${actionKey}": map[string]interface{}{},
+\t}, &resp); err != nil {
+\t\treturn nil, err
+\t}
+\treturn &resp, nil
+}
+"""
+                        } else {
+                            return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
+\tresp := view.${viewStructName}{}
+\tif err := cli.PutWithRespKey("${cleanPath}", "", "", map[string]interface{}{}, &resp); err != nil {
+\t\treturn nil, err
+\t}
+\treturn &resp, nil
+}
+"""
+                        }
+                    } else if (isActionApi) {
+                        return """func (cli *ZSClient) ${clzName}(params param.${clzName}Param) (*view.${viewStructName}, error) {
+\tresp := view.${viewStructName}{}
+\tif err := cli.PutWithRespKey("${cleanPath}", "", "", map[string]interface{}{
 \t\t"${actionKey}": params.Params,
 \t}, &resp); err != nil {
 \t\treturn nil, err
@@ -786,7 +909,7 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                     } else {
                         return """func (cli *ZSClient) ${clzName}(uuid string, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \tresp := view.${viewStructName}{}
-\tif err := cli.Put("${cleanPath}", uuid, params, &resp); err != nil {
+\tif err := cli.PutWithRespKey("${cleanPath}", uuid, "", params, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \treturn &resp, nil
@@ -948,26 +1071,70 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 """
                 }
             case "PUT":
+                boolean hasParams = hasApiParams()
                 if (!useSpec) {
                     if (placeholders.size() == 1) {
                         // Single placeholder pulled from the path parameter
                         String paramName = toSafeGoParamName(placeholders[0])
-                        if (isActionApi) {
+                        if (!hasParams) {
+                            // No params case
+                            if (isActionApi) {
+                                String putMethod = unwrap ? "cli.Put" : "cli.PutWithRespKey"
+                                String putArgs = unwrap ? 
+                                    """("${cleanPath}", ${paramName}, map[string]interface{}{
+\t\t"${actionKey}": map[string]interface{}{},
+\t}, &resp)""" :
+                                    """("${cleanPath}", ${paramName}, "", map[string]interface{}{
+\t\t"${actionKey}": map[string]interface{}{},
+\t}, &resp)"""
+                                return """func (cli *ZSClient) ${clzName}(${paramName} string) (*view.${viewStructName}, error) {
+\t${respDecl}
+\tif err := ${putMethod}${putArgs}; err != nil {
+\t\treturn nil, err
+\t}
+\t${returnStmt}
+}
+"""
+                            } else {
+                                String putMethod = unwrap ? "cli.Put" : "cli.PutWithRespKey"
+                                String putArgs = unwrap ? 
+                                    """("${cleanPath}", ${paramName}, map[string]interface{}{}, &resp)""" :
+                                    """("${cleanPath}", ${paramName}, "", map[string]interface{}{}, &resp)"""
+                                return """func (cli *ZSClient) ${clzName}(${paramName} string) (*view.${viewStructName}, error) {
+\t${respDecl}
+\tif err := ${putMethod}${putArgs}; err != nil {
+\t\treturn nil, err
+\t}
+\t${returnStmt}
+}
+"""
+                            }
+                        } else if (isActionApi) {
                             // Action APIs wrap params.Params inside a map
+                            String putMethod = unwrap ? "cli.Put" : "cli.PutWithRespKey"
+                            String putArgs = unwrap ?
+                                """("${cleanPath}", ${paramName}, map[string]interface{}{
+\t\t"${actionKey}": params.Params,
+\t}, &resp)""" :
+                                """("${cleanPath}", ${paramName}, "", map[string]interface{}{
+\t\t"${actionKey}": params.Params,
+\t}, &resp)"""
                             return """func (cli *ZSClient) ${clzName}(${paramName} string, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \t${respDecl}
-\tif err := cli.Put("${cleanPath}", ${paramName}, map[string]interface{}{
-\t\t"${actionKey}": params.Params,
-\t}, &resp); err != nil {
+\tif err := ${putMethod}${putArgs}; err != nil {
 \t\treturn nil, err
 \t}
 \t${returnStmt}
 }
 """
                         } else {
+                            String putMethod = unwrap ? "cli.Put" : "cli.PutWithRespKey"
+                            String putArgs = unwrap ?
+                                """("${cleanPath}", ${paramName}, params, &resp)""" :
+                                """("${cleanPath}", ${paramName}, "", params, &resp)"""
                             return """func (cli *ZSClient) ${clzName}(${paramName} string, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \t${respDecl}
-\tif err := cli.Put("${cleanPath}", ${paramName}, params, &resp); err != nil {
+\tif err := ${putMethod}${putArgs}; err != nil {
 \t\treturn nil, err
 \t}
 \t${returnStmt}
@@ -975,22 +1142,65 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 """
                         }
                     } else {
-                        // No placeholder: use the standard Put method (uuid required)
-                        if (isActionApi) {
-                            return """func (cli *ZSClient) ${clzName}(uuid string, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                        // No placeholder: use the standard Put method
+                        if (!hasParams) {
+                            // No params: don't require user input
+                            if (isActionApi) {
+                                String putMethod = unwrap ? "cli.Put" : "cli.PutWithRespKey"
+                                String putArgs = unwrap ?
+                                    """("${cleanPath}", "", map[string]interface{}{
+\t\t"${actionKey}": map[string]interface{}{},
+\t}, &resp)""" :
+                                    """("${cleanPath}", "", "", map[string]interface{}{
+\t\t"${actionKey}": map[string]interface{}{},
+\t}, &resp)"""
+                                return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
 \t${respDecl}
-\tif err := cli.Put("${cleanPath}", uuid, map[string]interface{}{
+\tif err := ${putMethod}${putArgs}; err != nil {
+\t\treturn nil, err
+\t}
+\t${returnStmt}
+}
+"""
+                            } else {
+                                String putMethod = unwrap ? "cli.Put" : "cli.PutWithRespKey"
+                                String putArgs = unwrap ?
+                                    """("${cleanPath}", "", map[string]interface{}{}, &resp)""" :
+                                    """("${cleanPath}", "", "", map[string]interface{}{}, &resp)"""
+                                return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
+\t${respDecl}
+\tif err := ${putMethod}${putArgs}; err != nil {
+\t\treturn nil, err
+\t}
+\t${returnStmt}
+}
+"""
+                            }
+                        } else if (isActionApi) {
+                            String putMethod = unwrap ? "cli.Put" : "cli.PutWithRespKey"
+                            String putArgs = unwrap ?
+                                """("${cleanPath}", "", map[string]interface{}{
 \t\t"${actionKey}": params.Params,
-\t}, &resp); err != nil {
+\t}, &resp)""" :
+                                """("${cleanPath}", "", "", map[string]interface{}{
+\t\t"${actionKey}": params.Params,
+\t}, &resp)"""
+                            return """func (cli *ZSClient) ${clzName}(params param.${clzName}Param) (*view.${viewStructName}, error) {
+\t${respDecl}
+\tif err := ${putMethod}${putArgs}; err != nil {
 \t\treturn nil, err
 \t}
 \t${returnStmt}
 }
 """
                         } else {
+                            String putMethod = unwrap ? "cli.Put" : "cli.PutWithRespKey"
+                            String putArgs = unwrap ?
+                                """("${cleanPath}", uuid, params, &resp)""" :
+                                """("${cleanPath}", uuid, "", params, &resp)"""
                             return """func (cli *ZSClient) ${clzName}(uuid string, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \t${respDecl}
-\tif err := cli.Put("${cleanPath}", uuid, params, &resp); err != nil {
+\tif err := ${putMethod}${putArgs}; err != nil {
 \t\treturn nil, err
 \t}
 \t${returnStmt}
