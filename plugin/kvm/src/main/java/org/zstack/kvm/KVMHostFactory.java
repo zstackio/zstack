@@ -241,7 +241,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     @Override
     public Host getHost(HostVO vo) {
         KVMHostVO kvo = dbf.findByUuid(vo.getUuid(), KVMHostVO.class);
-        KVMHostContext context = getHostContext(vo.getUuid());
+        KVMHostContext context = getHostContext(kvo);
         if (context == null) {
             context = createHostContext(kvo);
         }
@@ -1025,7 +1025,11 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         return context;
     }
 
-    public KVMHostContext getHostContext(String hostUuid) {
+    public KVMHostContext getHostContext(KVMHostVO kvo) {
+        return createHostContext(kvo);
+    }
+
+    public KVMHostContext getHostContextByUuid(String hostUuid) {
         KVMHostVO kvo = dbf.findByUuid(hostUuid, KVMHostVO.class);
         return createHostContext(kvo);
     }

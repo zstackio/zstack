@@ -265,6 +265,10 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         }
     }
 
+    public List<PrimaryStorageControllerSvc> getAllControllerSvcs() {
+        return new ArrayList<>(controllers.values());
+    }
+
     public PrimaryStorageControllerSvc getControllerSvc(String primaryStorageUuid) {
         return controllers.get(primaryStorageUuid);
     }

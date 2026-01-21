@@ -69,6 +69,10 @@ public class LocalStorageCapacityUpdater {
                 final long totalChange = rsp.getTotalCapacity() - ref.getTotalPhysicalCapacity();
                 final long availChange = rsp.getAvailableCapacity() - ref.getAvailablePhysicalCapacity();
 
+                if (totalChange == 0 && availChange == 0) {
+                    return;
+                }
+
                 new PrimaryStorageCapacityUpdater(psUuid).run(new PrimaryStorageCapacityUpdaterRunnable() {
                     @Override
                     public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
