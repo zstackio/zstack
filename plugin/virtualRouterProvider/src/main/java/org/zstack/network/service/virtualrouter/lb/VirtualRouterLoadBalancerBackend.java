@@ -860,6 +860,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 for (LbTO.RedirectRule rule : redirectRules) {
                     LbTO.RedirectRule formatRule = new LbTO.RedirectRule();
                     formatRule.setRedirectRule(rule.getRedirectRule());
+                    formatRule.setRedirectPort(rule.getRedirectPort());
                     formatRule.setRedirectRuleUuid(rule.getRedirectRuleUuid());
                     formatRule.setAclUuid(rule.getAclUuid());
                     formatRule.setServerGroupUuid(rule.getServerGroupUuid());
