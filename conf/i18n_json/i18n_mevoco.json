@@ -551,15 +551,6 @@
     "fileName": "src/main/java/org/zstack/compute/host/MevocoHostBase.java"
   },
   {
-    "raw": "host[uuid:%s] can not find",
-    "en_US": "host[uuid:{0}] can not find",
-    "zh_CN": "找不到主机[uuid：{0}]",
-    "arguments": [
-      "msg.getHostUuid()"
-    ],
-    "fileName": "src/main/java/org/zstack/compute/host/MevocoHostBase.java"
-  },
-  {
     "raw": "kvm host[uuid:%s, name:%s, ip:%s] doesn\u0027t not support live snapshot. please stop vm[uuid:%s] and try again",
     "en_US": "kvm host[uuid:{0}, name:{1}, ip:{2}] doesn\u0027t not support live snapshot. please stop vm[uuid:{3}] and try again",
     "zh_CN": "",
@@ -758,6 +749,15 @@
     "arguments": [
       "clusterUuids",
       "hypervisorType"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/host/MevocoHostManagerImpl.java"
+  },
+  {
+    "raw": "host[uuid:%s] can not find",
+    "en_US": "host[uuid:{0}] can not find",
+    "zh_CN": "找不到主机[uuid：{0}]",
+    "arguments": [
+      "msg.getHostUuid()"
     ],
     "fileName": "src/main/java/org/zstack/compute/host/MevocoHostManagerImpl.java"
   },
@@ -1623,6 +1623,13 @@
     "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
   },
   {
+    "raw": "the vm scheduling group has already had a vms Affinitive to Hosts scheduling policy attached",
+    "en_US": "the vm scheduling group has already had a vms Affinitive to Hosts scheduling policy attached, you cannot attach a vm antiaffinity from each other scheduling rule to the group again.",
+    "zh_CN": "该虚拟机调度组已绑定聚集虚拟机调度策略，不可绑定其它虚拟机调度策略",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
+  },
+  {
     "raw": "can not satisfied vm scheduling rule group conditions",
     "en_US": "can not satisfied vm scheduling rule group conditions",
     "zh_CN": "无法满足VM调度规则组条件",
@@ -2065,12 +2072,22 @@
     "fileName": "src/main/java/org/zstack/license/LicenseManagerImpl.java"
   },
   {
-    "raw": "Insufficient CPU number licensed. Your %s license permits the number of CPUs: %d.",
-    "en_US": "Insufficient CPU number licensed. Your {0} license permits the number of CPUs: {1}.",
-    "zh_CN": "许可证的 CPU 配额数量不足。您的 {0} 许可证允许的 CPU 数量为 {1}",
+    "raw": "Insufficient CPU Socket number licensed. Your %s license permits the number of CPU Sockets: %d.",
+    "en_US": "Insufficient CPU Socket number licensed. Your {0} license permits the number of CPU Sockets: {1}.",
+    "zh_CN": "许可证的 CPU Socket 数配额数量不足。您的 {0} 许可证允许的 CPU Socket 数量为 {1}",
     "arguments": [
       "addon.getModules()",
-      "addon.getCpuNum()"
+      "addon.getCpuSocketsNum()"
+    ],
+    "fileName": "src/main/java/org/zstack/license/LicenseManagerImpl.java"
+  },
+  {
+    "raw": "Insufficient CPU Core number licensed. Your %s license permits the number of CPU Cores: %d.",
+    "en_US": "Insufficient CPU Core number licensed. Your {0} license permits the number of CPU Cores: {1}.",
+    "zh_CN": "许可证的 CPU 核心数配额数量不足。您的 {0} 许可证允许的 CPU 核心数量为 {1}",
+    "arguments": [
+      "addon.getModules()",
+      "addon.getCpuCoresNum()"
     ],
     "fileName": "src/main/java/org/zstack/license/LicenseManagerImpl.java"
   },
@@ -2215,8 +2232,19 @@
     "zh_CN": "{0} 许可证配额为 {1}，已使用 {2} 个 CPU 核数。请上传新的许可证或删除多余的主机",
     "arguments": [
       "licenseType",
-      "platformLicenseCpu",
-      "x86HostCpu + otherHostCpu"
+      "platformLicenseCpuSockets",
+      "x86HostCpuSockets + otherHostCpuSockets"
+    ],
+    "fileName": "src/main/java/org/zstack/license/compute/LicenseCapacity.java"
+  },
+  {
+    "raw": "hijacked detected. Your license[%s] permits %d CPU cores, but consumed %d. You can either apply a new license or delete additional hosts",
+    "en_US": "hijacked detected. Your license[{0}] permits {1} CPU cores, but consumed {2}. You can either apply a new license or delete additional hosts",
+    "zh_CN": "",
+    "arguments": [
+      "licenseType",
+      "platformLicenseCpuCores",
+      "x86HostCpuCores + otherHostCpuCores"
     ],
     "fileName": "src/main/java/org/zstack/license/compute/LicenseCapacity.java"
   },

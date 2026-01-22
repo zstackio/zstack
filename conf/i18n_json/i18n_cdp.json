@@ -158,15 +158,6 @@
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
   {
-    "raw": "Unexpected VM state: %s",
-    "en_US": "Unexpected VM state: {0}",
-    "zh_CN": "意外的VM状态：{0}",
-    "arguments": [
-      "state"
-    ],
-    "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
-  },
-  {
     "raw": "Backup storage not found[uuid: %s]",
     "en_US": "Backup storage not found[uuid: {0}]",
     "zh_CN": "未找到备份存储[uuid：{0}]",
@@ -199,15 +190,6 @@
     "zh_CN": "VM[uuid：{0}]已创建备份作业，无法同时启用CDP任务。",
     "arguments": [
       "refVO.getResourceUuid()"
-    ],
-    "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
-  },
-  {
-    "raw": "unexpected task type: %s",
-    "en_US": "unexpected task type: {0}",
-    "zh_CN": "意外的任务类型：{0}",
-    "arguments": [
-      "msg.getTaskType()"
     ],
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageApiInterceptor.java"
   },
@@ -295,15 +277,6 @@
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageImpl.java"
   },
   {
-    "raw": "%s",
-    "en_US": "{0}",
-    "zh_CN": "{0}",
-    "arguments": [
-      "ret.getError()"
-    ],
-    "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageImpl.java"
-  },
-  {
     "raw": "hostname not found for backup storage[uuid: %s]",
     "en_US": "hostname not found for backup storage[uuid: {0}]",
     "zh_CN": "未找到备份存储的主机名[uuid：{0}]",
@@ -337,6 +310,15 @@
     "en_US": "revert job cancelled",
     "zh_CN": "已取消还原作业",
     "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
+  },
+  {
+    "raw": "%s",
+    "en_US": "{0}",
+    "zh_CN": "{0}",
+    "arguments": [
+      "vo.getJobResult()"
+    ],
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
@@ -392,6 +374,15 @@
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
+    "raw": "Unexpected VM state: %s",
+    "en_US": "Unexpected VM state: {0}",
+    "zh_CN": "意外的VM状态：{0}",
+    "arguments": [
+      "state"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
+  },
+  {
     "raw": "No CDP task found for VM: %s",
     "en_US": "No CDP task found for VM: {0}",
     "zh_CN": "未找到VM{0}的CDP任务",
@@ -437,6 +428,15 @@
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
+    "raw": "unexpected task type: %s",
+    "en_US": "unexpected task type: {0}",
+    "zh_CN": "意外的任务类型：{0}",
+    "arguments": [
+      "taskVO.getTaskType()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
+  },
+  {
     "raw": "The VM[%s] for volume[%s] is running CDP, cannot resize now.",
     "en_US": "The VM[{0}] for volume[{1}] is running CDP, cannot resize now.",
     "zh_CN": "卷[{1}]的VM[{0}]正在运行CDP，现在无法调整大小。",
@@ -460,16 +460,6 @@
     "en_US": "BackupStorage[uuid: {0}] already been deleted",
     "zh_CN": "BackupStorage[uuid：{0}]已删除",
     "arguments": [
-      "bsUuid"
-    ],
-    "fileName": "src/main/java/org/zstack/storage/cdp/CreateVmFromCdpBackupLongJob.java"
-  },
-  {
-    "raw": "waiting host[uuid:%s] and backupStorage[uuid:%s] to be Connected...",
-    "en_US": "waiting host[uuid:{0}] and backupStorage[uuid:{1}] to be Connected...",
-    "zh_CN": "正在等待要连接的主机[uuid：{0}]和备份存储[uuid：{1}]..",
-    "arguments": [
-      "hostUuid",
       "bsUuid"
     ],
     "fileName": "src/main/java/org/zstack/storage/cdp/CreateVmFromCdpBackupLongJob.java"
@@ -499,6 +489,13 @@
     "arguments": [
       "taskUuid"
     ],
+    "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveCreateFlowChain.java"
+  },
+  {
+    "raw": "no volume records found from VM backup",
+    "en_US": "no volume records found from VM backup",
+    "zh_CN": "未从虚拟机备份中找到卷记录",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveCreateFlowChain.java"
   },
   {
@@ -548,13 +545,6 @@
     "arguments": [
       "uuids"
     ],
-    "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveRestoreFlowChain.java"
-  },
-  {
-    "raw": "no volume records found from VM backup",
-    "en_US": "no volume records found from VM backup",
-    "zh_CN": "未从虚拟机备份中找到卷记录",
-    "arguments": [],
     "fileName": "src/main/java/org/zstack/storage/cdp/KvmCdpVmLiveRestoreFlowChain.java"
   },
   {
@@ -633,6 +623,16 @@
     "zh_CN": "RecoverVM：未提供物理机uuid，并且未找到VM[uuid：{0}]的原始物理机",
     "arguments": [
       "apiMessage.getVmInstanceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/cdp/RevertVmFromCdpBackupMsgLongJob.java"
+  },
+  {
+    "raw": "waiting host[uuid:%s] and backupStorage[uuid:%s] to be Connected...",
+    "en_US": "waiting host[uuid:{0}] and backupStorage[uuid:{1}] to be Connected...",
+    "zh_CN": "正在等待要连接的主机[uuid：{0}]和备份存储[uuid：{1}]..",
+    "arguments": [
+      "apiMessage.getHostUuid()",
+      "apiMessage.getBackupStorageUuid()"
     ],
     "fileName": "src/main/java/org/zstack/storage/cdp/RevertVmFromCdpBackupMsgLongJob.java"
   },
