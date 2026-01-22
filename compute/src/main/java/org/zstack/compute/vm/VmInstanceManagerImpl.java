@@ -1723,26 +1723,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
             }
         });
 
-        ResourceConfig resourceConfig = rcf.getResourceConfig(VmGlobalConfig.VM_HA_ACROSS_CLUSTERS.getIdentity());
-        resourceConfig.installUpdateExtension(new ResourceConfigUpdateExtensionPoint() {
-            @Override
-            public void updateResourceConfig(ResourceConfig config, String resourceUuid, String resourceType, String oldValue, String newValue) {
-                if (!VmInstanceVO.class.getSimpleName().equals(resourceType))
-                    return;
-                // keep back-compatibility create or delete resource binding tag if needed
-                if (newValue.equals("false")) {
-                    String clusterUuid = Q.New(VmInstanceVO.class).select(VmInstanceVO_.clusterUuid)
-                            .eq(VmInstanceVO_.uuid, resourceUuid).findValue();
-                    String token = String.format("Cluster:%s", clusterUuid);
-                    SystemTagCreator creator = VmSystemTags.VM_RESOURCE_BINGDING.newSystemTagCreator(resourceUuid);
-                    creator.recreate = true;
-                    creator.setTagByTokens(map(e(VmSystemTags.VM_RESOURCE_BINGDING_TOKEN, token)));
-                    creator.create();
-                } else {
-                    VmSystemTags.VM_RESOURCE_BINGDING.delete(resourceUuid);
-                }
-            }
-        });
+        // Note: VM_RESOURCE_BINGDING tag is silently deprecated (ZSTAC-75428)
+        // The tag data is preserved but no longer read or written by the new ResourceBindingAllocatorFlow
     }
 
     private void installHostnameValidator() {
