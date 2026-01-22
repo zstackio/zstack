@@ -46,6 +46,9 @@ public class UpdatePciDeviceSpecAction extends AbstractAction {
     @Param(required = false, validValues = {"Enabled","Disabled"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String state;
 
+    @Param(required = false, validValues = {"Dispersed","Compact","FollowGlobal","NotSet"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String allocatorStrategy;
+
     @Param(required = false)
     public java.util.List systemTags;
 
