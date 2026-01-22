@@ -1,139 +1,97 @@
 package org.zstack.compute.allocator;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.util.StringUtils;
 import org.zstack.compute.vm.VmGlobalConfig;
-import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
-import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
-import org.zstack.header.allocator.AllocationScene;
-import org.zstack.header.allocator.ResourceBindingCollector;
 import org.zstack.header.allocator.ResourceBindingStrategy;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
+
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
- * @ Author : yh.w
- * @ Date   : Created in 18:11 2019/11/26
+ * VM Cluster Binding Strategy Allocator
+ * <p>
+ * Truth Table (3 variables, 8 combinations):
+ * | # | vm.ha.across.clusters | resourceBinding.strategy | Cluster Has Resources | Expected Behavior |
+ * |---|----------------------|-------------------------|----------------------|-------------------|
+ * | 1 | true                 | Hard                    | true                 | Migrate Freely    |
+ * | 2 | true                 | Hard                    | false                | Migrate Freely    |
+ * | 3 | true                 | Soft                    | true                 | Migrate Freely    |
+ * | 4 | true                 | Soft                    | false                | Migrate Freely    |
+ * | 5 | false                | Hard                    | true                 | Migrate in Current Cluster |
+ * | 6 | false                | Hard                    | false                | Fail              |
+ * | 7 | false                | Soft                    | true                 | Migrate in Current Cluster |
+ * | 8 | false                | Soft                    | false                | Try Other Clusters |
+ *
+ * @author yh.w (original), refactored for ZSTAC-75428
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ResourceBindingAllocatorFlow extends AbstractHostAllocatorFlow {
 
     @Autowired
-    protected PluginRegistry pluginRgty;
-    @Autowired
     private ResourceConfigFacade rcf;
-
-    private static Map<String, ResourceBindingCollector> collectors = Collections.synchronizedMap(new HashMap<>());
-
-    private static String SPLIT = ",";
-
-    {
-        List<ResourceBindingCollector> cs = pluginRgty.getExtensionList(ResourceBindingCollector.class);
-        for (ResourceBindingCollector collector : cs) {
-            collectors.put(collector.getType(), collector);
-        }
-    }
-
-    private Map<String, List<String>> getBindedResourcesFromTag() {
-        String resources = VmSystemTags.VM_RESOURCE_BINGDING
-                .getTokenByResourceUuid(spec.getVmInstance().getUuid(), VmSystemTags.VM_RESOURCE_BINGDING_TOKEN);
-
-        if (StringUtils.isEmpty(resources)) {
-            return null;
-        }
-
-        Map<String, List<String>> resourceMap = new HashMap<>();
-        for (String resource : resources.split(SPLIT)) {
-            String type = resource.split(":")[0];
-            String uuid = resource.split(":")[1];
-            List<String> resourceList = resourceMap.computeIfAbsent(type, k -> new ArrayList<>());
-            resourceList.add(uuid);
-        }
-
-        return resourceMap;
-    }
-
-    private boolean validateAllocationScene() {
-        String as = rcf.getResourceConfigValue(VmGlobalConfig.RESOURCE_BINDING_SCENE, spec.getVmInstance().getUuid(), String.class);
-        if (as.equals(AllocationScene.All.toString())) {
-            return true;
-        }
-
-        if (spec.getAllocationScene() != null) {
-            return as.equals(spec.getAllocationScene().toString());
-        }
-
-        return false;
-    }
 
     @Override
     public void allocate() {
         throwExceptionIfIAmTheFirstFlow();
 
-        Boolean resourceConfig = rcf.getResourceConfigValue(VmGlobalConfig.VM_HA_ACROSS_CLUSTERS, spec.getVmInstance().getUuid(), Boolean.class);
-        if (!validateAllocationScene() || (!VmSystemTags.VM_RESOURCE_BINGDING.hasTag(spec.getVmInstance().getUuid()) && resourceConfig)) {
+        String vmUuid = spec.getVmInstance().getUuid();
+        String currentClusterUuid = spec.getVmInstance().getClusterUuid();
+        Boolean allowAcrossClusters = rcf
+                .getResourceConfigValue(VmGlobalConfig.VM_HA_ACROSS_CLUSTERS, vmUuid, Boolean.class);
+
+        // Truth table #1-4: If cross-cluster is allowed, pass through (migrate freely)
+        if (allowAcrossClusters) {
             next(candidates);
             return;
         }
 
-        // get bind resources from system tag
-        Map<String, List<String>> resources = getBindedResourcesFromTag();
-        resources = resources != null ? resources : new HashMap<>();
-        // get bind resources from config
-        ResourceBindingClusterCollector clusterCollector = new ResourceBindingClusterCollector();
-        if (!resourceConfig) {
-            //remove bind cluster uuid from system tag, use current cluster uuid from config
-            if (resources.containsKey(clusterCollector.getType())) {
-                List<String> uuids = resources.get(clusterCollector.getType());
-                if (!uuids.contains(spec.getVmInstance().getClusterUuid())) {
-                    String tag = String.format("Cluster:%s", spec.getVmInstance().getClusterUuid());
-                    VmSystemTags.VM_RESOURCE_BINGDING.updateTagByToken(spec.getVmInstance().getUuid(),
-                            VmSystemTags.VM_RESOURCE_BINGDING_TOKEN, tag);
-                }
-                resources.remove(clusterCollector.getType());
-            }
-
-            resources.computeIfAbsent(clusterCollector.getType(), k -> new ArrayList<>()).add(spec.getVmInstance().getClusterUuid());
-        }
-
-        if (resources.isEmpty()) {
+        // Skip binding check if current cluster is null
+        if (StringUtils.isBlank(currentClusterUuid)) {
             next(candidates);
             return;
         }
 
-        List<HostVO> availableHost = new ArrayList<>();
-        for (Map.Entry<String, List<String>> entry : resources.entrySet()) {
-            ResourceBindingCollector collector = collectors.get(entry.getKey());
-            if (collector == null) {
-                fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10004, "resource binding not support type %s yet", entry.getKey()));
-                return;
-            }
-            availableHost.addAll(collector.collect(entry.getValue()));
-        }
-
-        List<HostVO> filteredHost = candidates.stream()
-                .filter(v -> availableHost.stream().anyMatch(h -> h.getUuid().equals(v.getUuid())))
+        // Truth table #5-8: Cross-cluster not allowed, check current cluster resources
+        // Cluster resource sufficient: Enabled + Connected hosts excluding current VM's host
+        List<HostVO> hostsInCurrentCluster = candidates.stream()
+                .filter(h -> currentClusterUuid.equals(h.getClusterUuid()))
+                .filter(h -> h.getState() == HostState.Enabled)
+                .filter(h -> h.getStatus() == HostStatus.Connected)
                 .collect(Collectors.toList());
 
-        if (CollectionUtils.isNotEmpty(filteredHost)) {
-            next(filteredHost);
+        // Check if current cluster has sufficient resources
+        boolean clusterHasAvailableHosts = CollectionUtils.isNotEmpty(hostsInCurrentCluster);
+
+        if (clusterHasAvailableHosts) {
+            // Truth table #5, #7: Current cluster has available hosts, migrate successfully
+            next(hostsInCurrentCluster);
             return;
         }
 
-        if (rcf.getResourceConfigValue(VmGlobalConfig.RESOURCE_BINDING_STRATEGY, spec.getVmInstance().getUuid(), String.class)
-                .equals(ResourceBindingStrategy.Soft.toString())) {
+        // Current cluster has no resources, decide behavior based on strategy
+        String strategy = rcf.getResourceConfigValue(VmGlobalConfig.RESOURCE_BINDING_STRATEGY, vmUuid, String.class);
+
+        if (ResourceBindingStrategy.Soft.toString().equals(strategy)) {
+            // Truth table #8: Soft strategy, try other clusters
             next(candidates);
         } else {
-            fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10005, "no available host found with binded resource %s", resources));
+            // Truth table #6: Hard strategy, fail
+            fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10005,
+                    "no available host found in current cluster [uuid:%s], and vm.ha.across.clusters is disabled with Hard binding strategy",
+                    currentClusterUuid));
         }
     }
 }
