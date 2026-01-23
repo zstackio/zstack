@@ -71,7 +71,7 @@ public class VmGlobalConfig {
     public static GlobalConfig PCIE_PORT_NUMS = new GlobalConfig(CATEGORY, "pciePortNums");
 
     @GlobalConfigValidation(validValues = {"Hard", "Soft"})
-    @BindResourceConfig({VmInstanceVO.class})
+    @BindResourceConfig({VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig RESOURCE_BINDING_STRATEGY = new GlobalConfig(CATEGORY, "resourceBinding.strategy");
 
     @GlobalConfigValidation(validValues = {"None", "Preserve","Reboot","Shutdown"})
