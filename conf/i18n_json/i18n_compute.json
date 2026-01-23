@@ -1841,6 +1841,16 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
   },
   {
+    "raw": "host[uuid:%s] is specified but it is not in zone[uuid:%s], can not create vm from it",
+    "en_US": "host[uuid:{0}] is specified but it is not in zone[uuid:{1}], can not create vm from it",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getHostUuid()",
+      "expectZoneUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceHelper.java"
+  },
+  {
     "raw": "host[uuid:%s] is specified but it\u0027s Disabled, can not create vm from it",
     "en_US": "host[uuid:{0}] is specified but it\u0027s Disabled, can not create vm from it",
     "zh_CN": "主机[uuid：{0}]虽然被指定了但是处于未启用状态，不能从这上面创建虚拟机",

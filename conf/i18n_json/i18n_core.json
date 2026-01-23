@@ -16,15 +16,6 @@
     "fileName": "src/main/java/org/zstack/core/Platform.java"
   },
   {
-    "raw": "fail to create new File[%s]",
-    "en_US": "fail to create new File[{0}]",
-    "zh_CN": "无法创建新文件[{0}]",
-    "arguments": [
-      "invFile"
-    ],
-    "fileName": "src/main/java/org/zstack/core/ansible/AnsibleFacadeImpl.java"
-  },
-  {
     "raw": "failed to run ansible: failed to find target host",
     "en_US": "failed to run ansible: failed to find target host",
     "zh_CN": "",
@@ -44,6 +35,15 @@
     "zh_CN": "用户名、密码或者端口可能是错误的",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/core/ansible/AnsibleRunner.java"
+  },
+  {
+    "raw": "fail to create new File[%s]",
+    "en_US": "fail to create new File[{0}]",
+    "zh_CN": "无法创建新文件[{0}]",
+    "arguments": [
+      "hostsFile"
+    ],
+    "fileName": "src/main/java/org/zstack/core/ansible/PrepareAnsible.java"
   },
   {
     "raw": "cannot check md5sum of files in the folder[%s]",

@@ -743,16 +743,6 @@
     "fileName": "src/main/java/org/zstack/storage/volume/DownloadIsoForVmExtension.java"
   },
   {
-    "raw": "primary storage uuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
-    "en_US": "primary storage uuid conflict, the primary storage specified by the disk offering are {0}, and the primary storage specified in the creation parameter is {1}",
-    "zh_CN": "主存储组冲突，硬盘规格指定的数据存储组是 {0}，而创建参数指定的数据存储组是 {1}",
-    "arguments": [
-      "requiredPrimaryStorageUuids",
-      "msg.getPrimaryStorageUuid()"
-    ],
-    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
-  },
-  {
     "raw": "volume[uuid:%s] is not in status Ready, current is %s, can\u0027t create snapshot",
     "en_US": "volume[uuid:{0}] is not in status Ready, current is {1}, can\u0027t create snapshot",
     "zh_CN": "硬盘[uuid:{0}]未出于就绪状态，当前是{1}，不能创建快照",
@@ -976,6 +966,16 @@
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
+    "raw": "Can not attach volume to vm runs on host[uuid: %s] which is disconnected with volume\u0027s storage[uuid: %s]",
+    "en_US": "Can not attach volume to vm runs on host[uuid: {0}] which is disconnected with volume\u0027s storage[uuid: {1}]",
+    "zh_CN": "",
+    "arguments": [
+      "hostUuid",
+      "volumeVO.getPrimaryStorageUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
     "raw": "it\u0027s not allowed to backup root volume, uuid:%s",
     "en_US": "it\u0027s not allowed to backup root volume, uuid:{0}",
     "zh_CN": "备份硬盘不被允许，uuid:{0}",
@@ -1107,6 +1107,13 @@
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
+    "raw": "invalid disk states",
+    "en_US": "invalid disk states",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
     "raw": "cannot find image cache[imageUuid: %s] for reinit volume",
     "en_US": "cannot find image cache[imageUuid: {0}] for reinit volume",
     "zh_CN": "找不到重新初始化卷的镜像缓存[imageUuid：{0}]",
@@ -1194,6 +1201,16 @@
     "zh_CN": "无法找到一个镜像[uuid:{0}]所在的镜像服务器符合全部的下列条件: 状态启动[state:Enabled]，已连接[status:Connected]，被挂载到主存储[uuid:{1}]所在的数据中心中",
     "arguments": [
       "template.getUuid()",
+      "msg.getPrimaryStorageUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeManagerImpl.java"
+  },
+  {
+    "raw": "primary storage uuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
+    "en_US": "primary storage uuid conflict, the primary storage specified by the disk offering are {0}, and the primary storage specified in the creation parameter is {1}",
+    "zh_CN": "主存储组冲突，硬盘规格指定的数据存储组是 {0}，而创建参数指定的数据存储组是 {1}",
+    "arguments": [
+      "requiredPrimaryStorageUuids",
       "msg.getPrimaryStorageUuid()"
     ],
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeManagerImpl.java"

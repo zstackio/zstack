@@ -1,12 +1,5 @@
 [
   {
-    "raw": "the identity authentication does not specify the resource pool to provide the service",
-    "en_US": "the identity authentication does not specify the resource pool to provide the service",
-    "zh_CN": "身份认证未指定提供服务的资源池",
-    "arguments": [],
-    "fileName": "src/main/java/org/zstack/crypto/auth/AbstractCryptoAuthenticationFacade.java"
-  },
-  {
     "raw": "failed to find model for secretResourcePool [%s]",
     "en_US": "failed to find model for secretResourcePool [{0}]",
     "zh_CN": "找不到SecretResourcePool[{0}]的原型",
@@ -26,33 +19,12 @@
     "fileName": "src/main/java/org/zstack/crypto/auth/AbstractCryptoAuthenticationFacade.java"
   },
   {
-    "raw": "failed to connect remote crypto server",
-    "en_US": "failed to connect remote crypto server",
-    "zh_CN": "连接到远程密钥（密评）服务器失败",
-    "arguments": [],
-    "fileName": "src/main/java/org/zstack/crypto/auth/AbstractCryptoAuthenticationFacade.java"
-  },
-  {
     "raw": "parseCertificate failed: %s",
     "en_US": "parseCertificate failed: {0}",
     "zh_CN": "",
     "arguments": [
       "e.getMessage()"
     ],
-    "fileName": "src/main/java/org/zstack/crypto/auth/AbstractCryptoAuthenticationFacade.java"
-  },
-  {
-    "raw": "additional authentication server raise an error",
-    "en_US": "additional authentication server raise an error",
-    "zh_CN": "",
-    "arguments": [],
-    "fileName": "src/main/java/org/zstack/crypto/auth/AbstractCryptoAuthenticationFacade.java"
-  },
-  {
-    "raw": "additional authentication failed",
-    "en_US": "additional authentication failed",
-    "zh_CN": "",
-    "arguments": [],
     "fileName": "src/main/java/org/zstack/crypto/auth/AbstractCryptoAuthenticationFacade.java"
   },
   {
@@ -88,6 +60,34 @@
       "authenticationId"
     ],
     "fileName": "src/main/java/org/zstack/crypto/auth/CryptoAuthenticationHelper.java"
+  },
+  {
+    "raw": "the identity authentication does not specify the resource pool to provide the service",
+    "en_US": "the identity authentication does not specify the resource pool to provide the service",
+    "zh_CN": "身份认证未指定提供服务的资源池",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/crypto/auth/CryptoAuthenticationManagerImpl.java"
+  },
+  {
+    "raw": "failed to connect remote crypto server",
+    "en_US": "failed to connect remote crypto server",
+    "zh_CN": "连接到远程密钥（密评）服务器失败",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/crypto/auth/CryptoAuthenticationManagerImpl.java"
+  },
+  {
+    "raw": "additional authentication server raise an error",
+    "en_US": "additional authentication server raise an error",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/crypto/auth/CryptoAuthenticationManagerImpl.java"
+  },
+  {
+    "raw": "additional authentication failed",
+    "en_US": "additional authentication failed",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/crypto/auth/CryptoAuthenticationManagerImpl.java"
   },
   {
     "raw": "failed to generate credential",
