@@ -31,6 +31,17 @@
     "fileName": "src/main/java/org/zstack/query/MysqlQueryBuilderImpl3.java"
   },
   {
+    "raw": "field[%s] is not a primitive of the inventory %s; you cannot specify it in the parameter \u0027fields\u0027;valid fields are %s",
+    "en_US": "field[{0}] is not a primitive of the inventory {1}; you cannot specify it in the parameter \u0027fields\u0027;valid fields are {2}",
+    "zh_CN": "值[{1}]不是清单[{0}]的基元类型，不能在参数\u0027fields\u0027中指定",
+    "arguments": [
+      "f",
+      "info.inventoryClass.getSimpleName()",
+      "info.premitiveFieldNames"
+    ],
+    "fileName": "src/main/java/org/zstack/query/MysqlQueryBuilderImpl3.java"
+  },
+  {
     "raw": "filterName must be formatted as [filterType:condition(s)]",
     "en_US": "filterName must be formatted as [filterType:condition(s)]",
     "zh_CN": "FilterName的格式必须为[filterType：条件]",

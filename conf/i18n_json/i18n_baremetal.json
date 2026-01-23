@@ -9,6 +9,13 @@
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisApiInterceptor.java"
   },
   {
+    "raw": "Failed to reach the bare-metal chassis, please make sure: 1. the IPMI connection is active; 2. the IPMI Address, Port, Username and Password are correct; 3. IPMI Over LAN is enabled in BIOS.",
+    "en_US": "Failed to reach the bare-metal chassis, please make sure: 1. the IPMI connection is active; 2. the IPMI Address, Port, Username and Password are correct; 3. IPMI Over LAN is enabled in BIOS.",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisApiInterceptor.java"
+  },
+  {
     "raw": "Baremetal Chassis of IPMI address %s and IPMI port %d has already been created.",
     "en_US": "Baremetal Chassis of IPMI address {0} and IPMI port {1} has already been created.",
     "zh_CN": "IPMI地址为{0}，端口为{1}的裸金属设备已经被创建",
@@ -78,6 +85,24 @@
   {
     "raw": "License not found, please apply addon license for product baremetal.",
     "en_US": "License not found, please apply addon license for product baremetal.",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisManagerImpl.java"
+  },
+  {
+    "raw": "Hijacked detected. Your license[%s] permits %s baremetal chassis, but we detect there are %s in the database. You can either delete additional chassis or apply a new license.",
+    "en_US": "Hijacked detected. Your license[{0}] permits {1} baremetal chassis, but we detect there are {2} in the database. You can either delete additional chassis or apply a new license.",
+    "zh_CN": "",
+    "arguments": [
+      "licMgr.getLicenseType()",
+      "allowedChassisNum",
+      "currChassisNum"
+    ],
+    "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisManagerImpl.java"
+  },
+  {
+    "raw": "Insufficient baremetal chassis number licensed. You can either delete additional chassis or apply a new license.",
+    "en_US": "Insufficient baremetal chassis number licensed. You can either delete additional chassis or apply a new license.",
     "zh_CN": "",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisManagerImpl.java"
@@ -504,6 +529,19 @@
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
+    "raw": "baremetal pxeserver[uuid:%s] is not compatible with baremetal instances in cluster[uuid:%s], existing nic ip %s is out of pxeserver dhcp range %s ~ %s.",
+    "en_US": "baremetal pxeserver[uuid:{0}] is not compatible with baremetal instances in cluster[uuid:{1}], existing nic ip {2} is out of pxeserver dhcp range {3} ~ {4}.",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getPxeServerUuid()",
+      "msg.getClusterUuid()",
+      "ip",
+      "begin",
+      "end"
+    ],
+    "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
+  },
+  {
     "raw": "baremetal pxeserver[uuid: %s] not attached to cluster[uuid: %s]",
     "en_US": "baremetal pxeserver[uuid: {0}] not attached to cluster[uuid: {1}]",
     "zh_CN": "部署服务器[uuid:{0}]没有挂载到裸金属集群[uuid:{1}]",
@@ -611,6 +649,16 @@
     "arguments": [
       "msg.getChassisUuid()",
       "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
+  },
+  {
+    "raw": "the uuid of baremtal pxeserver agent changed[expected:%s, actual:%s], it\u0027s most likely the agent was manually restarted. Issue a reconnect to sync the status",
+    "en_US": "the uuid of baremtal pxeserver agent changed[expected:{0}, actual:{1}], it\u0027s most likely the agent was manually restarted. Issue a reconnect to sync the status",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "ret.uuid"
     ],
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerBase.java"
   },

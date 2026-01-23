@@ -300,6 +300,15 @@
     "fileName": "src/main/java/org/zstack/core/plugin/PluginManager.java"
   },
   {
+    "raw": "plugin[%s] name, productKey and vendor cannot be null",
+    "en_US": "plugin[{0}] name, productKey and vendor cannot be null",
+    "zh_CN": "插件[{0}]名称、产品密钥和供应商不能为空",
+    "arguments": [
+      "pluginDriver.getClass()"
+    ],
+    "fileName": "src/main/java/org/zstack/core/plugin/PluginManager.java"
+  },
+  {
     "raw": "parameter apiId[%s] is not a valid uuid.",
     "en_US": "parameter apiId[{0}] is not a valid uuid.",
     "zh_CN": "参数apiId[{0}]不是一个有效的uuid",

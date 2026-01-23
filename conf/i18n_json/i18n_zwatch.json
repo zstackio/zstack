@@ -753,6 +753,16 @@
     "fileName": "src/main/java/org/zstack/zwatch/function/SortFunction.java"
   },
   {
+    "raw": "there are multiple EventFamily with the name[%s], you must specify the label[%s]",
+    "en_US": "there are multiple EventFamily with the name[{0}], you must specify the label[{1}]",
+    "zh_CN": "存在多个同名[{0}]的事件族，必须指定标签[{1}]",
+    "arguments": [
+      "name.getValue()",
+      "InfluxEventDataV2.FIELD_NAMESPACE"
+    ],
+    "fileName": "src/main/java/org/zstack/zwatch/migratedb/MigrateDBEventDatabaseDriver.java"
+  },
+  {
     "raw": "invalid query label[%s]. Allowed label names are %s",
     "en_US": "invalid query label[{0}]. Allowed label names are {1}",
     "zh_CN": "无效的查询标签[{0}]。允许标签名是 {1}",

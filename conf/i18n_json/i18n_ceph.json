@@ -160,6 +160,17 @@
     "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
   },
   {
+    "raw": "there is another CEPH backup storage[name:%s, uuid:%s] with the same FSID[%s], you cannot add the same CEPH setup as two different backup storage",
+    "en_US": "there is another CEPH backup storage[name:{0}, uuid:{1}] with the same FSID[{2}], you cannot add the same CEPH setup as two different backup storage",
+    "zh_CN": "",
+    "arguments": [
+      "otherCeph.getName()",
+      "otherCeph.getUuid()",
+      "fsId"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
+  },
+  {
     "raw": "image[uuid: %s] is not on backup storage[uuid:%s, name:%s]",
     "en_US": "image[uuid: {0}] is not on backup storage[uuid:{1}, name:{2}]",
     "zh_CN": "镜像[uuid：{0}]不在备份存储[uuid：{1}，名称：{2}]上",
@@ -185,6 +196,15 @@
     "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
   },
   {
+    "raw": "cannot update status of the ceph backup storage mon[uuid:%s], it has been deleted.This error can be ignored",
+    "en_US": "cannot update status of the ceph backup storage mon[uuid:{0}], it has been deleted.This error can be ignored",
+    "zh_CN": "",
+    "arguments": [
+      "uuid"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageMonBase.java"
+  },
+  {
     "raw": "Ceph bs[uuid\u003d%s] pool name not found",
     "en_US": "Ceph bs[uuid\u003d{0}] pool name not found",
     "zh_CN": "找不到Ceph BS[uuid\u003d{0}]池名称",
@@ -199,6 +219,20 @@
     "zh_CN": "",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephDeleteVolumeChainGC.java"
+  },
+  {
+    "raw": "the backup storage[uuid:%s, name:%s, fsid:%s] is not in the same ceph cluster with the primary storage[uuid:%s, name:%s, fsid:%s]",
+    "en_US": "the backup storage[uuid:{0}, name:{1}, fsid:{2}] is not in the same ceph cluster with the primary storage[uuid:{3}, name:{4}, fsid:{5}]",
+    "zh_CN": "",
+    "arguments": [
+      "backupStorage.getUuid()",
+      "backupStorage.getName()",
+      "bsFsid",
+      "self.getUuid()",
+      "self.getName()",
+      "getSelf().getFsid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
     "raw": "fsid is not same between ps[%s] and bs[%s], create template is forbidden.",
@@ -229,6 +263,15 @@
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
+    "raw": "unable to connect to the ceph primary storage[uuid:%s], failed to connect all ceph monitors.",
+    "en_US": "unable to connect to the ceph primary storage[uuid:{0}], failed to connect all ceph monitors.",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
+  },
+  {
     "raw": "ceph primary storage[uuid:%s] may have been deleted.",
     "en_US": "ceph primary storage[uuid:{0}] may have been deleted.",
     "zh_CN": "分布式存储[uuid:{0}]可能已经被删除",
@@ -245,6 +288,29 @@
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
+    "raw": "there is another CEPH primary storage[name:%s, uuid:%s] with the same FSID[%s], you cannot add the same CEPH setup as two different primary storage",
+    "en_US": "there is another CEPH primary storage[name:{0}, uuid:{1}] with the same FSID[{2}], you cannot add the same CEPH setup as two different primary storage",
+    "zh_CN": "",
+    "arguments": [
+      "otherCeph.getName()",
+      "otherCeph.getUuid()",
+      "fsId"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
+  },
+  {
+    "raw": "the ceph primary storage[uuid:%s, name:%s] is down, as one mon[uuid:%s] reports an operation failure[%s]",
+    "en_US": "the ceph primary storage[uuid:{0}, name:{1}] is down, as one mon[uuid:{2}] reports an operation failure[{3}]",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "self.getName()",
+      "mon.getSelf().getUuid()",
+      "res.error"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
+  },
+  {
     "raw": "unable to connect mons",
     "en_US": "unable to connect mons",
     "zh_CN": "",
@@ -256,6 +322,17 @@
     "en_US": "unable to add mon to ceph primary storage",
     "zh_CN": "",
     "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
+  },
+  {
+    "raw": "the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster,are you adding a mon not belonging to current cluster mistakenly?",
+    "en_US": "the mon[ip:{0}] returns a fsid[{1}] different from the current fsid[{2}] of the cep cluster,are you adding a mon not belonging to current cluster mistakenly?",
+    "zh_CN": "",
+    "arguments": [
+      "base.getSelf().getHostname()",
+      "fsid",
+      "getSelf().getFsid()"
+    ],
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
@@ -292,6 +369,16 @@
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
+    "raw": "cannot find backupstorage to download image [%s] to primarystorage [%s] due to lack of Ready and accessible image",
+    "en_US": "cannot find backupstorage to download image [{0}] to primarystorage [{1}] due to lack of Ready and accessible image",
+    "zh_CN": "",
+    "arguments": [
+      "volume.getRootImageUuid()",
+      "getSelf().getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
+  },
+  {
     "raw": "allocated url not found",
     "en_US": "allocated url not found",
     "zh_CN": "未找到分配的URL",
@@ -314,6 +401,13 @@
     "arguments": [
       "vol.getPrimaryStorageUuid()"
     ],
+    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java"
+  },
+  {
+    "raw": "not support take volumes snapshots on multiple ps when including ceph",
+    "en_US": "not support take volumes snapshots on multiple ps when including ceph",
+    "zh_CN": "",
+    "arguments": [],
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java"
   },
   {
@@ -386,6 +480,15 @@
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java"
   },
   {
+    "raw": "cannot update status of the ceph primary storage mon[uuid:%s], it has been deleted.This error can be ignored",
+    "en_US": "cannot update status of the ceph primary storage mon[uuid:{0}], it has been deleted.This error can be ignored",
+    "zh_CN": "",
+    "arguments": [
+      "uuid"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageMonBase.java"
+  },
+  {
     "raw": "Ceph ps[uuid\u003d%s] root pool name not found",
     "en_US": "Ceph ps[uuid\u003d{0}] root pool name not found",
     "zh_CN": "找不到Ceph PS[uuid\u003d{0}]根池名称",
@@ -393,6 +496,24 @@
       "primaryStorageUuid"
     ],
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageMonBase.java"
+  },
+  {
+    "raw": "invalid uri, correct example is ceph://$POOLNAME/$VOLUMEUUID or volume://$VOLUMEUUID or volumeSnapshotReuse://$SNAPSHOTUUID",
+    "en_US": "invalid uri, correct example is ceph://$POOLNAME/$VOLUMEUUID or volume://$VOLUMEUUID or volumeSnapshotReuse://$SNAPSHOTUUID",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephRequiredUrlParser.java"
+  },
+  {
+    "raw": "required ceph pool[uuid:%s] cannot satisfy conditions [availableSize \u003e %s bytes], current available size %s",
+    "en_US": "required ceph pool[uuid:{0}] cannot satisfy conditions [availableSize \u003e {1} bytes], current available size {2}",
+    "zh_CN": "",
+    "arguments": [
+      "poolUuid",
+      "size",
+      "originAvailableCapacity"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/ceph/primary/capacity/CephOsdGroupCapacityHelper.java"
   },
   {
     "raw": "cannot find ceph pool [%s] related osdgroup",

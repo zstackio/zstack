@@ -144,6 +144,15 @@
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
+    "raw": "Can not do operations, because current organization[uuid:%s] is staled, please enable it",
+    "en_US": "Can not do operations, because current organization[uuid:{0}] is staled, please enable it",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/iam2/IAM2OrganizationBase.java"
+  },
+  {
     "raw": "organization[uuid:%s] is parent of the organization[uuid:%s], cannot set it as a child organization",
     "en_US": "organization[uuid:{0}] is parent of the organization[uuid:{1}], cannot set it as a child organization",
     "zh_CN": "部门[uuid:{0}]是部门[uuid:{1}]的上级部门，无法被设置为子部门",
@@ -230,6 +239,15 @@
       "organizationUuid"
     ],
     "fileName": "src/main/java/org/zstack/iam2/IAM2QuotaUpdateChecker.java"
+  },
+  {
+    "raw": "Can not do operations, because Current virtualID[uuid:%s] is staled, please enable it",
+    "en_US": "Can not do operations, because Current virtualID[uuid:{0}] is staled, please enable it",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/iam2/IAM2VirtualIDBase.java"
   },
   {
     "raw": "only admin and the virtual ID itself can do the update",
@@ -397,6 +415,16 @@
     "zh_CN": "组织[uuid：{0}]是不能有上级组织的公司",
     "arguments": [
       "msg.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
+  },
+  {
+    "raw": "parent organization[uuid:%s] cannot be a child organization[uuid:%s] of a childOrganization",
+    "en_US": "parent organization[uuid:{0}] cannot be a child organization[uuid:{1}] of a childOrganization",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()",
+      "msg.getParentUuid()"
     ],
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
@@ -629,6 +657,26 @@
       "dateFormat.format(new Timestamp(System.currentTimeMillis()))"
     ],
     "fileName": "src/main/java/org/zstack/iam2/attribute/project/RetirePolicy.java"
+  },
+  {
+    "raw": "virtual ID[uuid:%s] already has admin related attributes, can not add %s",
+    "en_US": "virtual ID[uuid:{0}] already has admin related attributes, can not add {1}",
+    "zh_CN": "",
+    "arguments": [
+      "vid",
+      "attributeName"
+    ],
+    "fileName": "src/main/java/org/zstack/iam2/attribute/virtualid/AbstractAdminAttribute.java"
+  },
+  {
+    "raw": "organiztion ID[uuid:%s] already has opoeration attributes, can not add %s",
+    "en_US": "organiztion ID[uuid:{0}] already has opoeration attributes, can not add {1}",
+    "zh_CN": "",
+    "arguments": [
+      "inv.getValue()",
+      "IAM2_ORGANIZATION_OPERATION.getName()"
+    ],
+    "fileName": "src/main/java/org/zstack/iam2/attribute/virtualid/IAM2OrganizationOperator.java"
   },
   {
     "raw": "virtual id[uuid:%s] already has a project operator attribute",

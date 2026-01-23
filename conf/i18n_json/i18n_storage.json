@@ -69,6 +69,23 @@
     "fileName": "src/main/java/org/zstack/storage/addon/primary/ExternalPrimaryStorageFactory.java"
   },
   {
+    "raw": "not support protocol[%s] on type[%s] primary storage",
+    "en_US": "not support protocol[{0}] on type[{1}] primary storage",
+    "zh_CN": "",
+    "arguments": [
+      "protocol",
+      "getPrimaryStorageType()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/addon/primary/ExternalPrimaryStorageFactory.java"
+  },
+  {
+    "raw": "not support take volumes snapshots on multiple ps when including storage snapshot",
+    "en_US": "not support take volumes snapshots on multiple ps when including storage snapshot",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/addon/primary/ExternalPrimaryStorageFactory.java"
+  },
+  {
     "raw": "cannot find ExternalPrimaryStorage[uuid:%s]",
     "en_US": "cannot find ExternalPrimaryStorage[uuid:{0}]",
     "zh_CN": "",
@@ -142,6 +159,29 @@
   {
     "raw": "the backup storage[uuid:%s, name:%s] has not enough capacity to download the image[%s]. Required size:%s, available size:%s",
     "en_US": "the backup storage[uuid:{0}, name:{1}] has not enough capacity to download the image[{2}]. Required size:{3}, available size:{4}",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "self.getName()",
+      "url",
+      "size",
+      "available"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageBase.java"
+  },
+  {
+    "raw": "the image size get from url %s is %d bytes, it\u0027s too small for an image, please check the url again.",
+    "en_US": "the image size get from url {0} is {1} bytes, it\u0027s too small for an image, please check the url again.",
+    "zh_CN": "",
+    "arguments": [
+      "url",
+      "size"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageBase.java"
+  },
+  {
+    "raw": "the backup storage[uuid:%s, name:%s] has not enough capacity to download the image[%s].Required size:%s, available size:%s",
+    "en_US": "the backup storage[uuid:{0}, name:{1}] has not enough capacity to download the image[{2}].Required size:{3}, available size:{4}",
     "zh_CN": "",
     "arguments": [
       "self.getUuid()",
@@ -236,6 +276,16 @@
     "fileName": "src/main/java/org/zstack/storage/backup/DefaultBackupStorageAllocatorStrategy.java"
   },
   {
+    "raw": "outputProtocol[%s] is exist on primary storage[%s]no need to add again",
+    "en_US": "outputProtocol[{0}] is exist on primary storage[{1}]no need to add again",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getOutputProtocol()",
+      "msg.getPrimaryStorageUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageApiInterceptor.java"
+  },
+  {
     "raw": "unknown primary storage type[%s]",
     "en_US": "unknown primary storage type[{0}]",
     "zh_CN": "",
@@ -298,6 +348,24 @@
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageApiInterceptor.java"
   },
   {
+    "raw": "primary storage(s) [uuid: %s] where volume(s) locate is not Enabled or Connected",
+    "en_US": "primary storage(s) [uuid: {0}] where volume(s) locate is not Enabled or Connected",
+    "zh_CN": "",
+    "arguments": [
+      "psUuids"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageApiInterceptor.java"
+  },
+  {
+    "raw": "after removing primary storage%s to avoid, there is no candidate primary storage anymore. please check primary storage status and state in the cluster.",
+    "en_US": "after removing primary storage{0} to avoid, there is no candidate primary storage anymore. please check primary storage status and state in the cluster.",
+    "zh_CN": "",
+    "arguments": [
+      "spec.getAvoidPrimaryStorageUuids()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageAvoidAllocatorFlow.java"
+  },
+  {
     "raw": "cannot attach ISO to a primary storage[uuid:%s] which is disabled",
     "en_US": "cannot attach ISO to a primary storage[uuid:{0}] which is disabled",
     "zh_CN": "无法将ISO附加到已禁用的主存储[uuid：{0}]",
@@ -344,6 +412,16 @@
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
   },
   {
+    "raw": "primary storage[uuid:%s] cannot be deleted for still being attached to cluster[uuid:%s].",
+    "en_US": "primary storage[uuid:{0}] cannot be deleted for still being attached to cluster[uuid:{1}].",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "clusterUuidsString"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
+  },
+  {
     "raw": "cannot attach volume[uuid:%s] whose primary storage is Maintenance",
     "en_US": "cannot attach volume[uuid:{0}] whose primary storage is Maintenance",
     "zh_CN": "无法挂载硬盘[uuid:{0}]，其主存储处于维护模式",
@@ -353,6 +431,26 @@
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
   },
   {
+    "raw": "cannot reserve %s bytes on the primary storage[uuid:%s], it\u0027s short of available capacity",
+    "en_US": "cannot reserve {0} bytes on the primary storage[uuid:{1}], it\u0027s short of available capacity",
+    "zh_CN": "",
+    "arguments": [
+      "size",
+      "capacityVO.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageCapacityUpdater.java"
+  },
+  {
+    "raw": "the primary storage[uuid:%s] is not in status of Connected, current status is %s",
+    "en_US": "the primary storage[uuid:{0}] is not in status of Connected, current status is {1}",
+    "zh_CN": "",
+    "arguments": [
+      "ps.getUuid()",
+      "ps.getStatus().toString()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageDeleteBitGC.java"
+  },
+  {
     "raw": "PrimaryStorageFeatureAllocatorFlow[%s] returns zero primary storage candidate",
     "en_US": "PrimaryStorageFeatureAllocatorFlow[{0}] returns zero primary storage candidate",
     "zh_CN": "",
@@ -360,6 +458,18 @@
       "extp.getClass().getName()"
     ],
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageFeatureAllocatorFlow.java"
+  },
+  {
+    "raw": "cannot find primary storage satisfying conditions[connected to host:%s, state:%s, status: %s, available capacity \u003e %s",
+    "en_US": "cannot find primary storage satisfying conditions[connected to host:{0}, state:{1}, status: {2}, available capacity \u003e {3}",
+    "zh_CN": "",
+    "arguments": [
+      "spec.getRequiredHostUuid()",
+      "PrimaryStorageState.Enabled",
+      "PrimaryStorageStatus.Connected",
+      "spec.getSize()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageMainAllocatorFlow.java"
   },
   {
     "raw": "no way to get image size of %s, report exception.",
@@ -534,6 +644,29 @@
     "fileName": "src/main/java/org/zstack/storage/snapshot/DeleteVolumeSnapshotLongJob.java"
   },
   {
+    "raw": "failed to cancel deletion job. Volume[uuid:%s] not attached to any vm, offline snapshot deletion do not support cancel.",
+    "en_US": "failed to cancel deletion job. Volume[uuid:{0}] not attached to any vm, offline snapshot deletion do not support cancel.",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/snapshot/DeleteVolumeSnapshotLongJob.java"
+  },
+  {
+    "raw": "failed to cancel deletion job. Volume[uuid:%s] attached vm not exists, offline snapshot deletion do not support cancel.",
+    "en_US": "failed to cancel deletion job. Volume[uuid:{0}] attached vm not exists, offline snapshot deletion do not support cancel.",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/snapshot/DeleteVolumeSnapshotLongJob.java"
+  },
+  {
+    "raw": "failed to cancel deletion job. Volume[uuid:%s] attached vm not in state %s offline snapshot deletion do not support cancel.",
+    "en_US": "failed to cancel deletion job. Volume[uuid:{0}] attached vm not in state {1} offline snapshot deletion do not support cancel.",
+    "zh_CN": "",
+    "arguments": [
+      "VmInstanceState.Running"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/snapshot/DeleteVolumeSnapshotLongJob.java"
+  },
+  {
     "raw": "volume snapshot[uuids:%s] is in state Disabled, cannot revert volume to it",
     "en_US": "volume snapshot[uuids:{0}] is in state Disabled, cannot revert volume to it",
     "zh_CN": "卷快照[uuid：{0}]处于禁用状态，无法将卷恢复为该状态",
@@ -638,6 +771,16 @@
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotManagerImpl.java"
   },
   {
+    "raw": "primary storage[uuid:%s] doesn\u0027t support volume snapshot; cannot create snapshot for volume[uuid:%s]",
+    "en_US": "primary storage[uuid:{0}] doesn\u0027t support volume snapshot; cannot create snapshot for volume[uuid:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "primaryStorageUuid",
+      "vol.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotManagerImpl.java"
+  },
+  {
     "raw": "cannot find snapshot: %s",
     "en_US": "cannot find snapshot: {0}",
     "zh_CN": "找不到快照：{0}",
@@ -697,6 +840,16 @@
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotTreeBase.java"
   },
   {
+    "raw": "vm[uuid:%s] is not Running, Paused or Destroyed, Stopped, Destroying, current state[%s]",
+    "en_US": "vm[uuid:{0}] is not Running, Paused or Destroyed, Stopped, Destroying, current state[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "volume.getVmInstanceUuid()",
+      "vmState"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotTreeBase.java"
+  },
+  {
     "raw": "failed to change status of volume snapshot[uuid:%s, name:%s] by status event[%s]",
     "en_US": "failed to change status of volume snapshot[uuid:{0}, name:{1}] by status event[{2}]",
     "zh_CN": "通过状态事件[{2}]改变硬盘快照[uuid:{0}, name:{1}]失败",
@@ -708,6 +861,18 @@
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotTreeBase.java"
   },
   {
+    "raw": "unable to reset volume[uuid:%s] to snapshot[uuid:%s], the vm[uuid:%s] volume attached to is not in Stopped state, current state is %s",
+    "en_US": "unable to reset volume[uuid:{0}] to snapshot[uuid:{1}], the vm[uuid:{2}] volume attached to is not in Stopped state, current state is {3}",
+    "zh_CN": "",
+    "arguments": [
+      "volumeInventory.getUuid()",
+      "currentRoot.getUuid()",
+      "vmUuid",
+      "state"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotTreeBase.java"
+  },
+  {
     "raw": "snapshot(s) %s in the group has been deleted, can only revert one by one.",
     "en_US": "snapshot(s) {0} in the group has been deleted, can only revert one by one.",
     "zh_CN": "快照组里的快照{0}已经被删除了，仅能单盘恢复。",
@@ -715,6 +880,34 @@
       "String.join(\", \", deletedSnapshotInfos)"
     ],
     "fileName": "src/main/java/org/zstack/storage/snapshot/group/VolumeSnapshotGroupChecker.java"
+  },
+  {
+    "raw": "volume(s) %s is no longer attached, can only revert one by one. If you need to group revert, please re-attach it.",
+    "en_US": "volume(s) {0} is no longer attached, can only revert one by one. If you need to group revert, please re-attach it.",
+    "zh_CN": "",
+    "arguments": [
+      "String.join(\", \", detachedVolInfos)"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/snapshot/group/VolumeSnapshotGroupChecker.java"
+  },
+  {
+    "raw": "new volume(s) %s attached after snapshot point, can only revert one by one. If you need to group revert, please detach it.",
+    "en_US": "new volume(s) {0} attached after snapshot point, can only revert one by one. If you need to group revert, please detach it.",
+    "zh_CN": "",
+    "arguments": [
+      "volInfos"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/snapshot/group/VolumeSnapshotGroupChecker.java"
+  },
+  {
+    "raw": " volume[uuid: %s] has been referenced by other volumes [%s], can not change install path before flatten them and their descendants ",
+    "en_US": " volume[uuid: {0}] has been referenced by other volumes [{1}], can not change install path before flatten them and their descendants ",
+    "zh_CN": "",
+    "arguments": [
+      "volumeUuid",
+      "infos.toString()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/snapshot/reference/VolumeSnapshotReferenceUtils.java"
   },
   {
     "raw": "current volume state[%s] doesn\u0027t allow to proceed message[%s]",
@@ -743,22 +936,22 @@
     "fileName": "src/main/java/org/zstack/storage/volume/DownloadIsoForVmExtension.java"
   },
   {
-    "raw": "volume[uuid:%s] is not in status Ready, current is %s, can\u0027t create snapshot",
-    "en_US": "volume[uuid:{0}] is not in status Ready, current is {1}, can\u0027t create snapshot",
-    "zh_CN": "硬盘[uuid:{0}]未出于就绪状态，当前是{1}，不能创建快照",
-    "arguments": [
-      "msg.getVolumeUuid()",
-      "status"
-    ],
-    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
-  },
-  {
     "raw": "volume[uuid:%s, type:%s], can\u0027t create snapshot",
     "en_US": "volume[uuid:{0}, type:{1}], can\u0027t create snapshot",
     "zh_CN": "卷[uuid：{0}，类型：{1}]，无法创建快照",
     "arguments": [
       "msg.getVolumeUuid()",
       "type"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
+    "raw": "volume[uuid:%s] is not in state Enabled, current is %s, can\u0027t create snapshot",
+    "en_US": "volume[uuid:{0}] is not in state Enabled, current is {1}, can\u0027t create snapshot",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVolumeUuid()",
+      "state"
     ],
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
@@ -779,6 +972,16 @@
       "vmvo.getState().toString()",
       "VmInstanceState.Running.toString()",
       "VmInstanceState.Paused.toString()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
+    "raw": "volume[uuid:%s] is not in status Ready, current is %s, can\u0027t create snapshot",
+    "en_US": "volume[uuid:{0}] is not in status Ready, current is {1}, can\u0027t create snapshot",
+    "zh_CN": "硬盘[uuid:{0}]未出于就绪状态，当前是{1}，不能创建快照",
+    "arguments": [
+      "vol.getUuid()",
+      "vol.getStatus()"
     ],
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
@@ -959,6 +1162,18 @@
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
+    "raw": "data volume[uuid:%s] has format[%s] that can only be attached to hypervisor[%s], but vm has hypervisor type[%s]. Can\u0027t attach",
+    "en_US": "data volume[uuid:{0}] has format[{1}] that can only be attached to hypervisor[{2}], but vm has hypervisor type[{3}]. Can\u0027t attach",
+    "zh_CN": "",
+    "arguments": [
+      "volumeVO.getUuid()",
+      "volumeVO.getFormat()",
+      "hvTypes",
+      "hvType"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
     "raw": "Can\u0027t attach volume to VM, no qualified cluster",
     "en_US": "Can\u0027t attach volume to VM, no qualified cluster",
     "zh_CN": "不能加载硬盘到虚拟机上，没有可用集群",
@@ -1011,11 +1226,31 @@
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
+    "raw": "can not delete volume[%s], because volume attach to host[%s]",
+    "en_US": "can not delete volume[{0}], because volume attach to host[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVolumeUuid()",
+      "hostUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
     "raw": "it\u0027s not allowed to change state of root volume, uuid:%s",
     "en_US": "it\u0027s not allowed to change state of root volume, uuid:{0}",
     "zh_CN": "不能改变硬盘状态，uuid:{0}",
     "arguments": [
       "msg.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
+    "raw": "can not change volume[%s] state, because volume attach to host[%s]",
+    "en_US": "can not change volume[{0}] state, because volume attach to host[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVolumeUuid()",
+      "hostUuid"
     ],
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
@@ -1069,6 +1304,15 @@
       "msg.getVolumeUuid()",
       "msg.getHostUuid()",
       "msg.getMountPath()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
+    "raw": "can not detach volume[%s] from host. it may have been detached",
+    "en_US": "can not detach volume[{0}] from host. it may have been detached",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVolumeUuid()"
     ],
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },

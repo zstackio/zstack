@@ -7,6 +7,16 @@
     "fileName": "src/main/java/org/zstack/image/AddImageLongJob.java"
   },
   {
+    "raw": "the backup storage[uuid:%s] is not in status of Connected, current status is %s",
+    "en_US": "the backup storage[uuid:{0}] is not in status of Connected, current status is {1}",
+    "zh_CN": "镜像服务器[uuid:{0}]未处于Connected状态，当前状态是{1}",
+    "arguments": [
+      "backupStorageUuid",
+      "bsStatus"
+    ],
+    "fileName": "src/main/java/org/zstack/image/BackupStorageDeleteBitGC.java"
+  },
+  {
     "raw": "The aarch64 architecture does not support legacy.",
     "en_US": "The aarch64 architecture does not support legacy.",
     "zh_CN": "AARCH64体系结构不支持旧版。",

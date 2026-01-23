@@ -54,6 +54,15 @@
     "fileName": "src/main/java/org/zstack/storage/zbs/ZbsStorageController.java"
   },
   {
+    "raw": "unable to connect to the ZBS primary storage[uuid:%s], failed to connect all MDS",
+    "en_US": "unable to connect to the ZBS primary storage[uuid:{0}], failed to connect all MDS",
+    "zh_CN": "无法连接 ZBS 主存储 [uuid:{0}]: 不能连接所有的 MDS",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/zbs/ZbsStorageController.java"
+  },
+  {
     "raw": "ZBS primary storage[uuid:%s] may have been deleted",
     "en_US": "ZBS primary storage[uuid:{0}] may have been deleted",
     "zh_CN": "",

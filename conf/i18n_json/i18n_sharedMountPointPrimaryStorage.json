@@ -9,6 +9,15 @@
     "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
   },
   {
+    "raw": "cannot find any connected host to perform the operation, it seems all KVM hosts in the clusters attached with the shared mount point storage[uuid:%s] are disconnected",
+    "en_US": "cannot find any connected host to perform the operation, it seems all KVM hosts in the clusters attached with the shared mount point storage[uuid:{0}] are disconnected",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
+  },
+  {
     "raw": "vm[uuid:%s] is not Running, Paused or Stopped, current state[%s]",
     "en_US": "vm[uuid:{0}] is not Running, Paused or Stopped, current state[{1}]",
     "zh_CN": "云主机[uuid:{0}]不是运行中、已暂停或者已停止状态，现在的状态是[{1}]",
@@ -26,6 +35,17 @@
       "volume.getUuid()",
       "volume.getVmInstanceUuid()",
       "state"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
+  },
+  {
+    "raw": "the image[uuid:%s, name: %s] is not available to download on any backup storage:\\n1. check if image is in status of Deleted\\n2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:%s]",
+    "en_US": "the image[uuid:{0}, name: {1}] is not available to download on any backup storage:\\n1. check if image is in status of Deleted\\n2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:{2}]",
+    "zh_CN": "",
+    "arguments": [
+      "imgInv.getUuid()",
+      "imgInv.getName()",
+      "self.getZoneUuid()"
     ],
     "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
   },
@@ -78,6 +98,26 @@
     "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
   },
   {
+    "raw": "the shared mount point primary storage[uuid:%s, name:%s] cannot find any available host in attached clusters for instantiating the volume",
+    "en_US": "the shared mount point primary storage[uuid:{0}, name:{1}] cannot find any available host in attached clusters for instantiating the volume",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "self.getName()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageBase.java"
+  },
+  {
+    "raw": "the SMP primary storage[uuid:%s, name:%s] has not attached to any clusters, or no hosts in the attached clusters are connected",
+    "en_US": "the SMP primary storage[uuid:{0}, name:{1}] has not attached to any clusters, or no hosts in the attached clusters are connected",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "self.getName()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageBase.java"
+  },
+  {
     "raw": "not supported operation",
     "en_US": "not supported operation",
     "zh_CN": "不支持的操作",
@@ -95,6 +135,15 @@
     "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageBase.java"
   },
   {
+    "raw": "cannot find available host for operation on primary storage[uuid:%s].",
+    "en_US": "cannot find available host for operation on primary storage[uuid:{0}].",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageBase.java"
+  },
+  {
     "raw": "host where vm[uuid:%s] locate is not Connected.",
     "en_US": "host where vm[uuid:{0}] locate is not Connected.",
     "zh_CN": "",
@@ -102,6 +151,27 @@
       "msg.getVmInstanceUuid()"
     ],
     "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageBase.java"
+  },
+  {
+    "raw": "volume[uuid:%s] has reference volume[%s], can not change volume type before flatten them and their descendants",
+    "en_US": "volume[uuid:{0}] has reference volume[{1}], can not change volume type before flatten them and their descendants",
+    "zh_CN": "",
+    "arguments": [
+      "volumeUuid",
+      "infos.toString()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageBase.java"
+  },
+  {
+    "raw": "the SMP primary storage[uuid:%s] is not attached to any clusters, and cannot expunge the root volume[uuid:%s] of the VM[uuid:%s]",
+    "en_US": "the SMP primary storage[uuid:{0}] is not attached to any clusters, and cannot expunge the root volume[uuid:{1}] of the VM[uuid:{2}]",
+    "zh_CN": "",
+    "arguments": [
+      "psUuid",
+      "vmUuid",
+      "volumeUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageFactory.java"
   },
   {
     "raw": "cannot find a Connected host to execute command for smp primary storage[uuid:%s]",

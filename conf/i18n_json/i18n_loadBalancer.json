@@ -754,6 +754,17 @@
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
+    "raw": "could not add vm nic [uuid:%s] to server group [uuid:%s] because listener [uuid:%s] attached this server group already the nic to be added",
+    "en_US": "could not add vm nic [uuid:{0}] to server group [uuid:{1}] because listener [uuid:{2}] attached this server group already the nic to be added",
+    "zh_CN": "",
+    "arguments": [
+      "vmNicUuids",
+      "msg.getServerGroupUuid()",
+      "listenerVO.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
     "raw": "could not add backend server ip to serverGroup [uuid:%s], because ip [ipAddress:%s] is repeated",
     "en_US": "could not add backend server ip to serverGroup [uuid:{0}], because ip [ipAddress:{1}] is repeated",
     "zh_CN": "无法将后端服务器IP添加到ServerGroup[uuid：{0}]，因为IP[IPAddress：{1}]重复",
@@ -1008,6 +1019,17 @@
     "zh_CN": "无法获取负载平衡器侦听器[uuid：{0}]的Service ProviderType",
     "arguments": [
       "struct.listenerUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerBase.java"
+  },
+  {
+    "raw": "service provider type mismatching. The load balancer[uuid:%s] is provided by the service provider[type:%s], but new service provider is [type: %s]",
+    "en_US": "service provider type mismatching. The load balancer[uuid:{0}] is provided by the service provider[type:{1}], but new service provider is [type: {2}]",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "self.getProviderType()",
+      "providerType"
     ],
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerBase.java"
   },

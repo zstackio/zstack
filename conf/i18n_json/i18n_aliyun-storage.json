@@ -2,35 +2,35 @@
   {
     "raw": "accessKey and keySecret must be set",
     "en_US": "accessKey and keySecret must be set",
-    "zh_CN": "",
+    "zh_CN": "必须设置 accessKey 和 keySecret",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunEbsClient.java"
   },
   {
     "raw": "ocean api endpoint must not be null",
     "en_US": "ocean api endpoint must not be null",
-    "zh_CN": "",
+    "zh_CN": "ocean API 的 endpoint 不能为空",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunEbsClient.java"
   },
   {
     "raw": "accessKey and keySecret must be set!",
     "en_US": "accessKey and keySecret must be set!",
-    "zh_CN": "",
+    "zh_CN": "必须设置 accessKey 和 keySecret",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunNasClient.java"
   },
   {
     "raw": "regionId must be set!",
     "en_US": "regionId must be set!",
-    "zh_CN": "",
+    "zh_CN": "必须设置 regionId",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunNasClient.java"
   },
   {
     "raw": "no current used key/secret for %s!",
     "en_US": "no current used key/secret for {0}!",
-    "zh_CN": "",
+    "zh_CN": "没有当前使用的 {0} 密钥/密钥对",
     "arguments": [
       "type.toString()"
     ],
@@ -39,14 +39,14 @@
   {
     "raw": "Not a valid message!",
     "en_US": "Not a valid message!",
-    "zh_CN": "",
+    "zh_CN": "不是有效的消息",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunStorageSdkIml.java"
   },
   {
     "raw": "%s failed, ErrorCode: %s, ErrorMessage: %s",
     "en_US": "{0} failed, ErrorCode: {1}, ErrorMessage: {2}",
-    "zh_CN": "",
+    "zh_CN": "{0} 失败，错误代码：{1}，错误消息：{2}",
     "arguments": [
       "action",
       "result.ErrorCode",
@@ -57,7 +57,7 @@
   {
     "raw": "Device Not Ready in %d milli seconds",
     "en_US": "Device Not Ready in {0} milli seconds",
-    "zh_CN": "",
+    "zh_CN": "设备在 {0} 毫秒内未就绪",
     "arguments": [
       "15000"
     ],
@@ -66,7 +66,7 @@
   {
     "raw": "snapshot task cannot finished in %d milliseconds, now progress is %d, status is %s",
     "en_US": "snapshot task cannot finished in {0} milliseconds, now progress is {1}, status is {2}",
-    "zh_CN": "",
+    "zh_CN": "快照任务无法在 {0} 毫秒内完成，当前进度为 {1}，状态为 {2}",
     "arguments": [
       "msg.getTimeout()",
       "result.Content.Progress",
@@ -77,7 +77,7 @@
   {
     "raw": "snapshot task status is finished %s",
     "en_US": "snapshot task status is finished {0}",
-    "zh_CN": "",
+    "zh_CN": "快照任务状态已完成 {0}",
     "arguments": [
       "result.Content.TaskStatus"
     ],
@@ -86,14 +86,14 @@
   {
     "raw": "not supported HybridClient",
     "en_US": "not supported HybridClient",
-    "zh_CN": "",
+    "zh_CN": "不支持的 HybridClient",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunStorageSdkIml.java"
   },
   {
     "raw": "arg \u0027endpoint\u0027 must be set in %s type",
     "en_US": "arg \u0027endpoint\u0027 must be set in {0} type",
-    "zh_CN": "",
+    "zh_CN": "参数 'endpoint' 必须在 {0} 类型中设置",
     "arguments": [
       "HybridType.AliyunEBS.toString()"
     ],
@@ -102,7 +102,7 @@
   {
     "raw": "not supported datacenter [%s] type here!",
     "en_US": "not supported datacenter [{0}] type here!",
-    "zh_CN": "",
+    "zh_CN": "此处不支持数据中心 [{0}] 类型",
     "arguments": [
       "type.toString()"
     ],
@@ -111,14 +111,14 @@
   {
     "raw": "must indicate zoneId in private aliyun.",
     "en_US": "must indicate zoneId in private aliyun.",
-    "zh_CN": "",
+    "zh_CN": "必须在私有阿里云中指定 zoneId",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/aliyun/core/identityzone/AliyunPrivateIdentityZoneBase.java"
   },
   {
     "raw": "make ocean api signature string failed: %s",
     "en_US": "make ocean api signature string failed: {0}",
-    "zh_CN": "",
+    "zh_CN": "生成 ocean API 签名字符串失败：{0}",
     "arguments": [
       "e.getMessage()"
     ],
@@ -127,7 +127,7 @@
   {
     "raw": "url(ocean endpoint) must be set for aliyun ebs backupstorage",
     "en_US": "url(ocean endpoint) must be set for aliyun ebs backupstorage",
-    "zh_CN": "",
+    "zh_CN": "必须为阿里云 EBS 备份存储设置 URL（ocean 端点）",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/aliyun/ebs/storage/backup/AliyunEbsBackupStorageApiInterceptor.java"
   },
@@ -240,6 +240,16 @@
       "msg.getIdentityZoneUuid()"
     ],
     "fileName": "src/main/java/org/zstack/aliyun/ebs/storage/primary/AliyunEbsPrimaryStorageApiInterceptor.java"
+  },
+  {
+    "raw": "the aliyun ebs primary storage[uuid:%s, name:%s] cannot find any available host in attached clusters for instantiating the volume",
+    "en_US": "the aliyun ebs primary storage[uuid:{0}, name:{1}] cannot find any available host in attached clusters for instantiating the volume",
+    "zh_CN": "阿里云 EBS 主存储[uuid:{0}, name:{1}] 在附加的集群中找不到可用于实例化卷的可用主机",
+    "arguments": [
+      "self.getUuid()",
+      "self.getName()"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/ebs/storage/primary/AliyunEbsPrimaryStorageBase.java"
   },
   {
     "raw": "cannot find snapshot from image: %s, maybe the image has been deleted",
@@ -489,6 +499,17 @@
     "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
   },
   {
+    "raw": "failed to ping aliyun nas primary storage[uuid:%s] from host[uuid:%s],because %s. disconnect this host-ps connection",
+    "en_US": "failed to ping aliyun nas primary storage[uuid:{0}] from host[uuid:{1}],because {2}. disconnect this host-ps connection",
+    "zh_CN": "从主机[uuid:{1}] ping 阿里云 NAS 主存储[uuid:{0}] 失败，因为 {2}。断开此主机-存储连接",
+    "arguments": [
+      "self.getUuid()",
+      "hostUuid",
+      "rsp.error"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
+  },
+  {
     "raw": "operation error, because:%s",
     "en_US": "operation error, because:{0}",
     "zh_CN": "",
@@ -604,6 +625,21 @@
     "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
   },
   {
+    "raw": "unable to attach a primary storage to cluster. Kvm host[uuid:%s, name:%s] in cluster has qemu-img with version[%s]; but the primary storage has attached to a cluster that has kvm host[uuid:%s], which has qemu-img with version[%s]. qemu-img version greater than %s is incompatible with versions less than %s, this will causes volume snapshot operation to fail. Please avoid attaching a primary storage to clusters that have different Linux distributions, in order to prevent qemu-img version mismatch",
+    "en_US": "unable to attach a primary storage to cluster. Kvm host[uuid:{0}, name:{1}] in cluster has qemu-img with version[{2}]; but the primary storage has attached to a cluster that has kvm host[uuid:{3}], which has qemu-img with version[{4}]. qemu-img version greater than {5} is incompatible with versions less than {6}, this will causes volume snapshot operation to fail. Please avoid attaching a primary storage to clusters that have different Linux distributions, in order to prevent qemu-img version mismatch",
+    "zh_CN": "",
+    "arguments": [
+      "context.getInventory().getUuid()",
+      "context.getInventory().getName()",
+      "mine",
+      "e.getKey()",
+      "version",
+      "QCOW3_QEMU_IMG_VERSION",
+      "QCOW3_QEMU_IMG_VERSION"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmFactory.java"
+  },
+  {
     "raw": "no available host could download imagecache!",
     "en_US": "no available host could download imagecache!",
     "zh_CN": "",
@@ -611,10 +647,50 @@
     "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmFactory.java"
   },
   {
+    "raw": "the aliyun nas primary storage[uuid:%s, name:%s] cannot find any available host in attached clusters for instantiating the volume",
+    "en_US": "the aliyun nas primary storage[uuid:{0}, name:{1}] cannot find any available host in attached clusters for instantiating the volume",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "self.getName()"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunNasPrimaryStorageBase.java"
+  },
+  {
+    "raw": "the aliyun nas primary storage[uuid:%s, name:%s] cannot find any available host in attached clusters for delete bits on primarystorage",
+    "en_US": "the aliyun nas primary storage[uuid:{0}, name:{1}] cannot find any available host in attached clusters for delete bits on primarystorage",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "self.getName()"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunNasPrimaryStorageBase.java"
+  },
+  {
     "raw": "not support",
     "en_US": "not support",
     "zh_CN": "",
     "arguments": [],
+    "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunNasPrimaryStorageBase.java"
+  },
+  {
+    "raw": "the AliyunNAS primary storage[uuid:%s, name:%s] has not attached to any clusters, or no hosts in the attached clusters are connected",
+    "en_US": "the AliyunNAS primary storage[uuid:{0}, name:{1}] has not attached to any clusters, or no hosts in the attached clusters are connected",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "self.getName()"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunNasPrimaryStorageBase.java"
+  },
+  {
+    "raw": "the Aliyun Nas primary storage[uuid:%s, name:%s] has not attached to any clusters, or no hosts in the attached clusters are connected",
+    "en_US": "the Aliyun Nas primary storage[uuid:{0}, name:{1}] has not attached to any clusters, or no hosts in the attached clusters are connected",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "self.getName()"
+    ],
     "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunNasPrimaryStorageBase.java"
   },
   {
@@ -639,6 +715,15 @@
     "zh_CN": "",
     "arguments": [
       "msg.getResourceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunNasPrimaryStorageBase.java"
+  },
+  {
+    "raw": "cannot find available host for operation on primary storage[uuid:%s].",
+    "en_US": "cannot find available host for operation on primary storage[uuid:{0}].",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
     ],
     "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunNasPrimaryStorageBase.java"
   },

@@ -39,6 +39,15 @@
     "fileName": "src/main/java/org/zstack/tag2/Tag2ApiInterceptor.java"
   },
   {
+    "raw": "Get format[%s], format must like that name::{tokenName1}::{tokenName2} ... ::{tokenNameN} or {tokenName1}::{tokenName2} ... ::{tokenNameN} Name cannot contain \u0027{}:\u0027",
+    "en_US": "Get format[{0}], format must like that name::{tokenName1}::{tokenName2} ... ::{tokenNameN} or {tokenName1}::{tokenName2} ... ::{tokenNameN} Name cannot contain \u0027{}:\u0027",
+    "zh_CN": "获取格式[{0}]，格式必须类似于名称::{tokenName1}::{tokenName2} ... ::{tokenNameN} 或 {tokenName1}::{tokenName2} ... ::{tokenNameN} 名称不能包含 \u0027{}:\u0027",
+    "arguments": [
+      "format"
+    ],
+    "fileName": "src/main/java/org/zstack/tag2/Tag2ApiInterceptor.java"
+  },
+  {
     "raw": "all tokens %s must be specify",
     "en_US": "all tokens {0} must be specify",
     "zh_CN": "必须指定所有令牌{0}",

@@ -268,6 +268,16 @@
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/AbstractCfnRootDecoder.java"
   },
   {
+    "raw": "Condition key: %s only support 1 element in the json object of value, but got %d elements!",
+    "en_US": "Condition key: {0} only support 1 element in the json object of value, but got {1} elements!",
+    "zh_CN": "",
+    "arguments": [
+      "key",
+      "es.size()"
+    ],
+    "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ConditionDecoder.java"
+  },
+  {
     "raw": "Value must be boolean in \u0027Condition\u0027 field",
     "en_US": "Value must be boolean in \u0027Condition\u0027 field",
     "zh_CN": "“条件”字段中的值必须为布尔值",

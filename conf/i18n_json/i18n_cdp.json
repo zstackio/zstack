@@ -437,6 +437,22 @@
     "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
   },
   {
+    "raw": "The operation has volume[uuid: %s] that will take chain type snapshot. Therefore, you could not do this operation when a CDP task is running on the VM instance.",
+    "en_US": "The operation has volume[uuid: {0}] that will take chain type snapshot. Therefore, you could not do this operation when a CDP task is running on the VM instance.",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVolume().getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/cdp/CdpBackupStorageManagerImpl.java"
+  },
+  {
+    "raw": "Could not attach volume.The VM instance is running a CDP task. After the volume is attached, the capacity required for full backup will exceed the CDP task planned size. Please plan the size properly and try again.",
+    "en_US": "Could not attach volume.The VM instance is running a CDP task. After the volume is attached, the capacity required for full backup will exceed the CDP task planned size. Please plan the size properly and try again.",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/cdp/CdpTaskMonitor.java"
+  },
+  {
     "raw": "The VM[%s] for volume[%s] is running CDP, cannot resize now.",
     "en_US": "The VM[{0}] for volume[{1}] is running CDP, cannot resize now.",
     "zh_CN": "卷[{1}]的VM[{0}]正在运行CDP，现在无法调整大小。",
@@ -599,6 +615,16 @@
     "en_US": "Available License not found, please apply addon license for product CDP.",
     "zh_CN": "",
     "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/cdp/LicenseChecker.java"
+  },
+  {
+    "raw": "Insufficient CDP VM number licensed. Your license permits %d CDP VM, there are %d CDP VM used. You can stop or disable some CDP tasks or apply a new license.",
+    "en_US": "Insufficient CDP VM number licensed. Your license permits {0} CDP VM, there are {1} CDP VM used. You can stop or disable some CDP tasks or apply a new license.",
+    "zh_CN": "",
+    "arguments": [
+      "allowedVmNum",
+      "cdpUsedVmNum"
+    ],
     "fileName": "src/main/java/org/zstack/storage/cdp/LicenseChecker.java"
   },
   {

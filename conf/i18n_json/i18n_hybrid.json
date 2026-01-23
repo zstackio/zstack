@@ -200,6 +200,16 @@
     "fileName": "src/main/java/org/zstack/aliyun/ecs/CreateEcsInstancePublicFlow.java"
   },
   {
+    "raw": "This region [%s] cannot produce instance type [%s] now, please select another instance type or another region",
+    "en_US": "This region [{0}] cannot produce instance type [{1}] now, please select another instance type or another region",
+    "zh_CN": "",
+    "arguments": [
+      "regionId",
+      "data1.get(\"type\")"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/ecs/CreateEcsInstancePublicFlow.java"
+  },
+  {
     "raw": "no system disk found for ecs: [%s], ecs id is: [%s]",
     "en_US": "no system disk found for ecs: [{0}], ecs id is: [{1}]",
     "zh_CN": "没有系统云盘可用来创建云主机，云主机id是: [{1}]",
@@ -389,6 +399,16 @@
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageApiInterceptor.java"
   },
   {
+    "raw": "valid platform:[%s] for aliyun image import, valid value are: [%s]",
+    "en_US": "valid platform:[{0}] for aliyun image import, valid value are: [{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "platform",
+      "EcsImageConstant.ECS_IMAGE_PLATFORM.getValid()"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageApiInterceptor.java"
+  },
+  {
     "raw": "image [%s] is not enable now",
     "en_US": "image [{0}] is not enable now",
     "zh_CN": "镜像[{0}]不可用",
@@ -413,6 +433,16 @@
     "zh_CN": "云主机[{0}]不存在，请进行核查",
     "arguments": [
       "eipVo.getAllocateResourceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
+  },
+  {
+    "raw": "Only ecs instances that are in the running and stopped status can detach the eip , but the ecs [%s] status is [%s] now ",
+    "en_US": "Only ecs instances that are in the running and stopped status can detach the eip , but the ecs [{0}] status is [{1}] now ",
+    "zh_CN": "",
+    "arguments": [
+      "ecsVo.getUuid()",
+      "ecsVo.getEcsStatus()"
     ],
     "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
   },
@@ -454,6 +484,16 @@
     "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
   },
   {
+    "raw": "Only esc instances that are in the running and stopped status can attach the eip , but the ecs [%s] status is [%s] now ",
+    "en_US": "Only esc instances that are in the running and stopped status can attach the eip , but the ecs [{0}] status is [{1}] now ",
+    "zh_CN": "",
+    "arguments": [
+      "evo.getUuid()",
+      "evo.getEcsStatus()"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
+  },
+  {
     "raw": "Vbr: [%s] is in create connection progress, please wait...",
     "en_US": "Vbr: [{0}] is in create connection progress, please wait...",
     "zh_CN": "虚拟边界路由器: [{0}]正在创建连接中，请稍后...",
@@ -461,6 +501,28 @@
       "msg.getVbrUuid()"
     ],
     "fileName": "src/main/java/org/zstack/aliyun/network/connection/AliyunConnectionManagerImpl.java"
+  },
+  {
+    "raw": "custom cidr [%s] is already existed in vbr [%s], it is overlapped with target cidr [%s], please check and delete it first.",
+    "en_US": "custom cidr [{0}] is already existed in vbr [{1}], it is overlapped with target cidr [{2}], please check and delete it first.",
+    "zh_CN": "",
+    "arguments": [
+      "tuple.get(0, String.class)",
+      "msg.getVbrUuid()",
+      "vpcCidr"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/CreateVbrRouteEntryFlow.java"
+  },
+  {
+    "raw": "custom cidr [%s] is already existed in vrouter [%s], it is overlapped with target cidr [%s], please check and delete it first.",
+    "en_US": "custom cidr [{0}] is already existed in vrouter [{1}], it is overlapped with target cidr [{2}], please check and delete it first.",
+    "zh_CN": "",
+    "arguments": [
+      "tuple.get(0, String.class)",
+      "vRouterUuid",
+      "cidr"
+    ],
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/CreateVpcRouteEntryFlow.java"
   },
   {
     "raw": "No Such VRouter nic found for l3network: %s",
@@ -656,6 +718,20 @@
     "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
   },
   {
+    "raw": "Cannot set the disk\u0027s deleteWithInstance property to false when the category property of the disk is ephemeral",
+    "en_US": "Cannot set the disk\u0027s deleteWithInstance property to false when the category property of the disk is ephemeral",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
+  },
+  {
+    "raw": "Cannot set the disk\u0027s deleteWithInstance property to false when the category property of the disk is cloud and portable property is false",
+    "en_US": "Cannot set the disk\u0027s deleteWithInstance property to false when the category property of the disk is cloud and portable property is false",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
+  },
+  {
     "raw": "The disk [%s] is not attach on any instance ",
     "en_US": "The disk [{0}] is not attach on any instance ",
     "zh_CN": "该云盘[{0}]没有加载到任何云主机",
@@ -722,6 +798,13 @@
     "raw": "Non-independent disk can only be destroyed with instances",
     "en_US": "Non-independent disk can only be destroyed with instances",
     "zh_CN": "未独立的云盘只能和云主机一起删除",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
+  },
+  {
+    "raw": "The size and snapshot id in the request parameter must select one of the items to specify the size of the disk or create a disk using the snapshot.",
+    "en_US": "The size and snapshot id in the request parameter must select one of the items to specify the size of the disk or create a disk using the snapshot.",
+    "zh_CN": "",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/aliyun/storage/disk/AliyunDiskApiInterceptor.java"
   },
@@ -1161,6 +1244,15 @@
     "zh_CN": "CIDR和其他的虚拟交换机{0}有重叠",
     "arguments": [
       "old.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
+  },
+  {
+    "raw": "invalid CidrBlock: %s, which must subnet in \u002710.0.0.0/8\u0027, \u0027172.16.0.0/12\u0027, \u0027192.168.0.0/16\u0027",
+    "en_US": "invalid CidrBlock: {0}, which must subnet in \u002710.0.0.0/8\u0027, \u0027172.16.0.0/12\u0027, \u0027192.168.0.0/16\u0027",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getCidrBlock()"
     ],
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },

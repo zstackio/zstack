@@ -127,6 +127,15 @@
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
+    "raw": "could not delete ip address, because ip [%s] is dhcp server ip",
+    "en_US": "could not delete ip address, because ip [{0}] is dhcp server ip",
+    "zh_CN": "",
+    "arguments": [
+      "vo.getIp()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
+  },
+  {
     "raw": "could not set dhcp v4 server ip, because there is no ipv4 range",
     "en_US": "could not set dhcp v4 server ip, because there is no ipv4 range",
     "zh_CN": "",
@@ -277,6 +286,15 @@
     "en_US": "could not attach eip because ipv6 eip can ONLY be attached to flat network",
     "zh_CN": "无法附加EIP，因为IPv6 EIP只能附加到三层网络",
     "arguments": [],
+    "fileName": "src/main/java/org/zstack/network/service/flat/FlatEipApiInterceptor.java"
+  },
+  {
+    "raw": "L2Network where vip\u0027s L3Network based hasn\u0027t attached the cluster where vmNic[uuid:%s] located",
+    "en_US": "L2Network where vip\u0027s L3Network based hasn\u0027t attached the cluster where vmNic[uuid:{0}] located",
+    "zh_CN": "",
+    "arguments": [
+      "vmNicUuid"
+    ],
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatEipApiInterceptor.java"
   },
   {

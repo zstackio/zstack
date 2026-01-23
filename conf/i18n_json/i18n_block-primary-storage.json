@@ -16,6 +16,16 @@
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageBase.java"
   },
   {
+    "raw": "the block primary storage[uuid:%s, name:%s] can not find any available host in attached clusters for instantiating the volume",
+    "en_US": "the block primary storage[uuid:{0}, name:{1}] can not find any available host in attached clusters for instantiating the volume",
+    "zh_CN": "块主存储[uuid:{0}, name:{1}] 在附加的集群中找不到可用于实例化卷的可用主机",
+    "arguments": [
+      "self.getUuid()",
+      "self.getName()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageBase.java"
+  },
+  {
     "raw": "fail to find a host to map for volume %s",
     "en_US": "fail to find a host to map for volume {0}",
     "zh_CN": "",
@@ -147,6 +157,13 @@
     "raw": "fail to clean up after detach volume",
     "en_US": "fail to clean up after detach volume",
     "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageFactory.java"
+  },
+  {
+    "raw": "not support take volumes snapshots on multiple ps when including ceph",
+    "en_US": "not support take volumes snapshots on multiple ps when including ceph",
+    "zh_CN": "当包含 Ceph 时，不支持在多个主存储上同时对卷进行快照",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/storage/primary/block/BlockPrimaryStorageFactory.java"
   },

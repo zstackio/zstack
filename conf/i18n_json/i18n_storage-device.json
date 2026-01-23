@@ -233,6 +233,27 @@
     "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
   },
   {
+    "raw": "different iscsi configuration were found on host[uuid:%s, targets:%s]and host[uuid:%s, targets:%s]",
+    "en_US": "different iscsi configuration were found on host[uuid:{0}, targets:{1}]and host[uuid:{2}, targets:{3}]",
+    "zh_CN": "被在主机 [uuid:%s, targets:%s] 和主机 [uuid:%s, targets:%s] 中发现了不同的 iscsi 配置",
+    "arguments": [
+      "scannedServer.getKey()",
+      "JSONObjectUtil.toJsonString(scannedTargets)",
+      "hostVO.getUuid()",
+      "JSONObjectUtil.toJsonString(returnValue.getIscsiTargets())"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
+  },
+  {
+    "raw": "different disk types are found in different hosts for lun[serial:%s], unable to attach it to cluster",
+    "en_US": "different disk types are found in different hosts for lun[serial:{0}], unable to attach it to cluster",
+    "zh_CN": "不同的主机中存在不同类型的 lun[serial:%s]，无法将其挂载到集群中",
+    "arguments": [
+      "serial"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceManagerImpl.java"
+  },
+  {
     "raw": "specified scsi lun[wwid: %s] not exists or disabled",
     "en_US": "specified scsi lun[wwid: {0}] not exists or disabled",
     "zh_CN": "",
