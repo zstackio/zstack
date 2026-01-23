@@ -10,6 +10,16 @@
     "fileName": "src/main/java/org/zstack/network/l2/L2NetworkApiInterceptor.java"
   },
   {
+    "raw": "could not attach l2 network, because there is another network [uuid:%s] on physical interface [%s] with different vswitch type",
+    "en_US": "could not attach l2 network, because there is another network [uuid:{0}] on physical interface [{1}] with different vswitch type",
+    "zh_CN": "",
+    "arguments": [
+      "otherL2s.get(0)",
+      "l2.getPhysicalInterface()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l2/L2NetworkApiInterceptor.java"
+  },
+  {
     "raw": "l2Network[uuid:%s] has not attached to cluster[uuid:%s]",
     "en_US": "l2Network[uuid:{0}] has not attached to cluster[uuid:{1}]",
     "zh_CN": "二层网络[uuid:{0}]没有挂载到集群上[uuid:{1}]",
@@ -25,6 +35,16 @@
     "zh_CN": "",
     "arguments": [
       "l2Type"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l2/L2NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "could not attach l2Network[uuid:%s] to host[uuid:%s] which is in the premaintenance or maintenance state",
+    "en_US": "could not attach l2Network[uuid:{0}] to host[uuid:{1}] which is in the premaintenance or maintenance state",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getL2NetworkUuid()",
+      "msg.getHostUuid()"
     ],
     "fileName": "src/main/java/org/zstack/network/l2/L2NetworkApiInterceptor.java"
   },
@@ -81,6 +101,15 @@
     "zh_CN": "",
     "arguments": [
       "l2.getType()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l2/L2NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "cannot update virtual network id for l2Network[uuid:%s] because it only supports an L2Network that is exclusively attached to a kvm cluster",
+    "en_US": "cannot update virtual network id for l2Network[uuid:{0}] because it only supports an L2Network that is exclusively attached to a kvm cluster",
+    "zh_CN": "",
+    "arguments": [
+      "l2.getUuid()"
     ],
     "fileName": "src/main/java/org/zstack/network/l2/L2NetworkApiInterceptor.java"
   },
@@ -221,6 +250,106 @@
       "reason"
     ],
     "fileName": "src/main/java/org/zstack/network/l3/L3BasicNetwork.java"
+  },
+  {
+    "raw": "could not delete ip address, because it\u0027s used by vmnic[uuid:%s]",
+    "en_US": "could not delete ip address, because it\u0027s used by vmnic[uuid:{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "vo.getVmNicUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "could not reserve ip range, because start ip[%s] is not valid ip address",
+    "en_US": "could not reserve ip range, because start ip[{0}] is not valid ip address",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getStartIp()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "could not reserve ip range, because end ip[%s] is not valid ip address",
+    "en_US": "could not reserve ip range, because end ip[{0}] is not valid ip address",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getEndIp()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "could not reserve ip range, because end ip[%s] is not ipv4 address",
+    "en_US": "could not reserve ip range, because end ip[{0}] is not ipv4 address",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getEndIp()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "could not reserve ip range, because end ip[%s] is not ipv6 address",
+    "en_US": "could not reserve ip range, because end ip[{0}] is not ipv6 address",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getEndIp()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "could not reserve ip range, because end ip[%s] is less than start ip[%s]",
+    "en_US": "could not reserve ip range, because end ip[{0}] is less than start ip[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getEndIp()",
+      "msg.getStartIp()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "could not reserve ip range, because there is no ipv4 range",
+    "en_US": "could not reserve ip range, because there is no ipv4 range",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "could not reserve ip range, because there is no ipv6 range",
+    "en_US": "could not reserve ip range, because there is no ipv6 range",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "could not reserve ip range, because reserve ip is not in ip range[%s]",
+    "en_US": "could not reserve ip range, because reserve ip is not in ip range[{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "ipv6Ranges.get(0).getNetworkCidr()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "could not reserve ip range, because new range [%s:%s] is overlapped with old range [%s:%s]",
+    "en_US": "could not reserve ip range, because new range [{0}:{1}] is overlapped with old range [{2}:{3}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getStartIp()",
+      "msg.getEndIp()",
+      "reserveRange.getStartIp()",
+      "reserveRange.getEndIp()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "could not set mtu because l2 network[uuid:%s] of l3 network [uuid:%s] mtu can not be bigger than the novlan network",
+    "en_US": "could not set mtu because l2 network[uuid:{0}] of l3 network [uuid:{1}] mtu can not be bigger than the novlan network",
+    "zh_CN": "",
+    "arguments": [
+      "l2VO.getUuid()",
+      "msg.getL3NetworkUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
   },
   {
     "raw": "can not delete the last normal ip range because there is still has address pool",
@@ -463,6 +592,15 @@
     "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
   },
   {
+    "raw": "not valid combination of system and category,only %s are valid",
+    "en_US": "not valid combination of system and category,only {0} are valid",
+    "zh_CN": "",
+    "arguments": [
+      "L3NetworkCategory.validCombination"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
+  },
+  {
     "raw": "l3 network [uuid %s: name %s] is not a public network, address pool range can not be added",
     "en_US": "l3 network [uuid {0}: name {1}] is not a public network, address pool range can not be added",
     "zh_CN": "三层网络[uuid{0}：名称{1}]不是公用网络，无法添加地址池范围",
@@ -574,6 +712,17 @@
       "r.getUuid()",
       "r.getStartIp()",
       "r.getEndIp()"
+    ],
+    "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "multiple CIDR on the same L3 network is not allowed. There has been a IP range[uuid:%s, CIDR:%s], the new IP range[CIDR:%s] is not in the CIDR with the existing one",
+    "en_US": "multiple CIDR on the same L3 network is not allowed. There has been a IP range[uuid:{0}, CIDR:{1}], the new IP range[CIDR:{2}] is not in the CIDR with the existing one",
+    "zh_CN": "",
+    "arguments": [
+      "r.getUuid()",
+      "rcidr",
+      "cidr"
     ],
     "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
   },

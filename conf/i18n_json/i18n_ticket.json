@@ -36,6 +36,13 @@
     "fileName": "src/main/java/org/zstack/ticket/api/TicketApiInterceptor.java"
   },
   {
+    "raw": "no matched ticket flow collection or no default ticket flow collection found, you must specify the flowCollectionUuid or create a default ticket flow collection in system",
+    "en_US": "no matched ticket flow collection or no default ticket flow collection found, you must specify the flowCollectionUuid or create a default ticket flow collection in system",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/ticket/api/TicketApiInterceptor.java"
+  },
+  {
     "raw": "Ticket flow collection[uuid:%s] not matches ticket type[uuid:%s]",
     "en_US": "Ticket flow collection[uuid:{0}] not matches ticket type[uuid:{1}]",
     "zh_CN": "票证流集合[uuid：{0}]与票证类型[uuid：{1}]不匹配",

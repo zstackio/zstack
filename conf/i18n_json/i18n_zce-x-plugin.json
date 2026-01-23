@@ -140,6 +140,15 @@
     "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
   },
   {
+    "raw": "install.sh not found: %s. install.sh has been manually deleted. please re-upload the installation package",
+    "en_US": "install.sh not found: {0}. install.sh has been manually deleted. please re-upload the installation package",
+    "zh_CN": "未找到 install.sh: {0}. install.sh 可能被手动删除, 需要重新上传安装包",
+    "arguments": [
+      "installPath"
+    ],
+    "fileName": "src/main/java/org/zstack/zcex/ZceXManager.java"
+  },
+  {
     "raw": "failed to install distributed storage",
     "en_US": "failed to install distributed storage",
     "zh_CN": "",
@@ -352,6 +361,13 @@
     "raw": "xms-cli does not exist",
     "en_US": "xms-cli does not exist",
     "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/zcex/client/ZceXLocalClient.java"
+  },
+  {
+    "raw": "admin_token already exists. You must confirm that the current admin_token is no longer in use, delete the token by command \u0027xms-cli access-token delete\u0027, and try again",
+    "en_US": "admin_token already exists. You must confirm that the current admin_token is no longer in use, delete the token by command \u0027xms-cli access-token delete\u0027, and try again",
+    "zh_CN": "admin_token 已经存在。请确认当前的 admin_token 不再使用，并通过 \u0027xms-cli access-token delete\u0027 删除它，然后重试",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/zcex/client/ZceXLocalClient.java"
   },

@@ -9,6 +9,16 @@
     "fileName": "src/main/java/org/zstack/compute/allocator/AttachedVolumePrimaryStorageAllocatorFlow.java"
   },
   {
+    "raw": "the backup storage[uuid:%s, type:%s] requires bound primary storage, however, the primary storage has not been added",
+    "en_US": "the backup storage[uuid:{0}, type:{1}] requires bound primary storage, however, the primary storage has not been added",
+    "zh_CN": "",
+    "arguments": [
+      "spec.getRequiredBackupStorageUuid()",
+      "bsType"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/allocator/BackupStorageSelectPrimaryStorageAllocatorFlow.java"
+  },
+  {
     "raw": "No host with %s found",
     "en_US": "No host with {0} found",
     "zh_CN": "找不到具有 {0} 的主机",
@@ -165,6 +175,15 @@
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
   },
   {
+    "raw": "the password for the physical machine [%s] is empty. please set a password",
+    "en_US": "the password for the physical machine [{0}] is empty. please set a password",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getHostName()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
+  },
+  {
     "raw": "path cannot be empty",
     "en_US": "path cannot be empty",
     "zh_CN": "",
@@ -207,6 +226,15 @@
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
   },
   {
+    "raw": "the mount point must strictly follow the security pattern: \u0027^[a-zA-Z0-9_\\-./]+$\u0027. this requires: \\n1. only alphanumeric characters [a-z, A-Z, 0-9]\\n2. limited special characters: hyphen (-), underscore (_), period (.), and forward slash (/)\\n3. must be a valid absolute path starting with \u0027/\u0027\\n\\nvalid examples:\\n  /mnt/data\\n  /volumes/drive01\\n  /backup-2023.disk\\n\\ninvalid value detected: \u0027%s\u0027",
+    "en_US": "the mount point must strictly follow the security pattern: \u0027^[a-zA-Z0-9_\\-./]+$\u0027. this requires: \\n1. only alphanumeric characters [a-z, A-Z, 0-9]\\n2. limited special characters: hyphen (-), underscore (_), period (.), and forward slash (/)\\n3. must be a valid absolute path starting with \u0027/\u0027\\n\\nvalid examples:\\n  /mnt/data\\n  /volumes/drive01\\n  /backup-2023.disk\\n\\ninvalid value detected: \u0027{0}\u0027",
+    "zh_CN": "",
+    "arguments": [
+      "mountPoint"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
+  },
+  {
     "raw": "mountPoint should not end with \u0027/\u0027 except root directory",
     "en_US": "mountPoint should not end with \u0027/\u0027 except root directory",
     "zh_CN": "",
@@ -239,6 +267,15 @@
       "self.getUuid()",
       "self.getName()",
       "self.getState()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
+  },
+  {
+    "raw": "host[%s] does not have ipmi device or ipmi does not have address.After config ipmi address, please reconnect host to refresh host ipmi information",
+    "en_US": "host[{0}] does not have ipmi device or ipmi does not have address.After config ipmi address, please reconnect host to refresh host ipmi information",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getHostUuid()"
     ],
     "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
   },
@@ -401,6 +438,17 @@
     "fileName": "src/main/java/org/zstack/compute/host/HostManagerImpl.java"
   },
   {
+    "raw": "failed to get disk devices, because [stderr:%s, stdout:%s, exitErrorMessage:%s]",
+    "en_US": "failed to get disk devices, because [stderr:{0}, stdout:{1}, exitErrorMessage:{2}]",
+    "zh_CN": "",
+    "arguments": [
+      "ret.getStderr()",
+      "ret.getStdout()",
+      "ret.getExitErrorMessage()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/host/HostManagerImpl.java"
+  },
+  {
     "raw": "mountPoint %s is already mount on device %s",
     "en_US": "mountPoint {0} is already mount on device {1}",
     "zh_CN": "",
@@ -457,6 +505,21 @@
       "checker.getStatesForOperation(msg.getMessageName())"
     ],
     "fileName": "src/main/java/org/zstack/compute/vm/AbstractVmInstance.java"
+  },
+  {
+    "raw": "cpu topology is not correct, cpuNum[%s], configured cpuSockets[%s], cpuCores[%s], cpuThreads[%s]; Calculated cpuSockets[%s], cpuCores[%s], cpuThreads[%s]",
+    "en_US": "cpu topology is not correct, cpuNum[{0}], configured cpuSockets[{1}], cpuCores[{2}], cpuThreads[{3}]; Calculated cpuSockets[{4}], cpuCores[{5}], cpuThreads[{6}]",
+    "zh_CN": "",
+    "arguments": [
+      "cpuNum",
+      "cpuSockets",
+      "cpuCores",
+      "cpuThreads",
+      "socketNum",
+      "coreNum",
+      "threadNum"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/CpuTopology.java"
   },
   {
     "raw": "the host[uuid:%s] is not connected",
@@ -635,6 +698,18 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmDestroyOnHypervisorFlow.java"
   },
   {
+    "raw": "cannot find the iso[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is running\\n2. if the backup storage is in connected status, if not, try reconnecting it",
+    "en_US": "cannot find the iso[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\\n1. if the backup storage is attached to the zone where the VM[name: {2}, uuid:{3}] is running\\n2. if the backup storage is in connected status, if not, try reconnecting it",
+    "zh_CN": "",
+    "arguments": [
+      "iso.getUuid()",
+      "host.getZoneUuid()",
+      "spec.getVmInventory().getName()",
+      "spec.getVmInventory().getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmDownloadIsoFlow.java"
+  },
+  {
     "raw": "hostname is empty",
     "en_US": "hostname is empty",
     "zh_CN": "",
@@ -704,6 +779,29 @@
       "label"
     ],
     "fileName": "src/main/java/org/zstack/compute/vm/VmHostnameUtils.java"
+  },
+  {
+    "raw": "cannot find the image[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\\n2. if the backup storage is in connected status, if not, try reconnecting it",
+    "en_US": "cannot find the image[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\\n1. if the backup storage is attached to the zone where the VM[name: {2}, uuid:{3}] is in\\n2. if the backup storage is in connected status, if not, try reconnecting it",
+    "zh_CN": "",
+    "arguments": [
+      "imageUuid",
+      "spec.getVmInventory().getZoneUuid()",
+      "spec.getVmInventory().getName()",
+      "spec.getVmInventory().getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmImageSelectBackupStorageFlow.java"
+  },
+  {
+    "raw": "cannot find the image[uuid:%s] in any connected backup storage. check below:\\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\\n2. if the backup storage is in connected status, if not, try reconnecting it",
+    "en_US": "cannot find the image[uuid:{0}] in any connected backup storage. check below:\\n1. if the backup storage is attached to the zone where the VM[name: {1}, uuid:{2}] is in\\n2. if the backup storage is in connected status, if not, try reconnecting it",
+    "zh_CN": "",
+    "arguments": [
+      "imageUuid",
+      "spec.getVmInventory().getName()",
+      "spec.getVmInventory().getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmImageSelectBackupStorageFlow.java"
   },
   {
     "raw": "no backup storage attached to the zone[uuid:%s] contains the ISO[uuid:%s]",
@@ -813,6 +911,16 @@
     "zh_CN": "无法更改为分布式端口组。分布式端口组[uuid：{0}]是系统网络，但虚拟机是一个用户虚拟机",
     "arguments": [
       "l3NetworkVO.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
+  },
+  {
+    "raw": "unable to change to L3 network[uuid:%s] whose l2Network is not attached to the host[uuid:%s]",
+    "en_US": "unable to change to L3 network[uuid:{0}] whose l2Network is not attached to the host[uuid:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getDestL3NetworkUuid()",
+      "hostUuid"
     ],
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
@@ -993,6 +1101,16 @@
     "arguments": [
       "msg.getVmInstanceUuid()",
       "msg.getL3NetworkUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
+  },
+  {
+    "raw": "could not delete static ip [%s] for vm [uuid:%s] because it does not exist",
+    "en_US": "could not delete static ip [{0}] for vm [uuid:{1}] because it does not exist",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getStaticIp()",
+      "msg.getVmInstanceUuid()"
     ],
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
@@ -1198,6 +1316,17 @@
     "zh_CN": "无法挂载分布式端口组。分布式端口组[uuid：{0}]是系统网络，但虚拟机是一个用户虚拟机",
     "arguments": [
       "l3NetworkVO.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
+  },
+  {
+    "raw": "unable to attach L3 network[uuid:%s] to VM[uuid:%s] whose l2Network is not attached to the host[uuid:%s]",
+    "en_US": "unable to attach L3 network[uuid:{0}] to VM[uuid:{1}] whose l2Network is not attached to the host[uuid:{2}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getL3NetworkUuid()",
+      "msg.getVmInstanceUuid()",
+      "hostUuid"
     ],
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
@@ -1622,6 +1751,18 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
+    "raw": "the ISO[uuid:%s] is on backup storage that is not compatible of the primary storage[uuid:%s] where the VM[name:%s, uuid:%s] is on",
+    "en_US": "the ISO[uuid:{0}] is on backup storage that is not compatible of the primary storage[uuid:{1}] where the VM[name:{2}, uuid:{3}] is on",
+    "zh_CN": "",
+    "arguments": [
+      "isoUuid",
+      "psUuid",
+      "self.getName()",
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
+  },
+  {
     "raw": "failed to update vm[uuid\u003d%s] on hypervisor.",
     "en_US": "failed to update vm[uuid\u003d{0}] on hypervisor.",
     "zh_CN": "更新虚拟机 {0} 失败",
@@ -1697,6 +1838,15 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
+    "raw": "Unable to find L3Network[uuid:%s] to start the current vm, it may have been deleted, Operation suggestion: delete this vm, recreate a new vm",
+    "en_US": "Unable to find L3Network[uuid:{0}] to start the current vm, it may have been deleted, Operation suggestion: delete this vm, recreate a new vm",
+    "zh_CN": "",
+    "arguments": [
+      "inv.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
+  },
+  {
     "raw": "One vm cannot create %s CDROMs, vm can only add %s CDROMs",
     "en_US": "One vm cannot create {0} CDROMs, vm can only add {1} CDROMs",
     "zh_CN": "一个VM无法创建{0}个CDROM，VM只能添加{1}个CDROM",
@@ -1741,6 +1891,38 @@
     "arguments": [
       "self.getUuid()",
       "msg.getPriority()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
+  },
+  {
+    "raw": "unable to reset volume[uuid:%s] to origin image[uuid:%s], the vm[uuid:%s] volume attached to is not in Stopped state, current state is %s",
+    "en_US": "unable to reset volume[uuid:{0}] to origin image[uuid:{1}], the vm[uuid:{2}] volume attached to is not in Stopped state, current state is {3}",
+    "zh_CN": "",
+    "arguments": [
+      "self.getRootVolumeUuid()",
+      "self.getImageUuid()",
+      "self.getUuid()",
+      "self.getState()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
+  },
+  {
+    "raw": "unable to reset volume[uuid:%s] to origin image[uuid:%s], cannot find image cache.",
+    "en_US": "unable to reset volume[uuid:{0}] to origin image[uuid:{1}], cannot find image cache.",
+    "zh_CN": "",
+    "arguments": [
+      "rootVolume.getUuid()",
+      "rootVolume.getRootImageUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
+  },
+  {
+    "raw": "unable to reset volume[uuid:%s] to origin image[uuid:%s], for image type is ISO",
+    "en_US": "unable to reset volume[uuid:{0}] to origin image[uuid:{1}], for image type is ISO",
+    "zh_CN": "",
+    "arguments": [
+      "rootVolume.getUuid()",
+      "rootVolume.getRootImageUuid()"
     ],
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
@@ -2111,6 +2293,18 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
+    "raw": "conflict hostname in system tag[%s]; there has been a VM[uuid:%s] having hostname[%s] on L3 network[uuid:%s]",
+    "en_US": "conflict hostname in system tag[{0}]; there has been a VM[uuid:{1}] having hostname[{2}] on L3 network[uuid:{3}]",
+    "zh_CN": "",
+    "arguments": [
+      "tag",
+      "sameTag.getResourceUuid()",
+      "hostname",
+      "l3Uuid"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
+  },
+  {
     "raw": "invalid boot device[%s] in boot order[%s]",
     "en_US": "invalid boot device[{0}] in boot order[{1}]",
     "zh_CN": "在引导顺序[{1}]中存在无效的引导设备[{0}]",
@@ -2285,6 +2479,15 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
+    "raw": "the resource[uuid:%s] is a ROOT volume, you cannot change its owner, instead,change the owner of the VM the root volume belongs to",
+    "en_US": "the resource[uuid:{0}] is a ROOT volume, you cannot change its owner, instead,change the owner of the VM the root volume belongs to",
+    "zh_CN": "",
+    "arguments": [
+      "ref.getResourceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
+  },
+  {
     "raw": "failed to find host of vm[uuid\u003d%s]",
     "en_US": "failed to find host of vm[uuid\u003d{0}]",
     "zh_CN": "",
@@ -2294,6 +2497,23 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceUtils.java"
   },
   {
+    "raw": "Failed to instantiate volume. Because vm\u0027s host[uuid: %s] and allocated primary storage[uuid: %s] is not connected.",
+    "en_US": "Failed to instantiate volume. Because vm\u0027s host[uuid: {0}] and allocated primary storage[uuid: {1}] is not connected.",
+    "zh_CN": "",
+    "arguments": [
+      "spec.getDestHost().getUuid()",
+      "pinv.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstantiateAttachingVolumeFlow.java"
+  },
+  {
+    "raw": "the diskAO parameter is incorrect. need to set one of the following properties, and can only be one of them: size, templateUuid, diskOfferingUuid, sourceUuid-sourceType",
+    "en_US": "the diskAO parameter is incorrect. need to set one of the following properties, and can only be one of them: size, templateUuid, diskOfferingUuid, sourceUuid-sourceType",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstantiateOtherDiskFlow.java"
+  },
+  {
     "raw": "the disk does not support attachment. disk type is %s",
     "en_US": "the disk does not support attachment. disk type is {0}",
     "zh_CN": "",
@@ -2301,6 +2521,16 @@
       "diskAO.getSourceType()"
     ],
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstantiateOtherDiskFlow.java"
+  },
+  {
+    "raw": "vm current state[%s], modify virtio requires the vm state[%s]",
+    "en_US": "vm current state[{0}], modify virtio requires the vm state[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "state",
+      "VmInstanceState.Stopped"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmNicManagerImpl.java"
   },
   {
     "raw": "duplicate nic params",

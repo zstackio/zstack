@@ -30,6 +30,16 @@
     "fileName": "src/main/java/org/zstack/storage/backup/sftp/SftpBackupStorage.java"
   },
   {
+    "raw": "the uuid of sftpBackupStorage agent changed[expected:%s, actual:%s], it\u0027s most likely the agent was manually restarted. Issue a reconnect to sync the status",
+    "en_US": "the uuid of sftpBackupStorage agent changed[expected:{0}, actual:{1}], it\u0027s most likely the agent was manually restarted. Issue a reconnect to sync the status",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "ret.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/backup/sftp/SftpBackupStorage.java"
+  },
+  {
     "raw": "unable to connect to SimpleHttpBackupStorage[url:%s], because %s",
     "en_US": "unable to connect to SimpleHttpBackupStorage[url:{0}], because {1}",
     "zh_CN": "无法连接到SimpleHttpBackupStorage[url:{0}]，因为{1}",

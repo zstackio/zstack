@@ -20,6 +20,13 @@
     "fileName": "src/main/java/org/zstack/directory/DirectoryApiInterceptor.java"
   },
   {
+    "raw": "name contains unsupported characters, name can only contain Chinese characters, English letters, numbers, spaces, and the following characters: ()（）【】@._-+ ",
+    "en_US": "name contains unsupported characters, name can only contain Chinese characters, English letters, numbers, spaces, and the following characters: ()（）【】@._-+ ",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/directory/DirectoryApiInterceptor.java"
+  },
+  {
     "raw": "circular dependency detected, directory %s and directory %s will cause circular dependency",
     "en_US": "circular dependency detected, directory {0} and directory {1} will cause circular dependency",
     "zh_CN": "检测到循环依赖，目录{0}和目录{1}将导致循环依赖",

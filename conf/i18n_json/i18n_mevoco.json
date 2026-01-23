@@ -1,5 +1,25 @@
 [
   {
+    "raw": "More than one BackupStorage on the same host identified by hostname. There has been a SftpBackupStorage [hostname:%s] existing. The BackupStorage type to be added is %s. ",
+    "en_US": "More than one BackupStorage on the same host identified by hostname. There has been a SftpBackupStorage [hostname:{0}] existing. The BackupStorage type to be added is {1}. ",
+    "zh_CN": "多个 BackupStorage 在相同的主机上被识别，已经存在一个 SftpBackupStorage[hostname:{0}]。要添加的 BackupStorage 类型是{1}。",
+    "arguments": [
+      "hostname",
+      "newBS"
+    ],
+    "fileName": "src/main/java/org/zstack/apimediator/ApiValidator.java"
+  },
+  {
+    "raw": "More than one BackupStorage on the same host identified by hostname. There has been an ImageStoreBackupStorage [hostname:%s] existing. The BackupStorage type to be added is %s. ",
+    "en_US": "More than one BackupStorage on the same host identified by hostname. There has been an ImageStoreBackupStorage [hostname:{0}] existing. The BackupStorage type to be added is {1}. ",
+    "zh_CN": "多个 BackupStorage 在相同主机上被识别，已经存在一个 ImageStoreBackupStorage[hostname:{0}]。要添加的 BackupStorage 类型是{1}",
+    "arguments": [
+      "hostname",
+      "newBS"
+    ],
+    "fileName": "src/main/java/org/zstack/apimediator/ApiValidator.java"
+  },
+  {
     "raw": "VM [uuid: %s] has already been added to affinityGroup [uuid: %s]",
     "en_US": "VM [uuid: {0}] has already been added to affinityGroup [uuid: {1}]",
     "zh_CN": "VM[uuid:{0}已经被添加到亲和组[uuid:{1}]中。]",
@@ -180,6 +200,16 @@
     "fileName": "src/main/java/org/zstack/compute/bonding/HostNetworkBondingUtils.java"
   },
   {
+    "raw": "cannot assign xmit_hash_policy [%s] for mode [%s], because only mode 802.3ad support specifying different xmit_hash_policys",
+    "en_US": "cannot assign xmit_hash_policy [{0}] for mode [{1}], because only mode 802.3ad support specifying different xmit_hash_policys",
+    "zh_CN": "",
+    "arguments": [
+      "xmitHashPolicy",
+      "mode"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/bonding/HostNetworkBondingUtils.java"
+  },
+  {
     "raw": "xmit_hash_policy for mode [%s] should not be null",
     "en_US": "xmit_hash_policy for mode [{0}] should not be null",
     "zh_CN": "",
@@ -233,6 +263,24 @@
     "fileName": "src/main/java/org/zstack/compute/bonding/HostNetworkBondingUtils.java"
   },
   {
+    "raw": "bonding card can not have occupied interfaces, which was already been used by bonding[uuid:%s]",
+    "en_US": "bonding card can not have occupied interfaces, which was already been used by bonding[uuid:{0}]",
+    "zh_CN": "绑定卡不能有被占用的接口，该接口已被绑定[uuid:{0}]使用",
+    "arguments": [
+      "bondingUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/bonding/HostNetworkBondingUtils.java"
+  },
+  {
+    "raw": "bonding card can not have interfaces that has been used as a network bridge, which was already been used by host[%s]",
+    "en_US": "bonding card can not have interfaces that has been used as a network bridge, which was already been used by host[{0}]",
+    "zh_CN": "绑定卡不能有被使用的网络桥接接口，该接口已被主机[uuid:{0}]使用",
+    "arguments": [
+      "hostUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/bonding/HostNetworkBondingUtils.java"
+  },
+  {
     "raw": "bonding card can not have interfaces that has been pass-through",
     "en_US": "bonding card can not have interfaces that has been pass-through",
     "zh_CN": "",
@@ -245,6 +293,15 @@
     "zh_CN": "",
     "arguments": [
       "hostUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/bonding/HostNetworkBondingUtils.java"
+  },
+  {
+    "raw": "bonding card can not have [%s] interfaces,it must be the number between[1~8]",
+    "en_US": "bonding card can not have [{0}] interfaces,it must be the number between[1~8]",
+    "zh_CN": "绑定卡不能有[{0}]个接口，该接口数量必须在[1~8]之间",
+    "arguments": [
+      "size"
     ],
     "fileName": "src/main/java/org/zstack/compute/bonding/HostNetworkBondingUtils.java"
   },
@@ -541,12 +598,31 @@
     "fileName": "src/main/java/org/zstack/compute/host/MevocoHostBase.java"
   },
   {
+    "raw": "failed to allocate pci device on host[uuid:%s], because there are not enough pci devices available",
+    "en_US": "failed to allocate pci device on host[uuid:{0}], because there are not enough pci devices available",
+    "zh_CN": "无法在主机[uuid:{0}]上分配 PCI 设备，因为没有足够的 PCI 设备可用",
+    "arguments": [
+      "msg.getHostUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/host/MevocoHostBase.java"
+  },
+  {
     "raw": "networkInterface[name:%s] of host[uuid:%s] can not find",
     "en_US": "networkInterface[name:{0}] of host[uuid:{1}] can not find",
     "zh_CN": "找不到主机[uuid：{1}]的网络接口[名称：{0}]",
     "arguments": [
       "msg.getNetworkInterfaceName()",
       "msg.getHostUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/host/MevocoHostBase.java"
+  },
+  {
+    "raw": "only support do live snapshot on vm state[%s], but vm is on [%s] state",
+    "en_US": "only support do live snapshot on vm state[{0}], but vm is on [{1}] state",
+    "zh_CN": "仅支持对处于[{0}]状态的虚拟机进行快照，但虚拟机处于[{1}]状态",
+    "arguments": [
+      "vmInstanceVO.getUuid()",
+      "vmInstanceVO.getState()"
     ],
     "fileName": "src/main/java/org/zstack/compute/host/MevocoHostBase.java"
   },
@@ -1012,6 +1088,26 @@
     "fileName": "src/main/java/org/zstack/compute/vdpa/KVMRealizeL2NoVlanOvsDpdkBackend.java"
   },
   {
+    "raw": "could not ungenerate pci device[uuid:%s], becausethere are another l2[uuid:%s] use the physical network interface attached to cluster",
+    "en_US": "could not ungenerate pci device[uuid:{0}], becausethere are another l2[uuid:{1}] use the physical network interface attached to cluster",
+    "zh_CN": "无法取消生成PCI设备[uuid：{0}]，因为该物理网络接口被其他二层网络[uuid：{1}]使用",
+    "arguments": [
+      "msg.getPciDeviceUuid()",
+      "l2Uuids"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vdpa/VmVdpaNicApiInterceptor.java"
+  },
+  {
+    "raw": "could not generate pci device[uuid:%s], becausethere are another l2[uuid:%s] use the physical network interface attached to cluster",
+    "en_US": "could not generate pci device[uuid:{0}], because there are another l2[uuid:{1}] use the physical network interface attached to cluster",
+    "zh_CN": "无法生成PCI设备[uuid：{0}]，因为该物理网络接口被其他二层网络[uuid：{1}]使用",
+    "arguments": [
+      "msg.getPciDeviceUuid()",
+      "l2Uuids"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vdpa/VmVdpaNicApiInterceptor.java"
+  },
+  {
     "raw": "only %s support vdpa",
     "en_US": "only {0} support vdpa",
     "zh_CN": "仅{0}支持VDPA",
@@ -1116,6 +1212,13 @@
     "fileName": "src/main/java/org/zstack/compute/vm/ChangeVmPasswordFlow.java"
   },
   {
+    "raw": "not account preference found,  send change password cmd to the host!",
+    "en_US": "not account preference found,  send change password cmd to the host!",
+    "zh_CN": "没有发现 account preference，不能发送更改密码的指令到这个主机上",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/compute/vm/ChangeVmPasswordFlow.java"
+  },
+  {
     "raw": "fail to attach virtio driver because read md5 of file[%s] fail in mn[uuid:%s]: file not found on classpath",
     "en_US": "fail to attach virtio driver because read md5 of file[{0}] fail in mn[uuid:{1}]: file not found on classpath",
     "zh_CN": "无法附加virtio驱动程序，因为在Mn[uuid：{1}]中读取文件[{0}]的MD5失败：在类路径中找不到文件",
@@ -1197,6 +1300,39 @@
     "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
   },
   {
+    "raw": "vm[uuid:%s] is in cluster[uuid:%s], but there is no available host in the cluster, cannot change image for the vm",
+    "en_US": "vm[uuid:{0}] is in cluster[uuid:{1}], but there is no available host in the cluster, cannot change image for the vm",
+    "zh_CN": "VM[uuid：{0}]位于集群[uuid：{1}]中，但集群中没有可用的主机，无法更改虚拟机镜像",
+    "arguments": [
+      "self.getUuid()",
+      "self.getClusterUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
+  },
+  {
+    "raw": "unable to allocate hosts, no host meets the following conditions: clusterUuid\u003d%s hostUuid\u003d%s cpu\u003d%d memoryCapacity\u003d%d L3NetworkUuids\u003d%s",
+    "en_US": "unable to allocate hosts, no host meets the following conditions: clusterUuid\u003d{0} hostUuid\u003d{1} cpu\u003d{2} memoryCapacity\u003d{3} L3NetworkUuids\u003d{4}",
+    "zh_CN": "无法分配主机，无满足以下条件的主机：集群uuid\u003d{0} 主机uuid\u003d{1} CPU\u003d{2} 内存容量\u003d{3} L3NetworkUuids\u003d{4}",
+    "arguments": [
+      "amsg.getClusterUuids()",
+      "amsg.getHostUuid()",
+      "amsg.getCpuCapacity()",
+      "amsg.getMemoryCapacity()",
+      "amsg.getL3NetworkUuids()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
+  },
+  {
+    "raw": "can not find backup storage, unable to commit volume snapshot[psUuid:%s] as image, destination required PS uuid:%s",
+    "en_US": "can not find backup storage, unable to commit volume snapshot[psUuid:{0}] as image, destination required PS uuid:{1}",
+    "zh_CN": "无法找到数据存储，无法将卷快照[psUuid：{0}]作为镜像，目标需要的主存储 uuid：{1}",
+    "arguments": [
+      "vol.getPrimaryStorageUuid()",
+      "finalRequiredPsUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
+  },
+  {
     "raw": "direction must be set to in or out",
     "en_US": "direction must be set to in or out",
     "zh_CN": "方法必须设置in或者out",
@@ -1238,6 +1374,15 @@
     "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
   },
   {
+    "raw": "not dest host found in db by uuid: %s, can\u0027t send change password cmd to the host!",
+    "en_US": "not dest host found in db by uuid: {0}, can\u0027t send change password cmd to the host!",
+    "zh_CN": "无法在数据库中找到该主机的uuid：{0}，无法向该主机发送修改密码命令",
+    "arguments": [
+      "amsg.getVmInstanceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
+  },
+  {
     "raw": "state is not correct while change password.",
     "en_US": "state is not correct while change password.",
     "zh_CN": "该状态不支持修改密码",
@@ -1251,6 +1396,15 @@
     "arguments": [
       "vmInstanceUuid",
       "shareableVolumeUuids"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
+  },
+  {
+    "raw": "failed to convert vm to templated vm, because the vm has scheduled jobs [%s]",
+    "en_US": "failed to convert vm to templated vm, because the vm has scheduled jobs [{0}]",
+    "zh_CN": "转换虚拟机为模板虚拟机失败，该虚拟机有计划任务[{0}]",
+    "arguments": [
+      "jobsBuilder.toString()"
     ],
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
@@ -1274,6 +1428,13 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
+    "raw": "can not set primaryStorageUuidForRootVolume or primaryStorageUuidForDataVolume or rootVolumeSystemTags or dataVolumeSystemTags when diskAOs is not empty",
+    "en_US": "can not set primaryStorageUuidForRootVolume or primaryStorageUuidForDataVolume or rootVolumeSystemTags or dataVolumeSystemTags when diskAOs is not empty",
+    "zh_CN": "不能在 diskAOs 不为空的情况下设置 primaryStorageUuidForRootVolume 或 primaryStorageUuidForDataVolume 或 rootVolumeSystemTags 或 dataVolumeSystemTags",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
+  },
+  {
     "raw": "invalid json format, causes: %s",
     "en_US": "invalid json format, causes: {0}",
     "zh_CN": "无效的JSON格式，原因：{0}",
@@ -1287,6 +1448,19 @@
     "en_US": "The operation only allows on user vm",
     "zh_CN": "该操作仅允许在用户虚拟机上执行",
     "arguments": [],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
+  },
+  {
+    "raw": "there are not enough capacity for full vm clone to vm[uuid: %s], volumes[uuid: %s] on primary storage[uuid: %s] required: %s bytes, current available capacity is %s bytes",
+    "en_US": "there are not enough capacity for full vm clone to vm[uuid: {0}], volumes[uuid: {1}] on primary storage[uuid: {2}] required: {3} bytes, current available capacity is {4} bytes",
+    "zh_CN": "虚拟机克隆失败，因为存储空间不足，虚拟机[uuid:{0}]的云盘[uuid:{1}]在存储[uuid:{2}]上所需空间为 {3} 字节，当前可用空间为 {4} 字节",
+    "arguments": [
+      "vmInstanceVO.getUuid()",
+      "volumeVOS.stream().map(VolumeVO::getUuid).collect(Collectors.toList())",
+      "primaryStorageUuid",
+      "(totalCapacity - snapshotsCapacity) * size",
+      "primaryStorageVO.getCapacity().getAvailableCapacity()"
+    ],
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
@@ -1449,6 +1623,16 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
+    "raw": "the cache of a templated vmInstance[uuid:%s] can contain only one or zero snapshot groups. the current number of snapshot groups is %d.",
+    "en_US": "the cache of a templated vmInstance[uuid:{0}] can contain only one or zero snapshot groups. the current number of snapshot groups is {1}.",
+    "zh_CN": "模板虚拟机[uuid：{0}] 的快照组只能包含一个或零个快照组，当前快照组数量为 {1}",
+    "arguments": [
+      "msg.getTemplatedVmInstanceUuid()",
+      "groups.size()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
+  },
+  {
     "raw": "the templated vmInstance[uuid:%s] is not exist",
     "en_US": "the templated vmInstance[uuid:{0}] is not exist",
     "zh_CN": "",
@@ -1588,12 +1772,36 @@
     "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
   },
   {
+    "raw": "unmatched zone detected, host[uuid: %s, zone uuid: %s]\u0027s zone is different from host sheduling rule group[uuid: %s, zone uuid: %s]",
+    "en_US": "unmatched zone detected, host[uuid: {0}, zone uuid: {1}]\u0027s zone is different from host sheduling rule group[uuid: {2}, zone uuid: {3}]",
+    "zh_CN": "未匹配的区被检测到，主机 [uuid：{0}，区域uuid：{1}] 的区域与主机调度组 [uuid：{2}，区域uuid：{3}] 的区域不同",
+    "arguments": [
+      "hostVO.getUuid()",
+      "hostVO.getZoneUuid()",
+      "hostGroup.getUuid()",
+      "hostGroup.getZoneUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
+  },
+  {
     "raw": "vm[uuid:%s] already attached to vm scheduling group[uuid:%s]",
     "en_US": "vm[uuid:{0}] already attached to vm scheduling group[uuid:{1}]",
     "zh_CN": "虚拟机[uuid：{0}]已连接到虚拟机调度组[uuid：{1}]",
     "arguments": [
       "msg.getVmUuid()",
       "refVO.getVmGroupUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
+  },
+  {
+    "raw": "unmatched zone detected, vm[uuid: %s, zone uuid: %s]\u0027s zone is different from vm sheduling rule group[uuid: %s, zone uuid: %s]",
+    "en_US": "unmatched zone detected, vm[uuid: {0}, zone uuid: {1}]\u0027s zone is different from vm sheduling rule group[uuid: {2}, zone uuid: {3}]",
+    "zh_CN": "未匹配的区被检测到，虚拟机 [uuid：{0}，区域uuid：{1}] 的区域与虚拟机调度组 [uuid：{2}，区域uuid：{3}] 的区域不同",
+    "arguments": [
+      "vm.getUuid()",
+      "vm.getZoneUuid()",
+      "groupVO.getUuid()",
+      "groupVO.getZoneUuid()"
     ],
     "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
   },
@@ -1630,6 +1838,97 @@
     "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
   },
   {
+    "raw": "the vm scheduling group has already had a vms antiaffinity from hosts scheduling rule attached. the number of hosts available for the vm in the scheduling group to run is less than that of the vm in the group. you cannot attach a vm antiaffinity from Each Other scheduling rule to the group",
+    "en_US": "the vm scheduling group has already had a vms antiaffinity from hosts scheduling rule attached. the number of hosts available for the vm in the scheduling group to run is less than that of the vm in the group. you cannot attach a vm antiaffinity from Each Other scheduling rule to the group",
+    "zh_CN": "该虚拟机调度组已绑定虚拟机反亲和性调度策略，不可绑定其它虚拟机调度策略",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
+  },
+  {
+    "raw": "the vm scheduling group has already had a vm antiaffinity from each other scheduling rule attached. the number of hosts available for the vm in the scheduling group to run is less than that of the vm in the group. you cannot attach a vms antiaffinity from Hosts scheduling policy to the group.",
+    "en_US": "the vm scheduling group has already had a vm antiaffinity from each other scheduling rule attached. the number of hosts available for the vm in the scheduling group to run is less than that of the vm in the group. you cannot attach a vms antiaffinity from Hosts scheduling policy to the group.",
+    "zh_CN": "该虚拟机调度组已绑定虚拟机反亲和性调度策略，不可绑定其它虚拟机调度策略",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
+  },
+  {
+    "raw": "the vm scheduling group[uuid:%s] has already had a vm antiaffinity from each other scheduling rule attached. attaching another one is not allowed.",
+    "en_US": "the vm scheduling group[uuid:{0}] has already had a vm antiaffinity from each other scheduling rule attached. attaching another one is not allowed.",
+    "zh_CN": "该虚拟机调度组已绑定虚拟机反亲和性调度策略，不可绑定其它虚拟机调度策略",
+    "arguments": [
+      "vmGroupUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
+  },
+  {
+    "raw": "the vm scheduling group[uuid:%s] has already had a vm affinitive to each other scheduling rule attached. Attaching a vm antiaffinity from each other scheduling rule is not allowed.",
+    "en_US": "the vm scheduling group[uuid:{0}] has already had a vm affinitive to each other scheduling rule attached. Attaching a vm antiaffinity from each other scheduling rule is not allowed.",
+    "zh_CN": "该虚拟机调度组 {0} 已绑定虚拟机亲和性调度策略，不可绑定其它虚拟机调度策略",
+    "arguments": [
+      "vmGroupUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
+  },
+  {
+    "raw": "the vm scheduling group[uuid:%s] has already had a vm affinitive to each other scheduling rule attached.attaching another one is not allowed.",
+    "en_US": "the vm scheduling group[uuid:{0}] has already had a vm affinitive to each other scheduling rule attached.attaching another one is not allowed.",
+    "zh_CN": "该虚拟机调度组 {0} 已绑定虚拟机亲和性调度策略，不可绑定其它虚拟机调度策略",
+    "arguments": [
+      "vmGroupUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
+  },
+  {
+    "raw": "the vm scheduling group[uuid:%s] has already had a vm exclusive from each other scheduling rule attached. Attaching a vm affinitive to each other scheduling policy is not allowed.",
+    "en_US": "the vm scheduling group[uuid:{0}] has already had a vm exclusive from each other scheduling rule attached. Attaching a vm affinitive to each other scheduling policy is not allowed.",
+    "zh_CN": "该虚拟机调度组 {0} 已绑定虚拟机独占性调度策略，不可绑定其它虚拟机调度策略",
+    "arguments": [
+      "vmGroupUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
+  },
+  {
+    "raw": "the vm scheduling group[uuid:%s] has already had a executed exclusive vm or affinitive vm scheduling policy attached. you cannot attach either of the two scheduling policies that require execution to the group again",
+    "en_US": "the vm scheduling group[uuid:{0}] has already had a executed exclusive vm or affinitive vm scheduling policy attached. you cannot attach either of the two scheduling policies that require execution to the group again",
+    "zh_CN": "该虚拟机调度组 {0} 已绑定虚拟机执行调度策略，不可绑定其它虚拟机调度策略",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
+  },
+  {
+    "raw": "the vm scheduling group[uuid:%s] has already had a vms affinitive to hosts scheduling rule attached. you cannot attach another one to the group again.",
+    "en_US": "the vm scheduling group[uuid:{0}] has already had a vms affinitive to hosts scheduling rule attached. you cannot attach another one to the group again.",
+    "zh_CN": "该虚拟机调度组 {0} 已绑定虚拟机亲和性调度策略，不可绑定其它虚拟机调度策略",
+    "arguments": [
+      "vmGroupUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
+  },
+  {
+    "raw": "the vm scheduling group[uuid:%s] has already had a vm antiaffinity from host scheduling rule attached. you cannot attach a vms affinitive to host scheduling rule to the group.",
+    "en_US": "the vm scheduling group[uuid:{0}] has already had a vm antiaffinity from host scheduling rule attached. you cannot attach a vms affinitive to host scheduling rule to the group.",
+    "zh_CN": "该虚拟机调度组 {0} 已绑定虚拟机反亲和性调度策略，不可绑定其它虚拟机调度策略",
+    "arguments": [
+      "vmGroupUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
+  },
+  {
+    "raw": "the vm scheduling group[uuid:%s] has already had a vm affinitive to hosts scheduling rule attached. you cannot attach a vm antiaffinity from hosts scheduling rule to the group.",
+    "en_US": "the vm scheduling group[uuid:{0}] has already had a vm affinitive to hosts scheduling rule attached. you cannot attach a vm antiaffinity from hosts scheduling rule to the group.",
+    "zh_CN": "该虚拟机调度组 {0} 已绑定虚拟机亲和性调度策略，不可绑定其它虚拟机调度策略",
+    "arguments": [
+      "vmGroupUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
+  },
+  {
+    "raw": "the vm scheduling group has already had a vm antiaffinity from each other scheduling rule attached. the number of hosts available for the vm in the scheduling group to run is less than that of the vm in the group. you cannot attach a vms affinitive to hosts scheduling policy to the group.",
+    "en_US": "the vm scheduling group has already had a vm antiaffinity from each other scheduling rule attached. the number of hosts available for the vm in the scheduling group to run is less than that of the vm in the group. you cannot attach a vms affinitive to hosts scheduling policy to the group.",
+    "zh_CN": "该虚拟机调度组已绑定虚拟机反亲和性调度策略，无法绑定其它虚拟机调度策略",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleApiInterceptor.java"
+  },
+  {
     "raw": "can not satisfied vm scheduling rule group conditions",
     "en_US": "can not satisfied vm scheduling rule group conditions",
     "zh_CN": "无法满足VM调度规则组条件",
@@ -1648,6 +1947,17 @@
     "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleGroupBase.java"
   },
   {
+    "raw": "vm[uuid:%s] is now running on host[uuid:%s],which does not comply with the scheduling rule associated with vm scheduling group[uuid:%s].",
+    "en_US": "vm[uuid:{0}] is now running on host[uuid:{1}],which does not comply with the scheduling rule associated with vm scheduling group[uuid:{2}].",
+    "zh_CN": "虚拟机[uuid：{0}]现在运行在主机[uuid：{1}]，该主机不符合虚拟机调度组[uuid：{2}]关联的调度规则。",
+    "arguments": [
+      "vmInv.getUuid()",
+      "hostUuid",
+      "refVO.getVmGroupUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleGroupBase.java"
+  },
+  {
     "raw": "hostGroup[uuid:%s] is no host",
     "en_US": "hostGroup[uuid:{0}] is no host",
     "zh_CN": "主机组[uuid：{0}]不是主机",
@@ -1655,6 +1965,57 @@
       "msg.getVmGroupUuid()"
     ],
     "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleGroupBase.java"
+  },
+  {
+    "raw": "vm[uuid:%s] is now running on host[uuid:%s], which does not comply with the scheduling rule[%s] associated with vm scheduling group[uuid:%s].",
+    "en_US": "vm[uuid:{0}] is now running on host[uuid:{1}], which does not comply with the scheduling rule[{2}] associated with vm scheduling group[uuid:{3}].",
+    "zh_CN": "虚拟机[uuid：{0}]现在运行在主机[uuid：{1}]，该主机不符合虚拟机调度组[uuid：{3}]关联的调度规则[{2}]",
+    "arguments": [
+      "msg.getVmUuid()",
+      "hostUuid",
+      "VMSchedulingRuleType.AFFINITY.toString()",
+      "msg.getVmGroupUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleGroupBase.java"
+  },
+  {
+    "raw": "vm[uuid:%s] is now running on host[uuid:%s],which does not comply with the scheduling rule[%s] associated with vm scheduling group[uuid:%s].",
+    "en_US": "vm[uuid:{0}] is now running on host[uuid:{1}],which does not comply with the scheduling rule[{2}] associated with vm scheduling group[uuid:{3}].",
+    "zh_CN": "虚拟机[uuid：{0}]现在运行在主机[uuid：{1}]，该主机不符合虚拟机调度组[uuid：{3}]关联的调度规则[{2}]",
+    "arguments": [
+      "msg.getVmUuid()",
+      "hostUuid",
+      "VMSchedulingRuleType.ANTIAFFINITY.toString()",
+      "msg.getVmGroupUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleGroupBase.java"
+  },
+  {
+    "raw": "cannot find the host scheduling group[uuid:%s], it may have been deleted",
+    "en_US": "cannot find the host scheduling group[uuid:{0}], it may have been deleted",
+    "zh_CN": "无法找到主机调度组[uuid：{0}]，可能已被删除",
+    "arguments": [
+      "msg.getHostGroupUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleManagerImpl.java"
+  },
+  {
+    "raw": "cannot find the vm scheduling rule[uuid:%s], it may have been deleted",
+    "en_US": "cannot find the vm scheduling rule[uuid:{0}], it may have been deleted",
+    "zh_CN": "无法找到虚拟机调度规则[uuid：{0}]，可能已被删除",
+    "arguments": [
+      "msg.getVmSchedulingRuleUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleManagerImpl.java"
+  },
+  {
+    "raw": "cannot find the vm scheduling group[uuid:%s], it may have been deleted",
+    "en_US": "cannot find the vm scheduling group[uuid:{0}], it may have been deleted",
+    "zh_CN": "无法找到虚拟机调度组[uuid：{0}]，可能已被删除",
+    "arguments": [
+      "msg.getVmSchedulingRuleGroupUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/compute/vmscheduling/VmSchedulingRuleManagerImpl.java"
   },
   {
     "raw": "failed to parse API message: can not parse encryption param with type %s",
@@ -1993,6 +2354,13 @@
     "fileName": "src/main/java/org/zstack/image/ImageMevocoApiInterceptor.java"
   },
   {
+    "raw": "Parse license error,\\n1. check your private key and application code is correct\\n2. check your license is not corrupted\\n3. use zstack-ctl clear_license to clear your licenses and try to reinstall\\n",
+    "en_US": "Parse license error,\\n1. check your private key and application code is correct\\n2. check your license is not corrupted\\n3. use zstack-ctl clear_license to clear your licenses and try to reinstall\\n",
+    "zh_CN": "解析许可证错误,\\n1. 检查您的私钥和应用程序代码是否正确\\n2. 检查您的许可证是否损坏\\n3. 使用zstack-ctl clear_license来清除您的许可证并重新安装",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/license/LicenseChecker.java"
+  },
+  {
     "raw": "the licenseRequestCode is illegal",
     "en_US": "the licenseRequestCode is illegal",
     "zh_CN": "许可证请求代码不合法",
@@ -2206,6 +2574,25 @@
     "fileName": "src/main/java/org/zstack/license/PlatformLicense.java"
   },
   {
+    "raw": "Hybrid platform license is already in use. You should remove Hybrid platform license and hybird add-ons license at the same timeby DeleteLicenseAction with Hybrid license UUID[uuid\u003d%s]",
+    "en_US": "Hybrid platform license is already in use. You should remove Hybrid platform license and hybird add-ons license at the same timeby DeleteLicenseAction with Hybrid license UUID[uuid\u003d{0}]",
+    "zh_CN": "混合平台许可证已使用。您应该同时删除混合平台许可证和混合模块许可证",
+    "arguments": [
+      "licenseUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/license/PlatformLicense.java"
+  },
+  {
+    "raw": "The system\u0027s thumbprint has changed.\\n Detailed errors: %s.\\n If you are setting up a new system or changing an existing system, please follow the commands below:\\n 1. run `zstack-ctl clear_license` to clear and backup old license files\\n    or delete the license file on path %s 2. contact sales@zstack.io to apply a license;\\n 3. run `zstack-ctl install_license -f path/to/your/license`;\\n 4. run `zstack-ctl start` to start management node.\\n",
+    "en_US": "The system\u0027s thumbprint has changed.\\n Detailed errors: {0}.\\n If you are setting up a new system or changing an existing system, please follow the commands below:\\n 1. run `zstack-ctl clear_license` to clear and backup old license files\\n    or delete the license file on path {1} 2. contact sales@zstack.io to apply a license;\\n 3. run `zstack-ctl install_license -f path/to/your/license`;\\n 4. run `zstack-ctl start` to start management node.\\n",
+    "zh_CN": "系统的指纹已改变，详情如下 {0}。如果是新系统或正在改变一个现有的系统，请按照以下命令进行操作：\\n 1. 运行 zstack-ctl clear_license 来清除并备份旧的许可证文件或者删除路径 {1} 的许可证文件 2. 联系 sales@zstack.io 申请许可证; 3. 执行 `zstack-ctl install_license -f path/to/your/license`; 4. 执行 `zstack-ctl start` 启动管理节点",
+    "arguments": [
+      "errors",
+      "info.getPath() !\u003d null ? info.getPath() : \"\""
+    ],
+    "fileName": "src/main/java/org/zstack/license/PlatformLicense.java"
+  },
+  {
     "raw": "Unexpected thumbprint",
     "en_US": "Unexpected thumbprint",
     "zh_CN": "未期望的错误",
@@ -2389,6 +2776,17 @@
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
+    "raw": "the host[uuid:%s]\u0027s operating system %s %s is too old, the QEMU doesn\u0027t support QoS of network or disk IO. Please choose another instance offering with no QoS configuration",
+    "en_US": "the host[uuid:{0}]\u0027s operating system {1} {2} is too old, the QEMU doesn\u0027t support QoS of network or disk IO. Please choose another instance offering with no QoS configuration",
+    "zh_CN": "宿主机[uuid:{0}]的操作系统{1} {2}过旧，QEMU不支持网络或磁盘IO的QoS。请选择另一个实例规格，该实例规格没有QoS配置",
+    "arguments": [
+      "hostUuid",
+      "os.distribution",
+      "os.version"
+    ],
+    "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
+  },
+  {
     "raw": "invalid value[%s], it must be a double greater than 0",
     "en_US": "invalid value[{0}], it must be a double greater than 0",
     "zh_CN": "错误的值[{0}]，必须是一个大于0的双精度值",
@@ -2508,6 +2906,16 @@
     "zh_CN": "",
     "arguments": [
       "msg.getVmInstanceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
+  },
+  {
+    "raw": "failed to create cache for templated vmInstance %s, because %s",
+    "en_US": "failed to create cache for templated vmInstance {0}, because {1}",
+    "zh_CN": "创建模板虚拟机 {0} 的缓存失败，因为 {1}",
+    "arguments": [
+      "chunk.msg.getTemplatedVmInstanceUuid()",
+      "inv.getError().getDetails()"
     ],
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
@@ -2638,6 +3046,15 @@
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
+    "raw": "shareable volume(s)[uuid: %s] attached, not support to group snapshot.",
+    "en_US": "shareable volume(s)[uuid: {0}] attached, not support to group snapshot.",
+    "zh_CN": "共享云盘 [uuid:{0}] 已经挂载，不支持快照组",
+    "arguments": [
+      "sharedVolUuids"
+    ],
+    "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
+  },
+  {
     "raw": "the license has been expired, please renew it",
     "en_US": "the license has been expired, please renew it",
     "zh_CN": "",
@@ -2663,6 +3080,35 @@
       "msg.getPin()",
       "vm.getUuid()",
       "rsp.getError()"
+    ],
+    "fileName": "src/main/java/org/zstack/mevoco/MevocoVolumeBase.java"
+  },
+  {
+    "raw": "can not found in used snapshot tree of volume[uuid: %s]. Maybe no snapshot chain need to validate.",
+    "en_US": "can not found in used snapshot tree of volume[uuid: {0}]. Maybe no snapshot chain need to validate.",
+    "zh_CN": "无法在云盘 [uuid:{0}] 的已使用快照树中找到快照。可能快照链不需要验证",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/mevoco/MevocoVolumeBase.java"
+  },
+  {
+    "raw": "can not found latest snapshot from tree[uuid: %s] of volume[uuid: %s]. Maybe no snapshot chain need to validate.",
+    "en_US": "can not found latest snapshot from tree[uuid: {0}] of volume[uuid: {1}]. Maybe no snapshot chain need to validate.",
+    "zh_CN": "无法在云盘 [uuid:{1}] 的快照树 [uuid: {0}] 中找到最新快照。可能快照链不需要验证",
+    "arguments": [
+      "currentTreeUuid",
+      "msg.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/mevoco/MevocoVolumeBase.java"
+  },
+  {
+    "raw": "can not found snapshots from tree[uuid: %s] of volume[uuid: %s]. Maybe no snapshot chain need to validate.",
+    "en_US": "can not found snapshots from tree[uuid: {0}] of volume[uuid: {1}]. Maybe no snapshot chain need to validate.",
+    "zh_CN": "无法在云盘 [uuid:{1}] 的快照树 [uuid: {0}] 中找到快照。可能快照链不需要验证",
+    "arguments": [
+      "currentTreeUuid",
+      "msg.getUuid()"
     ],
     "fileName": "src/main/java/org/zstack/mevoco/MevocoVolumeBase.java"
   },
@@ -2737,6 +3183,18 @@
     "zh_CN": "DeleteVolumeQoS[{0}]由于帐户权限而忽略。",
     "arguments": [
       "msg.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/mevoco/MevocoVolumeBase.java"
+  },
+  {
+    "raw": "Cannot delete vm\u0027s volume qos on host %s, because the current vm is in state of %s, but support expect states are [%s, %s]",
+    "en_US": "Cannot delete vm\u0027s volume qos on host {0}, because the current vm is in state of {1}, but support expect states are [{2}, {3}]",
+    "zh_CN": "不能在HOST [uuid:{0}] 上删除VM [uuid:{1}] 的云盘QoS，因为VM当前状态为 {2}，但支持的期望状态为[{3}, {4}]",
+    "arguments": [
+      "ivo.getHostUuid()",
+      "ivo.getState()",
+      "VmInstanceState.Running.toString()",
+      "VmInstanceState.Stopped.toString()"
     ],
     "fileName": "src/main/java/org/zstack/mevoco/MevocoVolumeBase.java"
   },
@@ -2908,6 +3366,15 @@
     "fileName": "src/main/java/org/zstack/mevoco/MevocoVolumeFactoryImpl.java"
   },
   {
+    "raw": "ZStack has been paused, reject all API which are not read only. If you really want to call it and known the consequence, add \u0027%s\u0027 into systemTags.",
+    "en_US": "ZStack has been paused, reject all API which are not read only. If you really want to call it and known the consequence, add \u0027{0}\u0027 into systemTags.",
+    "zh_CN": "ZStack已暂停，拒绝所有非只读API。如果您确定要调用它，并已了解其结果的含义，请将\u0027{0}\u0027添加到系统标签中。",
+    "arguments": [
+      "MevocoSystemTags.CONFIRM_CALL_API.getTagFormat()"
+    ],
+    "fileName": "src/main/java/org/zstack/mevoco/PauseWorldApiInterceptor.java"
+  },
+  {
     "raw": "the current version of license does not support modifying this global config [name:%s]",
     "en_US": "the current version of license does not support modifying this global config [name:{0}]",
     "zh_CN": "当前license版本不支持修改此全局设置[name:{0}]",
@@ -2998,6 +3465,15 @@
     "fileName": "src/main/java/org/zstack/monitoring/MonitorManagerImpl.java"
   },
   {
+    "raw": "A resource[name:{resourceName}, uuid:{resourceUuid}, type:{resourceType}]\u0027s monitoring trigger[uuid:{triggerUuid}] changes status to {triggerStatus}",
+    "en_US": "A resource[name:{resourceName}, uuid:{resourceUuid}, type:{resourceType}]\u0027s monitoring trigger[uuid:{triggerUuid}] changes status to {triggerStatus}",
+    "zh_CN": "一个资源[name:{resourceName}, uuid:{resourceUuid}, type:{resourceType}]\u0027s monitoring 触发器 [uuid:{triggerUuid}] 状态改为 {triggerStatus}",
+    "arguments": [
+      "args"
+    ],
+    "fileName": "src/main/java/org/zstack/monitoring/items/AlertText.java"
+  },
+  {
     "raw": "\\n\u003d\u003d\u003d BELOW ARE DETAILS OF THE PREVIOUS ALERT \u003d\u003d\u003d",
     "en_US": "\\n\u003d\u003d\u003d BELOW ARE DETAILS OF THE PREVIOUS ALERT \u003d\u003d\u003d",
     "zh_CN": "\\n\u003d\u003d\u003d 以下是上一次警告内容 \u003d\u003d\u003d",
@@ -3078,6 +3554,22 @@
       "r"
     ],
     "fileName": "src/main/java/org/zstack/monitoring/prometheus/AlertRuleWriter.java"
+  },
+  {
+    "raw": "ALERT:\\n resource[name: %s, uuid: %s, type: %s]\\nevent: %s %s %s\\ncurrent value: %s\\nduration: %s seconds\\n",
+    "en_US": "ALERT:\\n resource[name: {0}, uuid: {1}, type: {2}]\\nevent: {3} {4} {5}\\ncurrent value: {6}\\nduration: {7} seconds\\n",
+    "zh_CN": "告警:\\n 资源[name: {0}, uuid: {1}, type: {2}]\\nevent: {3} {4} {5}\\n当前值: {6}\\n持续时间: {7} 秒\\n",
+    "arguments": [
+      "resourceName",
+      "resourceUuid",
+      "toI18nString(resourceType)",
+      "itemName",
+      "toI18nString(expression.getOperator())",
+      "expression.getConstant()",
+      "value",
+      "tvo.getDuration()"
+    ],
+    "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusAlert.java"
   },
   {
     "raw": "the relativeTime[%s] is invalid, it must be in format of, for example, 10s, 1h",
@@ -3649,6 +4141,15 @@
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
   },
   {
+    "raw": "pci device[uuid:%s] cannot be virtualized into mdevs, make sure it\u0027s enabled and un-attached",
+    "en_US": "pci device[uuid:{0}] cannot be virtualized into mdevs, make sure it\u0027s enabled and un-attached",
+    "zh_CN": "PCI设备 [uuid:{0}] 无法被 MDEV 虚拟化切分，请确保设备已启用且未挂载",
+    "arguments": [
+      "msg.getPciDeviceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
+  },
+  {
     "raw": "pci device[uuid:%s] cannot be virtualized by mdev spec[uuid:%s]",
     "en_US": "pci device[uuid:{0}] cannot be virtualized by mdev spec[uuid:{1}]",
     "zh_CN": "PCI设备[uuid:{0}]无法使用MDEV设备规格[uuid:{1}]进行虚拟化切分",
@@ -3712,6 +4213,18 @@
       "VmInstanceUuid"
     ],
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "specified pci devices are not on the same host: pci device[uuid: %s] on host[uuid: %s] while pci device[uuid: %s] on host[uuid: %s]",
+    "en_US": "specified pci devices are not on the same host: pci device[uuid: {0}] on host[uuid: {1}] while pci device[uuid: {2}] on host[uuid: {3}]",
+    "zh_CN": "指定的PCI设备不是在同一个主机上: PCI 设备[uuid:{0}] 在主机[uuid:{1}]上，而PCI 设备[uuid:{2}] 在主机[uuid:{3}]上",
+    "arguments": [
+      "vo.getUuid()",
+      "vo.getHostUuid()",
+      "attachedPciUuid",
+      "dstHostUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceFilterFlow.java"
   },
   {
     "raw": "the PCI devices[uuid:%s] is not on this host",
@@ -3872,6 +4385,16 @@
       "vmUuid"
     ],
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceReserveFlow.java"
+  },
+  {
+    "raw": "The host [%s] has failed to enter the maintenance, The vm [%s] cannot migrate automatically because it contains the PCI device",
+    "en_US": "The host [{0}] has failed to enter the maintenance, The vm [{1}] cannot migrate automatically because it contains the PCI device",
+    "zh_CN": "主机[uuid：{0}]已进入维护模式，虚拟机[uuid：{1}]无法自动迁移，因为它包含PCI设备",
+    "arguments": [
+      "inventory.getUuid()",
+      "hasPciVmUuids.toString()"
+    ],
+    "fileName": "src/main/java/org/zstack/pciDevice/PciHostChangeStateExtension.java"
   },
   {
     "raw": "don\u0027t set rom version if has no rom content",
@@ -4244,6 +4767,18 @@
     "fileName": "src/main/java/org/zstack/pciDevice/virtual/vfio_mdev/MdevDeviceFilterFlow.java"
   },
   {
+    "raw": "specified mdev devices not on same host: mdev device[uuid: %s] on host[uuid: %s] while mdev device[uuid: %s] on host[uuid: %s]",
+    "en_US": "specified mdev devices not on same host: mdev device[uuid: {0}] on host[uuid: {1}] while mdev device[uuid: {2}] on host[uuid: {3}]",
+    "zh_CN": "指定的 MDEV 设备不在同一个主机上：MDEV 设备[uuid: {0}]在主机[uuid: {1}]上，而 MDEV 设备[uuid: {2}]在主机[uuid: {3}]上",
+    "arguments": [
+      "mdev.getUuid()",
+      "mdev.getHostUuid()",
+      "attachedMdevUuid",
+      "dstHostUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/pciDevice/virtual/vfio_mdev/MdevDeviceFilterFlow.java"
+  },
+  {
     "raw": "the Mdev devices[uuid:%s] is not on this host",
     "en_US": "the Mdev devices[uuid:{0}] is not on this host",
     "zh_CN": "",
@@ -4265,6 +4800,16 @@
     "zh_CN": "",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/pciDevice/virtual/vfio_mdev/MdevDeviceFilterFlow.java"
+  },
+  {
+    "raw": "The host [%s] has failed to enter the maintenance, because vm[%s] has mdev devices attached and cannot migrate automatically",
+    "en_US": "The host [{0}] has failed to enter the maintenance, because vm[{1}] has mdev devices attached and cannot migrate automatically",
+    "zh_CN": "主机[uuid:{0}]无法进入维护模式，因为虚拟机[uuid:{1}]有MDEV设备已连接，无法自动迁移",
+    "arguments": [
+      "inventory.getUuid()",
+      "hasMdevVmUuids.toString()"
+    ],
+    "fileName": "src/main/java/org/zstack/pciDevice/virtual/vfio_mdev/MdevDeviceHostChangeStateExtension.java"
   },
   {
     "raw": "failed to find enough mdev device of spec[uuid:%s] in dest host[uuid:%s] for vm[uuid:%s]",
@@ -4564,6 +5109,15 @@
     "fileName": "src/main/java/org/zstack/scheduler/VolumeSnapshotGroupJobFactory.java"
   },
   {
+    "raw": "the vm of the root volume[%s] is not available. check if the vm exists.",
+    "en_US": "the vm of the root volume[{0}] is not available. check if the vm exists.",
+    "zh_CN": "虚拟机的根盘 {0} 不存在，请检查虚拟机是否存在",
+    "arguments": [
+      "msg.getTargetResourceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/scheduler/VolumeSnapshotGroupJobFactory.java"
+  },
+  {
     "raw": "snapshotGroupMaxNumber : %s format error because %s",
     "en_US": "snapshotGroupMaxNumber : {0} format error because {1}",
     "zh_CN": "SnapshotGroupMaxNumber：{0}格式错误，原因是{1}",
@@ -4572,6 +5126,15 @@
       "e.getMessage()"
     ],
     "fileName": "src/main/java/org/zstack/scheduler/VolumeSnapshotGroupJobFactory.java"
+  },
+  {
+    "raw": "the volume[%s] is not available. check if the volume exists.",
+    "en_US": "the volume[{0}] is not available. check if the volume exists.",
+    "zh_CN": "盘[{0}]不存在，请检查卷是否存在",
+    "arguments": [
+      "msg.getTargetResourceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/scheduler/VolumeSnapshotJobFactory.java"
   },
   {
     "raw": "the volume[%s] does not support snapshots retention",
@@ -4591,6 +5154,15 @@
       "e.getMessage()"
     ],
     "fileName": "src/main/java/org/zstack/scheduler/VolumeSnapshotJobFactory.java"
+  },
+  {
+    "raw": "the vm of the root volume[%s] state in Destroyed. job state change is not allowed",
+    "en_US": "the vm of the root volume[{0}] state in Destroyed. job state change is not allowed",
+    "zh_CN": "虚拟机的根盘 {0} 状态为Destroyed，不允许更改状态",
+    "arguments": [
+      "getTargetResourceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/scheduler/snapshot/CreateVolumeSnapshotGroupJob.java"
   },
   {
     "raw": "volume[uuid:%s] is deleted, state change is not allowed",
@@ -4775,6 +5347,16 @@
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
   },
   {
+    "raw": "the uuid of imagestoreBackupStorage agent changed[expected:%s, actual:%s], it\u0027s most likely the agent was manually restarted. Issue a reconnect to sync the status",
+    "en_US": "the uuid of imagestoreBackupStorage agent changed[expected:{0}, actual:{1}], it\u0027s most likely the agent was manually restarted. Issue a reconnect to sync the status",
+    "zh_CN": "ImageStoreBackupStorage的代理的uuid已改变[期望：{0}，实际：{1}]，这可能是代理被手动重启了。请重新连接以同步状态",
+    "arguments": [
+      "self.getUuid()",
+      "ret.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
+  },
+  {
     "raw": "get image hash failed, because:%s",
     "en_US": "get image hash failed, because:{0}",
     "zh_CN": "",
@@ -4879,6 +5461,15 @@
     "zh_CN": "文件路径包含非法字符: {0}",
     "arguments": [
       "dir"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageApiInterceptor.java"
+  },
+  {
+    "raw": "the password for the physical machine [%s] is empty. please set a password",
+    "en_US": "the password for the physical machine [{0}] is empty. please set a password",
+    "zh_CN": "主机[%s]的密码为空。请设置密码",
+    "arguments": [
+      "msg.getHostname()"
     ],
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageApiInterceptor.java"
   },
@@ -5225,6 +5816,26 @@
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
+    "raw": "can not migrate volume[%s], because volume state is Disabled",
+    "en_US": "can not migrate volume[{0}], because volume state is Disabled",
+    "zh_CN": "不能迁移硬盘[uuid：{0}]，硬盘状态为禁用",
+    "arguments": [
+      "msg.getVolumeUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
+  },
+  {
+    "raw": "there are not enough capacity for vm[uuid: %s] storage migration, required capacity(include image cache): %s, current available physical capacity: %s",
+    "en_US": "there are not enough capacity for vm[uuid: {0}] storage migration, required capacity(include image cache): {1}, current available physical capacity: {2}",
+    "zh_CN": "不能为虚拟机[uuid：{0}]进行存储迁移，所需容量（包括镜像缓存）：{1}，当前可用物理容量：{2}",
+    "arguments": [
+      "msg.getVmInstanceUuid()",
+      "size",
+      "dstPrimaryStorageVO.getCapacity().getAvailablePhysicalCapacity()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationBase.java"
+  },
+  {
     "raw": "not support vm state[%s] to do storage migration",
     "en_US": "not support vm state[{0}] to do storage migration",
     "zh_CN": "虚拟机状态为[{0}],无法进行存储迁移",
@@ -5340,6 +5951,18 @@
     "fileName": "src/main/java/org/zstack/storage/migration/primary/ceph/CephToCephMigrateVolumeFlow.java"
   },
   {
+    "raw": "found trashId(%s) in primaryStorage [%s] for the migrate installPath[%s]. please clean it first by \u0027APICleanUpTrashOnPrimaryStorageMsg\u0027 if you insist to migrate the volume[%s]",
+    "en_US": "found trashId({0}) in primaryStorage [{1}] for the migrate installPath[{2}]. please clean it first by \u0027APICleanUpTrashOnPrimaryStorageMsg\u0027 if you insist to migrate the volume[{3}]",
+    "zh_CN": "在主存储[{1}]的回收数据({0})中己存在要迁移的目标路径[{2}]，如果要继续迁移卷[{3}]，请先调用\u0027APICleanUpTrashOnPrimaryStorageMsg\u0027来手动清理该回收数据",
+    "arguments": [
+      "re.getTrashId()",
+      "srcPsUuid",
+      "srcVolumeFolderPath",
+      "re.getResourceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/migration/primary/local/LocalToLocalMigrateVolumeFlow.java"
+  },
+  {
     "raw": "cannot find any connected host to perform the storage migration operation",
     "en_US": "cannot find any connected host to perform the storage migration operation",
     "zh_CN": "为了执行存储迁移操作，未找到连接的主机",
@@ -5367,6 +5990,17 @@
       "dstPsUuid",
       "dstVolumeFolderPath",
       "reply1.getResourceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/migration/primary/nfs/NfsToNfsMigrateVolumeFlow.java"
+  },
+  {
+    "raw": "volume[uuid:%s] has image[uuid:%s] dependency, other dependency image[%s]",
+    "en_US": "volume[uuid:{0}] has image[uuid:{1}] dependency, other dependency image[{2}]",
+    "zh_CN": "盘[uuid:{0}]有镜像[uuid:{1}]依赖，其他依赖镜像有[{2}]",
+    "arguments": [
+      "volumeUuid",
+      "r.getImageUuid()",
+      "r.getOtherImageUuids()"
     ],
     "fileName": "src/main/java/org/zstack/storage/migration/primary/nfs/NfsToNfsMigrateVolumeFlow.java"
   },
@@ -5414,6 +6048,16 @@
       "licMgr.getLicenseType().toString()"
     ],
     "fileName": "src/main/java/org/zstack/storage/primary/imagestore/ceph/CephPrimaryToImageStoreBackupStorageMediatorImpl.java"
+  },
+  {
+    "raw": "The source vm has local data volume on host[uuid: %s],but in fast clone api msg try to clone vm to host[%s], which is impossible for fast clone feature.",
+    "en_US": "The source vm has local data volume on host[uuid: {0}],but in fast clone api msg try to clone vm to host[{1}], which is impossible for fast clone feature.",
+    "zh_CN": "源虚拟机有本地硬盘，但是该虚拟机在快照克隆API消息中尝试将虚拟机克隆到主机[{0}]失败: 快照克隆功能不支持该操作",
+    "arguments": [
+      "hostUuid",
+      "msg.getHostUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/imagestore/local/LocalStorageImageStoreApiInterceptor.java"
   },
   {
     "raw": "System can\u0027t find imagestore backup Storage. Please do not set imagestore backup Storage server IP to localhost(127.*.*.*),",
@@ -5520,11 +6164,54 @@
     "fileName": "src/main/java/org/zstack/storage/primary/license/XskyLicenseInfoFactory.java"
   },
   {
+    "raw": "the current primaryStorage %s does not have a third-party token set, and the block volume cannot be created temporarily",
+    "en_US": "the current primaryStorage {0} does not have a third-party token set, and the block volume cannot be created temporarily",
+    "zh_CN": "当前PrimaryStorage [{0}] 没有第三方令牌设置，暂时无法创建块设备",
+    "arguments": [
+      "msg.getPrimaryStorageUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeMevocoApiInterceptor.java"
+  },
+  {
+    "raw": "the current primaryStorage %s is not Ceph type, can not get access path",
+    "en_US": "the current primaryStorage {0} is not Ceph type, can not get access path",
+    "zh_CN": "当前PrimaryStorage [{0}] 不是Ceph类型，无法获取访问路径",
+    "arguments": [
+      "primaryStorageUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeMevocoApiInterceptor.java"
+  },
+  {
+    "raw": "Ceph type block volume accessPathId, accessPathIqn cannot be null",
+    "en_US": "Ceph type block volume accessPathId, accessPathIqn cannot be null",
+    "zh_CN": "Ceph 类型块设备访问路径ID，访问路径 IQN 不能为空",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeMevocoApiInterceptor.java"
+  },
+  {
+    "raw": "current primary storage type not support block volume, supporttype has %s",
+    "en_US": "current primary storage type not support block volume, supporttype has {0}",
+    "zh_CN": "当前PrimaryStorage类型不支持块设备，支持类型有 {0}",
+    "arguments": [
+      "ALLOW_BLOCK_VENDER_TYPES"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeMevocoApiInterceptor.java"
+  },
+  {
     "raw": "no block volume factory found for vendor: %s",
     "en_US": "no block volume factory found for vendor: {0}",
     "zh_CN": "",
     "arguments": [
       "vender"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeMevocoApiInterceptor.java"
+  },
+  {
+    "raw": "name[%s] is invalid, the name requirement: 1~128 characters, support uppercase and lowercase letters, numbers, underscores, and hyphens; It can only start with uppercase and lowercase letters; It does not start or end with a space ",
+    "en_US": "name[{0}] is invalid, the name requirement: 1~128 characters, support uppercase and lowercase letters, numbers, underscores, and hyphens; It can only start with uppercase and lowercase letters; It does not start or end with a space ",
+    "zh_CN": "名称[{0}]无效，名称要求：1~128个字符，支持大写和小写字母、数字、下划线、连字符，只能以大写或小写字母开头，不能以空格开头或结尾",
+    "arguments": [
+      "name"
     ],
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeMevocoApiInterceptor.java"
   },
@@ -5567,6 +6254,26 @@
       "msg.getIoThreadId()",
       "msg.getVolumeUuid()",
       "pinInfo[0]"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeMevocoApiInterceptor.java"
+  },
+  {
+    "raw": "snapshot validation is unsupported for volume[uuid: %s]. Volume should be attached to vm",
+    "en_US": "snapshot validation is unsupported for volume[uuid: {0}]. Volume should be attached to vm",
+    "zh_CN": "快照验证不支持盘[uuid：{0}]。硬盘应添加到虚拟机上",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeMevocoApiInterceptor.java"
+  },
+  {
+    "raw": "snapshot validation is unsupported for volume[uuid: %s]. Attached vm is not in state of [%s, %s]",
+    "en_US": "snapshot validation is unsupported for volume[uuid: {0}]. Attached vm is not in state of [{1}, {2}]",
+    "zh_CN": "快照验证不支持硬盘[uuid：{0}]。相关的虚拟机不在状态[{1}, {2}]中",
+    "arguments": [
+      "msg.getUuid()",
+      "VmInstanceState.Running",
+      "VmInstanceState.Paused"
     ],
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeMevocoApiInterceptor.java"
   },
@@ -5616,6 +6323,15 @@
     "zh_CN": "云盘[uuid:{0}]不是云盘",
     "arguments": [
       "msg.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeMevocoApiInterceptor.java"
+  },
+  {
+    "raw": "can not resize volume[%s], because volume state is Disabled",
+    "en_US": "can not resize volume[{0}], because volume state is Disabled",
+    "zh_CN": "不能调整硬盘[uuid:{0}]的大小，因为硬盘状态为禁用",
+    "arguments": [
+      "msg.getVolumeUuid()"
     ],
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeMevocoApiInterceptor.java"
   },
@@ -5736,6 +6452,35 @@
       "allocatedUrl"
     ],
     "fileName": "src/main/java/org/zstack/storage/volume/block/XskyPrimaryStorageBackendFactory.java"
+  },
+  {
+    "raw": "name: [%s] already exists, block volume name cannot be duplicated on type[%s] primarystorage",
+    "en_US": "name: [{0}] already exists, block volume name cannot be duplicated on type[{1}] primarystorage",
+    "zh_CN": "名称[uuid：{0}]已存在，块硬盘名称不能在类型[uuid：{1}]主存储上重复",
+    "arguments": [
+      "volumeName",
+      "vo.getType()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/block/expon/ExponBlockVolumeFactory.java"
+  },
+  {
+    "raw": "[protocol] parameter is null, type[%s] primarystorage must set block volume protocol",
+    "en_US": "[protocol] parameter is null, type[{0}] primarystorage must set block volume protocol",
+    "zh_CN": "参数为空，类型[{0}]的主存储必须设置块硬盘协议",
+    "arguments": [
+      "vo.getType()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/block/expon/ExponBlockVolumeFactory.java"
+  },
+  {
+    "raw": "current [%s] primary storage not support [%s] type protocol, please add protocol to storage first",
+    "en_US": "current [{0}] primary storage not support [{1}] type protocol, please add protocol to storage first",
+    "zh_CN": "当前[{0}]主存储不支持[{1}]类型协议，请先添加协议",
+    "arguments": [
+      "vo.getUuid()",
+      "protocol"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/volume/block/expon/ExponBlockVolumeFactory.java"
   },
   {
     "raw": "ExponBlockVolume[uuid:%s] not found",
@@ -6005,6 +6750,16 @@
     "fileName": "src/main/java/org/zstack/usbDevice/UsbDeviceManager.java"
   },
   {
+    "raw": "cannot attach the usb device[uuid:%s] to vm[uuid:%s], possibly reasons include: the device is not enabled or had been attached to a vm, or the device and the vm are not on same host.",
+    "en_US": "cannot attach the usb device[uuid:{0}] to vm[uuid:{1}], possibly reasons include: the device is not enabled or had been attached to a vm, or the device and the vm are not on same host.",
+    "zh_CN": "不能将USB设备[uuid:{0}]绑定到虚拟机[uuid:{1}]，可能原因包括：设备未启用或已绑定到虚拟机，或设备和虚拟机不在同一主机上。",
+    "arguments": [
+      "msg.getUsbDeviceUuid()",
+      "msg.getVmInstanceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/usbDevice/UsbDeviceManager.java"
+  },
+  {
     "raw": "usb is already bound to vm[uuid:%s] and cannot be bound to other vm",
     "en_US": "usb is already bound to vm[uuid:{0}] and cannot be bound to other vm",
     "zh_CN": "USB已绑定到VM[uuid：{0}]，无法绑定到其他VM",
@@ -6230,6 +6985,16 @@
       "ESXConstant.VMWARE_HYPERVISOR_TYPE"
     ],
     "fileName": "src/main/java/org/zstack/vmware/ESXHostFactory.java"
+  },
+  {
+    "raw": "console password is not supported by vm[uuid:%s] on ESXHost[ESXI version:%s]",
+    "en_US": "console password is not supported by vm[uuid:{0}] on ESXHost[ESXI version:{1}]",
+    "zh_CN": "虚拟机[uuid：{0}]在ESX主机[ESXI版本：{1}]上不支持控制台密码",
+    "arguments": [
+      "msg.getUuid()",
+      "esxVersion"
+    ],
+    "fileName": "src/main/java/org/zstack/vmware/VCenterApiInterceptor.java"
   },
   {
     "raw": "vCenter login name expected.",
@@ -6458,6 +7223,45 @@
     "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
   },
   {
+    "raw": "Login to vCenter [%s] failed with user [%s],please check your network connection and credential.",
+    "en_US": "Login to vCenter [{0}] failed with user [{1}],please check your network connection and credential.",
+    "zh_CN": "登录到VCenter[{0}]失败，用户名[{1}]，请检查网络连接和密码。",
+    "arguments": [
+      "msg.getDomainName()",
+      "msg.getUsername()"
+    ],
+    "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
+  },
+  {
+    "raw": "Parse response failed from vCenter [%s],please check the port number[%d].",
+    "en_US": "Parse response failed from vCenter [{0}],please check the port number[{1}].",
+    "zh_CN": "从 vCenter {0} 解析响应失败，请检查端口号[{1}]",
+    "arguments": [
+      "msg.getDomainName()",
+      "msg.getPort() \u003d\u003d null ? 443 : msg.getPort()"
+    ],
+    "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
+  },
+  {
+    "raw": "SSL handshake failed with vCenter [%s],because insecure TLS 1.0 is used. Manually enabled TLS 1.0 in jdk configuration if needed.",
+    "en_US": "SSL handshake failed with vCenter [{0}],because insecure TLS 1.0 is used. Manually enabled TLS 1.0 in jdk configuration if needed.",
+    "zh_CN": "和 vCenter {0} 的 SSL 握手失败，请检查端口号[{1}]，是否使用不安全的TLS 1.0。如果需要，请手动启用jdk中的TLS 1.0。",
+    "arguments": [
+      "msg.getDomainName()"
+    ],
+    "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
+  },
+  {
+    "raw": "SSL handshake failed with vCenter [%s],please check the port number[%d].",
+    "en_US": "SSL handshake failed with vCenter [{0}],please check the port number[{1}].",
+    "zh_CN": "和 vCenter {0} 的 SSL 握手失败，请检查端口号[{1}]。",
+    "arguments": [
+      "msg.getDomainName()",
+      "msg.getPort() \u003d\u003d null ? 443 : msg.getPort()"
+    ],
+    "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
+  },
+  {
     "raw": "No clustered compute resource found",
     "en_US": "No clustered compute resource found",
     "zh_CN": "未找到集群资源",
@@ -6574,6 +7378,16 @@
       "ex.getMessage()"
     ],
     "fileName": "src/main/java/org/zstack/vmware/VCenterServiceInstanceManagerImpl.java"
+  },
+  {
+    "raw": "VCenter[uuid\u003d%s] is Disabled. You can only perform read-only operations on this VCenter. If you want to make configuration changes to it, you need to update config by UpdateVCenterAction {uuid\u003d%s state\u003dEnabled}",
+    "en_US": "VCenter[uuid\u003d{0}] is Disabled. You can only perform read-only operations on this VCenter. If you want to make configuration changes to it, you need to update config by UpdateVCenterAction {uuid\u003d{1} state\u003dEnabled}",
+    "zh_CN": "vCenter[{0}]已禁用，只能对它执行只读操作。如果您想对它进行配置更改，请使用UpdateVCenterAction {uuid\u003d{1} state\u003dEnabled}进行更新。",
+    "arguments": [
+      "vcenterUuid",
+      "vcenterUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/vmware/VCenterStateApiInterceptor.java"
   },
   {
     "raw": "VCenter[uuid\u003d%s] are Disabled. You can only perform read-only operations on these VCenter.",

@@ -8,5 +8,15 @@
       "source"
     ],
     "fileName": "src/main/java/org/zstack/rest/TypeVerifier.java"
+  },
+  {
+    "raw": "Invalid value for boolean field [%s], [%s] is not a valid boolean string[true, false].",
+    "en_US": "Invalid value for boolean field [{0}], [{1}] is not a valid boolean string[true, false].",
+    "zh_CN": "[%s] 属性值无效，[%s] 不是一个有效的布尔值字符串[true, false]",
+    "arguments": [
+      "f.getName()",
+      "source"
+    ],
+    "fileName": "src/main/java/org/zstack/rest/TypeVerifier.java"
   }
 ]

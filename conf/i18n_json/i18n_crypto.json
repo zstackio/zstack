@@ -397,6 +397,16 @@
     "fileName": "src/main/java/org/zstack/crypto/datacrypto/integrity/EncryptColumnIntegrityFactory.java"
   },
   {
+    "raw": "the shared mount point primary storage[uuid:%s, name:%s] cannot find any available host in attached clusters",
+    "en_US": "the shared mount point primary storage[uuid:{0}, name:{1}] cannot find any available host in attached clusters",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "self.getName()"
+    ],
+    "fileName": "src/main/java/org/zstack/crypto/datacrypto/smp/SMPCryptoBase.java"
+  },
+  {
     "raw": "invalid certificate parameter : %s\u003d%s",
     "en_US": "invalid certificate parameter : {0}\u003d{1}",
     "zh_CN": "",
@@ -636,6 +646,15 @@
     "arguments": [
       "msg.getType()",
       "StringUtils.join(SecurityMachineKeyType.values(), \u0027,\u0027)"
+    ],
+    "fileName": "src/main/java/org/zstack/crypto/securitymachine/secretresourcepool/SecretResourcePoolApiInterceptor.java"
+  },
+  {
+    "raw": "the identity authentication function is enabled but the corresponding resource pool is not set, please re-enable the function and try again",
+    "en_US": "the identity authentication function is enabled but the corresponding resource pool is not set, please re-enable the function and try again",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getSecretResourcePoolUuid()"
     ],
     "fileName": "src/main/java/org/zstack/crypto/securitymachine/secretresourcepool/SecretResourcePoolApiInterceptor.java"
   },

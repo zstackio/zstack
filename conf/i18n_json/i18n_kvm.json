@@ -248,6 +248,26 @@
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
+    "raw": "cannot do volume snapshot merge when vm[uuid:%s] is in state of %s. The operation is only allowed when vm is Running or Stopped",
+    "en_US": "cannot do volume snapshot merge when vm[uuid:{0}] is in state of {1}. The operation is only allowed when vm is Running or Stopped",
+    "zh_CN": "在虚拟机[uuid：{0}]处于状态[1]时无法进行快照合并",
+    "arguments": [
+      "volume.getUuid()",
+      "state"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "live volume snapshot merge needs libvirt version greater than %s, current libvirt version is %s. Please stop vm and redo the operation or detach the volume if it\u0027s data volume",
+    "en_US": "live volume snapshot merge needs libvirt version greater than {0}, current libvirt version is {1}. Please stop vm and redo the operation or detach the volume if it\u0027s data volume",
+    "zh_CN": "快照合并需要libvirt版本大于[0]，当前libvirt版本为[1]，请停止虚拟机并重新执行操作，或者将数据卷从虚拟机中分离",
+    "arguments": [
+      "KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION",
+      "libvirtVersion"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
     "raw": "vm[uuid:%s] is not Running or Stopped, current state[%s]",
     "en_US": "vm[uuid:{0}] is not Running or Stopped, current state[{1}]",
     "zh_CN": "虚拟机[uuid:{0}]未处在Running或Stopped状态, 现在状态为[{1}]",
@@ -277,6 +297,45 @@
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
+    "raw": "failed to update nic[vm:%s] on kvm host[uuid:%s, ip:%s],because %s",
+    "en_US": "failed to update nic[vm:{0}] on kvm host[uuid:{1}, ip:{2}],because {3}",
+    "zh_CN": "无法更新主机[uuid:{1}, ip:{2}] 虚拟机[vm：{0}]的网卡: {3}",
+    "arguments": [
+      "msg.getVmInstanceUuid()",
+      "self.getUuid()",
+      "self.getManagementIp()",
+      "ret.getError()"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to attach nic[uuid:%s, vm:%s] on kvm host[uuid:%s, ip:%s],because %s, please try again or delete device[%s] by yourself",
+    "en_US": "failed to attach nic[uuid:{0}, vm:{1}] on kvm host[uuid:{2}, ip:{3}],because {4}, please try again or delete device[{5}] by yourself",
+    "zh_CN": "无法将网卡[uuid:{0}, vm：{1}] 添加到主机[uuid:{2}, ip:{3}]，因为：{4}，请重新尝试或者自行删除设备[5]",
+    "arguments": [
+      "msg.getNicInventory().getUuid()",
+      "msg.getNicInventory().getVmInstanceUuid()",
+      "self.getUuid()",
+      "self.getManagementIp()",
+      "ret.getError()",
+      "msg.getNicInventory().getInternalName()"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to attach nic[uuid:%s, vm:%s] on kvm host[uuid:%s, ip:%s],because %s",
+    "en_US": "failed to attach nic[uuid:{0}, vm:{1}] on kvm host[uuid:{2}, ip:{3}],because {4}",
+    "zh_CN": "无法将网卡[uuid:{0}, vm：{1}] 添加到主机[uuid:{2}, ip:{3}]，因为：{4}",
+    "arguments": [
+      "msg.getNicInventory().getUuid()",
+      "msg.getNicInventory().getVmInstanceUuid()",
+      "self.getUuid()",
+      "self.getManagementIp()",
+      "ret.getError()"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
     "raw": "failed to detach data volume[uuid:%s, installPath:%s] from vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because %s",
     "en_US": "failed to detach data volume[uuid:{0}, installPath:{1}] from vm[uuid:{2}, name:{3}] on kvm host[uuid:{4}, ip:{5}], because {6}",
     "zh_CN": "无法在KVM主机[uuid:{4}, ip:{5}]上为虚拟机[uuid:{2}, name:{3}]卸载云盘[uuid:{0}, installPath:{1}]，因为: {6}",
@@ -298,6 +357,21 @@
     "arguments": [
       "self.getHypervisorType()",
       "state"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "failed to attach data volume[uuid:%s, installPath:%s] to vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+    "en_US": "failed to attach data volume[uuid:{0}, installPath:{1}] to vm[uuid:{2}, name:{3}] on kvm host[uuid:{4}, ip:{5}], because {6}",
+    "zh_CN": "无法在主机[uuid:{4}, ip:{5}]上挂载硬盘[uuid:{0}, installPath:{1}]到虚拟机[uuid:{2}, name:{3}]，因为: {6}",
+    "arguments": [
+      "vol.getUuid()",
+      "vol.getInstallPath()",
+      "vm.getUuid()",
+      "vm.getName()",
+      "getSelf().getUuid()",
+      "getSelf().getManagementIp()",
+      "ret.getError()"
     ],
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
@@ -494,6 +568,18 @@
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
+    "raw": "detected abnormal status[host uuid change, expected: %s but: %s or agent version change, expected: %s but: %s] of kvmagent,it\u0027s mainly caused by kvmagent restarts behind zstack management server. Report this to ping task, it will issue a reconnect soon",
+    "en_US": "detected abnormal status[host uuid change, expected: {0} but: {1} or agent version change, expected: {2} but: {3}] of kvmagent,it\u0027s mainly caused by kvmagent restarts behind zstack management server. Report this to ping task, it will issue a reconnect soon",
+    "zh_CN": "检测到 KVM 代理异常状态[主机uuid改变，期望值:{0}，实际值:{1} 或代理版本改变，期望值:{2}，实际值:{3}]，这通常是因为 KVM 代理重启导致管理节点无法获取到 KVM 代理状态。请等待主机重新完成后重试",
+    "arguments": [
+      "self.getUuid()",
+      "ret.getHostUuid()",
+      "dbf.getDbVersion()",
+      "ret.getVersion()"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
     "raw": "unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
     "en_US": "unable to connect to kvm host[uuid:{0}, ip:{1}, url:{2}], because {3}",
     "zh_CN": "连接主机[uuid:{0}, ip:{1}，url:{2}]失败，因为:{3}",
@@ -515,7 +601,7 @@
   {
     "raw": "connection error for KVM host[uuid:%s, ip:%s]",
     "en_US": "connection error for KVM host[uuid:{0}, ip:{1}]",
-    "zh_CN": "连接主机 {0} [ip={1}] 失败",
+    "zh_CN": "连接主机 {0} [ip:{1}] 失败",
     "arguments": [
       "self.getUuid()",
       "self.getManagementIp()"
@@ -578,6 +664,30 @@
     "zh_CN": "在{0}中的所有DNS/IP都ping失败了，请检查 /etc/resolv.conf 来确保你的主机能连接到公网",
     "arguments": [
       "checkList"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity,please check if username/password is wrong; %s",
+    "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort:{2}] to check the management node connectivity,please check if username/password is wrong; {3}",
+    "zh_CN": "无法连接主机[ip:{0}, 用户名:{1}, ssh端口:{2}] 做管理节点检查，请检查用户名密码是否正确；{3}",
+    "arguments": [
+      "self.getManagementIp()",
+      "getSelf().getUsername()",
+      "getSelf().getPort()",
+      "ret.getExitErrorMessage()"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
+  },
+  {
+    "raw": "the KVM host[ip:%s] cannot access the management node\u0027s callback url. It seems that the KVM host cannot reach the management IP[%s]. %s %s",
+    "en_US": "the KVM host[ip:{0}] cannot access the management node\u0027s callback url. It seems that the KVM host cannot reach the management IP[{1}]. {2} {3}",
+    "zh_CN": "主机[ip:{0}]无法访问管理节点的回调地址。似乎是主机的管理IP无法访问，{2} {3}",
+    "arguments": [
+      "self.getManagementIp()",
+      "restf.getHostName()",
+      "ret.getStderr()",
+      "ret.getExitErrorMessage()"
     ],
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
@@ -890,6 +1000,16 @@
     "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
   },
   {
+    "raw": "vm current state[%s], modify bus type requires the vm state[%s]",
+    "en_US": "vm current state[{0}], modify bus type requires the vm state[{1}]",
+    "zh_CN": "VM 当前状态[{0}]，修改 BUS 类型需要VM状态[{1}]",
+    "arguments": [
+      "vm.getState()",
+      "VmInstanceState.Stopped"
+    ],
+    "fileName": "src/main/java/org/zstack/kvm/KVMHostFactory.java"
+  },
+  {
     "raw": "vm do not support having both SCSI and Virtio-SCSI bus type volumes simultaneously.",
     "en_US": "vm do not support having both SCSI and Virtio-SCSI bus type volumes simultaneously.",
     "zh_CN": "",
@@ -1013,6 +1133,13 @@
       "rsp.getError()"
     ],
     "fileName": "src/main/java/org/zstack/kvm/KVMSecurityGroupBackend.java"
+  },
+  {
+    "raw": "Failed to start vm, because can not disable vm.cpu.hypervisor.feature with vm.cpuMode none",
+    "en_US": "Failed to start vm, because can not disable vm.cpu.hypervisor.feature with vm.cpuMode none",
+    "zh_CN": "无法启动虚拟机：当 vm.cpuMode 为 none 时无法禁用 vm.cpu.hypervisor.feature",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/kvm/KvmVmHardwareVerifyExtensionPoint.java"
   },
   {
     "raw": "cannot get vmUuid from msg %s",

@@ -132,7 +132,7 @@
   {
     "raw": "invalid image info[fileName\u003d%s]",
     "en_US": "invalid image info[fileName\u003d{0}]",
-    "zh_CN": "非法镜像信息 [fileName={0}]",
+    "zh_CN": "非法镜像信息 [fileName\u003d{0}]",
     "arguments": [
       "param.getFileName()"
     ],
@@ -208,6 +208,17 @@
     "fileName": "src/main/java/org/zstack/ovf/OvfInterceptor.java"
   },
   {
+    "raw": "backup storage[uuid: %s] does not have enough available capacity for exporting vm[uuid: %s], required capacity is: %d",
+    "en_US": "backup storage[uuid: {0}] does not have enough available capacity for exporting vm[uuid: {1}], required capacity is: {2}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getBackupStorageUuid()",
+      "msg.getVmUuid()",
+      "totalSize"
+    ],
+    "fileName": "src/main/java/org/zstack/ovf/OvfManagerImpl.java"
+  },
+  {
     "raw": "failed to parse OVF XML string",
     "en_US": "failed to parse OVF XML string",
     "zh_CN": "无法解析 OVF XML",
@@ -279,6 +290,13 @@
   {
     "raw": "ovfInfo can not be null",
     "en_US": "ovfInfo can not be null",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/ovf/datatype/CreateVmFromOvfBundle.java"
+  },
+  {
+    "raw": "failed to create ovf bundle: Neither the OVF file nor the custom API has set the size of the root disk, so unable to allocate root disk. You should set root disk size in CreateVmInstanceFromOvfAction.jsonCreateVmParam.rootDiskSize",
+    "en_US": "failed to create ovf bundle: Neither the OVF file nor the custom API has set the size of the root disk, so unable to allocate root disk. You should set root disk size in CreateVmInstanceFromOvfAction.jsonCreateVmParam.rootDiskSize",
     "zh_CN": "",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/ovf/datatype/CreateVmFromOvfBundle.java"

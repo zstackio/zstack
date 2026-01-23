@@ -39,6 +39,17 @@
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
+    "raw": "Invalid ChangeResourceOwner operation.Original owner is the same as target owner.Current account is [uuid: %s].The resource target owner account[uuid: %s].The resource original owner account[uuid:%s].",
+    "en_US": "Invalid ChangeResourceOwner operation.Original owner is the same as target owner.Current account is [uuid: {0}].The resource target owner account[uuid: {1}].The resource original owner account[uuid:{2}].",
+    "zh_CN": "无效的 ChangeResourceOwner 操作。原始拥有者与目标拥有者相同。当前账户是[uuid: {0}]，资源目标拥有者账户[uuid: {1}]，资源原始拥有者账户[uuid:{2}]",
+    "arguments": [
+      "currentAccountUuid",
+      "resourceTargetOwnerAccountUuid",
+      "resourceOriginalOwnerAccountUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
+  },
+  {
     "raw": "cannot find the account[uuid:%s]",
     "en_US": "cannot find the account[uuid:{0}]",
     "zh_CN": "找不到账户[uuid:{0}]",
@@ -227,6 +238,20 @@
     "fileName": "src/main/java/org/zstack/identity/DefaultAuthorizationBackend.java"
   },
   {
+    "raw": "quota exceeding.The resource owner(or target resource owner) account[uuid: %s name: %s] exceeds a quota[name: %s, value: %s], Current used:%s, Request:%s. Please contact the administrator.",
+    "en_US": "quota exceeding. The resource owner(or target resource owner) account[uuid: {0} name: {1}] exceeds a quota[name: {2}, value: {3}], Current used:{4}, Request:{5}. Please contact the administrator.",
+    "zh_CN": "配额已超出。资源拥有者（或目标资源拥有者）帐户[uuid：{0}，名称：{1}]超过了配额[名称：{2}，值：{3}]，当前使用：{4}，请求：{5}。请与管理员联系。",
+    "arguments": [
+      "quotaCompareInfo.resourceTargetOwnerAccountUuid",
+      "StringUtils.trimToEmpty(accountName)",
+      "quotaCompareInfo.quotaName",
+      "quotaCompareInfo.quotaValue",
+      "quotaCompareInfo.currentUsed",
+      "quotaCompareInfo.request"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/QuotaUtil.java"
+  },
+  {
     "raw": "quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]. Please contact the administrator.",
     "en_US": "quota exceeding. The account[uuid: {0}] exceeds a quota[name: {1}, value: {2}]. Please contact the administrator.",
     "zh_CN": "",
@@ -234,6 +259,19 @@
       "currentAccountUuid",
       "quotaName",
       "quotaValue"
+    ],
+    "fileName": "src/main/java/org/zstack/identity/QuotaUtil.java"
+  },
+  {
+    "raw": "quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s], Current used:%s, Request:%s. Please contact the administrator.",
+    "en_US": "quota exceeding. The account[uuid: {0}] exceeds a quota[name: {1}, value: {2}], Current used:{3}, Request:{4}. Please contact the administrator.",
+    "zh_CN": "配额已超出。帐户[uuid：{0}]超过了配额[名称：{1}，值：{2}]，当前使用：{3}，请求：{4}。请与管理员联系。",
+    "arguments": [
+      "currentAccountUuid",
+      "quotaName",
+      "quotaValue",
+      "currentUsed",
+      "request"
     ],
     "fileName": "src/main/java/org/zstack/identity/QuotaUtil.java"
   },

@@ -16,6 +16,16 @@
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageApiInterceptor.java"
   },
   {
+    "raw": "volume[uuid:%s] has been attached some VM(s)[uuid:%s] which are not Stopped and not running on the specific host.",
+    "en_US": "volume[uuid:{0}] has been attached some VM(s)[uuid:{1}] which are not Stopped and not running on the specific host.",
+    "zh_CN": "",
+    "arguments": [
+      "volume.getUuid()",
+      "runningVmUuids.toString()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageApiInterceptor.java"
+  },
+  {
     "raw": "VM[uuid:%s] are not Stopped and not running on the specific host.",
     "en_US": "VM[uuid:{0}] are not Stopped and not running on the specific host.",
     "zh_CN": "虚拟机[uuid：{0}]未停止，也未在特定主机上运行。",
@@ -54,10 +64,30 @@
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageBase.java"
   },
   {
+    "raw": "the mini storage[uuid:%s, name:%s] cannot find any available host in attached clusters for instantiating the volume",
+    "en_US": "the mini storage[uuid:{0}, name:{1}] cannot find any available host in attached clusters for instantiating the volume",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "self.getName()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageBase.java"
+  },
+  {
     "raw": "can not determine which host",
     "en_US": "can not determine which host",
     "zh_CN": "无法确定是哪个主机",
     "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageBase.java"
+  },
+  {
+    "raw": "the primary storage[uuid:%s, name:%s] has not attached to any clusters, or no hosts in the attached clusters are connected",
+    "en_US": "the primary storage[uuid:{0}, name:{1}] has not attached to any clusters, or no hosts in the attached clusters are connected",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "self.getName()"
+    ],
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageBase.java"
   },
   {
@@ -81,6 +111,18 @@
     "arguments": [
       "self.getUuid()",
       "hostUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageBase.java"
+  },
+  {
+    "raw": "host[uuid: %s] of mini primary storage[uuid: %s] doesn\u0027t have enough capacity[current: %s bytes, needed: %s]",
+    "en_US": "host[uuid: {0}] of mini primary storage[uuid: {1}] doesn\u0027t have enough capacity[current: {2} bytes, needed: {3}]",
+    "zh_CN": "",
+    "arguments": [
+      "hostUuid",
+      "self.getUuid()",
+      "ref.getAvailableCapacity()",
+      "size"
     ],
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageBase.java"
   },
@@ -167,6 +209,34 @@
       "rsp.error"
     ],
     "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageKvmCommandSender.java"
+  },
+  {
+    "raw": "can not find any available host to resize volume[uuid: %s] on mini storage[uuid: %s]",
+    "en_US": "can not find any available host to resize volume[uuid: {0}] on mini storage[uuid: {1}]",
+    "zh_CN": "",
+    "arguments": [
+      "volume.getUuid()",
+      "volume.getPrimaryStorageUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageKvmFactory.java"
+  },
+  {
+    "raw": "volume[uuid:%s] replication is syncing data, please wait until it is finished.",
+    "en_US": "volume[uuid:{0}] replication is syncing data, please wait until it is finished.",
+    "zh_CN": "",
+    "arguments": [
+      "volumeUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageKvmFactory.java"
+  },
+  {
+    "raw": "replication network status of volume[uuid:%s] run into StandAlone, but host are all Connected, please recover it first.",
+    "en_US": "replication network status of volume[uuid:{0}] run into StandAlone, but host are all Connected, please recover it first.",
+    "zh_CN": "",
+    "arguments": [
+      "volumeUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/primary/ministorage/MiniStorageKvmFactory.java"
   },
   {
     "raw": "Invalid path string %s",

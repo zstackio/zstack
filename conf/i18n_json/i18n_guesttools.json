@@ -399,7 +399,7 @@
   {
     "raw": "failed to get guest tools state from prometheus: [metric\u003d%s]",
     "en_US": "failed to get guest tools state from prometheus: [metric\u003d{0}]",
-    "zh_CN": "无法从 Prometheus 获取 metric={0} 的 VM-Tools 状态",
+    "zh_CN": "无法从 Prometheus 获取 metric 等于 {0} 的 VM-Tools 状态",
     "arguments": [
       "metricName"
     ],

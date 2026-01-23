@@ -102,6 +102,15 @@
     "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
   },
   {
+    "raw": "install.sh not found: %s. install.sh has been manually deleted. please re-upload the installation package",
+    "en_US": "install.sh not found: {0}. install.sh has been manually deleted. please re-upload the installation package",
+    "zh_CN": "未找到 install.sh: {0}. install.sh 可能被手动删除, 需要重新上传安装包",
+    "arguments": [
+      "installPath"
+    ],
+    "fileName": "src/main/java/org/zstack/zstone/ZStoneManager.java"
+  },
+  {
     "raw": "failed to install distributed storage",
     "en_US": "failed to install distributed storage",
     "zh_CN": "",

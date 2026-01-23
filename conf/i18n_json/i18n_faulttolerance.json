@@ -1,11 +1,55 @@
 [
   {
+    "raw": "pvm[uuid:%s] and svm[uuid:%s] volume number not matches, do not allowed to start",
+    "en_US": "pvm[uuid:{0}] and svm[uuid:{1}] volume number not matches, do not allowed to start",
+    "zh_CN": "",
+    "arguments": [
+      "group.getPrimaryVmInstanceUuid()",
+      "group.getSecondaryVmInstanceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
+  },
+  {
+    "raw": "volume with index: %d, of pvm[uuid:%s] and svm[uuid:%s] have different size, do not allowed to start",
+    "en_US": "volume with index: {0}, of pvm[uuid:{1}] and svm[uuid:{2}] have different size, do not allowed to start",
+    "zh_CN": "",
+    "arguments": [
+      "i",
+      "group.getPrimaryVmInstanceUuid()",
+      "group.getSecondaryVmInstanceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
+  },
+  {
+    "raw": "volume with index: %d, of pvm[uuid:%s] and svm[uuid:%s]\u0027s cache volume have different size, do not allowed to start",
+    "en_US": "volume with index: {0}, of pvm[uuid:{1}] and svm[uuid:{2}]\u0027s cache volume have different size, do not allowed to start",
+    "zh_CN": "",
+    "arguments": [
+      "i",
+      "group.getPrimaryVmInstanceUuid()",
+      "group.getSecondaryVmInstanceUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
+  },
+  {
     "raw": "image[uuid:%s] is still used by fault tolerance vm[uuid:%s]",
     "en_US": "image[uuid:{0}] is still used by fault tolerance vm[uuid:{1}]",
     "zh_CN": "容错虚拟机[uuid：{1}]仍在使用镜像[uuid：{0}]",
     "arguments": [
       "msg.getUuid()",
       "faultToleranceVmGroupUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
+  },
+  {
+    "raw": "could not delete l3 network[uuid:%s]. Fault tolerance vm[%s] in states[%s, %s] still using it. Stop related fault tolerance vms before delete l3 network",
+    "en_US": "could not delete l3 network[uuid:{0}]. Fault tolerance vm[{1}] in states[{2}, {3}] still using it. Stop related fault tolerance vms before delete l3 network",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getL3NetworkUuid()",
+      "String.join(\",\", vmInstanceUuids)",
+      "VmInstanceState.Paused",
+      "VmInstanceState.Running"
     ],
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
@@ -44,6 +88,17 @@
     "zh_CN": "无法维护主机，因为正在恢复FT VM[{0}]",
     "arguments": [
       "Joiner.on(\",\").join(vmUuids)"
+    ],
+    "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
+  },
+  {
+    "raw": "current operation[api:%s] is not supported when ft vm[uuid:%s, state:%s] is not stopped",
+    "en_US": "current operation[api:{0}] is not supported when ft vm[uuid:{1}, state:{2}] is not stopped",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getClass()",
+      "msg.getVmInstanceUuid()",
+      "state"
     ],
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceApiInterceptor.java"
   },
@@ -387,6 +442,15 @@
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceGroupVmInstanceBase.java"
   },
   {
+    "raw": "unable to start the vm[uuid:%s]. It doesn\u0027t have any nic, please attach a nic and try again",
+    "en_US": "unable to start the vm[uuid:{0}]. It doesn\u0027t have any nic, please attach a nic and try again",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceGroupVmInstanceBase.java"
+  },
+  {
     "raw": "an other fault tolerance gc task is running, cancel the new task and wait return",
     "en_US": "an other fault tolerance gc task is running, cancel the new task and wait return",
     "zh_CN": "其他容错GC任务正在运行，请取消新任务并等待返回",
@@ -447,6 +511,15 @@
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceManagerImpl.java"
   },
   {
+    "raw": "cannot found available ip from current ft network. Check whether global config[category:ft name:fault.tolerance.network.cidr] is correctly set, and confirm that host[uuid:%s] own ip address in the CIDR",
+    "en_US": "cannot found available ip from current ft network. Check whether global config[category:ft name:fault.tolerance.network.cidr] is correctly set, and confirm that host[uuid:{0}] own ip address in the CIDR",
+    "zh_CN": "",
+    "arguments": [
+      "hostUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceManagerImpl.java"
+  },
+  {
     "raw": "can not start secondary vm, because primary vm is stopped",
     "en_US": "can not start secondary vm, because primary vm is stopped",
     "zh_CN": "无法启动辅助云主机，因为主云主机已停止",
@@ -479,6 +552,29 @@
       "pvm.getHostUuid()"
     ],
     "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceManagerImpl.java"
+  },
+  {
+    "raw": "cannot find the image[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\\n2. if the backup storage is in connected status, if not, try reconnecting it",
+    "en_US": "cannot find the image[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\\n1. if the backup storage is attached to the zone where the VM[name: {2}, uuid:{3}] is in\\n2. if the backup storage is in connected status, if not, try reconnecting it",
+    "zh_CN": "",
+    "arguments": [
+      "imageUuid",
+      "spec.getVmInventory().getZoneUuid()",
+      "spec.getVmInventory().getName()",
+      "spec.getVmInventory().getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceVmImageSelectBackupStorageFlow.java"
+  },
+  {
+    "raw": "cannot find the image[uuid:%s] in any connected backup storage. check below:\\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\\n2. if the backup storage is in connected status, if not, try reconnecting it",
+    "en_US": "cannot find the image[uuid:{0}] in any connected backup storage. check below:\\n1. if the backup storage is attached to the zone where the VM[name: {1}, uuid:{2}] is in\\n2. if the backup storage is in connected status, if not, try reconnecting it",
+    "zh_CN": "",
+    "arguments": [
+      "imageUuid",
+      "spec.getVmInventory().getName()",
+      "spec.getVmInventory().getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/faulttolerance/FaultToleranceVmImageSelectBackupStorageFlow.java"
   },
   {
     "raw": "no backup storage attached to the zone[uuid:%s] contains the ISO[uuid:%s]",

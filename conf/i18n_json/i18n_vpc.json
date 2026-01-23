@@ -88,6 +88,16 @@
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
+    "raw": "there already have ipsec connection[uuid:%s, name:%s] with the same vrouter and peerAddress",
+    "en_US": "there already have ipsec connection[uuid:{0}, name:{1}] with the same vrouter and peerAddress",
+    "zh_CN": "",
+    "arguments": [
+      "tuples.get(0).get(0, String.class)",
+      "tuples.get(0).get(1, String.class)"
+    ],
+    "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
+  },
+  {
     "raw": "the vip[uuid:%s] has been used for %s",
     "en_US": "the vip[uuid:{0}] has been used for {1}",
     "zh_CN": "虚拟IP[uuid:{0}]已经用作网络服务 {1}",
@@ -385,6 +395,28 @@
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
+    "raw": "l3 network[uuid:%s] can not detach from vpc vrouter[uuid:%s] since network services attached vips[%s] still used in l3",
+    "en_US": "l3 network[uuid:{0}] can not detach from vpc vrouter[uuid:{1}] since network services attached vips[{2}] still used in l3",
+    "zh_CN": "",
+    "arguments": [
+      "l3NetworkVO.getUuid()",
+      "vmInstanceVO.getUuid()",
+      "vipPeerVOs.stream().map(VipPeerL3NetworkRefVO::getVipUuid).collect(Collectors.toList())"
+    ],
+    "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
+  },
+  {
+    "raw": "vpc l3 network[uuid:%s] can not detach from vpc vrouter[uuid:%s] since vm nics[%s] still used in l3",
+    "en_US": "vpc l3 network[uuid:{0}] can not detach from vpc vrouter[uuid:{1}] since vm nics[{2}] still used in l3",
+    "zh_CN": "",
+    "arguments": [
+      "l3NetworkVO.getUuid()",
+      "vmInstanceVO.getUuid()",
+      "vmNicVOS.stream().map(ResourceVO::getUuid).collect(Collectors.toList())"
+    ],
+    "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
+  },
+  {
     "raw": "virtual router offering[uuid: %s] is not enabled",
     "en_US": "virtual router offering[uuid: {0}] is not enabled",
     "zh_CN": "云路由规格[uuid: {0}]是不可用的",
@@ -464,6 +496,26 @@
     "arguments": [
       "gateways",
       "msg.getL3NetworkUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
+  },
+  {
+    "raw": "the static ip[%s] specified in message not equals to gateway ips[%s] of l3 network[uuid:%s]",
+    "en_US": "the static ip[{0}] specified in message not equals to gateway ips[{1}] of l3 network[uuid:{2}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getStaticIp()",
+      "gateways",
+      "l3NetworkVO.getUuid()"
+    ],
+    "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
+  },
+  {
+    "raw": "l3 network [uuid:%s] must be attached first, because there is vip on that l3 network",
+    "en_US": "l3 network [uuid:{0}] must be attached first, because there is vip on that l3 network",
+    "zh_CN": "",
+    "arguments": [
+      "vipL3Uuid"
     ],
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
@@ -575,6 +627,13 @@
     "fileName": "src/main/java/org/zstack/vpc/VpcManagerImpl.java"
   },
   {
+    "raw": "vpc l3 network must attach a vpc vrouter first before do anything related to vrouter(like start/stop vm, create lb, etc.)",
+    "en_US": "vpc l3 network must attach a vpc vrouter first before do anything related to vrouter(like start/stop vm, create lb, etc.)",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/vpc/VpcManagerImpl.java"
+  },
+  {
     "raw": "dns address [%s] has bean added to vpc router [uuid:%s]",
     "en_US": "dns address [{0}] has bean added to vpc router [uuid:{1}]",
     "zh_CN": "在路由器[uuid:{1}]上已经存在一个DNS[{0}]",
@@ -618,6 +677,16 @@
     "en_US": "unable to ssh in to the vpc router[{0}], the ssh port seems not open",
     "zh_CN": "无法通过SSH连接到VPC路由器[{0}]，SSH端口似乎未打开",
     "arguments": [
+      "mgmtNicIp"
+    ],
+    "fileName": "src/main/java/org/zstack/vpc/VpcVyosDeployZsnAgentFlow.java"
+  },
+  {
+    "raw": "the SSH port is not open after %s seconds. Failed to login the vpc router[ip:%s]",
+    "en_US": "the SSH port is not open after {0} seconds. Failed to login the vpc router[ip:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "timeoutInSeconds",
       "mgmtNicIp"
     ],
     "fileName": "src/main/java/org/zstack/vpc/VpcVyosDeployZsnAgentFlow.java"
@@ -713,6 +782,16 @@
     "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
   },
   {
+    "raw": "vpc router l3 networks [uuid:%s] are different from ha group l3 networks [uuid:%s], !!! please delete this router and recreate it",
+    "en_US": "vpc router l3 networks [uuid:{0}] are different from ha group l3 networks [uuid:{1}], !!! please delete this router and recreate it",
+    "zh_CN": "",
+    "arguments": [
+      "vpcL3Uuids",
+      "vpcHaGroupL3Uuids"
+    ],
+    "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
+  },
+  {
     "raw": "vpc router has been attached to ha group [uuid:%s]",
     "en_US": "vpc router has been attached to ha group [uuid:{0}]",
     "zh_CN": "vpc路由器不在高可用组[uuid:{0}]中",
@@ -734,6 +813,15 @@
     "raw": "there are more than 1 vpc routers attached to haGroup [uuid:%s]",
     "en_US": "there are more than 1 vpc routers attached to haGroup [uuid:{0}]",
     "zh_CN": "高可用组[uuid:{0}]的路由器数量已经超过1",
+    "arguments": [
+      "haUuid"
+    ],
+    "fileName": "src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
+  },
+  {
+    "raw": "vpc router [uuid:%s] can not be upgraded to ha router because it public network is same to management network",
+    "en_US": "vpc router [uuid:{0}] can not be upgraded to ha router because it public network is same to management network",
+    "zh_CN": "",
     "arguments": [
       "haUuid"
     ],

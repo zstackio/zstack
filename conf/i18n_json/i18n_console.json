@@ -1,5 +1,12 @@
 [
   {
+    "raw": "the console agent is not connected; it\u0027s mostly like the management node just starts, please wait for the console agent connected, or you can reconnect it manually if disconnected for a long time.",
+    "en_US": "the console agent is not connected; it\u0027s mostly like the management node just starts, please wait for the console agent connected, or you can reconnect it manually if disconnected for a long time.",
+    "zh_CN": "",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/console/AbstractConsoleProxyBackend.java"
+  },
+  {
     "raw": "cannot find host IP of the vm[uuid:%s], is the vm running???",
     "en_US": "cannot find host IP of the vm[uuid:{0}], is the vm running???",
     "zh_CN": "无法找到vm[uuid:{0}]的物理机IP，请确认该vm是否在运行？？？",
@@ -45,6 +52,17 @@
       "ret.getError()"
     ],
     "fileName": "src/main/java/org/zstack/console/ConsoleProxyBase.java"
+  },
+  {
+    "raw": "console proxy[uuid: %s, status: %s] on agent[ip: %s] is not Connected, fail to delete it",
+    "en_US": "console proxy[uuid: {0}, status: {1}] on agent[ip: {2}] is not Connected, fail to delete it",
+    "zh_CN": "",
+    "arguments": [
+      "consoleProxy.getUuid()",
+      "status",
+      "consoleProxy.getAgentIp()"
+    ],
+    "fileName": "src/main/java/org/zstack/console/DeleteConsoleProxyGcJob.java"
   },
   {
     "raw": "Ansible private key not found.",

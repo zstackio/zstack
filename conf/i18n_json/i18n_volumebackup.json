@@ -444,6 +444,13 @@
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
+    "raw": "The vm is creating a backup job, cannot enable the cdp task at the same time.",
+    "en_US": "The vm is creating a backup job, cannot enable the cdp task at the same time.",
+    "zh_CN": "虚拟机正在创建备份任务，无法同时启用 CDP 任务",
+    "arguments": [],
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
+  },
+  {
     "raw": "cannot find volume backup[uuid:%s]",
     "en_US": "cannot find volume backup[uuid:{0}]",
     "zh_CN": "",
@@ -646,6 +653,16 @@
       "url"
     ],
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
+  },
+  {
+    "raw": "generate volume backup metadata file on image store[uuid:%s] failure, because IO error: %s",
+    "en_US": "generate volume backup metadata file on image store[uuid:{0}] failure, because IO error: {1}",
+    "zh_CN": "在镜像存储[uuid:{0}] 上生成卷备份元数据文件出现 IO 错误: {1}",
+    "arguments": [
+      "inv.getUuid()",
+      "e.getMessage()"
+    ],
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupMetadataMaker.java"
   },
   {
     "raw": "volume backup metadata operation failure, because %s",
