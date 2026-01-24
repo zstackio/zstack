@@ -30,6 +30,7 @@ public class LongJobFactoryImpl implements LongJobFactory, Component {
     private TreeMap<String, String> fullJobName = new TreeMap<>();
 
     private Set<String> notSupportCancelJobType = new HashSet<>();
+    private Set<String> notSupportSuspendJobType = new HashSet<>();
     private Set<String> notSupportResumeJobType = new HashSet<>();
     private Set<String> notSupportCleanJobType = new HashSet<>();
 
@@ -81,6 +82,11 @@ public class LongJobFactoryImpl implements LongJobFactory, Component {
     }
 
     @Override
+    public boolean supportSuspend(String jobName) {
+        return !notSupportSuspendJobType.contains(jobName);
+    }
+
+    @Override
     public boolean supportResume(String jobName) {
         return !notSupportResumeJobType.contains(jobName);
     }
@@ -94,6 +100,10 @@ public class LongJobFactoryImpl implements LongJobFactory, Component {
         for (Method method : job.getClass().getMethods()) {
             if (method.getName().equals("cancel") && method.isDefault()) {
                 notSupportCancelJobType.add(jobName);
+            }
+
+            if (method.getName().equals("suspend") && method.isDefault()) {
+                notSupportSuspendJobType.add(jobName);
             }
 
             if (method.getName().equals("resume") && method.isDefault()) {

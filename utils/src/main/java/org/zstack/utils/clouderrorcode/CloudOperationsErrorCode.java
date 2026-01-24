@@ -7506,6 +7506,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_AI_MESSAGE_10002 = "ORG_ZSTACK_AI_MESSAGE_10002";
 
+    public static final String ORG_ZSTACK_AI_MESSAGE_10003 = "ORG_ZSTACK_AI_MESSAGE_10003";
+
     public static final String ORG_ZSTACK_BAREMETAL2_INSTANCE_10000 = "ORG_ZSTACK_BAREMETAL2_INSTANCE_10000";
 
     public static final String ORG_ZSTACK_BAREMETAL2_INSTANCE_10001 = "ORG_ZSTACK_BAREMETAL2_INSTANCE_10001";
@@ -14785,6 +14787,12 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_AI_10129 = "ORG_ZSTACK_AI_10129";
 
     public static final String ORG_ZSTACK_AI_10130 = "ORG_ZSTACK_AI_10130";
+
+    public static final String ORG_ZSTACK_AI_10131 = "ORG_ZSTACK_AI_10131";
+
+    public static final String ORG_ZSTACK_AI_10132 = "ORG_ZSTACK_AI_10132";
+
+    public static final String ORG_ZSTACK_AI_10133 = "ORG_ZSTACK_AI_10133";
 
     public static final String ORG_ZSTACK_CORE_CLOUDBUS_10000 = "ORG_ZSTACK_CORE_CLOUDBUS_10000";
 

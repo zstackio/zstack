@@ -162,9 +162,31 @@ public class LongJobUtils {
             return LongJobStateEvent.suspend;
         } else if (errorCode.isError(LongJobErrors.CANCELED)) {
             return LongJobStateEvent.canceled;
+        } else if (isRecoverableError(errorCode)) {
+            return LongJobStateEvent.suspend;
         } else {
             return LongJobStateEvent.fail;
         }
+    }
+
+    /**
+     * Check if an error is marked as recoverable in its opaque field.
+     * Any business module can mark an error as recoverable by setting
+     * "longJobRecoverable" to true in the error code's opaque field.
+     * This allows the long job framework to automatically suspend instead of fail
+     * for recoverable errors, enabling automatic retry after service restart.
+     *
+     * @param errorCode the error code to check
+     * @return true if the error is marked as recoverable, false otherwise
+     */
+    private static boolean isRecoverableError(ErrorCode errorCode) {
+        // Check if error code has recoverable flag in opaque
+        // Any business module can set this flag to indicate the error is recoverable
+        Object recoverable = errorCode.getFromOpaque("longJobRecoverable");
+        if (recoverable instanceof Boolean && (Boolean) recoverable) {
+            return true;
+        }
+        return false;
     }
 
     private static void setExecuteTimeIfNeed(LongJobVO job) {

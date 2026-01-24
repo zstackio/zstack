@@ -10,6 +10,7 @@ import org.zstack.header.message.APIEvent;
 public interface LongJob {
     void start(LongJobVO job, ReturnValueCompletion<APIEvent> completion);
     default void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion) {}
+    default void suspend(LongJobVO job, ReturnValueCompletion<Boolean> completion) {}
     default void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {}
     default void clean(LongJobVO job, NoErrorCompletion completion) {}
     default Class getAuditType() {

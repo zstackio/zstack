@@ -127,6 +127,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             handle((APIRerunLongJobMsg) msg);
         } else if (msg instanceof APIResumeLongJobMsg) {
             handle((APIResumeLongJobMsg) msg);
+        } else if (msg instanceof APISuspendLongJobMsg) {
+            handle((APISuspendLongJobMsg) msg);
         } else if (msg instanceof APICleanLongJobMsg) {
             handle((APICleanLongJobMsg) msg);
         } else {
@@ -420,6 +422,80 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             @Override
             public String getName() {
                 return String.format("resume-longjob-%s", msg.getUuid());
+            }
+        });
+    }
+
+    private void handle(APISuspendLongJobMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "longjob-" + msg.getUuid();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                final APISuspendLongJobEvent evt = new APISuspendLongJobEvent(msg.getId());
+                suspendLongJob(msg.getUuid(), new ReturnValueCompletion<LongJobVO>(chain) {
+                    @Override
+                    public void success(LongJobVO vo) {
+                        evt.setInventory(LongJobInventory.valueOf(vo));
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("suspend-longjob-%s", msg.getUuid());
+            }
+        });
+    }
+
+    private void suspendLongJob(String uuid, ReturnValueCompletion<LongJobVO> completion) {
+        Tuple t = Q.New(LongJobVO.class).eq(LongJobVO_.uuid, uuid).select(LongJobVO_.state, LongJobVO_.jobName).findTuple();
+        LongJobState currentState = t.get(0, LongJobState.class);
+        String jobName = t.get(1, String.class);
+
+        if (currentState == LongJobState.Suspended) {
+            LongJobVO vo = dbf.findByUuid(uuid, LongJobVO.class);
+            completion.success(vo);
+            return;
+        }
+
+        if (currentState != LongJobState.Running) {
+            completion.fail(err(ORG_ZSTACK_LONGJOB_10002, LongJobErrors.NOT_SUPPORTED, "can only suspend running jobs, current state: %s", currentState));
+            return;
+        }
+
+        if (!longJobFactory.supportSuspend(jobName)) {
+            completion.fail(err(ORG_ZSTACK_LONGJOB_10002, LongJobErrors.NOT_SUPPORTED, "job type %s does not support suspend", jobName));
+            return;
+        }
+
+        LongJobVO vo = dbf.findByUuid(uuid, LongJobVO.class);
+        LongJob job = longJobFactory.getLongJob(vo.getJobName());
+
+        job.suspend(vo, new ReturnValueCompletion<Boolean>(completion) {
+            @Override
+            public void success(Boolean suspended) {
+                LongJobVO updatedVo = changeState(uuid, LongJobStateEvent.suspend);
+                logger.info(String.format("longjob [uuid:%s, name:%s] has been suspended", vo.getUuid(), vo.getName()));
+                completion.success(updatedVo);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.error(String.format("failed to suspend longjob [uuid:%s, name:%s]: %s", vo.getUuid(), vo.getName(), errorCode));
+                completion.fail(errorCode);
             }
         });
     }
