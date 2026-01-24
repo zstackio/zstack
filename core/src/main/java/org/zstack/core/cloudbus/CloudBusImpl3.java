@@ -1,5 +1,10 @@
 package org.zstack.core.cloudbus;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
 import io.sentry.Sentry;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +23,9 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.log.LogUtils;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
+import org.zstack.core.telemetry.MessageTracingHelper;
+import org.zstack.core.telemetry.TelemetryFacade;
+import org.zstack.core.telemetry.TelemetryGlobalProperty;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTask;
@@ -103,6 +111,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     private final String THREAD_CONTEXT_STACK = "thread-context-stack";
     private final String THREAD_CONTEXT = "thread-context";
     private final String TASK_CONTEXT = "task-context";
+    private final String TRACE_CONTEXT = "__trace__";
     final static String SERVICE_ID_SPLITTER = ":::";
 
     private final String SERVICE_ID = makeLocalServiceId("cloudbus.messages");
@@ -132,6 +141,31 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
     public static final String HTTP_BASE_URL = "/cloudbus";
     public static final FutureCompletion SEND_CONFIRMED = new FutureCompletion(null);
+
+    private TelemetryFacade telemetryFacade;
+
+    private TelemetryFacade getTelemetryFacade() {
+        if (telemetryFacade == null && TelemetryGlobalProperty.ENABLED) {
+            try {
+                telemetryFacade = Platform.getComponentLoader().getComponent(TelemetryFacade.class);
+            } catch (Exception e) {
+                logger.trace("TelemetryFacade not available", e);
+            }
+        }
+        return telemetryFacade;
+    }
+
+    private boolean isTelemetryEnabled() {
+        return TelemetryGlobalProperty.ENABLED && getTelemetryFacade() != null && getTelemetryFacade().isEnabled();
+    }
+
+    private Context extractTraceContextFromMessage(Message msg) {
+        Map<String, String> traceCtx = msg.getHeaderEntry(TRACE_CONTEXT);
+        if (traceCtx == null || traceCtx.isEmpty()) {
+            return null;
+        }
+        return MessageTracingHelper.parseTraceContext(traceCtx);
+    }
 
     {
         if (CloudBusGlobalProperty.MESSAGE_LOG != null) {
@@ -790,6 +824,21 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         if (msg.getHeaders().containsKey(TASK_CONTEXT)) {
             TaskContext.setTaskContext(msg.getHeaderEntry(TASK_CONTEXT));
         }
+
+        if (TelemetryGlobalProperty.ENABLED && msg.getHeaders().containsKey(TRACE_CONTEXT)) {
+            @SuppressWarnings("unchecked")
+            Map<String, String> traceCtx = msg.getHeaderEntry(TRACE_CONTEXT);
+            if (traceCtx != null && !traceCtx.isEmpty()) {
+                String traceparent = traceCtx.get(MessageTracingHelper.TRACEPARENT_KEY);
+                String tracestate = traceCtx.get(MessageTracingHelper.TRACESTATE_KEY);
+                if (traceparent != null) {
+                    ThreadContext.put(Constants.THREAD_CONTEXT_TRACEPARENT, traceparent);
+                }
+                if (tracestate != null) {
+                    ThreadContext.put(Constants.THREAD_CONTEXT_TRACESTATE, tracestate);
+                }
+            }
+        }
     }
 
     private boolean islogMessage(Message msg) {
@@ -849,11 +898,40 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                         public Void call() {
                             setThreadLoggingContext(msg);
 
+                            Span consumerSpan = null;
+                            Scope scope = null;
+                            boolean success = true;
+
                             try {
+                                if (isTelemetryEnabled()) {
+                                    Context parentContext = extractTraceContextFromMessage(msg);
+                                    consumerSpan = getTelemetryFacade().getTracer()
+                                            .spanBuilder("CloudBus Handle: " + msg.getClass().getSimpleName())
+                                            .setSpanKind(SpanKind.CONSUMER)
+                                            .setParent(parentContext != null ? parentContext : Context.current())
+                                            .setAttribute("messaging.system", "cloudbus")
+                                            .setAttribute("messaging.destination", serv.getId())
+                                            .setAttribute("messaging.message_id", msg.getId())
+                                            .setAttribute("messaging.message_class", msg.getClass().getName())
+                                            .startSpan();
+                                    scope = consumerSpan.makeCurrent();
+
+                                    Map<String, String> newTraceCtx = MessageTracingHelper.extractTraceContext();
+                                    if (newTraceCtx.containsKey(MessageTracingHelper.TRACEPARENT_KEY)) {
+                                        ThreadContext.put(Constants.THREAD_CONTEXT_TRACEPARENT, 
+                                                newTraceCtx.get(MessageTracingHelper.TRACEPARENT_KEY));
+                                    }
+                                    if (newTraceCtx.containsKey(MessageTracingHelper.TRACESTATE_KEY)) {
+                                        ThreadContext.put(Constants.THREAD_CONTEXT_TRACESTATE,
+                                                newTraceCtx.get(MessageTracingHelper.TRACESTATE_KEY));
+                                    }
+                                }
+
                                 beforeDeliverMessage(msg);
 
                                 serv.handleMessage(msg);
                             } catch (Throwable t) {
+                                success = false;
                                 logExceptionWithMessageDump(msg, t);
 
                                 if (t instanceof OperationFailureException) {
@@ -863,16 +941,27 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
                                     if (CloudBusGlobalProperty.SENTRY_ON) {
                                         try {
-                                            // Add message context to Sentry before capturing the exception
-                                            Sentry.configureScope(scope -> {
-                                                scope.setExtra("message.dump", dumpMessage(msg));
-                                                scope.setTag("service.id", serv.getId());
-                                                scope.setTag("message.class", msg.getClass().getSimpleName());
+                                            Sentry.configureScope(scopeConfig -> {
+                                                scopeConfig.setExtra("message.dump", dumpMessage(msg));
+                                                scopeConfig.setTag("service.id", serv.getId());
+                                                scopeConfig.setTag("message.class", msg.getClass().getSimpleName());
                                             });
                                         } catch (Exception sentryEx) {
                                             logger.warn("Failed to capture exception with Sentry", sentryEx);
                                         }
                                     }
+                                }
+                                
+                                if (consumerSpan != null) {
+                                    consumerSpan.recordException(t);
+                                }
+                            } finally {
+                                if (consumerSpan != null) {
+                                    consumerSpan.setStatus(success ? StatusCode.OK : StatusCode.ERROR);
+                                    consumerSpan.end();
+                                }
+                                if (scope != null) {
+                                    scope.close();
                                 }
                             }
 
@@ -1270,6 +1359,13 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         if (tctx != null) {
             msg.putHeaderEntry(TASK_CONTEXT, tctx);
         }
+
+        if (TelemetryGlobalProperty.ENABLED) {
+            Map<String, String> traceCtx = MessageTracingHelper.extractTraceContext();
+            if (!traceCtx.isEmpty()) {
+                msg.putHeaderEntry(TRACE_CONTEXT, traceCtx);
+            }
+        }
     }
 
     private FutureCompletion doSendAndCallExtensions(Message msg) {
@@ -1291,7 +1387,25 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     }
 
     private FutureCompletion doSend(Message msg) {
-        evalThreadContextToMessage(msg);
+        if (isTelemetryEnabled() && !(msg instanceof MessageReply)) {
+            Span producerSpan = getTelemetryFacade().getTracer()
+                    .spanBuilder("CloudBus Send: " + msg.getClass().getSimpleName())
+                    .setSpanKind(SpanKind.PRODUCER)
+                    .setAttribute("messaging.system", "cloudbus")
+                    .setAttribute("messaging.destination", msg.getServiceId())
+                    .setAttribute("messaging.message_id", msg.getId())
+                    .setAttribute("messaging.message_class", msg.getClass().getName())
+                    .startSpan();
+            try (Scope scope = producerSpan.makeCurrent()) {
+                // Inject trace context while producer span is current, so the message
+                // contains the correct parent-child relationship
+                evalThreadContextToMessage(msg);
+            } finally {
+                producerSpan.end();
+            }
+        } else {
+            evalThreadContextToMessage(msg);
+        }
 
         if (logger.isTraceEnabled() && islogMessage(msg)) {
             logger.trace(String.format("[msg send]: %s", dumpMessage(msg)));

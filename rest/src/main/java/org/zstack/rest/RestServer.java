@@ -1,5 +1,10 @@
 package org.zstack.rest;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -10,6 +15,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.ThreadContext;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -30,6 +36,9 @@ import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.log.LogUtils;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
+import org.zstack.core.telemetry.MessageTracingHelper;
+import org.zstack.core.telemetry.TelemetryFacade;
+import org.zstack.core.telemetry.TelemetryGlobalProperty;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.Component;
 import org.zstack.header.Constants;
@@ -145,6 +154,23 @@ public class RestServer implements Component, CloudBusEventListener {
     private Map<RestAuthenticationType, RestAuthenticationBackend> restAuthBackends = new HashMap<RestAuthenticationType, RestAuthenticationBackend>();
 
     private List<RestServletRequestInterceptor> interceptors = new ArrayList<>();
+
+    private TelemetryFacade telemetryFacade;
+
+    private TelemetryFacade getTelemetryFacade() {
+        if (telemetryFacade == null && TelemetryGlobalProperty.ENABLED) {
+            try {
+                telemetryFacade = Platform.getComponentLoader().getComponent(TelemetryFacade.class);
+            } catch (Exception e) {
+                logger.trace("TelemetryFacade not available", e);
+            }
+        }
+        return telemetryFacade;
+    }
+
+    private boolean isTelemetryEnabled() {
+        return TelemetryGlobalProperty.ENABLED && getTelemetryFacade() != null && getTelemetryFacade().isEnabled();
+    }
 
     public void registerRestServletRequestInterceptor(RestServletRequestInterceptor interceptor) {
         interceptors.add(interceptor);
@@ -702,50 +728,145 @@ public class RestServer implements Component, CloudBusEventListener {
         HttpEntity<String> entity = toHttpEntity(req);
         extensions.forEach(ext -> ext.afterRestRequest(info.method));
 
-        if (requestLogger.isTraceEnabled() && needLog(info)) {
-            StringBuilder sb = new StringBuilder(String.format("[ID: %s, Method: %s] Request from %s (to %s), ",
-                    req.getSession().getId(), req.getMethod(),
-                    req.getRemoteHost(), UriUtils.decode(req.getRequestURI(), "UTF-8")));
-            sb.append(String.format(" Headers: %s,", JSONObjectUtil.toJsonString(entity.getHeaders())));
-            if (req.getQueryString() != null && !req.getQueryString().isEmpty()) {
-                sb.append(String.format(" Query: %s,", UriUtils.decode(req.getQueryString(), "UTF-8")));
+        Span apiSpan = null;
+        Scope scope = null;
+        if (isTelemetryEnabled()) {
+            try {
+                Context parentContext = extractTraceContextFromRequest(req);
+                
+                apiSpan = getTelemetryFacade().getTracer()
+                        .spanBuilder("API " + req.getMethod() + " " + path)
+                        .setSpanKind(SpanKind.SERVER)
+                        .setParent(parentContext)
+                        .setAttribute("http.method", req.getMethod())
+                        .setAttribute("http.url", req.getRequestURL().toString())
+                        .setAttribute("http.path", path)
+                        .setAttribute("http.client_ip", info.clientIp)
+                        .setAttribute("net.peer.ip", info.clientIp)
+                        .startSpan();
+                
+                scope = apiSpan.makeCurrent();
+                
+                java.util.Map<String, String> traceCtx = MessageTracingHelper.extractTraceContext();
+                if (traceCtx.containsKey(MessageTracingHelper.TRACEPARENT_KEY)) {
+                    ThreadContext.put(Constants.THREAD_CONTEXT_TRACEPARENT, 
+                            traceCtx.get(MessageTracingHelper.TRACEPARENT_KEY));
+                }
+                if (traceCtx.containsKey(MessageTracingHelper.TRACESTATE_KEY)) {
+                    ThreadContext.put(Constants.THREAD_CONTEXT_TRACESTATE, 
+                            traceCtx.get(MessageTracingHelper.TRACESTATE_KEY));
+                }
+            } catch (Exception e) {
+                logger.trace("Failed to create API span", e);
             }
-            sb.append(String.format(" Body: %s", entity.getBody() == null || entity.getBody().isEmpty() ? null : getFormatBody(path, entity.getBody())));
-
-            requestLogger.trace(sb.toString());
         }
+
+        final Span finalApiSpan = apiSpan;
+        final Scope finalScope = scope;
 
         try {
-            for (RestServletRequestInterceptor ic : interceptors) {
-                ic.intercept(req);
+            if (requestLogger.isTraceEnabled() && needLog(info)) {
+                StringBuilder sb = new StringBuilder(String.format("[ID: %s, Method: %s] Request from %s (to %s), ",
+                        req.getSession().getId(), req.getMethod(),
+                        req.getRemoteHost(), UriUtils.decode(req.getRequestURI(), "UTF-8")));
+                sb.append(String.format(" Headers: %s,", JSONObjectUtil.toJsonString(entity.getHeaders())));
+                if (req.getQueryString() != null && !req.getQueryString().isEmpty()) {
+                    sb.append(String.format(" Query: %s,", UriUtils.decode(req.getQueryString(), "UTF-8")));
+                }
+                sb.append(String.format(" Body: %s", entity.getBody() == null || entity.getBody().isEmpty() ? null : getFormatBody(path, entity.getBody())));
+
+                requestLogger.trace(sb.toString());
             }
-        } catch (RestServletRequestInterceptor.RestServletRequestInterceptorException e) {
-            sendResponse(e.statusCode, e.error, rsp);
-            return;
-        }
 
-        if (matcher.match(ASYNC_JOB_PATH_PATTERN, path)) {
-            handleJobQuery(req, rsp);
-            return;
-        }
-
-        Object api = apis.get(getMatchPath(path));
-        if (api == null) {
-            sendResponse(HttpStatus.NOT_FOUND.value(), String.format("no api mapping to %s", path), rsp);
-            return;
-        }
-
-        try {
-            if (api instanceof Api) {
-                handleUniqueApi((Api) api, entity, req, rsp);
-            } else {
-                handleNonUniqueApi((Collection)api, entity, req, rsp);
+            try {
+                for (RestServletRequestInterceptor ic : interceptors) {
+                    ic.intercept(req);
+                }
+            } catch (RestServletRequestInterceptor.RestServletRequestInterceptorException e) {
+                if (finalApiSpan != null) {
+                    finalApiSpan.setStatus(StatusCode.ERROR, e.error);
+                    finalApiSpan.setAttribute("http.status_code", e.statusCode);
+                }
+                sendResponse(e.statusCode, e.error, rsp);
+                return;
             }
-        } catch (RestException e) {
-            sendResponse(e.statusCode, e.error, rsp);
-        } catch (Throwable e) {
-            logger.warn(String.format("failed to handle API to %s", path), e);
-            sendResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), rsp);
+
+            if (matcher.match(ASYNC_JOB_PATH_PATTERN, path)) {
+                if (finalApiSpan != null) {
+                    finalApiSpan.setStatus(StatusCode.OK);
+                }
+                handleJobQuery(req, rsp);
+                return;
+            }
+
+            Object api = apis.get(getMatchPath(path));
+            if (api == null) {
+                if (finalApiSpan != null) {
+                    finalApiSpan.setStatus(StatusCode.ERROR, "API not found");
+                    finalApiSpan.setAttribute("http.status_code", HttpStatus.NOT_FOUND.value());
+                }
+                sendResponse(HttpStatus.NOT_FOUND.value(), String.format("no api mapping to %s", path), rsp);
+                return;
+            }
+
+            try {
+                if (api instanceof Api) {
+                    handleUniqueApi((Api) api, entity, req, rsp);
+                } else {
+                    handleNonUniqueApi((Collection)api, entity, req, rsp);
+                }
+                if (finalApiSpan != null) {
+                    finalApiSpan.setStatus(StatusCode.OK);
+                }
+            } catch (RestException e) {
+                if (finalApiSpan != null) {
+                    finalApiSpan.setStatus(StatusCode.ERROR, e.error);
+                    finalApiSpan.setAttribute("http.status_code", e.statusCode);
+                }
+                sendResponse(e.statusCode, e.error, rsp);
+            } catch (Throwable e) {
+                logger.warn(String.format("failed to handle API to %s", path), e);
+                if (finalApiSpan != null) {
+                    finalApiSpan.recordException(e);
+                    finalApiSpan.setStatus(StatusCode.ERROR, e.getMessage());
+                    finalApiSpan.setAttribute("http.status_code", HttpStatus.INTERNAL_SERVER_ERROR.value());
+                }
+                sendResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), rsp);
+            }
+        } finally {
+            endSpanAndScope(finalApiSpan, finalScope);
+        }
+    }
+
+    private Context extractTraceContextFromRequest(HttpServletRequest req) {
+        String traceparent = req.getHeader(Constants.HTTP_HEADER_TRACEPARENT);
+        if (traceparent == null || traceparent.isEmpty()) {
+            return Context.current();
+        }
+        
+        java.util.Map<String, String> traceCtx = new HashMap<>();
+        traceCtx.put(MessageTracingHelper.TRACEPARENT_KEY, traceparent);
+        String tracestate = req.getHeader(Constants.HTTP_HEADER_TRACESTATE);
+        if (tracestate != null && !tracestate.isEmpty()) {
+            traceCtx.put(MessageTracingHelper.TRACESTATE_KEY, tracestate);
+        }
+        return MessageTracingHelper.parseTraceContext(traceCtx);
+    }
+
+    private void endSpanAndScope(Span span, Scope scope) {
+        if (span != null) {
+            try {
+                span.end();
+            } catch (Exception e) {
+                logger.trace("Failed to end API span", e);
+            }
+        }
+        if (scope != null) {
+            try {
+                scope.close();
+            } catch (Exception e) {
+                logger.trace("Failed to close API scope", e);
+            }
         }
     }
 

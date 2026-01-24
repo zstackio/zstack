@@ -1,5 +1,10 @@
 package org.zstack.core.workflow;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +13,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.telemetry.TelemetryFacade;
+import org.zstack.core.telemetry.TelemetryGlobalProperty;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -69,8 +76,165 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     private static final Map<String, WorkFlowStatistic> statistics = new ConcurrentHashMap<>();
 
+    private static volatile TelemetryFacade telemetryFacade;
+    private Span chainSpan;
+    private Scope chainScope;
+    private Span currentFlowSpan;
+    private Scope currentFlowScope;
+    private Context chainContext;
+
+    private static TelemetryFacade getTelemetryFacade() {
+        if (telemetryFacade == null && TelemetryGlobalProperty.ENABLED) {
+            synchronized (SimpleFlowChain.class) {
+                if (telemetryFacade == null) {
+                    try {
+                        telemetryFacade = Platform.getComponentLoader().getComponent(TelemetryFacade.class);
+                    } catch (Exception e) {
+                        logger.trace("TelemetryFacade not available", e);
+                    }
+                }
+            }
+        }
+        return telemetryFacade;
+    }
+
+    private static boolean isTelemetryEnabled() {
+        return TelemetryGlobalProperty.ENABLED && getTelemetryFacade() != null && getTelemetryFacade().isEnabled();
+    }
+
+    private void startChainSpan() {
+        if (!isTelemetryEnabled()) {
+            return;
+        }
+
+        try {
+            chainContext = Context.current();
+            chainSpan = getTelemetryFacade().getTracer()
+                    .spanBuilder("FlowChain: " + (name != null ? name : "anonymous"))
+                    .setSpanKind(SpanKind.INTERNAL)
+                    .setAttribute("flowchain.id", id)
+                    .setAttribute("flowchain.name", name != null ? name : "anonymous")
+                    .setAttribute("flowchain.flow_count", flows.size())
+                    .startSpan();
+            chainScope = chainSpan.makeCurrent();
+        } catch (Exception e) {
+            logger.trace("Failed to start chain span", e);
+        }
+    }
+
+    private void endChainSpan(boolean success) {
+        if (!isTelemetryEnabled() || chainSpan == null) {
+            return;
+        }
+
+        try {
+            if (success) {
+                chainSpan.setStatus(StatusCode.OK);
+            } else {
+                chainSpan.setStatus(StatusCode.ERROR, errorCode != null ? errorCode.toString() : "unknown error");
+                if (errorCode != null) {
+                    chainSpan.setAttribute("error.code", errorCode.getCode());
+                    chainSpan.setAttribute("error.description",
+                            errorCode.getDescription() != null ? errorCode.getDescription() : "");
+                }
+            }
+        } catch (Exception e) {
+            logger.trace("Failed to set chain span status", e);
+        } finally {
+            try {
+                if (chainScope != null) {
+                    chainScope.close();
+                }
+                if (chainSpan != null) {
+                    chainSpan.end();
+                }
+            } catch (Exception e) {
+                logger.trace("Failed to end chain span", e);
+            }
+        }
+    }
+
+    private void startFlowSpan(Flow flow) {
+        if (!isTelemetryEnabled()) {
+            return;
+        }
+
+        endCurrentFlowSpan(true);
+
+        try {
+            String flowName = getFlowNameWithoutLocation(flow);
+            currentFlowSpan = getTelemetryFacade().getTracer()
+                    .spanBuilder("Flow: " + flowName)
+                    .setSpanKind(SpanKind.INTERNAL)
+                    .setAttribute("flow.name", flowName)
+                    .setAttribute("flow.class", flow.getClass().getName())
+                    .setAttribute("flow.index", currentLoop)
+                    .setAttribute("flowchain.id", id)
+                    .startSpan();
+            currentFlowScope = currentFlowSpan.makeCurrent();
+        } catch (Exception e) {
+            logger.trace("Failed to start flow span", e);
+        }
+    }
+
+    private void endCurrentFlowSpan(boolean success) {
+        if (!isTelemetryEnabled() || currentFlowSpan == null) {
+            return;
+        }
+
+        try {
+            if (success) {
+                currentFlowSpan.setStatus(StatusCode.OK);
+            } else {
+                currentFlowSpan.setStatus(StatusCode.ERROR, errorCode != null ? errorCode.toString() : "failed");
+                if (errorCode != null) {
+                    currentFlowSpan.setAttribute("error.code", errorCode.getCode());
+                }
+            }
+        } catch (Exception e) {
+            logger.trace("Failed to set flow span status", e);
+        } finally {
+            try {
+                if (currentFlowScope != null) {
+                    currentFlowScope.close();
+                    currentFlowScope = null;
+                }
+                if (currentFlowSpan != null) {
+                    currentFlowSpan.end();
+                    currentFlowSpan = null;
+                }
+            } catch (Exception e) {
+                logger.trace("Failed to end flow span", e);
+            }
+        }
+    }
+
+    private void startRollbackSpan(Flow flow) {
+        if (!isTelemetryEnabled()) {
+            return;
+        }
+
+        endCurrentFlowSpan(false);
+
+        try {
+            String flowName = getFlowNameWithoutLocation(flow);
+            currentFlowSpan = getTelemetryFacade().getTracer()
+                    .spanBuilder("Rollback: " + flowName)
+                    .setSpanKind(SpanKind.INTERNAL)
+                    .setAttribute("flow.name", flowName)
+                    .setAttribute("flow.class", flow.getClass().getName())
+                    .setAttribute("flow.rollback", true)
+                    .setAttribute("flowchain.id", id)
+                    .startSpan();
+            currentFlowScope = currentFlowSpan.makeCurrent();
+        } catch (Exception e) {
+            logger.trace("Failed to start rollback span", e);
+        }
+    }
+
     private class FlowStopWatch {
         Map<String, Long> beginTime = new HashMap<>();
+
         void start(Flow flow) {
             long btime = System.currentTimeMillis();
             if (currentFlow != null) {
@@ -106,6 +270,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     private FlowStopWatch stopWatch;
     private boolean allowWatch = false;
+
     public void allowWatch() {
         this.allowWatch = true;
         if (stopWatch == null) {
@@ -219,13 +384,13 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     }
 
     public SimpleFlowChain ctxHandler(FlowContextHandler handler) {
-        DebugUtils.Assert(contextHandler==null, "there has been an FlowContextHandler installed");
+        DebugUtils.Assert(contextHandler == null, "there has been an FlowContextHandler installed");
         contextHandler = handler;
         return this;
     }
 
     public SimpleFlowChain error(FlowErrorHandler handler) {
-        DebugUtils.Assert(errorHandler==null, "there has been an FlowErrorHandler installed");
+        DebugUtils.Assert(errorHandler == null, "there has been an FlowErrorHandler installed");
         errorHandler = handler;
         return this;
     }
@@ -243,7 +408,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     }
 
     @Override
-    public FlowChain putData(Entry...es) {
+    public FlowChain putData(Entry... es) {
         for (Map.Entry e : es) {
             data.put(e.getKey(), e.getValue());
         }
@@ -274,7 +439,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     @Override
     public SimpleFlowChain done(FlowDoneHandler handler) {
-        DebugUtils.Assert(doneHandler==null, "there has been a FlowDoneHandler installed");
+        DebugUtils.Assert(doneHandler == null, "there has been a FlowDoneHandler installed");
         doneHandler = handler;
         return this;
     }
@@ -321,7 +486,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                     flowClassName = currentFlow.getClass().getName();
                 }
 
-                throw new CloudRuntimeException(String.format("flow[%s:%s] opened a transaction but forgot closing it", flowClassName, flowName));
+                throw new CloudRuntimeException(String.format("flow[%s:%s] opened a transaction but forgot closing it",
+                        flowClassName, flowName));
             }
 
             Flow toRun = null;
@@ -329,7 +495,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                 toRun = flowMarshaller.marshalTheNextFlow(currentFlow == null ? null : currentFlow.getClass().getName(),
                         flow.getClass().getName(), this, data);
                 if (toRun != null) {
-                    printDebugLog(String.format("[FlowChain(%s): %s] FlowMarshaller[%s] replaces the next flow[%s] to the flow[%s]",
+                    printDebugLog(String.format(
+                            "[FlowChain(%s): %s] FlowMarshaller[%s] replaces the next flow[%s] to the flow[%s]",
                             id, name, flowMarshaller.getClass(), flow.getClass(), toRun.getClass()));
                 }
             }
@@ -344,6 +511,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
             currentFlow = toRun;
 
+            startFlowSpan(toRun);
+
             String flowName = getFlowName(currentFlow);
             String info = String.format("[FlowChain(%s): %s] start executing flow[%s]", id, name, flowName);
             printDebugLog(info);
@@ -351,7 +520,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             collectAfterRunnable(toRun);
 
             if (preCheck != null) {
-                printDebugLog(String.format("[FlowChain(%s): %s] start executing pre-check for flow[%s]", id, name, flowName));
+                printDebugLog(String.format("[FlowChain(%s): %s] start executing pre-check for flow[%s]", id, name,
+                        flowName));
 
                 ErrorCode err = preCheck.apply(data);
                 if (err != null) {
@@ -361,7 +531,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             }
 
             if (isSkipFlow(toRun)) {
-                printDebugLog(String.format("[FlowChain(%s): %s] skip flow[%s] because it's skip() returns true", id, name, flowName));
+                printDebugLog(String.format("[FlowChain(%s): %s] skip flow[%s] because it's skip() returns true", id,
+                        name, flowName));
                 skippedFlows.add(toRun);
                 this.next();
             } else {
@@ -384,8 +555,10 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             fail(fe.getErrorCode());
         } catch (Throwable t) {
             logger.warn(String.format("unhandled exception call backtrace %s", DebugUtils.getStackTrace(t)));
-            logger.warn(String.format("[FlowChain(%s): %s] unhandled exception when executing flow[%s], start to rollback",
-                    id, name, flow.getClass().getName()), t);
+            logger.warn(
+                    String.format("[FlowChain(%s): %s] unhandled exception when executing flow[%s], start to rollback",
+                            id, name, flow.getClass().getName()),
+                    t);
             fail(inerr(ORG_ZSTACK_CORE_WORKFLOW_10001, t.getMessage()));
         }
     }
@@ -394,7 +567,9 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         try {
             printDebugLog(String.format("[FlowChain(%s): %s] start to rollback flow[%s]", id, name, getFlowName(flow)));
 
-            currentLoop --;
+            startRollbackSpan(flow);
+
+            currentLoop--;
 
             if (contextHandler != null) {
                 if (contextHandler.skipRollback(this.getErrorCode())) {
@@ -404,15 +579,17 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                 }
             }
 
-
             if (skippedFlows.contains(flow)) {
-                printDebugLog(String.format("[FlowChain(%s): %s] skip rollback flow[%s] because it's skip() returns true", id, name, getFlowName(flow)));
+                printDebugLog(
+                        String.format("[FlowChain(%s): %s] skip rollback flow[%s] because it's skip() returns true", id,
+                                name, getFlowName(flow)));
                 rollback();
             } else {
                 flow.rollback(this, data);
             }
         } catch (Throwable t) {
-            logger.warn(String.format("unhandled exception when rollback, call backtrace %s", DebugUtils.getStackTrace(t)));
+            logger.warn(
+                    String.format("unhandled exception when rollback, call backtrace %s", DebugUtils.getStackTrace(t)));
             logger.warn(String.format("[FlowChain(%s): %s] unhandled exception when rollback flow[%s]," +
                     " continue to next rollback", id, name, flow.getClass().getSimpleName()), t);
             rollback();
@@ -420,8 +597,11 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     }
 
     private void callErrorHandler(boolean info) {
+        endCurrentFlowSpan(false);
+
         if (info) {
-            printDebugLog(String.format("[FlowChain(%s): %s] rolled back all flows because error%s", id, name, errorCode));
+            printDebugLog(
+                    String.format("[FlowChain(%s): %s] rolled back all flows because error%s", id, name, errorCode));
         }
 
         if (errorHandler != null) {
@@ -448,6 +628,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             }
         }
 
+        endChainSpan(false);
         callFinallyHandler();
     }
 
@@ -474,7 +655,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         if (logger.isTraceEnabled()) {
             String className = flow.getClass().getName();
             String[] ff = className.split("\\.");
-            String filename = ff[ff.length-1];
+            String filename = ff[ff.length - 1];
             if (filename.contains("$")) {
                 int index = filename.indexOf("$");
                 filename = filename.substring(0, index);
@@ -499,12 +680,13 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         }
 
         if (skipRestRollbacks) {
-            List<String> restRollbackNames = CollectionUtils.transformToList(rollBackFlows, new Function<String, Flow>() {
-                @Override
-                public String call(Flow arg) {
-                    return arg.getClass().getSimpleName();
-                }
-            });
+            List<String> restRollbackNames = CollectionUtils.transformToList(rollBackFlows,
+                    new Function<String, Flow>() {
+                        @Override
+                        public String call(Flow arg) {
+                            return arg.getClass().getSimpleName();
+                        }
+                    });
 
             printDebugLog(String.format("[FlowChain(%s): %s] we are instructed to skip rollbacks for remaining flows%s",
                     id, name, restRollbackNames));
@@ -567,6 +749,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     }
 
     private void callDoneHandler() {
+        endCurrentFlowSpan(true);
+
         if (CoreGlobalProperty.PROFILER_WORKFLOW || allowWatch) {
             stopWatch.stop();
         }
@@ -597,6 +781,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             }
         }
 
+        endChainSpan(true);
         callFinallyHandler();
     }
 
@@ -618,7 +803,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     private void runFlowOrComplete() {
         if (it.hasNext()) {
-            currentLoop ++;
+            currentLoop++;
             runFlow(it.next());
         } else {
             if (getErrorCode() == null) {
@@ -664,7 +849,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         }
 
         if (flows.isEmpty()) {
-            throw new CloudRuntimeException("you must call then() to add flow before calling start() or allowEmptyFlow() to run empty flow chain on purpose");
+            throw new CloudRuntimeException(
+                    "you must call then() to add flow before calling start() or allowEmptyFlow() to run empty flow chain on purpose");
         }
 
         if (data == null) {
@@ -675,6 +861,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         if (name == null) {
             name = "anonymous-chain";
         }
+
+        startChainSpan();
 
         printDebugLog(String.format("[FlowChain(%s): %s] starts", id, name));
 

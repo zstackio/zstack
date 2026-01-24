@@ -142,6 +142,44 @@
             <artifactId>sentry</artifactId>
             <version>8.29.0</version>
         </dependency>
+        <!-- OpenTelemetry Dependencies for Telemetry -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-trace</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.semconv</groupId>
+            <artifactId>opentelemetry-semconv</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-prometheus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry-opentelemetry-core</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <build>

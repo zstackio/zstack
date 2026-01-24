@@ -512,6 +512,68 @@
                 <artifactId>cas-client-core</artifactId>
                 <version>3.4.1</version>
             </dependency>
+            <!-- OpenTelemetry BOM for consistent versioning -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>1.35.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- OpenTelemetry API -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-api</artifactId>
+                <version>1.35.0</version>
+            </dependency>
+            <!-- OpenTelemetry SDK -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-sdk</artifactId>
+                <version>1.35.0</version>
+            </dependency>
+            <!-- OpenTelemetry SDK Trace -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-sdk-trace</artifactId>
+                <version>1.35.0</version>
+            </dependency>
+            <!-- OpenTelemetry OTLP Exporter -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-exporter-otlp</artifactId>
+                <version>1.35.0</version>
+            </dependency>
+            <!-- OpenTelemetry Context Propagation -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-context</artifactId>
+                <version>1.35.0</version>
+            </dependency>
+            <!-- OpenTelemetry Semconv -->
+            <dependency>
+                <groupId>io.opentelemetry.semconv</groupId>
+                <artifactId>opentelemetry-semconv</artifactId>
+                <version>1.23.1-alpha</version>
+            </dependency>
+            <!-- OpenTelemetry SDK Metrics -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-sdk-metrics</artifactId>
+                <version>1.35.0</version>
+            </dependency>
+            <!-- OpenTelemetry Prometheus Exporter -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-exporter-prometheus</artifactId>
+                <version>1.35.0-alpha</version>
+            </dependency>
+            <!-- Sentry OpenTelemetry Integration -->
+            <dependency>
+                <groupId>io.sentry</groupId>
+                <artifactId>sentry-opentelemetry-core</artifactId>
+                <version>8.0.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

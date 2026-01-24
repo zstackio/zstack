@@ -1,12 +1,23 @@
 package org.zstack.core.thread;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.debug.DebugManager;
 import org.zstack.core.debug.DebugSignalHandler;
+import org.zstack.core.telemetry.MessageTracingHelper;
+import org.zstack.core.telemetry.TelemetryFacade;
+import org.zstack.core.telemetry.TelemetryGlobalProperty;
+import org.zstack.core.telemetry.TelemetryMetricsFacade;
 import org.zstack.header.Constants;
 import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -42,9 +53,13 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     @Autowired
     private org.zstack.core.timeout.Timer zTimer;
 
+    private TelemetryFacade telemetryFacade;
+    private TelemetryMetricsFacade metricsFacade;
+
     private final HashMap<String, SyncTaskQueueWrapper> syncTasks = new HashMap<>();
     private final Map<String, ChainTaskQueueWrapper> chainTasks = Collections.synchronizedMap(new HashMap<>());
-    private final Map<String, SingleFlightQueueWrapper> singleFlightTasks = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, SingleFlightQueueWrapper> singleFlightTasks = Collections
+            .synchronizedMap(new HashMap<>());
     private final Map<String, List<String>> apiRunningSignature = new ConcurrentHashMap<>();
     private static final CLogger _logger = CLoggerImpl.getLogger(DispatchQueueImpl.class);
 
@@ -107,12 +122,12 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     public void beforeCleanQueuedumpThread(String signatureName) {
         String title = "\n================= Before Clean Task Queue Dump ================";
-        dumpSignatureNameThread(signatureName,title);
+        dumpSignatureNameThread(signatureName, title);
     }
 
     public void afterCleanQueuedumpThread(String signatureName) {
         String title = "\n================= After Clean Task Queue Dump ================";
-        dumpSignatureNameThread(signatureName,title);
+        dumpSignatureNameThread(signatureName, title);
     }
 
     public void dumpSignatureNameThread(String signatureName, String title) {
@@ -195,7 +210,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             if (w.runningQueue.isEmpty() && w.pendingQueue.isEmpty()) {
                 chainTasks.remove(signature);
             }
-            afterCleanQueuedumpThread(signature);       
+            afterCleanQueuedumpThread(signature);
             return info;
         }
     }
@@ -235,9 +250,63 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
         DebugManager.registerDebugSignalHandler(DUMP_TASK_DEBUG_SINGAL, this);
     }
 
+    private TelemetryFacade getTelemetryFacade() {
+        if (telemetryFacade == null && TelemetryGlobalProperty.ENABLED) {
+            try {
+                telemetryFacade = Platform.getComponentLoader().getComponent(TelemetryFacade.class);
+            } catch (Exception e) {
+                logger.trace("TelemetryFacade not available", e);
+            }
+        }
+        return telemetryFacade;
+    }
+
+    private TelemetryMetricsFacade getMetricsFacade() {
+        if (metricsFacade == null && TelemetryGlobalProperty.ENABLED && TelemetryGlobalProperty.METRICS_ENABLED) {
+            try {
+                metricsFacade = Platform.getComponentLoader().getComponent(TelemetryMetricsFacade.class);
+            } catch (Exception e) {
+                logger.trace("TelemetryMetricsFacade not available", e);
+            }
+        }
+        return metricsFacade;
+    }
+
+    private boolean isMetricsEnabled() {
+        return TelemetryGlobalProperty.ENABLED && TelemetryGlobalProperty.METRICS_ENABLED
+                && getMetricsFacade() != null && getMetricsFacade().isEnabled();
+    }
+
+    private boolean isTelemetryEnabled() {
+        return TelemetryGlobalProperty.ENABLED && getTelemetryFacade() != null && getTelemetryFacade().isEnabled();
+    }
+
+    private Context getTraceContextFromThreadContext() {
+        if (!isTelemetryEnabled()) {
+            return null;
+        }
+
+        String traceparent = ThreadContext.get(Constants.THREAD_CONTEXT_TRACEPARENT);
+        if (traceparent == null || traceparent.isEmpty()) {
+            return null;
+        }
+
+        Map<String, String> traceCtx = new HashMap<>();
+        traceCtx.put(MessageTracingHelper.TRACEPARENT_KEY, traceparent);
+        String tracestate = ThreadContext.get(Constants.THREAD_CONTEXT_TRACESTATE);
+        if (tracestate != null && !tracestate.isEmpty()) {
+            traceCtx.put(MessageTracingHelper.TRACESTATE_KEY, tracestate);
+        }
+        return MessageTracingHelper.parseTraceContext(traceCtx);
+    }
+
     private class SyncTaskFuture<T> extends AbstractFuture<T> {
+        private final Context parentContext;
+        private final long startPendingTimeMs = System.currentTimeMillis();
+
         public SyncTaskFuture(SyncTask<T> task) {
             super(task);
+            this.parentContext = Context.current();
         }
 
         private SyncTask getTask() {
@@ -255,6 +324,71 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                 return;
             }
 
+            long startExecutionTimeMs = System.currentTimeMillis();
+            String signature = getTask().getSyncSignature();
+            boolean success = true;
+
+            if (isMetricsEnabled()) {
+                getMetricsFacade().recordTaskWaitTime("SyncTask", signature, startExecutionTimeMs - startPendingTimeMs);
+            }
+
+            if (!isTelemetryEnabled()) {
+                try {
+                    runWithoutTracing();
+                } finally {
+                    if (isMetricsEnabled()) {
+                        long executionTimeMs = System.currentTimeMillis() - startExecutionTimeMs;
+                        getMetricsFacade().recordTaskExecutionTime("SyncTask", signature, executionTimeMs);
+                        getMetricsFacade().incrementTaskCompleted("SyncTask", signature, exception == null);
+                    }
+                }
+                return;
+            }
+
+            Span span = null;
+            Scope scope = null;
+            try {
+                Context ctxToUse = parentContext != null ? parentContext : getTraceContextFromThreadContext();
+                span = getTelemetryFacade().getTracer()
+                        .spanBuilder("SyncTask: " + getTask().getName())
+                        .setSpanKind(SpanKind.INTERNAL)
+                        .setParent(ctxToUse != null ? ctxToUse : Context.current())
+                        .setAttribute("sync.signature", signature)
+                        .setAttribute("sync.task.name", getTask().getName())
+                        .setAttribute("sync.task.class", getTask().getClass().getName())
+                        .setAttribute("sync.level", getTask().getSyncLevel())
+                        .startSpan();
+                scope = span.makeCurrent();
+
+                ret = (T) getTask().call();
+                span.setStatus(StatusCode.OK);
+            } catch (Throwable t) {
+                _logger.warn(String.format("unhandled exception happened when calling sync task[name:%s, class:%s]",
+                        getTask().getName(), getTask().getClass().getName()), t);
+                exception = t;
+                success = false;
+                if (span != null) {
+                    span.recordException(t);
+                    span.setStatus(StatusCode.ERROR, t.getMessage());
+                }
+            } finally {
+                if (scope != null) {
+                    scope.close();
+                }
+                if (span != null) {
+                    span.end();
+                }
+                if (isMetricsEnabled()) {
+                    long executionTimeMs = System.currentTimeMillis() - startExecutionTimeMs;
+                    getMetricsFacade().recordTaskExecutionTime("SyncTask", signature, executionTimeMs);
+                    getMetricsFacade().incrementTaskCompleted("SyncTask", signature, success);
+                }
+            }
+
+            done();
+        }
+
+        private void runWithoutTracing() {
             try {
                 ret = (T) getTask().call();
             } catch (Throwable t) {
@@ -281,10 +415,12 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     private abstract class AbstractTaskQueueWrapper {
         String syncSignature;
-        private final AtomicInteger abnormalPendingQueueThreshold = new AtomicInteger(CoreGlobalProperty.PENDING_QUEUE_MINIMUM_THRESHOLD);
+        private final AtomicInteger abnormalPendingQueueThreshold = new AtomicInteger(
+                CoreGlobalProperty.PENDING_QUEUE_MINIMUM_THRESHOLD);
 
         /**
          * make getCurrentPendingQueueThreshold() public for test
+         * 
          * @return int value of abnormalPendingQueueThreshold
          */
         public int getCurrentPendingQueueThreshold() {
@@ -297,6 +433,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
          * Next level 250 tasks use 13.67MB memory.
          * No big change for the memory usage and just use this mechanism to detect
          * system level slow executed task queue.
+         * 
          * @return current pending queue threshold
          */
         private int extendPendingQueueThresholdForNextDetection() {
@@ -337,7 +474,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             // change threshold for next abnormal report
             if (currentPendingTaskQueueSize > getCurrentPendingQueueThreshold()) {
                 logger.debug(String.format("syncSignature: %s, pending queue size over abnormal limitation: %d, " +
-                                " too many pending tasks, dump task queue for potential problem",
+                        " too many pending tasks, dump task queue for potential problem",
                         syncSignature, extendPendingQueueThresholdForNextDetection()));
                 logger.debug("\n================= BEGIN ABNORMAL TASK QUEUE DUMP ================");
                 logger.debug(dumpTaskQueueInfo());
@@ -347,6 +484,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
         /**
          * dump current task queue info
+         * 
          * @return String with queue description string
          */
         protected abstract String getTaskQueueInfo();
@@ -379,9 +517,11 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
         void startThreadIfNeeded() {
             if (counter.get() >= maxThreadNum) {
-                logger.debug(String.format("Sync task syncSignature: %s reached maxThreadNum: %s, current: %d, pending queue size: %d",
-                        syncSignature, maxThreadNum, counter.get(), queue.size()));
-                dumpTaskQueueIfNeeded(queue.size());
+                int pendingTaskSize = queue.size() - counter.get();
+                logger.debug(String.format(
+                        "Sync task syncSignature: %s reached maxThreadNum: %s, current: %d, pending queue size: %d",
+                        syncSignature, maxThreadNum, counter.get(), pendingTaskSize));
+                dumpTaskQueueIfNeeded(pendingTaskSize);
                 return;
             }
 
@@ -453,7 +593,6 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                         task.getName(), taskId));
             }
 
-
             return tb.toString();
         }
     }
@@ -512,7 +651,8 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
         void singleFlightRun(final ReturnValueCompletion<Object> completion) {
             if (isCancelled()) {
-                completion.fail(err(ORG_ZSTACK_CORE_THREAD_10000, SysErrors.CANCEL_ERROR, "task failed due to cancelled"));
+                completion.fail(
+                        err(ORG_ZSTACK_CORE_THREAD_10000, SysErrors.CANCEL_ERROR, "task failed due to cancelled"));
                 return;
             }
 
@@ -521,7 +661,8 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             } catch (Throwable t) {
                 try {
                     if (!(t instanceof OperationFailureException)) {
-                        _logger.warn(String.format("unhandled exception happened when calling %s", task.getClass().getName()), t);
+                        _logger.warn(String.format("unhandled exception happened when calling %s",
+                                task.getClass().getName()), t);
                     }
 
                     done();
@@ -546,6 +687,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     class ChainFuture extends AbstractTimeStatisticFuture {
         private AtomicBoolean isNextCalled = new AtomicBoolean(false);
+        private volatile Throwable executionError = null;
 
         public ChainFuture(ChainTask task) {
             super(task);
@@ -553,6 +695,10 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
         ChainTask getTask() {
             return (ChainTask) task;
+        }
+
+        Throwable getExecutionError() {
+            return executionError;
         }
 
         @Override
@@ -585,8 +731,10 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                 });
             } catch (Throwable t) {
                 try {
+                    executionError = t;
                     if (!(t instanceof OperationFailureException)) {
-                        _logger.warn(String.format("unhandled exception happened when calling %s", task.getClass().getName()), t);
+                        _logger.warn(String.format("unhandled exception happened when calling %s",
+                                task.getClass().getName()), t);
                     }
 
                     done();
@@ -617,14 +765,14 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             if (syncSignature == null) {
                 syncSignature = task.getSyncSignature();
             }
-            
+
             return true;
         }
 
         void startSingleFlightIfNeed() {
             if (taskCounter.get() > 1) {
                 logger.debug(String.format("single flight task[signature: %s] thread is running now," +
-                                " skip start new thread", syncSignature));
+                        " skip start new thread", syncSignature));
                 dumpTaskQueueIfNeeded(pendingQueue.size());
                 return;
             }
@@ -643,7 +791,8 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                     synchronized (singleFlightTasks) {
                         if (runningTask != null) {
                             logger.debug(String.format("single flight task[signature: %s, id: %s] is running now," +
-                                            " skip poll new running task, current pending task num: %d", runningTask.getSyncSignature(),
+                                    " skip poll new running task, current pending task num: %d",
+                                    runningTask.getSyncSignature(),
                                     runningTask.getTaskId(), pendingQueue.size()));
                             return;
                         }
@@ -659,6 +808,13 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
                     processTimeoutTask(runningTask);
                     runningTask.setStartExecutionTimeInMills(zTimer.getCurrentTimeMillis());
+
+                    if (isMetricsEnabled()) {
+                        long waitTimeMs = runningTask.getStartExecutionTimeInMills()
+                                - runningTask.getStartPendingTimeInMills();
+                        getMetricsFacade().recordTaskWaitTime("SingleFlightTask", syncSignature, waitTimeMs);
+                    }
+
                     runningTask.singleFlightRun(new ReturnValueCompletion<Object>(null) {
                         @Override
                         public void success(Object object) {
@@ -674,6 +830,16 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
                 private void executeSingleRunTasks(Object object, ErrorCode errorCode) {
                     synchronized (singleFlightTasks) {
+                        if (isMetricsEnabled() && runningTask != null
+                                && runningTask.getStartExecutionTimeInMills() != null) {
+                            long executionTimeMs = zTimer.getCurrentTimeMillis()
+                                    - runningTask.getStartExecutionTimeInMills();
+                            boolean success = errorCode == null;
+                            getMetricsFacade().recordTaskExecutionTime("SingleFlightTask", syncSignature,
+                                    executionTimeMs);
+                            getMetricsFacade().incrementTaskCompleted("SingleFlightTask", syncSignature, success);
+                        }
+
                         safeRun(object, runningTask, errorCode);
                         pendingQueue.forEach(task -> safeRun(object, (SingleFlightFuture) task, errorCode));
 
@@ -699,10 +865,12 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                             return;
                         }
 
-                        _logger.warn(String.format("unhandled exception happened when calling %s", flightFuture.getClass().getName()), t);
+                        _logger.warn(String.format("unhandled exception happened when calling %s",
+                                flightFuture.getClass().getName()), t);
                     } finally {
                         logger.debug(String.format("single flight task[signature: %s, id: %s] finish with %s",
-                                runningTask.getSyncSignature(), flightFuture.getTaskId(), JSONObjectUtil.toJsonString(result)));
+                                runningTask.getSyncSignature(), flightFuture.getTaskId(),
+                                JSONObjectUtil.toJsonString(result)));
                         flightFuture.done();
                     }
                 }
@@ -795,13 +963,15 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
         }
 
         void warningAndRemove(ChainFuture task, int length, int queueLength) {
-            logger.warn(String.format("[%s] max pending size: %d, pending now: %d, throw the task: %s!", task.getTask().getDeduplicateString(), length, queueLength, task.getTask().getName()));
+            logger.warn(String.format("[%s] max pending size: %d, pending now: %d, throw the task: %s!",
+                    task.getTask().getDeduplicateString(), length, queueLength, task.getTask().getName()));
             removeSubPending(task.getTask().getDeduplicateString(), true);
         }
 
         boolean addTask(ChainFuture task, int length) {
             if (length != -1 && CoreGlobalProperty.CHAIN_TASK_QOS) {
-                DebugUtils.Assert(task.getTask().getDeduplicateString() != null, "deduplicate String must be set if max pending string has been set!");
+                DebugUtils.Assert(task.getTask().getDeduplicateString() != null,
+                        "deduplicate String must be set if max pending string has been set!");
                 AtomicInteger r = subPendingMap.get(task.getTask().getDeduplicateString());
                 int queueLength = addSubPending(task.getTask().getDeduplicateString());
                 if (queueLength > length) {
@@ -818,7 +988,8 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             if (maxThreadNum == -1) {
                 maxThreadNum = task.getSyncLevel();
             } else if (maxThreadNum < task.getSyncLevel()) {
-                logger.warn(String.format("task[name:%s] increases queue[name:%s]'s sync level from %s to %s", task.getTask().getName(), task.getSyncSignature(), maxThreadNum, task.getSyncLevel()));
+                logger.warn(String.format("task[name:%s] increases queue[name:%s]'s sync level from %s to %s",
+                        task.getTask().getName(), task.getSyncSignature(), maxThreadNum, task.getSyncLevel()));
                 maxThreadNum = task.getSyncLevel();
             }
 
@@ -830,7 +1001,8 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
         void startThreadIfNeeded() {
             if (counter.get() >= maxThreadNum) {
-                logger.debug(String.format("Chain task syncSignature: %s reached maxThreadNum: %s, current: %d, pending queue size: %d",
+                logger.debug(String.format(
+                        "Chain task syncSignature: %s reached maxThreadNum: %s, current: %d, pending queue size: %d",
                         syncSignature, maxThreadNum, counter.get(), pendingQueue.size()));
                 dumpTaskQueueIfNeeded(pendingQueue.size());
                 return;
@@ -864,6 +1036,12 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                     synchronized (runningQueue) {
                         processTimeoutTask(cf);
                         cf.setStartExecutionTimeInMills(zTimer.getCurrentTimeMillis());
+
+                        if (isMetricsEnabled()) {
+                            long waitTimeMs = cf.getStartExecutionTimeInMills() - cf.getStartPendingTimeInMills();
+                            getMetricsFacade().recordTaskWaitTime("ChainTask", syncSignature, waitTimeMs);
+                        }
+
                         // add to running queue
                         runningQueue.offer(cf);
                         Optional.ofNullable(getApiId(cf))
@@ -876,40 +1054,127 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                         TaskContext.setTaskContext(cf.getTask().getTaskContext());
                     }
 
-                    logger.debug(String.format("Start executing runningQueue: %s, task name: %s", syncSignature, cf.getTask().getName()));
+                    logger.debug(String.format("Start executing runningQueue: %s, task name: %s", syncSignature,
+                            cf.getTask().getName()));
 
                     if (cf.getTask().getDeduplicateString() != null) {
                         removeSubPending(cf.getTask().getDeduplicateString(), false);
                     }
 
-                    cf.run(() -> {
-                        synchronized (runningQueue) {
-                            Optional.ofNullable(getApiId(cf))
-                                    .ifPresent(apiId -> apiRunningSignature.computeIfPresent(apiId, (k, sigs) -> {
-                                        sigs.remove(syncSignature);
-                                        return sigs.isEmpty() ? null : sigs;
-                                    }));
-                            runningQueue.remove(cf);
-                            logger.debug(String.format("Finish executing runningQueue: %s, task name: %s", syncSignature, cf.getTask().getName()));
+                    Span chainTaskSpan = null;
+                    Scope scope = null;
+                    if (isTelemetryEnabled()) {
+                        try {
+                            Context parentContext = getParentContextFromTask(cf);
 
-                            if (cf.getTask().getDeduplicateString() != null) {
-                                removeSubPendingZero(cf.getTask().getDeduplicateString());
+                            chainTaskSpan = getTelemetryFacade().getTracer()
+                                    .spanBuilder("ChainTask: " + cf.getTask().getName())
+                                    .setSpanKind(SpanKind.INTERNAL)
+                                    .setParent(parentContext != null ? parentContext : Context.current())
+                                    .setAttribute("chain.signature", syncSignature)
+                                    .setAttribute("chain.task.name", cf.getTask().getName())
+                                    .setAttribute("chain.task.class", cf.getTask().getClass().getName())
+                                    .startSpan();
+
+                            scope = chainTaskSpan.makeCurrent();
+
+                            Map<String, String> newTraceCtx = MessageTracingHelper.extractTraceContext();
+                            if (newTraceCtx.containsKey(MessageTracingHelper.TRACEPARENT_KEY)) {
+                                ThreadContext.put(Constants.THREAD_CONTEXT_TRACEPARENT,
+                                        newTraceCtx.get(MessageTracingHelper.TRACEPARENT_KEY));
+                            }
+                            if (newTraceCtx.containsKey(MessageTracingHelper.TRACESTATE_KEY)) {
+                                ThreadContext.put(Constants.THREAD_CONTEXT_TRACESTATE,
+                                        newTraceCtx.get(MessageTracingHelper.TRACESTATE_KEY));
+                            }
+                        } catch (Exception e) {
+                            logger.trace("Failed to create chain task span", e);
+                        }
+                    }
+
+                    final Span finalSpan = chainTaskSpan;
+                    final Scope finalScope = scope;
+
+                    cf.run(() -> {
+                        try {
+                            synchronized (runningQueue) {
+                                Optional.ofNullable(getApiId(cf))
+                                        .ifPresent(apiId -> apiRunningSignature.computeIfPresent(apiId, (k, sigs) -> {
+                                            sigs.remove(syncSignature);
+                                            return sigs.isEmpty() ? null : sigs;
+                                        }));
+                                runningQueue.remove(cf);
+                                logger.debug(String.format("Finish executing runningQueue: %s, task name: %s",
+                                        syncSignature, cf.getTask().getName()));
+
+                                if (cf.getTask().getDeduplicateString() != null) {
+                                    removeSubPendingZero(cf.getTask().getDeduplicateString());
+                                }
+                            }
+                        } finally {
+                            if (isMetricsEnabled() && cf.getStartExecutionTimeInMills() != null) {
+                                long executionTimeMs = zTimer.getCurrentTimeMillis()
+                                        - cf.getStartExecutionTimeInMills();
+                                boolean success = cf.getExecutionError() == null;
+                                getMetricsFacade().recordTaskExecutionTime("ChainTask", syncSignature, executionTimeMs);
+                                getMetricsFacade().incrementTaskCompleted("ChainTask", syncSignature, success);
+                            }
+
+                            if (finalSpan != null) {
+                                try {
+                                    Throwable error = cf.getExecutionError();
+                                    if (error != null) {
+                                        finalSpan.recordException(error);
+                                        finalSpan.setStatus(StatusCode.ERROR, error.getMessage());
+                                    } else {
+                                        finalSpan.setStatus(StatusCode.OK);
+                                    }
+                                    finalSpan.end();
+                                } catch (Exception e) {
+                                    logger.trace("Failed to end chain task span", e);
+                                }
+                            }
+                            if (finalScope != null) {
+                                try {
+                                    finalScope.close();
+                                } catch (Exception e) {
+                                    logger.trace("Failed to close chain task scope", e);
+                                }
                             }
                         }
 
                         /*
-                          Note: run queue @AsyncThread will set thread context from
-                          current task and next task's context will not be set until
-                          `cf.run` so the code from `runQueue()` to `cf.run` will
-                          use a wrong api id which might be confusing.
-
-                          Manually remove thread context here to avoid this issue.
+                         * Note: run queue @AsyncThread will set thread context from
+                         * current task and next task's context will not be set until
+                         * `cf.run` so the code from `runQueue()` to `cf.run` will
+                         * use a wrong api id which might be confusing.
+                         * 
+                         * Manually remove thread context here to avoid this issue.
                          */
                         TaskContext.removeTaskContext();
                         runQueue();
                     });
                 }
 
+                private Context getParentContextFromTask(ChainFuture cf) {
+                    Map<String, String> threadContext = cf.getTask().getThreadContext();
+                    if (threadContext == null) {
+                        return getTraceContextFromThreadContext();
+                    }
+
+                    String traceparent = threadContext.get(Constants.THREAD_CONTEXT_TRACEPARENT);
+                    if (traceparent == null || traceparent.isEmpty()) {
+                        return getTraceContextFromThreadContext();
+                    }
+
+                    Map<String, String> traceCtx = new HashMap<>();
+                    traceCtx.put(MessageTracingHelper.TRACEPARENT_KEY, traceparent);
+                    String tracestate = threadContext.get(Constants.THREAD_CONTEXT_TRACESTATE);
+                    if (tracestate != null && !tracestate.isEmpty()) {
+                        traceCtx.put(MessageTracingHelper.TRACESTATE_KEY, tracestate);
+                    }
+                    return MessageTracingHelper.parseTraceContext(traceCtx);
+                }
 
                 private String getApiId(DispatchQueueImpl.ChainFuture cf) {
                     Map<String, String> tc = cf.getTask().getThreadContext();
@@ -972,9 +1237,10 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             timeout = (context.get("timeout") == null) ? 0 : (long) context.get("timeout");
         }
 
-        if (timeout > 0 && taskInfo.getPendingTime() * 1000 > timeout){
-            logger.warn(String.format("this task has been pending for %s ms longer than timeout %s ms, cancel it. task info: %s",
-                    taskInfo.getPendingTime()*1000, timeout, taskInfo));
+        if (timeout > 0 && taskInfo.getPendingTime() * 1000 > timeout) {
+            logger.warn(String.format(
+                    "this task has been pending for %s ms longer than timeout %s ms, cancel it. task info: %s",
+                    taskInfo.getPendingTime() * 1000, timeout, taskInfo));
             abstractTimeStatisticFuture.cancel(true);
         }
     }
@@ -995,7 +1261,8 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             boolean succeed = wrapper.addTask(cf, task.getMaxPendingTasks());
             if (!succeed) {
                 cf.cancel();
-                logger.debug(String.format("Pending queue[%s] exceed max size, task name: %s, start execute callback", task.getSyncSignature(), task.getName()));
+                logger.debug(String.format("Pending queue[%s] exceed max size, task name: %s, start execute callback",
+                        task.getSyncSignature(), task.getName()));
                 task.exceedMaxPendingCallback();
             } else {
                 wrapper.startThreadIfNeeded();
@@ -1003,7 +1270,6 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             return cf;
         }
     }
-
 
     @Override
     public Future<Void> chainSubmit(ChainTask task) {
@@ -1016,7 +1282,8 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     }
 
     private <T> Future<T> doSingleFlightSyncSubmit(SingleFlightTask task) {
-        assert task.getSyncSignature() != null : "How can you submit a single flight chain task without sync signature ???";
+        assert task.getSyncSignature() != null
+                : "How can you submit a single flight chain task without sync signature ???";
 
         synchronized (singleFlightTasks) {
             final String signature = task.getSyncSignature();
@@ -1042,8 +1309,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                         wrapper.syncSignature,
                         wrapper.maxThreadNum,
                         wrapper.counter.intValue(),
-                        wrapper.queue.size()
-                );
+                        wrapper.queue.size());
                 ret.put(statistic.getSyncSignature(), statistic);
 
                 logger.warn(JSONObjectUtil.toJsonString(statistic));
@@ -1055,15 +1321,14 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     @Override
     public Map<String, ChainTaskStatistic> getChainTaskStatistics() {
-        Map<String, ChainTaskStatistic> ret =  new ConcurrentHashMap<>();
+        Map<String, ChainTaskStatistic> ret = new ConcurrentHashMap<>();
         synchronized (chainTasks) {
             for (ChainTaskQueueWrapper wrapper : chainTasks.values()) {
                 ChainTaskStatistic statistic = new ChainTaskStatistic(
                         wrapper.syncSignature,
                         wrapper.maxThreadNum,
                         wrapper.counter.intValue(),
-                        wrapper.pendingQueue.size()
-                );
+                        wrapper.pendingQueue.size());
                 ret.put(statistic.getSyncSignature(), statistic);
             }
         }
