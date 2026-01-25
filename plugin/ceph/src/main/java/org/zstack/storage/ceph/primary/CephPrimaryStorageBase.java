@@ -54,8 +54,12 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
@@ -485,6 +489,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public Long size;
         public Long actualSize;
         public String installPath;
+        public String volumeId;
+        public String volumeStatus;
 
         public String getInstallPath() {
             return installPath;
@@ -492,6 +498,22 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setInstallPath(String installPath) {
             this.installPath = installPath;
+        }
+
+        public String getVolumeId() {
+            return volumeId;
+        }
+
+        public void setVolumeId(String volumeId) {
+            this.volumeId = volumeId;
+        }
+
+        public String getVolumeStatus() {
+            return volumeStatus;
+        }
+
+        public void setVolumeStatus(String volumeStatus) {
+            this.volumeStatus = volumeStatus;
         }
     }
 

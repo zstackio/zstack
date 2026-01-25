@@ -52,6 +52,22 @@ public class BareMetal2InstanceProvisionNicInventory  {
         return this.gateway;
     }
 
+    public java.lang.String instanceUuid;
+    public void setInstanceUuid(java.lang.String instanceUuid) {
+        this.instanceUuid = instanceUuid;
+    }
+    public java.lang.String getInstanceUuid() {
+        return this.instanceUuid;
+    }
+
+    public java.lang.Boolean isPrimaryProvisionNic;
+    public void setIsPrimaryProvisionNic(java.lang.Boolean isPrimaryProvisionNic) {
+        this.isPrimaryProvisionNic = isPrimaryProvisionNic;
+    }
+    public java.lang.Boolean getIsPrimaryProvisionNic() {
+        return this.isPrimaryProvisionNic;
+    }
+
     public java.lang.String metadata;
     public void setMetadata(java.lang.String metadata) {
         this.metadata = metadata;
