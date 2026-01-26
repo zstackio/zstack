@@ -489,8 +489,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public Long size;
         public Long actualSize;
         public String installPath;
-        public String volumeId;
-        public String volumeStatus;
 
         public String getInstallPath() {
             return installPath;
@@ -498,22 +496,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setInstallPath(String installPath) {
             this.installPath = installPath;
-        }
-
-        public String getVolumeId() {
-            return volumeId;
-        }
-
-        public void setVolumeId(String volumeId) {
-            this.volumeId = volumeId;
-        }
-
-        public String getVolumeStatus() {
-            return volumeStatus;
-        }
-
-        public void setVolumeStatus(String volumeStatus) {
-            this.volumeStatus = volumeStatus;
         }
     }
 
