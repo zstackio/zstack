@@ -90,3 +90,9 @@ END$$
 DELIMITER ;
 CALL UpdateBareMetal2InstanceProvisionNicVO();
 DROP PROCEDURE IF EXISTS UpdateBareMetal2InstanceProvisionNicVO;
+
+-- ZSTAC-81511 Host allocation restore the default
+DELETE FROM `zstack`.`SystemTagVO`
+WHERE `resourceType` = 'InstanceOfferingVO'
+  AND (tag LIKE 'minimumCPUUsageHostAllocatorStrategyMode::%'
+    OR tag LIKE 'minimumMemoryUsageHostAllocatorStrategyMode::%');
