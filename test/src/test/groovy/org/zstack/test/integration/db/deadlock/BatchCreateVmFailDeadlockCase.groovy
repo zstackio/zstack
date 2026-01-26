@@ -51,17 +51,6 @@ class BatchCreateVmFailDeadlockCase extends SubCase{
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(1)
-                cpu = 1
-            }
-
-            diskOffering {
-                name = "diskOffering"
-                    diskSize = SizeUnit.GIGABYTE.toByte(1)
-            }
-
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -163,10 +152,8 @@ class BatchCreateVmFailDeadlockCase extends SubCase{
     }
 
     void testBatchCreateVm() {
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         L3NetworkInventory l3 = env.inventoryByName("l3")
         ImageInventory image = env.inventoryByName("iso")
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
 
         env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) {FlatDhcpBackend.ApplyDhcpRsp rsp, HttpEntity<java.lang.String> e ->
             Random r = new Random()
@@ -187,12 +174,20 @@ class BatchCreateVmFailDeadlockCase extends SubCase{
             def thread = Thread.start {
                 CreateVmInstanceAction action = new CreateVmInstanceAction(
                         name : "test-" + i,
-                        instanceOfferingUuid : instanceOffering.uuid,
+                        cpuNum: 1,
+                        memorySize: gb(1),
                         l3NetworkUuids : [l3.uuid],
                         imageUuid : image.uuid,
-                        rootDiskOfferingUuid : diskOffering.uuid,
-                        dataDiskOfferingUuids: [diskOffering.uuid],
                         sessionId: Test.currentEnvSpec.session.uuid,
+                        diskAOs: [
+                            [
+                                "boot" : true,
+                                "size" : gb(1),
+                            ],
+                            [
+                                "size" : gb(1),
+                            ]
+                        ]
                 )
 
                 CreateVmInstanceAction.Result ret = action.call()
