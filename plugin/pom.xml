@@ -39,6 +39,7 @@
         <module>externalStorage</module>
         <module>zbs</module>
         <module>cbd</module>
+        <module>helloworld</module>
     </modules>
     <dependencies>
         <dependency>
