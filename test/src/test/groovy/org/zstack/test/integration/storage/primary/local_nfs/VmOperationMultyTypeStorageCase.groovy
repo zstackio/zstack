@@ -3,7 +3,6 @@ package org.zstack.test.integration.storage.primary.local_nfs
 import org.zstack.header.storage.primary.PrimaryStorageStateEvent
 import org.zstack.sdk.AttachDataVolumeToVmAction
 import org.zstack.sdk.CreateVmInstanceAction
-import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
@@ -48,25 +47,28 @@ class VmOperationMultyTypeStorageCase extends SubCase{
 
     void testCreateVmChooseNfs(){
         PrimaryStorageInventory nfs = env.inventoryByName("nfs") as PrimaryStorageInventory
-        InstanceOfferingInventory ins = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
         ImageInventory image = env.inventoryByName("image") as ImageInventory
         L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
 
         CreateVmInstanceAction a = new CreateVmInstanceAction()
         a.name = "vm"
-        a.instanceOfferingUuid = ins.uuid
+        a.cpuNum = 4
+        a.memorySize = gb(8)
         a.imageUuid = image.uuid
         a.l3NetworkUuids = [l3.uuid]
-        a.primaryStorageUuidForRootVolume = nfs.uuid
         a.sessionId = currentEnvSpec.session.uuid
+        a.diskAOs = [
+            [
+                "boot" : true,
+                "primaryStorageUuid" : nfs.uuid,
+            ]
+        ]
 
         assert a.call().error == null
     }
 
     void testDisableNfsPrimaryStorageThenCreateVmInstance(){
         PrimaryStorageInventory nfs = env.inventoryByName("nfs") as PrimaryStorageInventory
-        InstanceOfferingInventory ins = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
-        DiskOfferingInventory diskOfferingInventory = env.inventoryByName("diskOffering")
         ImageInventory image = env.inventoryByName("image") as ImageInventory
         L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
 
@@ -77,11 +79,20 @@ class VmOperationMultyTypeStorageCase extends SubCase{
 
         CreateVmInstanceAction a = new CreateVmInstanceAction()
         a.name = "vm1"
-        a.instanceOfferingUuid = ins.uuid
+        a.cpuNum = 4
+        a.memorySize = gb(8)
         a.imageUuid = image.uuid
         a.l3NetworkUuids = [l3.uuid]
-        a.dataDiskOfferingUuids = [diskOfferingInventory.uuid]
         a.sessionId = currentEnvSpec.session.uuid
+        a.diskAOs = [
+            [
+                "boot" : true,
+            ],
+            [
+                "boot" : false,
+                "size" : gb(20),
+            ]
+        ]
 
         CreateVmInstanceAction.Result result = a.call()
         assert result.error == null
@@ -95,7 +106,6 @@ class VmOperationMultyTypeStorageCase extends SubCase{
     void testDisableNfsPrimaryStorageThenAttachDataVolumeToVm(){
         PrimaryStorageInventory nfs = env.inventoryByName("nfs") as PrimaryStorageInventory
         InstanceOfferingInventory ins = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
-        DiskOfferingInventory diskOfferingInventory = env.inventoryByName("diskOffering")
         ImageInventory image = env.inventoryByName("image") as ImageInventory
         L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
 
@@ -108,12 +118,13 @@ class VmOperationMultyTypeStorageCase extends SubCase{
             name = "vm2"
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
-            instanceOfferingUuid = ins.uuid
+            cpuNum = 4
+            memorySize = gb(8)
         }
 
         VolumeInventory volume = createDataVolume {
             name = "data"
-            diskOfferingUuid = diskOfferingInventory.uuid
+            diskSize = gb(20)
         }
 
         changePrimaryStorageState {
