@@ -34,6 +34,7 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
+import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -298,6 +299,74 @@ class ZbsPrimaryStorageCase extends SubCase {
         assert Q.New(ExternalPrimaryStorageSpaceVO.class)
                 .eq(ExternalPrimaryStorageSpaceVO_.primaryStorageUuid, ps.uuid)
                 .count() == 1
+
+        String nowConfig = Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.config)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                .findValue()
+        updateExternalPrimaryStorage {
+            uuid = ps.uuid
+            config ="{\"mdsUrls\":[\"root:password@127.0.1.4\",\"root:password@127.0.1.2\",\"root:password@127.0.1.3\"],\"logicalPoolName\":\"lpool1\"}"
+            oldConfig = nowConfig
+        }
+        String newConfig= Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.config)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                .findValue()
+        assert newConfig.contains("127.0.1.4")
+        expect(AssertionError.class) {
+            updateExternalPrimaryStorage {
+                uuid = ps.uuid
+                config ="{\"mdsUrls\":[\"root:password@127.0.1.5\",\"root:password@127.0.1.2\",\"root:password@127.0.1.3\"],\"logicalPoolName\":\"lpool1\"}"
+                oldConfig = nowConfig
+            }
+        }
+        String newConfig2= Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.config)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                .findValue()
+        assert !newConfig2.contains("127.0.1.5")
+        assert newConfig2.contains("127.0.1.4")
+        def exceptionCount = new AtomicInteger(0)
+        def successCount = new AtomicInteger(0)
+        def barrier = new CyclicBarrier(2)
+        def thread1 = Thread.start{
+            try {
+                barrier.await()
+                updateExternalPrimaryStorage {
+                    uuid = ps.uuid
+                    config ="{\"mdsUrls\":[\"root:password@127.0.1.6\",\"root:password@127.0.1.2\",\"root:password@127.0.1.3\"],\"logicalPoolName\":\"lpool1\"}"
+                    oldConfig = newConfig2
+                }
+                successCount.incrementAndGet()
+            } catch (Throwable e) {
+                exceptionCount.incrementAndGet()
+            }
+        }
+        def thread2 = Thread.start{
+            try {
+                barrier.await()
+                updateExternalPrimaryStorage {
+                    uuid = ps.uuid
+                    config ="{\"mdsUrls\":[\"root:password@127.0.1.4\",\"root:password@127.0.1.7\",\"root:password@127.0.1.3\"],\"logicalPoolName\":\"lpool1\"}"
+                    oldConfig = newConfig2
+                }
+                successCount.incrementAndGet()
+            } catch (Throwable e) {
+                exceptionCount.incrementAndGet()
+            }
+        }
+        thread1.join()
+        thread2.join()
+        retryInSecs {
+            String newConfig3= Q.New(ExternalPrimaryStorageVO.class)
+                    .select(ExternalPrimaryStorageVO_.config)
+                    .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                    .findValue()
+            assert ([ "127.0.1.6", "127.0.1.7" ].count { newConfig3.contains(it) } == 1)
+            assert exceptionCount.get() == 1
+            assert successCount.get() == 1
+        }
         // update multi pools
         // Config.Pool
         updateExternalPrimaryStorage {

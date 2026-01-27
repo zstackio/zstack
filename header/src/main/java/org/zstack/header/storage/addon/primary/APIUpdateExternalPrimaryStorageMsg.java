@@ -19,6 +19,9 @@ public class APIUpdateExternalPrimaryStorageMsg extends APIUpdatePrimaryStorageM
     @APIParam(required = false, maxLength = 255, validValues = {"Vhost", "Scsi", "Nvme", "CBD", "file"})
     private String defaultProtocol;
 
+    @APIParam(required = false)
+    private String oldConfig;
+
     public String getConfig() {
         return config;
     }
@@ -35,6 +38,14 @@ public class APIUpdateExternalPrimaryStorageMsg extends APIUpdatePrimaryStorageM
         this.defaultProtocol = defaultProtocol;
     }
 
+    public String getOldConfig() {
+        return oldConfig;
+    }
+
+    public void setOldConfig(String oldConfig) {
+        this.oldConfig = oldConfig;
+    }
+
     public static APIUpdateExternalPrimaryStorageMsg __example__() {
         APIUpdateExternalPrimaryStorageMsg msg = new APIUpdateExternalPrimaryStorageMsg();
         msg.setUuid(uuid());
@@ -42,6 +53,7 @@ public class APIUpdateExternalPrimaryStorageMsg extends APIUpdatePrimaryStorageM
         msg.setDescription("New description");
         msg.setDefaultProtocol("Vhost");
         msg.setConfig("{\"pools\":[{\"name\":\"pool1\",\"aliasName\":\"pool-high\"}]}");
+        msg.setOldConfig("{\"pools\":[{\"name\":\"pool2\",\"aliasName\":\"pool-high\"}]}");
         return msg;
     }
 }

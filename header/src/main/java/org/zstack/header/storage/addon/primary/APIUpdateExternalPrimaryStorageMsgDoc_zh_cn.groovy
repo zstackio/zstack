@@ -94,6 +94,15 @@ doc {
 					optional true
 					since "5.0.0"
 				}
+				column {
+					name "oldConfig"
+					enclosedIn "updateExternalPrimaryStorage"
+					desc "用于原子更新的预期旧值,为 null 则代表跳过预检.只有当服务器上的当前配置与此值完全相等时,更新才会生效;否则将拒绝请求以防止并发冲突."
+					location "body"
+					type "String"
+					optional true
+					since "5.5.0"
+				}
 			}
         }
 

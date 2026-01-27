@@ -1,5 +1,7 @@
 package org.zstack.storage.addon.primary;
 
+import com.google.common.collect.Interner;
+import com.google.common.collect.Interners;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
@@ -71,6 +73,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     protected final PrimaryStorageNodeSvc node;
     protected final PrimaryStorageControllerSvc controller;
+    private static final Interner<String> externalPsUpdateLock = Interners.newWeakInterner();
 
     private ExternalPrimaryStorageVO externalVO;
     private LinkedHashMap selfConfig;
@@ -172,6 +175,18 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
+    private boolean compareAndSetConfig(String expectedConfig, String config) {
+        synchronized (externalPsUpdateLock.intern(String.format("ExternalPrimaryStorage-update-%s", self.getUuid()))) {
+            String updateSql = "update ExternalPrimaryStorageVO set config = :config where uuid = :uuid and config = :expectedConfig";
+            int updatedRows = SQL.New(updateSql)
+                    .param("config", config)
+                    .param("uuid", self.getUuid())
+                    .param("expectedConfig", expectedConfig)
+                    .execute();
+            return updatedRows > 0;
+        }
+    }
+
     private void handle(APIUpdateExternalPrimaryStorageMsg msg) {
         APIUpdateExternalPrimaryStorageEvent evt = new APIUpdateExternalPrimaryStorageEvent(msg.getId());
         if (msg.getName() != null) {
@@ -192,6 +207,14 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             String config = controller.validateConfig(msg.getConfig());
             externalVO.setConfig(config);
             needReconnect = true;
+        }
+        if (msg.getOldConfig() != null) {
+            boolean success = compareAndSetConfig(msg.getOldConfig(), externalVO.getConfig());
+            if (!success) {
+                evt.setError(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10040,"Failed to update ExternalPrimaryStorage[uuid:%s], config has been modified by another operation", externalVO.getUuid()));
+                bus.publish(evt);
+                return;
+            }
         }
         externalVO = dbf.updateAndRefresh(externalVO);
 
