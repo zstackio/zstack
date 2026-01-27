@@ -1,4 +1,4 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python3 
 #
 # NOTE(weiw): although we could use shell script, but python script may
 # be easier to port to Windows/MacOS/Linux

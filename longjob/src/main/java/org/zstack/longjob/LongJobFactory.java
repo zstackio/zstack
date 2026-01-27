@@ -11,6 +11,7 @@ public interface LongJobFactory {
     LongJob getLongJob(String jobName);
     TreeMap<String, String> getFullJobName();
     boolean supportCancel(String jobName);
+    boolean supportSuspend(String jobName);
     boolean supportResume(String jobName);
     boolean supportClean(String jobName);
 }
