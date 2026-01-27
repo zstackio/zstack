@@ -96,3 +96,15 @@ DELETE FROM `zstack`.`SystemTagVO`
 WHERE `resourceType` = 'InstanceOfferingVO'
   AND (tag LIKE 'minimumCPUUsageHostAllocatorStrategyMode::%'
     OR tag LIKE 'minimumMemoryUsageHostAllocatorStrategyMode::%');
+
+-- Fix PodGpuStatsVO unit: GpuDeviceVO.memory stores bytes, convert to MB
+CREATE OR REPLACE VIEW PodGpuStatsVO AS
+SELECT
+    p.uuid AS podUuid,
+    COUNT(g.uuid) AS gpuCount,
+    COALESCE(CAST(ROUND(AVG(g.memory) / 1048576) AS SIGNED), 0) AS avgAllocatedMb,
+    COALESCE(CAST(ROUND(SUM(g.memory) / 1048576) AS SIGNED), 0) AS totalGpuMemMb
+FROM PodVO p
+    LEFT JOIN PciDeviceVO pci ON pci.vmInstanceUuid = p.uuid
+    LEFT JOIN GpuDeviceVO g ON g.uuid = pci.uuid
+GROUP BY p.uuid;
