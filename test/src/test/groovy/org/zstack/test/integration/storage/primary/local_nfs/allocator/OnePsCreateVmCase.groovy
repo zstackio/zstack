@@ -20,22 +20,6 @@ class OnePsCreateVmCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(1)
-                cpu = 1
-            }
-
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(100)
-            }
-
-            diskOffering {
-                name = "diskOffering3"
-                diskSize = SizeUnit.GIGABYTE.toByte(102)
-            }
-
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -111,28 +95,45 @@ class OnePsCreateVmCase extends SubCase {
     }
 
     void createVmVolumeSizeEqualSinglePsCap() {
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
-        DiskOfferingInventory _100G = env.inventoryByName("diskOffering") as DiskOfferingInventory
-        DiskOfferingInventory _102G = env.inventoryByName("diskOffering3") as DiskOfferingInventory
         ImageInventory image = env.inventoryByName("image") as ImageInventory
         L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
 
-        CreateVmInstanceAction createVmInstanceAction = new CreateVmInstanceAction(
-                name: "vm",
-                instanceOfferingUuid: instanceOffering.uuid,
-                dataDiskOfferingUuids: [_102G.uuid],
-                imageUuid: image.uuid,
-                l3NetworkUuids: [l3.uuid],
-                sessionId: currentEnvSpec.session.uuid
-        )
-        assert createVmInstanceAction.call().error != null
+        expectApiFailure({
+            createVmInstance {
+                delegate.name = "vm"
+                delegate.cpuNum = 1
+                delegate.memorySize = gb(1)
+                delegate.imageUuid = image.uuid
+                delegate.l3NetworkUuids = [l3.uuid]
+                delegate.diskAOs = [
+                    [
+                        "boot" : true,
+                    ],
+                    [
+                        "boot" : false,
+                        "size" : gb(102)
+                    ]
+                ]
+            }
+        }) {
+            assert delegate.code == "SYS.1006"
+        }
 
-        VmInstanceInventory vm = createVmInstance {
-            name = "newVm"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
-            l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [_100G.uuid]
+        createVmInstance {
+            delegate.name = "vm"
+            delegate.cpuNum = 1
+            delegate.memorySize = gb(1)
+            delegate.imageUuid = image.uuid
+            delegate.l3NetworkUuids = [l3.uuid]
+            delegate.diskAOs = [
+                [
+                    "boot" : true,
+                ],
+                [
+                    "boot" : false,
+                    "size" : gb(100)
+                ]
+            ]
         }
     }
 }
