@@ -68,6 +68,8 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
             validate((APIRerunLongJobMsg) msg);
         } else if (msg instanceof APIResumeLongJobMsg) {
             validate((APIResumeLongJobMsg) msg);
+        } else if (msg instanceof APISuspendLongJobMsg) {
+            validate((APISuspendLongJobMsg) msg);
         }
 
         return msg;
@@ -207,6 +209,31 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_LONGJOB_10011, "can only resume longjob that is Suspended"));
         }
 
+        Optional.ofNullable(t.get(1, String.class)).ifPresent(mnId ->
+                bus.makeServiceIdByManagementNodeId(msg, LongJobConstants.SERVICE_ID, mnId));
+    }
+
+    private void validate(APISuspendLongJobMsg msg) {
+        Tuple t = Q.New(LongJobVO.class)
+                .select(LongJobVO_.state, LongJobVO_.managementNodeUuid)
+                .eq(LongJobVO_.uuid, msg.getUuid())
+                .findTuple();
+
+        LongJobState state = t.get(0, LongJobState.class);
+
+        // If already suspended, allow operation (business layer will return success directly, idempotency)
+        if (state == LongJobState.Suspended) {
+            Optional.ofNullable(t.get(1, String.class)).ifPresent(mnId ->
+                    bus.makeServiceIdByManagementNodeId(msg, LongJobConstants.SERVICE_ID, mnId));
+            return;
+        }
+
+        // Only running tasks can be suspended (Running state allows suspension)
+        if (state != LongJobState.Running) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_LONGJOB_10002, "can only suspend running jobs, current state: %s", state));
+        }
+
+        // Running task allows suspension, set the correct serviceId routing
         Optional.ofNullable(t.get(1, String.class)).ifPresent(mnId ->
                 bus.makeServiceIdByManagementNodeId(msg, LongJobConstants.SERVICE_ID, mnId));
     }

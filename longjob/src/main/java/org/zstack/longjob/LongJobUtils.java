@@ -33,6 +33,20 @@ public class LongJobUtils {
 
     public static String succeeded = "Succeeded";
 
+    /**
+     * Opaque key for marking an error as recoverable in long job framework.
+     * Business modules can set this flag to true in error code's opaque field
+     * to indicate that the error is recoverable and the long job should be suspended
+     * instead of failed, enabling automatic retry after service restart.
+     *
+     * Usage example:
+     * <pre>
+     * ErrorCode err = Platform.err(...);
+     * err.putToOpaque(LongJobUtils.OPAQUE_KEY_LONG_JOB_RECOVERABLE, true);
+     * </pre>
+     */
+    public static final String OPAQUE_KEY_LONG_JOB_RECOVERABLE = "longJobRecoverable";
+
     private static Interner<String> jobUuids = Interners.newWeakInterner();
 
     private static List<LongJobState> completedStates = Arrays.asList(LongJobState.Failed, LongJobState.Succeeded, LongJobState.Canceled);
@@ -172,21 +186,20 @@ public class LongJobUtils {
     /**
      * Check if an error is marked as recoverable in its opaque field.
      * Any business module can mark an error as recoverable by setting
-     * "longJobRecoverable" to true in the error code's opaque field.
+     * {@link #OPAQUE_KEY_LONG_JOB_RECOVERABLE} to true in the error code's opaque field.
      * This allows the long job framework to automatically suspend instead of fail
      * for recoverable errors, enabling automatic retry after service restart.
      *
-     * @param errorCode the error code to check
+     * @param errorCode the error code to check, may be null
      * @return true if the error is marked as recoverable, false otherwise
      */
     private static boolean isRecoverableError(ErrorCode errorCode) {
-        // Check if error code has recoverable flag in opaque
-        // Any business module can set this flag to indicate the error is recoverable
-        Object recoverable = errorCode.getFromOpaque("longJobRecoverable");
-        if (recoverable instanceof Boolean && (Boolean) recoverable) {
-            return true;
+        if (errorCode == null) {
+            return false;
         }
-        return false;
+
+        Object recoverable = errorCode.getFromOpaque(OPAQUE_KEY_LONG_JOB_RECOVERABLE);
+        return recoverable instanceof Boolean && (Boolean) recoverable;
     }
 
     private static void setExecuteTimeIfNeed(LongJobVO job) {
