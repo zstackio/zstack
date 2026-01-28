@@ -7,6 +7,9 @@ ALTER TABLE `GuestVmScriptExecutedRecordDetailVO`
 CALL ADD_COLUMN('PciDeviceVO', 'vmPciDeviceAddress', 'varchar(32)', 1, NULL);
 CALL ADD_COLUMN('MdevDeviceVO', 'mdevDeviceAddress', 'varchar(32)', 1, NULL);
 
+CALL ADD_COLUMN('VolumeBackupVO', 'hypervisorType', 'varchar(255)', 0, 'kvm');
+ALTER TABLE `zstack`.`VolumeBackupHistoryVO` modify column bitmap varchar(32) DEFAULT NULL;
+
 -- Add index for modelId field to support duplicate checking
 -- Use CREATE_INDEX procedure (defined in beforeMigrate.sql) for idempotent operation
 CALL CREATE_INDEX('ModelVO', 'idx_modelId', 'modelId');

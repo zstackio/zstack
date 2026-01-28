@@ -6167,7 +6167,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         return snapshotPath.split("@")[0];
     }
 
-    protected String getTargetPoolNameFromAllocatedUrl(String allocatedUrl) {
+    public String getTargetPoolNameFromAllocatedUrl(String allocatedUrl) {
         if (allocatedUrl == null) {
             throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10032, "allocated url not found"));
         }
