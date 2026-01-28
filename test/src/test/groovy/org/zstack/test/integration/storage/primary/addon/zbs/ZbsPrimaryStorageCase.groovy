@@ -781,7 +781,8 @@ class ZbsPrimaryStorageCase extends SubCase {
         Integer originalPingInterval = PrimaryStorageGlobalConfig.PING_INTERVAL.value().toInteger()
         PrimaryStorageGlobalConfig.PING_INTERVAL.updateValue(1)
         final String dbVersion = dbf.getDbVersion()
-        final Integer MAX_PING_CNT = ZbsConstants.PRIMARY_STORAGE_MDS_MAXIMUM_PING_FAILURE
+        final Integer MDS_PING_RETRY_PER_CYCLE = ZbsConstants.MDS_PING_RETRY_PER_CYCLE
+        final Integer MDS_PING_FAIL_CYCLE_THRESHOLD = ZbsConstants.MDS_PING_FAIL_CYCLE_THRESHOLD
         AtomicInteger pingFailureCount = new AtomicInteger(0)
         Boolean reconnectTriggered = false
 
@@ -803,14 +804,13 @@ class ZbsPrimaryStorageCase extends SubCase {
             ZbsPrimaryStorageMdsBase.SyncMetadataCmd cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.SyncMetadataCmd.class)
             ZbsPrimaryStorageMdsBase.SyncMetadataRsp rsp = new ZbsPrimaryStorageMdsBase.SyncMetadataRsp()
             rsp.setExternalAddr(cmd.getAddr())
-            if (cmd.getAddr().equals("127.0.1.1")) {
-                assert pingFailureCount.intValue().equals(MAX_PING_CNT)
+            if (cmd.getAddr().equals("127.0.1.1") && pingFailureCount.intValue().equals(MDS_PING_RETRY_PER_CYCLE * MDS_PING_FAIL_CYCLE_THRESHOLD)) {
                 reconnectTriggered = true
             }
             return rsp
         }
 
-        sleep((MAX_PING_CNT + 1) * 1000 + 500)
+        sleep((MDS_PING_RETRY_PER_CYCLE * MDS_PING_FAIL_CYCLE_THRESHOLD + 1) * 1000 + 500)
         retryInSecs {
             assert reconnectTriggered
         }
