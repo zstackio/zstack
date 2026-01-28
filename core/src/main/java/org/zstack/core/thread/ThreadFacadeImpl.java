@@ -1,8 +1,17 @@
 package org.zstack.core.thread;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.jmx.JmxFacade;
+import org.zstack.core.telemetry.TelemetryFacade;
+import org.zstack.core.telemetry.TelemetryGlobalProperty;
+import org.zstack.core.telemetry.TelemetryMetricsFacade;
 import org.zstack.header.core.progress.ChainInfo;
 import org.zstack.header.core.progress.SingleFlightChainInfo;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -32,6 +41,88 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
     private JmxFacade jmxf;
     @Autowired
     private PluginRegistry pluginRegistry;
+    
+    private volatile TelemetryFacade telemetryFacade;
+    private volatile TelemetryMetricsFacade metricsFacade;
+    
+    private TelemetryFacade getTelemetryFacade() {
+        if (telemetryFacade == null && TelemetryGlobalProperty.ENABLED) {
+            synchronized (this) {
+                if (telemetryFacade == null) {
+                    try {
+                        telemetryFacade = Platform.getComponentLoader().getComponent(TelemetryFacade.class);
+                    } catch (Exception e) {
+                        _logger.trace("TelemetryFacade not available", e);
+                    }
+                }
+            }
+        }
+        return telemetryFacade;
+    }
+    
+    private boolean isTelemetryEnabled() {
+        return TelemetryGlobalProperty.ENABLED && getTelemetryFacade() != null && getTelemetryFacade().isEnabled();
+    }
+    
+    private TelemetryMetricsFacade getMetricsFacade() {
+        if (metricsFacade == null && TelemetryGlobalProperty.ENABLED && TelemetryGlobalProperty.METRICS_ENABLED) {
+            synchronized (this) {
+                if (metricsFacade == null) {
+                    try {
+                        metricsFacade = Platform.getComponentLoader().getComponent(TelemetryMetricsFacade.class);
+                    } catch (Exception e) {
+                        _logger.trace("TelemetryMetricsFacade not available", e);
+                    }
+                }
+            }
+        }
+        return metricsFacade;
+    }
+    
+    private boolean isMetricsEnabled() {
+        return TelemetryGlobalProperty.ENABLED && TelemetryGlobalProperty.METRICS_ENABLED 
+                && getMetricsFacade() != null && getMetricsFacade().isEnabled();
+    }
+    
+    private void collectAndReportMetrics() {
+        TelemetryMetricsFacade metrics = getMetricsFacade();
+        if (metrics == null || !metrics.isEnabled()) {
+            return;
+        }
+        
+        metrics.recordThreadPoolMetrics("main",
+                _pool.getActiveCount(),
+                _pool.getPoolSize(),
+                _pool.getMaximumPoolSize(),
+                _pool.getQueue().size(),
+                _pool.getCompletedTaskCount());
+        
+        metrics.recordThreadPoolMetrics("sync",
+                _syncpool.getActiveCount(),
+                _syncpool.getPoolSize(),
+                _syncpool.getMaximumPoolSize(),
+                _syncpool.getQueue().size(),
+                _syncpool.getCompletedTaskCount());
+        
+        pools.forEach((name, pool) -> {
+            metrics.recordThreadPoolMetrics(name,
+                    pool.getActiveCount(),
+                    pool.getPoolSize(),
+                    pool.getMaximumPoolSize(),
+                    pool.getQueue().size(),
+                    pool.getCompletedTaskCount());
+        });
+        
+        Map<String, ChainTaskStatistic> chainStats = dpq.getChainTaskStatistics();
+        chainStats.forEach((sig, stat) -> {
+            metrics.recordChainTaskQueueMetrics(sig, (int) stat.getPendingTaskNum(), stat.getCurrentRunningThreadNum());
+        });
+        
+        Map<String, SyncTaskStatistic> syncStats = dpq.getSyncTaskStatistics();
+        syncStats.forEach((sig, stat) -> {
+            metrics.recordSyncTaskQueueMetrics(sig, (int) stat.getPendingTaskNum(), stat.getCurrentRunningThreadNum());
+        });
+    }
 
     private static class TimerWrapper extends Timer {
         private int cancelledTimerTaskCount = 0;
@@ -126,6 +217,71 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
         }
 
     }
+    
+    private class TracedWorker<T> implements Callable<T> {
+        private final Task<T> task;
+        private final Context parentContext;
+        
+        TracedWorker(Task<T> task) {
+            this.task = task;
+            this.parentContext = Context.current();
+        }
+        
+        @Override
+        public T call() throws Exception {
+            if (!isTelemetryEnabled()) {
+                return executeTask();
+            }
+            
+            Span span = null;
+            Scope scope = null;
+            try {
+                span = getTelemetryFacade().getTracer()
+                        .spanBuilder("Task: " + task.getName())
+                        .setSpanKind(SpanKind.INTERNAL)
+                        .setParent(parentContext)
+                        .setAttribute("task.name", task.getName())
+                        .setAttribute("task.class", task.getClass().getName())
+                        .startSpan();
+                scope = span.makeCurrent();
+                
+                T result = executeTask();
+                span.setStatus(StatusCode.OK);
+                return result;
+            } catch (Exception e) {
+                if (span != null) {
+                    span.recordException(e);
+                    span.setStatus(StatusCode.ERROR, e.getMessage());
+                }
+                throw e;
+            } catch (Throwable t) {
+                if (span != null) {
+                    span.recordException(t);
+                    span.setStatus(StatusCode.ERROR, t.getMessage());
+                }
+                throw new CloudRuntimeException(task.getName() + " throws out an unhandled throwable", t);
+            } finally {
+                if (scope != null) {
+                    scope.close();
+                }
+                if (span != null) {
+                    span.end();
+                }
+            }
+        }
+        
+        private T executeTask() throws Exception {
+            try {
+                return task.call();
+            } catch (Exception e) {
+                _logger.warn(task.getName() + " throws out an unhandled exception, this thread will terminate immediately", e);
+                throw e;
+            } catch (Throwable t) {
+                _logger.warn(task.getName() + " throws out an unhandled throwable, this thread will terminate immediately", t);
+                throw new CloudRuntimeException(task.getName() + " throws out an unhandled throwable, this thread will terminate immediately", t);
+            }
+        }
+    }
 
     @Override
     public int getSyncThreadNum(int totalThreadNum) {
@@ -164,16 +320,25 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
     @Override
     public <T> Future<T> submit(Task<T> task) {
         _logger.trace(String.format("submit task: %s", task.getName()));
+        if (isTelemetryEnabled()) {
+            return _pool.submit(new TracedWorker<T>(task));
+        }
         return _pool.submit(new Worker<T>(task));
     }
 
     public <T> Future<T> submitSyncPool(Task<T> task) {
+        if (isTelemetryEnabled()) {
+            return _syncpool.submit(new TracedWorker<T>(task));
+        }
         return _syncpool.submit(new Worker<T>(task));
     }
 
     @Override
     public <T> Future<T> submitTargetPool(Task<T> task, String signature) {
         ScheduledThreadPoolExecutorExt executorExt = pools.getOrDefault(signature, _syncpool);
+        if (isTelemetryEnabled()) {
+            return executorExt.submit(new TracedWorker<>(task));
+        }
         return executorExt.submit(new Worker<>(task));
     }
 
@@ -199,6 +364,52 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
         @SuppressWarnings("unchecked")
         ScheduledFuture<Void> ret = (ScheduledFuture<Void>) _pool.scheduleAtFixedRate(new Runnable() {
             public void run() {
+                if (!isTelemetryEnabled()) {
+                    runWithoutTracing();
+                    return;
+                }
+                
+                Span span = null;
+                Scope scope = null;
+                try {
+                    span = getTelemetryFacade().getTracer()
+                            .spanBuilder("PeriodicTask: " + task.getName())
+                            .setSpanKind(SpanKind.INTERNAL)
+                            .setAttribute("periodic.task.name", task.getName())
+                            .setAttribute("periodic.task.class", task.getClass().getName())
+                            .setAttribute("periodic.interval", task.getInterval())
+                            .setAttribute("periodic.time_unit", task.getTimeUnit().toString())
+                            .startSpan();
+                    scope = span.makeCurrent();
+                    
+                    task.run();
+                    span.setStatus(StatusCode.OK);
+                } catch (Throwable e) {
+                    if (span != null) {
+                        span.recordException(e);
+                        span.setStatus(StatusCode.ERROR, e.getMessage());
+                    }
+                    _logger.warn("An unhandled exception happened during executing periodic task: " + task.getName() + ", cancel it", e);
+                    final Map<PeriodicTask, ScheduledFuture<?>> periodicTasks = getPeriodicTasks();
+                    final ScheduledFuture<?> ft = periodicTasks.get(task);
+                    if (ft != null) {
+                        ft.cancel(true);
+                        periodicTasks.remove(task);
+                    } else {
+                        _logger.warn("Not found feature for task " + task.getName()
+                                + ", the exception happened too soon, will try to cancel the task next time the exception happens");
+                    }
+                } finally {
+                    if (scope != null) {
+                        scope.close();
+                    }
+                    if (span != null) {
+                        span.end();
+                    }
+                }
+            }
+            
+            private void runWithoutTracing() {
                 try {
                     task.run();
                 } catch (Throwable e) {
@@ -376,8 +587,27 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
                 separatedThreadNum,
                 internalThreadNum));
         poolList.forEach(this::initThreadPool);
+        
+        startMetricsCollection();
 
         return true;
+    }
+    
+    private void startMetricsCollection() {
+        if (!TelemetryGlobalProperty.ENABLED || !TelemetryGlobalProperty.METRICS_ENABLED) {
+            return;
+        }
+        
+        int intervalSeconds = TelemetryGlobalProperty.METRICS_COLLECTION_INTERVAL_SECONDS;
+        _logger.info(String.format("Starting metrics collection with interval %d seconds", intervalSeconds));
+        
+        _pool.scheduleAtFixedRate(() -> {
+            try {
+                collectAndReportMetrics();
+            } catch (Throwable e) {
+                _logger.trace("Error collecting metrics", e);
+            }
+        }, intervalSeconds, intervalSeconds, TimeUnit.SECONDS);
     }
 
     @Override
@@ -413,6 +643,49 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
             }
 
             public void run() {
+                if (!isTelemetryEnabled()) {
+                    runWithoutTracing();
+                    return;
+                }
+                
+                Span span = null;
+                Scope scope = null;
+                try {
+                    span = getTelemetryFacade().getTracer()
+                            .spanBuilder("CancelablePeriodicTask: " + task.getName())
+                            .setSpanKind(SpanKind.INTERNAL)
+                            .setAttribute("periodic.task.name", task.getName())
+                            .setAttribute("periodic.task.class", task.getClass().getName())
+                            .setAttribute("periodic.interval", task.getInterval())
+                            .setAttribute("periodic.time_unit", task.getTimeUnit().toString())
+                            .setAttribute("periodic.cancelable", true)
+                            .startSpan();
+                    scope = span.makeCurrent();
+                    
+                    boolean cancel = task.run();
+                    if (cancel) {
+                        span.setAttribute("periodic.cancelled", true);
+                        cancelTask();
+                    }
+                    span.setStatus(StatusCode.OK);
+                } catch (Throwable e) {
+                    if (span != null) {
+                        span.recordException(e);
+                        span.setStatus(StatusCode.ERROR, e.getMessage());
+                    }
+                    _logger.warn("An unhandled exception happened during executing periodic task: " + task.getName() + ", cancel it", e);
+                    cancelTask();
+                } finally {
+                    if (scope != null) {
+                        scope.close();
+                    }
+                    if (span != null) {
+                        span.end();
+                    }
+                }
+            }
+            
+            private void runWithoutTracing() {
                 try {
                     boolean cancel = task.run();
                     if (cancel) {

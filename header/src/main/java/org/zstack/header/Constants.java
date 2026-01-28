@@ -11,6 +11,12 @@ public interface Constants {
     String THREAD_CONTEXT_TASK = "task";
     String THREAD_CONTEXT_PROGRESS_ENABLED = "progress-enabled";
     String THREAD_CONTEXT_TASK_STAGE = "task-stage";
+    
+    String THREAD_CONTEXT_TRACEPARENT = "traceparent";
+    String THREAD_CONTEXT_TRACESTATE = "tracestate";
+    
+    String HTTP_HEADER_TRACEPARENT = "traceparent";
+    String HTTP_HEADER_TRACESTATE = "tracestate";
 
     String CATEGORY_RESOURCE = "resource";
     String CATEGORY_METADATA = "metadata";

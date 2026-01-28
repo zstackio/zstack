@@ -1,5 +1,10 @@
 package org.zstack.core.rest;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
 import org.apache.http.HttpStatus;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
@@ -7,6 +12,7 @@ import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
 import org.apache.http.impl.nio.reactor.IOReactorConfig;
 import org.apache.http.nio.reactor.IOReactorException;
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsAsyncClientHttpRequestFactory;
@@ -19,12 +25,16 @@ import org.zstack.core.Platform;
 import org.zstack.core.debug.DebugManager;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
+import org.zstack.core.telemetry.MessageTracingHelper;
+import org.zstack.core.telemetry.TelemetryFacade;
+import org.zstack.core.telemetry.TelemetryGlobalProperty;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.thread.ThreadFacadeImpl.TimeoutTaskReceipt;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.validation.ValidationFacade;
+import org.zstack.header.Constants;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -61,6 +71,8 @@ public class RESTFacadeImpl implements RESTFacade {
     @Autowired
     private ValidationFacade vf;
 
+    private TelemetryFacade telemetryFacade;
+
     private String hostname;
     private int port = 8080;
     private String path;
@@ -96,6 +108,55 @@ public class RESTFacadeImpl implements RESTFacade {
             return this.size() > notifiedFailureHttpTasksSize;
         }
     });
+
+    private TelemetryFacade getTelemetryFacade() {
+        if (telemetryFacade == null && TelemetryGlobalProperty.ENABLED) {
+            try {
+                telemetryFacade = Platform.getComponentLoader().getComponent(TelemetryFacade.class);
+            } catch (Exception e) {
+                logger.trace("TelemetryFacade not available", e);
+            }
+        }
+        return telemetryFacade;
+    }
+
+    private boolean isTelemetryEnabled() {
+        return TelemetryGlobalProperty.ENABLED && getTelemetryFacade() != null && getTelemetryFacade().isEnabled();
+    }
+
+    private void injectTraceHeaders(HttpHeaders headers) {
+        if (!isTelemetryEnabled()) {
+            return;
+        }
+
+        String traceparent = ThreadContext.get(Constants.THREAD_CONTEXT_TRACEPARENT);
+        if (traceparent != null && !traceparent.isEmpty()) {
+            headers.set(Constants.HTTP_HEADER_TRACEPARENT, traceparent);
+        }
+        String tracestate = ThreadContext.get(Constants.THREAD_CONTEXT_TRACESTATE);
+        if (tracestate != null && !tracestate.isEmpty()) {
+            headers.set(Constants.HTTP_HEADER_TRACESTATE, tracestate);
+        }
+    }
+
+    private void endSpanAndScope(Span span, Scope scope) {
+        if (span != null) {
+            try {
+                span.end();
+            } catch (Exception e) {
+                logger.trace("Failed to end HTTP span", e);
+            }
+        }
+        // Scope has already been closed in the creating thread, only handle span here
+        // If scope is not null (theoretically should not happen), still try to close it to avoid resource leaks
+        if (scope != null) {
+            try {
+                scope.close();
+            } catch (Exception e) {
+                logger.trace("Failed to close HTTP scope", e);
+            }
+        }
+    }
 
     void init() {
         DebugManager.registerDebugSignalHandler("DumpRestStats", () -> {
@@ -341,6 +402,52 @@ public class RESTFacadeImpl implements RESTFacade {
             }
         }
 
+        Span httpSpan = null;
+        Scope scope = null;
+        if (isTelemetryEnabled()) {
+            try {
+                URI uri = URI.create(url);
+                int defaultPort = "https".equalsIgnoreCase(uri.getScheme()) ? 443 : 80;
+                httpSpan = getTelemetryFacade().getTracer()
+                        .spanBuilder("HTTP " + method.toString())
+                        .setSpanKind(SpanKind.CLIENT)
+                        .setAttribute("http.method", method.toString())
+                        .setAttribute("http.url", url)
+                        .setAttribute("http.host", uri.getHost())
+                        .setAttribute("http.path", uri.getPath())
+                        .setAttribute("net.peer.name", uri.getHost())
+                        .setAttribute("net.peer.port", uri.getPort() > 0 ? uri.getPort() : defaultPort)
+                        .startSpan();
+
+                scope = httpSpan.makeCurrent();
+
+                Map<String, String> traceCtx = MessageTracingHelper.extractTraceContext();
+                if (traceCtx.containsKey(MessageTracingHelper.TRACEPARENT_KEY)) {
+                    requestHeaders.set(Constants.HTTP_HEADER_TRACEPARENT, 
+                            traceCtx.get(MessageTracingHelper.TRACEPARENT_KEY));
+                }
+                if (traceCtx.containsKey(MessageTracingHelper.TRACESTATE_KEY)) {
+                    requestHeaders.set(Constants.HTTP_HEADER_TRACESTATE, 
+                            traceCtx.get(MessageTracingHelper.TRACESTATE_KEY));
+                }
+                
+                // Close scope immediately after header injection in current thread to avoid context pollution from cross-thread closure
+                if (scope != null) {
+                    try {
+                        scope.close();
+                    } catch (Exception e) {
+                        logger.trace("Failed to close HTTP scope in current thread", e);
+                    }
+                    scope = null;
+                }
+            } catch (Exception e) {
+                logger.trace("Failed to create HTTP client span", e);
+            }
+        }
+
+        final Span finalHttpSpan = httpSpan;
+        final Scope finalScope = scope;
+
         HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
 
         AsyncHttpWrapper wrapper = new AsyncHttpWrapper() {
@@ -370,43 +477,60 @@ public class RESTFacadeImpl implements RESTFacade {
                         return;
                     }
 
-                    if (CoreGlobalProperty.PROFILER_HTTP_CALL) {
-                        HttpCallStatistic stat = statistics.get(url);
-                        stat.addStatistic(System.currentTimeMillis() - finalStime);
-                    }
-
-                    wrappers.remove(taskUuid);
-                    cancelTimeout();
-
-                    if (logger.isTraceEnabled()) {
-                        List<String> hs = responseEntity.getHeaders().get(RESTConstant.TASK_UUID);
-                        String taskUuid = hs == null || hs.isEmpty() ? null : hs.get(0);
-
-                        if (taskUuid == null) {
-                            logger.trace(String.format("[http response(url: %s)] %s", url, responseEntity.getBody()));
-                        } else {
-                            logger.trace(String.format("[http response(url: %s, taskUuid: %s)] %s",
-                                    url, taskUuid, responseEntity.getBody()));
+                    try {
+                        if (CoreGlobalProperty.PROFILER_HTTP_CALL) {
+                            HttpCallStatistic stat = statistics.get(url);
+                            stat.addStatistic(System.currentTimeMillis() - finalStime);
                         }
-                    }
 
-                    if (callback instanceof JsonAsyncRESTCallback) {
-                        JsonAsyncRESTCallback<Object> jcallback = (JsonAsyncRESTCallback)callback;
-                        try {
-                            Object obj = JSONObjectUtil.toObject(responseEntity.getBody(), jcallback.getReturnClass());
-                            ErrorCode err = vf.validateErrorByErrorCode(obj);
-                            if (err != null) {
-                                logger.warn(String.format("error response that causes validation failure: %s", responseEntity.getBody()));
-                                jcallback.fail(err);
+                        wrappers.remove(taskUuid);
+                        cancelTimeout();
+
+                        if (logger.isTraceEnabled()) {
+                            List<String> hs = responseEntity.getHeaders().get(RESTConstant.TASK_UUID);
+                            String taskUuid = hs == null || hs.isEmpty() ? null : hs.get(0);
+
+                            if (taskUuid == null) {
+                                logger.trace(String.format("[http response(url: %s)] %s", url, responseEntity.getBody()));
                             } else {
-                                jcallback.success(obj);
+                                logger.trace(String.format("[http response(url: %s, taskUuid: %s)] %s",
+                                        url, taskUuid, responseEntity.getBody()));
                             }
-                        } catch (Throwable t) {
-                            logger.warn(t.getMessage(), t);
-                            callback.fail(inerr(ORG_ZSTACK_CORE_REST_10002, t.getMessage()));
                         }
-                    } else {
-                        callback.success(responseEntity);
+
+                        if (callback instanceof JsonAsyncRESTCallback) {
+                            JsonAsyncRESTCallback<Object> jcallback = (JsonAsyncRESTCallback)callback;
+                            try {
+                                Object obj = JSONObjectUtil.toObject(responseEntity.getBody(), jcallback.getReturnClass());
+                                ErrorCode err = vf.validateErrorByErrorCode(obj);
+                                if (err != null) {
+                                    logger.warn(String.format("error response that causes validation failure: %s", responseEntity.getBody()));
+                                    if (finalHttpSpan != null) {
+                                        finalHttpSpan.setStatus(StatusCode.ERROR, err.getDetails());
+                                    }
+                                    jcallback.fail(err);
+                                } else {
+                                    if (finalHttpSpan != null) {
+                                        finalHttpSpan.setStatus(StatusCode.OK);
+                                    }
+                                    jcallback.success(obj);
+                                }
+                            } catch (Throwable t) {
+                                logger.warn(t.getMessage(), t);
+                                if (finalHttpSpan != null) {
+                                    finalHttpSpan.recordException(t);
+                                    finalHttpSpan.setStatus(StatusCode.ERROR, t.getMessage());
+                                }
+                                callback.fail(inerr(ORG_ZSTACK_CORE_REST_10002, t.getMessage()));
+                            }
+                        } else {
+                            if (finalHttpSpan != null) {
+                                finalHttpSpan.setStatus(StatusCode.OK);
+                            }
+                            callback.success(responseEntity);
+                        }
+                    } finally {
+                        endSpanAndScope(finalHttpSpan, finalScope);
                     }
                 }
 
@@ -418,13 +542,21 @@ public class RESTFacadeImpl implements RESTFacade {
                         return;
                     }
 
-                    wrappers.remove(taskUuid);
-                    if (!SysErrors.TIMEOUT.toString().equals(err.getCode())) {
-                        cancelTimeout();
-                    }
+                    try {
+                        wrappers.remove(taskUuid);
+                        if (!SysErrors.TIMEOUT.toString().equals(err.getCode())) {
+                            cancelTimeout();
+                        }
 
-                    logger.warn(String.format("Unable to post to %s: %s", url, err.getDetails()));
-                    callback.fail(err);
+                        if (finalHttpSpan != null) {
+                            finalHttpSpan.setStatus(StatusCode.ERROR, err.getDetails());
+                        }
+
+                        logger.warn(String.format("Unable to post to %s: %s", url, err.getDetails()));
+                        callback.fail(err);
+                    } finally {
+                        endSpanAndScope(finalHttpSpan, finalScope);
+                    }
                 }
             };
 
