@@ -62,6 +62,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.storage.zbs.ZbsConstants.MDS_PING_FAIL_CYCLE_THRESHOLD;
 import static org.zstack.storage.zbs.ZbsHelper.*;
 
 /**
@@ -86,6 +87,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     private AddonInfo addonInfo;
     private Config config;
 
+    private final Map<MdsInfo, Integer> mdsConsecutivePingFailureCount = new ConcurrentHashMap<>();
     public static final String DEPLOY_CLIENT_PATH = "/zbs/primarystorage/client/deploy";
     public static final String GET_CAPACITY_PATH = "/zbs/primarystorage/capacity";
     public static final String GET_FACTS_PATH = "/zbs/primarystorage/facts";
@@ -544,6 +546,61 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         });
     }
 
+    private void incrementMdsPingFailureCount(ZbsPrimaryStorageMdsBase mds) {
+        // initialize the count if absent
+        mdsConsecutivePingFailureCount.putIfAbsent(mds.getSelf(), 0);
+        // increment the count only if it is below the threshold
+        // avoid unbounded growth of the count
+        if (mdsConsecutivePingFailureCount.get(mds.getSelf()) < MDS_PING_FAIL_CYCLE_THRESHOLD) {
+            mdsConsecutivePingFailureCount.merge(mds.getSelf(), 1, Integer::sum);
+        }
+    }
+
+    private void resetMdsPingFailureCount(ZbsPrimaryStorageMdsBase mds) {
+        mdsConsecutivePingFailureCount.remove(mds.getSelf());
+    }
+
+    private List<ZbsPrimaryStorageMdsBase> getDisconnectedMds(List<ZbsPrimaryStorageMdsBase> mdsBases) {
+        return mdsBases.stream()
+                .filter(m -> MdsStatus.Disconnected.equals(m.getSelf().getStatus()))
+                .collect(Collectors.toList());
+    }
+
+    private boolean allMdssDisconnected(List<ZbsPrimaryStorageMdsBase> mdsBases) {
+        List<ZbsPrimaryStorageMdsBase> disconnectedMds = getDisconnectedMds(mdsBases);
+        return disconnectedMds.size() == mdsBases.size();
+    }
+
+    private List<ZbsPrimaryStorageMdsBase> getMdssNeedToReconnect(List<ZbsPrimaryStorageMdsBase> mdsBases) {
+        List<ZbsPrimaryStorageMdsBase> disconnectedMds = getDisconnectedMds(mdsBases);
+        boolean allDisconnected = allMdssDisconnected(mdsBases);
+
+        if (disconnectedMds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // If all MDS are disconnected, try to reconnect all of them
+        if (allDisconnected) {
+            logger.info("All MDS are disconnected, ignore the ping failure count threshold and all of them need be reconnected");
+            return disconnectedMds;
+        }
+
+        String disconnectedMdsInfo = disconnectedMds.stream()
+                .map(m -> String.format("%s (Consecutive Ping Failure: %d)",
+                        m.getSelf().getAddr(),
+                        mdsConsecutivePingFailureCount.computeIfAbsent(m.getSelf(), k -> 0)))
+                .collect(Collectors.joining(", "));
+
+        logger.info(String.format("Some MDS are disconnected for ZBS primary storage[uuid:%s], disconnected MDS: [%s]",
+                self.getUuid(), disconnectedMdsInfo));
+
+        return disconnectedMds.stream()
+                .filter(m -> mdsConsecutivePingFailureCount
+                        .computeIfAbsent(m.getSelf(), k -> 0) >= MDS_PING_FAIL_CYCLE_THRESHOLD)
+                .collect(Collectors.toList());
+
+    }
+
     @Override
     public void ping(ReturnValueCompletion<PingResult> completion) {
         reloadDbInfo();
@@ -558,44 +615,36 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             @Override
             public void success() {
                 m.getSelf().setStatus(MdsStatus.Connected);
+                resetMdsPingFailureCount(m);
                 comp.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 m.getSelf().setStatus(MdsStatus.Disconnected);
+                incrementMdsPingFailureCount(m);
                 comp.done();
             }
         })).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                List<ZbsPrimaryStorageMdsBase> disconnectedMds = mds.stream()
-                        .filter(m -> MdsStatus.Disconnected.equals(m.getSelf().getStatus()))
-                        .collect(Collectors.toList());
+                List<ZbsPrimaryStorageMdsBase> mdsNeedToReconnect = getMdssNeedToReconnect(mds);
 
-                if (disconnectedMds.isEmpty()) {
+                if (mdsNeedToReconnect.isEmpty()) {
                     completion.success(new PingResult(addonInfo));
                     return;
                 }
 
-                final boolean allDisconnected = disconnectedMds.size() == mds.size();
-                String notConnectedIps = disconnectedMds.stream()
-                        .map(ZbsPrimaryStorageMdsBase::getSelf)
-                        .map(MdsInfo::getAddr)
+                String mdsNeedToReconnectInfo = mdsNeedToReconnect.stream()
+                        .map(m -> String.format("%s (Consecutive Ping Failure: %d)",
+                                m.getSelf().getAddr(),
+                                mdsConsecutivePingFailureCount.get(m.getSelf())))
                         .collect(Collectors.joining(", "));
 
-                // it should be covered in primary storage reconnect phase
-                if (allDisconnected) {
-                    completion.success(new PingResult(addonInfo, String.format("All MDS are not connected, disconnected MDS addresses: %s", notConnectedIps)));
-                    return;
-                }
+                logger.warn(String.format("Some MDS need to reconnect for ZBS primary storage[uuid:%s], MDS : %s",
+                        self.getUuid(), mdsNeedToReconnectInfo));
 
-                // Try to reconnect disconnected MDS, the reconnection results are recorded in addonInfo
-                // and will not cause the ping operation to fail.
-                logger.warn(String.format("Some MDS are not connected for ZBS primary storage[uuid:%s], disconnected MDS addresses: %s, try to reconnect them",
-                        self.getUuid(), notConnectedIps));
-
-                reconnectMdss(disconnectedMds, new Completion(completion) {
+                reconnectMdss(mdsNeedToReconnect, new Completion(completion) {
                     @Override
                     public void success() {
                         completion.success(new PingResult(addonInfo));
@@ -603,8 +652,25 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        logger.warn(String.format("Some MDS are still not connected after reconnection for ZBS primary storage[uuid:%s], error: %s",
-                                self.getUuid(), errorCode));
+                        List<ZbsPrimaryStorageMdsBase> stillDisconnectedMds = getDisconnectedMds(mds);
+                        boolean allDisconnected = allMdssDisconnected(mds);
+
+                        if (allDisconnected) {
+                            completion.success(new PingResult(addonInfo,
+                                    String.format("All MDS are still disconnected after reconnection for ZBS primary storage[uuid:%s]",
+                                            self.getUuid())));
+                            return;
+                        }
+
+                        String stillDisconnectedMdsInfo =  stillDisconnectedMds.stream()
+                                .map(m -> String.format("%s (Consecutive Ping Failure: %d)",
+                                        m.getSelf().getAddr(),
+                                        mdsConsecutivePingFailureCount.get(m.getSelf())))
+                                .collect(Collectors.joining(", "));
+
+                        logger.warn(String.format("Some MDS are still disconnected after reconnection for ZBS primary storage[uuid:%s], disconnected MDS : %s, error: %s",
+                                self.getUuid(), stillDisconnectedMdsInfo, errorCode));
+
                         completion.success(new PingResult(addonInfo));
                     }
                 });
@@ -1187,7 +1253,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             }
         });
     }
-
 
     @Override
     public void syncAddonInfo(String addonInfo) {
