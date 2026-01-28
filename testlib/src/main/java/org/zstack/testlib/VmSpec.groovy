@@ -33,7 +33,7 @@ class VmSpec extends Spec implements HasSession {
     @SpecParam
     List<String> dataVolumeSystemTags = []
     private List<String> volumeToAttach = []
-    private List<DiskAO> disks = []
+    private List<VmDiskSpec> disks = []
 
     VmInstanceInventory inventory
 
@@ -172,7 +172,7 @@ class VmSpec extends Spec implements HasSession {
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
         addChild(diskSpec)
-        disks << diskSpec.toDiskAO()
+        disks << diskSpec
         return diskSpec
     }
 
@@ -199,10 +199,14 @@ class VmSpec extends Spec implements HasSession {
             delegate.virtio = virtio
 
             if (!disks.isEmpty()) {
-                if (disks.every { (!it.boot) }) {
-                    disks.first().boot = true
+                List<DiskAO> diskAOs = []
+                for (VmDiskSpec disk : disks) {
+                    diskAOs << disk.toDiskAO()
                 }
-                delegate.diskAOs = disks
+                if (diskAOs.every { (!it.boot) }) {
+                    diskAOs.first().boot = true
+                }
+                delegate.diskAOs = diskAOs
             }
         }
 
