@@ -8,7 +8,7 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-
+import org.apache.commons.lang.StringUtils;
 /**
  * Created by lining on 2018/02/10.
  */
@@ -114,8 +114,10 @@ class DeleteIsoCase extends SubCase {
                 useL3Networks("l3")
                 useImage("iso_1")
                 disk {
+                    name = "disk1"
                     boot = true
                     sizeGB(20)
+                    diskUsePrimaryStorage("local")
                 }
             }
         }
@@ -125,8 +127,19 @@ class DeleteIsoCase extends SubCase {
     @Override
     void test() {
         env.create {
+            prepare()
             testDeleteIso()
         }
+    }
+
+    void prepare() {
+        def vm = queryVmInstance {conditions = ["name=vm"]}[0] as VmInstanceInventory
+        def localPs  = env.inventoryByName("local") as PrimaryStorageInventory
+        def volumes = vm.allVolumes.findAll {
+            volume -> volume.name == "disk1"
+        }
+        assert volumes.size() == 1
+        assert volumes[0].primaryStorageUuid == localPs.uuid
     }
 
     void testDeleteIso() {

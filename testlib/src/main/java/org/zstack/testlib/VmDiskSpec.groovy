@@ -4,6 +4,8 @@ import org.zstack.header.vm.DiskAO
 import org.zstack.utils.data.SizeUnit
 
 class VmDiskSpec extends Spec {
+    private Closure primaryStorage = {}
+
     @SpecParam(required = false)
     boolean boot
     @SpecParam(required = false)
@@ -12,8 +14,6 @@ class VmDiskSpec extends Spec {
     String guestOsType
     @SpecParam(required = false)
     String architecture
-    @SpecParam(required = false)
-    String primaryStorageUuid
     @SpecParam(required = false)
     long size
     /**
@@ -59,7 +59,7 @@ class VmDiskSpec extends Spec {
         ao.platform = platform
         ao.guestOsType = guestOsType
         ao.architecture = architecture
-        ao.primaryStorageUuid = primaryStorageUuid
+        ao.primaryStorageUuid = primaryStorage();
         ao.size = size
         ao.templateUuid = templateUuid
         ao.diskOfferingUuid = diskOfferingUuid
@@ -72,5 +72,17 @@ class VmDiskSpec extends Spec {
 
     void sizeGB(long sizeGB) {
         this.size = SizeUnit.GIGABYTE.toByte(sizeGB)
+    }
+
+    @SpecMethod
+    void diskUsePrimaryStorage(String name) {
+        preCreate {
+            addDependency(name, PrimaryStorageSpec.class)
+        }
+        primaryStorage = {
+            PrimaryStorageSpec spec = findSpec(name, PrimaryStorageSpec.class)
+            assert spec != null: "cannot find primaryStorage[$name], check the vm block of environment"
+            return spec.inventory.uuid
+        }
     }
 }
