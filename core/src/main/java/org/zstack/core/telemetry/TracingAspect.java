@@ -57,11 +57,7 @@ public class TracingAspect {
         if (telemetryFacade == null && TelemetryGlobalProperty.ENABLED) {
             synchronized (this) {
                 if (telemetryFacade == null) {
-                    try {
-                        telemetryFacade = Platform.getComponentLoader().getComponent(TelemetryFacade.class);
-                    } catch (Exception e) {
-                        logger.trace("TelemetryFacade not available", e);
-                    }
+                    telemetryFacade = Platform.getComponentLoader().getComponentNoExceptionWhenNotExisting(TelemetryFacade.class);
                 }
             }
         }

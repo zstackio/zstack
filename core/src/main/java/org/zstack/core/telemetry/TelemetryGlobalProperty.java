@@ -70,6 +70,15 @@ public class TelemetryGlobalProperty {
     public static String SENTRY_DSN;
 
     /**
+     * Sentry traces sample rate (0.0 to 1.0).
+     * Must be set in Sentry.init() via options.setTracesSampleRate(), otherwise Sentry may drop
+     * transactions from OTel SentrySpanExporter and Performance/Traces will be empty.
+     * Default 1.0 for full sampling; in production consider 0.1 or lower.
+     */
+    @GlobalProperty(name = "Telemetry.sentryTracesSampleRate", defaultValue = "1.0")
+    public static double SENTRY_TRACES_SAMPLE_RATE;
+
+    /**
      * Service name reported in traces.
      */
     @GlobalProperty(name = "Telemetry.serviceName", defaultValue = "zstack-management-node")

@@ -146,11 +146,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
     private TelemetryFacade getTelemetryFacade() {
         if (telemetryFacade == null && TelemetryGlobalProperty.ENABLED) {
-            try {
-                telemetryFacade = Platform.getComponentLoader().getComponent(TelemetryFacade.class);
-            } catch (Exception e) {
-                logger.trace("TelemetryFacade not available", e);
-            }
+            telemetryFacade = Platform.getComponentLoader().getComponentNoExceptionWhenNotExisting(TelemetryFacade.class);
         }
         return telemetryFacade;
     }
@@ -910,6 +906,8 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                                             .setSpanKind(SpanKind.CONSUMER)
                                             .setParent(parentContext != null ? parentContext : Context.current())
                                             .setAttribute("messaging.system", "cloudbus")
+                                            .setAttribute("messaging.destination.name", serv.getId())
+                                            .setAttribute("messaging.message.id", msg.getId())
                                             .setAttribute("messaging.destination", serv.getId())
                                             .setAttribute("messaging.message_id", msg.getId())
                                             .setAttribute("messaging.message_class", msg.getClass().getName())
@@ -939,13 +937,15 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                                 } else {
                                     replyErrorByMessageType(msg, inerr(ORG_ZSTACK_CORE_CLOUDBUS_10008, t.getMessage()));
 
-                                    if (CloudBusGlobalProperty.SENTRY_ON) {
+                                    // Sentry 仅由 TelemetryFacade 在注册全局 OpenTelemetry 后 init；此处只判断是否已启用
+                                    if (CloudBusGlobalProperty.SENTRY_ON && Sentry.isEnabled()) {
                                         try {
                                             Sentry.configureScope(scopeConfig -> {
                                                 scopeConfig.setExtra("message.dump", dumpMessage(msg));
                                                 scopeConfig.setTag("service.id", serv.getId());
                                                 scopeConfig.setTag("message.class", msg.getClass().getSimpleName());
                                             });
+                                            Sentry.captureException(t);
                                         } catch (Exception sentryEx) {
                                             logger.warn("Failed to capture exception with Sentry", sentryEx);
                                         }
@@ -1392,6 +1392,8 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                     .spanBuilder("CloudBus Send: " + msg.getClass().getSimpleName())
                     .setSpanKind(SpanKind.PRODUCER)
                     .setAttribute("messaging.system", "cloudbus")
+                    .setAttribute("messaging.destination.name", msg.getServiceId())
+                    .setAttribute("messaging.message.id", msg.getId())
                     .setAttribute("messaging.destination", msg.getServiceId())
                     .setAttribute("messaging.message_id", msg.getId())
                     .setAttribute("messaging.message_class", msg.getClass().getName())

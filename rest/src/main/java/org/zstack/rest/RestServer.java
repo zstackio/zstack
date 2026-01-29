@@ -159,11 +159,7 @@ public class RestServer implements Component, CloudBusEventListener {
 
     private TelemetryFacade getTelemetryFacade() {
         if (telemetryFacade == null && TelemetryGlobalProperty.ENABLED) {
-            try {
-                telemetryFacade = Platform.getComponentLoader().getComponent(TelemetryFacade.class);
-            } catch (Exception e) {
-                logger.trace("TelemetryFacade not available", e);
-            }
+            telemetryFacade = Platform.getComponentLoader().getComponentNoExceptionWhenNotExisting(TelemetryFacade.class);
         }
         return telemetryFacade;
     }
@@ -738,6 +734,7 @@ public class RestServer implements Component, CloudBusEventListener {
                         .spanBuilder("API " + req.getMethod() + " " + path)
                         .setSpanKind(SpanKind.SERVER)
                         .setParent(parentContext)
+                        .setAttribute("http.request.method", req.getMethod())
                         .setAttribute("http.method", req.getMethod())
                         .setAttribute("http.url", req.getRequestURL().toString())
                         .setAttribute("http.path", path)

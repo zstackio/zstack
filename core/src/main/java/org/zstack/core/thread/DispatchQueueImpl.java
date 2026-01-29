@@ -252,11 +252,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     private TelemetryFacade getTelemetryFacade() {
         if (telemetryFacade == null && TelemetryGlobalProperty.ENABLED) {
-            try {
-                telemetryFacade = Platform.getComponentLoader().getComponent(TelemetryFacade.class);
-            } catch (Exception e) {
-                logger.trace("TelemetryFacade not available", e);
-            }
+            telemetryFacade = Platform.getComponentLoader().getComponentNoExceptionWhenNotExisting(TelemetryFacade.class);
         }
         return telemetryFacade;
     }

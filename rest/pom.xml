@@ -32,6 +32,15 @@
             <artifactId>header</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- OpenTelemetry API for RestServer tracing (Span, Context, Scope, etc.) -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-context</artifactId>
+        </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
