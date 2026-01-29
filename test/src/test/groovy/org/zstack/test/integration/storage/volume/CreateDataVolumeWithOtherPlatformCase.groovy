@@ -27,17 +27,6 @@ class CreateDataVolumeWithOtherPlatformCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(20)
-            }
-
             cephBackupStorage {
                 name = "ceph-bk"
                 description = "Test"
@@ -127,10 +116,8 @@ class CreateDataVolumeWithOtherPlatformCase extends SubCase {
     }
 
     void TestCreateDataVolumeWithOtherPlatform() {
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         ImageInventory image1 = env.inventoryByName("image1")
         L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
         PrimaryStorageInventory ps = env.inventoryByName("ceph-pri")
 
         KVMAgentCommands.StartVmCmd cmd
@@ -139,13 +126,21 @@ class CreateDataVolumeWithOtherPlatformCase extends SubCase {
             return rsp
         }
 
-        VmInstanceInventory vm1 = createVmInstance {
+        def vm1 = createVmInstance {
             name = "vm1"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 4
+            memorySize = gb(8)
             imageUuid = image1.uuid
             l3NetworkUuids = [pubL3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
-        }
+            diskAOs = [
+                [
+                    "boot" : true,
+                ],
+                [
+                    "size" : gb(20),
+                ]
+            ]
+        } as VmInstanceInventory
 
         assert cmd.getRootVolume().useVirtio == false
         assert cmd.getRootVolume().useVirtioSCSI == false
@@ -158,12 +153,12 @@ class CreateDataVolumeWithOtherPlatformCase extends SubCase {
         stopVmInstance {
             uuid = vm1.uuid
         }
-        VolumeInventory volume1 = createDataVolume {
+        def volume1 = createDataVolume {
             name = "volume1"
-            diskOfferingUuid = diskOffering.uuid
+            diskSize = gb(20)
             primaryStorageUuid = ps.uuid
             systemTags = ["capability::virtio-scsi".toString()]
-        }
+        } as VolumeInventory
         attachDataVolumeToVm {
             vmInstanceUuid = vm1.uuid
             volumeUuid = volume1.uuid
@@ -182,10 +177,10 @@ class CreateDataVolumeWithOtherPlatformCase extends SubCase {
         stopVmInstance {
             uuid = vm1.uuid
         }
-        VolumeInventory volume2 = createDataVolume {
+        def volume2 = createDataVolume {
             name = "volume2"
-            diskOfferingUuid = diskOffering.uuid
-        }
+            diskSize = gb(20)
+        } as VolumeInventory
         attachDataVolumeToVm {
             vmInstanceUuid = vm1.uuid
             volumeUuid = volume2.uuid
