@@ -50,6 +50,12 @@ doc {
 		since "0.6"
 	}
 	field {
+		name "redirectPort"
+		desc ""
+		type "Integer"
+		since "5.5.6"
+	}
+	field {
 		name "description"
 		desc "资源的详细描述"
 		type "String"

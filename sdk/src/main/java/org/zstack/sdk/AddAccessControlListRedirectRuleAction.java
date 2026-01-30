@@ -40,6 +40,9 @@ public class AddAccessControlListRedirectRuleAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String aclUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
+    public java.lang.Integer redirectPort;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

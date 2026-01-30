@@ -60,6 +60,14 @@ public class AccessControlListEntryInventory  {
         return this.ipEntries;
     }
 
+    public java.lang.Integer redirectPort;
+    public void setRedirectPort(java.lang.Integer redirectPort) {
+        this.redirectPort = redirectPort;
+    }
+    public java.lang.Integer getRedirectPort() {
+        return this.redirectPort;
+    }
+
     public java.lang.String description;
     public void setDescription(java.lang.String description) {
         this.description = description;

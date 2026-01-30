@@ -20,6 +20,9 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.core.workflow.SimpleFlowChain;
+import org.zstack.header.acl.AccessControlListEntryVO;
+import org.zstack.header.acl.AccessControlListEntryVO_;
+import org.zstack.header.acl.AclEntryType;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
@@ -2019,19 +2022,19 @@ public class LoadBalancerBase {
         });
     }
 
-    private void handle(APIAddAccessControlListToLoadBalancerMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return getSyncId();
-            }
 
+    private void doAddAccessControlListToLoadBalancer(APIAddAccessControlListToLoadBalancerMsg msg, final Completion completion) {
+        FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
+        Map data = new HashMap();
+        flowChain.setName(String.format("add-acl-to-lb-listener-%s", msg.getListenerUuid()));
+        final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+        flowChain.setData(data);
+
+        flowChain.then(new NoRollbackFlow() {
+            String __name__ = "add-acl-to-lb-listener";
             @Override
-            public void run(SyncTaskChain chain) {
-                DebugUtils.Assert(msg.getAclType() != null && msg.getAclUuids() != null, "parameters cannot be null");
-                APIAddAccessControlListToLoadBalancerEvent evt = new APIAddAccessControlListToLoadBalancerEvent(msg.getId());
+            public void run(FlowTrigger trigger, Map data) {
                 List<LoadBalancerListenerACLRefVO> refs = new ArrayList<>();
-                final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
                 if (msg.getServerGroupUuids() != null && !msg.getServerGroupUuids().isEmpty()) {
                     for (String aclUuid : msg.getAclUuids()) {
                         List<String> sgUuids = lblVo.getAclRefs().stream().filter(ref -> ref.getAclUuid().equals(aclUuid))
@@ -2057,37 +2060,95 @@ public class LoadBalancerBase {
                 }
                 dbf.persistCollection(refs);
 
-                final List<LoadBalancerListenerACLRefVO> refVOS = refs;
-                boolean refresh = isListenerNeedRefresh(lblVo, msg.getServerGroupUuids());
-                if (refresh) {
-                    RefreshLoadBalancerMsg rmsg = new RefreshLoadBalancerMsg();
-                    rmsg.setUuid(msg.getLoadBalancerUuid());
-                    bus.makeLocalServiceId(rmsg, LoadBalancerConstants.SERVICE_ID);
-                    bus.send(rmsg, new CloudBusCallBack(chain) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                logger.warn(String.format("update listener [uuid:%s] failed", msg.getLoadBalancerUuid()));
-                                evt.setError(reply.getError());
-                                dbf.removeCollection(refVOS, LoadBalancerListenerACLRefVO.class);
-                            } else {
-                                evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
-                            }
-                            bus.publish(evt);
-                        }
-                    });
-                    chain.next();
+                Integer instancePort = lblVo.getInstancePort();
+                msg.getAclUuids().forEach(aclUuid -> {
+                    SQL.New(AccessControlListEntryVO.class)
+                            .eq(AccessControlListEntryVO_.aclUuid, aclUuid)
+                            .eq(AccessControlListEntryVO_.type, AclEntryType.RedirectRule.toString())
+                            .isNull(AccessControlListEntryVO_.redirectPort)
+                            .set(AccessControlListEntryVO_.redirectPort, instancePort)
+                            .update();
+                });
+
+                data.put("refs", refs);
+                trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "refresh-lb-listener";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<LoadBalancerListenerACLRefVO> refs = (List<LoadBalancerListenerACLRefVO>) data.get("refs");
+                if (refs.isEmpty()) {
+                    trigger.next();
                     return;
                 }
+                boolean refresh = isListenerNeedRefresh(lblVo, msg.getServerGroupUuids());
+                if (!refresh) {
+                    trigger.next();
+                    return;
+                }
+                RefreshLoadBalancerMsg rmsg = new RefreshLoadBalancerMsg();
+                rmsg.setUuid(msg.getLoadBalancerUuid());
+                bus.makeTargetServiceIdByResourceUuid(rmsg, LoadBalancerConstants.SERVICE_ID, msg.getLoadBalancerUuid());
+                bus.send(rmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.warn(String.format("update listener [uuid:%s] failed", msg.getLoadBalancerUuid()));
+                            dbf.removeCollection(refs, LoadBalancerListenerACLRefVO.class);
+                            trigger.fail(reply.getError());
+                        } else {
+                            trigger.next();
+                        }
+                    }
+                });
+            }
+        });
 
-                evt.setInventory( LoadBalancerListenerInventory.valueOf(lblVo));
-                bus.publish(evt);
-                chain.next();
+        flowChain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
+    private void handle(APIAddAccessControlListToLoadBalancerMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("lb-%s-acl", msg.getLoadBalancerUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                APIAddAccessControlListToLoadBalancerEvent evt = new APIAddAccessControlListToLoadBalancerEvent(msg.getId());
+                doAddAccessControlListToLoadBalancer(msg, new Completion(msg) {
+                    @Override
+                    public void success() {
+                        evt.setInventory(LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class)));
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
             }
 
             @Override
             public String getName() {
-                return "add-acl-lb-listener";
+                return getSyncSignature();
             }
         });
     }
