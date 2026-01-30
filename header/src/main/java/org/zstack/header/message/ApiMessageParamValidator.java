@@ -19,7 +19,7 @@ public class ApiMessageParamValidator implements ApiMessageValidator, Ordered {
     @Override
     public void validate(APIMessage msg, Field f, Object value, APIParam at) {
         if (at.required() && value == null) {
-            throw new InvalidApiMessageException("field[%s] of message[%s] is mandatory, can not be null", f.getName(), getClass().getName());
+            throw new InvalidApiMessageException("field[%s] of message[%s] is mandatory, can not be null", f.getName(), msg.getClass().getName());
         }
         
         if (value != null) {
@@ -32,7 +32,7 @@ public class ApiMessageParamValidator implements ApiMessageValidator, Ordered {
             String str = (String) value;
             if (str.length() > at.maxLength()) {
                 throw new InvalidApiMessageException("field[%s] of message[%s] exceeds max length of string. expected was <= %s, actual was %s",
-                    f.getName(), getClass().getName(), at.maxLength(), str.length());
+                    f.getName(), msg.getClass().getName(), at.maxLength(), str.length());
             }
         }
     
@@ -40,7 +40,7 @@ public class ApiMessageParamValidator implements ApiMessageValidator, Ordered {
             String str = (String) value;
             if (str.length() < at.minLength()) {
                 throw new InvalidApiMessageException("field[%s] of message[%s] less than the min length of string. expected was >= %s, actual was %s",
-                    f.getName(), getClass().getName(), at.minLength(), str.length());
+                    f.getName(), msg.getClass().getName(), at.minLength(), str.length());
             }
         }
     
@@ -48,14 +48,14 @@ public class ApiMessageParamValidator implements ApiMessageValidator, Ordered {
             Collection<?> values = (value instanceof Collection) ?
                     (Collection<?>) value : Collections.singletonList(value);
             for (Object v : values) {
-                validateValue(at.validValues(), v.toString(), f.getName(), getClass().getName());
+                validateValue(at.validValues(), v.toString(), f.getName(), msg.getClass().getName());
             }
         } else if (at.validEnums().length > 0) {
             Collection<?> values = (value instanceof Collection) ?
                     (Collection<?>) value : Collections.singletonList(value);
             final String[] validValues = CollectionUtils.valuesForEnums(at.validEnums()).toArray(String[]::new);
             for (Object v : values) {
-                validateValue(validValues, v.toString(), f.getName(), getClass().getName());
+                validateValue(validValues, v.toString(), f.getName(), msg.getClass().getName());
             }
         }
     
@@ -65,7 +65,7 @@ public class ApiMessageParamValidator implements ApiMessageValidator, Ordered {
             Matcher mt = p.matcher(value.toString());
             if (!mt.matches()){
                 throw new InvalidApiMessageException("valid regex value for field[%s] of message[%s] are %s, but %s found", f.getName(),
-                    getClass().getName(), regex, value);
+                    msg.getClass().getName(), regex, value);
             }
         }
     
