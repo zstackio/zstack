@@ -1,24 +1,17 @@
 package org.zstack.test.integration.storage.primary.nfs
 
 import org.springframework.http.HttpEntity
-import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.Constants
 import org.zstack.header.errorcode.SysErrors
-import org.zstack.header.message.MessageReply
-import org.zstack.header.storage.primary.PingPrimaryStorageMsg
-import org.zstack.header.storage.primary.PrimaryStorageConstant
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus
-import org.zstack.header.tag.SystemTagVO
-import org.zstack.header.tag.SystemTagVO_
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
-import org.zstack.sdk.CreateVmInstanceAction
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ImageInventory
@@ -28,6 +21,7 @@ import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.ReconnectHostAction
 import org.zstack.sdk.ReconnectPrimaryStorageAction
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VolumeInventory
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands
 import org.zstack.test.integration.storage.NfsEnv
@@ -129,46 +123,30 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
         }
     }
 
-    void testCreateVmSpecifyHost() {
-        disconnectHostPS(host1.uuid, ps1.uuid)
-        disconnectHostPS(host1.uuid, ps2.uuid)
-
-        def a = new CreateVmInstanceAction()
-        a.name == "vm3"
-        a.instanceOfferingUuid = ins.uuid
-        a.imageUuid = image.uuid
-        a.l3NetworkUuids = [l3.uuid]
-        a.sessionId = env.session.uuid
-        a.hostUuid = host1.uuid
-
-        assert a.call().error.code == SysErrors.OPERATION_ERROR
-
-        recoverConnectHostPS()
-
-        disconnectHostPS(host1.uuid, ps2.uuid)
-
-        // try again
-        def vm3 = a.call().value.inventory
-
-        assert vm3.hostUuid == host1.uuid
-        assert vm3.allVolumes.size() == 1
-        assert vm3.allVolumes[0].primaryStorageUuid == ps1.uuid
-    }
-
     void testCreateAndStartVmNotOnHostDisconnectNfs(){
         disconnectHostPS(host1.uuid, ps1.uuid)
         disconnectHostPS(host2.uuid, ps2.uuid)
 
-        expectError {
+        expectApiFailure ({
             createVmInstance {
                 name = "vm_failed"
-                instanceOfferingUuid = ins.uuid
+                cpuNum = 4
+                memorySize = gb(8)
                 imageUuid = image.uuid
                 l3NetworkUuids = [l3.uuid]
-                primaryStorageUuidForRootVolume = ps1.uuid
-                dataDiskOfferingUuids = [diskOffering.uuid]
-                systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): ps2.uuid])]
+                diskAOs = [
+                    [
+                        "boot" : true,
+                        "primaryStorageUuid" : ps1.uuid,
+                    ],
+                    [
+                        "size" : gb(20),
+                        "primaryStorageUuid" : ps2.uuid,
+                    ]
+                ]
             }
+        }) {
+            assert delegate.code == "HOST_ALLOCATION.1001"
         }
 
         recoverConnectHostPS()
@@ -176,17 +154,25 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
         disconnectHostPS(host2.uuid, ps2.uuid)
         VmInstanceInventory vm3 = createVmInstance {
             name = "vm3"
-            instanceOfferingUuid = ins.uuid
+            cpuNum = 4
+            memorySize = gb(8)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
-            primaryStorageUuidForRootVolume = ps1.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid]
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): ps2.uuid])]
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "primaryStorageUuid" : ps1.uuid,
+                ],
+                [
+                    "size" : gb(20),
+                    "primaryStorageUuid" : ps2.uuid,
+                ]
+            ]
         } as VmInstanceInventory
 
         assert vm3.hostUuid == host1.uuid
         assert vm3.allVolumes.size() == 2
-        assert vm3.allVolumes.primaryStorageUuid.containsAll([ps1.uuid, ps2.uuid])
+        assert (vm3.allVolumes as List<VolumeInventory>).primaryStorageUuid.containsAll([ps1.uuid, ps2.uuid])
 
         stopVmInstance {
             uuid = vm3.uuid
@@ -224,16 +210,26 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
         connectingHostPS(host3.uuid, ps1.uuid)
         connectingHostPS(host3.uuid, ps2.uuid)
 
-        expect(AssertionError.class) {
+        expectApiFailure ({
             createVmInstance {
                 name = "vm4"
-                instanceOfferingUuid = ins.uuid
+                cpuNum = 4
+                memorySize = gb(8)
                 imageUuid = image.uuid
                 l3NetworkUuids = [l3.uuid]
-                primaryStorageUuidForRootVolume = ps1.uuid
-                dataDiskOfferingUuids = [diskOffering.uuid]
-                systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): ps2.uuid])]
+                diskAOs = [
+                    [
+                        "boot" : true,
+                        "primaryStorageUuid" : ps1.uuid,
+                    ],
+                    [
+                        "size" : gb(20),
+                        "primaryStorageUuid" : ps2.uuid,
+                    ]
+                ]
             }
+        }) {
+            assert delegate.code == "HOST_ALLOCATION.1001"
         }
     }
 
