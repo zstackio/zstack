@@ -1,15 +1,13 @@
 package org.zstack.test.integration.kvm.vm
 
-import org.zstack.compute.vm.VmSystemTags
-import org.zstack.sdk.DiskOfferingInventory
+import org.zstack.core.Platform
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ImageInventory
-import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.utils.data.SizeUnit
 
 
 class CreateVmWithDesignatedPSCase extends SubCase {
@@ -23,17 +21,6 @@ class CreateVmWithDesignatedPSCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(20)
-            }
-
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -121,23 +108,55 @@ class CreateVmWithDesignatedPSCase extends SubCase {
     }
 
     void TestCreateVmWithDesignatedPS() {
-        PrimaryStorageInventory ps_1 = env.inventoryByName("local1")
-        PrimaryStorageInventory ps_2 = env.inventoryByName("local2")
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
-        DiskOfferingInventory diskOfferingInventory = env.inventoryByName("diskOffering")
-        ImageInventory image = env.inventoryByName("image")
-        L3NetworkInventory l3 = env.inventoryByName("l3")
+        def ps_1 = env.inventoryByName("local1") as PrimaryStorageInventory
+        def ps_2 = env.inventoryByName("local2") as PrimaryStorageInventory
+        def image = env.inventoryByName("image") as ImageInventory
+        def l3 = env.inventoryByName("l3") as L3NetworkInventory
 
-        expectError {
+        expectApiFailure({
             createVmInstance {
                 name = "test_vm"
-                instanceOfferingUuid = instanceOffering.uuid
+                cpuNum = 4
+                memorySize = gb(8)
                 l3NetworkUuids = [l3.uuid]
                 imageUuid = image.uuid
-                primaryStorageUuidForRootVolume = ps_1.uuid
-                dataDiskOfferingUuids = [diskOfferingInventory.uuid]
-                systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): ps_2.uuid])]
+                diskAOs = [
+                    [
+                        "boot" : true,
+                        "primaryStorageUuid" : ps_1.uuid,
+                    ],
+                    [
+                        "size" : gb(20),
+                        "primaryStorageUuid" : ps_2.uuid,
+                    ]
+                ]
             }
+        }) {
+            // host1 -> ps_1
+            // host2 -> ps_2
+            assert delegate.code == "HOST_ALLOCATION.1001"
+            assert delegate.opaque
+            assert delegate.opaque["rejectedCandidates"] instanceof List
+            def rejectedCandidates = (delegate.opaque["rejectedCandidates"] as List<Map<String, Object>>)
+            assert rejectedCandidates.size() == 2
+
+            def kvm1 = env.inventoryByName("kvm1") as HostInventory
+            def candidates1 = rejectedCandidates.findAll {
+                return it["hostUuid"] == kvm1.uuid
+            }
+            assert candidates1.size() == 1
+            assert candidates1[0]["hostName"] == "kvm1"
+            assert candidates1[0]["reject"] == Platform.i18n("not accessible to the specific primary storage")
+            assert candidates1[0]["rejectBy"] == "HostPrimaryStorageAllocatorFlow"
+
+            def kvm2 = env.inventoryByName("kvm2") as HostInventory
+            def candidates2 = rejectedCandidates.findAll {
+                return it["hostUuid"] == kvm2.uuid
+            }
+            assert candidates2.size() == 1
+            assert candidates2[0]["hostName"] == "kvm2"
+            assert candidates2[0]["reject"] == Platform.i18n("not accessible to the specific primary storage")
+            assert candidates2[0]["rejectBy"] == "HostPrimaryStorageAllocatorFlow"
         }
     }
 

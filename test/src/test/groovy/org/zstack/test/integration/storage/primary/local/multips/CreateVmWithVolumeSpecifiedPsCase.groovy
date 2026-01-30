@@ -2,10 +2,8 @@ package org.zstack.test.integration.storage.primary.local.multips
 
 import org.zstack.core.db.Q
 import org.zstack.header.image.ImageConstant
-import org.zstack.header.volume.Volume
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
-import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -30,17 +28,6 @@ class CreateVmWithVolumeSpecifiedPsCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(1)
-                cpu = 1
-            }
-
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(20)
-            }
-
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -126,11 +113,14 @@ class CreateVmWithVolumeSpecifiedPsCase extends SubCase {
 
             vm {
                 name = "vm"
-                useInstanceOffering("instanceOffering")
+                cpu = 1
+                memoryGB(1)
                 useImage("image1")
                 useL3Networks("pubL3")
-                useRootDiskOffering("diskOffering")
                 useHost("kvm")
+                disk {
+                    sizeGB(20)
+                }
             }
         }
     }
@@ -147,20 +137,26 @@ class CreateVmWithVolumeSpecifiedPsCase extends SubCase {
 
     void testCreateVMPs1WithVolumePs1() {
         ImageInventory iso = env.inventoryByName("iso") as ImageInventory
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
         VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
         PrimaryStorageInventory local_ps1 = env.inventoryByName("local") as PrimaryStorageInventory
-        PrimaryStorageInventory local_ps2 = env.inventoryByName("local2") as PrimaryStorageInventory
 
         VmInstanceInventory newVm = createVmInstance {
             name = "new_vm"
-            instanceOfferingUuid = vm.instanceOfferingUuid
-            rootDiskOfferingUuid = diskOffering.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid]
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = iso.uuid
             l3NetworkUuids = [vm.defaultL3NetworkUuid]
-            primaryStorageUuidForRootVolume = local_ps1.uuid
-            systemTags = ["primaryStorageUuidForDataVolume::${local_ps1.uuid}".toString()]
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "size" : gb(20),
+                    "primaryStorageUuid" : local_ps1.uuid,
+                ],
+                [
+                    "size" : gb(20),
+                    "primaryStorageUuid" : local_ps1.uuid,
+                ],
+            ]
         } as VmInstanceInventory
 
         assert newVm.allVolumes.size() == 2
@@ -174,20 +170,27 @@ class CreateVmWithVolumeSpecifiedPsCase extends SubCase {
 
     void testCreateVMPs1WithVolumePs2() {
         ImageInventory iso = env.inventoryByName("iso") as ImageInventory
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
         VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
         PrimaryStorageInventory local_ps1 = env.inventoryByName("local") as PrimaryStorageInventory
         PrimaryStorageInventory local_ps2 = env.inventoryByName("local2") as PrimaryStorageInventory
 
         VmInstanceInventory newVm = createVmInstance {
             name = "new_vm"
-            instanceOfferingUuid = vm.instanceOfferingUuid
-            rootDiskOfferingUuid = diskOffering.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid]
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = iso.uuid
             l3NetworkUuids = [vm.defaultL3NetworkUuid]
-            primaryStorageUuidForRootVolume = local_ps1.uuid
-            systemTags = ["primaryStorageUuidForDataVolume::${local_ps2.uuid}".toString()]
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "size" : gb(20),
+                    "primaryStorageUuid" : local_ps1.uuid,
+                ],
+                [
+                    "size" : gb(20),
+                    "primaryStorageUuid" : local_ps2.uuid,
+                ],
+            ]
         } as VmInstanceInventory
 
         retryInSecs {
@@ -200,20 +203,26 @@ class CreateVmWithVolumeSpecifiedPsCase extends SubCase {
 
     void testCreateVMPs2WithVolumePs2() {
         ImageInventory iso = env.inventoryByName("iso") as ImageInventory
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
         VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
-        PrimaryStorageInventory local_ps1 = env.inventoryByName("local") as PrimaryStorageInventory
         PrimaryStorageInventory local_ps2 = env.inventoryByName("local2") as PrimaryStorageInventory
 
         VmInstanceInventory newVm = createVmInstance {
             name = "new_vm"
-            instanceOfferingUuid = vm.instanceOfferingUuid
-            rootDiskOfferingUuid = diskOffering.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid]
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = iso.uuid
             l3NetworkUuids = [vm.defaultL3NetworkUuid]
-            primaryStorageUuidForRootVolume = local_ps2.uuid
-            systemTags = ["primaryStorageUuidForDataVolume::${local_ps2.uuid}".toString()]
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "size" : gb(20),
+                    "primaryStorageUuid" : local_ps2.uuid,
+                ],
+                [
+                    "size" : gb(20),
+                    "primaryStorageUuid" : local_ps2.uuid,
+                ],
+            ]
         } as VmInstanceInventory
 
         retryInSecs {
@@ -226,20 +235,27 @@ class CreateVmWithVolumeSpecifiedPsCase extends SubCase {
 
     void testCreateVMPs2WithVolumePs1() {
         ImageInventory iso = env.inventoryByName("iso") as ImageInventory
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
         VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
         PrimaryStorageInventory local_ps1 = env.inventoryByName("local") as PrimaryStorageInventory
         PrimaryStorageInventory local_ps2 = env.inventoryByName("local2") as PrimaryStorageInventory
 
         VmInstanceInventory newVm = createVmInstance {
             name = "new_vm"
-            instanceOfferingUuid = vm.instanceOfferingUuid
-            rootDiskOfferingUuid = diskOffering.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid]
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = iso.uuid
             l3NetworkUuids = [vm.defaultL3NetworkUuid]
-            primaryStorageUuidForRootVolume = local_ps2.uuid
-            systemTags = ["primaryStorageUuidForDataVolume::${local_ps1.uuid}".toString()]
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "size" : gb(20),
+                    "primaryStorageUuid" : local_ps2.uuid,
+                ],
+                [
+                    "size" : gb(20),
+                    "primaryStorageUuid" : local_ps1.uuid,
+                ],
+            ]
         } as VmInstanceInventory
 
         retryInSecs {

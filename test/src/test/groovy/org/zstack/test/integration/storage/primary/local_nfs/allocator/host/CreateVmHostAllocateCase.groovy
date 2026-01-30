@@ -1,7 +1,6 @@
 package org.zstack.test.integration.storage.primary.local_nfs.allocator.host
 
 import org.zstack.compute.allocator.HostPrimaryStorageAllocatorFlow
-import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.Platform
 import org.zstack.sdk.*
 import org.zstack.test.integration.storage.StorageTest
@@ -193,8 +192,6 @@ class CreateVmHostAllocateCase extends SubCase {
     }
 
     void testCreateVmAssignNfs(){
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
         ImageInventory image = env.inventoryByName("image") as ImageInventory
         L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
         HostInventory host = env.inventoryByName("kvm")
@@ -203,35 +200,67 @@ class CreateVmHostAllocateCase extends SubCase {
 
         createVmInstance {
             name = "newVm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
             hostUuid = host.uuid
-            primaryStorageUuidForRootVolume = nfs.uuid
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "primaryStorageUuid" : nfs.uuid,
+                ]
+            ]
         }
 
         createVmInstance {
             name = "newVm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
             hostUuid = host.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid,diskOffering.uuid]
-            primaryStorageUuidForRootVolume = nfs.uuid
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "primaryStorageUuid" : nfs.uuid,
+                ],
+                [
+                    "size" : gb(100),
+                    "primaryStorageUuid" : nfs.uuid,
+                ],
+                [
+                    "size" : gb(100),
+                    "primaryStorageUuid" : nfs.uuid,
+                ],
+            ]
         }
 
-        CreateVmInstanceAction createVmInstanceAction = new CreateVmInstanceAction(
-                name : "newVm",
-                instanceOfferingUuid : instanceOffering.uuid,
-                imageUuid : image.uuid,
-                l3NetworkUuids : [l3.uuid],
-                hostUuid : host.uuid,
-                dataDiskOfferingUuids : [diskOffering.uuid,diskOffering.uuid],
-                primaryStorageUuidForRootVolume : local.uuid,
-                systemTags : [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])],
-                sessionId : currentEnvSpec.session.uuid
-        )
-        assert null != createVmInstanceAction.call().error
+        expectApiFailure({
+            createVmInstance {
+                name = "newVm2"
+                cpuNum = 1
+                memorySize = gb(1)
+                imageUuid = image.uuid
+                l3NetworkUuids = [l3.uuid]
+                hostUuid = host.uuid
+                diskAOs = [
+                    [
+                        "boot" : true,
+                        "primaryStorageUuid" : local.uuid,
+                    ],
+                    [
+                        "size" : gb(100),
+                        "primaryStorageUuid" : local.uuid,
+                    ],
+                    [
+                        "size" : gb(100),
+                        "primaryStorageUuid" : local.uuid,
+                    ],
+                ]
+            }
+        }) {
+            assert delegate.code == "SYS.1006"
+        }
     }
 }
