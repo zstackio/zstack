@@ -14,7 +14,8 @@ public interface ZbsConstants {
     String ZBS_HEARTBEAT_VOLUME_NAME = "zbs_zstack_heartbeat";
     long ZBS_HEARTBEAT_VOLUME_SIZE_IN_GIGABYTE = 1;
     String SCHEME_PREFIX = "zbs://";
-    Integer PRIMARY_STORAGE_MDS_MAXIMUM_PING_FAILURE = 3;
+    Integer MDS_PING_RETRY_PER_CYCLE = 3;
+    Integer MDS_PING_FAIL_CYCLE_THRESHOLD = 3;
     String VOLUME_PHYSICAL_BLOCK_SIZE = "4096";
     String MEGABYTE_SUPPORTED_VERSION = "1.6.1";
     String MEGABYTE_UNIT = "M";
