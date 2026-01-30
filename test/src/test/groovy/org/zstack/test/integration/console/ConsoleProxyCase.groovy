@@ -2,8 +2,10 @@ package org.zstack.test.integration.console
 
 import org.springframework.http.HttpEntity
 import org.zstack.console.ConsoleGlobalConfig
+import org.zstack.header.vm.VmInstanceConstant
 import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
+import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.core.gc.GCStatus
@@ -12,6 +14,7 @@ import org.zstack.header.console.ConsoleProxyAgentVO
 import org.zstack.header.console.ConsoleProxyCommands
 import org.zstack.header.console.ConsoleProxyVO
 import org.zstack.header.console.ConsoleProxyVO_
+import org.zstack.header.vm.KvmReportVmShutdownFromGuestEventMsg
 import org.zstack.sdk.ConsoleInventory
 import org.zstack.sdk.GarbageCollectorInventory
 import org.zstack.sdk.SessionInventory
@@ -25,6 +28,7 @@ import org.zstack.utils.data.SizeUnit
 class ConsoleProxyCase extends SubCase {
     EnvSpec env
     DatabaseFacade dbf
+    CloudBus bus;
 
     @Override
     void setup() {
@@ -34,6 +38,7 @@ class ConsoleProxyCase extends SubCase {
     @Override
     void environment() {
         dbf = bean(DatabaseFacade.class)
+        bus = bean(CloudBus.class)
         env = env {
             account {
                 name = "test"
@@ -119,6 +124,7 @@ class ConsoleProxyCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testConsoleProxyCleanupOnGuestShutdown()
             testUpdateConsoleProxyAgent()
             testConsoleProxyGC()
         }
@@ -242,6 +248,27 @@ class ConsoleProxyCase extends SubCase {
                 consoleProxyOverriddenIp = "127.0.0.1"
                 consoleProxyPort = 4900
             }
+        }
+    }
+
+    void testConsoleProxyCleanupOnGuestShutdown() {
+        VmInstanceInventory vm = env.inventoryByName("vm")
+        requestConsoleAccess {
+            vmInstanceUuid = vm.uuid
+        }
+        def consoleProxyCount = Q.New(ConsoleProxyVO.class)
+                .eq(ConsoleProxyVO_.vmInstanceUuid, vm.uuid)
+                .count()
+        assert consoleProxyCount == 1
+        KvmReportVmShutdownFromGuestEventMsg msg = new KvmReportVmShutdownFromGuestEventMsg()
+        msg.vmInstanceUuid = vm.uuid
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vm.uuid)
+        bus.send(msg)
+        retryInSecs {
+            consoleProxyCount = Q.New(ConsoleProxyVO.class)
+                    .eq(ConsoleProxyVO_.vmInstanceUuid, vm.uuid)
+                    .count()
+            assert consoleProxyCount == 0
         }
     }
 
