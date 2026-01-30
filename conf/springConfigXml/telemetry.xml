@@ -12,7 +12,16 @@
     http://zstack.org/schema/zstack/plugin.xsd"
     default-init-method="init" default-destroy-method="destroy">
 
-    <bean id="TelemetryFacade" class="org.zstack.core.telemetry.TelemetryFacadeImpl"/>
-    <bean id="TelemetryMetricsFacade" class="org.zstack.core.telemetry.TelemetryMetricsFacadeImpl"/>
+    <bean id="TelemetryFacade" class="org.zstack.core.telemetry.TelemetryFacadeImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="TelemetryMetricsFacade" class="org.zstack.core.telemetry.TelemetryMetricsFacadeImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
 
 </beans>

@@ -54,12 +54,14 @@ public class TelemetryMetricsFacadeImpl implements TelemetryMetricsFacade, Compo
 
     @Override
     public boolean start() {
+        logger.trace("TelemetryMetricsFacade.start() invoked (Telemetry.enabled=" + TelemetryGlobalProperty.ENABLED + ", metricsEnabled=" + TelemetryGlobalProperty.METRICS_ENABLED + ")");
         if (!TelemetryGlobalProperty.ENABLED || !TelemetryGlobalProperty.METRICS_ENABLED) {
             logger.info("Telemetry metrics disabled by configuration");
             return true;
         }
 
         try {
+            logger.trace("TelemetryMetricsFacade: calling initializeMetrics()");
             initializeMetrics();
             initialized = true;
             logger.info(String.format("Telemetry metrics initialized on port %d",
@@ -79,6 +81,7 @@ public class TelemetryMetricsFacadeImpl implements TelemetryMetricsFacade, Compo
     }
 
     private void initializeMetrics() {
+        logger.trace("TelemetryMetricsFacade.initializeMetrics: building resource (serviceName=" + TelemetryGlobalProperty.SERVICE_NAME + ", port=" + TelemetryGlobalProperty.PROMETHEUS_PORT + ")");
         Resource resource = Resource.getDefault().merge(
                 Resource.create(Attributes.of(
                         AttributeKey.stringKey("service.name"), TelemetryGlobalProperty.SERVICE_NAME,
@@ -87,13 +90,16 @@ public class TelemetryMetricsFacadeImpl implements TelemetryMetricsFacade, Compo
         prometheusReader = PrometheusHttpServer.builder()
                 .setPort(TelemetryGlobalProperty.PROMETHEUS_PORT)
                 .build();
+        logger.trace("TelemetryMetricsFacade.initializeMetrics: PrometheusHttpServer built on port " + TelemetryGlobalProperty.PROMETHEUS_PORT);
 
         meterProvider = SdkMeterProvider.builder()
                 .setResource(resource)
                 .registerMetricReader(prometheusReader)
                 .build();
+        logger.trace("TelemetryMetricsFacade.initializeMetrics: SdkMeterProvider built");
 
         meter = meterProvider.get(INSTRUMENTATION_SCOPE);
+        logger.trace("TelemetryMetricsFacade.initializeMetrics: registering gauges and histograms");
 
         registerThreadPoolGauges();
         registerTaskQueueGauges();

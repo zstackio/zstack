@@ -1,6 +1,5 @@
 package org.zstack.core;
 
-import io.sentry.Sentry;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.LocaleUtils;
 import org.apache.commons.lang.RandomStringUtils;
@@ -395,21 +394,6 @@ public class Platform {
         }
     }
 
-    private static void setUpSentry() {
-        if (!CloudBusGlobalProperty.SENTRY_ON) {
-            logger.debug("Sentry is disabled");
-            return;
-        }
-
-        try {
-            logger.info("Initializing Sentry error tracking...");
-            Sentry.init();
-            logger.info("Sentry error tracking initialized successfully");
-        } catch (Exception e) {
-            logger.warn("Failed to initialize Sentry error tracking, continuing without it", e);
-        }
-    }
-
     private static void prepareHibernateSearchProperties() {
         if (!SearchGlobalProperty.SearchAutoRegister) {
             System.setProperty("Search.autoRegister", "false");
@@ -518,7 +502,6 @@ public class Platform {
             validateGlobalProperty();
             prepareDefaultDbProperties();
             prepareHibernateSearchProperties();
-            setUpSentry();
             callStaticInitMethods();
             encryptedMethodsMap = getAllEncryptPassword();
             writePidFile();

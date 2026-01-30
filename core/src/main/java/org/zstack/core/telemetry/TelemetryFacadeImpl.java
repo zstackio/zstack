@@ -44,6 +44,7 @@ public class TelemetryFacadeImpl implements TelemetryFacade, Component {
 
     @Override
     public boolean start() {
+        logger.info("TelemetryFacade.start() invoked (Telemetry.enabled=" + TelemetryGlobalProperty.ENABLED + ", exporters=" + TelemetryGlobalProperty.EXPORTERS + ")");
         if (!TelemetryGlobalProperty.ENABLED) {
             logger.info("Telemetry is disabled by configuration");
             return true;
@@ -51,13 +52,16 @@ public class TelemetryFacadeImpl implements TelemetryFacade, Component {
 
         // Idempotency: avoid buildAndRegisterGlobal() being called when global is already registered
         synchronized (this) {
+            logger.trace("TelemetryFacade.start() inside synchronized, initialized=" + initialized);
             if (initialized) {
                 logger.info("Telemetry already initialized, skipping re-initialization");
                 return true;
             }
 
             try {
+                logger.trace("TelemetryFacade: calling registerBuiltInProviders()");
                 registerBuiltInProviders();
+                logger.trace("TelemetryFacade: calling initializeOpenTelemetry(), providers=" + exporterProviders.keySet());
                 initializeOpenTelemetry();
                 initialized = true;
                 logger.info(String.format("Telemetry initialized successfully: environment=%s, exporters=%s",
@@ -72,14 +76,20 @@ public class TelemetryFacadeImpl implements TelemetryFacade, Component {
     }
 
     private void registerBuiltInProviders() {
+        logger.trace("TelemetryFacade: registering OtlpExporterProvider");
         registerProvider(new OtlpExporterProvider());
+        logger.trace("TelemetryFacade: registering SentryExporterProvider");
         registerProvider(new SentryExporterProvider());
     }
 
     public void registerProvider(TelemetryExporterProvider provider) {
-        exporterProviders.put(provider.getName().toLowerCase(Locale.ROOT), provider);
-        logger.debug(String.format("Registered telemetry exporter provider: %s (available=%s)",
-                provider.getName(), provider.isAvailable()));
+        String name = provider.getName().toLowerCase(Locale.ROOT);
+        exporterProviders.put(name, provider);
+        boolean available = provider.isAvailable();
+        logger.trace(String.format("Registered telemetry exporter provider: %s (available=%s)", provider.getName(), available));
+        if ("sentry".equals(name)) {
+            logger.info("Sentry exporter provider registered (available=" + available + ")");
+        }
     }
 
     @Override
@@ -89,6 +99,7 @@ public class TelemetryFacadeImpl implements TelemetryFacade, Component {
     }
 
     private void initializeOpenTelemetry() {
+        logger.trace("TelemetryFacade: building resource (serviceName=" + TelemetryGlobalProperty.SERVICE_NAME + ", environment=" + TelemetryGlobalProperty.ENVIRONMENT + ")");
         Resource resource = Resource.getDefault().merge(
                 Resource.create(Attributes.of(
                         AttributeKey.stringKey("service.name"), TelemetryGlobalProperty.SERVICE_NAME,
@@ -98,8 +109,10 @@ public class TelemetryFacadeImpl implements TelemetryFacade, Component {
                         AttributeKey.stringKey("deployment.environment"), TelemetryGlobalProperty.ENVIRONMENT)));
 
         ZStackSampler sampler = new ZStackSampler();
+        logger.trace("TelemetryFacade: calling buildExporters()");
 
         List<SpanExporter> exporters = buildExporters();
+        logger.trace("TelemetryFacade: buildExporters() returned " + exporters.size() + " exporter(s)");
 
         SdkTracerProviderBuilder tracerProviderBuilder = SdkTracerProvider.builder()
                 .setResource(resource)
@@ -124,16 +137,19 @@ public class TelemetryFacadeImpl implements TelemetryFacade, Component {
         }
 
         tracerProvider = tracerProviderBuilder.build();
+        logger.trace("TelemetryFacade: SdkTracerProvider built");
 
-        // Idempotency protection: buildAndRegisterGlobal() throws IllegalStateException if already registered
-        try {
-            openTelemetry = OpenTelemetrySdk.builder()
-                    .setTracerProvider(tracerProvider)
-                    .buildAndRegisterGlobal();
-        } catch (IllegalStateException e) {
-            // If already registered, use existing instance
-            logger.warn("Global OpenTelemetry already registered, using existing instance", e);
-            openTelemetry = GlobalOpenTelemetry.get();
+        // Do not call buildAndRegisterGlobal() to avoid conflict with early registrants like
+        // sentry-opentelemetry-bootstrap. All spans are created via TelemetryFacade.getTracer()/
+        // startSpan() using this instance's tracerProvider (including Sentry exporter).
+        openTelemetry = OpenTelemetrySdk.builder()
+                .setTracerProvider(tracerProvider)
+                .build();
+        logger.trace("TelemetryFacade: OpenTelemetry SDK built (not registered globally; use our instance for Sentry)");
+
+        // Single Sentry init entry for CloudBus error reporting and LazySentryExporter
+        if (SentryInitHelper.isConfigPresent()) {
+            SentryInitHelper.initIfNeeded();
         }
 
         defaultTracer = openTelemetry.getTracer(INSTRUMENTATION_NAME);
@@ -199,6 +215,7 @@ public class TelemetryFacadeImpl implements TelemetryFacade, Component {
     private List<SpanExporter> buildExporters() {
         List<SpanExporter> exporters = new ArrayList<>();
         String exporterConfig = TelemetryGlobalProperty.EXPORTERS;
+        logger.trace("TelemetryFacade.buildExporters: Telemetry.EXPORTERS='" + exporterConfig + "', registeredProviders=" + exporterProviders.keySet());
 
         if (exporterConfig == null || exporterConfig.trim().isEmpty()) {
             logger.info("No exporters configured, traces will not be exported");
@@ -206,32 +223,40 @@ public class TelemetryFacadeImpl implements TelemetryFacade, Component {
         }
 
         List<String> requestedExporters = Arrays.asList(exporterConfig.toLowerCase(Locale.ROOT).split(","));
+        logger.trace("TelemetryFacade.buildExporters: requested exporter names=" + requestedExporters);
 
         for (String exporterName : requestedExporters) {
             String name = exporterName.trim();
             if (name.isEmpty()) {
                 continue;
             }
+            logger.trace("TelemetryFacade.buildExporters: processing exporter '" + name + "'");
 
             TelemetryExporterProvider provider = exporterProviders.get(name);
             if (provider == null) {
                 logger.warn(String.format("Unknown exporter '%s', available: %s", name, exporterProviders.keySet()));
                 continue;
             }
+            logger.trace("TelemetryFacade.buildExporters: provider for '" + name + "' found, checking isAvailable()");
 
             if (!provider.isAvailable()) {
-                logger.warn(
-                        String.format("Exporter '%s' is not available (missing dependencies or configuration)", name));
+                if ("sentry".equals(name)) {
+                    logger.warn("Exporter 'sentry' is not available: ensure CloudBus.sentryOn=true and Telemetry.sentryDsn (or sentry.dsn) is set in zstack.properties, then restart");
+                } else {
+                    logger.warn(String.format("Exporter '%s' is not available (missing dependencies or configuration)", name));
+                }
                 continue;
             }
 
             SpanExporter exporter = provider.createExporter();
+            logger.trace("TelemetryFacade.buildExporters: createExporter() for '" + name + "' returned " + (exporter != null ? "non-null" : "null"));
             if (exporter != null) {
                 exporters.add(exporter);
                 logger.info(String.format("Enabled exporter: %s", name));
             }
         }
 
+        logger.trace("TelemetryFacade.buildExporters: total exporters created=" + exporters.size());
         if (exporters.isEmpty()) {
             logger.warn("No exporters were successfully created, traces will not be exported");
         }
@@ -278,9 +303,11 @@ public class TelemetryFacadeImpl implements TelemetryFacade, Component {
     @Override
     public Span startSpan(String spanName, Context parentContext, Map<String, String> attributes) {
         if (!isEnabled()) {
+            logger.trace("TelemetryFacade.startSpan: skipped (telemetry not enabled), name=" + spanName);
             return Span.getInvalid();
         }
 
+        logger.trace("TelemetryFacade.startSpan: creating span name=" + spanName);
         SpanBuilder spanBuilder = defaultTracer.spanBuilder(spanName);
 
         if (parentContext != null) {

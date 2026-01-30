@@ -87,11 +87,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         if (telemetryFacade == null && TelemetryGlobalProperty.ENABLED) {
             synchronized (SimpleFlowChain.class) {
                 if (telemetryFacade == null) {
-                    try {
-                        telemetryFacade = Platform.getComponentLoader().getComponent(TelemetryFacade.class);
-                    } catch (Exception e) {
-                        logger.trace("TelemetryFacade not available", e);
-                    }
+                    telemetryFacade = Platform.getComponentLoader().getComponentNoExceptionWhenNotExisting(TelemetryFacade.class);
                 }
             }
         }

@@ -6,7 +6,6 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.jmx.JmxFacade;
 import org.zstack.core.telemetry.TelemetryFacade;
@@ -41,47 +40,26 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
     private JmxFacade jmxf;
     @Autowired
     private PluginRegistry pluginRegistry;
-    
-    private volatile TelemetryFacade telemetryFacade;
-    private volatile TelemetryMetricsFacade metricsFacade;
-    
+    @Autowired(required = false)
+    private TelemetryFacade telemetryFacade;
+    @Autowired(required = false)
+    private TelemetryMetricsFacade metricsFacade;
+
     private TelemetryFacade getTelemetryFacade() {
-        if (telemetryFacade == null && TelemetryGlobalProperty.ENABLED) {
-            synchronized (this) {
-                if (telemetryFacade == null) {
-                    try {
-                        telemetryFacade = Platform.getComponentLoader().getComponent(TelemetryFacade.class);
-                    } catch (Exception e) {
-                        _logger.trace("TelemetryFacade not available", e);
-                    }
-                }
-            }
-        }
         return telemetryFacade;
     }
-    
+
     private boolean isTelemetryEnabled() {
-        return TelemetryGlobalProperty.ENABLED && getTelemetryFacade() != null && getTelemetryFacade().isEnabled();
+        return TelemetryGlobalProperty.ENABLED && telemetryFacade != null && telemetryFacade.isEnabled();
     }
-    
+
     private TelemetryMetricsFacade getMetricsFacade() {
-        if (metricsFacade == null && TelemetryGlobalProperty.ENABLED && TelemetryGlobalProperty.METRICS_ENABLED) {
-            synchronized (this) {
-                if (metricsFacade == null) {
-                    try {
-                        metricsFacade = Platform.getComponentLoader().getComponent(TelemetryMetricsFacade.class);
-                    } catch (Exception e) {
-                        _logger.trace("TelemetryMetricsFacade not available", e);
-                    }
-                }
-            }
-        }
         return metricsFacade;
     }
-    
+
     private boolean isMetricsEnabled() {
-        return TelemetryGlobalProperty.ENABLED && TelemetryGlobalProperty.METRICS_ENABLED 
-                && getMetricsFacade() != null && getMetricsFacade().isEnabled();
+        return TelemetryGlobalProperty.ENABLED && TelemetryGlobalProperty.METRICS_ENABLED
+                && metricsFacade != null && metricsFacade.isEnabled();
     }
     
     private void collectAndReportMetrics() {

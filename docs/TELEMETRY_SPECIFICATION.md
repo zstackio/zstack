@@ -530,6 +530,8 @@ Secondary exporter for error tracking integration.
 **Java**: Uses reflection, optional dependency
 **Python**: Use `sentry-sdk[opentelemetry]`
 
+**Sentry 展示对齐**：CloudBus 使用可搜索的 span 名（`CloudBus Send: ...`、`CloudBus Handle: ...`），便于在 Sentry Performance 中按「CloudBus Handle」等关键词搜索；同时设置 OTel/Sentry 语义属性 `messaging.destination.name`、`messaging.message.id` 及 `messaging.system`、`messaging.message_class`，便于筛选与分组。
+
 ---
 
 ## 7. Semantic Conventions
@@ -1108,6 +1110,9 @@ def create_tracing_middleware(telemetry: ZStackAgentTelemetry):
 
 ### Management Node (zstack.properties)
 
+**注意**：等号两边不要加空格（`key=value`），否则 key 会变成带空格的，读不到，会用默认值（如 `Telemetry.enabled` 默认 false）。
+管理节点上遥测**不会**监听 OTLP/Sentry 端口，只会向外发送；本地会监听的只有 **9464**（Prometheus /metrics）。
+
 ```properties
 # Enable/disable telemetry
 Telemetry.enabled=true
@@ -1123,6 +1128,13 @@ Telemetry.alwaysSampleErrors=true
 
 # Exporters (comma-separated): otlp, sentry
 Telemetry.exporters=otlp
+
+# Sentry DSN (when using sentry exporter). Also used by CloudBus error reporting.
+# Can be set here or via -Dsentry.dsn=... or env SENTRY_DSN (no spaces around =)
+# Telemetry.sentryDsn=https://your-key@your-org.ingest.sentry.io/project-id
+
+# Sentry traces sample rate (0.0 to 1.0). Must be set in Sentry.init() or Performance/Traces may be empty.
+Telemetry.sentryTracesSampleRate=1.0
 
 # OTLP endpoint
 Telemetry.otlpEndpoint=http://jaeger:4317
@@ -1165,3 +1177,87 @@ telemetry:
     max_export_batch_size: 512
     export_timeout_ms: 30000
 ```
+
+---
+
+## Appendix B: Sentry 对接与测试
+
+对接公司 Sentry 时按以下步骤配置和验证。
+
+**配置注意**：`zstack.properties` 中等号两边**不要加空格**（`key=value`），否则 key 带空格读不到；Sentry 测试时建议 `Telemetry.exporters=otlp,sentry`、`Telemetry.sentryTracesSampleRate=1.0`（或通过该配置项设置）。使用 Sentry 时需在 **Sentry.init()** 中设置 **tracesSampleRate**，否则 Sentry 可能不接收 OTel 发去的 transaction，Performance/Traces 可能看不到数据；ZStack 已通过 `Telemetry.sentryTracesSampleRate` 传入，默认 1.0。
+
+### B.1 前置条件
+
+- 已拿到 Sentry 项目的 **DSN**（形如 `https://xxx@xxx.ingest.sentry.io/xxx`）。
+- 管理节点 classpath 中包含 `sentry`、`sentry-opentelemetry-core`（根 `pom.xml` 的 dependencyManagement 中已声明，build 打包时会带入 WEB-INF/lib）。**注意**：`sentry-opentelemetry-bootstrap` 已被显式排除，以避免其抢先注册 GlobalOpenTelemetry，导致与 ZStack 自建的 TracerProvider（含 Sentry exporter）冲突。
+
+### B.2 配置步骤
+
+**1. 配置 DSN**
+
+Sentry 由 `SentryInitHelper.initIfNeeded()` 在 TelemetryFacade 构建 OpenTelemetry SDK 之后调用 `Sentry.init()` 进行初始化。DSN 来源（任选其一，优先级：Telemetry.sentryDsn > sentry.dsn 系统属性 > SENTRY_DSN 环境变量）：
+
+- **推荐** 在 `zstack.properties` 中增加（会通过 `System.getProperties().load()` 注入为系统属性）：
+  ```properties
+  sentry.dsn=https://你的key@你的org.ingest.sentry.io/项目id
+  ```
+- 或启动 JVM 时加参数：`-Dsentry.dsn=https://...`
+- 或设置环境变量：`SENTRY_DSN=https://...`
+
+**2. 开启 Sentry 与 Telemetry Sentry 导出**
+
+在 `zstack.properties` 中增加或修改：
+
+```properties
+# 启用 Sentry（TelemetryFacade 启动时在构建 OTel SDK 后通过 SentryInitHelper.initIfNeeded() 调用 Sentry.init()；必须为 true 才能把 trace 发到 Sentry）
+CloudBus.sentryOn=true
+
+# 启用遥测并启用 sentry exporter
+Telemetry.enabled=true
+Telemetry.exporters=sentry
+
+# 可选：仅用 Sentry 时可不必配 OTLP；若同时用 OTLP 与 Sentry，可写：
+# Telemetry.exporters=otlp,sentry
+```
+
+**3. 测试环境建议**
+
+本地/测试环境可提高采样率以便快速看到 trace；Sentry 端需设置 tracesSampleRate（ZStack 通过 `Telemetry.sentryTracesSampleRate` 传入，默认 1.0）：
+
+```properties
+Telemetry.environment=DEV
+Telemetry.samplingRate=1.0
+Telemetry.sentryTracesSampleRate=1.0
+Telemetry.alwaysSampleErrors=true
+```
+
+### B.3 验证方式
+
+**方式一：看启动日志**
+
+启动管理节点后查看日志，应出现类似：
+
+- `Sentry initialized (tracesSampleRate=...)`（由 SentryInitHelper 在 TelemetryFacade 构建 OTel SDK 后输出，表示 Sentry.init() 成功且已设置 tracesSampleRate）。
+- `Telemetry initialized successfully: environment=..., exporters=sentry` 或 `exporters=otlp,sentry`。
+- `Enabled exporter: sentry`（表示已启用 sentry exporter）；首次有 span 导出时会出现 `LazySentryExporter: created Sentry span exporter (first use)`。
+
+若出现 `Sentry exporter requested but sentry-opentelemetry-core is not on classpath` 或 exporter 不可用相关告警，说明依赖或配置有误，需检查打包/classpath 及 `CloudBus.sentryOn`、`Telemetry.sentryDsn`（或 sentry.dsn/SENTRY_DSN）。
+
+**方式二：触发带错误的请求**
+
+- 调用一个会返回错误或抛异常的 API（例如错误参数、不存在的资源 UUID）。
+- 由于配置了 `Telemetry.alwaysSampleErrors=true`，带错误的 span 会被强制采样并导出。
+- 在 Sentry 控制台 **Issues** 或 **Performance/Traces** 中查看是否出现对应错误或 trace。
+
+**方式三：DEV 环境全量采样**
+
+- 将 `Telemetry.environment=DEV`、`Telemetry.samplingRate=1.0` 时，所有请求都会被采样。
+- 正常调用若干 API（如列出云主机、创建/删除测试资源），然后在 Sentry 的 **Performance** / **Traces** 中查看是否有对应 trace。
+
+### B.4 常见问题
+
+| 现象 | 可能原因 | 处理 |
+|------|----------|------|
+| 控制台没有 trace/error | DSN 未生效 | 确认 `sentry.dsn` 已在 zstack.properties 或 -D/环境变量中设置，且 `CloudBus.sentryOn=true` |
+| 没有 Sentry exporter | 依赖未带入 | 确认运行时 classpath 包含 `sentry-opentelemetry-core`，必要时去掉 optional 或调整打包 |
+| 只有 error 没有 trace | 采样率低且请求未报错；或 Sentry 未设置 tracesSampleRate | 在测试环境用 `Telemetry.environment=DEV`、`Telemetry.samplingRate=1.0`、`Telemetry.sentryTracesSampleRate=1.0`，或故意触发错误并用 `alwaysSampleErrors=true` 验证；确认 Sentry.init() 已设置 tracesSampleRate（ZStack 通过 Telemetry.sentryTracesSampleRate 传入） |

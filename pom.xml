@@ -550,11 +550,17 @@
                 <artifactId>opentelemetry-context</artifactId>
                 <version>1.35.0</version>
             </dependency>
-            <!-- OpenTelemetry Semconv -->
+            <!-- OpenTelemetry Semconv (1.37+ has UrlAttributes required by Sentry OpenTelemetryAttributesExtractor) -->
             <dependency>
                 <groupId>io.opentelemetry.semconv</groupId>
                 <artifactId>opentelemetry-semconv</artifactId>
-                <version>1.23.1-alpha</version>
+                <version>1.37.0</version>
+            </dependency>
+            <!-- Legacy semconv (groupId io.opentelemetry) provides SemanticAttributes required by Sentry/OTel at runtime -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-semconv</artifactId>
+                <version>1.30.1-alpha</version>
             </dependency>
             <!-- OpenTelemetry SDK Metrics -->
             <dependency>
@@ -568,11 +574,26 @@
                 <artifactId>opentelemetry-exporter-prometheus</artifactId>
                 <version>1.35.0-alpha</version>
             </dependency>
-            <!-- Sentry OpenTelemetry Integration -->
+            <!-- Sentry OpenTelemetry Integration (8.16: requires sentry + bootstrap + semconv-incubating at runtime) -->
+            <dependency>
+                <groupId>io.sentry</groupId>
+                <artifactId>sentry</artifactId>
+                <version>8.16.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.sentry</groupId>
+                <artifactId>sentry-opentelemetry-bootstrap</artifactId>
+                <version>8.16.0</version>
+            </dependency>
             <dependency>
                 <groupId>io.sentry</groupId>
                 <artifactId>sentry-opentelemetry-core</artifactId>
-                <version>8.0.0</version>
+                <version>8.16.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry.semconv</groupId>
+                <artifactId>opentelemetry-semconv-incubating</artifactId>
+                <version>1.32.0-alpha</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
