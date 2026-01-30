@@ -799,6 +799,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     public void preCreateVmInstance(CreateVmInstanceMsg msg) {
         settingRootVolume(msg);
         settingDataVolume(msg);
+        settingDataDisks(msg);
     }
 
     private void settingRootVolume(CreateVmInstanceMsg msg) {
@@ -909,15 +910,48 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
             if (config.getAllocate().getPrimaryStorage() instanceof CephPrimaryStorageAllocateConfig) {
                 CephPrimaryStorageAllocateConfig primaryStorageAllocateConfig = (CephPrimaryStorageAllocateConfig) config.getAllocate().getPrimaryStorage();
-                msg.getDataVolumeSystemTags().add(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.instantiateTag(
-                        map(
-                                e(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN, primaryStorageAllocateConfig.getPoolNames().get(0))
-                        )
-                ));
+                if (!isEmpty(primaryStorageAllocateConfig.getPoolNames())) {
+                    msg.getDataVolumeSystemTags().add(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.instantiateTag(
+                            map(
+                                    e(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN, primaryStorageAllocateConfig.getPoolNames().get(0))
+                            )
+                    ));
+                }
             }
         }
     }
 
+    private void settingDataDisks(CreateVmInstanceMsg msg) {
+        List<DiskAO> diskAOs = msg.getDataDisks();
+        if (diskAOs == null) {
+            return;
+        }
+        for (DiskAO diskAO : diskAOs) {
+            String diskOffering = diskAO.getDiskOfferingUuid();
+            if (diskOffering == null || !DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
+                continue;
+            }
+            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
+            if (config.getAllocate() == null) {
+                continue;
+            }
+
+            if (diskAO.getSystemTags() == null) {
+                diskAO.setSystemTags(new ArrayList<>());
+            }
+
+            if (config.getAllocate().getPrimaryStorage() instanceof CephPrimaryStorageAllocateConfig) {
+                CephPrimaryStorageAllocateConfig primaryStorageAllocateConfig = (CephPrimaryStorageAllocateConfig) config.getAllocate().getPrimaryStorage();
+                if (!isEmpty(primaryStorageAllocateConfig.getPoolNames())) {
+                    diskAO.getSystemTags().add(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.instantiateTag(
+                            map(
+                                    e(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN, primaryStorageAllocateConfig.getPoolNames().get(0))
+                            )
+                    ));
+                }
+            }
+        }
+    }
     @Override
     public void preCreateVolume(VolumeCreateMessage msg) {
         String diskOffering = msg.getDiskOfferingUuid();
