@@ -43,7 +43,7 @@ import java.util.Map;
  * To change this template use File | Settings | File Templates.
  */
 public class ConsoleManagerImpl extends AbstractService implements ConsoleManager, VmInstanceMigrateExtensionPoint, ManagementNodeChangeListener,
-        VmReleaseResourceExtensionPoint, SessionLogoutExtensionPoint, PostVmInstantiateResourceExtensionPoint {
+        VmReleaseResourceExtensionPoint, SessionLogoutExtensionPoint, PostVmInstantiateResourceExtensionPoint, KvmReportVmShutdownFromGuestEventExtensionPoint {
     private static CLogger logger = Utils.getLogger(ConsoleManagerImpl.class);
 
     @Autowired
@@ -356,5 +356,25 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     @Override
     public void postReleaseVmResource(VmInstanceSpec spec, Completion completion) {
         completion.success();
+    }
+
+    @Override
+    public void kvmReportVmShutdownEvent(String vmUuid) {
+        VmInstanceVO vmvo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid).find();
+        if (vmvo == null) {
+            return;
+        }
+        VmInstanceInventory inv = VmInstanceInventory.valueOf(vmvo);
+        ConsoleBackend backend = getBackend();
+        backend.deleteConsoleSession(inv, new Completion(null) {
+            @Override
+            public void success() {}
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format(
+                        "failed to delete console session for vm[uuid:%s] on guest shutdown, because %s", vmUuid, errorCode));
+            }
+        });
     }
 }
