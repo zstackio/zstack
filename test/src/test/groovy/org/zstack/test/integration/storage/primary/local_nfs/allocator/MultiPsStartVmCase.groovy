@@ -1,6 +1,5 @@
 package org.zstack.test.integration.storage.primary.local_nfs.allocator
 
-import org.zstack.compute.vm.VmSystemTags
 import org.zstack.sdk.*
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -21,27 +20,6 @@ class MultiPsStartVmCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(1)
-                cpu = 1
-            }
-
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(100)
-            }
-
-            diskOffering {
-                name = "diskOffering2"
-                diskSize = SizeUnit.GIGABYTE.toByte(203)
-            }
-
-            diskOffering {
-                name = "diskOffering3"
-                diskSize = SizeUnit.GIGABYTE.toByte(102)
-            }
-
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -130,31 +108,41 @@ class MultiPsStartVmCase extends SubCase {
     }
 
     void createVmVolumeSizeEqualMultiPsCap() {
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
         ImageInventory image = env.inventoryByName("image") as ImageInventory
         L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
         PrimaryStorageInventory local = env.inventoryByName("local") as PrimaryStorageInventory
         PrimaryStorageInventory nfs = env.inventoryByName("nfs") as PrimaryStorageInventory
 
-        VmInstanceInventory vm = createVmInstance {
+        def vm = createVmInstance {
             name = "newVm"
-            instanceOfferingUuid = instanceOffering.uuid
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid,diskOffering.uuid]
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
-            primaryStorageUuidForRootVolume = nfs.uuid
-        }
+            diskAOs = [
+                [
+                    "boot": true,
+                    "primaryStorageUuid": nfs.uuid
+                ],
+                [
+                    "size": gb(100),
+                    "primaryStorageUuid": local.uuid
+                ],
+                [
+                    "size": gb(100),
+                    "primaryStorageUuid": local.uuid
+                ]
+            ]
+        } as VmInstanceInventory
 
         String hostUuid = vm.hostUuid
         for(int i =0; i < 20; i++){
             stopVmInstance {
-                uuid = vm.uuid
+                delegate.uuid = vm.uuid
             }
             vm = startVmInstance {
-                uuid = vm.uuid
-            }
+                delegate.uuid = vm.uuid
+            } as VmInstanceInventory
             assert hostUuid == vm.hostUuid
         }
     }

@@ -1,6 +1,5 @@
 package org.zstack.test.integration.storage.primary.local_smp
 
-import org.zstack.compute.vm.VmSystemTags
 import org.zstack.sdk.*
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -21,12 +20,6 @@ class CreateVmAssignPsCase extends SubCase{
     @Override
     void environment() {
         env = env{
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(1)
-                cpu = 1
-            }
-
             diskOffering {
                 name = "diskOffering"
                 diskSize = SizeUnit.GIGABYTE.toByte(1)
@@ -124,10 +117,8 @@ class CreateVmAssignPsCase extends SubCase{
     void localAndSmp(){
         ClusterInventory cluster = env.inventoryByName("cluster") as ClusterInventory
         PrimaryStorageInventory smp = env.inventoryByName("smp") as PrimaryStorageInventory
-        PrimaryStorageInventory smp2 = env.inventoryByName("smp2") as PrimaryStorageInventory
         PrimaryStorageInventory local = env.inventoryByName("local") as PrimaryStorageInventory
         PrimaryStorageInventory local2 = env.inventoryByName("local2") as PrimaryStorageInventory
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
         DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
         ImageInventory image = env.inventoryByName("image") as ImageInventory
         L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
@@ -158,116 +149,174 @@ class CreateVmAssignPsCase extends SubCase{
             assert [dataVolumePrimaryStorages[0].uuid, dataVolumePrimaryStorages[1].uuid].containsAll([local.uuid, smp.uuid])
         }
 
-        // not assign ps
-        VmInstanceInventory vm = createVmInstance {
-            name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+        logger.info("Test 101: not assign ps")
+        createVmInstance {
+            name = "vm101"
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
+            diskAOs = [
+                [
+                    "boot" : true,
+                ],
+                [
+                    "size" : gb(1),
+                ],
+            ]
         }
+
+        logger.info("Test 102: assign root volume local ps")
+        createVmInstance {
+            name = "vm102"
+            cpuNum = 1
+            memorySize = gb(1)
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "primaryStorageUuid" : local.uuid,
+                ],
+                [
+                    "size" : gb(1),
+                ],
+            ]
+        }
+
+        logger.info("Test 103: assign root volume smp ps")
+        def vm = createVmInstance {
+            name = "vm103"
+            cpuNum = 1
+            memorySize = gb(1)
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "primaryStorageUuid" : smp.uuid,
+                ],
+            ]
+        } as VmInstanceInventory
+        checkVmRootDiskPs(vm, smp.uuid)
+
+        logger.info("Test 104: assign data volume local ps")
+        createVmInstance {
+            name = "vm104"
+            cpuNum = 1
+            memorySize = gb(1)
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            diskAOs = [
+                [
+                    "boot" : true,
+                ],
+                [
+                    "size" : gb(1),
+                    "primaryStorageUuid" : local.uuid,
+                ],
+            ]
+        }
+
+        logger.info("Test 105: assign data volume smp ps")
+        createVmInstance {
+            name = "vm105"
+            cpuNum = 1
+            memorySize = gb(1)
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            diskAOs = [
+                [
+                    "boot" : true,
+                ],
+                [
+                    "size" : gb(1),
+                    "primaryStorageUuid" : smp.uuid,
+                ],
+            ]
+        }
+
+        logger.info("Test 106: assign root volume local ps, data volume local ps")
+        vm = createVmInstance {
+            name = "vm106"
+            cpuNum = 1
+            memorySize = gb(1)
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "primaryStorageUuid" : local.uuid,
+                ],
+                [
+                    "size" : gb(1),
+                    "primaryStorageUuid" : local.uuid,
+                ],
+            ]
+        } as VmInstanceInventory
         checkVmRootDiskPs(vm, local.uuid)
+        checkVmDataDiskPs(vm, local.uuid)
+
+        logger.info("Test 107: assign root volume smp ps, data volume local ps")
+        vm = createVmInstance {
+            name = "vm107"
+            cpuNum = 1
+            memorySize = gb(1)
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "primaryStorageUuid" : smp.uuid,
+                ],
+                [
+                    "size" : gb(1),
+                    "primaryStorageUuid" : local.uuid,
+                ],
+            ]
+        } as VmInstanceInventory
+        checkVmRootDiskPs(vm, smp.uuid)
+        checkVmDataDiskPs(vm, local.uuid)
+
+        logger.info("Test 108: assign root volume smp ps, data volume smp ps")
+        vm = createVmInstance {
+            name = "vm108"
+            cpuNum = 1
+            memorySize = gb(1)
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "primaryStorageUuid" : smp.uuid,
+                ],
+                [
+                    "size" : gb(1),
+                    "primaryStorageUuid" : smp.uuid,
+                ],
+            ]
+        } as VmInstanceInventory
+        checkVmRootDiskPs(vm, smp.uuid)
         checkVmDataDiskPs(vm, smp.uuid)
 
-        // assign root volume local ps
+        logger.info("Test 109: assign root volume local ps, data volume smp ps")
         vm = createVmInstance {
-            name = "vm1"
-            instanceOfferingUuid = instanceOffering.uuid
+            name = "vm109"
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
-            primaryStorageUuidForRootVolume = local.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid]
-        }
-
-        // assign root volume smp ps
-        CreateVmInstanceAction a = new CreateVmInstanceAction(
-                name: "vm2",
-                instanceOfferingUuid: instanceOffering.uuid,
-                imageUuid: image.uuid,
-                l3NetworkUuids: [l3.uuid],
-                primaryStorageUuidForRootVolume: smp.uuid,
-                sessionId: currentEnvSpec.session.uuid
-        )
-        CreateVmInstanceAction.Result result = a.call()
-        checkVmRootDiskPs(result.value.inventory, smp.uuid)
-
-        // assign data volume local ps
-        CreateVmInstanceAction a2 = new CreateVmInstanceAction(
-                name: "vm2",
-                instanceOfferingUuid: instanceOffering.uuid,
-                imageUuid: image.uuid,
-                l3NetworkUuids: [l3.uuid],
-                dataDiskOfferingUuids: [diskOffering.uuid],
-                systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])],
-                sessionId: currentEnvSpec.session.uuid
-        )
-        assert a2.call().error == null
-
-        // assign data volume smp ps
-        vm = createVmInstance {
-            name = "vm3"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
-            l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): smp.uuid])]
-        }
-
-        // assign root volume local ps, data volume local ps,
-        CreateVmInstanceAction a3 = new CreateVmInstanceAction(
-                name: "vm3",
-                instanceOfferingUuid: instanceOffering.uuid,
-                imageUuid: image.uuid,
-                l3NetworkUuids: [l3.uuid],
-                dataDiskOfferingUuids: [diskOffering.uuid],
-                primaryStorageUuidForRootVolume: local.uuid,
-                systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])],
-                sessionId: currentEnvSpec.session.uuid
-        )
-        result = a3.call()
-        checkVmRootDiskPs(result.value.inventory, local.uuid)
-        checkVmDataDiskPs(result.value.inventory, local.uuid)
-
-        // assign root volume smp ps, data volume local ps
-        CreateVmInstanceAction a4 = new CreateVmInstanceAction(
-                name: "vm4",
-                instanceOfferingUuid: instanceOffering.uuid,
-                imageUuid: image.uuid,
-                l3NetworkUuids: [l3.uuid],
-                dataDiskOfferingUuids: [diskOffering.uuid],
-                primaryStorageUuidForRootVolume: smp.uuid,
-                systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])],
-                sessionId: currentEnvSpec.session.uuid
-        )
-        result = a4.call()
-        checkVmRootDiskPs(result.value.inventory, smp.uuid)
-        checkVmDataDiskPs(result.value.inventory, local.uuid)
-
-        // assign root volume smp ps, data volume smp ps
-        CreateVmInstanceAction a5 = new CreateVmInstanceAction(
-                name: "vm4",
-                instanceOfferingUuid: instanceOffering.uuid,
-                imageUuid: image.uuid,
-                l3NetworkUuids: [l3.uuid],
-                dataDiskOfferingUuids: [diskOffering.uuid],
-                primaryStorageUuidForRootVolume: smp.uuid,
-                systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): smp.uuid])],
-                sessionId: currentEnvSpec.session.uuid
-        )
-        result = a5.call()
-        checkVmRootDiskPs(result.value.inventory, smp.uuid)
-        checkVmDataDiskPs(result.value.inventory, smp.uuid)
-
-        // assign root volume local ps, data volume smp ps
-        vm = createVmInstance {
-            name = "vm4"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
-            l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): smp.uuid])]
-            primaryStorageUuidForRootVolume = local.uuid
-        }
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "primaryStorageUuid" : local.uuid,
+                ],
+                [
+                    "size" : gb(1),
+                    "primaryStorageUuid" : smp.uuid,
+                ],
+            ]
+        } as VmInstanceInventory
         checkVmRootDiskPs(vm, local.uuid)
         checkVmDataDiskPs(vm, smp.uuid)
     }
@@ -277,7 +326,6 @@ class CreateVmAssignPsCase extends SubCase{
         PrimaryStorageInventory smp = env.inventoryByName("smp") as PrimaryStorageInventory
         PrimaryStorageInventory smp2 = env.inventoryByName("smp2") as PrimaryStorageInventory
         PrimaryStorageInventory local = env.inventoryByName("local") as PrimaryStorageInventory
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
         DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
         ImageInventory image = env.inventoryByName("image") as ImageInventory
         L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
@@ -308,58 +356,98 @@ class CreateVmAssignPsCase extends SubCase{
             assert [dataVolumePrimaryStorages[0].uuid, dataVolumePrimaryStorages[1].uuid].containsAll([smp.uuid, smp2.uuid])
         }
 
-        // not assign ps
-        VmInstanceInventory vm = createVmInstance {
-            name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
+        logger.info("Test 201: not assign ps")
+        createVmInstance {
+            name = "vm201"
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
+            diskAOs = [
+                [
+                    "boot" : true,
+                ],
+                [
+                    "size" : gb(1),
+                ],
+            ]
         }
 
-        // assign root volume smp ps
-        vm = createVmInstance {
-            name = "vm1"
-            instanceOfferingUuid = instanceOffering.uuid
+        logger.info("Test 202: assign root volume smp ps")
+        def vm = createVmInstance {
+            name = "vm202"
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
-            primaryStorageUuidForRootVolume = smp.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid]
-        }
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "primaryStorageUuid" : smp.uuid,
+                ],
+                [
+                    "size" : gb(1),
+                ],
+            ]
+        } as VmInstanceInventory
         checkVmRootDiskPs(vm, smp.uuid)
 
-        // assign root volume ps
+        logger.info("Test 203: assign root volume ps")
         vm = createVmInstance {
-            name = "vm2"
-            instanceOfferingUuid = instanceOffering.uuid
+            name = "vm203"
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
-            primaryStorageUuidForRootVolume = smp2.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid]
-        }
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "primaryStorageUuid" : smp2.uuid,
+                ],
+                [
+                    "size" : gb(1),
+                ],
+            ]
+        } as VmInstanceInventory
         checkVmRootDiskPs(vm, smp2.uuid)
 
-        // assign data volume  ps
+        logger.info("Test 204: assign data volume ps")
         vm = createVmInstance {
-            name = "vm3"
-            instanceOfferingUuid = instanceOffering.uuid
+            name = "vm204"
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): smp.uuid])]
-        }
+            diskAOs = [
+                [
+                    "boot" : true,
+                ],
+                [
+                    "size" : gb(1),
+                    "primaryStorageUuid" : smp.uuid,
+                ],
+            ]
+        } as VmInstanceInventory
         checkVmDataDiskPs(vm, smp.uuid)
 
-        // assign data , root volume ps
+        logger.info("Test 205: assign data, root volume ps")
         vm = createVmInstance {
-            name = "vm4"
-            instanceOfferingUuid = instanceOffering.uuid
+            name = "vm205"
+            cpuNum = 1
+            memorySize = gb(1)
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): smp2.uuid])]
-            primaryStorageUuidForRootVolume = smp.uuid
-        }
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "primaryStorageUuid" : smp.uuid,
+                ],
+                [
+                    "size" : gb(1),
+                    "primaryStorageUuid" : smp2.uuid,
+                ],
+            ]
+        } as VmInstanceInventory
         checkVmRootDiskPs(vm, smp.uuid)
         checkVmDataDiskPs(vm, smp2.uuid)
 
@@ -373,9 +461,9 @@ class CreateVmAssignPsCase extends SubCase{
         }
     }
 
-    void checkVmRootDiskPs(VmInstanceInventory vm, String psUuid){
+    static void checkVmRootDiskPs(VmInstanceInventory vm, String psUuid){
         assert vm.allVolumes.size() > 0
-        for(VolumeInventory disk : vm.allVolumes){
+        for(VolumeInventory disk : vm.allVolumes as List<VolumeInventory>){
             if(disk.uuid == vm.rootVolumeUuid){
                 assert psUuid == disk.primaryStorageUuid
                 return
@@ -383,9 +471,9 @@ class CreateVmAssignPsCase extends SubCase{
         }
     }
 
-    void checkVmDataDiskPs(VmInstanceInventory vm, String psUuid){
+    static void checkVmDataDiskPs(VmInstanceInventory vm, String psUuid){
         assert vm.allVolumes.size() > 1
-        for(VolumeInventory disk : vm.allVolumes){
+        for(VolumeInventory disk : vm.allVolumes as List<VolumeInventory>){
             if(disk.uuid != vm.rootVolumeUuid){
                 assert psUuid == disk.primaryStorageUuid
             }
