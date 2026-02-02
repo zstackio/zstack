@@ -1189,7 +1189,7 @@ telemetry:
 ### B.1 前置条件
 
 - 已拿到 Sentry 项目的 **DSN**（形如 `https://xxx@xxx.ingest.sentry.io/xxx`）。
-- 管理节点 classpath 中包含 `sentry`、`sentry-opentelemetry-core`（根 `pom.xml` 的 dependencyManagement 中已声明，build 打包时会带入 WEB-INF/lib）。**注意**：`sentry-opentelemetry-bootstrap` 已被显式排除，以避免其抢先注册 GlobalOpenTelemetry，导致与 ZStack 自建的 TracerProvider（含 Sentry exporter）冲突。
+- 管理节点 classpath 中包含 `sentry`、`sentry-opentelemetry-core`、`sentry-opentelemetry-bootstrap`（根 `pom.xml` 的 dependencyManagement 中已声明，build 打包时会带入 WEB-INF/lib）。bootstrap 提供 `SentryWeakSpanStorage` 等运行时所需类。同时需使用 legacy semconv 1.23.1-alpha（`io.opentelemetry:opentelemetry-semconv`），以提供 bootstrap 所需的顶层 `io.opentelemetry.semconv.SemanticAttributes`。
 
 ### B.2 配置步骤
 

@@ -726,14 +726,8 @@
         <dependency>
             <groupId>io.sentry</groupId>
             <artifactId>sentry-opentelemetry-core</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.sentry</groupId>
-                    <artifactId>sentry-opentelemetry-bootstrap</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
-        <!-- Legacy semconv for SemanticAttributes at runtime (Sentry/OTel) -->
+        <!-- Legacy semconv 1.23.1-alpha for top-level SemanticAttributes (sentry-opentelemetry-bootstrap) -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-semconv</artifactId>
