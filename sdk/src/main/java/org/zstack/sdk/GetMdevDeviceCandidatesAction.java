@@ -37,6 +37,9 @@ public class GetMdevDeviceCandidatesAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List types;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer minAvailableDevicesPerHost;
+
     @Param(required = false)
     public java.util.List systemTags;
 
