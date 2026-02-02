@@ -113,3 +113,9 @@ FROM PodVO p
 GROUP BY p.uuid;
 
 ALTER TABLE `zstack`.`AccessControlListEntryVO` ADD COLUMN `redirectPort` int(10) DEFAULT NULL;
+
+CALL ADD_COLUMN('GpuDeviceSpecVO', 'allocatorStrategy', 'varchar(32)', 1, NULL);
+CALL ADD_COLUMN('MdevDeviceSpecVO', 'allocatorStrategy', 'varchar(32)', 1, NULL);
+
+UPDATE `zstack`.`GpuDeviceSpecVO` SET `allocatorStrategy` = 'FollowGlobal' WHERE `allocatorStrategy` IS NULL;
+UPDATE `zstack`.`MdevDeviceSpecVO` SET `allocatorStrategy` = 'FollowGlobal' WHERE `allocatorStrategy` IS NULL;

@@ -28,4 +28,12 @@ public class GpuDeviceSpecInventory extends org.zstack.sdk.PciDeviceSpecInventor
         return this.isolated;
     }
 
+    public java.lang.String allocatorStrategy;
+    public void setAllocatorStrategy(java.lang.String allocatorStrategy) {
+        this.allocatorStrategy = allocatorStrategy;
+    }
+    public java.lang.String getAllocatorStrategy() {
+        return this.allocatorStrategy;
+    }
+
 }
