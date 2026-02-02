@@ -12,6 +12,14 @@ public class ApplicationDevelopmentServiceInventory extends org.zstack.sdk.Model
         return this.deploymentStatus;
     }
 
+    public java.lang.String packageVersion;
+    public void setPackageVersion(java.lang.String packageVersion) {
+        this.packageVersion = packageVersion;
+    }
+    public java.lang.String getPackageVersion() {
+        return this.packageVersion;
+    }
+
     public ModelServiceInventory service;
     public void setService(ModelServiceInventory service) {
         this.service = service;
