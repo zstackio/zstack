@@ -204,6 +204,14 @@ public class ModelService  {
         return this.rootDiskSize;
     }
 
+    public java.lang.String projectUuid;
+    public void setProjectUuid(java.lang.String projectUuid) {
+        this.projectUuid = projectUuid;
+    }
+    public java.lang.String getProjectUuid() {
+        return this.projectUuid;
+    }
+
     public SessionInventory session;
     public void setSession(SessionInventory session) {
         this.session = session;

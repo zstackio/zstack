@@ -100,6 +100,9 @@ public class MatchModelServiceTemplateWithModelAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Long rootDiskSize;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String projectUuid;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
