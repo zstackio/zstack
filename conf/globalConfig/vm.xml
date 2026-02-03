@@ -225,7 +225,7 @@
 	<config>
 		<name>resourceBinding.strategy</name>
 		<description>Strategy of resource binding</description>
-		<defaultValue>Hard</defaultValue>
+		<defaultValue>Soft</defaultValue>
 		<category>vm</category>
 		<type>java.lang.String</type>
 	</config>
