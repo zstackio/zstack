@@ -419,6 +419,9 @@ public class SourceClassMap {
 			put("org.zstack.header.tag.TagPatternInventory", "org.zstack.sdk.TagPatternInventory");
 			put("org.zstack.header.tag.TagPatternType", "org.zstack.sdk.TagPatternType");
 			put("org.zstack.header.tag.UserTagInventory", "org.zstack.sdk.UserTagInventory");
+			put("org.zstack.header.tpm.entity.TpmCapabilityView", "org.zstack.sdk.tpm.entity.TpmCapabilityView");
+			put("org.zstack.header.tpm.entity.TpmHostRefInventory", "org.zstack.sdk.tpm.entity.TpmHostRefInventory");
+			put("org.zstack.header.tpm.entity.TpmInventory", "org.zstack.sdk.tpm.entity.TpmInventory");
 			put("org.zstack.header.vdpa.VmVdpaNicInventory", "org.zstack.sdk.VmVdpaNicInventory");
 			put("org.zstack.header.vipQos.VipQosInventory", "org.zstack.sdk.VipQosInventory");
 			put("org.zstack.header.vipQos.VpcSharedQosInventory", "org.zstack.sdk.VpcSharedQosInventory");
@@ -1557,6 +1560,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.TagInventory", "org.zstack.header.tag.TagInventory");
 			put("org.zstack.sdk.TagPatternInventory", "org.zstack.header.tag.TagPatternInventory");
 			put("org.zstack.sdk.TagPatternType", "org.zstack.header.tag.TagPatternType");
+			put("org.zstack.sdk.tpm.entity.TpmCapabilityView", "org.zstack.header.tpm.entity.TpmCapabilityView");
+			put("org.zstack.sdk.tpm.entity.TpmHostRefInventory", "org.zstack.header.tpm.entity.TpmHostRefInventory");
+			put("org.zstack.sdk.tpm.entity.TpmInventory", "org.zstack.header.tpm.entity.TpmInventory");
 			put("org.zstack.sdk.TaskInfo", "org.zstack.header.core.progress.TaskInfo");
 			put("org.zstack.sdk.TaskProgressInventory", "org.zstack.header.core.progress.TaskProgressInventory");
 			put("org.zstack.sdk.TemplateConfigInventory", "org.zstack.templateConfig.TemplateConfigInventory");

@@ -76,6 +76,9 @@ public class CreateBareMetal2InstanceFromVmBackupAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List tagUuids;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean resetTpm;
+
     @Param(required = false)
     public java.util.List systemTags;
 
