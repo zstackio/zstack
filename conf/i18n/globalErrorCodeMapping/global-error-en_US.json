@@ -2886,6 +2886,7 @@
   "ORG_ZSTACK_AI_CONTAINER_10023": "Invalid Kubernetes deployment YAML: %s",
   "ORG_ZSTACK_AI_CONTAINER_10020": "failed to patch Kubernetes deployment %s to terminate all pods",
   "ORG_ZSTACK_AI_CONTAINER_10025": "model service instance group %s not found in the database",
+  "ORG_ZSTACK_AI_CONTAINER_10026": "Unable to get cluster info; please sync container management endpoint or wait for auto sync and retry",
   "ORG_ZSTACK_AI_CONTAINER_10024": "failed to patch k8s deployment %s",
   "ORG_ZSTACK_STORAGE_PRIMARY_NFS_10039": "fails to create root volume[uuid:%s] from cached image[path:%s] because of an error in virtualization environment",
   "ORG_ZSTACK_CRYPTO_SECURITYMACHINE_10040": "originText or certificateText cannot be null",
