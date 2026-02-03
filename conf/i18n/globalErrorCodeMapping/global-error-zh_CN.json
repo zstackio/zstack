@@ -2886,6 +2886,7 @@
   "ORG_ZSTACK_AI_CONTAINER_10023": "无效的K8s部署YAML: %s",
   "ORG_ZSTACK_AI_CONTAINER_10020": "失败将 Kubernetes 部署 %s 中的所有 Pod 删除",
   "ORG_ZSTACK_AI_CONTAINER_10025": "模型服务实例组 %s 在数据库中未找到",
+  "ORG_ZSTACK_AI_CONTAINER_10026": "无法获取集群信息，请先执行同步容器管理端点或等待自动同步后再重试",
   "ORG_ZSTACK_AI_CONTAINER_10024": "失败修补 Kubernetes 部署 %s",
   "ORG_ZSTACK_STORAGE_PRIMARY_NFS_10039": "失败从缓存镜像[path:%s]创建根卷[uuid:%s]的原因是%s",
   "ORG_ZSTACK_CRYPTO_SECURITYMACHINE_10040": "originText 或 certificateText 不能为 null",

@@ -17,7 +17,9 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.image.*;
 import org.zstack.header.longjob.LongJob;
 import org.zstack.header.longjob.LongJobFor;
+import org.zstack.header.longjob.LongJobState;
 import org.zstack.header.longjob.LongJobVO;
+import org.zstack.header.longjob.LongJobVO_;
 import org.zstack.header.longjob.UseApiTimeout;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
@@ -71,6 +73,11 @@ public class AddImageLongJob implements LongJob {
         @Override
         public void success(ImageInventory image) {
             if (done.compareAndSet(false, true)) {
+                LongJobState state = Q.New(LongJobVO.class).eq(LongJobVO_.uuid, job.getUuid()).select(LongJobVO_.state).findValue();
+                // Image upload long job suspend only changes job state; if upload completes while suspended, do not complete here so resume() can re-track and finish
+                if (state == LongJobState.Suspended) {
+                    return;
+                }
                 event.setInventory(image);
                 job = setJobResult(job.getUuid(), event);
                 completion.success(event);
@@ -178,6 +185,15 @@ public class AddImageLongJob implements LongJob {
                 }
             }
         });
+    }
+
+    /**
+     * Image upload suspend only sets long job state to Suspended; no pause request is sent to backup storage.
+     * The underlying upload may still be in progress; resume() re-tracks progress and completes the job.
+     */
+    @Override
+    public void suspend(LongJobVO job, ReturnValueCompletion<Boolean> completion) {
+        completion.success(Boolean.TRUE);
     }
 
     @Override
