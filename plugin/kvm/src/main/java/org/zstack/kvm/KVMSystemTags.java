@@ -71,4 +71,8 @@ public class KVMSystemTags {
     public static final String EDK_RPM_TOKEN = "edkRpm";
     public static PatternedSystemTag VM_EDK =
             new PatternedSystemTag(String.format("vm::edk::{%s}", EDK_RPM_TOKEN), VmInstanceVO.class);
+
+    public static final String SWTPM_VERSION_TOKEN = "version";
+    public static PatternedSystemTag SWTPM_VERSION =
+            new PatternedSystemTag(String.format("swtpm::{%s}", SWTPM_VERSION_TOKEN), HostVO.class);
 }

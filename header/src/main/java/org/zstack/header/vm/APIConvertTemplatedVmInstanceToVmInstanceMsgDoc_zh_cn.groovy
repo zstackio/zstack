@@ -57,6 +57,15 @@ doc {
 					optional true
 					since "zsv 4.2.6"
 				}
+				column {
+					name "resetTpm"
+					enclosedIn "params"
+					desc "转换成虚拟机后是否重置 TPM 状态"
+					location "body"
+					type "Boolean"
+					optional true
+					since "5.0.0"
+				}
 			}
 		}
 

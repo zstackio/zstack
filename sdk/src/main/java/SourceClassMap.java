@@ -270,6 +270,9 @@ public class SourceClassMap {
 			put("org.zstack.header.tag.TagPatternInventory", "org.zstack.sdk.TagPatternInventory");
 			put("org.zstack.header.tag.TagPatternType", "org.zstack.sdk.TagPatternType");
 			put("org.zstack.header.tag.UserTagInventory", "org.zstack.sdk.UserTagInventory");
+			put("org.zstack.header.tpm.entity.TpmCapabilityView", "org.zstack.sdk.tpm.entity.TpmCapabilityView");
+			put("org.zstack.header.tpm.entity.TpmHostRefInventory", "org.zstack.sdk.tpm.entity.TpmHostRefInventory");
+			put("org.zstack.header.tpm.entity.TpmInventory", "org.zstack.sdk.tpm.entity.TpmInventory");
 			put("org.zstack.header.vdpa.VmVdpaNicInventory", "org.zstack.sdk.VmVdpaNicInventory");
 			put("org.zstack.header.vipQos.VipQosInventory", "org.zstack.sdk.VipQosInventory");
 			put("org.zstack.header.vm.CloneVmInstanceInventory", "org.zstack.sdk.CloneVmInstanceInventory");
@@ -1270,6 +1273,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.sns.platform.wecom.SNSWeComEndpointInventory", "org.zstack.sns.platform.wecom.SNSWeComEndpointInventory");
 			put("org.zstack.sdk.softwarePackage.header.JobDetails", "org.zstack.softwarePackage.header.JobDetails");
 			put("org.zstack.sdk.softwarePackage.header.SoftwarePackageInventory", "org.zstack.softwarePackage.header.SoftwarePackageInventory");
+			put("org.zstack.sdk.tpm.entity.TpmCapabilityView", "org.zstack.header.tpm.entity.TpmCapabilityView");
+			put("org.zstack.sdk.tpm.entity.TpmHostRefInventory", "org.zstack.header.tpm.entity.TpmHostRefInventory");
+			put("org.zstack.sdk.tpm.entity.TpmInventory", "org.zstack.header.tpm.entity.TpmInventory");
 			put("org.zstack.sdk.zbox.ZBoxBackupInventory", "org.zstack.externalbackup.zbox.ZBoxBackupInventory");
 			put("org.zstack.sdk.zbox.ZBoxBackupStorageBackupInfo", "org.zstack.externalbackup.zbox.ZBoxBackupStorageBackupInfo");
 			put("org.zstack.sdk.zbox.ZBoxInventory", "org.zstack.zbox.ZBoxInventory");

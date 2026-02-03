@@ -31,6 +31,9 @@ public class ConvertTemplatedVmInstanceToVmInstanceAction extends AbstractAction
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean resetTpm;
+
     @Param(required = false)
     public java.util.List systemTags;
 

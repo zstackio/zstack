@@ -115,6 +115,9 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
     @APINoSee
     private String platform;
 
+    @APIParam(required = false)
+    private Boolean resetTpm;
+
     public String getName() {
         return name;
     }
@@ -291,5 +294,13 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
 
     public void setPlatform(String platform) {
         this.platform = platform;
+    }
+
+    public Boolean getResetTpm() {
+        return resetTpm;
+    }
+
+    public void setResetTpm(Boolean resetTpm) {
+        this.resetTpm = resetTpm;
     }
 }

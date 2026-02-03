@@ -5,6 +5,7 @@ import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vo.*;
 import org.zstack.header.vo.EntityGraph;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
                 @EntityGraph.Neighbour(type = VolumeVO.class, myField = "rootVolumeUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = VmNicVO.class, myField = "uuid", targetField = "vmInstanceUuid"),
                 @EntityGraph.Neighbour(type = VmCdRomVO.class, myField = "uuid", targetField = "vmInstanceUuid"),
+                @EntityGraph.Neighbour(type = TpmVO.class, myField = "uuid", targetField = "vmInstanceUuid"),
         }
 )
 public class VmInstanceVO extends VmInstanceAO implements OwnedByAccount, ToInventory {
