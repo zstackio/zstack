@@ -141,7 +141,7 @@
             <groupId>io.sentry</groupId>
             <artifactId>sentry</artifactId>
         </dependency>
-        <!-- Exclude sentry-opentelemetry-bootstrap: it registers GlobalOpenTelemetry on load and causes "already registered" so our TracerProvider (with Sentry exporter) is never used. We use only sentry-opentelemetry-core (SentrySpanExporter). -->
+        <!-- sentry-opentelemetry-bootstrap required at runtime for SentryWeakSpanStorage; legacy semconv 1.23.1-alpha required for io.opentelemetry.semconv.SemanticAttributes -->
         <!-- OpenTelemetry Dependencies for Telemetry -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
@@ -183,12 +183,6 @@
         <dependency>
             <groupId>io.sentry</groupId>
             <artifactId>sentry-opentelemetry-core</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.sentry</groupId>
-                    <artifactId>sentry-opentelemetry-bootstrap</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry.semconv</groupId>
