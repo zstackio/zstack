@@ -166,4 +166,8 @@ public class KVMGlobalConfig {
     @BindResourceConfig({HostVO.class, ClusterVO.class})
     public static GlobalConfig MINIMUM_MEMORY_SIZE_BEFORE_START_VM = new GlobalConfig(CATEGORY, "min.free.memory.size");
 
+    @GlobalConfigDef(defaultValue = "",
+            description = "Specify the EDK version to be used for the next VM startup. Default empty string indicates the use of the system's default EDK version")
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
+    public static GlobalConfig VM_EDK_VERSION_CONFIG = new GlobalConfig(CATEGORY, "vm.edk.version");
 }

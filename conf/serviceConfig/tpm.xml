@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>tpm</id>
+    <interceptor>TpmApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.tpm.api.APIAddTpmMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.tpm.api.APIGetTpmCapabilityMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.tpm.api.APIQueryTpmMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+    <message>
+        <name>org.zstack.header.tpm.api.APIRemoveTpmMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.tpm.api.APIUpdateTpmMsg</name>
+    </message>
+</service>
