@@ -148,6 +148,21 @@ public class StringDSL {
         return apiId != null && apiId.matches("[0-9a-f]{8}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{12}");
     }
 
+    public static String createFixedUuid(Class<?> voClass) {
+        return createFixedUuid(voClass.getSimpleName());
+    }
+
+    public static String createFixedUuid(String text) {
+        StringBuilder builder = new StringBuilder(
+                UUID.nameUUIDFromBytes(text.getBytes()).toString().replace("-", ""));
+        builder.setCharAt(0, 'f');
+        builder.setCharAt(1, 'f');
+        builder.setCharAt(2, '0');
+        builder.setCharAt(30, '0');
+        builder.setCharAt(31, '0');
+        return builder.toString();
+    }
+
     private static int hashOXR(List lst) {
         return lst.stream().mapToInt(Object::hashCode)
                 .reduce(0, (l, r) -> l ^ r);

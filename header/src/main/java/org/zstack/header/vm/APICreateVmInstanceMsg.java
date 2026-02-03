@@ -15,8 +15,10 @@ import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagResourceType;
+import org.zstack.header.vm.devices.VmDevicesSpec;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.zone.ZoneVO;
+import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.Collections;
 import java.util.List;
@@ -324,6 +326,15 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false)
     private List<DiskAO> diskAOs;
 
+    @APIParam(required = false)
+    private Map<String, Object> devices;
+
+    /**
+     * cache of {@link #devices}
+     */
+    @APINoSee
+    private VmDevicesSpec devicesSpec;
+
     public List<DiskAO> getDiskAOs() {
         return diskAOs;
     }
@@ -561,6 +572,26 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         this.virtio = virtio;
     }
 
+    public Map<String, Object> getDevices() {
+        return devices;
+    }
+
+    public void setDevices(Map<String, Object> devices) {
+        this.devices = devices;
+    }
+
+    public VmDevicesSpec getDevicesSpec() {
+        if (devicesSpec == null && devices != null) {
+            devicesSpec = JSONObjectUtil.rehashObject(devices, VmDevicesSpec.class);
+        }
+        return devicesSpec;
+    }
+
+    public void setDevicesSpec(VmDevicesSpec devicesSpec) {
+        this.devicesSpec = devicesSpec;
+    }
+
+    @SuppressWarnings("unchecked")
     public static APICreateVmInstanceMsg __example__() {
         APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
         msg.setName("vm1");
@@ -572,6 +603,7 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         msg.setL3NetworkUuids(Collections.singletonList(uuid()));
         msg.setRootVolumeSystemTags(Collections.singletonList("volumeProvisioningStrategy::ThickProvisioning"));
         msg.setDataVolumeSystemTags(null);
+        msg.setDevices(JSONObjectUtil.rehashObject(VmDevicesSpec.__example__(), Map.class));
         return msg;
     }
 
