@@ -267,4 +267,16 @@
         </zstack:plugin>
     </bean>
 
+    <!-- TPM -->
+    <bean id="TpmApiInterceptor" class="org.zstack.compute.vm.devices.TpmApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="TpmMessageAutoCompleter" class="org.zstack.compute.vm.devices.TpmMessageAutoCompleter">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
 </beans>

@@ -150,8 +150,12 @@ public class StringDSL {
     }
 
     public static String createFixedUuid(Class<?> voClass) {
+        return createFixedUuid(voClass.getSimpleName());
+    }
+
+    public static String createFixedUuid(String text) {
         StringBuilder builder = new StringBuilder(
-                UUID.nameUUIDFromBytes(voClass.getSimpleName().getBytes()).toString().replace("-", ""));
+                UUID.nameUUIDFromBytes(text.getBytes()).toString().replace("-", ""));
         builder.setCharAt(0, 'f');
         builder.setCharAt(1, 'f');
         builder.setCharAt(2, '0');
