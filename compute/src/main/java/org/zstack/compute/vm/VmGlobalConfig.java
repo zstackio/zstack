@@ -133,4 +133,9 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(validValues = {"None", "AuthenticAMD"})
     @BindResourceConfig(value = {VmInstanceVO.class})
     public static GlobalConfig VM_CPUID_VENDOR = new GlobalConfig(CATEGORY, "vm.cpuid.vendor");
+
+    @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "whether reset TPM state after VM clone")
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
+    public static GlobalConfig RESET_TPM_AFTER_VM_CLONE = new GlobalConfig(CATEGORY, "reset.tpm.after.vm.clone");
 }

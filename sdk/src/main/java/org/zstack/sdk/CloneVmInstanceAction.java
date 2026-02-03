@@ -67,6 +67,9 @@ public class CloneVmInstanceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public org.zstack.sdk.VmCustomSpecificationStruct vmCustomSpecification;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean resetTpm;
+
     @Param(required = false)
     public java.util.List systemTags;
 

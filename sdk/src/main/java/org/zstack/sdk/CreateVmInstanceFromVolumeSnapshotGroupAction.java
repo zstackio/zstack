@@ -79,6 +79,9 @@ public class CreateVmInstanceFromVolumeSnapshotGroupAction extends AbstractActio
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.Map dataVolumeSystemTags;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean resetTpm;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
