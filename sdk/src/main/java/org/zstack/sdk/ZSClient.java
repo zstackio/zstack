@@ -117,6 +117,10 @@ public class ZSClient {
             if (item != null && item.isJsonObject()) {
                 wrapper.setOpaque(context.deserialize(item, LinkedHashMap.class));
             }
+            item = object.get("globalErrorCode");
+            if (item != null && item.isJsonPrimitive()) {
+                wrapper.setGlobalErrorCode(item.getAsString());
+            }
             return wrapper;
         }
     }
