@@ -2420,6 +2420,8 @@ public class KVMAgentCommands {
         // used when bootMode == 'UEFI'
         @GrayVersion(value = "5.0.0")
         private boolean secureBoot;
+        private String edkVersion;
+
         @GrayVersion(value = "5.0.0")
         private boolean fromForeignHypervisor;
         @GrayVersion(value = "5.0.0")
@@ -2584,6 +2586,14 @@ public class KVMAgentCommands {
 
         public void setSecureBoot(boolean secureBoot) {
             this.secureBoot = secureBoot;
+        }
+
+        public String getEdkVersion() {
+            return edkVersion;
+        }
+
+        public void setEdkVersion(String edkVersion) {
+            this.edkVersion = edkVersion;
         }
 
         public boolean isEmulateHyperV() {
