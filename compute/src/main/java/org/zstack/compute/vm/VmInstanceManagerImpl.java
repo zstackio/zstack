@@ -1227,6 +1227,22 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
 
                 flow(new Flow() {
+                    String __name__ = "call-after-persist-vm-extensions";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        pluginRgty.getExtensionList(VmInstanceCreateExtensionPoint.class).forEach(
+                                extensionPoint -> extensionPoint.afterPersistVmInstanceVO(finalVo, msg));
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        // do nothing
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new Flow() {
                     List<ErrorCode> errorCodes = new ArrayList<>();
                     String __name__ = String.format("instantiate-systemTag-for-vm-%s", finalVo.getUuid());
 
@@ -1323,6 +1339,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         smsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
                         smsg.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
                         smsg.setDiskAOs(msg.getDiskAOs());
+                        smsg.setDevicesSpec(msg.getDevicesSpec());
                         bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, finalVo.getUuid());
                         bus.send(smsg, new CloudBusCallBack(smsg) {
                             @Override
