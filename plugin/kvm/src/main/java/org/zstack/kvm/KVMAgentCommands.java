@@ -2104,6 +2104,8 @@ public class KVMAgentCommands {
         private String bootMode;
         // used when bootMode == 'UEFI'
         private boolean secureBoot;
+        private String edkVersion;
+
         private boolean fromForeignHypervisor;
         private String machineType;
         private Integer pciePortNums;
@@ -2258,6 +2260,14 @@ public class KVMAgentCommands {
 
         public void setSecureBoot(boolean secureBoot) {
             this.secureBoot = secureBoot;
+        }
+
+        public String getEdkVersion() {
+            return edkVersion;
+        }
+
+        public void setEdkVersion(String edkVersion) {
+            this.edkVersion = edkVersion;
         }
 
         public boolean isEmulateHyperV() {
