@@ -113,6 +113,7 @@ public class VmGlobalConfig {
     @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "sync clock after vm resume")
     public static GlobalConfig VM_CLOCK_SYNC_AFTER_VM_RESUME = new GlobalConfig(CATEGORY, "vm.clock.sync.after.vm.resume");
 
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig ENABLE_UEFI_SECURE_BOOT = new GlobalConfig(CATEGORY, "enable.uefi.secure.boot");
 
