@@ -257,7 +257,6 @@
             <zstack:extension interface="org.zstack.core.config.GlobalConfigInitExtensionPoint" />
         </zstack:plugin>
     </bean>
-
     <bean id="XmlHookManager" class="org.zstack.kvm.xmlhook.XmlHookManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
@@ -276,6 +275,12 @@
     </bean>
 
     <bean id="KvmTpmExtensions" class="org.zstack.kvm.tpm.KvmTpmExtensions">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="KvmSecureBootExtensions" class="org.zstack.kvm.efi.KvmSecureBootExtensions">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint" />
         </zstack:plugin>
