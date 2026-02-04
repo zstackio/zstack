@@ -691,5 +691,17 @@ class KVMSimulator implements Simulator {
         spec.simulator(KVMConstant.KVM_HOST_IPSET_SYNC_PATH) {
             return new KVMAgentCommands.AgentResponse()
         }
+
+        spec.simulator(KVMConstant.SETUP_VM_HA_ENABLED_METADATA_LIVE_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
+
+        spec.simulator(KVMConstant.RECONCILE_VM_HA_ENABLED_METADATA_LIVE_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
+
+        spec.simulator(KVMConstant.HA_NETWORK_GROUP_SYNC_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
     }
 }

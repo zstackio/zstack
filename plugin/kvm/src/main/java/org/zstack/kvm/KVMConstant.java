@@ -133,6 +133,9 @@ public interface KVMConstant {
     String KVM_BLOCK_PULL_VOLUME_PATH = "/vm/volume/blockpull";
     String TAKE_VM_CONSOLE_SCREENSHOT_PATH = "/vm/console/screenshot";
     String UPDATE_VM_CONSOLE_PASSWORD_PATH = "/host/vm/updateConsolePassword/live";
+    String SETUP_VM_HA_ENABLED_METADATA_LIVE_PATH = "/host/vm/setupHaEnabledMetadata/live";
+    String RECONCILE_VM_HA_ENABLED_METADATA_LIVE_PATH = "/host/vm/reconcileHaEnabledMetadata/live";
+    String HA_NETWORK_GROUP_SYNC_PATH = "/ha/networkgroup/sync";
 
     String KVM_HOST_IPSET_ATTACH_NIC_PATH = "/network/ipset/attach";
     String KVM_HOST_IPSET_DETACH_NIC_PATH = "/network/ipset/detach";
