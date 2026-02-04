@@ -17,6 +17,7 @@ import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.header.vm.devices.VmDevicesSpec;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
@@ -403,6 +404,7 @@ public class VmInstanceSpec implements Serializable {
     private List<DiskAO> dataDisks;
     private List<DiskAO> deprecatedDisksSpecs = new ArrayList<>();
     private VmCustomSpecificationStruct vmCustomSpecification;
+    private VmDevicesSpec devicesSpec;
 
     public DiskAO getRootDisk() {
         return rootDisk;
@@ -434,6 +436,14 @@ public class VmInstanceSpec implements Serializable {
 
     public void setVmCustomSpecification(VmCustomSpecificationStruct vmCustomSpecification) {
         this.vmCustomSpecification = vmCustomSpecification;
+    }
+
+    public VmDevicesSpec getDevicesSpec() {
+        return devicesSpec;
+    }
+
+    public void setDevicesSpec(VmDevicesSpec devicesSpec) {
+        this.devicesSpec = devicesSpec;
     }
 
     public boolean isSkipIpAllocation() {

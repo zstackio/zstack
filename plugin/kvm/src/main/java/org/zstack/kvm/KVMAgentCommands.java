@@ -13,6 +13,7 @@ import org.zstack.header.log.NoLogging;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
+import org.zstack.kvm.tpm.TpmTO;
 import org.zstack.network.securitygroup.RuleTO;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.VmNicSecurityTO;
@@ -2068,6 +2069,7 @@ public class KVMAgentCommands {
         private List<VolumeTO> dataVolumes;
         private List<VolumeTO> cacheVolumes;
         private List<NicTO> nics;
+        private TpmTO tpm;
         private long timeout;
         private Map<String, Object> addons;
         private boolean instanceOfferingOnlineChange;
@@ -2543,6 +2545,14 @@ public class KVMAgentCommands {
 
         public void setNics(List<NicTO> nics) {
             this.nics = nics;
+        }
+
+        public TpmTO getTpm() {
+            return tpm;
+        }
+
+        public void setTpm(TpmTO tpm) {
+            this.tpm = tpm;
         }
 
         public long getTimeout() {
