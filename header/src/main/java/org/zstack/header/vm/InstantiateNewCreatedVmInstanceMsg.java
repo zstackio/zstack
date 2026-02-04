@@ -1,6 +1,7 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.vm.devices.VmDevicesSpec;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +48,7 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
     }
 
     private List<APICreateVmInstanceMsg.DiskAO> diskAOs;
+    private VmDevicesSpec devicesSpec;
 
     public List<APICreateVmInstanceMsg.DiskAO> getDiskAOs() {
         return diskAOs;
@@ -54,6 +56,14 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
 
     public void setDiskAOs(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
         this.diskAOs = diskAOs;
+    }
+
+    public VmDevicesSpec getDevicesSpec() {
+        return devicesSpec;
+    }
+
+    public void setDevicesSpec(VmDevicesSpec devicesSpec) {
+        this.devicesSpec = devicesSpec;
     }
 
     public List<String> getSoftAvoidHostUuids() {
@@ -197,4 +207,3 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
         this.disableL3Networks = disableL3Networks;
     }
 }
-

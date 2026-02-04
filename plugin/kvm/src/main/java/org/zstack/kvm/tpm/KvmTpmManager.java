@@ -1,10 +1,10 @@
 package org.zstack.kvm.tpm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.devices.VmTpmManager;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
-import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.thread.ChainTask;
@@ -63,9 +63,9 @@ public class KvmTpmManager extends AbstractService {
     @Autowired
     private ThreadFacade threadFacade;
     @Autowired
-    private DatabaseFacade databaseFacade;
-    @Autowired
     private ResourceConfigFacade resourceConfigFacade;
+    @Autowired
+    private VmTpmManager vmTpmManager;
 
     @Override
     public boolean start() {
@@ -197,11 +197,7 @@ public class KvmTpmManager extends AbstractService {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                TpmVO tpm = new TpmVO();
-                tpm.setUuid(context.tpmUuid);
-                tpm.setResourceName("TPM-for-VM-" + context.vmInstanceUuid);
-                tpm.setVmInstanceUuid(context.vmInstanceUuid);
-                databaseFacade.persist(tpm);
+                vmTpmManager.persistTpmVO(context.tpmUuid, context.vmInstanceUuid);
                 trigger.next();
             }
         }).done(new FlowDoneHandler(completion) {
@@ -312,10 +308,10 @@ public class KvmTpmManager extends AbstractService {
 
         final TpmVO tpm = Q.New(TpmVO.class)
                 .eq(TpmVO_.uuid, msg.getTpmUuid())
-                .findValue();
+                .find();
         final VmInstanceVO vm = Q.New(VmInstanceVO.class)
                 .eq(VmInstanceVO_.uuid, tpm.getVmInstanceUuid())
-                .findValue();
+                .find();
 
         view.setTpmInventory(TpmInventory.valueOf(tpm));
         view.setEdkVersion(VM_EDK.getTokenByResourceUuid(vm.getUuid(), EDK_RPM_TOKEN));

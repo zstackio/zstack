@@ -5,6 +5,7 @@ import org.zstack.header.vm.CreateVmInstanceMsg;
 import org.zstack.header.vm.InstantiateNewCreatedVmInstanceMsg;
 import org.zstack.header.vm.VmCreationStrategy;
 import org.zstack.header.vm.VmNicSpec;
+import org.zstack.header.vm.devices.VmDevicesSpec;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +32,7 @@ public class InstantiateVmFromNewCreatedStruct {
     private List<String> sshKeyPairUuids;
     private final List<String> candidatePrimaryStorageUuidsForRootVolume = new ArrayList<>();
     private final List<String> candidatePrimaryStorageUuidsForDataVolume = new ArrayList<>();
+    private VmDevicesSpec devicesSpec;
 
     public List<String> getCandidatePrimaryStorageUuidsForRootVolume() {
         return candidatePrimaryStorageUuidsForRootVolume;
@@ -62,6 +64,14 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public void setDiskAOs(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
         this.diskAOs = diskAOs;
+    }
+
+    public VmDevicesSpec getDevicesSpec() {
+        return devicesSpec;
+    }
+
+    public void setDevicesSpec(VmDevicesSpec devicesSpec) {
+        this.devicesSpec = devicesSpec;
     }
 
     public List<String> getRootVolumeSystemTags() {
@@ -142,6 +152,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
         struct.setDisableL3Networks(msg.getDisableL3Networks());
         struct.setDiskAOs(msg.getDiskAOs());
+        struct.setDevicesSpec(msg.getDevicesSpec());
         return struct;
     }
 
@@ -161,6 +172,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
         struct.setDisableL3Networks(msg.getDisableL3Networks());
         struct.setDiskAOs(msg.getDiskAOs());
+        struct.setDevicesSpec(msg.getDevicesSpec());
         return struct;
     }
 
