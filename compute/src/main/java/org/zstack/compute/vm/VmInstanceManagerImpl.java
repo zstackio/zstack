@@ -1217,7 +1217,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         pluginRgty.getExtensionList(VmInstanceCreateExtensionPoint.class).forEach(
-                                extensionPoint -> extensionPoint.afterPersistVmInstanceVO(finalVo));
+                                extensionPoint -> extensionPoint.afterPersistVmInstanceVO(finalVo, msg));
                         trigger.next();
                     }
 
@@ -1352,6 +1352,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         smsg.setDataDisks(msg.getDataDisks());
                         smsg.setDeprecatedDataVolumeSpecs(msg.getDeprecatedDataVolumeSpecs());
                         smsg.setVmCustomSpecification(msg.getVmCustomSpecification());
+                        smsg.setDevicesSpec(msg.getDevicesSpec());
                         bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, finalVo.getUuid());
                         bus.send(smsg, new CloudBusCallBack(smsg) {
                             @Override

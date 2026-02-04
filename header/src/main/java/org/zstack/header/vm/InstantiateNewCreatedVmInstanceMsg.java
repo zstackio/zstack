@@ -3,6 +3,7 @@ package org.zstack.header.vm;
 import org.zstack.header.configuration.VmCustomSpecificationStruct;
 import org.zstack.header.host.CpuArchitecture;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.vm.devices.VmDevicesSpec;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +60,7 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
     private DiskAO rootDisk;
     private List<DiskAO> dataDisks;
     private List<DiskAO> deprecatedDataVolumeSpecs;
+    private VmDevicesSpec devicesSpec;
 
     public DiskAO getRootDisk() {
         return rootDisk;
@@ -82,6 +84,14 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
 
     public void setDeprecatedDataVolumeSpecs(List<DiskAO> deprecatedDataVolumeSpecs) {
         this.deprecatedDataVolumeSpecs = deprecatedDataVolumeSpecs;
+    }
+
+    public VmDevicesSpec getDevicesSpec() {
+        return devicesSpec;
+    }
+
+    public void setDevicesSpec(VmDevicesSpec devicesSpec) {
+        this.devicesSpec = devicesSpec;
     }
 
     public List<String> getSoftAvoidHostUuids() {
