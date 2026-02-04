@@ -7,4 +7,18 @@
         <defaultValue>259200</defaultValue>
         <type>java.lang.Long</type>
     </config>
+    <config>
+        <category>longJob</category>
+        <name>progress.notification.enabled</name>
+        <description>enable long job progress notification to SNS for UI</description>
+        <defaultValue>true</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+    <config>
+        <category>longJob</category>
+        <name>progress.notification.timeliness</name>
+        <description>batch delay in seconds for long job progress notification (0 = no delay)</description>
+        <defaultValue>1</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>

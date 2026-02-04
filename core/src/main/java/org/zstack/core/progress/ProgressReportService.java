@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
@@ -376,7 +377,7 @@ public class ProgressReportService extends AbstractService implements Management
         vo.setManagementUuid(Platform.getManagementServerId());
         vo.setTaskName(ThreadContext.get(Constants.THREAD_CONTEXT_TASK_NAME));
 
-        Platform.getComponentLoader().getComponent(DatabaseFacade.class).persist(vo);
+        persistProgress(vo, TaskType.Task);
 
         // use content as the subtask name
         ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, vo.getContent());
@@ -411,6 +412,14 @@ public class ProgressReportService extends AbstractService implements Management
         }
 
         Platform.getComponentLoader().getComponent(DatabaseFacade.class).persist(vo);
+
+        for (ProgressUpdateExtensionPoint ext : Platform.getComponentLoader().getComponent(PluginRegistry.class).getExtensionList(ProgressUpdateExtensionPoint.class)) {
+            try {
+                ext.afterProgressPersisted(vo);
+            } catch (Throwable t) {
+                logger.warn("ProgressUpdateExtensionPoint.afterProgressPersisted failed", t);
+            }
+        }
     }
 
     private static void taskProgress(TaskType type, String fmt, Object... args) {

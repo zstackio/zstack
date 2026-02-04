@@ -13,4 +13,7 @@ public class LongJobGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig LONG_JOB_DEFAULT_TIMEOUT = new GlobalConfig(CATEGORY, "longJob.api.timeout");
+
+    public static GlobalConfig LONG_JOB_PROGRESS_NOTIFICATION_ENABLED = new GlobalConfig(CATEGORY, "progress.notification.enabled");
+    public static GlobalConfig LONG_JOB_NOTIFICATION_TIMELINESS = new GlobalConfig(CATEGORY, "progress.notification.timeliness");
 }
