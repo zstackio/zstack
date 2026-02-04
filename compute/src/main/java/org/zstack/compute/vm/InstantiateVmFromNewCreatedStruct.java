@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.zstack.header.configuration.VmCustomSpecificationStruct;
 import org.zstack.header.host.CpuArchitecture;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.devices.VmDevicesSpec;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,7 @@ public class InstantiateVmFromNewCreatedStruct {
     private List<DiskAO> dataDisks;
     private List<DiskAO> deprecatedDataVolumeSpecs = new ArrayList<>();
     private VmCustomSpecificationStruct vmCustomSpecification;
+    private VmDevicesSpec devicesSpec;
 
     public List<String> getCandidatePrimaryStorageUuidsForRootVolume() {
         return candidatePrimaryStorageUuidsForRootVolume;
@@ -85,6 +87,14 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public void setVmCustomSpecification(VmCustomSpecificationStruct vmCustomSpecification) {
         this.vmCustomSpecification = vmCustomSpecification;
+    }
+
+    public VmDevicesSpec getDevicesSpec() {
+        return devicesSpec;
+    }
+
+    public void setDevicesSpec(VmDevicesSpec devicesSpec) {
+        this.devicesSpec = devicesSpec;
     }
 
     public List<String> getRootVolumeSystemTags() {
@@ -167,6 +177,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setDataDisks(msg.getDataDisks());
         struct.setDeprecatedDataVolumeSpecs(msg.getDeprecatedDataVolumeSpecs());
         struct.setVmCustomSpecification(msg.getVmCustomSpecification());
+        struct.setDevicesSpec(msg.getDevicesSpec());
         return struct;
     }
 
@@ -187,6 +198,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setDataDisks(msg.getDataDisks());
         struct.setDeprecatedDataVolumeSpecs(msg.getDeprecatedDataVolumeSpecs());
         struct.setVmCustomSpecification(msg.getVmCustomSpecification());
+        struct.setDevicesSpec(msg.getDevicesSpec());
         return struct;
     }
 

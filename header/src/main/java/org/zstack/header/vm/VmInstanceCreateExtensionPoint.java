@@ -1,10 +1,12 @@
 package org.zstack.header.vm;
 
 /**
- * Created by lining on 2019/4/17.
+ * Only for UserVM.
+ *
+ * Appliance VM use {@link ApplianceVmInstanceCreateExtensionPoint}
  */
 public interface VmInstanceCreateExtensionPoint {
     void preCreateVmInstance(CreateVmInstanceMsg msg);
 
-    default void afterPersistVmInstanceVO(VmInstanceVO vo) {}
+    default void afterPersistVmInstanceVO(VmInstanceVO vo, CreateVmInstanceMsg msg) {}
 }
