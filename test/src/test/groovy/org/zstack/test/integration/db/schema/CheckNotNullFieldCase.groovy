@@ -3,8 +3,6 @@ package org.zstack.test.integration.db.schema
 import org.zstack.core.db.Q
 import org.zstack.header.vo.ResourceVO
 import org.zstack.header.vo.ResourceVO_
-import org.zstack.header.identity.AccountResourceRefVO
-import org.zstack.header.identity.AccountResourceRefVO_
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.VersionComparator
@@ -31,7 +29,11 @@ class CheckNotNullFieldCase extends SubCase{
 
     @Override
     void test() {
-        String upgradeSchemaDir = Paths.get("../conf/db/upgrade").toAbsolutePath().normalize().toString()
+        checkNotNullField(Paths.get("../conf/db/upgrade").toAbsolutePath().normalize().toString())
+        checkNotNullField(Paths.get("../conf/db/zsv").toAbsolutePath().normalize().toString())
+    }
+
+    static void checkNotNullField(String upgradeSchemaDir) {
         File dir = new File(upgradeSchemaDir)
         dir.eachFileRecurse { schema ->
             if (!schema.name.contains("__")){

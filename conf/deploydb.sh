@@ -42,6 +42,7 @@ mkdir -p $flyway_sql
 
 cp $base/db/V0.6__schema.sql $flyway_sql
 cp $base/db/upgrade/* $flyway_sql
+cp $base/db/zsv/* $flyway_sql
 
 url="jdbc:mysql://$host:$port/zstack"
 
