@@ -42,6 +42,7 @@ mkdir -p ${flyway_sql}
 eval "rm -f ${flyway_sql}/*"
 cp ${base}/../conf/db/V0.6__schema.sql ${flyway_sql}
 cp ${base}/../conf/db/upgrade/* ${flyway_sql}
+cp ${base}/../conf/db/zsv/* ${flyway_sql}
 
 if [[ ! -n $host ]] || [[ ! -n $port ]];then
   url="jdbc:mysql://localhost:3306/zstack"
