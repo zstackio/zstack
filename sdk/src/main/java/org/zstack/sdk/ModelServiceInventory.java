@@ -140,6 +140,14 @@ public class ModelServiceInventory  {
         return this.condaVersion;
     }
 
+    public java.lang.String version;
+    public void setVersion(java.lang.String version) {
+        this.version = version;
+    }
+    public java.lang.String getVersion() {
+        return this.version;
+    }
+
     public java.lang.String startCommand;
     public void setStartCommand(java.lang.String startCommand) {
         this.startCommand = startCommand;

@@ -119,3 +119,9 @@ CALL ADD_COLUMN('MdevDeviceSpecVO', 'allocatorStrategy', 'varchar(32)', 1, NULL)
 
 UPDATE `zstack`.`GpuDeviceSpecVO` SET `allocatorStrategy` = 'FollowGlobal' WHERE `allocatorStrategy` IS NULL;
 UPDATE `zstack`.`MdevDeviceSpecVO` SET `allocatorStrategy` = 'FollowGlobal' WHERE `allocatorStrategy` IS NULL;
+
+-- Add version column to ModelServiceVO (entity field was added without schema migration)
+CALL ADD_COLUMN('ModelServiceVO', 'version', 'VARCHAR(255)', 1, NULL);
+
+-- Add packageVersion column to ApplicationDevelopmentServiceVO (ZSTAC-81309)
+CALL ADD_COLUMN('ApplicationDevelopmentServiceVO', 'packageVersion', 'VARCHAR(255)', 1, NULL);
