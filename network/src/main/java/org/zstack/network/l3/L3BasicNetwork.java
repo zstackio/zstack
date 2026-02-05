@@ -319,6 +319,7 @@ public class L3BasicNetwork implements L3Network {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        SQL.New(UsedIpVO.class).eq(UsedIpVO_.ipRangeUuid, iprvo.getUuid()).delete();
                         dbf.remove(iprvo);
                         IpRangeHelper.updateL3NetworkIpversion(iprvo);
 
@@ -789,6 +790,10 @@ public class L3BasicNetwork implements L3Network {
         }
 
         if (!self.enableIpAddressAllocation()) {
+            inRange = true;
+        }
+
+        if (L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class)) {
             inRange = true;
         }
 

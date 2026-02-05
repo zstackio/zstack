@@ -66,6 +66,15 @@ doc {
 					optional true
 					since "0.6"
 				}
+				column {
+					name "dnsAddresses"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "List"
+					optional true
+					since "5.5.6"
+				}
 			}
         }
 

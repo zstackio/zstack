@@ -30,6 +30,7 @@ public class UsedIpInventory implements Serializable {
     private Integer ipVersion;
     private String ip;
     private String netmask;
+    private Integer prefixLen;
     private String gateway;
     private String usedFor;
     @APINoSee
@@ -52,6 +53,7 @@ public class UsedIpInventory implements Serializable {
         inv.setL3NetworkUuid(vo.getL3NetworkUuid());
         inv.setGateway(vo.getGateway());
         inv.setNetmask(vo.getNetmask());
+        inv.setPrefixLen(vo.getPrefixLen());
         inv.setUsedFor(vo.getUsedFor());
         inv.setVmNicUuid(vo.getVmNicUuid());
         inv.setMetaData(vo.getMetaData());
@@ -137,6 +139,14 @@ public class UsedIpInventory implements Serializable {
 
     public void setNetmask(String netmask) {
         this.netmask = netmask;
+    }
+
+    public Integer getPrefixLen() {
+        return prefixLen;
+    }
+
+    public void setPrefixLen(Integer prefixLen) {
+        this.prefixLen = prefixLen;
     }
 
     public String getGateway() {

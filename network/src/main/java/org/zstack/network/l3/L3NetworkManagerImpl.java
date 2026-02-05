@@ -383,7 +383,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     ts = IpRangeHelper.stripNetworkAndBroadcastAddress(ts);
                     calcElementTotalIp(ts, ret);
 
-                    sql = "select count(distinct uip.ip), uip.l3NetworkUuid, uip.ipVersion from UsedIpVO uip where uip.l3NetworkUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by uip.l3NetworkUuid, uip.ipVersion";
+                    sql = "select count(distinct uip.ip), uip.l3NetworkUuid, uip.ipVersion from UsedIpVO uip where uip.l3NetworkUuid in (:uuids) and uip.ipRangeUuid is not null and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by uip.l3NetworkUuid, uip.ipVersion";
                     TypedQuery<Tuple> cq = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     cq.setParameter("uuids", msg.getL3NetworkUuids());
                     cq.setParameter("notAccountMetaData", notAccountMetaDatas);
@@ -399,7 +399,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     ts = IpRangeHelper.stripNetworkAndBroadcastAddress(ts);
                     calcElementTotalIp(ts, ret);
 
-                    sql = "select count(distinct uip.ip), zone.uuid, uip.ipVersion from UsedIpVO uip, L3NetworkVO l3, ZoneVO zone where uip.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by zone.uuid, uip.ipVersion";
+                    sql = "select count(distinct uip.ip), zone.uuid, uip.ipVersion from UsedIpVO uip, L3NetworkVO l3, ZoneVO zone where uip.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids) and uip.ipRangeUuid is not null and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by zone.uuid, uip.ipVersion";
                     TypedQuery<Tuple> cq = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     cq.setParameter("uuids", msg.getZoneUuids());
                     cq.setParameter("notAccountMetaData", notAccountMetaDatas);
@@ -723,6 +723,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             vo.setL3NetworkUuid(ipRange.getL3NetworkUuid());
             vo.setNetmask(ipRange.getNetmask());
             vo.setGateway(ipRange.getGateway());
+            vo.setPrefixLen(ipRange.getPrefixLen());
             vo.setIpVersion(IPv6Constants.IPv6);
             vo = dbf.persistAndRefresh(vo);
             return UsedIpInventory.valueOf(vo);

@@ -19,6 +19,7 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
+import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.network.service.vip.*;
 import org.zstack.utils.VipUseForList;
 import org.zstack.utils.network.IPv6Constants;
@@ -147,6 +148,17 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         } catch (CloudRuntimeException e) {
             throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10011, e.getMessage()));
         }
+
+        // Check if the NIC's IP is outside L3 CIDR range (ipRangeUuid is null)
+        VmNicVO nicVO = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+        if (nicVO != null && nicVO.getUsedIpUuid() != null) {
+            UsedIpVO usedIpVO = dbf.findByUuid(nicVO.getUsedIpUuid(), UsedIpVO.class);
+            if (usedIpVO != null && usedIpVO.getIpRangeUuid() == null) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10025,
+                        "cannot bind port forwarding rule to IP address[%s] which is outside L3 network CIDR range",
+                        usedIpVO.getIp()));
+            }
+        }
     }
 
     private boolean rangeOverlap(int s1, int e1, int s2, int e2) {
@@ -243,6 +255,17 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
             checkIfAnotherVip(msg.getVipUuid(), msg.getVmNicUuid());
             checkForConflictsWithOtherRules(msg.getVmNicUuid(), msg.getPrivatePortStart(), msg.getPrivatePortEnd(),
                     msg.getAllowedCidr(), PortForwardingProtocolType.valueOf(msg.getProtocolType()));
+
+            // Check if the NIC's IP is outside L3 CIDR range (ipRangeUuid is null)
+            VmNicVO nicVO = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+            if (nicVO != null && nicVO.getUsedIpUuid() != null) {
+                UsedIpVO usedIpVO = dbf.findByUuid(nicVO.getUsedIpUuid(), UsedIpVO.class);
+                if (usedIpVO != null && usedIpVO.getIpRangeUuid() == null) {
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10025,
+                            "cannot bind port forwarding rule to IP address[%s] which is outside L3 network CIDR range",
+                            usedIpVO.getIp()));
+                }
+            }
         }
 
         if(msg.getAllowedCidr() != null){

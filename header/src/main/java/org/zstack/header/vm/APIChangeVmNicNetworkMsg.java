@@ -33,6 +33,10 @@ public class APIChangeVmNicNetworkMsg extends APIMessage implements VmInstanceMe
 
     private String staticIp;
 
+
+    @APIParam(required = false)
+    private List<String> dnsAddresses;
+
     public String getVmNicUuid() {
         return vmNicUuid;
     }
@@ -57,6 +61,7 @@ public class APIChangeVmNicNetworkMsg extends APIMessage implements VmInstanceMe
         this.requiredIpMap = requiredIpMap;
     }
 
+
     public static APIChangeVmNicNetworkMsg __example__() {
         APIChangeVmNicNetworkMsg msg = new APIChangeVmNicNetworkMsg();
         msg.vmNicUuid = uuid();
@@ -79,5 +84,13 @@ public class APIChangeVmNicNetworkMsg extends APIMessage implements VmInstanceMe
 
     public void setStaticIp(String staticIp) {
         this.staticIp = staticIp;
+    }
+
+    public List<String> getDnsAddresses() {
+        return dnsAddresses;
+    }
+
+    public void setDnsAddresses(List<String> dnsAddresses) {
+        this.dnsAddresses = dnsAddresses;
     }
 }

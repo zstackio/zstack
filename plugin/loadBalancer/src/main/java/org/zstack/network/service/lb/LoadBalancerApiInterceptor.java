@@ -642,6 +642,30 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("uuid", msg.getListenerUuid());
         msg.setLoadBalancerUuid(q.getSingleResult());
+
+        // When the load balancer has a VIP configured, the NIC's corresponding IP must be within L3 IP range
+        LoadBalancerVO lbVO = dbf.findByUuid(msg.getLoadBalancerUuid(), LoadBalancerVO.class);
+        for (String nicUuid : msg.getVmNicUuids()) {
+            VmNicVO nicVO = dbf.findByUuid(nicUuid, VmNicVO.class);
+            if (nicVO == null) {
+                continue;
+            }
+            for (UsedIpVO usedIpVO : nicVO.getUsedIps()) {
+                if (usedIpVO.getIpRangeUuid() != null) {
+                    continue;
+                }
+                if (lbVO.getVipUuid() != null && usedIpVO.getIpVersion() == IPv6Constants.IPv4) {
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10172,
+                            "cannot add VM NIC[uuid:%s] with IPv4 address[%s] which is outside L3 network CIDR range to load balancer",
+                            nicUuid, usedIpVO.getIp()));
+                }
+                if (lbVO.getIpv6VipUuid() != null && usedIpVO.getIpVersion() == IPv6Constants.IPv6) {
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10173,
+                            "cannot add VM NIC[uuid:%s] with IPv6 address[%s] which is outside L3 network CIDR range to load balancer",
+                            nicUuid, usedIpVO.getIp()));
+                }
+            }
+        }
     }
 
     private boolean hasTag(APIMessage msg, PatternedSystemTag tag) {
@@ -1561,6 +1585,31 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                         throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10138, "could not add vm nic [uuid:%s] to server group" +
                                         " [uuid:%s] because listener [uuid:%s] attached this server group already the nic to be added",
                                 vmNicUuids, msg.getServerGroupUuid(), listenerVO.getUuid()));
+                    }
+                }
+            }
+
+            // When server group has an IP version, the vmnic's corresponding IP must be within L3 IP range
+            if (groupVO.getIpVersion() != null) {
+                for (String nicUuid : vmNicUuids) {
+                    VmNicVO nicVO = dbf.findByUuid(nicUuid, VmNicVO.class);
+                    if (nicVO == null) {
+                        continue;
+                    }
+                    for (UsedIpVO usedIpVO : nicVO.getUsedIps()) {
+                        if (usedIpVO.getIpRangeUuid() != null) {
+                            continue;
+                        }
+                        if (groupVO.getIpVersion() == IPv6Constants.IPv4 && usedIpVO.getIpVersion() == IPv6Constants.IPv4) {
+                            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10174,
+                                    "cannot add VM NIC[uuid:%s] with IPv4 address[%s] which is outside L3 network CIDR range to server group[uuid:%s]",
+                                    nicUuid, usedIpVO.getIp(), msg.getServerGroupUuid()));
+                        }
+                        if (groupVO.getIpVersion() == IPv6Constants.IPv6 && usedIpVO.getIpVersion() == IPv6Constants.IPv6) {
+                            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10175,
+                                    "cannot add VM NIC[uuid:%s] with IPv6 address[%s] which is outside L3 network CIDR range to server group[uuid:%s]",
+                                    nicUuid, usedIpVO.getIp(), msg.getServerGroupUuid()));
+                        }
                     }
                 }
             }
