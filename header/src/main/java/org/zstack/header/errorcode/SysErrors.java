@@ -26,6 +26,7 @@ public enum SysErrors {
 
     // ZSphere only
     MULTIPLE_REASONS(1090),
+    NOT_SUPPORTED(1091),
     ;
 
     private String code;

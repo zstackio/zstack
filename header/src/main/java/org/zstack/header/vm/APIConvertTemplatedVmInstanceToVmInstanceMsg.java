@@ -21,6 +21,9 @@ public class APIConvertTemplatedVmInstanceToVmInstanceMsg extends APIMessage imp
     @APIParam(maxLength = 255, required = true)
     private String name;
 
+    @APIParam(required = false)
+    private Boolean resetTpm;
+
     @APINoSee
     private String vmInstanceUuid;
 
@@ -38,6 +41,14 @@ public class APIConvertTemplatedVmInstanceToVmInstanceMsg extends APIMessage imp
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Boolean getResetTpm() {
+        return resetTpm;
+    }
+
+    public void setResetTpm(Boolean resetTpm) {
+        this.resetTpm = resetTpm;
     }
 
     @Override

@@ -37,6 +37,29 @@ public interface RBACDescription {
         return new RBAC.AttributeSupportResourceBuilder();
     }
 
+    /**
+     * If you want to contribute a resource to a resource ensemble, you can use this method:
+     *
+     * Ex: (Make TpmVO as a child resource of VmInstanceVO)
+     * <blockquote><pre>
+     * resourceEnsembleContributorBuilder()
+     *     .resource(TpmVO.class)
+     *     .contributeTo(VmInstanceVO.class)
+     *     .build();
+     * </pre></blockquote>
+     *
+     * You must set @EntityGraph.Neighbour on VmInstanceVO.class
+     * <blockquote><pre>
+     * \@EntityGraph(
+     *         friends = {
+     *                 \@EntityGraph.Neighbour(type = TpmVO.class, myField = "uuid", targetField = "vmInstanceUuid"),
+     *         }
+     * )
+     * </pre></blockquote>
+     *
+     * or use {@link org.zstack.header.identity.rbac.RBAC.ResourceEnsembleContributorBuilder#resourceWithCustomizeFindingMethods(java.lang.Class, java.util.function.Consumer, java.util.function.Consumer)}
+     * to specify how to find the resource by SQL.
+     */
     default RBAC.ResourceEnsembleContributorBuilder resourceEnsembleContributorBuilder() {
         return new RBAC.ResourceEnsembleContributorBuilder();
     }
