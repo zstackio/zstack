@@ -300,8 +300,8 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
 
                 /* both ipv4 and ipv6 has been deleted or deleting, then delete nic */
-                if ((ip4 == null || uuids.contains(ip4.getIpRangeUuid()))
-                        && (ip6 == null || uuids.contains(ip6.getIpRangeUuid()))) {
+                if ((ip4 == null || (ip4.getIpRangeUuid() != null && uuids.contains(ip4.getIpRangeUuid())))
+                        && (ip6 == null || (ip6.getIpRangeUuid() != null && uuids.contains(ip6.getIpRangeUuid())))) {
                     DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
                     msg.setVmInstanceUuid(nic.getVmInstanceUuid());
                     msg.setVmNicUuid(nic.getUuid());
@@ -309,10 +309,10 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                     msgs.add(msg);
                 } else {
                     boolean deleteIp4 = false, hasIp6 = false;
-                    if (ip4 != null && uuids.contains(ip4.getIpRangeUuid())) {
+                    if (ip4 != null && ip4.getIpRangeUuid() != null && uuids.contains(ip4.getIpRangeUuid())) {
                         deleteIp4 = true;
                     }
-                    if (ip6 != null && !uuids.contains(ip6.getIpRangeUuid())) {
+                    if (ip6 != null && (ip6.getIpRangeUuid() == null || !uuids.contains(ip6.getIpRangeUuid()))) {
                         hasIp6 = true;
                     }
 

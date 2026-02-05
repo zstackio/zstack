@@ -34,6 +34,9 @@ public class ChangeVmNicNetworkAction extends AbstractAction {
     @Param(required = false)
     public java.lang.String staticIp;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List dnsAddresses;
+
     @Param(required = false)
     public java.util.List systemTags;
 

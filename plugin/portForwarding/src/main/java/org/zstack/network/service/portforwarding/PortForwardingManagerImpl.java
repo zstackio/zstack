@@ -37,6 +37,7 @@ import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
@@ -365,7 +366,16 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                 /* TODO: only ipv4 portforwarding is supported */
                 List<VmNicInventory> nicInvs = VmNicInventory.valueOf(nics.stream().filter(nic -> !usedVm.contains(nic.getVmInstanceUuid())).collect(Collectors.toList()));
-                return l3Mgr.filterVmNicByIpVersion(nicInvs, IPv6Constants.IPv4);
+                List<VmNicInventory> filtered = l3Mgr.filterVmNicByIpVersion(nicInvs, IPv6Constants.IPv4);
+
+                // Filter out NICs whose primary IP is outside L3 CIDR
+                filtered = filtered.stream().filter(nic -> {
+                    String nicIp = nic.getIp();
+                    String nicL3 = nic.getL3NetworkUuid();
+                    return nicIp == null || IpRangeHelper.isIpInL3NetworkCidr(nicIp, nicL3);
+                }).collect(Collectors.toList());
+
+                return filtered;
             }
         }.execute();
     }

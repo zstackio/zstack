@@ -24,7 +24,7 @@ public class UsedIpVO {
     private String uuid;
 
     @Column
-    @ForeignKey(parentEntityClass = IpRangeEO.class, onDeleteAction = ReferenceOption.CASCADE)
+    @ForeignKey(parentEntityClass = IpRangeEO.class, onDeleteAction = ReferenceOption.SET_NULL)
     private String ipRangeUuid;
 
     @Column
@@ -47,6 +47,9 @@ public class UsedIpVO {
 
     @Column
     private String netmask;
+
+    @Column
+    private Integer prefixLen;
 
     @Column
     @Index
@@ -145,6 +148,14 @@ public class UsedIpVO {
 
     public void setNetmask(String netmask) {
         this.netmask = netmask;
+    }
+
+    public Integer getPrefixLen() {
+        return prefixLen;
+    }
+
+    public void setPrefixLen(Integer prefixLen) {
+        this.prefixLen = prefixLen;
     }
 
     public String getUsedFor() {

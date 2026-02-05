@@ -7,6 +7,8 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
 /**
  * Created by frank on 2/26/2016.
  */
@@ -34,6 +36,8 @@ public class APISetVmStaticIpMsg extends APIMessage implements VmInstanceMessage
     private String ipv6Gateway;
     @APIParam(required = false)
     private String ipv6Prefix;
+    @APIParam(required = false)
+    private List<String> dnsAddresses;
 
     public String getIp() {
         return ip;
@@ -98,6 +102,14 @@ public class APISetVmStaticIpMsg extends APIMessage implements VmInstanceMessage
 
     public void setIpv6Prefix(String ipv6Prefix) {
         this.ipv6Prefix = ipv6Prefix;
+    }
+
+    public List<String> getDnsAddresses() {
+        return dnsAddresses;
+    }
+
+    public void setDnsAddresses(List<String> dnsAddresses) {
+        this.dnsAddresses = dnsAddresses;
     }
 
     public static APISetVmStaticIpMsg __example__() {

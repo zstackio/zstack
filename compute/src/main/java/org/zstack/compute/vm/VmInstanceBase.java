@@ -1046,7 +1046,46 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void changeVmIp(final String l3Uuid, final Map<Integer, String> staticIpMap, final Completion completion) {
+    static class IpOverrideInfo {
+        private String netmask;
+        private String gateway;
+        private String ipv6Gateway;
+        private String ipv6Prefix;
+
+        public String getNetmask() {
+            return netmask;
+        }
+
+        public void setNetmask(String netmask) {
+            this.netmask = netmask;
+        }
+
+        public String getGateway() {
+            return gateway;
+        }
+
+        public void setGateway(String gateway) {
+            this.gateway = gateway;
+        }
+
+        public String getIpv6Gateway() {
+            return ipv6Gateway;
+        }
+
+        public void setIpv6Gateway(String ipv6Gateway) {
+            this.ipv6Gateway = ipv6Gateway;
+        }
+
+        public String getIpv6Prefix() {
+            return ipv6Prefix;
+        }
+
+        public void setIpv6Prefix(String ipv6Prefix) {
+            this.ipv6Prefix = ipv6Prefix;
+        }
+    }
+
+    private void changeVmIp(final String l3Uuid, final Map<Integer, String> staticIpMap, final IpOverrideInfo overrideInfo, final Completion completion) {
         final VmNicVO targetNic = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
             @Override
             public VmNicVO call(VmNicVO arg) {
@@ -1105,6 +1144,15 @@ public class VmInstanceBase extends AbstractVmInstance {
                             amsg.setL3NetworkUuid(l3Uuid);
                             amsg.setRequiredIp(entry.getValue());
                             amsg.setIpVersion(entry.getKey());
+                            if (overrideInfo != null) {
+                                if (entry.getKey() == IPv6Constants.IPv4) {
+                                    amsg.setNetmask(overrideInfo.getNetmask());
+                                    amsg.setGateway(overrideInfo.getGateway());
+                                } else if (entry.getKey() == IPv6Constants.IPv6) {
+                                    amsg.setIpv6Gateway(overrideInfo.getIpv6Gateway());
+                                    amsg.setIpv6Prefix(overrideInfo.getIpv6Prefix());
+                                }
+                            }
                             bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, l3Uuid);
                             bus.send(amsg, new CloudBusCallBack(trigger) {
                                 @Override
@@ -3481,6 +3529,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         cmsg.setNetmask(msg.getNetmask());
         cmsg.setIpv6Gateway(msg.getIpv6Gateway());
         cmsg.setIpv6Prefix(msg.getIpv6Prefix());
+        cmsg.setDnsAddresses(msg.getDnsAddresses());
         bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, cmsg.getVmInstanceUuid());
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
@@ -3507,7 +3556,17 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(final SyncTaskChain chain) {
 
                 L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
-                if (!l3NetworkVO.enableIpAddressAllocation()) {
+
+                List<String> staticIpList = new ArrayList<>();
+                if (msg.getIp() != null) {
+                    staticIpList.add(msg.getIp());
+                }
+                if (msg.getIp6() != null) {
+                    staticIpList.add(msg.getIp6());
+                }
+
+                if (!l3NetworkVO.enableIpAddressAllocation()
+                        || allStaticIpsOutsideRange(msg.getL3NetworkUuid(), staticIpList)) {
                     setNoIpamStaticIp(msg, new Completion(reply) {
                         @Override
                         public void success() {
@@ -3652,6 +3711,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
+                        // Set DNS addresses if provided
+                        if (msg.getDnsAddresses() != null) {
+                            new StaticIpOperator().setStaticDns(self.getUuid(), msg.getL3NetworkUuid(), msg.getDnsAddresses());
+                        }
+
                         completion.success();
                     }
                 });
@@ -3680,7 +3744,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             staticIpMap.put(IPv6Constants.IPv6, msg.getIp6());
         }
 
-        changeVmIp(msg.getL3NetworkUuid(), staticIpMap, new Completion(msg, completion) {
+        IpOverrideInfo overrideInfo = new IpOverrideInfo();
+        overrideInfo.setNetmask(msg.getNetmask());
+        overrideInfo.setGateway(msg.getGateway());
+        overrideInfo.setIpv6Gateway(msg.getIpv6Gateway());
+        overrideInfo.setIpv6Prefix(msg.getIpv6Prefix());
+
+        changeVmIp(msg.getL3NetworkUuid(), staticIpMap, overrideInfo, new Completion(msg, completion) {
             @Override
             public void success() {
                 if (msg.getIp() != null) {
@@ -3690,6 +3760,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                     new StaticIpOperator().setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp6());
                 }
                 new StaticIpOperator().setIpChange(self.getUuid(), msg.getL3NetworkUuid());
+                // Set DNS addresses if provided
+                if (msg.getDnsAddresses() != null) {
+                    new StaticIpOperator().setStaticDns(self.getUuid(), msg.getL3NetworkUuid(), msg.getDnsAddresses());
+                }
                 completion.success();
             }
 
@@ -5437,6 +5511,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             private void removeStaticIp() {
                 for (UsedIpInventory ip : nic.getUsedIps()) {
                     new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), ip.getL3NetworkUuid());
+                    new StaticIpOperator().deleteStaticDnsByVmUuidAndL3Uuid(self.getUuid(), ip.getL3NetworkUuid());
                 }
             }
 
@@ -6195,6 +6270,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void success(VmNicInventory returnValue) {
                 String originalL3Uuid = nic.getL3NetworkUuid();
                 new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), originalL3Uuid);
+                new StaticIpOperator().deleteStaticDnsByVmUuidAndL3Uuid(self.getUuid(), originalL3Uuid);
                 reply.setInventory(returnValue);
                 bus.reply(msg, reply);
             }
@@ -6225,6 +6301,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         cmsg.setVmInstanceUuid(msg.getVmInstanceUuid());
         cmsg.setRequiredIpMap(msg.getRequiredIpMap());
         cmsg.setSystemTags(msg.getSystemTags());
+        cmsg.setDnsAddresses(msg.getDnsAddresses());
         bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, cmsg.getVmInstanceUuid());
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
@@ -6240,6 +6317,20 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
+    private boolean allStaticIpsOutsideRange(String l3Uuid, List<String> ips) {
+        if (ips == null || ips.isEmpty()) {
+            return false;
+        }
+
+        for (String ip : ips) {
+            if (new StaticIpOperator().getIpRangeUuid(l3Uuid, ip) != null) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private void changeVmNicNetwork(ChangeVmNicNetworkMsg msg, VmNicInventory nic, L3NetworkInventory destL3, final ReturnValueCompletion<VmNicInventory> completion) {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
@@ -6252,6 +6343,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(final SyncTaskChain chain) {
                 class SetStaticIp {
                     private boolean isSet = false;
+                    private boolean isDnsSet = false;
                     Map<String, List<String>> staticIpMap = null;
 
                     void set() {
@@ -6272,17 +6364,28 @@ public class VmInstanceBase extends AbstractVmInstance {
                         isSet = true;
                     }
 
+                    void setDns() {
+                        if (msg.getDnsAddresses() != null) {
+                            new StaticIpOperator().setStaticDns(self.getUuid(), msg.getDestL3NetworkUuid(), msg.getDnsAddresses());
+                            isDnsSet = true;
+                        }
+                    }
+
                     void rollback() {
                         if (isSet) {
                             for (Map.Entry<String, List<String>> e : staticIpMap.entrySet()) {
                                 new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), e.getKey());
                             }
                         }
+                        if (isDnsSet) {
+                            new StaticIpOperator().deleteStaticDnsByVmUuidAndL3Uuid(self.getUuid(), msg.getDestL3NetworkUuid());
+                        }
                     }
                 }
 
                 final SetStaticIp setStaticIp = new SetStaticIp();
                 setStaticIp.set();
+                setStaticIp.setDns();
                 Defer.guard(new Runnable() {
                     @Override
                     public void run() {
@@ -6316,11 +6419,23 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        if (!destL3.enableIpAddressAllocation()) {
+                        if (!destL3.enableIpAddressAllocation()
+                                || allStaticIpsOutsideRange(destL3.getUuid(),
+                                    msg.getRequiredIpMap() != null ? msg.getRequiredIpMap().get(destL3.getUuid()) : null)) {
                             trigger.next();
                             return;
                         }
-                        allocateIp(destL3, nic, new ReturnValueCompletion<List<UsedIpInventory>>(chain) {
+                        IpOverrideInfo nicOverrideInfo = null;
+                        Map<String, NicIpAddressInfo> nicNetworkInfo = new StaticIpOperator().getNicNetworkInfoBySystemTag(msg.getSystemTags());
+                        NicIpAddressInfo nicIpInfo = nicNetworkInfo.get(msg.getDestL3NetworkUuid());
+                        if (nicIpInfo != null) {
+                            nicOverrideInfo = new IpOverrideInfo();
+                            nicOverrideInfo.setNetmask(nicIpInfo.ipv4Netmask);
+                            nicOverrideInfo.setGateway(nicIpInfo.ipv4Gateway);
+                            nicOverrideInfo.setIpv6Gateway(nicIpInfo.ipv6Gateway);
+                            nicOverrideInfo.setIpv6Prefix(nicIpInfo.ipv6Prefix);
+                        }
+                        allocateIp(destL3, nic, nicOverrideInfo, new ReturnValueCompletion<List<UsedIpInventory>>(chain) {
                             @Override
                             public void success(List<UsedIpInventory> returnValue) {
                                 data.put(VmInstanceConstant.Params.VmAllocateNicFlow_ips.toString(), returnValue);
@@ -6370,7 +6485,9 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        if (destL3.enableIpAddressAllocation()) {
+                        if (destL3.enableIpAddressAllocation()
+                                && !allStaticIpsOutsideRange(destL3.getUuid(),
+                                    msg.getRequiredIpMap() != null ? msg.getRequiredIpMap().get(destL3.getUuid()) : null)) {
                             trigger.next();
                             return;
                         }
@@ -6445,7 +6562,9 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        if (!destL3.enableIpAddressAllocation()) {
+                        if (!destL3.enableIpAddressAllocation()
+                                || allStaticIpsOutsideRange(destL3.getUuid(),
+                                    msg.getRequiredIpMap() != null ? msg.getRequiredIpMap().get(destL3.getUuid()) : null)) {
                             trigger.next();
                             return;
                         }
@@ -6617,7 +6736,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void allocateIp(L3NetworkInventory l3, VmNicInventory nic,final ReturnValueCompletion<List<UsedIpInventory>> completion) {
+    private void allocateIp(L3NetworkInventory l3, VmNicInventory nic, final IpOverrideInfo overrideInfo, final ReturnValueCompletion<List<UsedIpInventory>> completion) {
         L3NetworkInventory nw = l3;
         Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(getSelf().getUuid());
         List<Integer> ipVersions = nw.getIpVersions();
@@ -6641,6 +6760,15 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
             }
             msg.setIpVersion(ipversion);
+            if (overrideInfo != null) {
+                if (ipversion == IPv6Constants.IPv4) {
+                    msg.setNetmask(overrideInfo.getNetmask());
+                    msg.setGateway(overrideInfo.getGateway());
+                } else if (ipversion == IPv6Constants.IPv6) {
+                    msg.setIpv6Gateway(overrideInfo.getIpv6Gateway());
+                    msg.setIpv6Prefix(overrideInfo.getIpv6Prefix());
+                }
+            }
             bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nw.getUuid());
             msgs.add(msg);
         }

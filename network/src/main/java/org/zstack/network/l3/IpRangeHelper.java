@@ -264,6 +264,95 @@ public class IpRangeHelper {
         return l3NetworkVO.enableIpAddressAllocation();
     }
 
+    /**
+     * Check if an IP address is within any L3 network's CIDR (from NormalIpRange).
+     */
+    public static boolean isIpInL3NetworkCidr(String ip, String l3Uuid) {
+        if (ip == null || l3Uuid == null) {
+            return false;
+        }
+
+        if (IPv6NetworkUtils.isIpv6Address(ip)) {
+            List<NormalIpRangeVO> ranges = Q.New(NormalIpRangeVO.class)
+                    .eq(NormalIpRangeVO_.l3NetworkUuid, l3Uuid)
+                    .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
+            for (NormalIpRangeVO ipr : ranges) {
+                String cidr = ipr.getNetworkCidr();
+                if (cidr != null && IPv6NetworkUtils.isIpv6InCidrRange(ip, cidr)) {
+                    return true;
+                }
+            }
+        } else if (NetworkUtils.isIpv4Address(ip)) {
+            List<NormalIpRangeVO> ranges = Q.New(NormalIpRangeVO.class)
+                    .eq(NormalIpRangeVO_.l3NetworkUuid, l3Uuid)
+                    .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).list();
+            for (NormalIpRangeVO ipr : ranges) {
+                String cidr = ipr.getNetworkCidr();
+                if (cidr != null && NetworkUtils.isIpv4InCidr(ip, cidr)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if an IP address is outside all L3 network CIDRs.
+     */
+    public static boolean isIpOutsideL3NetworkCidr(String ip, String l3Uuid) {
+        return !isIpInL3NetworkCidr(ip, l3Uuid);
+    }
+
+    /**
+     * Find a NormalIpRangeVO whose CIDR contains the given IP.
+     * First tries exact range match (startIp-endIp), then falls back to CIDR match.
+     */
+    public static NormalIpRangeVO findIpRangeByCidr(String ip, List<NormalIpRangeVO> ranges) {
+        if (ip == null || ranges == null || ranges.isEmpty()) {
+            return null;
+        }
+
+        boolean isIpv4 = NetworkUtils.isIpv4Address(ip);
+        boolean isIpv6 = IPv6NetworkUtils.isIpv6Address(ip);
+        int targetVersion = isIpv4 ? IPv6Constants.IPv4 : (isIpv6 ? IPv6Constants.IPv6 : -1);
+        if (targetVersion == -1) {
+            return null;
+        }
+
+        // First try exact range match
+        for (NormalIpRangeVO ipr : ranges) {
+            if (ipr.getIpVersion() != targetVersion) {
+                continue;
+            }
+            if (isIpv4 && NetworkUtils.isInRange(ip, ipr.getStartIp(), ipr.getEndIp())) {
+                return ipr;
+            }
+            if (isIpv6 && IPv6NetworkUtils.isIpv6InRange(ip, ipr.getStartIp(), ipr.getEndIp())) {
+                return ipr;
+            }
+        }
+
+        // Fallback to CIDR match
+        for (NormalIpRangeVO ipr : ranges) {
+            if (ipr.getIpVersion() != targetVersion) {
+                continue;
+            }
+            String cidr = ipr.getNetworkCidr();
+            if (cidr == null) {
+                continue;
+            }
+            if (isIpv4 && NetworkUtils.isIpv4InCidr(ip, cidr)) {
+                return ipr;
+            }
+            if (isIpv6 && IPv6NetworkUtils.isIpv6InCidrRange(ip, cidr)) {
+                return ipr;
+            }
+        }
+
+        return null;
+    }
+
     public static IpRangeVO fromIpRangeInventory(IpRangeInventory ipr, String accountUuid) {
         NormalIpRangeVO vo = new NormalIpRangeVO();
         vo.setUuid(ipr.getUuid() == null ? Platform.getUuid() : ipr.getUuid());

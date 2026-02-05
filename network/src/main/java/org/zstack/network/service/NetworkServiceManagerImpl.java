@@ -25,9 +25,12 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.header.network.service.NetworkServiceExtensionPoint.NetworkServiceExtensionPosition;
 import org.zstack.header.vm.*;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.query.QueryFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.util.*;
 
@@ -481,6 +484,36 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
         }
 
         return dns;
+    }
+
+    @Override
+    public List<String> getVmNicDns(String vmUuid, String l3NetworkUuid) {
+        // First try to get DNS from system tag (VM NIC-level custom DNS)
+        // Tag format: staticDns::{l3NetworkUuid}::{dns1,dns2,dns3}
+        String tagLike = String.format("staticDns::%s::%%", l3NetworkUuid);
+        List<String> tags = Q.New(SystemTagVO.class)
+                .select(SystemTagVO_.tag)
+                .eq(SystemTagVO_.resourceUuid, vmUuid)
+                .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
+                .like(SystemTagVO_.tag, tagLike)
+                .listValues();
+        if (tags != null && !tags.isEmpty()) {
+            String tag = tags.get(0);
+            // Parse DNS part: staticDns::{l3Uuid}::{dnsStr}
+            String prefix = String.format("staticDns::%s::", l3NetworkUuid);
+            if (tag.startsWith(prefix)) {
+                String dnsStr = tag.substring(prefix.length());
+                if (!dnsStr.isEmpty()) {
+                    List<String> dnsList = new ArrayList<>();
+                    for (String dns : dnsStr.split(",")) {
+                        dnsList.add(IPv6NetworkUtils.ipv6TagValueToAddress(dns));
+                    }
+                    return dnsList;
+                }
+            }
+        }
+        // Fall back to L3 network DNS
+        return getL3NetworkDns(l3NetworkUuid);
     }
 
     @Override

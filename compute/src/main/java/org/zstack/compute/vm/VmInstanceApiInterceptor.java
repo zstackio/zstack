@@ -3,14 +3,13 @@ package org.zstack.compute.vm;
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.net.util.SubnetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.compute.VmNicUtils;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.GlobalConfigVO;
-import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -50,9 +49,8 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
-import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.network.NicIpAddressInfo;
-
+import org.zstack.utils.network.NetworkUtils;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -60,7 +58,9 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.CollectionUtils.getDuplicateElementsOfList;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
@@ -82,6 +82,224 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private VmNicManager nicManager;
     @Autowired
     private PluginRegistry pluginRgty;
+
+    /**
+     * Common validation logic for IPv4 and IPv6 static IPs.
+     * Checks IP format and whether it is already assigned to the current NIC.
+     */
+    private void validateStaticIpCommon(VmNicVO vmNicVO, L3NetworkVO l3NetworkVO, String ip,
+                                        int ipVersion, String formatErrorCode, String duplicateErrorCode) {
+        // 1. Format validation
+        boolean isValidFormat = (ipVersion == IPv6Constants.IPv4)
+                ? NetworkUtils.isIpv4Address(ip)
+                : IPv6NetworkUtils.isIpv6Address(ip);
+
+        if (!isValidFormat) {
+            String ipType = (ipVersion == IPv6Constants.IPv4) ? "IPv4" : "IPv6";
+            throw new ApiMessageInterceptionException(argerr(formatErrorCode,
+                    "%s is not a valid " + ipType + " address", ip));
+        }
+
+        // 2. Check whether it conflicts with the IPs already assigned to the current NIC
+        for (UsedIpVO ipVo : vmNicVO.getUsedIps()) {
+            if (ipVo.getIpVersion() != ipVersion) {
+                continue;
+            }
+
+            if (ipVo.getL3NetworkUuid().equals(l3NetworkVO.getUuid())) {
+                if (ipVo.getIp().equals(ip)) {
+                    throw new ApiMessageInterceptionException(argerr(duplicateErrorCode,
+                            "ip address [%s] already set to vmNic [uuid:%s]", ip, vmNicVO.getUuid()));
+                }
+            }
+        }
+    }
+
+    /**
+     * Determine whether to use the NIC's existing IPv4 parameters (netmask/gateway).
+     * Condition: existingIp is non-null with non-empty netmask and non-empty gateway,
+     * and the IP falls within the CIDR formed by existingIp's gateway + netmask.
+     */
+    private boolean shouldUseExistingIpv4(String ip, UsedIpVO existingIp) {
+        if (existingIp == null || StringUtils.isEmpty(existingIp.getNetmask())) {
+            return false;
+        }
+        if (StringUtils.isEmpty(existingIp.getGateway())) {
+            return false;
+        }
+        try {
+            SubnetUtils.SubnetInfo info = NetworkUtils.getSubnetInfo(
+                    new SubnetUtils(existingIp.getGateway(), existingIp.getNetmask()));
+            return NetworkUtils.isIpv4InRange(ip, info.getLowAddress(), info.getHighAddress());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Determine whether to use the NIC's existing IPv6 parameters (prefix/gateway).
+     * Condition: existingIp is non-null with non-null prefixLen and non-empty gateway,
+     * and the IP falls within the CIDR formed by existingIp's gateway + prefixLen.
+     */
+    private boolean shouldUseExistingIpv6(String ip6, UsedIpVO existingIp) {
+        if (existingIp == null || existingIp.getPrefixLen() == null) {
+            return false;
+        }
+        if (StringUtils.isEmpty(existingIp.getGateway())) {
+            return false;
+        }
+        try {
+            return IPv6NetworkUtils.isIpv6InCidrRange(ip6,
+                    existingIp.getGateway() + "/" + existingIp.getPrefixLen());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Resolve IPv4 netmask and gateway based on 4 cases:
+     * (a) Both netmask+gateway provided: use user input as-is
+     * (b) Gateway provided, no netmask: if ip and gateway both in L3 CIDR, use CIDR netmask; else error
+     * (c) Netmask provided, no gateway: if netmask == CIDR netmask, use CIDR gateway; else if default/sole NIC, error; else gateway=""
+     * (d) Neither provided: if existingIp usable (APISetVmStaticIpMsg), use it; else if in L3 CIDR, use CIDR; else error
+     *
+     * @param existingIp pass null for APIChangeVmNicNetworkMsg (no existing IP on dest L3)
+     */
+    private String[] resolveIpv4NetmaskAndGateway(String ip, String userNetmask, String userGateway,
+            List<NormalIpRangeVO> ipv4Ranges, String l3Uuid, String defaultL3Uuid, int vmNicCount, UsedIpVO existingIp) {
+        boolean hasNetmask = StringUtils.isNotEmpty(userNetmask);
+        boolean hasGateway = StringUtils.isNotEmpty(userGateway);
+
+        // case (a): both provided
+        if (hasNetmask && hasGateway) {
+            return new String[]{userNetmask, userGateway};
+        }
+
+        NormalIpRangeVO matchedRange = IpRangeHelper.findIpRangeByCidr(ip, ipv4Ranges);
+
+        // case (b): gateway provided, no netmask
+        if (hasGateway) {
+            if (matchedRange != null && matchedRange.getNetworkCidr() != null
+                    && NetworkUtils.isIpv4InCidr(userGateway, matchedRange.getNetworkCidr())) {
+                return new String[]{matchedRange.getNetmask(), userGateway};
+            }
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10323,
+                    "gateway[%s] is provided but IP[%s] and gateway are not both in L3 network CIDR, netmask must be specified",
+                    userGateway, ip));
+        }
+
+        // case (c): netmask provided, no gateway
+        if (hasNetmask) {
+            if (matchedRange != null && userNetmask.equals(matchedRange.getNetmask())) {
+                return new String[]{matchedRange.getNetmask(), matchedRange.getGateway()};
+            }
+            if (l3Uuid.equals(defaultL3Uuid) || vmNicCount == 1) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10324,
+                        "netmask[%s] does not match L3 CIDR netmask and the NIC is the default or sole network, gateway must be specified",
+                        userNetmask));
+            }
+            return new String[]{userNetmask, ""};
+        }
+
+        // case (d): neither provided
+        if (existingIp != null && shouldUseExistingIpv4(ip, existingIp)) {
+            return new String[]{existingIp.getNetmask(), existingIp.getGateway()};
+        }
+        if (matchedRange != null) {
+            return new String[]{matchedRange.getNetmask(), matchedRange.getGateway()};
+        }
+        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10325,
+                "IP[%s] is outside all L3 network CIDRs and no existing IP parameters available, netmask and gateway must be specified",
+                ip));
+    }
+
+    /**
+     * Resolve IPv6 prefix and gateway based on 4 cases (mirrors IPv4 logic):
+     * (a) Both prefix+gateway provided: use user input as-is
+     * (b) Gateway provided, no prefix: if ip and gateway both in L3 CIDR, use CIDR prefix; else error
+     * (c) Prefix provided, no gateway: if prefix == CIDR prefix, use CIDR gateway; else if default/sole NIC, error; else gateway=""
+     * (d) Neither provided: if existingIp usable (APISetVmStaticIpMsg), use it; else if in L3 CIDR, use CIDR; else error
+     *
+     * @param existingIp pass null for APIChangeVmNicNetworkMsg (no existing IP on dest L3)
+     */
+    private String[] resolveIpv6PrefixAndGateway(String ip6, String userPrefix, String userGateway,
+            List<NormalIpRangeVO> ipv6Ranges, String l3Uuid, String defaultL3Uuid, int vmNicCount, UsedIpVO existingIp) {
+        boolean hasPrefix = StringUtils.isNotEmpty(userPrefix);
+        boolean hasGateway = StringUtils.isNotEmpty(userGateway);
+
+        // case (a): both provided
+        if (hasPrefix && hasGateway) {
+            return new String[]{userPrefix, userGateway};
+        }
+
+        NormalIpRangeVO matchedRange = IpRangeHelper.findIpRangeByCidr(ip6, ipv6Ranges);
+
+        // case (b): gateway provided, no prefix
+        if (hasGateway) {
+            if (matchedRange != null && matchedRange.getNetworkCidr() != null
+                    && IPv6NetworkUtils.isIpv6InCidrRange(userGateway, matchedRange.getNetworkCidr())) {
+                return new String[]{matchedRange.getPrefixLen().toString(), userGateway};
+            }
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10326,
+                    "gateway[%s] is provided but IPv6[%s] and gateway are not both in L3 network CIDR, prefix must be specified",
+                    userGateway, ip6));
+        }
+
+        // case (c): prefix provided, no gateway
+        if (hasPrefix) {
+            if (matchedRange != null && userPrefix.equals(matchedRange.getPrefixLen().toString())) {
+                return new String[]{matchedRange.getPrefixLen().toString(), matchedRange.getGateway()};
+            }
+            if (l3Uuid.equals(defaultL3Uuid) || vmNicCount == 1) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10327,
+                        "prefix[%s] does not match L3 CIDR prefix and the NIC is the default or sole network, gateway must be specified",
+                        userPrefix));
+            }
+            return new String[]{userPrefix, ""};
+        }
+
+        // case (d): neither provided
+        if (existingIp != null && shouldUseExistingIpv6(ip6, existingIp)) {
+            return new String[]{existingIp.getPrefixLen().toString(), existingIp.getGateway()};
+        }
+        if (matchedRange != null) {
+            return new String[]{matchedRange.getPrefixLen().toString(), matchedRange.getGateway()};
+        }
+        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10328,
+                "IPv6[%s] is outside all L3 network CIDRs and no existing IP parameters available, prefix and gateway must be specified",
+                ip6));
+    }
+
+    /**
+     * Check whether an IP is already in use (using error code ORG_ZSTACK_COMPUTE_VM_10105).
+     */
+    private void checkIpOccupied(String ip, String l3NetworkUuid) {
+        if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, ip).eq(UsedIpVO_.l3NetworkUuid, l3NetworkUuid).isExists()) {
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10105,
+                    "the static IP[%s] has been occupied on the L3 network[uuid:%s]", ip, l3NetworkUuid));
+        }
+    }
+
+    /**
+     * Batch check whether multiple IPs are already in use.
+     */
+    private void checkIpsOccupied(List<String> ips, String l3NetworkUuid) {
+        if (ips == null || ips.isEmpty()) {
+            return;
+        }
+
+        List<String> occupiedIps = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3NetworkUuid)
+                .in(UsedIpVO_.ip, ips)
+                .select(UsedIpVO_.ip)
+                .listValues();
+
+        if (!occupiedIps.isEmpty()) {
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10105,
+                    "the static IP%s has been occupied on the L3 network[uuid:%s]", occupiedIps, l3NetworkUuid));
+        }
+    }
+
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof VmInstanceMessage) {
@@ -287,99 +505,106 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         new StaticIpOperator().validateSystemTagInApiMessage(msg);
-        Map<String, List<String>> staticIps = new StaticIpOperator().getStaticIpbySystemTag(msg.getSystemTags());
-        if (msg.getRequiredIpMap() != null) {
-            staticIps.computeIfAbsent(msg.getDestL3NetworkUuid(), k -> new ArrayList<>()).add(msg.getStaticIp());
-            SimpleQuery<NormalIpRangeVO> iprq = dbf.createQuery(NormalIpRangeVO.class);
-            iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, msg.getDestL3NetworkUuid());
-            List<NormalIpRangeVO> iprs = iprq.list();
 
-            boolean found = false;
-            for (NormalIpRangeVO ipr : iprs) {
-                if (!ipr.getIpVersion().equals(NetworkUtils.getIpversion(msg.getStaticIp()))) {
-                    continue;
+        // Resolve netmask/gateway for static IPs in systemTags, overriding what validateSystemTagInApiMessage may have set
+        {
+            String destL3Uuid = msg.getDestL3NetworkUuid();
+            Map<String, NicIpAddressInfo> nicNetworkInfo = new StaticIpOperator().getNicNetworkInfoBySystemTag(msg.getSystemTags());
+            NicIpAddressInfo nicIpInfo = nicNetworkInfo.get(destL3Uuid);
+            if (nicIpInfo != null) {
+                List<NormalIpRangeVO> destIpv4Ranges = Q.New(NormalIpRangeVO.class)
+                        .eq(NormalIpRangeVO_.l3NetworkUuid, destL3Uuid)
+                        .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).list();
+                List<NormalIpRangeVO> destIpv6Ranges = Q.New(NormalIpRangeVO.class)
+                        .eq(NormalIpRangeVO_.l3NetworkUuid, destL3Uuid)
+                        .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
+                String defaultL3Uuid = Q.New(VmInstanceVO.class)
+                        .select(VmInstanceVO_.defaultL3NetworkUuid)
+                        .eq(VmInstanceVO_.uuid, vmUuid)
+                        .findValue();
+                int vmNicCount = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, vmUuid).count().intValue();
+
+                // Remove existing netmask/gateway/prefix/ipv6Gateway tags for dest L3 from systemTags
+                if (msg.getSystemTags() != null) {
+                    msg.getSystemTags().removeIf(tag ->
+                            VmSystemTags.IPV4_NETMASK.isMatch(tag) || VmSystemTags.IPV4_GATEWAY.isMatch(tag)
+                                    || VmSystemTags.IPV6_PREFIX.isMatch(tag) || VmSystemTags.IPV6_GATEWAY.isMatch(tag));
                 }
 
-                if (NetworkUtils.isInRange(msg.getStaticIp(), ipr.getStartIp(), ipr.getEndIp())) {
-                    found = true;
-                    break;
+                // Resolve and add IPv4 netmask/gateway
+                if (StringUtils.isNotEmpty(nicIpInfo.ipv4Address)) {
+                    String[] ipv4Result = resolveIpv4NetmaskAndGateway(nicIpInfo.ipv4Address,
+                            nicIpInfo.ipv4Netmask, nicIpInfo.ipv4Gateway,
+                            destIpv4Ranges, destL3Uuid, defaultL3Uuid, vmNicCount, null);
+                    msg.getSystemTags().add(VmSystemTags.IPV4_NETMASK.instantiateTag(
+                            map(e(VmSystemTags.IPV4_NETMASK_L3_UUID_TOKEN, destL3Uuid),
+                                    e(VmSystemTags.IPV4_NETMASK_TOKEN, ipv4Result[0]))));
+                    msg.getSystemTags().add(VmSystemTags.IPV4_GATEWAY.instantiateTag(
+                            map(e(VmSystemTags.IPV4_GATEWAY_L3_UUID_TOKEN, destL3Uuid),
+                                    e(VmSystemTags.IPV4_GATEWAY_TOKEN, ipv4Result[1]))));
                 }
-            }
 
-            if (!l3NetworkVO.enableIpAddressAllocation()) {
-                found = true;
-            }
-
-            if (!found) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10104, "the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getStaticIp(), msg.getDestL3NetworkUuid()));
-            }
-
-            SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
-            uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getDestL3NetworkUuid());
-            uq.add(UsedIpVO_.ip, Op.EQ, msg.getStaticIp());
-            if (uq.isExists()) {
-                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10105, "the static IP[%s] has been occupied on the L3 network[uuid:%s]", msg.getStaticIp(), msg.getDestL3NetworkUuid()));
+                // Resolve and add IPv6 prefix/gateway
+                if (StringUtils.isNotEmpty(nicIpInfo.ipv6Address)) {
+                    String[] ipv6Result = resolveIpv6PrefixAndGateway(nicIpInfo.ipv6Address,
+                            nicIpInfo.ipv6Prefix, nicIpInfo.ipv6Gateway,
+                            destIpv6Ranges, destL3Uuid, defaultL3Uuid, vmNicCount, null);
+                    msg.getSystemTags().add(VmSystemTags.IPV6_PREFIX.instantiateTag(
+                            map(e(VmSystemTags.IPV6_PREFIX_L3_UUID_TOKEN, destL3Uuid),
+                                    e(VmSystemTags.IPV6_PREFIX_TOKEN, ipv6Result[0]))));
+                    msg.getSystemTags().add(VmSystemTags.IPV6_GATEWAY.instantiateTag(
+                            map(e(VmSystemTags.IPV6_GATEWAY_L3_UUID_TOKEN, destL3Uuid),
+                                    e(VmSystemTags.IPV6_GATEWAY_TOKEN,
+                                            IPv6NetworkUtils.ipv6AddressToTagValue(ipv6Result[1])))));
+                }
             }
         }
 
-        for (Map.Entry<String, List<String>> e : staticIps.entrySet()) {
-            if (!newAddedL3Uuids.contains(e.getKey())) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10106, "static ip l3 uuid[%s] is not included in nic l3 [%s]", e.getKey(), newAddedL3Uuids));
-            }
+        Map<String, List<String>> staticIps = new StaticIpOperator().getStaticIpbySystemTag(msg.getSystemTags());
 
-            String l3Uuid = e.getKey();
-            List<String> ips = e.getValue();
-            SimpleQuery<NormalIpRangeVO> iprq = dbf.createQuery(NormalIpRangeVO.class);
-            iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, l3Uuid);
-            List<NormalIpRangeVO> iprs = iprq.list();
-
-            boolean found = false;
-            for (String staticIp : ips) {
-                int ipVersion = IPv6Constants.IPv4;
-                if (IPv6NetworkUtils.isIpv6Address(staticIp)) {
-                    ipVersion = IPv6Constants.IPv6;
-                }
-                for (NormalIpRangeVO ipr : iprs) {
-                    if (ipVersion != ipr.getIpVersion()) {
-                        continue;
-                    }
-                    if (NetworkUtils.isInRange(staticIp, ipr.getStartIp(), ipr.getEndIp())) {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!l3NetworkVO.enableIpAddressAllocation()) {
-                    found = true;
-                }
-
-                if (!found) {
-                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10107, "the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", staticIp, l3Uuid));
-                }
-
-                SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
-                uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getDestL3NetworkUuid());
-                uq.add(UsedIpVO_.ip, Op.EQ, msg.getStaticIp());
-                if (uq.isExists()) {
-                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10108, "the static IP[%s] has been occupied on the L3 network[uuid:%s]", staticIp, l3Uuid));
-                }
-            }
+        // If staticIp parameter is provided, add it to the static IP list
+        if (msg.getStaticIp() != null) {
+            staticIps.computeIfAbsent(msg.getDestL3NetworkUuid(), k -> new ArrayList<>()).add(msg.getStaticIp());
         }
 
         msg.setRequiredIpMap(new HashMap<>());
 
+        // Unified loop: validate and set all static IPs together
         for (Map.Entry<String, List<String>> e : staticIps.entrySet()) {
-            msg.getRequiredIpMap().put(e.getKey(), e.getValue());
+            String l3Uuid = e.getKey();
+            List<String> ips = e.getValue();
+
+            // Validate that the L3 network UUID is in the allowed list
+            if (!newAddedL3Uuids.contains(l3Uuid)) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10106,
+                        "static ip l3 uuid[%s] is not included in nic l3 [%s]", l3Uuid, newAddedL3Uuids));
+            }
+
+            // Performance optimization: batch check IP occupation (one query instead of N)
+            checkIpsOccupied(ips, l3Uuid);
+
+            // Set requiredIpMap (merged into this loop to eliminate redundant iteration)
+            msg.getRequiredIpMap().put(l3Uuid, ips);
         }
 
-        final Map<String, NicIpAddressInfo> nicNetworkInfo = new StaticIpOperator().getNicNetworkInfoBySystemTag(msg.getSystemTags());
-        NicIpAddressInfo nicIpAddressInfo = nicNetworkInfo.get(msg.getDestL3NetworkUuid());
-        if (nicIpAddressInfo != null) {
-            if (!nicIpAddressInfo.ipv4Address.isEmpty() && Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, nicIpAddressInfo.ipv4Address).eq(UsedIpVO_.l3NetworkUuid, msg.getDestL3NetworkUuid()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10109, "the static IP[%s] has been occupied on the L3 network[uuid:%s]", nicIpAddressInfo.ipv4Address, msg.getDestL3NetworkUuid()));
-            }
-            if (!nicIpAddressInfo.ipv6Address.isEmpty() && Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, IPv6NetworkUtils.getIpv6AddressCanonicalString(nicIpAddressInfo.ipv6Address)).eq(UsedIpVO_.l3NetworkUuid, msg.getDestL3NetworkUuid()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10110, "the static IP[%s] has been occupied on the L3 network[uuid:%s]", nicIpAddressInfo.ipv6Address, msg.getDestL3NetworkUuid()));
+        validateDnsAddresses(msg.getDnsAddresses());
+    }
+
+    private void validateDnsAddresses(List<String> dnsAddresses) {
+        if (dnsAddresses == null || dnsAddresses.isEmpty()) {
+            return;
+        }
+
+        if (dnsAddresses.size() > VmInstanceConstant.MAXIMUM_NIC_DNS_NUMBER) {
+            throw new ApiMessageInterceptionException(argerr(
+                    ORG_ZSTACK_COMPUTE_VM_10321, "at most %d DNS addresses are allowed, but got %d",
+                    VmInstanceConstant.MAXIMUM_NIC_DNS_NUMBER, dnsAddresses.size()));
+        }
+
+        for (String dns : dnsAddresses) {
+            if (!NetworkUtils.isIpv4Address(dns) && !IPv6NetworkUtils.isIpv6Address(dns)) {
+                throw new ApiMessageInterceptionException(argerr(
+                        ORG_ZSTACK_COMPUTE_VM_10322, "invalid DNS address[%s], must be a valid IPv4 or IPv6 address", dns));
             }
         }
     }
@@ -570,58 +795,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validateStaticIPv4(VmNicVO vmNicVO, L3NetworkVO l3NetworkVO, String ip) {
-        if (!NetworkUtils.isIpv4Address(ip)) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10129, "%s is not a valid IPv4 address", ip));
-        }
-
-        for (UsedIpVO ipVo : vmNicVO.getUsedIps()) {
-            if (ipVo.getIpVersion() != IPv6Constants.IPv4) {
-                continue;
-            }
-
-            if (ipVo.getL3NetworkUuid().equals(l3NetworkVO.getUuid())) {
-                if (ipVo.getIp().equals(ip)) {
-                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10130, "ip address [%s] already set to vmNic [uuid:%s]",
-                            ip, vmNicVO.getUuid()));
-                }
-                if (!l3NetworkVO.enableIpAddressAllocation()) {
-                    continue;
-                }
-                // check if the ip is in the ip range when ipam is enabled
-                NormalIpRangeVO rangeVO = dbf.findByUuid(ipVo.getIpRangeUuid(), NormalIpRangeVO.class);
-                if (!NetworkUtils.isIpv4InCidr(ip, rangeVO.getNetworkCidr())) {
-                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10131, "ip address [%s] is not in ip range [%s]",
-                            ip, rangeVO.getNetworkCidr()));
-                }
-            }
-        }
+        validateStaticIpCommon(vmNicVO, l3NetworkVO, ip, IPv6Constants.IPv4,
+                ORG_ZSTACK_COMPUTE_VM_10129, ORG_ZSTACK_COMPUTE_VM_10130);
     }
 
     private void validateStaticIPv6(VmNicVO vmNicVO, L3NetworkVO l3NetworkVO, String ip) {
-        if (!IPv6NetworkUtils.isIpv6Address(ip)) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10132, "%s is not a valid IPv6 address", ip));
-        }
-
-        for (UsedIpVO ipVo : vmNicVO.getUsedIps()) {
-            if (ipVo.getIpVersion() != IPv6Constants.IPv6) {
-                continue;
-            }
-
-            if (ipVo.getL3NetworkUuid().equals(l3NetworkVO.getUuid())) {
-                if (ip.equals(ipVo.getIp())) {
-                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10133, "ip address [%s] already set to vmNic [uuid:%s]",
-                            ip, vmNicVO.getUuid()));
-                }
-                if (!l3NetworkVO.enableIpAddressAllocation()) {
-                    continue;
-                }
-                NormalIpRangeVO rangeVO = dbf.findByUuid(ipVo.getIpRangeUuid(), NormalIpRangeVO.class);
-                if (!IPv6NetworkUtils.isIpv6InRange(ip, rangeVO.getStartIp(), rangeVO.getEndIp())) {
-                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10134, "ip address [%s] is not in ip range [startIp %s, endIp %s]",
-                            ip, rangeVO.getStartIp(), rangeVO.getEndIp()));
-                }
-            }
-        }
+        validateStaticIpCommon(vmNicVO, l3NetworkVO, ip, IPv6Constants.IPv6,
+                ORG_ZSTACK_COMPUTE_VM_10132, ORG_ZSTACK_COMPUTE_VM_10133);
     }
 
     private void validate(APISetVmStaticIpMsg msg) {
@@ -639,15 +819,39 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
         List<VmNicVO> vmNics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
         boolean l3Found = false;
+
+        // Normalize IP addresses (avoid redundant calls)
+        String normalizedIp = null;
+        String normalizedIp6 = null;
+        UsedIpVO existingIpv4 = null;
+        UsedIpVO existingIpv6 = null;
+
         for (VmNicVO nic : vmNics) {
-            l3Found = true;
+            if (msg.getL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
+                l3Found = true;
+            }
+
+            // Extract UsedIpVO records matching the same L3 and IP version from the NIC's existing IPs
+            for (UsedIpVO usedIp : nic.getUsedIps()) {
+                if (!msg.getL3NetworkUuid().equals(usedIp.getL3NetworkUuid())) {
+                    continue;
+                }
+
+                if (usedIp.getIpVersion() != null && usedIp.getIpVersion() == IPv6Constants.IPv4) {
+                    existingIpv4 = usedIp;
+                } else if (usedIp.getIpVersion() != null && usedIp.getIpVersion() == IPv6Constants.IPv6) {
+                    existingIpv6 = usedIp;
+                }
+            }
             if (msg.getIp() != null) {
                 String ip = IPv6NetworkUtils.ipv6TagValueToAddress(msg.getIp());
                 if (NetworkUtils.isIpv4Address(ip)) {
                     validateStaticIPv4(nic, l3NetworkVO, ip);
+                    normalizedIp = ip;
                 } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
                     validateStaticIPv6(nic, l3NetworkVO, ip);
                     msg.setIp(ip);
+                    normalizedIp6 = ip;
                 } else {
                     throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10136, "static ip [%s] format error", msg.getIp()));
                 }
@@ -656,52 +860,38 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 String ip6 = IPv6NetworkUtils.ipv6TagValueToAddress(msg.getIp6());
                 validateStaticIPv6(nic, l3NetworkVO, ip6);
                 msg.setIp6(ip6);
+                normalizedIp6 = ip6;
             }
         }
-        if (msg.getIp() != null && !l3NetworkVO.enableIpAddressAllocation()) {
-            l3Found = true;
-            if (msg.getNetmask() == null) {
-                if (ipv4Ranges.isEmpty()) {
-                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10137, "ipv4 address need a netmask"));
-                } else {
-                    msg.setNetmask(ipv4Ranges.get(0).getNetmask());
-                }
-            }
-            if (msg.getGateway() == null) {
-                if (ipv4Ranges.isEmpty()) {
-                    msg.setGateway("");
-                } else {
-                    msg.setGateway(ipv4Ranges.get(0).getGateway());
-                }
-            }
-            if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, msg.getIp()).eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10138, "ip address [%s] already set to vmNic", msg.getIp()));
-            }
-        }
-        if (msg.getIp6() != null && !l3NetworkVO.enableIpAddressAllocation()) {
-            l3Found = true;
-            if (msg.getIpv6Prefix() == null) {
-                if (ipv6Ranges.isEmpty()) {
-                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10139, "ipv6 address need a prefix"));
-                } else {
-                    msg.setIpv6Prefix(ipv6Ranges.get(0).getPrefixLen().toString());
-                }
-            }
-            if (msg.getIpv6Gateway() == null) {
-                if (ipv6Ranges.isEmpty()) {
-                    msg.setIpv6Gateway("");
-                } else {
-                    msg.setIpv6Gateway(ipv6Ranges.get(0).getGateway());
-                }
-            }
-            if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, msg.getIp6()).eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid()).isExists()) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10140, "ip address [%s] already set to vmNic", msg.getIp6()));
-            }
-        }
+
         if (!l3Found) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10141, "the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
-                            msg.getL3NetworkUuid()));
+                    msg.getL3NetworkUuid()));
         }
+
+        // Get the VM's default L3 network UUID for gateway enforcement
+        String defaultL3NetworkUuid = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.defaultL3NetworkUuid)
+                .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
+                .findValue();
+
+        // Fill parameters and check IP occupation
+        if (normalizedIp != null) {
+            String[] ipv4Result = resolveIpv4NetmaskAndGateway(normalizedIp, msg.getNetmask(), msg.getGateway(),
+                    ipv4Ranges, msg.getL3NetworkUuid(), defaultL3NetworkUuid, vmNics.size(), existingIpv4);
+            msg.setNetmask(ipv4Result[0]);
+            msg.setGateway(ipv4Result[1]);
+            checkIpOccupied(normalizedIp, msg.getL3NetworkUuid());
+        }
+        if (normalizedIp6 != null) {
+            String[] ipv6Result = resolveIpv6PrefixAndGateway(normalizedIp6, msg.getIpv6Prefix(), msg.getIpv6Gateway(),
+                    ipv6Ranges, msg.getL3NetworkUuid(), defaultL3NetworkUuid, vmNics.size(), existingIpv6);
+            msg.setIpv6Prefix(ipv6Result[0]);
+            msg.setIpv6Gateway(ipv6Result[1]);
+            checkIpOccupied(normalizedIp6, msg.getL3NetworkUuid());
+        }
+
+        validateDnsAddresses(msg.getDnsAddresses());
     }
 
     private void validate(APIDeleteVmStaticIpMsg msg) {
@@ -825,26 +1015,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getIp() != null) {
-            SimpleQuery<NormalIpRangeVO> iprq = dbf.createQuery(NormalIpRangeVO.class);
-            iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-            List<NormalIpRangeVO> iprs = iprq.list();
-
-            boolean found = false;
-            for (NormalIpRangeVO ipr : iprs) {
-                if (NetworkUtils.isInRange(msg.getIp(), ipr.getStartIp(), ipr.getEndIp())) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!l3VO.enableIpAddressAllocation()) {
-                found = true;
-            }
-
-            if (!found) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10154, "the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getIp(), msg.getL3NetworkUuid()));
-            }
-
             SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
             uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
             uq.add(UsedIpVO_.ip, Op.EQ, msg.getIp());
@@ -936,29 +1106,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
         if (msg.getStaticIp() != null) {
             staticIps.computeIfAbsent(msg.getL3NetworkUuid(), k -> new ArrayList<>()).add(msg.getStaticIp());
-            SimpleQuery<NormalIpRangeVO> iprq = dbf.createQuery(NormalIpRangeVO.class);
-            iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-            List<NormalIpRangeVO> iprs = iprq.list();
-
-            boolean found = false;
-            for (NormalIpRangeVO ipr : iprs) {
-                if (!ipr.getIpVersion().equals(NetworkUtils.getIpversion(msg.getStaticIp()))) {
-                    continue;
-                }
-
-                if (NetworkUtils.isInRange(msg.getStaticIp(), ipr.getStartIp(), ipr.getEndIp())) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!l3NetworkVO.enableIpAddressAllocation()) {
-                found = true;
-            }
-
-            if (!found) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10164, "the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getStaticIp(), msg.getL3NetworkUuid()));
-            }
 
             SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
             uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
@@ -975,33 +1122,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
             String l3Uuid = e.getKey();
             List<String> ips = e.getValue();
-            SimpleQuery<NormalIpRangeVO> iprq = dbf.createQuery(NormalIpRangeVO.class);
-            iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, l3Uuid);
-            List<NormalIpRangeVO> iprs = iprq.list();
 
-            boolean found = false;
             for (String staticIp : ips) {
-                int ipVersion = IPv6Constants.IPv4;
-                if (IPv6NetworkUtils.isIpv6Address(staticIp)) {
-                    ipVersion = IPv6Constants.IPv6;
-                }
-                for (NormalIpRangeVO ipr : iprs) {
-                    if (ipVersion != ipr.getIpVersion()) {
-                        continue;
-                    }
-                    if (NetworkUtils.isInRange(staticIp, ipr.getStartIp(), ipr.getEndIp())) {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!l3NetworkVO.enableIpAddressAllocation()) {
-                    found = true;
-                }
-
-                if (!found) {
-                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10167, "the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", staticIp, l3Uuid));
-                }
 
                 SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
                 uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
@@ -1424,7 +1546,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10206, "l3Network[uuid:%s] is Disabled, can not create vm on it", l3Uuid));
                 }
                 if (system && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
-                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10207, "l3Network[uuid:%s] is system network, can not create user vm on it", l3Uuid));
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10207, "l3Network[uuid:%s] is system network, can not create user vm on it", l3Uuid));
                 }
             }
         }

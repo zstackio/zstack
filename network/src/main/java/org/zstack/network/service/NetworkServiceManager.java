@@ -18,6 +18,16 @@ public interface NetworkServiceManager {
     void applyNetworkServiceOnChangeIP(VmInstanceSpec spec, NetworkServiceExtensionPoint.NetworkServiceExtensionPosition position, Completion completion);
     List<String> getL3NetworkDns(String l3NetworkUuid);
 
+    /**
+     * Get DNS servers for a VM NIC.
+     * Priority: VM NIC system tag > L3 Network DNS
+     *
+     * @param vmUuid VM instance UUID
+     * @param l3NetworkUuid L3 network UUID
+     * @return List of DNS server addresses
+     */
+    List<String> getVmNicDns(String vmUuid, String l3NetworkUuid);
+
     void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType,
                               NetworkServiceType nsType, List<String> systemTags, Completion completion);
 

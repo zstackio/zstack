@@ -1001,6 +1001,20 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         }
     }
 
+    /**
+     * Expect an API call to fail and verify the error details.
+     * The second closure's delegate is the parsed {@link ErrorCodeList}, so you can
+     * directly access {@code code}, {@code details}, {@code globalErrorCode}, etc.
+     *
+     * Example:
+     * <pre>
+     *   expectApiFailure {
+     *       someApiCall { ... }
+     *   } {
+     *       assert details.contains("expected error keyword")
+     *   }
+     * </pre>
+     */
     static void expectApiFailure(Closure c, @DelegatesTo(strategy = Closure.OWNER_FIRST, value = ErrorCodeList.class) Closure errorCodeChecker) {
         AssertionError error = null
 

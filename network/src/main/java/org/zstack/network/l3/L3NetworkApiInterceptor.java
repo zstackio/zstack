@@ -726,6 +726,48 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10064, "new add ip range gateway %s is different from old gateway %s", ipr.getGateway(), r.getGateway()));
                 }
             }
+
+            // When adding the first IpRange, check if network address or gateway is already used
+            if (l3IpRanges.isEmpty()) {
+                String networkAddress = info.getNetworkAddress();
+                String broadcastAddress = info.getBroadcastAddress();
+
+                // Check if gateway address is already used by VmNic with ipRangeUuid=null
+                boolean gatewayUsed = Q.New(UsedIpVO.class)
+                        .eq(UsedIpVO_.l3NetworkUuid, ipr.getL3NetworkUuid())
+                        .eq(UsedIpVO_.ip, ipr.getGateway())
+                        .isNull(UsedIpVO_.ipRangeUuid)
+                        .isExists();
+                if (gatewayUsed) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            ORG_ZSTACK_NETWORK_L3_10079, "gateway address[%s] is already used by a VM NIC, cannot add IP range with this gateway",
+                            ipr.getGateway()));
+                }
+
+                // Check if network address is already used
+                boolean networkAddressUsed = Q.New(UsedIpVO.class)
+                        .eq(UsedIpVO_.l3NetworkUuid, ipr.getL3NetworkUuid())
+                        .eq(UsedIpVO_.ip, networkAddress)
+                        .isNull(UsedIpVO_.ipRangeUuid)
+                        .isExists();
+                if (networkAddressUsed) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            ORG_ZSTACK_NETWORK_L3_10080, "network address[%s] is already used by a VM NIC, cannot add IP range containing this address",
+                            networkAddress));
+                }
+
+                // Check if broadcast address is already used
+                boolean broadcastAddressUsed = Q.New(UsedIpVO.class)
+                        .eq(UsedIpVO_.l3NetworkUuid, ipr.getL3NetworkUuid())
+                        .eq(UsedIpVO_.ip, broadcastAddress)
+                        .isNull(UsedIpVO_.ipRangeUuid)
+                        .isExists();
+                if (broadcastAddressUsed) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            ORG_ZSTACK_NETWORK_L3_10081, "broadcast address[%s] is already used by a VM NIC, cannot add IP range containing this address",
+                            broadcastAddress));
+                }
+            }
         } else if (ipr.getIpRangeType() == IpRangeType.AddressPool) {
             validateAddressPool(ipr);
         }

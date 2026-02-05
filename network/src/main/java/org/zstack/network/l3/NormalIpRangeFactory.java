@@ -70,9 +70,11 @@ public class NormalIpRangeFactory implements IpRangeFactory {
 
                     IpRangeHelper.updateL3NetworkIpversion(vo);
 
+                    // Update UsedIpVO records that have ipRangeUuid=null and IP is within the new range
                     List<UsedIpVO> usedIpVos = Q.New(UsedIpVO.class)
                             .eq(UsedIpVO_.l3NetworkUuid, vo.getL3NetworkUuid())
-                            .eq(UsedIpVO_.ipVersion, vo.getIpVersion()).list();
+                            .eq(UsedIpVO_.ipVersion, vo.getIpVersion())
+                            .isNull(UsedIpVO_.ipRangeUuid).list();
                     List<UsedIpVO> updateVos = new ArrayList<>();
                     for (UsedIpVO ipvo : usedIpVos) {
                         if (ipvo.getIpVersion() == IPv6Constants.IPv4) {

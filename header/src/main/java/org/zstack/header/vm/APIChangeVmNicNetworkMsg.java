@@ -2,12 +2,16 @@ package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.other.APIAuditor;
+import org.zstack.header.other.APIMultiAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -18,7 +22,7 @@ import java.util.Map;
         method = HttpMethod.POST,
         responseClass = APIChangeVmNicNetworkEvent.class
 )
-public class APIChangeVmNicNetworkMsg extends APIMessage implements VmInstanceMessage{
+public class APIChangeVmNicNetworkMsg extends APIMessage implements VmInstanceMessage, APIMultiAuditor {
     @APIParam(resourceType = VmNicVO.class, checkAccount = true, operationTarget = true)
     private String vmNicUuid;
 
@@ -32,6 +36,10 @@ public class APIChangeVmNicNetworkMsg extends APIMessage implements VmInstanceMe
     private Map<String, List<String>> requiredIpMap;
 
     private String staticIp;
+
+
+    @APIParam(required = false)
+    private List<String> dnsAddresses;
 
     public String getVmNicUuid() {
         return vmNicUuid;
@@ -57,6 +65,7 @@ public class APIChangeVmNicNetworkMsg extends APIMessage implements VmInstanceMe
         this.requiredIpMap = requiredIpMap;
     }
 
+
     public static APIChangeVmNicNetworkMsg __example__() {
         APIChangeVmNicNetworkMsg msg = new APIChangeVmNicNetworkMsg();
         msg.vmNicUuid = uuid();
@@ -79,5 +88,21 @@ public class APIChangeVmNicNetworkMsg extends APIMessage implements VmInstanceMe
 
     public void setStaticIp(String staticIp) {
         this.staticIp = staticIp;
+    }
+
+    public List<String> getDnsAddresses() {
+        return dnsAddresses;
+    }
+
+    public void setDnsAddresses(List<String> dnsAddresses) {
+        this.dnsAddresses = dnsAddresses;
+    }
+
+    @Override
+    public List<APIAuditor.Result> multiAudit(APIMessage msg, APIEvent rsp) {
+        APIChangeVmNicNetworkMsg amsg = (APIChangeVmNicNetworkMsg) msg;
+        List<APIAuditor.Result> res = new ArrayList<>();
+        res.add(new APIAuditor.Result(amsg.getVmInstanceUuid(), VmInstanceVO.class));
+        return res;
     }
 }
