@@ -44,6 +44,7 @@ public class VmInstanceUtils {
         cmsg.setGuestOsType(msg.getGuestOsType());
         cmsg.setArchitecture(msg.getArchitecture());
         cmsg.setStrategy(msg.getStrategy());
+        cmsg.setDevicesSpec(msg.getDevicesSpec());
         if (CollectionUtils.isNotEmpty(msg.getDataDiskOfferingUuids()) || CollectionUtils.isNotEmpty(msg.getDataDiskSizes())) {
             cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
         }
