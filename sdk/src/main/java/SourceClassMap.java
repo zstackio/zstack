@@ -328,6 +328,11 @@ public class SourceClassMap {
 			put("org.zstack.header.image.ImageGroupInventory", "org.zstack.sdk.ImageGroupInventory");
 			put("org.zstack.header.image.ImageGroupRefInventory", "org.zstack.sdk.ImageGroupRefInventory");
 			put("org.zstack.header.image.ImageInventory", "org.zstack.sdk.ImageInventory");
+			put("org.zstack.header.keyprovider.KeyProviderInventory", "org.zstack.sdk.KeyProviderInventory");
+			put("org.zstack.header.keyprovider.KmsIdentityInventory", "org.zstack.sdk.KmsIdentityInventory");
+			put("org.zstack.header.keyprovider.KmsInventory", "org.zstack.sdk.KmsInventory");
+			put("org.zstack.header.keyprovider.NkpInventory", "org.zstack.sdk.NkpInventory");
+			put("org.zstack.header.keyprovider.NkpRestoreInfo", "org.zstack.sdk.NkpRestoreInfo");
 			put("org.zstack.header.longjob.LongJobInventory", "org.zstack.sdk.LongJobInventory");
 			put("org.zstack.header.longjob.LongJobState", "org.zstack.sdk.LongJobState");
 			put("org.zstack.header.managementnode.ManagementNodeInventory", "org.zstack.sdk.ManagementNodeInventory");
@@ -1241,6 +1246,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.KVMHostInventory", "org.zstack.kvm.KVMHostInventory");
 			put("org.zstack.sdk.KVMIsoTO", "org.zstack.kvm.KVMIsoTO");
 			put("org.zstack.sdk.KoAlSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.koal.KoAlSecretResourcePoolInventory");
+			put("org.zstack.sdk.KeyProviderInventory", "org.zstack.header.keyprovider.KeyProviderInventory");
+			put("org.zstack.sdk.KmsIdentityInventory", "org.zstack.header.keyprovider.KmsIdentityInventory");
+			put("org.zstack.sdk.KmsInventory", "org.zstack.header.keyprovider.KmsInventory");
 			put("org.zstack.sdk.KvmCephCdRomTO", "org.zstack.storage.ceph.primary.KvmCephCdRomTO");
 			put("org.zstack.sdk.KvmCephIsoTO", "org.zstack.storage.ceph.primary.KvmCephIsoTO");
 			put("org.zstack.sdk.KvmHostHypervisorMetadataInventory", "org.zstack.kvm.hypervisor.datatype.KvmHostHypervisorMetadataInventory");
@@ -1360,6 +1368,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.NfvInstOfferingInventory", "org.zstack.network.service.header.nfvinstgroup.NfvInstOfferingInventory");
 			put("org.zstack.sdk.NginxRedirectRule", "org.zstack.ai.NginxRedirectRule");
 			put("org.zstack.sdk.NicTO", "org.zstack.kvm.KVMAgentCommands$NicTO");
+			put("org.zstack.sdk.NkpInventory", "org.zstack.header.keyprovider.NkpInventory");
+			put("org.zstack.sdk.NkpRestoreInfo", "org.zstack.header.keyprovider.NkpRestoreInfo");
 			put("org.zstack.sdk.NormalIpRangeInventory", "org.zstack.header.network.l3.NormalIpRangeInventory");
 			put("org.zstack.sdk.NvmeLunHostRefInventory", "org.zstack.storage.device.nvme.NvmeLunHostRefInventory");
 			put("org.zstack.sdk.NvmeLunInventory", "org.zstack.storage.device.nvme.NvmeLunInventory");
