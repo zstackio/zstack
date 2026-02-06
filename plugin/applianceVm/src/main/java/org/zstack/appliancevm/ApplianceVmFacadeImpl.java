@@ -416,8 +416,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         ret.put(ApplianceVmConstant.BootstrapParams.additionalNics.toString(), extraTos);
 
         List<VmNicInventory> additionalNics = reduceNic(spec.getDestNics(), mgmtNic);
-        // if management nic is not default route nic, choose default route nic as eth1
-        int deviceId = 1;
+        // if management nic is not default route nic, choose default route nic first
         if (!mto.isDefaultRoute()) {
             VmNicInventory defaultRouteNic = null;
             for (VmNicInventory nic : additionalNics) {
@@ -428,7 +427,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             }
 
             ApplianceVmNicTO t = new ApplianceVmNicTO(defaultRouteNic);
-            t.setDeviceName(String.format("eth%s", deviceId));
+            t.setDeviceName(String.format("eth1"));
             t.setDefaultRoute(true);
 
             l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, defaultRouteNic.getL3NetworkUuid()).find();
@@ -440,14 +439,13 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             t.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
             fillVfNicBootstrapInfo(defaultRouteNic, t);
             t.setMtu(new MtuGetter().getMtu(l3NetworkVO.getUuid()));
-            deviceId ++;
             extraTos.add(t);
             additionalNics = reduceNic(additionalNics, defaultRouteNic);
         }
 
         for (VmNicInventory nic : additionalNics) {
             ApplianceVmNicTO nto = new ApplianceVmNicTO(nic);
-            nto.setDeviceName(String.format("eth%s", deviceId));
+            nto.setDeviceName(String.format("eth%s", nic.getDeviceId()));
             l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, nic.getL3NetworkUuid()).find();
             l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
 
@@ -458,7 +456,6 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             fillVfNicBootstrapInfo(nic, nto);
             nto.setMtu(new MtuGetter().getMtu(l3NetworkVO.getUuid()));
             extraTos.add(nto);
-            deviceId ++;
         }
 
         String publicKey = asf.getPublicKey();
