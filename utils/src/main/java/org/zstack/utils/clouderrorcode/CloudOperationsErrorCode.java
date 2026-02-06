@@ -5024,6 +5024,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_IAM2_CONTAINER_10009 = "ORG_ZSTACK_IAM2_CONTAINER_10009";
 
+    public static final String ORG_ZSTACK_IAM2_CONTAINER_10010 = "ORG_ZSTACK_IAM2_CONTAINER_10010";
+
     public static final String ORG_ZSTACK_CORE_SALT_10000 = "ORG_ZSTACK_CORE_SALT_10000";
 
     public static final String ORG_ZSTACK_CORE_SALT_10001 = "ORG_ZSTACK_CORE_SALT_10001";
