@@ -177,6 +177,14 @@ public class ProgressReportService extends AbstractService implements Management
                 current + TimeUnit.SECONDS.toMillis(DELETE_DELAY)).update();
     }
 
+    public void deleteTaskProgress(String apiId) {
+        if (apiId == null) {
+            return;
+        }
+
+        SQL.New(TaskProgressVO.class).eq(TaskProgressVO_.apiId, apiId).hardDelete();
+    }
+
     @Override
     public boolean stop() {
         return true;
