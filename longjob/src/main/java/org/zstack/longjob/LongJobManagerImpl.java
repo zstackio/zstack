@@ -574,6 +574,13 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         }
 
         if (vo != null) {
+            // clean old progress data immediately before updating apiId,
+            // otherwise rerun will show stale 100% progress from previous execution
+            String oldApiId = vo.getApiId();
+            if (oldApiId != null) {
+                progRpt.deleteTaskProgress(oldApiId);
+            }
+
             vo.setApiId(ThreadContext.getImmutableContext().get(Constants.THREAD_CONTEXT_API));
             vo.setState(LongJobState.Waiting);
             vo.setExecuteTime(null);
