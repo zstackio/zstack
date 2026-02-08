@@ -100,6 +100,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
     {
         type.setSupportSharedVolume(true);
+        type.setSupportCheckHostStatus(true);
     }
 
     @Autowired

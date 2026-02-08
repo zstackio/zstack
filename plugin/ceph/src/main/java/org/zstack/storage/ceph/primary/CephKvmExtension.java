@@ -25,6 +25,7 @@ import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
 import org.zstack.kvm.KVMHostFactory;
 import org.zstack.storage.ceph.CephConstants;
+import org.zstack.storage.primary.CheckHostStorageConnectionMsg;
 
 import javax.persistence.TypedQuery;
 import java.util.List;
