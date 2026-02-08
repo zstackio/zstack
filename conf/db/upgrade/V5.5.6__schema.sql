@@ -125,3 +125,53 @@ CALL ADD_COLUMN('ModelServiceVO', 'version', 'VARCHAR(255)', 1, NULL);
 
 -- Add packageVersion column to ApplicationDevelopmentServiceVO (ZSTAC-81309)
 CALL ADD_COLUMN('ApplicationDevelopmentServiceVO', 'packageVersion', 'VARCHAR(255)', 1, NULL);
+
+-- Upgrade application development service version to readable format (e.g. dify:xxx -> 1.11.1 from installPath)
+-- ModelServiceVO.version: extract x.y.z from installPath last segment (e.g. dify_1.11.1 -> 1.11.1)
+-- ApplicationDevelopmentServiceVO.packageVersion: sync from ModelServiceVO.version when unreadable or null
+DROP PROCEDURE IF EXISTS UpgradeApplicationDevelopmentServiceVersion;
+
+DELIMITER $$
+
+CREATE PROCEDURE UpgradeApplicationDevelopmentServiceVersion()
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'UpgradeApplicationDevelopmentServiceVersion failed.';
+    END;
+
+    START TRANSACTION;
+
+    -- 1. ModelServiceVO: set version to readable (x.y.z) extracted from installPath for App type with unreadable version
+    UPDATE `zstack`.`ModelServiceVO`
+    SET `version` = SUBSTRING_INDEX(
+            SUBSTRING_INDEX(
+                TRIM(TRAILING '/' FROM REPLACE(REPLACE(`installPath`, 'file://', ''), 'file:', '')),
+                '/', -1
+            ), '_', -1
+        )
+    WHERE `type` = 'App'
+      AND (`version` LIKE '%:%' OR `version` IS NULL OR `version` = '')
+      AND `installPath` IS NOT NULL AND TRIM(`installPath`) != ''
+      AND SUBSTRING_INDEX(
+              SUBSTRING_INDEX(
+                  TRIM(TRAILING '/' FROM REPLACE(REPLACE(`installPath`, 'file://', ''), 'file:', '')),
+                  '/', -1
+              ), '_', -1
+          ) REGEXP '^[0-9]+\\.[0-9]+';
+
+    -- 2. ApplicationDevelopmentServiceVO.packageVersion: sync from linked ModelServiceVO.version (join on uuid - JPA TABLE_PER_CLASS inheritance)
+    UPDATE `zstack`.`ApplicationDevelopmentServiceVO` a
+    INNER JOIN `zstack`.`ModelServiceInstanceGroupVO` g ON a.`uuid` = g.`uuid`
+    INNER JOIN `zstack`.`ModelServiceVO` m ON g.`modelServiceUuid` = m.`uuid`
+    SET a.`packageVersion` = m.`version`
+    WHERE (a.`packageVersion` IS NULL OR a.`packageVersion` LIKE '%:%')
+      AND m.`version` IS NOT NULL AND TRIM(m.`version`) != '';
+
+    COMMIT;
+END$$
+
+DELIMITER ;
+CALL UpgradeApplicationDevelopmentServiceVersion();
+DROP PROCEDURE IF EXISTS UpgradeApplicationDevelopmentServiceVersion;
