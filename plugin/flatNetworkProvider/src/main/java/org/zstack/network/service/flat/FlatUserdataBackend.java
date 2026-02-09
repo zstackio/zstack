@@ -310,6 +310,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         continue;
                     }
 
+                    if (mto.vmHostname == null) {
+                        mto.vmHostname = l.vmIp.replaceAll("\\.", "-");
+                    }
+
                     if (bridgeNames.get(l.l3Uuid) == null) {
                         continue;
                     }
@@ -780,6 +784,9 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         MetadataTO to = new MetadataTO();
                         to.vmUuid = struct.getVmUuid();
                         to.vmHostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(struct.getVmUuid(), VmSystemTags.HOSTNAME_TOKEN);
+                        if (to.vmHostname == null) {
+                            to.vmHostname = ipv4.getIp().replaceAll("\\.", "-");
+                        }
                         to.regionName = getZoneNameByVmInstanceUuid(struct.getVmUuid());
                         to.mac = destNic.getMac();
                         to.dnsServersIp = getDnsServersIpFromVm(struct.getVmUuid());
