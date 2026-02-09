@@ -10,7 +10,7 @@ fi
 pypi_path=file://$cwd/../../../static/pypi/simple
 
 usage() {
-    echo "usage:$0 [zstack-cli|zstack-ctl|zstack-dashboard|zstack-ui]"
+    echo "usage:$0 [zstack-cli|zstack-ctl|zstack-dashboard|zstack-ui|zstack-sys]"
     exit 1
 }
 
@@ -22,24 +22,20 @@ if [ -z $tool ]; then
 fi
 
 install_pip() {
-    pip --version | grep 7.0.3 >/dev/null || easy_install -i $pypi_path --upgrade pip
+    pip3.11 --version | grep 22.3.1 >/dev/null || yum install python3.11-pip
 }
 
-install_virtualenv() {
-    virtualenv --version | grep 12.1.1 >/dev/null || pip install -i $pypi_path --ignore-installed virtualenv==12.1.1
-}
 
 cd $cwd
 
 install_pip
-install_virtualenv
 cd /tmp
 
 if [ $tool = 'zstack-cli' ]; then
     CLI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstackcli
     [ ! -z $force ] && rm -rf $CLI_VIRENV_PATH
     if [ ! -d "$CLI_VIRENV_PATH" ]; then
-        virtualenv $CLI_VIRENV_PATH --python=python2.7
+        python3.11 -m venv $CLI_VIRENV_PATH
         if [ $? -ne 0 ]; then
             rm -rf $CLI_VIRENV_PATH
             exit 1
@@ -74,13 +70,13 @@ if [ $tool = 'zstack-cli' ]; then
 
 elif [ $tool = 'zstack-ctl' ]; then
     CTL_VIRENV_PATH=/var/lib/zstack/virtualenv/zstackctl
-    rm -rf $CTL_VIRENV_PATH && virtualenv $CTL_VIRENV_PATH --python=python2.7 || exit 1
+    rm -rf $CTL_VIRENV_PATH && python3.11 -m venv $CTL_VIRENV_PATH || exit 1
     . $CTL_VIRENV_PATH/bin/activate
     cd $cwd
     TMPDIR=/usr/local/zstack/ pip install -i $pypi_path --trusted-host localhost --ignore-installed zstackctl-*.tar.gz || exit 1
-    TMPDIR=/usr/local/zstack/ pip install -i $pypi_path --trusted-host localhost --ignore-installed pycrypto==2.6.1 || exit 1
+    TMPDIR=/usr/local/zstack/ pip install -i $pypi_path --trusted-host localhost --ignore-installed pycryptodome || exit 1
     chmod +x /usr/bin/zstack-ctl
-    python $CTL_VIRENV_PATH/lib/python2.7/site-packages/zstackctl/generate_zstackctl_bash_completion.py
+    python $CTL_VIRENV_PATH/lib/python3.11/site-packages/zstackctl/generate_zstackctl_bash_completion.py
 
 elif [ $tool = 'zstack-sys' ]; then
     SYS_VIRENV_PATH=/var/lib/zstack/virtualenv/zstacksys
@@ -95,11 +91,11 @@ elif [ $tool = 'zstack-sys' ]; then
         NEED_INSTALL=true
     fi
     if $NEED_INSTALL; then
-        rm -rf $SYS_VIRENV_PATH && virtualenv $SYS_VIRENV_PATH --python=python2.7 || exit 1
+        rm -rf $SYS_VIRENV_PATH && python3.11 -m venv /var/lib/zstack/virtualenv/zstacksys || exit 1
         . $SYS_VIRENV_PATH/bin/activate
         cd $cwd
-        TMPDIR=/usr/local/zstack/ pip install -i $pypi_path --trusted-host localhost --ignore-installed setuptools==39.2.0 || exit 1
-        TMPDIR=/usr/local/zstack/ pip install -i $pypi_path --trusted-host localhost --ignore-installed ansible==4.10.0 || exit 1
+        #TMPDIR=/usr/local/zstack/ pip install -i $pypi_path --trusted-host localhost --ignore-installed setuptools==65.5.1 || exit 1
+        TMPDIR=/usr/local/zstack/ pip install -i $pypi_path --trusted-host localhost --ignore-installed ansible==9.13.0 || exit 1
 
         cat > /usr/bin/ansible << EOF
 #! /bin/sh
@@ -140,7 +136,7 @@ elif [ $tool = 'zstack-dashboard' ]; then
     UI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstack-dashboard
     [ ! -z $force ] && rm -rf $UI_VIRENV_PATH
     if [ ! -d "$UI_VIRENV_PATH" ]; then
-        virtualenv $UI_VIRENV_PATH --python=python2.7
+        python3.11 -m venv $UI_VIRENV_PATH
         if [ $? -ne 0 ]; then
             rm -rf $UI_VIRENV_PATH
             exit 1
