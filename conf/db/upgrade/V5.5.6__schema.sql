@@ -190,3 +190,12 @@ WHERE p.type NOT IN (
     'GPU_Co_Processor',
     'GPU_Communication_Controller'
 );
+
+-- ZSTAC-81566: Persist clusterId on ModelServiceInstanceVO to survive node restart
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'clusterId', 'BIGINT', 1, NULL);
+
+-- Backfill existing data from PodVO
+UPDATE ModelServiceInstanceVO msi
+INNER JOIN PodVO p ON msi.vmInstanceUuid = p.uuid
+SET msi.clusterId = p.clusterId
+WHERE msi.clusterId IS NULL AND p.clusterId IS NOT NULL;
