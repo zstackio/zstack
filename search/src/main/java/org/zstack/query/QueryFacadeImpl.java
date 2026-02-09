@@ -532,7 +532,11 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                     ZQL.queryTargetNameFromInventoryClass(inventoryClass));
             Class voClass = meta.inventoryAnnotation.mappingVOClass();
             Field pkField = EntityMetadata.getPrimaryKeyField(voClass);
-            return pkField.getName();
+            String pkName = pkField.getName();
+            if (!meta.selfInventoryFieldNames.contains(pkName)) {
+                return null;
+            }
+            return pkName;
         } catch (Exception e) {
             logger.trace(String.format("cannot resolve PK for %s, skip pagination tiebreaker: %s",
                     inventoryClass.getSimpleName(), e.getMessage()));
