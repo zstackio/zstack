@@ -427,7 +427,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             }
 
             ApplianceVmNicTO t = new ApplianceVmNicTO(defaultRouteNic);
-            t.setDeviceName(String.format("eth1"));
+            t.setDeviceName(String.format("eth%s", defaultRouteNic.getDeviceId()));
             t.setDefaultRoute(true);
 
             l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, defaultRouteNic.getL3NetworkUuid()).find();
