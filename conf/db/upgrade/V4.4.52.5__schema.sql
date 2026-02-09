@@ -1,0 +1,1 @@
+ALTER TABLE TicketVO MODIFY column requests MEDIUMTEXT;
