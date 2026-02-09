@@ -703,6 +703,25 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             @Override
             public void success(APIEvent evt) {
                 reportProgress("100");
+
+                // ZSTAC-82086: Re-read current state from DB to check if job was suspended
+                // during download completion. Suspended state doesn't allow 'succeed' event,
+                // which would cause CloudRuntimeException. Save the result but keep Suspended
+                // state so user can resume/cancel.
+                LongJobVO currentVo = dbf.findByUuid(longJobUuid, LongJobVO.class);
+                if (currentVo != null && currentVo.getState() == LongJobState.Suspended) {
+                    logger.info(String.format("longjob [uuid:%s, name:%s] completed but was suspended, saving result without state change",
+                            currentVo.getUuid(), currentVo.getName()));
+                    updateByUuid(longJobUuid, it -> {
+                        if (evt != null) {
+                            it.setJobResult(JSONObjectUtil.toJsonString(evt));
+                        } else {
+                            it.setJobResult(LongJobUtils.succeeded);
+                        }
+                    });
+                    return;
+                }
+
                 changeState(longJobUuid, LongJobStateEvent.succeed, it -> {
                     if (!Strings.isEmpty(it.getJobResult())) {
                         it.setJobResult(it.getJobResult());
