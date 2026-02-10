@@ -175,3 +175,18 @@ END$$
 DELIMITER ;
 CALL UpgradeApplicationDevelopmentServiceVersion();
 DROP PROCEDURE IF EXISTS UpgradeApplicationDevelopmentServiceVersion;
+
+-- ZSTAC-82069: Clean up orphan GpuDeviceSpecVO records where parent spec type is not GPU
+-- Root cause: ZSTAC-81489 fixed GPU detection on Agent side, but didn't handle cleanup of
+-- stale GpuDeviceSpecVO records when device type changed from GPU to Generic.
+-- GpuDeviceSpecVO is a child table of PciDeviceSpecVO using @PrimaryKeyJoinColumn inheritance.
+-- Only GPU-type specs should have corresponding records in GpuDeviceSpecVO.
+DELETE g FROM GpuDeviceSpecVO g
+INNER JOIN PciDeviceSpecVO p ON g.uuid = p.uuid
+WHERE p.type NOT IN (
+    'GPU_Video_Controller',
+    'GPU_3D_Controller',
+    'GPU_Processing_Accelerators',
+    'GPU_Co_Processor',
+    'GPU_Communication_Controller'
+);
