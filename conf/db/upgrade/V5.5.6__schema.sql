@@ -201,10 +201,10 @@ CREATE PROCEDURE EnsureClusterIdBigint()
 BEGIN
     DECLARE col_type VARCHAR(64);
     SELECT DATA_TYPE INTO col_type
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = 'zstack'
-      AND TABLE_NAME = 'ModelServiceInstanceVO'
-      AND COLUMN_NAME = 'clusterId';
+    FROM `INFORMATION_SCHEMA`.`COLUMNS`
+    WHERE `TABLE_SCHEMA` = 'zstack'
+      AND `TABLE_NAME` = 'ModelServiceInstanceVO'
+      AND `COLUMN_NAME` = 'clusterId';
 
     IF col_type = 'int' THEN
         ALTER TABLE `zstack`.`ModelServiceInstanceVO` MODIFY COLUMN `clusterId` BIGINT NULL;
