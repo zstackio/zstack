@@ -219,3 +219,13 @@ UPDATE ModelServiceInstanceVO msi
 INNER JOIN PodVO p ON msi.vmInstanceUuid = p.uuid
 SET msi.clusterId = p.clusterId
 WHERE msi.clusterId IS NULL AND p.clusterId IS NOT NULL;
+
+-- Fix GPU allocateStatus for virtualized devices
+-- Issue: Virtualized physical GPUs (with vGPUs generated) should show as Unallocatable, not Unallocated
+-- This UPDATE is idempotent: WHERE clause ensures only incorrect statuses are updated
+UPDATE `zstack`.`GpuDeviceVO` g
+INNER JOIN `zstack`.`PciDeviceVO` p ON g.`uuid` = p.`uuid`
+SET g.`allocateStatus` = 'Unallocatable'
+WHERE p.`virtStatus` IN ('VFIO_MDEV_VIRTUALIZED', 'SRIOV_VIRTUALIZED')
+  AND p.`vmInstanceUuid` IS NULL
+  AND g.`allocateStatus` != 'Unallocatable';
