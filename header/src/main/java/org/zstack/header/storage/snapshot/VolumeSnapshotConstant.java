@@ -1,5 +1,10 @@
 package org.zstack.header.storage.snapshot;
 
+import org.zstack.header.vm.VmInstanceState;
+
+import java.util.Arrays;
+import java.util.List;
+
 /**
  */
 public interface VolumeSnapshotConstant {
@@ -17,4 +22,11 @@ public interface VolumeSnapshotConstant {
     String NEED_TAKE_SNAPSHOTS_ON_HYPERVISOR = "needTakeSnapshotOnHypervisor";
     String NEED_BLOCK_STREAM_ON_HYPERVISOR = "needBlockStreamOnHypervisor";
     String INTEGRITY_VOLUME_SNAPSHOTS = "integrityVolumeSnapshots";
+
+    public static final List<VmInstanceState> ALLOW_TAKE_SNAPSHOTS_VM_STATES = Arrays.asList(
+            VmInstanceState.Running, VmInstanceState.Stopped, VmInstanceState.Paused
+    );
+    public static final List<VmInstanceState> ALLOW_TAKE_MEMORY_SNAPSHOTS_VM_STATES = Arrays.asList(
+            VmInstanceState.Stopped
+    );
 }
