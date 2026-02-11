@@ -160,8 +160,8 @@ public class KVMGlobalConfig {
     )
     public static GlobalConfig KVMAGENT_PHYSICAL_MEMORY_USAGE_HARD_LIMIT = new GlobalConfig(CATEGORY, "kvmagent.physicalmemory.usage.hardlimit");
 
-    @GlobalConfigDef(defaultValue = "",
-            description = "Specify the EDK version to be used for the next VM startup. Default empty string indicates the use of the system's default EDK version")
+    @GlobalConfigDef(defaultValue = "None",
+            description = "Specify the EDK version to be used for the next VM startup. None indicates the use of the system's default EDK version")
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_EDK_VERSION_CONFIG = new GlobalConfig(CATEGORY, "vm.edk.version");
 }
