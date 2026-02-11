@@ -581,7 +581,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 progRpt.deleteTaskProgress(oldApiId);
             }
 
-            vo.setApiId(ThreadContext.getImmutableContext().get(Constants.THREAD_CONTEXT_API));
             vo.setState(LongJobState.Waiting);
             vo.setExecuteTime(null);
             vo.setManagementNodeUuid(Platform.getManagementServerId());
