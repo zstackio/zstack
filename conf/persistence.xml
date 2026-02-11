@@ -24,6 +24,7 @@
         <class>org.zstack.header.cluster.ClusterEO</class>
         <class>org.zstack.header.host.HostVO</class>
         <class>org.zstack.header.host.HostEO</class>
+        <class>org.zstack.header.host.HostKeyIdentityVO</class>
         <class>org.zstack.header.host.CpuFeaturesHistoryVO</class>
         <class>org.zstack.header.storage.primary.PrimaryStorageVO</class>
         <class>org.zstack.header.storage.primary.PrimaryStorageEO</class>
@@ -182,6 +183,11 @@
         <class>org.zstack.header.vm.VmInstanceNumaNodeVO</class>
         <class>org.zstack.header.host.HostNumaNodeVO</class>
         <class>org.zstack.header.core.encrypt.EncryptionIntegrityVO</class>
+        <class>org.zstack.header.keyprovider.KeyProviderVO</class>
+        <class>org.zstack.header.keyprovider.KmsVO</class>
+        <class>org.zstack.header.keyprovider.KmsIdentityVO</class>
+        <class>org.zstack.header.keyprovider.NkpVO</class>
+        <class>org.zstack.header.keyprovider.EncryptedResourceKeyRefVO</class>
         <class>org.zstack.storage.primary.sharedblock.SharedBlockCapacityVO</class>
         <class>org.zstack.header.vm.devices.VmInstanceResourceMetadataVO</class>
         <class>org.zstack.header.vm.devices.VmInstanceResourceMetadataArchiveVO</class>
