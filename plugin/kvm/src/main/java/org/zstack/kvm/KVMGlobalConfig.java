@@ -11,6 +11,8 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.zone.ZoneVO;
 
+import static org.zstack.kvm.KVMConstant.EDK_VERSION_NONE;
+
 /**
  */
 @GlobalConfigDefinition
@@ -160,7 +162,7 @@ public class KVMGlobalConfig {
     )
     public static GlobalConfig KVMAGENT_PHYSICAL_MEMORY_USAGE_HARD_LIMIT = new GlobalConfig(CATEGORY, "kvmagent.physicalmemory.usage.hardlimit");
 
-    @GlobalConfigDef(defaultValue = "None",
+    @GlobalConfigDef(defaultValue = EDK_VERSION_NONE,
             description = "Specify the EDK version to be used for the next VM startup. None indicates the use of the system's default EDK version")
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_EDK_VERSION_CONFIG = new GlobalConfig(CATEGORY, "vm.edk.version");
