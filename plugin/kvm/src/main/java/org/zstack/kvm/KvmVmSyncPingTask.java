@@ -69,6 +69,12 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     private List<Class> skipVmTracerReplies = new ArrayList<>();
     private Map<String, Integer> vmInShutdownMap = new ConcurrentHashMap<>();
 
+    // Orphaned skip entries from departed MN nodes. Key=vmUuid, Value=timestamp when orphaned.
+    // These VMs remain in skip-trace state for ORPHAN_TTL_MS to avoid false HA triggers
+    // when a MN restarts and its in-flight VM operations haven't completed yet. See ZSTAC-80821.
+    private final ConcurrentHashMap<String, Long> orphanedSkipVms = new ConcurrentHashMap<>();
+    private static final long ORPHAN_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
     {
         getReflections().getTypesAnnotatedWith(SkipVmTracer.class).forEach(clz -> {
             skipVmTracerMessages.add(clz.asSubclass(Message.class));
@@ -196,8 +202,13 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
         // Get vms to skip before send command to host to confirm the vm will be skipped after sync command finished.
         // The problem is if one vm-sync skipped operation is started and finished during vm sync command's handling
         // vm state would still be sync to mn
+        // ZSTAC-80821: clean up expired orphaned entries each sync cycle
+        cleanupExpiredOrphanedSkipVms();
+
         Set<String> vmsToSkipSetHostSide = new HashSet<>();
         vmsToSkip.values().forEach(vmsToSkipSetHostSide::addAll);
+        // ZSTAC-80821: also skip VMs from departed MN nodes that are still within TTL
+        vmsToSkipSetHostSide.addAll(orphanedSkipVms.keySet());
 
         // if the vm is not running on host when sync command executing but started as soon as possible
         // before response handling of vm sync, mgmtSideStates will including the running vm but not result in
@@ -228,6 +239,8 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
 
                     // Get vms to skip after sync result returned.
                     vmsToSkip.values().forEach(vmsToSkipSetHostSide::addAll);
+                    // ZSTAC-80821: include orphaned entries from departed MN nodes
+                    vmsToSkipSetHostSide.addAll(orphanedSkipVms.keySet());
 
                     Collection<String> vmUuidsInDeleteVmGC = DeleteVmGC.queryVmInGC(host.getUuid(), ret.getStates().keySet());
 
@@ -446,7 +459,19 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     @Override
     public void nodeLeft(ManagementNodeInventory inv) {
         vmApis.remove(inv.getUuid());
-        vmsToSkip.remove(inv.getUuid());
+
+        // ZSTAC-80821: Instead of immediately removing skip list entries, move them
+        // to the orphaned set with a TTL. This prevents false HA triggers for VMs that
+        // are still being started by kvmagent but whose controlling MN has restarted.
+        Set<String> skippedVms = vmsToSkip.remove(inv.getUuid());
+        if (skippedVms != null && !skippedVms.isEmpty()) {
+            long now = System.currentTimeMillis();
+            for (String vmUuid : skippedVms) {
+                orphanedSkipVms.put(vmUuid, now);
+                logger.info(String.format("moved VM[uuid:%s] from departed MN[uuid:%s] skip list to orphaned set" +
+                        " (will expire in %d minutes)", vmUuid, inv.getUuid(), ORPHAN_TTL_MS / 60000));
+            }
+        }
     }
 
     @Override
@@ -460,6 +485,41 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     }
 
     public boolean isVmDoNotNeedToTrace(String vmUuid) {
-        return vmsToSkip.values().stream().anyMatch(vmsToSkipSet -> vmsToSkipSet.contains(vmUuid));
+        if (vmsToSkip.values().stream().anyMatch(vmsToSkipSet -> vmsToSkipSet.contains(vmUuid))) {
+            return true;
+        }
+
+        // ZSTAC-80821: Also check orphaned skip entries from departed MN nodes
+        Long orphanedAt = orphanedSkipVms.get(vmUuid);
+        if (orphanedAt != null) {
+            if (System.currentTimeMillis() - orphanedAt < ORPHAN_TTL_MS) {
+                logger.debug(String.format("VM[uuid:%s] is in orphaned skip set, skipping trace", vmUuid));
+                return true;
+            } else {
+                // Expired, clean up
+                orphanedSkipVms.remove(vmUuid);
+                logger.info(String.format("orphaned skip entry for VM[uuid:%s] expired after %d minutes, resuming trace",
+                        vmUuid, ORPHAN_TTL_MS / 60000));
+            }
+        }
+
+        return false;
+    }
+
+    // Periodically clean up expired orphaned entries. Called from VM sync cycle.
+    private void cleanupExpiredOrphanedSkipVms() {
+        if (orphanedSkipVms.isEmpty()) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        Iterator<Map.Entry<String, Long>> it = orphanedSkipVms.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, Long> entry = it.next();
+            if (now - entry.getValue() >= ORPHAN_TTL_MS) {
+                it.remove();
+                logger.info(String.format("cleaned up expired orphaned skip entry for VM[uuid:%s]", entry.getKey()));
+            }
+        }
     }
 }
