@@ -154,7 +154,7 @@ public class QuotaUtil {
             return;
         }
 
-        if (AccountConstant.isAdminPermission(targetAccountUuid)) {
+        if (AccountConstant.isAdminPermission(targetAccountUuid) || isAdminAccount(targetAccountUuid)) {
             return;
         }
 
@@ -217,11 +217,18 @@ public class QuotaUtil {
             return;
         }
 
+        Quota.QuotaPair pair = pairs.get(requiredRequest.getQuotaName());
+        if (pair == null) {
+            logger.warn(String.format("quota[name: %s] not defined for account[uuid: %s], skip check",
+                    requiredRequest.getQuotaName(), targetAccountUuid));
+            return;
+        }
+
         QuotaUtil.QuotaCompareInfo quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
         quotaCompareInfo.currentAccountUuid = currentAccountUuid;
         quotaCompareInfo.resourceTargetOwnerAccountUuid = targetAccountUuid;
         quotaCompareInfo.quotaName = requiredRequest.getQuotaName();
-        quotaCompareInfo.quotaValue = pairs.get(requiredRequest.getQuotaName()).getValue();
+        quotaCompareInfo.quotaValue = pair.getValue();
         quotaCompareInfo.currentUsed = used;
         quotaCompareInfo.request = asked;
         CheckQuota(quotaCompareInfo);
@@ -235,13 +242,19 @@ public class QuotaUtil {
             return;
         }
 
+        Quota.QuotaPair pair = pairs.get(fixedSizeRequiredRequest.getQuotaName());
+        if (pair == null) {
+            logger.warn(String.format("quota[name: %s] not defined for account[uuid: %s], skip check",
+                    fixedSizeRequiredRequest.getQuotaName(), targetAccountUuid));
+            return;
+        }
+
         QuotaUtil.QuotaCompareInfo quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
         quotaCompareInfo.currentAccountUuid = currentAccountUuid;
         quotaCompareInfo.resourceTargetOwnerAccountUuid = targetAccountUuid;
         quotaCompareInfo.quotaName = fixedSizeRequiredRequest.getQuotaName();
-        Quota.QuotaPair pair = pairs.get(fixedSizeRequiredRequest.getQuotaName());
         logger.debug("get quota pair of " + fixedSizeRequiredRequest.getQuotaName() + ":\n" + JSONObjectUtil.toJsonString(pair));
-        quotaCompareInfo.quotaValue = pairs.get(fixedSizeRequiredRequest.getQuotaName()).getValue();
+        quotaCompareInfo.quotaValue = pair.getValue();
         quotaCompareInfo.currentUsed = used;
         quotaCompareInfo.request = asked;
         CheckQuota(quotaCompareInfo);
