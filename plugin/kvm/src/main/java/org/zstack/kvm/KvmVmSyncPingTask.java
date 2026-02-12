@@ -497,7 +497,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                 return true;
             } else {
                 // Expired, clean up
-                orphanedSkipVms.remove(vmUuid);
+                orphanedSkipVms.remove(vmUuid, orphanedAt);
                 logger.info(String.format("orphaned skip entry for VM[uuid:%s] expired after %d minutes, resuming trace",
                         vmUuid, ORPHAN_TTL_MS / 60000));
             }
@@ -513,11 +513,9 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
         }
 
         long now = System.currentTimeMillis();
-        Iterator<Map.Entry<String, Long>> it = orphanedSkipVms.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, Long> entry = it.next();
+        for (Map.Entry<String, Long> entry : orphanedSkipVms.entrySet()) {
             if (now - entry.getValue() >= ORPHAN_TTL_MS) {
-                it.remove();
+                orphanedSkipVms.remove(entry.getKey(), entry.getValue());
                 logger.info(String.format("cleaned up expired orphaned skip entry for VM[uuid:%s]", entry.getKey()));
             }
         }
