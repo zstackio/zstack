@@ -79,20 +79,25 @@ public class VmCreateOnHypervisorFlow implements Flow {
                             spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
                             spec.getDestHost().getUuid(), spec.getDestHost().getName(), reply.getError()));
 
-                    if (reply.getError().isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
-                        String gcName = String.format("gc-vm-%s-on-host-%s", spec.getVmInventory().getUuid(), spec.getDestHost().getUuid());
+                    // ZSTAC-68874: Always submit GC task on rollback failure to clean up VM remnants on host
+                    // Previously only submitted GC when error was GC_ELIGIBLE, but detach PCI failures (e.g., MN unavailable)
+                    // don't return GC_ELIGIBLE, causing GPU resources to remain occupied
+                    String gcName = String.format("gc-vm-%s-on-host-%s", spec.getVmInventory().getUuid(), spec.getDestHost().getUuid());
 
-                        DeleteVmGC gc = new DeleteVmGC();
-                        gc.NAME = gcName;
-                        gc.hostUuid = spec.getVmInventory().getHostUuid();
-                        gc.inventory = spec.getVmInventory();
-                        if (gc.existedAndNotCompleted()) {
-                            logger.debug(String.format("There is already a DeleteVmGC of vm[uuid:%s] " +
-                                    "on host[uuid:%s], skip.", spec.getVmInventory().getUuid(), spec.getDestHost().getUuid()));
-                        } else {
-                            gc.submit();
-                        }
+                    DeleteVmGC gc = new DeleteVmGC();
+                    gc.NAME = gcName;
+                    gc.hostUuid = spec.getVmInventory().getHostUuid();
+                    gc.inventory = spec.getVmInventory();
+                    if (gc.existedAndNotCompleted()) {
+                        logger.debug(String.format("There is already a DeleteVmGC of vm[uuid:%s] " +
+                                "on host[uuid:%s], skip.", spec.getVmInventory().getUuid(), spec.getDestHost().getUuid()));
                     } else {
+                        gc.submit();
+                        logger.debug(String.format("Submitted DeleteVmGC for vm[uuid:%s] on host[uuid:%s] due to rollback failure",
+                                spec.getVmInventory().getUuid(), spec.getDestHost().getUuid()));
+                    }
+
+                    if (!reply.getError().isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
                         VmTracerCanonicalEvents.OperateFailOnHypervisorData data = new VmTracerCanonicalEvents.OperateFailOnHypervisorData();
                         data.setHostUuid(spec.getVmInventory().getHostUuid());
                         data.setVmUuid(spec.getVmInventory().getUuid());
