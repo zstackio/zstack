@@ -27,27 +27,27 @@ public class ResourceDestinationMakerImpl implements ManagementNodeChangeListene
     private DatabaseFacade dbf;
 
     @Override
-    public void nodeJoin(ManagementNodeInventory inv) {
+    public synchronized void nodeJoin(ManagementNodeInventory inv) {
         nodeHash.add(inv.getUuid());
         nodes.put(inv.getUuid(), new NodeInfo(inv));
     }
 
     @Override
-    public void nodeLeft(ManagementNodeInventory inv) {
+    public synchronized void nodeLeft(ManagementNodeInventory inv) {
         String nodeId = inv.getUuid();
         nodeHash.remove(nodeId);
         nodes.remove(nodeId);
     }
 
     @Override
-    public void iAmDead(ManagementNodeInventory inv) {
+    public synchronized void iAmDead(ManagementNodeInventory inv) {
         String nodeId = inv.getUuid();
         nodeHash.remove(nodeId);
         nodes.remove(nodeId);
     }
 
     @Override
-    public void iJoin(ManagementNodeInventory inv) {
+    public synchronized void iJoin(ManagementNodeInventory inv) {
         List<ManagementNodeVO> lst = Q.New(ManagementNodeVO.class).list();
         lst.forEach((ManagementNodeVO node) -> {
             nodeHash.add(node.getUuid());
@@ -56,7 +56,7 @@ public class ResourceDestinationMakerImpl implements ManagementNodeChangeListene
     }
 
     @Override
-    public String makeDestination(String resourceUuid) {
+    public synchronized String makeDestination(String resourceUuid) {
         String nodeUuid = nodeHash.get(resourceUuid);
         if (nodeUuid == null) {
             throw new CloudRuntimeException("Cannot find any available management node to send message");
@@ -66,18 +66,18 @@ public class ResourceDestinationMakerImpl implements ManagementNodeChangeListene
     }
 
     @Override
-    public boolean isManagedByUs(String resourceUuid) {
+    public synchronized boolean isManagedByUs(String resourceUuid) {
         String nodeUuid = makeDestination(resourceUuid);
         return nodeUuid.equals(Platform.getManagementServerId());
     }
 
     @Override
-    public Collection<String> getManagementNodesInHashRing() {
-        return nodeHash.getNodes();
+    public synchronized Collection<String> getManagementNodesInHashRing() {
+        return new ArrayList<>(nodeHash.getNodes());
     }
 
     @Override
-    public NodeInfo getNodeInfo(String nodeUuid) {
+    public synchronized NodeInfo getNodeInfo(String nodeUuid) {
         NodeInfo info = nodes.get(nodeUuid);
         if (info == null) {
             ManagementNodeVO vo = dbf.findByUuid(nodeUuid, ManagementNodeVO.class);
@@ -93,17 +93,17 @@ public class ResourceDestinationMakerImpl implements ManagementNodeChangeListene
     }
 
     @Override
-    public Collection<NodeInfo> getAllNodeInfo() {
-        return nodes.values();
+    public synchronized Collection<NodeInfo> getAllNodeInfo() {
+        return new ArrayList<>(nodes.values());
     }
 
     @Override
-    public int getManagementNodeCount() {
-        return nodes.values().size();
+    public synchronized int getManagementNodeCount() {
+        return nodes.size();
     }
 
 
-    public boolean isNodeInCircle(String nodeId) {
+    public synchronized boolean isNodeInCircle(String nodeId) {
         return nodeHash.hasNode(nodeId);
     }
 }

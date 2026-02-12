@@ -74,6 +74,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -106,6 +107,15 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     private List<ManagementNodeChangeListener> lifeCycleExtension = new ArrayList<ManagementNodeChangeListener>();
     // A dictionary (nodeId -> ManagementNodeInventory) of joined management Node
     final private Map<String, ManagementNodeInventory> joinedManagementNodes = new ConcurrentHashMap<>();
+
+    // Lock to serialize lifecycle events from heartbeat reconciliation and canonical event callbacks,
+    // preventing race conditions where a nodeJoin event is immediately followed by a stale nodeLeft
+    // from the heartbeat thread, or vice versa. See ZSTAC-77711.
+    private final Object lifecycleLock = new Object();
+
+    // Track nodes found in hash ring but missing from DB. Only call nodeLeft after a node
+    // is missing for two consecutive heartbeat cycles, to avoid removing nodes that just joined.
+    private final Set<String> suspectedMissingFromDb = new HashSet<>();
 
     private static int NODE_STARTING = 0;
     private static int NODE_RUNNING = 1;
@@ -368,12 +378,16 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
             ManagementNodeLifeCycleData d = (ManagementNodeLifeCycleData) data;
 
-            if (LifeCycle.NodeJoin.toString().equals(d.getLifeCycle())) {
-                nodeLifeCycle.nodeJoin(d.getInventory());
-            } else if (LifeCycle.NodeLeft.toString().equals(d.getLifeCycle())) {
-                nodeLifeCycle.nodeLeft(d.getInventory());
-            } else {
-                throw new CloudRuntimeException(String.format("unknown lifecycle[%s]", d.getLifeCycle()));
+            synchronized (lifecycleLock) {
+                if (LifeCycle.NodeJoin.toString().equals(d.getLifeCycle())) {
+                    // Clear from suspected set since the node is confirmed alive
+                    suspectedMissingFromDb.remove(d.getInventory().getUuid());
+                    nodeLifeCycle.nodeJoin(d.getInventory());
+                } else if (LifeCycle.NodeLeft.toString().equals(d.getLifeCycle())) {
+                    nodeLifeCycle.nodeLeft(d.getInventory());
+                } else {
+                    throw new CloudRuntimeException(String.format("unknown lifecycle[%s]", d.getLifeCycle()));
+                }
             }
         }
     };
@@ -860,34 +874,55 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                 Set<String> nodeUuidsInDb = nodesInDb.stream().map(ManagementNodeVO::getUuid).collect(Collectors.toSet());
 
-                // When a node is dying, we may not receive the the dead notification because the message bus may be also dead
-                // at that moment. By checking if the node UUID is still in our hash ring, we know what nodes should be kicked out
-                destinationMaker.getManagementNodesInHashRing().forEach(nodeUuid -> {
-                    if (!nodeUuidsInDb.contains(nodeUuid)) {
-                        logger.warn(String.format("found that a management node[uuid:%s] had no heartbeat in database but still in our hash ring," +
-                                "notify that it's dead", nodeUuid));
-                        ManagementNodeInventory inv = new ManagementNodeInventory();
-                        inv.setUuid(nodeUuid);
-                        inv.setHostName(destinationMaker.getNodeInfo(nodeUuid).getNodeIP());
+                // Reconcile hash ring with DB under lifecycleLock to prevent race with
+                // canonical event callbacks (nodeJoin/nodeLeft). See ZSTAC-77711.
+                synchronized (lifecycleLock) {
+                    // When a node is dying, we may not receive the dead notification because the message bus may be also dead
+                    // at that moment. By checking if the node UUID is still in our hash ring, we know what nodes should be kicked out.
+                    // Use two-round confirmation: first round marks as suspected, second round actually removes.
+                    Set<String> currentSuspected = new HashSet<>();
+                    destinationMaker.getManagementNodesInHashRing().forEach(nodeUuid -> {
+                        if (!nodeUuidsInDb.contains(nodeUuid)) {
+                            if (suspectedMissingFromDb.contains(nodeUuid)) {
+                                // Second consecutive detection — confirmed missing, remove from hash ring
+                                logger.warn(String.format("management node[uuid:%s] confirmed missing from database for two consecutive" +
+                                        " heartbeat cycles, removing from hash ring", nodeUuid));
+                                ManagementNodeInventory inv = new ManagementNodeInventory();
+                                inv.setUuid(nodeUuid);
+                                try {
+                                    inv.setHostName(destinationMaker.getNodeInfo(nodeUuid).getNodeIP());
+                                } catch (Exception e) {
+                                    logger.warn(String.format("cannot get node info for node[uuid:%s], use empty hostname", nodeUuid));
+                                }
 
-                        nodeLifeCycle.nodeLeft(inv);
-                    }
-                });
-
-                // check if any node missing in our hash ring
-                nodesInDb.forEach(n -> {
-                    if (n.getUuid().equals(node().getUuid()) || suspects.contains(n)) {
-                        return;
-                    }
-
-                    new Runnable() {
-                        @Override
-                        @AsyncThread
-                        public void run() {
-                            nodeLifeCycle.nodeJoin(ManagementNodeInventory.valueOf(n));
+                                nodeLifeCycle.nodeLeft(inv);
+                            } else {
+                                // First detection — mark as suspected, defer removal to next cycle
+                                logger.warn(String.format("management node[uuid:%s] not found in database but still in hash ring," +
+                                        " marking as suspected (will remove on next heartbeat if still missing)", nodeUuid));
+                                currentSuspected.add(nodeUuid);
+                            }
                         }
-                    }.run();
-                });
+                    });
+                    // Update suspected set: only keep nodes that are newly suspected this round
+                    suspectedMissingFromDb.clear();
+                    suspectedMissingFromDb.addAll(currentSuspected);
+
+                    // check if any node missing in our hash ring
+                    nodesInDb.forEach(n -> {
+                        if (n.getUuid().equals(node().getUuid()) || suspects.contains(n)) {
+                            return;
+                        }
+
+                        new Runnable() {
+                            @Override
+                            @AsyncThread
+                            public void run() {
+                                nodeLifeCycle.nodeJoin(ManagementNodeInventory.valueOf(n));
+                            }
+                        }.run();
+                    });
+                }
             }
 
             @Override
