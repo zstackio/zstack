@@ -155,7 +155,13 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
         String hostname = CollectionUtils.find(hostNames, new Function<String, HostName>() {
             @Override
             public String call(HostName arg) {
-                return arg.getL3NetworkUuid().equals(l3.getUuid()) ? arg.getHostname() : null;
+                if (arg == null || l3 == null) {
+                    return null;
+                }
+                if (Objects.equals(arg.getL3NetworkUuid(), l3.getUuid())) {
+                    return arg.getHostname();
+                }
+                return null;
             }
         });
         if (hostname != null && l3.getDnsDomain() != null) {
