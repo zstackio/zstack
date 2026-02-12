@@ -14,6 +14,10 @@ import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Objects;
+
+import static org.zstack.kvm.KVMConstant.EDK_VERSION_NONE;
+
 public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmSecureBootExtensions.class);
 
@@ -32,7 +36,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint {
 
         resourceConfig = resourceConfigFacade.getResourceConfig(KVMGlobalConfig.VM_EDK_VERSION_CONFIG.getIdentity());
         final String edkVersion = resourceConfig.getResourceConfigValue(spec.getVmInventory().getUuid(), String.class);
-        if (edkVersion != null && !edkVersion.isEmpty()) {
+        if (!Objects.equals(edkVersion, EDK_VERSION_NONE)) {
             cmd.setEdkVersion(edkVersion);
         }
     }
