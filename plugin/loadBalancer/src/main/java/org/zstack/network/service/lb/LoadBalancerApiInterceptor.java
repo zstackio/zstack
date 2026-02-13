@@ -39,6 +39,7 @@ import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.vip.VipVO_;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.TagManager;
+import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
@@ -152,8 +153,20 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             validate((APIGetCandidateVmNicsForLoadBalancerServerGroupMsg)msg);
         } else if (msg instanceof APIChangeLoadBalancerBackendServerMsg) {
             validate((APIChangeLoadBalancerBackendServerMsg)msg);
+        } else if (msg instanceof APIDeleteLoadBalancerMsg) {
+            validate((APIDeleteLoadBalancerMsg) msg);
         }
         return msg;
+    }
+
+    private void validate(APIDeleteLoadBalancerMsg msg) {
+        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            LoadBalancerVO lb = dbf.findByUuid(msg.getUuid(), LoadBalancerVO.class);
+            if (lb != null && lb.getType() == LoadBalancerType.SLB) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "cannot delete the standalone load balancer[uuid:%s] during grayscale upgrade", msg.getUuid()));
+            }
+        }
     }
 
     private void validate(APIDeleteAccessControlListMsg msg) {
