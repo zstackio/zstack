@@ -11,6 +11,7 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.network.NetworkUtils
 import org.zstack.utils.network.IPv6Constants
 
 class ReservedIpRangeSecondNormalRangeCase extends SubCase {
@@ -37,6 +38,7 @@ class ReservedIpRangeSecondNormalRangeCase extends SubCase {
         env.create {
             reserveIpv4AddressFromSecondNormalRange()
             reserveIpv6AddressFromSecondNormalRange()
+            getFreeIpExcludesReservationsOnDualStackNetwork()
         }
     }
 
@@ -153,6 +155,80 @@ class ReservedIpRangeSecondNormalRangeCase extends SubCase {
         assertIpUnavailable(l3.uuid, "2024:0005:0028:0000:0000:0000:0000:0001", IpNotAvailabilityReason.GATEWAY.toString())
         assertIpUnavailable(l3.uuid, "2024:5:28::41")
         assertIpUnavailable(l3.uuid, "2024:5:28::51")
+    }
+
+    void getFreeIpExcludesReservationsOnDualStackNetwork() {
+        L3NetworkInventory sourceL3Network = env.inventoryByName("l3-1")
+        L3NetworkInventory l3 = createL3Network {
+            name = "l3-reserved-free-ip-dual-stack"
+            l2NetworkUuid = sourceL3Network.l2NetworkUuid
+            category = L3NetworkCategory.Private
+        }
+
+        addIpRange {
+            name = "initial-ipv4-range"
+            l3NetworkUuid = l3.uuid
+            startIp = "192.168.251.2"
+            endIp = "192.168.251.5"
+            gateway = "192.168.251.1"
+            netmask = "255.255.255.0"
+        }
+        addIpv6Range {
+            name = "initial-ipv6-range"
+            l3NetworkUuid = l3.uuid
+            startIp = "2024:5:29::2"
+            endIp = "2024:5:29::5"
+            gateway = "2024:5:29::1"
+            prefixLen = 64
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+        addReservedIpRange {
+            l3NetworkUuid = l3.uuid
+            startIp = "192.168.251.10"
+            endIp = "192.168.251.11"
+        }
+        addReservedIpRange {
+            l3NetworkUuid = l3.uuid
+            startIp = "2024:5:29::10"
+            endIp = "2024:5:29::11"
+        }
+        addIpRange {
+            name = "later-ipv4-range"
+            l3NetworkUuid = l3.uuid
+            startIp = "192.168.251.10"
+            endIp = "192.168.251.12"
+            gateway = "192.168.251.1"
+            netmask = "255.255.255.0"
+        }
+        addIpv6Range {
+            name = "later-ipv6-range"
+            l3NetworkUuid = l3.uuid
+            startIp = "2024:5:29::10"
+            endIp = "2024:5:29::12"
+            gateway = "2024:5:29::1"
+            prefixLen = 64
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+
+        [IPv6Constants.IPv4, IPv6Constants.IPv6].each { version ->
+            List<FreeIpInventory> freeIps = getFreeIp {
+                l3NetworkUuid = l3.uuid
+                ipVersion = version
+                limit = 100
+            }
+            assert freeIps.size() == 5
+            if (version != IPv6Constants.IPv6) {
+                assert freeIps.any { it.ip == "192.168.251.12" }
+                assert !freeIps.any { NetworkUtils.isIpv4Address(it.ip) &&
+                        NetworkUtils.isInRange(it.ip, "192.168.251.10", "192.168.251.11") }
+            }
+            if (version != IPv6Constants.IPv4) {
+                assert freeIps.any { !NetworkUtils.isIpv4Address(it.ip) &&
+                        NetworkUtils.isInRange(it.ip, "2024:5:29::12", "2024:5:29::12") }
+                assert !freeIps.any { !NetworkUtils.isIpv4Address(it.ip) &&
+                        NetworkUtils.isInRange(it.ip, "2024:5:29::10", "2024:5:29::11") }
+            }
+        }
     }
 
     void assertReservedUsedIp(String l3NetworkUuid, String ip, String ipRangeUuid, String reservedIpRangeUuid) {
