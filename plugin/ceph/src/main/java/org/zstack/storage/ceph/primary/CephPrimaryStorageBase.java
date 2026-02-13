@@ -1729,7 +1729,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         cmd.size = msg.getVolume().getSize();
         cmd.setShareable(msg.getVolume().isShareable());
         cmd.skipIfExisting = msg.isSkipIfExisting();
-        cmd.format = msg.hasSystemTag(VolumeSystemTags.FORMAT_QCOW2.getTagFormat()) ? VolumeConstant.VOLUME_FORMAT_QCOW2 : VolumeConstant.VOLUME_FORMAT_RAW ;
+
+        VolumeType type = Q.New(VolumeVO.class)
+                .eq(VolumeVO_.uuid, volumeUuid)
+                .select(VolumeVO_.type)
+                .findValue();
+        if (type == VolumeType.NvRam) {
+            cmd.format = VolumeConstant.VOLUME_FORMAT_RAW;
+        } else {
+            cmd.format = msg.hasSystemTag(VolumeSystemTags.FORMAT_QCOW2.getTagFormat()) ?
+                    VolumeConstant.VOLUME_FORMAT_QCOW2 :
+                    VolumeConstant.VOLUME_FORMAT_RAW ;
+        }
 
         final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
 
