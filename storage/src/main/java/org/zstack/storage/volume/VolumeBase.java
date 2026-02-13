@@ -817,7 +817,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
                             } else if (msg instanceof InstantiateMemoryVolumeMsg) {
                                 instantiateMemoryVolume(msg, trigger);
                             } else {
-                                instantiateDataVolume(msg, trigger);
+                                // include: data volume, NvRam, TpmState
+                                instantiateOtherVolume(msg, trigger);
                             }
                         }
                     }
@@ -859,7 +860,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
                         doInstantiateVolume(imsg, trigger);
                     }
 
-                    private void instantiateDataVolume(InstantiateVolumeMsg msg, FlowTrigger trigger) {
+                    private void instantiateOtherVolume(InstantiateVolumeMsg msg, FlowTrigger trigger) {
                         InstantiateVolumeOnPrimaryStorageMsg imsg = new InstantiateVolumeOnPrimaryStorageMsg();
                         prepareMsg(msg, imsg);
                         doInstantiateVolume(imsg, trigger);
