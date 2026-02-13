@@ -116,6 +116,7 @@
         <property name="expungeVmWorkFlowElements">
             <list>
                 <value>org.zstack.compute.vm.VmExpungeRootVolumeFlow</value>
+                <value>org.zstack.compute.vm.VmExpungeNvRamVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeMemoryVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeCacheVolumeFlow</value>
             </list>
@@ -285,6 +286,7 @@
     <bean id="VmTpmExtensions" class="org.zstack.compute.vm.devices.VmTpmExtensions">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.vm.VmInstanceCreateExtensionPoint" />
+            <zstack:extension interface="org.zstack.compute.vm.BuildVmSpecExtensionPoint" />
         </zstack:plugin>
     </bean>
 </beans>

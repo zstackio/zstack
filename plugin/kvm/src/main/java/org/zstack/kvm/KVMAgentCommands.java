@@ -2068,6 +2068,7 @@ public class KVMAgentCommands {
         private List<CdRomTO> cdRoms = new ArrayList<>();
         private List<VolumeTO> dataVolumes;
         private List<VolumeTO> cacheVolumes;
+        private VolumeTO nvRam;
         private List<NicTO> nics;
         private TpmTO tpm;
         private long timeout;
@@ -2547,6 +2548,14 @@ public class KVMAgentCommands {
 
         public void setCacheVolumes(List<VolumeTO> cacheVolumes) {
             this.cacheVolumes = cacheVolumes;
+        }
+
+        public VolumeTO getNvRam() {
+            return nvRam;
+        }
+
+        public void setNvRam(VolumeTO nvRam) {
+            this.nvRam = nvRam;
         }
 
         public List<NicTO> getNics() {
