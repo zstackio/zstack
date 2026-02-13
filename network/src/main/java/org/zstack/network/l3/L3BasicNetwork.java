@@ -1075,6 +1075,13 @@ public class L3BasicNetwork implements L3Network {
             }
             limit -= freeIpInventorys.size();
         }
+
+        Set<ReservedIpRangeVO> reservedIpRanges = self.getReservedIpRanges();
+        if (reservedIpRanges != null && !reservedIpRanges.isEmpty()) {
+            freeIpInventorys.removeIf(freeIp -> reservedIpRanges.stream().anyMatch(
+                    r -> NetworkUtils.isInRange(freeIp.getIp(), r.getStartIp(), r.getEndIp())));
+        }
+
         reply.setInventories(freeIpInventorys);
 
         bus.reply(msg, reply);
