@@ -1052,6 +1052,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         return PathUtil.join(self.getUrl(), PrimaryStoragePathMaker.makeDataVolumeInstallPath(volUuid));
     }
 
+    public String makeNvRamVolumeInstallUrl(String volUuid) {
+        return PathUtil.join(self.getUrl(), PrimaryStoragePathMaker.makeNvRamVolumeInstallPath(volUuid));
+    }
+
     public boolean isCachedImageUrl(String path){
         return path.startsWith(PathUtil.join(self.getUrl(), PrimaryStoragePathMaker.getCachedImageInstallDir()));
     }
@@ -1380,6 +1384,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 cmd.setInstallUrl(makeMemoryVolumeInstallUrl(volume));
             } else if (VolumeType.Cache.toString().equals(volume.getType())) {
                 cmd.setInstallUrl(makeDataVolumeInstallUrl(volume.getUuid()));
+            } else if (VolumeType.NvRam.toString().equals(volume.getType())) {
+                cmd.setInstallUrl(makeNvRamVolumeInstallUrl(volume.getUuid()));
             }
         }
         cmd.setName(volume.getName());
