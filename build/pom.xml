@@ -727,6 +727,10 @@
             <groupId>io.sentry</groupId>
             <artifactId>sentry-opentelemetry-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry-opentelemetry-bootstrap</artifactId>
+        </dependency>
         <!-- Legacy semconv 1.23.1-alpha for top-level SemanticAttributes (sentry-opentelemetry-bootstrap) -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
