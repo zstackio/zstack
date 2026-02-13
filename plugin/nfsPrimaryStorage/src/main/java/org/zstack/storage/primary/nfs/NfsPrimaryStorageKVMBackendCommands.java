@@ -3,6 +3,7 @@ package org.zstack.storage.primary.nfs;
 import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.validation.Validation;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMAgentCommands.AgentCommand;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
@@ -373,6 +374,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
         private String name;
         @GrayVersion(value = "5.0.0")
         private String volumeUuid;
+        private String volumeFormat = VolumeConstant.VOLUME_FORMAT_QCOW2;
 
         public String getInstallUrl() {
             return installUrl;
@@ -404,7 +406,12 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public void setVolumeUuid(String uuid) {
             this.volumeUuid = uuid;
         }
-
+        public String getVolumeFormat() {
+            return volumeFormat;
+        }
+        public void setVolumeFormat(String volumeFormat) {
+            this.volumeFormat = volumeFormat;
+        }
     }
 
     public static class CreateRootVolumeFromTemplateCmd extends CreateVolumeCmd {
