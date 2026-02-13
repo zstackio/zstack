@@ -3374,7 +3374,7 @@
   "ORG_ZSTACK_NETWORK_HUAWEI_IMASTER_10019": "delete token of SDN controller [IP:%s] failed because %s",
   "ORG_ZSTACK_STORAGE_PRIMARY_BLOCK_10004": "Cannot execute volume mapping to host flow due to invalid volume ID.%s",
   "ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10007": "port forwarding rule [uuid:%s] has not been attached to any virtual machine network interface, cannot detach",
-  "ORG_ZSTACK_MEVOCO_10088": "cannot take a snapshot for volumes[%s] when volume[uuid: %s] is not attached",
+  "ORG_ZSTACK_MEVOCO_10088": "cannot create snapshot for volume[uuid:%s] because it is not attached to any VM instance. Please attach the volume to a VM first. Affected volumes: %s",
   "ORG_ZSTACK_STORAGE_PRIMARY_BLOCK_10005": "Cannot execute map LUN to host flow due to invalid LUN type: %s",
   "ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10008": "port forwarding rule [uuid:%s] has been associated with vm nic [uuid:%s], cannot be reassigned again",
   "ORG_ZSTACK_MEVOCO_10087": "A Running VM[uuid:%s] has no associated Host UUID.",

@@ -3374,7 +3374,7 @@
   "ORG_ZSTACK_NETWORK_HUAWEI_IMASTER_10019": "删除 SDN 控制器 [IP：%s] 的令牌失败，因为 %s",
   "ORG_ZSTACK_STORAGE_PRIMARY_BLOCK_10004": "无法执行映射LUN到主机流程，无效的LUN ID",
   "ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10007": "端口转发规则 rule[uuid:%s] 没有绑定到任何 VM 的网卡上，无法解除绑定",
-  "ORG_ZSTACK_MEVOCO_10088": "无法为挂载状态以外的卷[%s]创建快照",
+  "ORG_ZSTACK_MEVOCO_10088": "无法为云盘[uuid:%s]创建快照，因为该云盘未挂载到任何云主机。请先将云盘挂载到云主机后再创建快照。相关云盘: %s",
   "ORG_ZSTACK_STORAGE_PRIMARY_BLOCK_10005": "无法执行映射LUN到主机流程，无效的LUN类型",
   "ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10008": "端口转发规则[uuid:%s]已绑定到VM网卡[uuid:%s]，无法再次绑定",
   "ORG_ZSTACK_MEVOCO_10087": "如何一个运行中的VM[uuid:%s]没有宿主机uuid?",
