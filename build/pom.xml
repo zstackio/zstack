@@ -731,11 +731,6 @@
             <groupId>io.sentry</groupId>
             <artifactId>sentry-opentelemetry-bootstrap</artifactId>
         </dependency>
-        <!-- New semconv (io.opentelemetry.semconv) for UrlAttributes required by Sentry 8.x -->
-        <dependency>
-            <groupId>io.opentelemetry.semconv</groupId>
-            <artifactId>opentelemetry-semconv</artifactId>
-        </dependency>
         <!-- Legacy semconv 1.23.1-alpha for top-level SemanticAttributes (sentry-opentelemetry-bootstrap) -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
