@@ -44,6 +44,10 @@ public class NfsPrimaryStorageKvmHelper {
         return ImageCacheUtil.getImageCachePath(iminv, it -> PathUtil.join(pinv.getMountPath(), PrimaryStoragePathMaker.makeCachedImageInstallPath(iminv)));
     }
 
+    public static String makeNvRamVolumeInstallUrl(PrimaryStorageInventory pinv, String volUuid) {
+        return PathUtil.join(pinv.getMountPath(), PrimaryStoragePathMaker.makeNvRamVolumeInstallPath(volUuid));
+    }
+
     public static String getCachedImageDir(PrimaryStorageInventory pinv){
         return PathUtil.join(pinv.getMountPath(), PrimaryStoragePathMaker.getCachedImageInstallDir());
     }
