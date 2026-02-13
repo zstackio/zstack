@@ -1107,6 +1107,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             cmd.setInstallUrl(NfsPrimaryStorageKvmHelper.makeDataVolumeInstallUrl(pinv, volume.getUuid()));
         } else if (volume.getType().equals(VolumeType.Cache.toString())) {
             cmd.setInstallUrl(NfsPrimaryStorageKvmHelper.makeDataVolumeInstallUrl(pinv, volume.getUuid()));
+        } else if (volume.getType().equals(VolumeType.NvRam.toString())) {
+            cmd.setInstallUrl(NfsPrimaryStorageKvmHelper.makeNvRamVolumeInstallUrl(pinv, volume.getUuid()));
+            cmd.setVolumeFormat(VolumeConstant.VOLUME_FORMAT_RAW);
         } else {
             throw new CloudRuntimeException(String.format("unknown volume type %s", volume.getType()));
         }
@@ -1139,7 +1142,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 }
 
                 volume.setInstallPath(cmd.getInstallUrl());
-                volume.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
+                volume.setFormat(cmd.getVolumeFormat());
                 volume.setActualSize(rsp.actualSize);
                 if (rsp.size != null) {
                     volume.setSize(rsp.size);
