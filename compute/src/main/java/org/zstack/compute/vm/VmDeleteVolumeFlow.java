@@ -49,7 +49,9 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
         final boolean templated = isTemplated(spec.getVmInventory().getUuid());
 
         /* data volume must be detached anyway no matter if it is going to be deleted */
-        if (spec.getVmInventory().getAllVolumes().size() > 1) {
+        boolean anyDataVolume = spec.getVmInventory().getAllVolumes().stream()
+                .anyMatch(arg -> VolumeType.Data.toString().equals(arg.getType()));
+        if (anyDataVolume) {
             detachDataVolumes(spec);
         }
 
@@ -60,7 +62,12 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
             return;
         }
 
-        List<String> volumeTypes = Arrays.asList(VolumeType.Root.toString(), VolumeType.Memory.toString(), VolumeType.Cache.toString());
+        List<String> volumeTypes = Arrays.asList(
+                VolumeType.Root.toString(),
+                VolumeType.Memory.toString(),
+                VolumeType.Cache.toString(),
+                VolumeType.NvRam.toString()
+        );
         List<VolumeDeletionStruct> ctx = transformAndRemoveNull(spec.getVmInventory().getAllVolumes(), arg -> {
             if (VolumeType.Data.toString().equals(arg.getType()) && !deleteDataDisk && !templated) {
                 return null;
