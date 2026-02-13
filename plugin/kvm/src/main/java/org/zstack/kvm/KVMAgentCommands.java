@@ -2396,6 +2396,7 @@ public class KVMAgentCommands {
         private List<VolumeTO> dataVolumes;
         @GrayVersion(value = "5.0.0")
         private List<VolumeTO> cacheVolumes;
+        private VolumeTO nvRam;
         private List<NicTO> nics;
         private TpmTO tpm;
         @GrayVersion(value = "5.0.0")
@@ -2950,6 +2951,14 @@ public class KVMAgentCommands {
 
         public void setCacheVolumes(List<VolumeTO> cacheVolumes) {
             this.cacheVolumes = cacheVolumes;
+        }
+
+        public VolumeTO getNvRam() {
+            return nvRam;
+        }
+
+        public void setNvRam(VolumeTO nvRam) {
+            this.nvRam = nvRam;
         }
 
         public List<NicTO> getNics() {
