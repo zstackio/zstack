@@ -321,6 +321,7 @@ public class KvmBackend extends HypervisorBackend {
         public String name;
         public String volumeUuid;
         public String backingFile;
+        public String volumeFormat = VolumeConstant.VOLUME_FORMAT_QCOW2;
     }
 
     public static class CreateEmptyVolumeRsp extends AgentRsp {
@@ -615,6 +616,10 @@ public class KvmBackend extends HypervisorBackend {
 
     public String makeCachedImageInstallUrl(ImageInventory iminv) {
         return ImageCacheUtil.getImageCachePath(iminv, it -> PathUtil.join(self.getMountPath(), PrimaryStoragePathMaker.makeCachedImageInstallPath(iminv)));
+    }
+
+    public String makeNvRamVolumeInstallUrl(String volUuid) {
+        return PathUtil.join(self.getMountPath(), PrimaryStoragePathMaker.makeNvRamVolumeInstallPath(volUuid));
     }
 
     public String makeCachedImageInstallUrlFromImageUuidForTemplate(String imageUuid) {
@@ -969,6 +974,9 @@ public class KvmBackend extends HypervisorBackend {
             cmd.installPath = makeRootVolumeInstallUrl(volume);
         } else if (VolumeType.Data.toString().equals(volume.getType())) {
             cmd.installPath = makeDataVolumeInstallUrl(volume.getUuid());
+        } else if (VolumeType.NvRam.toString().equals(volume.getType())) {
+            cmd.installPath = makeNvRamVolumeInstallUrl(volume.getUuid());
+            cmd.volumeFormat = VolumeConstant.VOLUME_FORMAT_RAW;
         } else {
             DebugUtils.Assert(false, "Should not be here");
         }
@@ -982,7 +990,7 @@ public class KvmBackend extends HypervisorBackend {
                 CreateEmptyVolumeRsp rsp = (CreateEmptyVolumeRsp) returnValue;
                 InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
                 volume.setInstallPath(cmd.installPath);
-                volume.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
+                volume.setFormat(cmd.volumeFormat);
                 volume.setActualSize(rsp.actualSize);
                 if (rsp.size != null) {
                     volume.setSize(rsp.size);
