@@ -302,7 +302,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
         public SyncTaskFuture(SyncTask<T> task) {
             super(task);
-            this.parentContext = Context.current();
+            this.parentContext = isTelemetryEnabled() ? Context.current() : null;
         }
 
         private SyncTask getTask() {
