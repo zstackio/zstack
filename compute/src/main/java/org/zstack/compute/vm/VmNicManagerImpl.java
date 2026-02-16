@@ -58,6 +58,10 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
         SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, usedIpUuid).set(UsedIpVO_.vmNicUuid, vmNicUUid).update();
 
         VmNicVO nic = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, vmNicUUid).find();
+        if (nic == null) {
+            logger.debug(String.format("VmNic[uuid:%s] not found, skip afterAddIpAddress", vmNicUUid));
+            return;
+        }
 
         UsedIpVO temp = null;
         /* if there is ipv4 addresses, we put the first attached ipv4 address to VmNic.ip
@@ -88,6 +92,10 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
     @Override
     public void afterDelIpAddress(String vmNicUUid, String usedIpUuid) {
         VmNicVO nic = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, vmNicUUid).find();
+        if (nic == null) {
+            logger.debug(String.format("VmNic[uuid:%s] not found, skip afterDelIpAddress", vmNicUUid));
+            return;
+        }
         if (nic.getUsedIpUuid() != null && !nic.getUsedIpUuid().equals(usedIpUuid)) {
             return;
         }
