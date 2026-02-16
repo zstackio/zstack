@@ -120,6 +120,10 @@ public class KVMGlobalConfig {
     @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable install host shutdown hook")
     public static GlobalConfig INSTALL_HOST_SHUTDOWN_HOOK = new GlobalConfig(CATEGORY, "install.host.shutdown.hook");
 
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigDef(defaultValue = "600", type = Long.class, description = "timeout in seconds for orphaned VM skip entries from departed management nodes")
+    public static GlobalConfig ORPHANED_VM_SKIP_TIMEOUT = new GlobalConfig(CATEGORY, "vm.orphanedSkipTimeout");
+
     @GlobalConfigValidation(validValues = {"true", "false"})
     @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable memory auto balloon")
     @BindResourceConfig({VmInstanceVO.class, HostVO.class, ClusterVO.class})

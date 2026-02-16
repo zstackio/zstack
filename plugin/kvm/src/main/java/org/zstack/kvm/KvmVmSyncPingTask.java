@@ -70,10 +70,13 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     private Map<String, Integer> vmInShutdownMap = new ConcurrentHashMap<>();
 
     // Orphaned skip entries from departed MN nodes. Key=vmUuid, Value=timestamp when orphaned.
-    // These VMs remain in skip-trace state for ORPHAN_TTL_MS to avoid false HA triggers
+    // These VMs remain in skip-trace state to avoid false HA triggers
     // when a MN restarts and its in-flight VM operations haven't completed yet. See ZSTAC-80821.
     private final ConcurrentHashMap<String, Long> orphanedSkipVms = new ConcurrentHashMap<>();
-    private static final long ORPHAN_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+    private long getOrphanTtlMs() {
+        return KVMGlobalConfig.ORPHANED_VM_SKIP_TIMEOUT.value(Long.class) * 1000;
+    }
 
     {
         getReflections().getTypesAnnotatedWith(SkipVmTracer.class).forEach(clz -> {
@@ -469,7 +472,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
             for (String vmUuid : skippedVms) {
                 orphanedSkipVms.put(vmUuid, now);
                 logger.info(String.format("moved VM[uuid:%s] from departed MN[uuid:%s] skip list to orphaned set" +
-                        " (will expire in %d minutes)", vmUuid, inv.getUuid(), ORPHAN_TTL_MS / 60000));
+                        " (will expire in %d minutes)", vmUuid, inv.getUuid(), getOrphanTtlMs() / 60000));
             }
         }
     }
@@ -492,14 +495,14 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
         // ZSTAC-80821: Also check orphaned skip entries from departed MN nodes
         Long orphanedAt = orphanedSkipVms.get(vmUuid);
         if (orphanedAt != null) {
-            if (System.currentTimeMillis() - orphanedAt < ORPHAN_TTL_MS) {
+            if (System.currentTimeMillis() - orphanedAt < getOrphanTtlMs()) {
                 logger.debug(String.format("VM[uuid:%s] is in orphaned skip set, skipping trace", vmUuid));
                 return true;
             } else {
                 // Expired, clean up
                 orphanedSkipVms.remove(vmUuid, orphanedAt);
                 logger.info(String.format("orphaned skip entry for VM[uuid:%s] expired after %d minutes, resuming trace",
-                        vmUuid, ORPHAN_TTL_MS / 60000));
+                        vmUuid, getOrphanTtlMs() / 60000));
             }
         }
 
@@ -514,7 +517,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
 
         long now = System.currentTimeMillis();
         for (Map.Entry<String, Long> entry : orphanedSkipVms.entrySet()) {
-            if (now - entry.getValue() >= ORPHAN_TTL_MS) {
+            if (now - entry.getValue() >= getOrphanTtlMs()) {
                 orphanedSkipVms.remove(entry.getKey(), entry.getValue());
                 logger.info(String.format("cleaned up expired orphaned skip entry for VM[uuid:%s]", entry.getKey()));
             }
