@@ -179,7 +179,10 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         if (VolumeProtocol.CBD.toString().equals(protocol)) {
             GetVolumeClientsCmd cmd = new GetVolumeClientsCmd();
             cmd.setPath(installPath);
-            GetVolumeClientsRsp rsp = syncHttpCall(GET_VOLUME_CLIENTS_PATH, cmd, GetVolumeClientsRsp.class);
+            GetVolumeClientsRsp rsp = new HttpCaller<>(GET_VOLUME_CLIENTS_PATH, cmd, GetVolumeClientsRsp.class,
+                    null, TimeUnit.SECONDS, 30, true)
+                    .setTryNext(true)
+                    .syncCall();
             List<ActiveVolumeClient> clients = new ArrayList<>();
 
             if (!rsp.isSuccess()) {
@@ -1410,6 +1413,11 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         private final boolean sync;
 
         private boolean tryNext = false;
+
+        HttpCaller<T> setTryNext(boolean tryNext) {
+            this.tryNext = tryNext;
+            return this;
+        }
 
         public HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback) {
             this(path, cmd, retClass, callback, null, 0, false);
