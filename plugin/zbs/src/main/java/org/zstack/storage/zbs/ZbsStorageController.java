@@ -539,6 +539,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
+                        syncMdsStatuses(newAddonInfo);
                         completion.fail(errCode);
                     }
                 });
@@ -1359,6 +1360,24 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     @Override
     public void syncConfig(String config) {
         this.config = StringUtils.isEmpty(config) ? new Config() : JSONObjectUtil.toObject(config, Config.class);
+    }
+
+    private void syncMdsStatuses(AddonInfo newAddonInfo) {
+        if (addonInfo == null || newAddonInfo == null) {
+            return;
+        }
+
+        for (MdsInfo newMds : newAddonInfo.getMdsInfos()) {
+            for (MdsInfo existMds : addonInfo.getMdsInfos()) {
+                if (existMds.getAddr().equals(newMds.getAddr())) {
+                    existMds.setStatus(newMds.getStatus());
+                }
+            }
+        }
+
+        SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
+                .set(ExternalPrimaryStorageVO_.addonInfo, JSONObjectUtil.toJsonString(addonInfo))
+                .update();
     }
 
     @Deprecated
