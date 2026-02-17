@@ -7230,6 +7230,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                         logger.debug(String.format("vm[uuid:%s] is running ..", self.getUuid()));
                         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                         extEmitter.afterStartVm(inv);
+                        for (DeleteInhibitHASystemTagExtensionPoint ext : pluginRgty.getExtensionList(DeleteInhibitHASystemTagExtensionPoint.class)) {
+                            ext.deleteInhibitHaSystemTag(self.getUuid());
+                        }
                         completion.success();
                     }
                 });
@@ -7502,6 +7505,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 logger.debug(String.format("vm[uuid:%s] is started ..", self.getUuid()));
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                 extEmitter.afterStartNewCreatedVm(inv);
+                for (DeleteInhibitHASystemTagExtensionPoint ext : pluginRgty.getExtensionList(DeleteInhibitHASystemTagExtensionPoint.class)) {
+                    ext.deleteInhibitHaSystemTag(self.getUuid());
+                }
                 trigger.next();
             }
         });
