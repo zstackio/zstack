@@ -6274,6 +6274,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_STORAGE_BACKUP_10133 = "ORG_ZSTACK_STORAGE_BACKUP_10133";
 
+    public static final String ORG_ZSTACK_STORAGE_BACKUP_CANCEL_TIMEOUT = "ORG_ZSTACK_STORAGE_BACKUP_CANCEL_TIMEOUT";
+
     public static final String ORG_ZSTACK_COMPUTE_10000 = "ORG_ZSTACK_COMPUTE_10000";
 
     public static final String ORG_ZSTACK_COMPUTE_10001 = "ORG_ZSTACK_COMPUTE_10001";
