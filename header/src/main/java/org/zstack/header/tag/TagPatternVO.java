@@ -31,6 +31,9 @@ public class TagPatternVO extends ResourceVO implements OwnedByAccount {
     private String accountUuid;
 
     @Column
+    private String resourceType;
+
+    @Column
     private Timestamp createDate;
 
     @Column
@@ -105,5 +108,13 @@ public class TagPatternVO extends ResourceVO implements OwnedByAccount {
 
     public void setType(TagPatternType type) {
         this.type = type;
+    }
+
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
     }
 }
