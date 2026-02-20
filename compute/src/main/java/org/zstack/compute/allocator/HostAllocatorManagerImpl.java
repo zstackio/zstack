@@ -851,17 +851,15 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     long deltaMemory = ratioMgr.calculateMemoryByRatio(hostUuid, memory);
                     long availMemory = cap.getAvailableMemory() + deltaMemory;
                     if (availMemory > cap.getTotalMemory()) {
-                        throw new CloudRuntimeException(
-                                String.format("invalid memory capacity of host[uuid:%s]," +
-                                                " available memory[%s] is greater than total memory[%s]." +
-                                                " Available Memory before is [%s], Delta Memory is [%s].",
-                                        hostUuid,
-                                        new DecimalFormat(",###").format(availMemory),
-                                        new DecimalFormat(",###").format(cap.getTotalMemory()),
-                                        new DecimalFormat(",###").format(cap.getAvailableMemory()),
-                                        new DecimalFormat(",###").format(deltaMemory)
-                                )
-                        );
+                        logger.warn(String.format("memory capacity overflow on host[uuid:%s]," +
+                                        " available memory[%s] > total memory[%s], clamping to total." +
+                                        " Available Memory before is [%s], Delta Memory is [%s].",
+                                hostUuid,
+                                new DecimalFormat(",###").format(availMemory),
+                                new DecimalFormat(",###").format(cap.getTotalMemory()),
+                                new DecimalFormat(",###").format(cap.getAvailableMemory()),
+                                new DecimalFormat(",###").format(deltaMemory)));
+                        availMemory = cap.getTotalMemory();
                     }
 
                     cap.setAvailableMemory(availMemory);

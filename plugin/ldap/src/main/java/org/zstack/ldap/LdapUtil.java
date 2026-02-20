@@ -657,10 +657,10 @@ public class LdapUtil {
         sq.add(LdapServerVO_.scope, SimpleQuery.Op.EQ, scope);
         List<LdapServerVO> ldapServers = sq.list();
         if (ldapServers.isEmpty()) {
-            throw new CloudRuntimeException("No LDAP/AD server record in database.");
+            throw new OperationFailureException(operr(ORG_ZSTACK_LDAP_10020, "No LDAP/AD server record in database."));
         }
         if (ldapServers.size() > 1) {
-            throw new CloudRuntimeException("More than one LDAP/AD server record in database.");
+            throw new OperationFailureException(operr(ORG_ZSTACK_LDAP_10021, "More than one LDAP/AD server record in database."));
         }
         return ldapServers.get(0);
     }
