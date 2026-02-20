@@ -11588,6 +11588,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_PCIDEVICE_10076 = "ORG_ZSTACK_PCIDEVICE_10076";
 
+    public static final String ORG_ZSTACK_PCIDEVICE_10077 = "ORG_ZSTACK_PCIDEVICE_10077";
+
     public static final String ORG_ZSTACK_CAS_DRIVER_DONGHAI_10000 = "ORG_ZSTACK_CAS_DRIVER_DONGHAI_10000";
 
     public static final String ORG_ZSTACK_CAS_DRIVER_DONGHAI_10001 = "ORG_ZSTACK_CAS_DRIVER_DONGHAI_10001";
