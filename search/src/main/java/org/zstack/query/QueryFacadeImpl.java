@@ -378,7 +378,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         } catch (OperationFailureException of) {
             throw of;
         } catch (Exception e) {
-            throw new CloudRuntimeException(e);
+            throw new OperationFailureException(inerr("failed to query: %s", e.getMessage()));
         }
     }
 
