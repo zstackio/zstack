@@ -141,7 +141,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
 
             @Override
             public String getName() {
-                return String.format("connect-ceph-primary-storage-mon-%s", self.getUuid());
+                return String.format("connect-ceph-primary-storage-mon-%s", self == null ? "unknown" : self.getUuid());
             }
         });
     }
@@ -420,7 +420,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
 
             @Override
             public String getName() {
-                return String.format("ping-ceph-primary-storage-%s", self.getUuid());
+                return String.format("ping-ceph-primary-storage-%s", self == null ? "unknown" : self.getUuid());
             }
         });
     }

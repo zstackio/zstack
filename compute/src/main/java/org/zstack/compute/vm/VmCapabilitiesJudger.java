@@ -53,6 +53,12 @@ public class VmCapabilitiesJudger {
             q.add(PrimaryStorageVO_.uuid, SimpleQuery.Op.EQ, rootVolume.getPrimaryStorageUuid());
             String type = q.findValue();
 
+            if (type == null) {
+                capabilities.setSupportLiveMigration(false);
+                capabilities.setSupportVolumeMigration(false);
+                return;
+            }
+
             PrimaryStorageType psType = PrimaryStorageType.valueOf(type);
 
             if (vm.getState() != VmInstanceState.Running) {

@@ -385,7 +385,12 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 throw new OperationFailureException(
                         argerr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10023, "invalid uri, correct example is file://$URL;hostUuid://$HOSTUUID or volume://$VOLUMEUUID "));
             }
-            hostUuid = uriParsers.get(protocol).parseUri(msg.getRequiredInstallUri()).hostUuid;
+            AbstractUriParser parser = uriParsers.get(protocol);
+            if (parser == null) {
+                throw new OperationFailureException(
+                        argerr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10023, "unsupported protocol[%s] in uri[%s]", protocol, msg.getRequiredInstallUri()));
+            }
+            hostUuid = parser.parseUri(msg.getRequiredInstallUri()).hostUuid;
         }
 
         if (hostUuid != null) {

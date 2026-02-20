@@ -1443,7 +1443,7 @@ public abstract class HostBase extends AbstractHost {
 
             @Override
             protected String getDeduplicateString() {
-                return String.format("connect-host-%s", self.getUuid());
+                return String.format("connect-host-%s", self == null ? "unknown" : self.getUuid());
             }
         });
     }

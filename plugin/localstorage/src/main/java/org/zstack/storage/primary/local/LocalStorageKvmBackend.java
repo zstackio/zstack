@@ -3797,7 +3797,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10081, "cannot find flag file [%s] on host [%s], because: %s", makeInitializedFilePath(), hostUuid, errorCode.getCause().getDetails()));
+                String causeDetails = errorCode.getCause() != null ? errorCode.getCause().getDetails() : errorCode.getDetails();
+                completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10081, "cannot find flag file [%s] on host [%s], because: %s", makeInitializedFilePath(), hostUuid, causeDetails));
             }
         });
     }

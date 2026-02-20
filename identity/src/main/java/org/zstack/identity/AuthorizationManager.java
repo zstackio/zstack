@@ -116,6 +116,11 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
             session = evaluateSession(msg);
         }
 
+        if (session == null) {
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_IDENTITY_10012, IdentityErrors.INVALID_SESSION,
+                    "evaluated session is null for message[%s]", msg.getMessageName()));
+        }
+
         logger.trace(String.format("authorizing message[%s] with user[accountUuid:%s, uuid:%s] session",
                 msg.getMessageName(),
                 session.getAccountUuid(),

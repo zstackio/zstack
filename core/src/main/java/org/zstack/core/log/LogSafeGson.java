@@ -208,6 +208,9 @@ public class LogSafeGson {
     }
 
     public static JsonElement toJsonElement(Object o) {
+        if (o == null) {
+            return JsonNull.INSTANCE;
+        }
         return logSafeGson.toJsonTree(o, getGsonType(o.getClass()));
     }
 

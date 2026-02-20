@@ -54,7 +54,8 @@ public class UpdateQueryImpl implements UpdateQuery {
     @Override
     public UpdateQuery condAnd(SingularAttribute attr, Op op, Object val) {
         if ((op == Op.IN || op == Op.NOT_IN) && !(val instanceof Collection)) {
-            throw new CloudRuntimeException(String.format("for operation IN or NOT IN, a Collection value is expected, but %s got", val.getClass()));
+            throw new CloudRuntimeException(String.format("for operation IN or NOT IN, a Collection value is expected, but %s got",
+                    val == null ? "null" : val.getClass()));
         }
 
         Cond cond = new Cond();
