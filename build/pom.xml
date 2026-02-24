@@ -731,9 +731,9 @@
             <groupId>io.sentry</groupId>
             <artifactId>sentry-opentelemetry-bootstrap</artifactId>
         </dependency>
-        <!-- Legacy semconv 1.23.1-alpha for top-level SemanticAttributes (sentry-opentelemetry-bootstrap) -->
+        <!-- Semconv 1.28.0-alpha: both legacy SemanticAttributes and new split classes for Sentry OTel -->
         <dependency>
-            <groupId>io.opentelemetry</groupId>
+            <groupId>io.opentelemetry.semconv</groupId>
             <artifactId>opentelemetry-semconv</artifactId>
         </dependency>
         <dependency>

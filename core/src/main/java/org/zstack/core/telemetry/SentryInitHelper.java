@@ -1,6 +1,7 @@
 package org.zstack.core.telemetry;
 
 import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -54,6 +55,42 @@ public final class SentryInitHelper {
                 Sentry.init(options -> {
                     options.setDsn(finalDsn);
                     options.setTracesSampleRate(tracesSampleRate);
+                    options.setMaxQueueSize(1000);
+                    if (TelemetryGlobalProperty.SENTRY_DEBUG) {
+                        options.setDebug(true);
+                        options.setDiagnosticLevel(SentryLevel.DEBUG);
+                        options.setLogger(new io.sentry.ILogger() {
+                            @Override
+                            public void log(SentryLevel level, String message, Object... args) {
+                                String formatted = args.length > 0 ? String.format(message, args) : message;
+                                switch (level) {
+                                    case ERROR: logger.warn("[Sentry] " + formatted); break;
+                                    case WARNING: logger.warn("[Sentry] " + formatted); break;
+                                    default: logger.info("[Sentry] " + formatted); break;
+                                }
+                            }
+
+                            @Override
+                            public void log(SentryLevel level, String message, Throwable throwable) {
+                                switch (level) {
+                                    case ERROR: logger.warn("[Sentry] " + message, throwable); break;
+                                    case WARNING: logger.warn("[Sentry] " + message, throwable); break;
+                                    default: logger.info("[Sentry] " + message, throwable); break;
+                                }
+                            }
+
+                            @Override
+                            public void log(SentryLevel level, Throwable throwable, String message, Object... args) {
+                                String formatted = args.length > 0 ? String.format(message, args) : message;
+                                log(level, formatted, throwable);
+                            }
+
+                            @Override
+                            public boolean isEnabled(SentryLevel level) {
+                                return true;
+                            }
+                        });
+                    }
                 });
                 logger.info("Sentry initialized (tracesSampleRate=" + tracesSampleRate + ")");
                 return true;

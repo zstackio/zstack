@@ -148,6 +148,12 @@ public class TelemetryGlobalProperty {
     public static int SHUTDOWN_TIMEOUT_MS;
 
     /**
+     * Enable Sentry SDK debug logging (outputs to management-server.log via log4j).
+     */
+    @GlobalProperty(name = "Telemetry.sentryDebug", defaultValue = "false")
+    public static boolean SENTRY_DEBUG;
+
+    /**
      * Environment types enumeration
      */
     public enum Environment {
