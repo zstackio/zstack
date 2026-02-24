@@ -411,9 +411,8 @@ public abstract class HostBase extends AbstractHost {
                             if (ordered != null) {
                                 vmUuids = ordered;
 
-                                logger.debug(String.format("%s ordered VMs for host maintenance, to keep the order, we will migrate VMs one by one",
-                                        ext.getClass()));
-                                migrateQuantity = 1;
+                                logger.debug(String.format("%s ordered VMs for host maintenance, migrate quantity: %d",
+                                        ext.getClass(), migrateQuantity));
                             }
                         }
 
