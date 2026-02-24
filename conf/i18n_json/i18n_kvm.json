@@ -622,7 +622,7 @@
   {
     "raw": "host password has been changed. Please update host password in management node by UpdateKVMHostAction with host UUID[%s]",
     "en_US": "host password has been changed. Please update host password in management node by UpdateKVMHostAction with host UUID[{0}]",
-    "zh_CN": "",
+    "zh_CN": "主机[UUID:{0}]的密码已被修改，请通过 UpdateKVMHostAction 在管理节点更新主机密码",
     "arguments": [
       "self.getUuid()"
     ],
