@@ -167,11 +167,6 @@
             <groupId>io.opentelemetry.semconv</groupId>
             <artifactId>opentelemetry-semconv</artifactId>
         </dependency>
-        <!-- Legacy semconv (groupId io.opentelemetry) for SemanticAttributes at runtime (Sentry/OTel) -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-semconv</artifactId>
-        </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-metrics</artifactId>

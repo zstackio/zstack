@@ -550,17 +550,11 @@
                 <artifactId>opentelemetry-context</artifactId>
                 <version>1.35.0</version>
             </dependency>
-            <!-- OpenTelemetry Semconv (1.37+ has UrlAttributes required by Sentry OpenTelemetryAttributesExtractor) -->
+            <!-- OpenTelemetry Semconv 1.28.0-alpha: has both legacy SemanticAttributes (top-level) and new split classes (UrlAttributes/HttpAttributes/ServerAttributes) required by sentry-opentelemetry-core 8.16 -->
             <dependency>
                 <groupId>io.opentelemetry.semconv</groupId>
                 <artifactId>opentelemetry-semconv</artifactId>
-                <version>1.37.0</version>
-            </dependency>
-            <!-- Legacy semconv (groupId io.opentelemetry): 1.23.1-alpha has top-level io.opentelemetry.semconv.SemanticAttributes required by sentry-opentelemetry-bootstrap at runtime -->
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-semconv</artifactId>
-                <version>1.23.1-alpha</version>
+                <version>1.28.0-alpha</version>
             </dependency>
             <!-- OpenTelemetry SDK Metrics -->
             <dependency>
