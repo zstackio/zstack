@@ -3198,7 +3198,7 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void success(MigrateVmResponse ret) {
                                 if (!ret.isSuccess()) {
-                                    ErrorCode err = err(HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR, "failed to migrate VM")
+                                    ErrorCode err = err(HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR, "failed to migrate VM, because %s", ret.getError())
                                             .withOpaque("response.error", ret.getError())
                                             .withOpaque("vm.uuid", vmUuid)
                                             .withOpaque("source.host.uuid", srcHostUuid)
