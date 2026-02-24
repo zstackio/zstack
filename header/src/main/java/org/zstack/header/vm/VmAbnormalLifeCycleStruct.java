@@ -72,7 +72,7 @@ public class VmAbnormalLifeCycleStruct {
             boolean match(VmAbnormalLifeCycleStruct struct) {
                 return struct.getOriginalState() == VmInstanceState.Paused
                         && struct.getCurrentState() == VmInstanceState.Stopped
-                        && struct.getCurrentHostUuid().equals(struct.getOriginalHostUuid());
+                        && Objects.equals(struct.getCurrentHostUuid(), struct.getOriginalHostUuid());
             }
         },
         VmMigrateToAnotherHost {

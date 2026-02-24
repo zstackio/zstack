@@ -3974,15 +3974,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     mon.connect(new Completion(releaseLock) {
                         @Override
                         public void success() {
+                            String monUuid = mon.getSelf() == null ? "unknown" : mon.getSelf().getUuid();
                             logger.debug(String.format("successfully reconnected the mon[uuid:%s] of the ceph primary" +
-                                    " storage[uuid:%s, name:%s]", mon.getSelf().getUuid(), self.getUuid(), self.getName()));
+                                    " storage[uuid:%s, name:%s]", monUuid, self.getUuid(), self.getName()));
                             releaseLock.done();
                         }
 
                         @Override
                         public void fail(ErrorCode errorCode) {
+                            String monUuid = mon.getSelf() == null ? "unknown" : mon.getSelf().getUuid();
                             logger.warn(String.format("failed to reconnect the mon[uuid:%s] server of the ceph primary" +
-                                    " storage[uuid:%s, name:%s], %s", mon.getSelf().getUuid(), self.getUuid(), self.getName(), errorCode));
+                                    " storage[uuid:%s, name:%s], %s", monUuid, self.getUuid(), self.getName(), errorCode));
                             releaseLock.done();
                         }
                     });

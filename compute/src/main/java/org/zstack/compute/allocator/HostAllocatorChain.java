@@ -146,7 +146,14 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
             }
         } catch (Throwable t) {
             logger.warn("unhandled throwable", t);
-            completion.fail(inerr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10019, t.toString()));
+            String errMsg = t != null ? t.toString() : "unknown error";
+            if (isDryRun) {
+                if (dryRunCompletion != null) {
+                    dryRunCompletion.fail(inerr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10019, errMsg));
+                }
+            } else if (completion != null) {
+                completion.fail(inerr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10019, errMsg));
+            }
         }
     }
 
