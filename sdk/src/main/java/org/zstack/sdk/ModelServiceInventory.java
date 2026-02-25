@@ -180,6 +180,14 @@ public class ModelServiceInventory  {
         return this.supportDistributed;
     }
 
+    public boolean deleted;
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
+    public boolean getDeleted() {
+        return this.deleted;
+    }
+
     public java.util.List cpuArchitectures;
     public void setCpuArchitectures(java.util.List cpuArchitectures) {
         this.cpuArchitectures = cpuArchitectures;
