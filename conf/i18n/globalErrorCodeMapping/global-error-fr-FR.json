@@ -629,6 +629,7 @@
   "ORG_ZSTACK_CONFIGURATION_10006": "type d'instance[%s] non supporté",
   "ORG_ZSTACK_MULTICAST_ROUTER_10007": "l'adresse de groupe [%s] n'est pas une adresse de groupe multicast",
   "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10014": "le stockage n'est pas sain : %s",
+  "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10015": "aucun stockage de sauvegarde disponible avec les types préférés %s pour le stockage principal[uuid:%s]",
   "ORG_ZSTACK_MULTICAST_ROUTER_10000": "Le multicastRouter[uuid:%s] n'a pas été associé à un routeur VPC",
   "ORG_ZSTACK_MULTICAST_ROUTER_10001": "Le multicast est déjà activé sur le routeur VPC UUID[:%s]",
   "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10012": "Impossible de trouver le chemin du volume propriétaire à partir du chemin d'instantané interne[%s], car l'expression régulière[%s] ne correspond pas au chemin d'instantané",

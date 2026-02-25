@@ -629,6 +629,7 @@
   "ORG_ZSTACK_CONFIGURATION_10006": "instance type[%s] ไม่รองรับ",
   "ORG_ZSTACK_MULTICAST_ROUTER_10007": "group address [%s] ไม่ใช่ multicast group address",
   "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10014": "storage ไม่พร้อมใช้งาน:%s",
+  "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10015": "ไม่มี backup storage ที่ใช้ได้ซึ่งมีประเภทที่ต้องการ %s สำหรับ primary storage[uuid:%s]",
   "ORG_ZSTACK_MULTICAST_ROUTER_10000": "multicastRouter[uuid:%s] ไม่ได้เชื่อมโยงกับ VPC router",
   "ORG_ZSTACK_MULTICAST_ROUTER_10001": "multicast เปิดใช้งานอยู่แล้วบน VPC router UUID[:%s]",
   "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10012": "ไม่พบ path ของ volume ที่เป็นเจ้าของจาก internal snapshot path[%s] เนื่องจาก regex[%s] ไม่สามารถจับคู่กับ snapshot path ได้",

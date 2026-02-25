@@ -510,8 +510,19 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 .param("size", msg.getRequiredSize())
                 .list();
 
-        // sort by prefer type
-        availableBs.sort(Comparator.comparingInt(o -> preferBsTypes.indexOf(o.getType())));
+        // filter out non-preferred types, then sort by preference order
+        availableBs = availableBs.stream()
+                .filter(bs -> preferBsTypes.contains(bs.getType()))
+                .sorted(Comparator.comparingInt(o -> preferBsTypes.indexOf(o.getType())))
+                .collect(Collectors.toList());
+
+        if (availableBs.isEmpty()) {
+            reply.setError(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10015,
+                    "no available backup storage with preferred types %s for primary storage[uuid:%s]",
+                    preferBsTypes, self.getUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
         reply.setInventory(BackupStorageInventory.valueOf(availableBs.get(0)));
 
         bus.reply(msg, reply);

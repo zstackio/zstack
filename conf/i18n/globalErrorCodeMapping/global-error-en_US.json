@@ -629,6 +629,7 @@
   "ORG_ZSTACK_CONFIGURATION_10006": "unsupported instance type[%s]",
   "ORG_ZSTACK_MULTICAST_ROUTER_10007": "group address [%s] is not a multicast group address",
   "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10014": "storage is not healthy:%s",
+  "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10015": "no available backup storage with preferred types %s for primary storage[uuid:%s]",
   "ORG_ZSTACK_MULTICAST_ROUTER_10000": "multicastRouter[uuid:%s] has not been associated with a VPC router",
   "ORG_ZSTACK_MULTICAST_ROUTER_10001": "multicast already enabled on VPC router UUID[:%s]",
   "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10012": "cannot find the owning volume path from the internal snapshot path[%s], as the regex[%s] fails to match the snapshot path",
