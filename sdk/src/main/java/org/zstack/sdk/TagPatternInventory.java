@@ -52,6 +52,14 @@ public class TagPatternInventory  {
         return this.type;
     }
 
+    public java.lang.String resourceType;
+    public void setResourceType(java.lang.String resourceType) {
+        this.resourceType = resourceType;
+    }
+    public java.lang.String getResourceType() {
+        return this.resourceType;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
