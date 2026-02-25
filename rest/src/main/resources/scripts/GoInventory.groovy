@@ -215,7 +215,13 @@ class GoInventory implements SdkTemplate {
 
         // Note: client.go is manually maintained, not auto-generated
 
-        // 8. Validate that all referenced response views were generated
+        // 8. Generate test files (unit tests + integration tests)
+        def testTemplate = new GoTestTemplate(this, allApiTemplates, inventories)
+        def testFiles = testTemplate.generate()
+        files.addAll(testFiles)
+        logger.warn("[GoSDK] Generated ${testFiles.size()} test files")
+
+        // 9. Validate that all referenced response views were generated
         validateGeneratedViews()
 
         logger.warn("[GoSDK] GoInventory.generate() complete. Total files: " + files.size())
