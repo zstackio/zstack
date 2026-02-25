@@ -116,4 +116,12 @@ public class ModelServiceInstanceGroupInventory  {
         return this.supportMetrics;
     }
 
+    public java.lang.String exportPath;
+    public void setExportPath(java.lang.String exportPath) {
+        this.exportPath = exportPath;
+    }
+    public java.lang.String getExportPath() {
+        return this.exportPath;
+    }
+
 }
