@@ -426,6 +426,12 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
             return;
         }
 
+        if (spec.getDestHost() == null) {
+            logger.debug("skip deactivate volumes because no host associated");
+            completion.success();
+            return;
+        }
+
         deactivateVolumes(vols, spec.getDestHost(), completion);
     }
 

@@ -23,6 +23,7 @@ class StorageTest extends Test {
         lb()
         portForwarding()
         expon()
+        xinfini()
         zbs()
     }
 

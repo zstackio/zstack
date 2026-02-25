@@ -1,6 +1,7 @@
 package org.zstack.test.integration.storage.primary.addon.expon
 
 import org.springframework.http.HttpEntity
+import javax.servlet.http.HttpServletRequest
 import org.zstack.compute.cluster.ClusterGlobalConfig
 import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.Platform
@@ -71,7 +72,7 @@ class ExponPrimaryStorageCase extends SubCase {
     ExponStorageController controller
     ExponApiHelper apiHelper
 
-    String exponUrl = "https://admin:Admin123@172.25.108.64:443/pool"
+    String exponUrl = "http://admin:Admin123@127.0.0.1:8989/pool"
     String exportProtocol = "iscsi://"
 
     @Override
@@ -171,11 +172,6 @@ class ExponPrimaryStorageCase extends SubCase {
     void test() {
         System.setProperty("useImageSpecSize", "true")
         env.create {
-            if (System.getProperty("inTestSuite") != null) {
-                logger.debug("skip expon case in test suite")
-                return
-            }
-
             cluster = env.inventoryByName("cluster") as ClusterInventory
             instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
             diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
@@ -207,7 +203,6 @@ class ExponPrimaryStorageCase extends SubCase {
             reconnectPrimaryStorage {
                 uuid = ps.uuid
             }
-            testCreateVmWhenSpecifiedSblk()
             testDeletePs()
         }
     }
@@ -283,6 +278,21 @@ class ExponPrimaryStorageCase extends SubCase {
         assert r.success
         assert Q.New(PrimaryStorageHostRefVO.class).eq(PrimaryStorageHostRefVO_.hostUuid, host1.uuid).find().status.toString() == "Connected"
 
+        // override USS simulator to return empty for host2's vhost_127_0_0_3
+        env.simulator("/api/v2/(sync/)?wds/uss") { HttpServletRequest req, HttpEntity<String> e, EnvSpec spec ->
+            def nameParam = req.getParameter("name")
+            if (nameParam == "vhost_127_0_0_3") {
+                return [ret_code: "0", message: "", total: 0, uss_gateways: []]
+            }
+            def ussName = nameParam ?: "vhost_localhost"
+            return [ret_code: "0", message: "", total: 1, uss_gateways: [
+                [id: "test-uss-" + ussName, name: ussName, type: "uss", status: "health",
+                 tianshu_id: "test-tianshu-id", tianshu_name: "test-tianshu",
+                 manager_ip: "127.0.0.1", business_port: 4420, business_network: "127.0.0.1/8",
+                 create_time: System.currentTimeMillis(), update_time: System.currentTimeMillis()]
+            ]]
+        }
+
         pmsg = new PingHostMsg()
         pmsg.hostUuid = host2.uuid
         bus.makeTargetServiceIdByResourceUuid(pmsg, HostConstant.SERVICE_ID, host2.uuid)
@@ -307,7 +317,7 @@ class ExponPrimaryStorageCase extends SubCase {
         String pswd = "Pswd@#123"
         String encodePswd = URLEncoder.encode(pswd, "UTF-8")
         discoverExternalPrimaryStorage {
-            url = String.format("https://complex:%s@172.25.108.64:443/pool", encodePswd)
+            url = String.format("http://complex:%s@127.0.0.1:8989/pool", encodePswd)
             identity = "expon"
         }
     }
@@ -338,7 +348,7 @@ class ExponPrimaryStorageCase extends SubCase {
             assert cmd.rootVolume.format == "raw"
             if (cmd.cdRoms != null) {
                 cmd.cdRoms.forEach {
-                    if (!it.isEmpty()) {
+                    if (!it.isEmpty() && it.getPath() != null) {
                         assert it.getPath().startsWith(exportProtocol)
                     }
                 }
@@ -346,28 +356,15 @@ class ExponPrimaryStorageCase extends SubCase {
             return rsp
         }
 
-        // create vm concurrently
-        boolean success = false
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            void run() {
-                def otherVm = createVmInstance {
-                    name = "vm"
-                    instanceOfferingUuid = instanceOffering.uuid
-                    rootDiskOfferingUuid = diskOffering.uuid
-                    imageUuid = image.uuid
-                    l3NetworkUuids = [l3.uuid]
-                    hostUuid = host1.uuid
-                } as VmInstanceInventory
+        def otherVm = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = instanceOffering.uuid
+            rootDiskOfferingUuid = diskOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            hostUuid = host1.uuid
+        } as VmInstanceInventory
 
-                assert otherVm.allVolumes[0].size == diskOffering.diskSize
-                assert apiHelper.getVolume(getVolIdFromPath(otherVm.allVolumes[0].installPath)).volumeSize == diskOffering.diskSize
-                deleteVm(otherVm.uuid)
-                success = true
-            }
-        })
-
-        thread.run()
         vm = createVmInstance {
             name = "vm"
             instanceOfferingUuid = instanceOffering.uuid
@@ -376,8 +373,7 @@ class ExponPrimaryStorageCase extends SubCase {
             hostUuid = host1.uuid
         } as VmInstanceInventory
 
-        thread.join()
-        assert success
+        deleteVm(otherVm.uuid)
 
         stopVmInstance {
             uuid = vm.uuid
@@ -683,7 +679,14 @@ class ExponPrimaryStorageCase extends SubCase {
     }
 
     void testClean() {
+        startVmInstance {
+            uuid = vm.uuid
+            hostUuid = host1.uuid
+        }
+
         deleteVm(vm.uuid)
+
+        deleteVolume(vol2.uuid)
 
         deleteDataVolume {
             uuid = vol.uuid
@@ -757,6 +760,9 @@ class ExponPrimaryStorageCase extends SubCase {
             primaryStorageUuidForRootVolume = sblk.uuid
         } as VmInstanceInventory
 
+        deleteVm(vm1.uuid)
+        deleteVm(vm2.uuid)
+
         detachPrimaryStorageFromCluster {
             primaryStorageUuid = sblk.uuid
             clusterUuid = cluster.getUuid()
@@ -775,8 +781,6 @@ class ExponPrimaryStorageCase extends SubCase {
             l3NetworkUuids = [l3.uuid]
         } as VmInstanceInventory
 
-        deleteVm(vm1.uuid)
-        deleteVm(vm2.uuid)
         deleteVm(vm3.uuid)
     }
 

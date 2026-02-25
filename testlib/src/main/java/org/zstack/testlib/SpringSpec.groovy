@@ -105,6 +105,10 @@ class SpringSpec {
         include("iscsi.xml")
     }
 
+    void xinfini() {
+        include("xinfini.xml")
+    }
+
     void zbs() {
         include("zbs.xml")
         include("cbd.xml")

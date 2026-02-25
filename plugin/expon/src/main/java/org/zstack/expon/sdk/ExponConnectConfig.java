@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 public class ExponConnectConfig {
     public String hostname = "localhost";
     public int port = 443;
+    public String scheme = "https";
     long defaultPollingTimeout = TimeUnit.HOURS.toMillis(3);
     long defaultPollingInterval = TimeUnit.SECONDS.toMillis(1);
     public Long readTimeout;
@@ -36,6 +37,11 @@ public class ExponConnectConfig {
 
         public Builder setPort(int port) {
             config.port = port;
+            return this;
+        }
+
+        public Builder setScheme(String scheme) {
+            config.scheme = scheme;
             return this;
         }
 
