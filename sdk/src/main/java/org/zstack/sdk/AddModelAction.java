@@ -70,6 +70,9 @@ public class AddModelAction extends AbstractAction {
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String modelId;
 
+    @Param(required = false, validValues = {"Public"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String shareMode;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
