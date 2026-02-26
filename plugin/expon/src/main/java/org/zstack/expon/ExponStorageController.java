@@ -122,6 +122,11 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         ExponConnectConfig clientConfig = new ExponConnectConfig();
         clientConfig.hostname = uri.getHost();
         clientConfig.port = uri.getPort();
+        String scheme = uri.getScheme();
+        clientConfig.scheme = scheme != null ? scheme : "https";
+        if (clientConfig.port == -1) {
+            clientConfig.port = "https".equalsIgnoreCase(clientConfig.scheme) ? 443 : 80;
+        }
         clientConfig.readTimeout = TimeUnit.MINUTES.toMillis(10);
         clientConfig.writeTimeout = TimeUnit.MINUTES.toMillis(10);
         ExponClient client = new ExponClient();

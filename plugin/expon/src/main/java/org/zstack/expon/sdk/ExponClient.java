@@ -211,7 +211,7 @@ public class ExponClient extends ExternalStorageApiClient {
         private void fillQueryApiRequestBuilder(Request.Builder reqBuilder) throws Exception {
             ExponQueryRequest qaction = (ExponQueryRequest) action;
 
-            HttpUrl.Builder urlBuilder = new HttpUrl.Builder().scheme("https")
+            HttpUrl.Builder urlBuilder = new HttpUrl.Builder().scheme(config.scheme)
                     .host(config.hostname)
                     .port(config.port);
 
@@ -262,7 +262,7 @@ public class ExponClient extends ExternalStorageApiClient {
 
         private void fillNonQueryApiRequestBuilder(Request.Builder reqBuilder) throws Exception {
             HttpUrl.Builder builder = new HttpUrl.Builder()
-                    .scheme("https")
+                    .scheme(config.scheme)
                     .host(config.hostname)
                     .port(config.port);
             builder.addPathSegment("api");

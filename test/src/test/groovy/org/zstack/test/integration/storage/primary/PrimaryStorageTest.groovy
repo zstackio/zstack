@@ -14,6 +14,8 @@ class PrimaryStorageTest extends Test {
         smp()
         ceph()
         externalPrimaryStorage()
+        expon()
+        xinfini()
         zbs()
         virtualRouter()
         vyos()

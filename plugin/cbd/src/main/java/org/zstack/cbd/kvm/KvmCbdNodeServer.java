@@ -234,12 +234,12 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
 
     private String convertPathIfNeeded(BaseVolumeInfo volumeInfo, HostInventory host){
         if (!VolumeProtocol.CBD.name().equals(volumeInfo.getProtocol())){
-            return volumeInfo.getInstallPath();
+            return null;
         }
 
         PrimaryStorageNodeSvc nodeSvc = getNodeService(volumeInfo);
         if (nodeSvc == null) {
-            return volumeInfo.getInstallPath();
+            return null;
         }
 
         return nodeSvc.getActivePath(volumeInfo, host, false);
@@ -247,7 +247,9 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
 
     private <T> void convertAndSetPathIfNeeded(BaseVolumeInfo volumeInfo, HostInventory host, T target, PathSetter<T> setter) {
         String newInstallPath = convertPathIfNeeded(volumeInfo, host);
-        setter.setPath(target, newInstallPath);
+        if (newInstallPath != null) {
+            setter.setPath(target, newInstallPath);
+        }
     }
 
 
