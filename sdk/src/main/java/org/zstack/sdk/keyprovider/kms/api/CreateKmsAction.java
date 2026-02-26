@@ -47,9 +47,6 @@ public class CreateKmsAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = false)
-    public java.lang.String type;
-
-    @Param(required = false)
     public java.lang.String resourceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
