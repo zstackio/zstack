@@ -203,7 +203,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         private String name;
         private String volumeUuid;
         private String backingFile;
-        private String format;
+        private String volumeFormat;
 
         public String getBackingFile() {
             return backingFile;
@@ -213,12 +213,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             this.backingFile = backingFile;
         }
 
-        public String getFormat() {
-            return format;
+        public String getVolumeFormat() {
+            return volumeFormat;
         }
 
-        public void setFormat(String format) {
-            this.format = format;
+        public void setVolumeFormat(String volumeFormat) {
+            this.volumeFormat = volumeFormat;
         }
 
         public String getInstallUrl() {
@@ -1293,11 +1293,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cmd.setAccountUuid(acntMgr.getOwnerAccountUuidOfResource(volume.getUuid()));
         if (volume.getInstallPath() != null && !volume.getInstallPath().equals("")) {
             cmd.setInstallUrl(volume.getInstallPath());
-            cmd.setFormat(VolumeType.NvRam.toString().equals(volume.getType())
+            cmd.setVolumeFormat(VolumeType.NvRam.toString().equals(volume.getType())
                     ? ImageConstant.RAW_FORMAT_STRING
                     : ImageConstant.QCOW2_FORMAT_STRING);
         } else {
-            cmd.setFormat(ImageConstant.QCOW2_FORMAT_STRING);
+            cmd.setVolumeFormat(ImageConstant.QCOW2_FORMAT_STRING);
             if (VolumeType.Root.toString().equals(volume.getType())) {
                 cmd.setInstallUrl(makeRootVolumeInstallUrl(volume));
             } else if (VolumeType.Data.toString().equals(volume.getType())) {
@@ -1308,7 +1308,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 cmd.setInstallUrl(makeDataVolumeInstallUrl(volume.getUuid()));
             } else if (VolumeType.NvRam.toString().equals(volume.getType())) {
                 cmd.setInstallUrl(makeNvRamVolumeInstallUrl(volume.getUuid()));
-                cmd.setFormat(ImageConstant.RAW_FORMAT_STRING);
+                cmd.setVolumeFormat(ImageConstant.RAW_FORMAT_STRING);
             }
         }
         cmd.setName(volume.getName());
@@ -1320,7 +1320,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void success(CreateEmptyVolumeRsp returnValue) {
                 final VolumeStats stats = new VolumeStats(cmd.getInstallUrl(), returnValue.actualSize, returnValue.size);
-                stats.setFormat(cmd.getFormat());
+                stats.setFormat(cmd.getVolumeFormat());
                 completion.success(stats);
             }
 
