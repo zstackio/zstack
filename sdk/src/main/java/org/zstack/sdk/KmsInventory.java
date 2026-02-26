@@ -1,5 +1,6 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.CertificateInfo;
 import org.zstack.sdk.KmsIdentityInventory;
 
 public class KmsInventory extends org.zstack.sdk.KeyProviderInventory {
@@ -52,12 +53,20 @@ public class KmsInventory extends org.zstack.sdk.KeyProviderInventory {
         return this.activeIdentityUuid;
     }
 
-    public java.sql.Timestamp serverCertExpiredDate;
-    public void setServerCertExpiredDate(java.sql.Timestamp serverCertExpiredDate) {
-        this.serverCertExpiredDate = serverCertExpiredDate;
+    public java.lang.String serverCertPem;
+    public void setServerCertPem(java.lang.String serverCertPem) {
+        this.serverCertPem = serverCertPem;
     }
-    public java.sql.Timestamp getServerCertExpiredDate() {
-        return this.serverCertExpiredDate;
+    public java.lang.String getServerCertPem() {
+        return this.serverCertPem;
+    }
+
+    public CertificateInfo serverCertInfo;
+    public void setServerCertInfo(CertificateInfo serverCertInfo) {
+        this.serverCertInfo = serverCertInfo;
+    }
+    public CertificateInfo getServerCertInfo() {
+        return this.serverCertInfo;
     }
 
     public KmsIdentityInventory activeIdentity;

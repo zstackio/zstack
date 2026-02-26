@@ -44,20 +44,20 @@ public class NkpRestoreInfo  {
         return this.saltPolicy;
     }
 
-    public java.lang.String encryptedMasterSeed;
-    public void setEncryptedMasterSeed(java.lang.String encryptedMasterSeed) {
-        this.encryptedMasterSeed = encryptedMasterSeed;
-    }
-    public java.lang.String getEncryptedMasterSeed() {
-        return this.encryptedMasterSeed;
-    }
-
     public java.lang.Integer currentVersion;
     public void setCurrentVersion(java.lang.Integer currentVersion) {
         this.currentVersion = currentVersion;
     }
     public java.lang.Integer getCurrentVersion() {
         return this.currentVersion;
+    }
+
+    public java.lang.Long backupTime;
+    public void setBackupTime(java.lang.Long backupTime) {
+        this.backupTime = backupTime;
+    }
+    public java.lang.Long getBackupTime() {
+        return this.backupTime;
     }
 
 }

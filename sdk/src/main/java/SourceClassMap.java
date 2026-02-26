@@ -178,6 +178,7 @@ public class SourceClassMap {
 			put("org.zstack.header.image.APIGetUploadImageJobDetailsReply$JobDetails", "org.zstack.sdk.JobDetails");
 			put("org.zstack.header.image.ImageBackupStorageRefInventory", "org.zstack.sdk.ImageBackupStorageRefInventory");
 			put("org.zstack.header.image.ImageInventory", "org.zstack.sdk.ImageInventory");
+			put("org.zstack.header.keyprovider.CertificateInfo", "org.zstack.sdk.CertificateInfo");
 			put("org.zstack.header.keyprovider.KeyProviderInventory", "org.zstack.sdk.KeyProviderInventory");
 			put("org.zstack.header.keyprovider.KmsIdentityInventory", "org.zstack.sdk.KmsIdentityInventory");
 			put("org.zstack.header.keyprovider.KmsInventory", "org.zstack.sdk.KmsInventory");
@@ -763,6 +764,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CephPrimaryStorageInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageInventory");
 			put("org.zstack.sdk.CephPrimaryStorageMonInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageMonInventory");
 			put("org.zstack.sdk.CephPrimaryStoragePoolInventory", "org.zstack.storage.ceph.primary.CephPrimaryStoragePoolInventory");
+			put("org.zstack.sdk.CertificateInfo", "org.zstack.header.keyprovider.CertificateInfo");
 			put("org.zstack.sdk.CertificateInventory", "org.zstack.network.service.lb.CertificateInventory");
 			put("org.zstack.sdk.ChainInfo", "org.zstack.header.core.progress.ChainInfo");
 			put("org.zstack.sdk.ChronyServerInfo", "org.zstack.zops.ChronyServerInfo");

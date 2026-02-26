@@ -36608,6 +36608,33 @@ abstract class ApiHelper {
     }
 
 
+    def getKmsServerCertFromKms(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.keyprovider.kms.api.GetKmsServerCertFromKmsAction.class) Closure c) {
+        def a = new org.zstack.sdk.keyprovider.kms.api.GetKmsServerCertFromKmsAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def queryKms(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.keyprovider.kms.api.QueryKmsAction.class) Closure c) {
         def a = new org.zstack.sdk.keyprovider.kms.api.QueryKmsAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -36639,6 +36666,114 @@ abstract class ApiHelper {
 
     def updateKms(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.keyprovider.kms.api.UpdateKmsAction.class) Closure c) {
         def a = new org.zstack.sdk.keyprovider.kms.api.UpdateKmsAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def uploadKmsClientCsr(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.keyprovider.kms.api.UploadKmsClientCsrAction.class) Closure c) {
+        def a = new org.zstack.sdk.keyprovider.kms.api.UploadKmsClientCsrAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def uploadKmsClientIdentity(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.keyprovider.kms.api.UploadKmsClientIdentityAction.class) Closure c) {
+        def a = new org.zstack.sdk.keyprovider.kms.api.UploadKmsClientIdentityAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def uploadKmsClientSignedCert(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.keyprovider.kms.api.UploadKmsClientSignedCertAction.class) Closure c) {
+        def a = new org.zstack.sdk.keyprovider.kms.api.UploadKmsClientSignedCertAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def uploadKmsServerCert(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.keyprovider.kms.api.UploadKmsServerCertAction.class) Closure c) {
+        def a = new org.zstack.sdk.keyprovider.kms.api.UploadKmsServerCertAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
