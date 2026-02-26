@@ -113,5 +113,14 @@
     "zh_CN": "",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/zsv/storage/ZsvStorageManager.java"
+  },
+  {
+    "raw": "volume[uuid:%s] has been deleted",
+    "en_US": "volume[uuid:{0}] has been deleted",
+    "zh_CN": "硬盘[uuid:{0}]已经被删除了",
+    "arguments": [
+      "volId"
+    ],
+    "fileName": "src/main/java/org/zstack/zsv/snapshotgroup/ZsvBeforeRevertSnapshotGroupFlow.java"
   }
 ]
