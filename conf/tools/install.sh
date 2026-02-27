@@ -66,6 +66,7 @@ if [ $tool = 'zstack-cli' ]; then
             exit 1
         fi
     fi
+    [ -f $CLI_VIRENV_PATH/bin/zstack-cli ] && cp $CLI_VIRENV_PATH/bin/zstack-cli /usr/bin/zstack-cli
     chmod +x /usr/bin/zstack-cli
 
 elif [ $tool = 'zstack-ctl' ]; then
@@ -75,6 +76,7 @@ elif [ $tool = 'zstack-ctl' ]; then
     cd $cwd
     TMPDIR=/usr/local/zstack/ pip install -i $pypi_path --trusted-host localhost --ignore-installed zstackctl-*.tar.gz || exit 1
     TMPDIR=/usr/local/zstack/ pip install -i $pypi_path --trusted-host localhost --ignore-installed pycryptodome || exit 1
+    [ -f $CTL_VIRENV_PATH/bin/zstack-ctl ] && cp $CTL_VIRENV_PATH/bin/zstack-ctl /usr/bin/zstack-ctl
     chmod +x /usr/bin/zstack-ctl
     python $CTL_VIRENV_PATH/lib/python3.11/site-packages/zstackctl/generate_zstackctl_bash_completion.py
 
