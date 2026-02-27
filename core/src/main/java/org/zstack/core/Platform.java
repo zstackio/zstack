@@ -979,6 +979,11 @@ public class Platform {
         handleErrorElaboration(errCode, fmt, result, cause, args);
         addErrorCounter(result);
         result.setGlobalErrorCode(globalErrorCode);
+        if (args != null && args.length > 0) {
+            result.setFormatArgs(java.util.Arrays.stream(args)
+                    .map(a -> a == null ? "null" : a.toString())
+                    .toArray(String[]::new));
+        }
 
         return result;
     }

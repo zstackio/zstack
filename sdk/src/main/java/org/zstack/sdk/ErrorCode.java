@@ -76,4 +76,12 @@ public class ErrorCode  {
         return this.globalErrorCode;
     }
 
+    public java.lang.String message;
+    public void setMessage(java.lang.String message) {
+        this.message = message;
+    }
+    public java.lang.String getMessage() {
+        return this.message;
+    }
+
 }
