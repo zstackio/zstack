@@ -122,4 +122,5 @@
     <import resource="springConfigXml/plugin.xml"/>
     <import resource="springConfigXml/HygonDeviceManager.xml"/>
     <import resource="springConfigXml/telemetry.xml"/>
+    <import resource="springConfigXml/localVolumeCache.xml"/>
 </beans>

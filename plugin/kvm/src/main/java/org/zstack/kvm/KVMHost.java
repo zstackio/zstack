@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import okhttp3.Response;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -215,6 +216,7 @@ public class KVMHost extends HostBase implements Host {
     private String getVirtualizerInfo;
     private String scanVmPortPath;
     private String getDevCapacityPath;
+    private String getBlockDevicesPath;
     private String configPrimaryVmPath;
     private String configSecondaryVmPath;
     private String startColoSyncPath;
@@ -410,6 +412,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.GET_DEV_CAPACITY);
         getDevCapacityPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_GET_BLOCK_DEVICES_PATH);
+        getBlockDevicesPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_CONFIG_PRIMARY_VM_PATH);
@@ -702,9 +708,34 @@ public class KVMHost extends HostBase implements Host {
             handle((RestartKvmAgentMsg) msg);
         } else if (msg instanceof UpdateVmConsolePasswordOnHypervisorMsg) {
             handle((UpdateVmConsolePasswordOnHypervisorMsg) msg);
+        } else if (msg instanceof GetBlockDevicesOnHostMsg) {
+            handle((GetBlockDevicesOnHostMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(GetBlockDevicesOnHostMsg msg) {
+        GetBlockDevicesOnHostReply reply = new GetBlockDevicesOnHostReply();
+        KVMAgentCommands.GetBlockDevicesCmd cmd = new KVMAgentCommands.GetBlockDevicesCmd();
+        new Http<>(getBlockDevicesPath, cmd, KVMAgentCommands.GetBlockDevicesRsp.class)
+                .call(new ReturnValueCompletion<KVMAgentCommands.GetBlockDevicesRsp>(msg) {
+            @Override
+            public void success(KVMAgentCommands.GetBlockDevicesRsp rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("operation error, because:%s", rsp.getError()));
+                } else {
+                    reply.setBlockDevices(rsp.getBlockDevices());
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(RestartKvmAgentMsg msg) {

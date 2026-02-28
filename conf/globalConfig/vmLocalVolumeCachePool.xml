@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+    <config>
+        <category>vmLocalVolumeCachePool</category>
+        <name>capacitySync.interval</name>
+        <description>Interval in seconds between periodic capacity sync tasks for local volume cache pools.</description>
+        <defaultValue>300</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <category>vmLocalVolumeCachePool</category>
+        <name>healthCheck.interval</name>
+        <description>Interval in seconds between periodic health check tasks for local volume cache pools.</description>
+        <defaultValue>60</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <category>vmLocalVolumeCachePool</category>
+        <name>gc.interval</name>
+        <description>Interval in seconds between periodic garbage collection tasks for local volume cache pools.</description>
+        <defaultValue>3600</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+
+</globalConfig>

@@ -264,6 +264,7 @@ public class SourceClassMap {
 			put("org.zstack.header.flowMeter.NetworkRouterFlowMeterRefInventory", "org.zstack.sdk.NetworkRouterFlowMeterRefInventory");
 			put("org.zstack.header.host.AddHostFromFileResult", "org.zstack.sdk.AddHostFromFileResult");
 			put("org.zstack.header.host.CpuArchitecture", "org.zstack.sdk.CpuArchitecture");
+			put("org.zstack.header.host.HostBlockDeviceStruct", "org.zstack.sdk.HostBlockDeviceStruct");
 			put("org.zstack.header.host.HostInventory", "org.zstack.sdk.HostInventory");
 			put("org.zstack.header.host.HostIpmiInventory", "org.zstack.sdk.HostIpmiInventory");
 			put("org.zstack.header.host.HostNUMANode", "org.zstack.sdk.HostNUMANode");
@@ -309,6 +310,12 @@ public class SourceClassMap {
 			put("org.zstack.header.image.ImageGroupInventory", "org.zstack.sdk.ImageGroupInventory");
 			put("org.zstack.header.image.ImageGroupRefInventory", "org.zstack.sdk.ImageGroupRefInventory");
 			put("org.zstack.header.image.ImageInventory", "org.zstack.sdk.ImageInventory");
+			put("org.zstack.header.localVolumeCache.VmLocalVolumeCacheInventory", "org.zstack.sdk.VmLocalVolumeCacheInventory");
+			put("org.zstack.header.localVolumeCache.VmLocalVolumeCacheMode", "org.zstack.sdk.VmLocalVolumeCacheMode");
+			put("org.zstack.header.localVolumeCache.VmLocalVolumeCachePoolInventory", "org.zstack.sdk.VmLocalVolumeCachePoolInventory");
+			put("org.zstack.header.localVolumeCache.VmLocalVolumeCachePoolState", "org.zstack.sdk.VmLocalVolumeCachePoolState");
+			put("org.zstack.header.localVolumeCache.VmLocalVolumeCachePoolStatus", "org.zstack.sdk.VmLocalVolumeCachePoolStatus");
+			put("org.zstack.header.localVolumeCache.VmLocalVolumeCacheState", "org.zstack.sdk.VmLocalVolumeCacheState");
 			put("org.zstack.header.longjob.LongJobInventory", "org.zstack.sdk.LongJobInventory");
 			put("org.zstack.header.longjob.LongJobState", "org.zstack.sdk.LongJobState");
 			put("org.zstack.header.managementnode.ManagementNodeInventory", "org.zstack.sdk.ManagementNodeInventory");
@@ -480,6 +487,7 @@ public class SourceClassMap {
 			put("org.zstack.ipsec.IPsecPeerCidrInventory", "org.zstack.sdk.IPsecPeerCidrInventory");
 			put("org.zstack.kvm.APIKvmRunShellEvent$ShellResult", "org.zstack.sdk.ShellResult");
 			put("org.zstack.kvm.BaseVirtualDeviceTO", "org.zstack.sdk.BaseVirtualDeviceTO");
+			put("org.zstack.kvm.CacheTO", "org.zstack.sdk.CacheTO");
 			put("org.zstack.kvm.KVMAgentCommands$CdRomTO", "org.zstack.sdk.CdRomTO");
 			put("org.zstack.kvm.KVMAgentCommands$IsoTO", "org.zstack.sdk.IsoTO");
 			put("org.zstack.kvm.KVMAgentCommands$NicTO", "org.zstack.sdk.NicTO");
@@ -978,6 +986,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CCSCertificateUserRefInventory", "org.zstack.crypto.ccs.CCSCertificateUserRefInventory");
 			put("org.zstack.sdk.CCSCertificateUserState", "org.zstack.crypto.ccs.CCSCertificateUserState");
 			put("org.zstack.sdk.CSPSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.csp.CSPSecretResourcePoolInventory");
+			put("org.zstack.sdk.CacheTO", "org.zstack.kvm.CacheTO");
 			put("org.zstack.sdk.CasClientInventory", "org.zstack.sso.header.CasClientInventory");
 			put("org.zstack.sdk.CasState", "org.zstack.sso.header.CasState");
 			put("org.zstack.sdk.CbtTaskInventory", "org.zstack.header.cbt.CbtTaskInventory");
@@ -1097,6 +1106,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HardwareL2VxlanNetworkInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkInventory");
 			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdk.HbaDeviceInventory", "org.zstack.storage.device.hba.HbaDeviceInventory");
+			put("org.zstack.sdk.HostBlockDeviceStruct", "org.zstack.header.host.HostBlockDeviceStruct");
 			put("org.zstack.sdk.HostConnectedStatus", "org.zstack.zops.HostConnectedStatus");
 			put("org.zstack.sdk.HostDiskCapacity", "org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity");
 			put("org.zstack.sdk.HostInventory", "org.zstack.header.host.HostInventory");
@@ -1533,6 +1543,12 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmInstanceInventory", "org.zstack.header.vm.VmInstanceInventory");
 			put("org.zstack.sdk.VmInstanceMdevDeviceSpecRefInventory", "org.zstack.pciDevice.specification.mdev.VmInstanceMdevDeviceSpecRefInventory");
 			put("org.zstack.sdk.VmInstancePciDeviceSpecRefInventory", "org.zstack.pciDevice.specification.pci.VmInstancePciDeviceSpecRefInventory");
+			put("org.zstack.sdk.VmLocalVolumeCacheInventory", "org.zstack.header.localVolumeCache.VmLocalVolumeCacheInventory");
+			put("org.zstack.sdk.VmLocalVolumeCacheMode", "org.zstack.header.localVolumeCache.VmLocalVolumeCacheMode");
+			put("org.zstack.sdk.VmLocalVolumeCachePoolInventory", "org.zstack.header.localVolumeCache.VmLocalVolumeCachePoolInventory");
+			put("org.zstack.sdk.VmLocalVolumeCachePoolState", "org.zstack.header.localVolumeCache.VmLocalVolumeCachePoolState");
+			put("org.zstack.sdk.VmLocalVolumeCachePoolStatus", "org.zstack.header.localVolumeCache.VmLocalVolumeCachePoolStatus");
+			put("org.zstack.sdk.VmLocalVolumeCacheState", "org.zstack.header.localVolumeCache.VmLocalVolumeCacheState");
 			put("org.zstack.sdk.VmMemoryBillingInventory", "org.zstack.billing.generator.vm.memory.VmMemoryBillingInventory");
 			put("org.zstack.sdk.VmMemorySpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmMemorySpendingDetails");
 			put("org.zstack.sdk.VmNicBandwidthSpendingDetails", "org.zstack.billing.spendingcalculator.vmnic.VmNicBandwidthSpendingDetails");

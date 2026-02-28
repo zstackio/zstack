@@ -4,6 +4,7 @@ import org.zstack.header.core.NonCloneable;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.tag.EphemeralPatternSystemTag;
 import org.zstack.tag.EphemeralSystemTag;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTag;
@@ -52,4 +53,12 @@ public class VolumeSystemTags {
     public static PatternedSystemTag VOLUME_QOS = new PatternedSystemTag(String.format("%s::{%s}", VOLUME_QOS_TOKEN, VOLUME_QOS_TOKEN), VolumeVO.class);
 
     public static SystemTag FAST_REVERT = new SystemTag("fast::revert", VolumeVO.class);
+
+    public static EphemeralSystemTag VOLUME_CACHE_ENABLE = new EphemeralSystemTag("volumeCache::enable");
+
+    public static String CACHE_POOL_UUID_TOKEN = "poolUuid";
+    public static EphemeralPatternSystemTag VOLUME_CACHE_POOL_UUID = new EphemeralPatternSystemTag(String.format("volumeCache::poolUuid::{%s}", CACHE_POOL_UUID_TOKEN), VolumeVO.class);
+
+    public static String CACHE_MODE_TOKEN = "cacheMode";
+    public static EphemeralPatternSystemTag VOLUME_CACHE_MODE = new EphemeralPatternSystemTag(String.format("volumeCache::cacheMode::{%s}", CACHE_MODE_TOKEN), VolumeVO.class);
 }

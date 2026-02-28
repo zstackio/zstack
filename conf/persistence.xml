@@ -217,6 +217,9 @@
         <class>org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpRefVO</class>
         <class>org.zstack.header.volume.block.BlockVolumeVO</class>
         <class>org.zstack.header.host.HostHwMonitorStatusVO</class>
+        <class>org.zstack.header.localVolumeCache.VmLocalVolumeCachePoolVO</class>
+        <class>org.zstack.header.localVolumeCache.VmLocalVolumeCachePoolCapacityVO</class>
+        <class>org.zstack.header.localVolumeCache.VmLocalVolumeCacheVO</class>
         <class>org.zstack.kvm.xmlhook.XmlHookVO</class>
         <class>org.zstack.kvm.xmlhook.XmlHookVmInstanceRefVO</class>
         <class>org.zstack.log.server.LogServerVO</class>
