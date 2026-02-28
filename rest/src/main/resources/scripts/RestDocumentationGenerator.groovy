@@ -42,6 +42,7 @@ import javax.xml.bind.JAXBContext
 import javax.xml.bind.JAXBException
 import javax.xml.bind.Unmarshaller
 import java.lang.reflect.Field
+import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.nio.file.Paths
@@ -74,8 +75,8 @@ class RestDocumentationGenerator implements DocumentGenerator {
         void init() {
             try {
                 loadSystemProperties()
-                loadConfigFromXml()
                 parseGlobalConfigFields()
+                loadConfigFromXml()
                 loadConfigFromJava()
                 link()
             } catch (IllegalArgumentException ie) {
@@ -105,7 +106,6 @@ class RestDocumentationGenerator implements DocumentGenerator {
                         try {
                             def bind = field.getAnnotation(BindResourceConfig.class)
                             def validator = field.getAnnotation(GlobalConfigValidation.class)
-                            def configBef = field.getAnnotation(GlobalConfigDef.class)
                             GlobalConfig config = (GlobalConfig) field.get(null)
                             if (config == null) {
                                 throw new CloudRuntimeException(String.format("GlobalConfigDefinition[%s] " +
@@ -176,11 +176,6 @@ class RestDocumentationGenerator implements DocumentGenerator {
             }
         }
 
-        String generateRangeString(boolean isInteger, long greaterThan, long lessThan) {
-            String typeRange = isInteger ? "${Integer.MIN_VALUE},${Integer.MAX_VALUE}" : "${Long.MIN_VALUE},${Long.MAX_VALUE}"
-            return "[" + (greaterThan != Long.MIN_VALUE ? greaterThan : typeRange.split(",")[0]) + ", " +
-                    (lessThan != Long.MAX_VALUE ? lessThan : typeRange.split(",")[1]) + "]"
-        }
 
         private void loadConfigFromJava() {
             for (Field field : globalConfigFields) {
@@ -533,7 +528,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
 
         Set<Class> apiClasses = getRequestRequestApiSet()
         apiClasses.each {
-            println("generating doc template for class ${it}")
+            logger.info("generating doc template for class ${it}")
             def tmp = new ApiRequestDocTemplate(it)
             tmp.generateDocFile(mode)
         }
@@ -554,6 +549,9 @@ class RestDocumentationGenerator implements DocumentGenerator {
 
         String specifiedClasses = System.getProperty("classes")
 
+        apiClasses.forEach {it ->
+            logger.info("apiClasses 1: ${it}".toString())
+        }
         if (specifiedClasses != null) {
             def classes = specifiedClasses.split(",") as List
             apiClasses = apiClasses.findAll {
@@ -565,6 +563,10 @@ class RestDocumentationGenerator implements DocumentGenerator {
             apiClasses = apiClasses.findAll {
                 return !noDocClasses.contains(it.getSimpleName())
             }
+        }
+
+        apiClasses.forEach {it ->
+            logger.info("apiClasses 2: ${it}".toString())
         }
 
         return apiClasses
@@ -583,10 +585,6 @@ class RestDocumentationGenerator implements DocumentGenerator {
 
         def errInfo = []
         getRequestRequestApiSet().each {
-            if (it.isInterface() || Modifier.isAbstract(it.getModifiers())) {
-                return
-            }
-
             def docPath = getDocTemplatePathFromClass(it)
             logger.info("processing ${docPath}")
             try {
@@ -1251,7 +1249,13 @@ ${category(err)}
     }
 
     Doc createDoc(String docTemplatePath) {
-        Script script = new GroovyShell().parse(new File(docTemplatePath))
+        Script script
+        try {
+            script = new GroovyShell().parse(new File(docTemplatePath))
+        } catch (FileNotFoundException e) {
+            throw new CloudRuntimeException("cannot find doc template file[path:${docTemplatePath}]", e)
+        }
+
         return createDocFromGroobyScript(script)
     }
 
@@ -1299,7 +1303,7 @@ ${category(err)}
             List<String> conds = getQueryConditionExampleOfTheClass(clz)
             conds = conds.collect { return "\"" + it + "\""}
             cols.add("action.conditions = asList(${conds.join(",")});")
-            cols.add("""action.sessionId = "b86c9016b4f24953a9edefb53ca0678c\";""")
+            cols.add("""action.sessionId = "b86c9016b4f24953a9edefb53ca0678c";""")
             cols.add("${actionName}.Result res = action.call();")
 
             return """\
@@ -1315,11 +1319,11 @@ ${cols.join("\n")}
 
             String actionName = getSdkActionName()
 
-            List<String> cols = ["action = ${actionName}()".toString()]
+            def cols = ["${actionName} action = ${actionName}()"]
             List<String> conds = getQueryConditionExampleOfTheClass(clz)
             conds = conds.collect { return "\"" + it + "\""}
-            cols.add("action.conditions = [${conds.join(",")}]".toString())
-            cols.add("action.sessionId = \"b86c9016b4f24953a9edefb53ca0678c\"")
+            cols.add("action.conditions = [${conds.join(",")}]")
+            cols.add("""action.sessionId = "b86c9016b4f24953a9edefb53ca0678c"""")
             cols.add("res = action.call()")
 
             return """\
@@ -1381,44 +1385,6 @@ ${examples.join("\n")}
 
         @Override
         String generate() {
-            def urlScript = ""
-            def headerScript = ""
-            def requestExampleScript = ""
-            def curlExampleScript = ""
-            def paramsScript = ""
-            def responseDescScript = ""
-            def responseExampleScript = ""
-            def javaSdkScript = ""
-            def pythonSdkScript = ""
-
-            try {
-                urlScript = url()
-            } catch (Exception e) { logger.warn("failed to generate url of ${doc._title}", e) }
-            try {
-                headerScript = headers()
-            } catch (Exception e) { logger.warn("failed to generate header of ${doc._title}", e) }
-            try {
-                requestExampleScript = requestExample()
-            } catch (Exception e) { logger.warn("failed to generate requestExample of ${doc._title}", e) }
-            try {
-                curlExampleScript = curlExample()
-            } catch (Exception e) { logger.warn("failed to generate curlExample of ${doc._title}", e) }
-            try {
-                paramsScript = params()
-            } catch (Exception e) { logger.warn("failed to generate params of ${doc._title}", e) }
-            try {
-                responseDescScript = responseDesc()
-            } catch (Exception e) { logger.warn("failed to generate responseDesc of ${doc._title}", e) }
-            try {
-                responseExampleScript = responseExample()
-            } catch (Exception e) { logger.warn("failed to generate responseExample of ${doc._title}", e) }
-            try {
-                javaSdkScript = javaSdk()
-            } catch (Exception e) { logger.warn("failed to generate javaSdk of ${doc._title}", e) }
-            try {
-                pythonSdkScript = pythonSdk()
-            } catch (Exception e) { logger.warn("failed to generate pythonSdk of ${doc._title}", e) }
-
             return  """\
 ## ${doc._category} - ${doc._title}
 
@@ -1426,31 +1392,31 @@ ${doc._desc}
 
 ## API请求
 
-${urlScript}
+${url()}
 
-${headerScript}
+${headers()}
 
-${requestExampleScript}
+${requestExample()}
 
-${curlExampleScript}
+${curlExample()}
 
-${paramsScript}
+${params()}
 
 ## API返回
 
-${responseDescScript}
+${responseDesc()}
 
-${responseExampleScript}
+${responseExample()}
 
 ## SDK示例
 
 ### Java SDK
 
-${javaSdkScript}
+${javaSdk()}
 
 ### Python SDK
 
-${pythonSdkScript}
+${pythonSdk()}
 """
         }
     }
@@ -1590,7 +1556,18 @@ ${table.join("\n")}
                     throw new CloudRuntimeException("__example__() of ${clz.name} must be declared as a static method")
                 }
 
-                def example = m.invoke(null)
+                def example
+                try {
+                    example = m.invoke(null)
+                } catch (InvocationTargetException e) {
+                    Throwable target = e.getTargetException()
+                    throw new CloudRuntimeException(
+                            "cannot generate the markdown document for the class[${clz.name}], the __example__() method has an error: ${target?.message}",
+                            target
+                    )
+
+                }
+
                 DocUtils.removeApiUuidMap(example.class.name)
 
 
@@ -1598,7 +1575,12 @@ ${table.join("\n")}
                     example.validate()
                 }
 
-                LinkedHashMap map = JSONObjectUtil.rehashObject(example, LinkedHashMap.class)
+                LinkedHashMap map
+                try {
+                    map = JSONObjectUtil.rehashObject(example, LinkedHashMap.class)
+                } catch (IllegalStateException e) {
+                    throw new CloudRuntimeException("cannot generate the markdown document for the class[${clz.name}], the __example__() method has an error: ${e.getMessage()}")
+                }
 
                 List<Field> apiFields = getApiFieldsOfClass(clz)
 
@@ -1619,6 +1601,7 @@ ${table.join("\n")}
             } catch (NoSuchMethodException e) {
                 //throw new CloudRuntimeException("class[${clz.name}] doesn't have static __example__ method", e)
                 logger.warn("class[${clz.name}] doesn't have static __example__ method")
+                return null
             }
         }
 
@@ -1647,8 +1630,18 @@ ${table.join("\n")}
                 curl.add("-X ${at.method()}")
 
                 Map allFields = getApiExampleOfTheClass(clz)
+                if (allFields == null) {
+                    logger.warn("No __example__ method found for class ${clz.name}, skipping curl example")
+                    return ""
+                }
 
-                String urlPath = substituteUrl("${RestConstants.API_VERSION}${it}", allFields)
+                String urlPath
+                try {
+                    urlPath = substituteUrl("${RestConstants.API_VERSION}${it}", allFields)
+                } catch (CloudRuntimeException e) {
+                    logger.warn("Failed to substituteUrl for class ${clz.name} url ${it}, ${e.getMessage()}")
+                    throw e
+                }
 
                 if (!queryString) {
                     def apiFields = getRequestBody()
@@ -1726,6 +1719,9 @@ ${examples.join("\n")}
 
             // the API has a body
             Map apiFields = getApiExampleOfTheClass(clz)
+            if (apiFields == null) {
+                throw new CloudRuntimeException("cannot find the example of the class[${clz.name}]")
+            }
             List<String> urlVars = getVarNamesFromUrl(at.path())
             apiFields = apiFields.findAll { k, v -> !urlVars.contains(k) }
             return [(paramName): apiFields]
@@ -1827,20 +1823,20 @@ ${dmd.generate()}
                 return "Python SDK未能自动生成"
             }
 
-            List<String> cols = ["action = ${actionName}()"]
+            def cols = ["${actionName} action = ${actionName}()"]
             cols.addAll(apiFields.collect { k, v ->
                 if (v instanceof String) {
-                    return "action.${k} = \"${v}\"".toString()
+                    return """action.${k} = "${v}""""
                 } else {
-                    return "action.${k} = ${v}".toString()
+                    return "action.${k} = ${v}"
                 }
             })
 
             if (!clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
-                cols.add("action.sessionId = \"b86c9016b4f24953a9edefb53ca0678c\"")
+                cols.add("""action.sessionId = "b86c9016b4f24953a9edefb53ca0678c"""")
             }
 
-            cols.add("res = action.call()")
+            cols.add("${actionName}.Result res = action.call()")
 
             return """\
 ```
@@ -1905,77 +1901,43 @@ ${cols.join("\n")}
         }
 
         String generate() {
-            def urlScript = ""
-            def headerScript = ""
-            def requestExampleScript = ""
-            def curlExampleScript = ""
-            def paramsScript = ""
-            def responseDescScript = ""
-            def responseExampleScript = ""
-            def javaSdkScript = ""
-            def pythonSdkScript = ""
-
             try {
-                urlScript = url()
-            } catch (Exception e) { logger.warn("failed to generate url of ${doc._title}", e) }
-            try {
-                headerScript = headers()
-            } catch (Exception e) { logger.warn("failed to generate header of ${doc._title}", e) }
-            try {
-                requestExampleScript = requestExample()
-            } catch (Exception e) { logger.warn("failed to generate requestExample of ${doc._title}", e) }
-            try {
-                curlExampleScript = curlExample()
-            } catch (Exception e) { logger.warn("failed to generate curlExample of ${doc._title}", e) }
-            try {
-                paramsScript = params()
-            } catch (Exception e) { logger.warn("failed to generate params of ${doc._title}", e) }
-            try {
-                responseDescScript = responseDesc()
-            } catch (Exception e) { logger.warn("failed to generate responseDesc of ${doc._title}", e) }
-            try {
-                responseExampleScript = responseExample()
-            } catch (Exception e) { logger.warn("failed to generate responseExample of ${doc._title}", e) }
-            try {
-                javaSdkScript = javaSdk()
-            } catch (Exception e) { logger.warn("failed to generate javaSdk of ${doc._title}", e) }
-            try {
-                pythonSdkScript = pythonSdk()
-            } catch (Exception e) { logger.warn("failed to generate pythonSdk of ${doc._title}", e) }
-
-            return """\
+                return """\
 ## ${doc._category} - ${doc._title}
 
 ${doc._desc}
 
 ## API请求
 
-${urlScript}
+${url()}
 
-${headerScript}
+${headers()}
 
-${requestExampleScript}
+${requestExample()}
 
-${curlExampleScript}
+${curlExample()}
 
-${paramsScript}
+${params()}
 
 ## API返回
 
-${responseDescScript}
+${responseDesc()}
 
-${responseExampleScript}
+${responseExample()}
 
 ## SDK示例
 
 ### Java SDK
 
-${javaSdkScript}
+${javaSdk()}
 
 ### Python SDK
 
-${pythonSdkScript}
+${pythonSdk()}
 """
+            } catch (Exception e) {
+                logger.warn(e.message, e)
+            }
         }
     }
 
@@ -2028,13 +1990,13 @@ ${pythonSdkScript}
             // generate dependent tables
 
             refs.each {
-                if (it._clz.name.startsWith("java.")) {
-                    return ""
-                }
-
                 String txt = resolvedRefs[it._clz]
 
                 if (txt == null) {
+                    if (it._clz == null) {
+                        throw new CloudRuntimeException("cannot find the class[${it._name}]")
+                    }
+
                     String path = getDocTemplatePathFromClass(it._clz)
                     Doc refDoc = createDoc(path)
                     def dmd = new DataStructMarkDown(it._clz, refDoc)
@@ -2074,6 +2036,7 @@ ${txt}
             char.class,
             String.class,
             Enum.class,
+            byte[].class
     ]
 
     class ApiResponseDocTemplate {
@@ -2144,7 +2107,7 @@ ${txt}
             }
 
             if (at.allTo() != "") {
-                fsToAdd[at.allTo()] = getFieldRecursively(responseClass, at.allTo())
+                fsToAdd[at.allTo()] = responseClass.getDeclaredField(at.allTo())
                 supplementFields('success', responseClass, at)
                 supplementFields('error', responseClass, at)
             } else if (at.fieldsTo().length == 1 && at.fieldsTo()[0] == "all") {
@@ -2165,20 +2128,6 @@ ${txt}
                 }
             }
 
-        }
-
-        static Field getFieldRecursively(Class<?> clazz, String fieldName) {
-            try {
-                return clazz.getDeclaredField(fieldName)
-            } catch (NoSuchFieldException e) {
-                Class<?> superClass = clazz.getSuperclass()
-
-                if (superClass != null && superClass != Object.class) {
-                    return getFieldRecursively(superClass, fieldName)
-                } else {
-                    throw e
-                }
-            }
         }
 
         void supplementFields(String fieldName, Class clz, RestResponse at){
@@ -2359,13 +2308,6 @@ ${fieldStr}
                         l.add("\"${it}\"")
                     }
                     values = "values (${l.join(",")})"
-                } else if (ap != null && ap.validEnums().length != 0) {
-                    def l = []
-                    def validValues = CollectionUtils.valuesForEnums(ap.validEnums()).collect(Collectors.toList())
-                    validValues.each {
-                        l.add("\"${it}\"")
-                    }
-                    values = "values (${l.join(",")})"
                 }
 
                 String desc = MUTUAL_FIELDS.get(af.name)
@@ -2386,7 +2328,7 @@ ${fieldStr}
                     location = LOCATION_BODY
                 }
 
-                def col = """\t\t\t\tcolumn {
+                cols.add("""\t\t\t\tcolumn {
 \t\t\t\t\tname "${af.name}"
 \t\t\t\t\tenclosedIn "${enclosedIn}"
 \t\t\t\t\tdesc "${desc == null  ? "" : desc}"
@@ -2394,13 +2336,12 @@ ${fieldStr}
 \t\t\t\t\ttype "${af.type.simpleName}"
 \t\t\t\t\toptional ${ap == null ? true : !ap.required()}
 \t\t\t\t\tsince "${projectVersion}"
-"""
+""")
                 if (values != null) {
-                    col += "\t\t\t\t\t${values}\n"
+                    cols.add("\t\t\t\t\t${values}")
                 }
 
-                col += "\t\t\t\t}"
-                cols.add(col)
+                cols.add("\t\t\t\t}")
             }
 
             if (cols.isEmpty()) {
@@ -2865,23 +2806,13 @@ ${additionalRemark}
     }
 
     def scanJavaSourceFiles() {
-        ShellResult res = ShellUtils.runAndReturn("find ${rootPath} -name '*.java' -not -path '${rootPath}/sdk/*'")
+        ShellResult res = ShellUtils.runAndReturn("find ${rootPath} -name '*.java' -not -path '${rootPath}/sdk/*' -not -path '${rootPath}/plugin/expon/*'")
         List<String> paths = res.stdout.split("\n")
         paths = paths.findAll { !(it - "\n" - "\r" - "\t").trim().isEmpty()}
 
         paths.each {
             def f = new File(it)
-            def key = f.name - ".java"
-            if (sourceFiles[key] == null) {
-                sourceFiles[key] = f
-                return
-            }
-
-            // Two class names have the same name
-            // 1. Exclude classes containing '/plugin/expon/' paths
-            if (sourceFiles[key].absolutePath.contains("/plugin/expon/")) {
-                sourceFiles[key] = f
-            }
+            sourceFiles[f.name - ".java"] = f
         }
     }
 

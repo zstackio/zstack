@@ -1,0 +1,228 @@
+// Copyright (c) ZStack.io, Inc.
+
+package client
+
+import (
+	"context"
+	"crypto/sha512"
+	"fmt"
+	"net/http"
+	"net/url"
+
+	"github.com/kataras/golog"
+	"github.com/zstackio/zsphere-sdk-go-v2/pkg/errors"
+	"github.com/zstackio/zsphere-sdk-go-v2/pkg/param"
+	"github.com/zstackio/zsphere-sdk-go-v2/pkg/view"
+)
+
+type ZSClient struct {
+	*ZSHttpClient
+}
+
+func NewZSClient(config *ZSConfig) *ZSClient {
+	return &ZSClient{
+		ZSHttpClient: NewZSHttpClient(config),
+	}
+}
+
+func (cli *ZSClient) Login(ctx context.Context) (*view.SessionInventoryView, error) {
+	if cli.authType != AuthTypeAccountUser && cli.authType != AuthTypeAccount {
+		return nil, errors.ErrNotSupported
+	}
+
+	var sessionView *view.SessionInventoryView
+	var err error
+	if cli.authType == AuthTypeAccountUser {
+		sessionView, err = cli.logInByAccountUser(ctx)
+	} else {
+		sessionView, err = cli.logInByAccount(ctx)
+	}
+
+	if err != nil {
+		golog.Errorf("ZSClient.Login error:%v", err)
+		return nil, err
+	}
+
+	cli.LoadSession(sessionView.Uuid)
+	return sessionView, nil
+}
+
+func (cli *ZSClient) logInByAccountUser(ctx context.Context) (*view.SessionInventoryView, error) {
+	if cli.authType != AuthTypeAccountUser {
+		return nil, errors.ErrNotSupported
+	}
+
+	if len(cli.accountName) == 0 || len(cli.accountUserName) == 0 || len(cli.password) == 0 {
+		return nil, errors.ErrParameter
+	}
+
+	params := param.LogInByUserParam{
+		LogInByUser: param.LogInByUserDetailParam{
+			AccountName: cli.accountName,
+			UserName:    cli.accountUserName,
+			Password:    fmt.Sprintf("%x", sha512.Sum512([]byte(cli.password))),
+		},
+	}
+	sessionView := view.SessionInventoryView{}
+	err := cli.Put(ctx, "v1/accounts/users/login", "", params, &sessionView)
+	if err != nil {
+		golog.Errorf("ZSClient.logInByAccountUser Account[%s] User[%s] error:%v",
+			cli.accountName, cli.accountUserName, err)
+		return nil, err
+	}
+
+	return &sessionView, nil
+}
+
+func (cli *ZSClient) logInByAccount(ctx context.Context) (*view.SessionInventoryView, error) {
+	if cli.authType != AuthTypeAccount {
+		return nil, errors.ErrNotSupported
+	}
+
+	if len(cli.accountName) == 0 || len(cli.password) == 0 {
+		return nil, errors.ErrParameter
+	}
+
+	params := param.LoginByAccountParam{
+		LoginByAccount: param.LoginByAccountDetailParam{
+			AccountName: cli.accountName,
+			Password:    fmt.Sprintf("%x", sha512.Sum512([]byte(cli.password))),
+		},
+	}
+	sessionView := view.SessionInventoryView{}
+	err := cli.Put(ctx, "v1/accounts/login", "", params, &sessionView)
+	if err != nil {
+		golog.Errorf("ZSClient.logInByAccount Account[%s] error:%v", cli.accountName, err)
+		return nil, err
+	}
+
+	return &sessionView, nil
+}
+
+func (cli *ZSClient) ValidateSession(ctx context.Context) (map[string]bool, error) {
+	if cli.authType != AuthTypeAccountUser && cli.authType != AuthTypeAccount {
+		return nil, errors.ErrNotSupported
+	}
+
+	if len(cli.sessionId) == 0 {
+		return nil, errors.ErrNotSupported
+	}
+
+	return cli.ValidateSessionId(ctx, cli.sessionId)
+}
+
+func (cli *ZSClient) ValidateSessionId(ctx context.Context, sessionId string) (map[string]bool, error) {
+	validSession := make(map[string]bool)
+	err := cli.GetWithSpec(ctx, "v1/accounts/sessions", sessionId, "valid", "", nil, &validSession)
+	if err != nil {
+		golog.Errorf("ZSClient.ValidateSession sessionId[%s] error:%v", sessionId, err)
+		return nil, err
+	}
+
+	golog.Debugf("ZSClient.ValidateSession sessionId[%s]:%v", sessionId, validSession)
+	return validSession, nil
+}
+
+func (cli *ZSClient) Logout(ctx context.Context) error {
+	if cli.authType != AuthTypeAccountUser && cli.authType != AuthTypeAccount {
+		return errors.ErrNotSupported
+	}
+
+	if len(cli.sessionId) == 0 {
+		return errors.ErrNotSupported
+	}
+
+	err := cli.Delete(ctx, "v1/accounts/sessions", cli.sessionId, "")
+	if err != nil {
+		golog.Errorf("ZSClient.Logout sessionId[%s] error:%v", cli.sessionId, err)
+		return err
+	}
+
+	cli.unloadSession()
+	return nil
+}
+
+func (cli *ZSClient) WebLogin(ctx context.Context) (*view.WebUISessionView, error) {
+	if cli.authType != AuthTypeAccountUser && cli.authType != AuthTypeAccount {
+		return nil, errors.ErrNotSupported
+	}
+
+	var operationName, username, loginType, query string
+	var input map[string]interface{}
+	if cli.authType == AuthTypeAccount {
+		operationName, username, loginType = "loginByAccount", cli.accountName, "iam1"
+		input = map[string]interface{}{
+			"accountName": cli.accountName,
+			"password":    fmt.Sprintf("%x", sha512.Sum512([]byte(cli.password))),
+		}
+		query = `mutation loginByAccount($input:LoginByAccountInput!) {
+			loginByAccount(input: $input) {
+			  sessionId,
+			  accountUuid,
+			  userUuid,
+			  currentIdentity
+			}
+		  }`
+	} else {
+		operationName, username, loginType = "loginIAM2VirtualID", cli.accountUserName, "iam2"
+		input = map[string]interface{}{
+			"name":     cli.accountUserName,
+			"password": fmt.Sprintf("%x", sha512.Sum512([]byte(cli.password))),
+		}
+		query = `mutation loginIAM2VirtualID($input:LoginIAM2VirtualIDInput!) {
+			loginIAM2VirtualID(input: $input) {
+			  sessionId,
+			  accountUuid,
+			  userUuid,
+			  currentIdentity
+			}
+		  }`
+	}
+
+	result := new(view.WebUISessionView)
+	params := param.HqlParam{
+		OperationName: operationName,
+		Query:         query,
+		Variables: param.Variables{
+			Input: input,
+		},
+	}
+	respHeader, err := cli.hql(ctx, params, result, responseKeyData, operationName)
+	if err != nil {
+		return nil, err
+	}
+	result.UserName = username
+	result.LoginType = loginType
+	result.ZSVersion = respHeader.Get("Zs-Version")
+	return result, nil
+}
+
+func (cli *ZSClient) hql(ctx context.Context, params param.HqlParam, retVal interface{}, unMarshalKeys ...string) (http.Header, error) {
+	urlStr := fmt.Sprintf("http://%s:%d/graphql", cli.hostname, WebZStackPort)
+	_, respHeader, resp, err := cli.httpPost(ctx, urlStr, jsonMarshal(params), false)
+	if err != nil {
+		return nil, err
+	}
+
+	if retVal == nil {
+		return nil, nil
+	}
+
+	return respHeader, resp.Unmarshal(retVal, unMarshalKeys...)
+}
+
+func (cli *ZSClient) Zql(ctx context.Context, querySt string, retVal interface{}, unMarshalKeys ...string) (http.Header, error) {
+	encodedQuery := url.QueryEscape(querySt)
+	baseUrl := cli.getRequestURL("v1/zql")
+	urlStr := fmt.Sprintf("%s?zql=%s", baseUrl, encodedQuery)
+	_, respHeader, resp, err := cli.httpGet(ctx, urlStr, false)
+	if err != nil {
+		return nil, err
+	}
+
+	if retVal == nil {
+		return nil, nil
+	}
+
+	return respHeader, resp.Unmarshal(retVal, unMarshalKeys...)
+}

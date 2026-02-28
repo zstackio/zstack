@@ -1,403 +1,407 @@
 package scripts
 
-import org.apache.commons.lang.StringEscapeUtils
 import org.apache.commons.lang.StringUtils
+import org.reflections.Reflections
 import org.zstack.core.Platform
 import org.zstack.header.exception.CloudRuntimeException
-import org.zstack.header.identity.SuppressCredentialCheck
-import org.zstack.header.message.*
-import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.message.Message
+import org.zstack.header.query.APIQueryReply
 import org.zstack.header.rest.APINoSee
-import org.zstack.header.rest.RestRequest
+import org.zstack.header.rest.NoSDK
+import org.zstack.header.rest.RestResponse
 import org.zstack.header.rest.SDK
-import org.zstack.header.rest.SDKPackage
-import org.zstack.rest.sdk.SdkTemplate
 import org.zstack.rest.sdk.SdkFile
-import org.zstack.utils.CollectionUtils
+import org.zstack.rest.sdk.SdkTemplate
 import org.zstack.utils.FieldUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
 
 import java.lang.reflect.Field
-import java.util.stream.Collectors
+import java.lang.reflect.Modifier
 
 /**
- * Created by xing5 on 2016/12/9.
+ * Created by xing5 on 2016/12/11.
  */
-class SdkApiTemplate implements SdkTemplate {
-    CLogger logger = Utils.getLogger(SdkApiTemplate.class)
+class SdkDataStructureGenerator implements SdkTemplate {
+    CLogger logger = Utils.getLogger(SdkDataStructureGenerator.class)
 
-    Class apiMessageClass
-    RestRequest requestAnnotation
+    Set<Class> responseClasses
+    Map<Class, SdkFile> sdkFileMap = [:]
+    Set<Class> laterResolvedClasses = []
 
-    String resultClassName
-    boolean isQueryApi
-    String packageName
+    Map<String, String> sourceClassMap = [:]
 
-    private static Map<Package, SDKPackage> packageSDKAnnotations = [:]
+    Reflections reflections = Platform.reflections
 
-    static {
-        Platform.reflections.getTypesAnnotatedWith(SDKPackage.class).each {
-            packageSDKAnnotations[it.package] = it.getAnnotation(SDKPackage.class)
-        }
-    }
-
-    SdkApiTemplate(Class apiMessageClass) {
-        try {
-            packageName = getPackageName(apiMessageClass)
-
-            this.apiMessageClass = apiMessageClass
-            this.requestAnnotation = apiMessageClass.getAnnotation(RestRequest.class)
-
-            String baseName = requestAnnotation.responseClass().simpleName
-            baseName = StringUtils.removeStart(baseName, "API")
-            baseName = StringUtils.removeEnd(baseName, "Event")
-            baseName = StringUtils.removeEnd(baseName, "Reply")
-
-            resultClassName = StringUtils.capitalize(baseName)
-            resultClassName = "${getPackageName(requestAnnotation.responseClass())}.${resultClassName}Result"
-
-            isQueryApi = APIQueryMessage.class.isAssignableFrom(apiMessageClass)
-        } catch (Throwable t) {
-            throw new CloudRuntimeException(String.format("failed to make SDK for the class[%s]", apiMessageClass), t)
-        }
-    }
-
-    static String getFieldType(Field field) {
-        if (!field.type.name.startsWith("org.zstack")) {
-            return field.type.name
-        }
-
-        return "${getPackageName(field.type)}.${field.type.simpleName}"
-    }
-
-    static String getPackageName(Class clz) {
-        String packageName = "org.zstack.sdk"
-
-        if (clz.getPackage() == null) {
-            return packageName
-        }
-
-        for (Map.Entry<Package, SDKPackage> e : packageSDKAnnotations.entrySet()) {
-            String parentName = e.key.getName()
-            String pname = clz.getPackage().getName()
-
-            if (parentName == pname || pname.startsWith(parentName + ".")) {
-                if (e.value.packageName().isEmpty()) {
-                    return packageName
-                } else {
-                    String subPackageName = pname.replaceFirst(parentName, "")
-                    return e.value.packageName() + subPackageName
-                }
-            }
-        }
-
-        return packageName
-    }
-
-    def normalizeApiName() {
-        def name = StringUtils.removeStart(apiMessageClass.getSimpleName(), "API")
-        name = StringUtils.removeEnd(name, "Msg")
-        return StringUtils.capitalize(name)
-    }
-
-    def generateClassName() {
-        return String.format("%sAction", normalizeApiName())
-    }
-
-    def generateFields() {
-        if (isQueryApi) {
-            return ""
-        }
-
-        def fields = FieldUtils.getAllFields(apiMessageClass)
-
-        APIMessage msg = (APIMessage)apiMessageClass.newInstance()
-
-        def output = []
-
-        OverriddenApiParams oap = apiMessageClass.getAnnotation(OverriddenApiParams.class)
-        Map<String, APIParam> overriden = [:]
-        if (oap != null) {
-            for (OverriddenApiParam op : oap.value()) {
-                overriden.put(op.field(), op.param())
-            }
-        }
-
-        for (Field f : fields) {
-            if (f.isAnnotationPresent(APINoSee.class)) {
-                continue
-            }
-
-            boolean isDeprecated = f.getDeclaredAnnotation(Deprecated.class) != null
-            String annotationPrefix = isDeprecated ? "    @Deprecated\n" : ""
-
-            APIParam apiParam = overriden.containsKey(f.name) ? overriden[f.name] : f.getAnnotation(APIParam.class)
-
-            def annotationFields = []
-            if (apiParam != null) {
-                annotationFields.add(String.format("required = %s", apiParam.required()))
-                if (apiParam.validValues().length > 0) {
-                    annotationFields.add(String.format("validValues = {%s}", { ->
-                        def vv = []
-                        for (String v : apiParam.validValues()) {
-                            vv.add("\"${v}\"")
-                        }
-                        return vv.join(",")
-                    }()))
-                } else if (apiParam.validEnums().length > 0) {
-                    annotationFields.add(String.format("validValues = {%s}", { ->
-                        def vv = []
-                        def validValues = CollectionUtils.valuesForEnums(apiParam.validEnums()).collect(Collectors.toList())
-                        for (String v : validValues) {
-                            vv.add("\"${v}\"")
-                        }
-                        return vv.join(",")
-                    }()))
-                }
-                if (!apiParam.validRegexValues().isEmpty()) {
-                    annotationFields.add(String.format("validRegexValues = \"%s\"", StringEscapeUtils.escapeJava(apiParam.validRegexValues())))
-                }
-                if (apiParam.maxLength() != Integer.MIN_VALUE) {
-                    annotationFields.add(String.format("maxLength = %s", apiParam.maxLength()))
-                }
-                if (apiParam.minLength() != 0) {
-                    annotationFields.add(String.format("minLength = %s", apiParam.minLength()))
-                }
-                annotationFields.add(String.format("nonempty = %s", apiParam.nonempty()))
-                annotationFields.add(String.format("nullElements = %s", apiParam.nullElements()))
-                annotationFields.add(String.format("emptyString = %s", apiParam.emptyString()))
-                if (apiParam.numberRange().length > 0) {
-                    def nr = apiParam.numberRange() as List<Long>
-                    def ns = []
-                    nr.forEach({ n -> return ns.add("${n}L")})
-
-                    annotationFields.add(String.format("numberRange = {%s}", ns.join(",")))
-
-                    if (apiParam.numberRangeUnit().length > 0) {
-                        def nru = apiParam.numberRangeUnit() as List<String>
-
-                        annotationFields.add(String.format("numberRangeUnit = {\"%s\", \"%s\"}", nru.get(0), nru.get(1)))
-                    }
-                }
-
-                annotationFields.add(String.format("noTrim = %s", apiParam.noTrim()))
-            } else {
-                annotationFields.add(String.format("required = false"))
-            }
-
-            def fs = """${annotationPrefix}\
-    @Param(${annotationFields.join(", ")})
-    public ${getFieldType(f)} ${f.getName()}${{ ->
-                f.accessible = true
-                
-                Object val = f.get(msg)
-                if (val == null) {
-                    return ";"
-                }
-                
-                if (val instanceof String) {
-                    return " = \"${StringEscapeUtils.escapeJava(val.toString())}\";" 
-                } else if (val instanceof Long) {
-                    return " = ${val.toString()}L;"
-                } else {
-                    return " = ${val.toString()};"
-                }
-            }()}
-"""
-            output.add(fs.toString())
-        }
-
-        if (!apiMessageClass.isAnnotationPresent(SuppressCredentialCheck.class)) {
-            output.add("""\
-    @Param(required = false)
-    public String sessionId;
-""")
-            output.add("""\
-    @Param(required = false)
-    public String accessKeyId;
-""")
-            output.add("""\
-    @Param(required = false)
-    public String accessKeySecret;
-""")
-        } else {
-            output.add("""\
-    @NonAPIParam
-    public boolean isSuppressCredentialCheck = true;
-""")
-        }
-
-        output.add("""\
-    @Param(required = false)
-    public String requestIp;
-""")
-
-        if (!APISyncCallMessage.class.isAssignableFrom(apiMessageClass)) {
-            output.add("""\
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-""")
-        }
-
-        return output.join("\n")
-    }
-
-    def generateMethods(String path) {
-        def ms = []
-        ms.add("""\
-    private Result makeResult(ApiResult res) {
-        Result ret = new Result();
-        if (res.error != null) {
-            ret.error = res.error;
-            return ret;
-        }
-        
-        ${resultClassName} value = res.getResult(${resultClassName}.class);
-        ret.value = value == null ? new ${resultClassName}() : value; 
-
-        return ret;
-    }
-""")
-
-        ms.add("""\
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
-        return makeResult(res);
-    }
-""")
-
-        ms.add("""\
-    public void call(final Completion<Result> completion) {
-        ZSClient.call(this, new InternalCompletion() {
-            @Override
-            public void complete(ApiResult res) {
-                completion.complete(makeResult(res));
-            }
-        });
-    }
-""")
-
-        ms.add("""\
-    protected Map<String, Parameter> getParameterMap() {
-        return parameterMap;
-    }
-
-    protected Map<String, Parameter> getNonAPIParameterMap() {
-        return nonAPIParameterMap;
-    }
-""")
-
-        ms.add("""\
-    protected RestInfo getRestInfo() {
-        RestInfo info = new RestInfo();
-        info.httpMethod = "${requestAnnotation.method().name()}";
-        info.path = "${path}";
-        info.needSession = ${!apiMessageClass.isAnnotationPresent(SuppressCredentialCheck.class)};
-        info.needPoll = ${!APISyncCallMessage.class.isAssignableFrom(apiMessageClass)};
-        info.parameterName = "${requestAnnotation.isAction() ? StringUtils.uncapitalize(normalizeApiName()) : requestAnnotation.parameterName()}";
-        return info;
-    }
-""")
-
-        return ms.join("\n")
-    }
-
-    def generateAction(String clzName, String path) {
-        def f = new SdkFile()
-        f.subPath = packageName.replaceAll("\\.", "/")
-        f.fileName = "${clzName}.java"
-        f.content = """package ${packageName};
-
-import java.util.HashMap;
-import java.util.Map;
-import org.zstack.sdk.*;
-
-public class ${clzName} extends ${isQueryApi ? "QueryAction" : "AbstractAction"} {
-
-    private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
-
-    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
-
-    public static class Result {
-        public ErrorCode error;
-        public ${resultClassName} value;
-
-        public Result throwExceptionIfError() {
-            if (error != null) {
-                throw new ApiException(
-                    String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
-                );
-            }
-            
-            return this;
-        }
-    }
-
-${generateFields()}
-
-${generateMethods(path)}
-}
-""".toString()
-
-        return f
-    }
-
-    def generateAction() {
-        SDK sdk = apiMessageClass.getAnnotation(SDK.class)
-        if (sdk != null && sdk.actionsMapping().length != 0) {
-            def ret = []
-
-            for (String ap : sdk.actionsMapping()) {
-                String[] aps = ap.split("=")
-                if (aps.length != 2) {
-                    throw new CloudRuntimeException("Invalid actionMapping[${ap}] of the class[${apiMessageClass.name}]," +
-                            "an action mapping must be in format of actionName=restfulPath")
-                }
-
-                String aname = aps[0].trim()
-                String restPath = aps[1].trim()
-
-                if (!requestAnnotation.optionalPaths().contains(restPath)) {
-                    throw new CloudRuntimeException("Cannot find ${restPath} in the 'optionalPaths' of the @RestPath of " +
-                            "the class[${apiMessageClass.name}]")
-                }
-
-                aname = StringUtils.capitalize(aname)
-
-                ret.add(generateAction("${aname}Action", restPath))
-            }
-
-            return ret
-        } else {
-            def requestPath = requestAnnotation.path()
-            if (requestPath == "null") {
-                throw new CloudRuntimeException("'path' is set to 'null' but no @SDK found on the class[${apiMessageClass.name}]")
-            }
-
-            if (requestPath.contains("{") || requestPath.contains("}")) {
-                def pattern = ~/\{([^}]*)}/
-                requestPath = requestPath.replaceAll(pattern, "")
-
-                if (requestPath.contains("{") || requestPath.contains("}")) {
-                    throw new CloudRuntimeException("'path' value format is missing please check '{' and '}' in path on the class[${apiMessageClass.name}]")
-                }
-            }
-
-            return [generateAction(generateClassName(), requestAnnotation.path())]
-        }
+    SdkDataStructureGenerator() {
+        Reflections reflections = Platform.getReflections()
+        responseClasses = reflections.getTypesAnnotatedWith(RestResponse.class)
+        laterResolvedClasses.addAll(reflections.getTypesAnnotatedWith(SDK.class)
+                .findAll() { !Message.class.isAssignableFrom(it) })
     }
 
     @Override
     List<SdkFile> generate() {
+        responseClasses.each { c ->
+            try {
+                generateResponseClass(c)
+            } catch (Throwable t) {
+                throw new CloudRuntimeException("failed to generate SDK for the class[${c.name}]", t)
+            }
+        }
+
+        resolveAllClasses()
+
+        def ret = sdkFileMap.values() as List
+        ret.add(generateSourceDestClassMap())
+
+        return ret
+    }
+
+    def generateSourceDestClassMap() {
+        def srcToDst = []
+        def dstToSrc = []
+
+        sourceClassMap.each { k, v ->
+            srcToDst.add("""\t\t\tput("${k}", "${v}");""")
+            dstToSrc.add("""\t\t\tput("${v}", "${k}");""")
+        }
+
+        srcToDst.sort()
+        dstToSrc.sort()
+
+        SdkFile f = new SdkFile()
+        f.fileName = "SourceClassMap.java"
+        f.content = """package org.zstack.sdk;
+
+import java.util.HashMap;
+
+public class SourceClassMap {
+    public final static HashMap<String, String> srcToDstMapping = new HashMap() {
+        {
+${srcToDst.join("\n")}
+        }
+    };
+
+    public final static HashMap<String, String> dstToSrcMapping = new HashMap() {
+        {
+${dstToSrc.join("\n")}
+        }
+    };
+}
+"""
+        return f
+    }
+
+    def resolveAllClasses() {
+        if (laterResolvedClasses.isEmpty()) {
+            return
+        }
+
+        Set<Class> toResolve = []
+        toResolve.addAll(laterResolvedClasses)
+
+        toResolve.each { Class clz ->
+            try {
+                resolveClass(clz)
+                laterResolvedClasses.remove(clz)
+            } catch (Throwable t) {
+                throw new CloudRuntimeException("failed to generate SDK for the class[${clz.getName()}]", t)
+            }
+        }
+
+        resolveAllClasses()
+    }
+
+    def getTargetClassName(Class clz) {
+        SDK at = clz.getAnnotation(SDK.class)
+        if (at == null || at.sdkClassName().isEmpty()) {
+            return clz.getSimpleName()
+        }
+
+        return at.sdkClassName()
+    }
+
+    def resolveClass(Class clz) {
+        if (clz.getName().contains("\$") && !Modifier.isStatic(clz.modifiers)) {
+            // ignore anonymous class
+            return
+        }
+
+        if (clz.isAnnotationPresent(NoSDK.class)) {
+            return
+        }
+
+        if (sdkFileMap.containsKey(clz)) {
+            return
+        }
+
+        if (isZStackClass(clz.superclass)) {
+            addToLaterResolvedClassesIfNeed(clz.superclass)
+        }
+
+        def output = []
+        def imports = []
+
+        if (!Enum.class.isAssignableFrom(clz)) {
+            for (Field f : clz.getDeclaredFields()) {
+                if (f.isAnnotationPresent(APINoSee.class)) {
+                    continue
+                }
+
+                if (isZStackClass(f.type)) {
+                    SDK at = f.type.getAnnotation(SDK.class)
+                    String simpleName = at != null && !at.sdkClassName().isEmpty() ? at.sdkClassName() : f.type.getSimpleName()
+                    imports.add("${SdkApiTemplate.getPackageName(f.type)}.${simpleName}")
+                }
+
+                def text = makeFieldText(f.name, f)
+                if (text != null) {
+                    output.add(text)
+                }
+            }
+        } else {
+            for (Enum e : clz.getEnumConstants()) {
+                output.add("\t${e.name()},")
+            }
+        }
+
+        String packageName = SdkApiTemplate.getPackageName(clz)
+
+        SdkFile file = new SdkFile()
+        file.subPath = packageName.replaceAll("\\.", "/")
+        file.fileName = "${getTargetClassName(clz)}.java"
+        if (!Enum.class.isAssignableFrom(clz)) {
+            file.content = """package ${packageName};
+
+${imports.collect { "import ${it};" }.join("\n")}
+
+public class ${getTargetClassName(clz)} ${Object.class == clz.superclass ? "" : "extends " + SdkApiTemplate.getPackageName(clz.superclass) + "." + clz.superclass.simpleName} {
+
+${output.join("\n")}
+}
+"""
+        } else {
+            file.content = """package ${packageName};
+
+public enum ${getTargetClassName(clz)} {
+${output.join("\n")}
+}
+"""
+        }
+
+        sourceClassMap[clz.name] = "${packageName}.${getTargetClassName(clz)}"
+        sdkFileMap.put(clz, file)
+    }
+
+    def isZStackClass(Class clz) {
+        if (clz.isArray() && clz.getComponentType() == byte.class) {
+            return false
+        }
+        if (clz.getName().startsWith("java.") || int.class == clz || long.class == clz
+                || short.class == clz || char.class == clz || boolean.class == clz || float.class == clz
+                || double.class == clz) {
+            return false
+        } else if (clz.getCanonicalName().startsWith("org.zstack")) {
+            return true
+        } else {
+            throw new CloudRuntimeException("${clz.getName()} is neither JRE class nor ZStack class")
+        }
+    }
+
+    def addToLaterResolvedClassesIfNeed(Class clz) {
+        if (clz.isAnnotationPresent(NoSDK.class)) {
+            return
+        }
+
+        if (!sdkFileMap.containsKey(clz)) {
+            laterResolvedClasses.add(clz)
+        }
+
+        Platform.reflections.getSubTypesOf(clz).forEach({ i ->
+            if (!sdkFileMap.containsKey(i) && !i.isAnnotationPresent(NoSDK.class)) {
+                laterResolvedClasses.add(i)
+            }
+        })
+    }
+
+    def generateResponseClass(Class responseClass) {
+        logger.debug("generating class: ${responseClass.name}")
+
+        RestResponse at = responseClass.getAnnotation(RestResponse.class)
+
+        def fields = [:]
+
+        def addToFields = { String fname, Field f ->
+            if (isZStackClass(f.type)) {
+                addToLaterResolvedClassesIfNeed(f.type)
+                fields[fname] = f
+            } else {
+                fields[fname] = f
+            }
+        }
+
+        if (!at.allTo().isEmpty()) {
+            Field f = getFieldRecursively(responseClass, at.allTo())
+            addToFields(at.allTo(), f)
+        } else {
+            if (at.fieldsTo().length == 1 && at.fieldsTo()[0] == "all") {
+                for (Field f : responseClass.getDeclaredFields()) {
+                    addToFields(f.name, f)
+                }
+            } else {
+                at.fieldsTo().each { s ->
+                    def ss = s.split("=")
+
+                    def dst, src
+                    if (ss.length == 2) {
+                        dst = ss[0].trim()
+                        src = ss[1].trim()
+                    } else {
+                        dst = src = ss[0]
+                    }
+
+                    Field f = responseClass.getDeclaredField(src)
+                    addToFields(dst, f)
+                }
+            }
+        }
+
+        // hack
+        if (APIQueryReply.class.isAssignableFrom(responseClass)) {
+            addToFields("total", responseClass.superclass.getDeclaredField("total"))
+        }
+
+        def imports = []
+        def output = []
+        fields.each { String name, Field f ->
+            if (isZStackClass(f.type)) {
+                SDK sdkat = f.type.getAnnotation(SDK.class)
+                String simpleName = sdkat != null && !sdkat.sdkClassName().isEmpty() ? sdkat.sdkClassName() : f.type.getSimpleName()
+                imports.add("${SdkApiTemplate.getPackageName(f.type)}.${simpleName}")
+            }
+
+            def text = makeFieldText(name, f)
+            if (text != null) {
+                output.add(text)
+            }
+        }
+
+        def className = responseClass.simpleName
+        className = StringUtils.removeStart(className, "API")
+        className = StringUtils.removeEnd(className, "Event")
+        className = StringUtils.removeEnd(className, "Reply")
+        className = StringUtils.capitalize(className)
+        className = "${className}Result"
+
+        String packageName = SdkApiTemplate.getPackageName(responseClass)
+        SdkFile file = new SdkFile()
+        file.subPath = packageName.replaceAll("\\.", "/")
+        file.fileName = "${className}.java"
+        file.content = """package ${packageName};
+
+${imports.collect { "import ${it};" }.join("\n")}
+
+public class ${className} {
+${output.join("\n")}
+}
+"""
+        sdkFileMap[responseClass] = file
+    }
+
+    static Field getFieldRecursively(Class<?> clazz, String fieldName) {
         try {
-            return generateAction()
-        } catch (Exception e) {
-            logger.warn("failed to generate SDK for ${apiMessageClass.name}")
-            throw e
+            return clazz.getDeclaredField(fieldName)
+        } catch (NoSuchFieldException e) {
+            Class<?> superClass = clazz.getSuperclass()
+
+            if (superClass != null && superClass != Object.class) {
+                return getFieldRecursively(superClass, fieldName)
+            } else {
+                throw e
+            }
+        }
+    }
+
+    def makeFieldText(String fname, Field field) {
+        // zstack type
+        if (isZStackClass(field.type) || Enum.class.isAssignableFrom(field.type)) {
+            addToLaterResolvedClassesIfNeed(field.type)
+
+            return """\
+    public ${getTargetClassName(field.type)} ${fname};
+    public void set${StringUtils.capitalize(fname)}(${getTargetClassName(field.type)} ${fname}) {
+        this.${fname} = ${fname};
+    }
+    public ${getTargetClassName(field.type)} get${StringUtils.capitalize(fname)}() {
+        return this.${fname};
+    }
+"""
+        }
+
+        // skip static fields
+        if (Modifier.isStatic(field.modifiers)) {
+            return null
+        }
+
+        // handle byte[] type
+        if (field.type == byte[].class) {
+            return """\
+    public byte[] ${fname};
+    public void set${StringUtils.capitalize(fname)}(byte[] ${fname}) {
+        this.${fname} = ${fname};
+    }
+    public byte[] get${StringUtils.capitalize(fname)}() {
+        return this.${fname};
+    }
+"""
+        }
+
+        // java type
+        if (Collection.class.isAssignableFrom(field.type)) {
+            Class genericType = FieldUtils.getGenericType(field)
+            if (genericType != null) {
+                if (isZStackClass(genericType)) {
+                    addToLaterResolvedClassesIfNeed(genericType)
+                }
+            }
+
+            return """\
+    public ${field.type.name} ${fname};
+    public void set${StringUtils.capitalize(fname)}(${field.type.name} ${fname}) {
+        this.${fname} = ${fname};
+    }
+    public ${field.type.name} get${StringUtils.capitalize(fname)}() {
+        return this.${fname};
+    }
+"""
+        } else if (Map.class.isAssignableFrom(field.type)) {
+            Class genericType = FieldUtils.getGenericType(field)
+            if (genericType != null) {
+                if (isZStackClass(genericType)) {
+                    addToLaterResolvedClassesIfNeed(genericType)
+                }
+            }
+
+            return """\
+    public ${field.type.name} ${fname};
+    public void set${StringUtils.capitalize(fname)}(${field.type.name} ${fname}) {
+        this.${fname} = ${fname};
+    }
+    public ${field.type.name} get${StringUtils.capitalize(fname)}() {
+        return this.${fname};
+    }
+"""
+        } else {
+            return """\
+    public ${field.type.name} ${fname};
+    public void set${StringUtils.capitalize(fname)}(${field.type.name} ${fname}) {
+        this.${fname} = ${fname};
+    }
+    public ${field.type.name} get${StringUtils.capitalize(fname)}() {
+        return this.${fname};
+    }
+"""
         }
     }
 }
