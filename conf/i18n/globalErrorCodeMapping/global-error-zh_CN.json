@@ -630,6 +630,7 @@
   "ORG_ZSTACK_CONFIGURATION_10006": "不支持的实例配置类型[%s]",
   "ORG_ZSTACK_MULTICAST_ROUTER_10007": "组地址 [%s] 不是多播地址",
   "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10014": "存储不健康:%s",
+  "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10015": "没有可用的镜像服务器匹配首选类型 %s，主存储[uuid:%s]",
   "ORG_ZSTACK_MULTICAST_ROUTER_10000": "多播路由器[uuid:%s]尚未绑定到VPC路由器",
   "ORG_ZSTACK_MULTICAST_ROUTER_10001": "多播已在VPC路由器uuid[:%s]上启用",
   "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10012": "无法从内部快照路径[%s]找到所属卷路径，因为正则表达式[%s]与快照路径不匹配",

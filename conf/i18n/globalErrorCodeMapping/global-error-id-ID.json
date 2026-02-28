@@ -630,6 +630,7 @@
   "ORG_ZSTACK_CONFIGURATION_10006": "jenis instance[%s] tidak didukung",
   "ORG_ZSTACK_MULTICAST_ROUTER_10007": "alamat grup [%s] bukan alamat grup multicast",
   "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10014": "penyimpanan tidak sehat:%s",
+  "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10015": "tidak ada penyimpanan cadangan yang tersedia dengan tipe yang disukai %s untuk penyimpanan utama[uuid:%s]",
   "ORG_ZSTACK_MULTICAST_ROUTER_10000": "multicastRouter[uuid:%s] belum dikaitkan dengan router VPC",
   "ORG_ZSTACK_MULTICAST_ROUTER_10001": "multicast sudah diaktifkan pada router VPC UUID[:%s]",
   "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10012": "tidak dapat menemukan jalur volume pemilik dari jalur snapshot internal[%s], karena regex[%s] tidak cocok dengan jalur snapshot",

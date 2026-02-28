@@ -630,6 +630,7 @@
   "ORG_ZSTACK_CONFIGURATION_10006": "Instanztyp[%s] wird nicht unterstützt",
   "ORG_ZSTACK_MULTICAST_ROUTER_10007": "Gruppenadresse [%s] ist keine Multicast-Gruppenadresse",
   "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10014": "Speicher ist nicht gesund:%s",
+  "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10015": "Kein verfügbarer Backup-Speicher mit bevorzugten Typen %s für primären Speicher[uuid:%s]",
   "ORG_ZSTACK_MULTICAST_ROUTER_10000": "multicastRouter[uuid:%s] wurde keinem VPC-Router zugeordnet",
   "ORG_ZSTACK_MULTICAST_ROUTER_10001": "Multicast ist bereits auf dem VPC-Router UUID[:%s] aktiviert",
   "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10012": "Der Eigentümer-Volume-Pfad kann aus dem internen Snapshot-Pfad[%s] nicht gefunden werden, da der reguläre Ausdruck[%s] nicht mit dem Snapshot-Pfad übereinstimmt",

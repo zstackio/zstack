@@ -630,6 +630,7 @@
   "ORG_ZSTACK_CONFIGURATION_10006": "지원되지 않는 인스턴스 유형[%s]",
   "ORG_ZSTACK_MULTICAST_ROUTER_10007": "그룹 주소 [%s]는 멀티캐스트 그룹 주소가 아닙니다",
   "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10014": "저장소가 정상 상태가 아닙니다:%s",
+  "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10015": "기본 저장소[uuid:%s]에 대해 선호하는 유형 %s의 사용 가능한 백업 저장소가 없습니다",
   "ORG_ZSTACK_MULTICAST_ROUTER_10000": "multicastRouter[uuid:%s]가 VPC 라우터와 연결되지 않았습니다",
   "ORG_ZSTACK_MULTICAST_ROUTER_10001": "VPC 라우터 UUID[:%s]에서 멀티캐스트가 이미 활성화되어 있습니다",
   "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10012": "정규식[%s]이 스냅샷 경로와 일치하지 않아 내부 스냅샷 경로[%s]에서 소유 볼륨 경로를 찾을 수 없습니다",

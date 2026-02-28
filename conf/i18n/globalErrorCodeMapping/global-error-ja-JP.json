@@ -630,6 +630,7 @@
   "ORG_ZSTACK_CONFIGURATION_10006": "サポートされていないインスタンスタイプ[%s]",
   "ORG_ZSTACK_MULTICAST_ROUTER_10007": "グループアドレス[%s]はマルチキャストグループアドレスではありません",
   "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10014": "ストレージは正常ではありません:%s",
+  "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10015": "優先タイプ%sに一致する利用可能なバックアップストレージがプライマリストレージ[uuid:%s]に存在しません",
   "ORG_ZSTACK_MULTICAST_ROUTER_10000": "マルチキャストルーター[uuid:%s]はVPCルーターに関連付けられていません",
   "ORG_ZSTACK_MULTICAST_ROUTER_10001": "マルチキャストは既にVPCルーターUUID[:%s]で有効化されています",
   "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10012": "内部スナップショットパス[%s]から所有ボリュームパスが見つかりません。正規表現[%s]がスナップショットパスに一致しません",
