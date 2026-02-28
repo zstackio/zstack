@@ -92,6 +92,7 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
         msg.setAvoidHostUuids(spec.getAvoidHostUuids());
         amsg = msg;
 
+        extEmitter.beforeVmAllocateHost(amsg, spec);
         bus.send(amsg, new CloudBusCallBack(chain) {
             @Override
             public void run(MessageReply reply) {

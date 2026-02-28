@@ -37,16 +37,15 @@ public class HostAllocatorSpec {
     private long oldMemoryCapacity = 0;
     private AllocationScene allocationScene;
     private String architecture;
-    private String accountUuid;
-    /**
-     * Allocation purpose. Defaults to ALLOCATE so existing call sites keep
-     * their current behavior. Filters may relax some checks (e.g. PCI device
-     * owner-RBAC) when this is LIST_CANDIDATES.
-     *
-     * Permission gating is the caller's responsibility; filters trust this
-     * value as-is.
-     */
-    private HostAllocationPurpose purpose = HostAllocationPurpose.ALLOCATE;
+    private LinkedHashMap opaque;
+
+    public LinkedHashMap getOpaque() {
+        return opaque;
+    }
+
+    public void setOpaque(LinkedHashMap opaque) {
+        this.opaque = opaque;
+    }
 
     public AllocationScene getAllocationScene() {
         return allocationScene;
@@ -278,6 +277,9 @@ public class HostAllocatorSpec {
         spec.setPurpose(msg.getPurpose());
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()){
             spec.setSystemTags(new ArrayList<String>(msg.getSystemTags()));
+        }
+        if (msg.getOpaque() != null) {
+            spec.setOpaque(new LinkedHashMap(msg.getOpaque()));
         }
 
         return spec;

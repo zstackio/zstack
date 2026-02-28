@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>vmLocalVolumeCachePool</id>
+
+    <message>
+        <name>org.zstack.header.localVolumeCache.APICreateVmLocalVolumeCachePoolMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.localVolumeCache.APIDeleteVmLocalVolumeCachePoolMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.localVolumeCache.APIUpdateVmLocalVolumeCachePoolMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.localVolumeCache.APIChangeVmLocalVolumeCachePoolStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.localVolumeCache.APIReconnectVmLocalVolumeCachePoolMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.localVolumeCache.APIExtendVmLocalVolumeCachePoolMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.localVolumeCache.APISyncVmLocalVolumeCachePoolCapacityMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.localVolumeCache.APIQueryVmLocalVolumeCachePoolMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>
