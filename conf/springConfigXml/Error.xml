@@ -13,4 +13,9 @@
     default-init-method="init" default-destroy-method="destroy">
 
     <bean id="ErrorFacade" class="org.zstack.core.errorcode.ErrorFacadeImpl" />
+    <bean id="GlobalErrorCodeI18nService" class="org.zstack.core.errorcode.GlobalErrorCodeI18nServiceImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
 </beans>

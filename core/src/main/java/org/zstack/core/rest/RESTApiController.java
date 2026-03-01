@@ -7,8 +7,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.zstack.core.errorcode.GlobalErrorCodeI18nService;
+import org.zstack.core.errorcode.LocaleUtils;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTApiFacade;
 import org.zstack.header.rest.RESTConstant;
 import org.zstack.header.rest.RESTFacade;
@@ -30,15 +35,19 @@ public class RESTApiController {
     private RESTApiFacade restApi;
     @Autowired
     private RESTFacade restf;
+    @Autowired
+    private GlobalErrorCodeI18nService i18nService;
 
     @RequestMapping(value = RESTConstant.REST_API_RESULT + "{uuid}", method = {RequestMethod.GET, RequestMethod.PUT})
-    public void queryResult(@PathVariable String uuid, HttpServletResponse rsp) throws IOException {
+    public void queryResult(@PathVariable String uuid, HttpServletRequest req, HttpServletResponse rsp) throws IOException {
         try {
             RestAPIResponse apiRsp = restApi.getResult(uuid);
             if (apiRsp == null) {
                 rsp.sendError(HttpStatus.SC_NOT_FOUND, String.format("No api result[uuid:%s] found", uuid));
                 return;
             }
+            String locale = resolveLocale(req);
+            localizeRestAPIResponse(apiRsp, locale);
             rsp.setCharacterEncoding("UTF-8");
             PrintWriter writer = rsp.getWriter();
             String res = JSONObjectUtil.toJsonString(apiRsp);
@@ -50,7 +59,7 @@ public class RESTApiController {
         }
     }
 
-    private String handleByMessageType(String body, String clientIp, String clientBrowser) {
+    private String handleByMessageType(String body, String clientIp, String clientBrowser, String locale) {
         APIMessage amsg = null;
         try {
             amsg = (APIMessage) RESTApiDecoder.loads(body);
@@ -66,6 +75,7 @@ public class RESTApiController {
         } else {
             rsp = restApi.send(amsg);
         }
+        localizeRestAPIResponse(rsp, locale);
         return JSONObjectUtil.toJsonString(rsp);
     }
 
@@ -74,8 +84,9 @@ public class RESTApiController {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(request);
         String clientIp = HttpServletRequestUtils.getClientIP(request);
         String clientBrowser = HttpServletRequestUtils.getClientBrowser(request);
+        String locale = resolveLocale(request);
         try {
-            String ret = handleByMessageType(entity.getBody(), clientIp, clientBrowser);
+            String ret = handleByMessageType(entity.getBody(), clientIp, clientBrowser, locale);
             response.setStatus(HttpStatus.SC_OK);
             response.setCharacterEncoding("UTF-8");
             PrintWriter writer = response.getWriter();
@@ -87,6 +98,36 @@ public class RESTApiController {
             sb.append(String.format("\nexception message: %s", t.getMessage()));
             logger.debug(sb.toString(), t);
             response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, sb.toString());
+        }
+    }
+
+    private String resolveLocale(HttpServletRequest req) {
+        String acceptLanguage = req.getHeader("Accept-Language");
+        return LocaleUtils.resolveLocale(acceptLanguage, i18nService.getAvailableLocales());
+    }
+
+    private void localizeRestAPIResponse(RestAPIResponse rsp, String locale) {
+        if (rsp == null || rsp.getResult() == null || locale == null) {
+            return;
+        }
+
+        try {
+            Message msg = RESTApiDecoder.loads(rsp.getResult());
+            if (msg instanceof MessageReply) {
+                MessageReply reply = (MessageReply) msg;
+                if (!reply.isSuccess() && reply.getError() != null) {
+                    i18nService.localizeErrorCode(reply.getError(), locale);
+                    rsp.setResult(RESTApiDecoder.dump(reply));
+                }
+            } else if (msg instanceof APIEvent) {
+                APIEvent evt = (APIEvent) msg;
+                if (!evt.isSuccess() && evt.getError() != null) {
+                    i18nService.localizeErrorCode(evt.getError(), locale);
+                    rsp.setResult(RESTApiDecoder.dump(evt));
+                }
+            }
+        } catch (Exception e) {
+            logger.debug(String.format("failed to localize RestAPIResponse: %s", e.getMessage()), e);
         }
     }
 

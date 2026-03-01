@@ -24,6 +24,26 @@ public class ErrorCode implements Serializable, Cloneable {
     @NoJsonSchema
     private LinkedHashMap opaque;
     private String globalErrorCode;
+    private String message;
+    @APINoSee
+    @NoJsonSchema
+    private String[] formatArgs;
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public String[] getFormatArgs() {
+        return formatArgs == null ? null : formatArgs.clone();
+    }
+
+    public void setFormatArgs(String[] formatArgs) {
+        this.formatArgs = formatArgs == null ? null : formatArgs.clone();
+    }
 
     public String getGlobalErrorCode() {
         return globalErrorCode;
@@ -81,6 +101,9 @@ public class ErrorCode implements Serializable, Cloneable {
         this.messages = other.messages;
         this.cause = other.cause;
         this.location = other.location;
+        this.message = other.message;
+        this.formatArgs = other.formatArgs == null ? null : other.formatArgs.clone();
+        this.globalErrorCode = other.globalErrorCode;
     }
 
     public void setCode(String code) {
