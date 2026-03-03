@@ -4,6 +4,7 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,6 +57,7 @@ public class CollectionUtils {
         return from.stream().filter(tester).collect(Collectors.toList());
     }
 
+    @Nullable
     public static <T> T findOneOrNull(Collection<T> from, Predicate<T> tester) {
         return from.stream().filter(tester).findFirst().orElse(null);
     }

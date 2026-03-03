@@ -230,6 +230,8 @@ public class KVMHost extends HostBase implements Host {
     private String fileDownloadPath;
     private String fileUploadPath;
     private String fileDownloadProgressPath;
+    private String readVmHostFilePath;
+    private String writeVmHostFilePath;
 
     public KVMHost(KVMHostVO self, KVMHostContext context) {
         super(self);
@@ -480,6 +482,14 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_HOST_FILE_DOWNLOAD_PROGRESS_PATH);
         fileDownloadProgressPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.READ_VM_HOST_FILE_PATH);
+        readVmHostFilePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.WRITE_VM_HOST_FILE_PATH);
+        writeVmHostFilePath = ub.build().toString();
     }
 
     static {
