@@ -22,7 +22,24 @@ if [ -z $tool ]; then
 fi
 
 install_pip() {
-    pip3.11 --version | grep 22.3.1 >/dev/null || yum install python3.11-pip
+    pip3.11 --version | grep 22.3.1 >/dev/null || yum install -y python3.11-pip
+}
+
+# Ensure the virtualenv at $1 is a Python 3.11 venv.
+# If it does not exist or is a legacy Python 2 venv, recreate it.
+ensure_python3_venv() {
+    local venv_path=$1
+    local allowed_prefix="/var/lib/zstack/virtualenv"
+
+    if [[ "$venv_path" != "$allowed_prefix"* || "$venv_path" == *".."* ]]; then
+        echo "Error: Path must start with $allowed_prefix. Provided: $venv_path" >&2
+        exit 1
+    fi
+
+    if [ -d "$venv_path" ] && [ -x "$venv_path/bin/python3.11" ]; then
+        return 0
+    fi
+    rm -rf "$venv_path" && python3.11 -m venv "$venv_path" || exit 1
 }
 
 
@@ -34,13 +51,7 @@ cd /tmp
 if [ $tool = 'zstack-cli' ]; then
     CLI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstackcli
     [ ! -z $force ] && rm -rf $CLI_VIRENV_PATH
-    if [ ! -d "$CLI_VIRENV_PATH" ]; then
-        python3.11 -m venv $CLI_VIRENV_PATH
-        if [ $? -ne 0 ]; then
-            rm -rf $CLI_VIRENV_PATH
-            exit 1
-        fi
-    fi
+    ensure_python3_venv "$CLI_VIRENV_PATH"
     . $CLI_VIRENV_PATH/bin/activate
     cd $cwd
     pip install -i $pypi_path --trusted-host localhost --ignore-installed zstackcli-*.tar.gz apibinding-*.tar.gz
@@ -71,7 +82,7 @@ if [ $tool = 'zstack-cli' ]; then
 
 elif [ $tool = 'zstack-ctl' ]; then
     CTL_VIRENV_PATH=/var/lib/zstack/virtualenv/zstackctl
-    rm -rf $CTL_VIRENV_PATH && python3.11 -m venv $CTL_VIRENV_PATH || exit 1
+    ensure_python3_venv "$CTL_VIRENV_PATH"
     . $CTL_VIRENV_PATH/bin/activate
     cd $cwd
     TMPDIR=/usr/local/zstack/ pip install -i $pypi_path --trusted-host localhost --ignore-installed zstackctl-*.tar.gz || exit 1
@@ -82,18 +93,15 @@ elif [ $tool = 'zstack-ctl' ]; then
 
 elif [ $tool = 'zstack-sys' ]; then
     SYS_VIRENV_PATH=/var/lib/zstack/virtualenv/zstacksys
-    NEED_INSTALL=false
-    if [ -d $SYS_VIRENV_PATH ]; then
-        . $SYS_VIRENV_PATH/bin/activate
-        if ! ansible --version | grep -q 'core 2.11.12.3'; then
-          deactivate
-          NEED_INSTALL=true
-        fi
-    else
-        NEED_INSTALL=true
+    ensure_python3_venv "$SYS_VIRENV_PATH"
+    RE_INSTALL=false
+    . $SYS_VIRENV_PATH/bin/activate
+    if ! ansible --version | grep -q 'core 2.16.14'; then
+        deactivate
+        RE_INSTALL=true
     fi
-    if $NEED_INSTALL; then
-        rm -rf $SYS_VIRENV_PATH && python3.11 -m venv /var/lib/zstack/virtualenv/zstacksys || exit 1
+    if $RE_INSTALL; then
+        rm -rf $SYS_VIRENV_PATH && python3.11 -m venv $SYS_VIRENV_PATH || exit 1
         . $SYS_VIRENV_PATH/bin/activate
         cd $cwd
         #TMPDIR=/usr/local/zstack/ pip install -i $pypi_path --trusted-host localhost --ignore-installed setuptools==65.5.1 || exit 1
@@ -112,7 +120,7 @@ LC_ALL=en_US.utf8
 export LANG LC_ALL
 . ${VIRTUAL_ENV}/bin/activate
 
-ansible \$@
+\${VIRTUAL_ENV}/bin/ansible \$@
 EOF
         chmod +x /usr/bin/ansible
 
@@ -129,7 +137,7 @@ LC_ALL=en_US.utf8
 export LANG LC_ALL
 . ${VIRTUAL_ENV}/bin/activate
 
-ansible-playbook \$@
+\${VIRTUAL_ENV}/bin/ansible-playbook \$@
 EOF
         chmod +x /usr/bin/ansible-playbook
     fi
