@@ -21,6 +21,32 @@ CREATE TABLE IF NOT EXISTS `zstack`.`TpmHostRefVO` (
     CONSTRAINT `fkTpmHostRefVOHostVO` FOREIGN KEY (`hostUuid`) REFERENCES `HostEO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `zstack`.`VmHostFileVO` (
+    `uuid` char(32) NOT NULL UNIQUE,
+    `vmInstanceUuid` char(32) NOT NULL,
+    `hostUuid` char(32) NOT NULL,
+    `type` varchar(64) NOT NULL COMMENT 'NvRam, TpmState, NvRamBackup, TpmStateBackup',
+    `path` varchar(1024) NOT NULL COMMENT 'Absolute path of the file on the host',
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
+    PRIMARY KEY (`uuid`),
+    INDEX `idxVmHostFileVOVmInstanceUuid` (`vmInstanceUuid`),
+    INDEX `idxVmHostFileVOHostUuid` (`hostUuid`),
+    CONSTRAINT `fkVmHostFileVOVmInstanceVO` FOREIGN KEY (`vmInstanceUuid`) REFERENCES `VmInstanceEO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkVmHostFileVOHostVO` FOREIGN KEY (`hostUuid`) REFERENCES `HostEO` (`uuid`) ON DELETE CASCADE,
+    UNIQUE KEY `ukVmHostFileVO` (`vmInstanceUuid`, `hostUuid`, `type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`VmHostFileContentVO` (
+    `uuid` char(32) NOT NULL UNIQUE,
+    `content` MEDIUMBLOB DEFAULT '',
+    `format` varchar(64) NOT NULL COMMENT 'Raw, TarballGzip',
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT `fkVmHostFileContentVOVmHostFileVO` FOREIGN KEY (`uuid`) REFERENCES `VmHostFileVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- Feature: KMS | ZSPHER-46, ZSPHER-60, ZSPHER-61, ZSPHER-62
 
 CREATE TABLE IF NOT EXISTS `zstack`.`KeyProviderVO` (

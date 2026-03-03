@@ -12,6 +12,7 @@ import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.header.vm.additions.VmHostFileContentFormat
 import org.zstack.header.vm.devices.DeviceAddress
 import org.zstack.header.vm.devices.VirtualDeviceInfo
 import org.zstack.header.volume.VolumeInventory
@@ -680,6 +681,25 @@ class KVMSimulator implements Simulator {
 
         spec.simulator(KVMConstant.KVM_UPDATE_HOSTNAME_PATH) {
             return new UpdateHostnameRsp()
+        }
+
+        spec.simulator(KVMConstant.READ_VM_HOST_FILE_PATH) { HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ReadVmHostFileContentCmd)
+
+            def rsp = new ReadVmHostFileContentResponse()
+            for (final def param in cmd.hostFiles) {
+                def to = new VmHostFileTO()
+                to.path = param.path
+                to.type = param.type
+                to.fileFormat = VmHostFileContentFormat.Raw.toString()
+                to.contentBase64 = "dGVzdA=="
+                rsp.hostFiles.add(to)
+            }
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.WRITE_VM_HOST_FILE_PATH) { HttpEntity<String> e ->
+            return new WriteVmHostFileContentResponse()
         }
     }
 }
