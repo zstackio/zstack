@@ -3426,6 +3426,7 @@
   "ORG_ZSTACK_STORAGE_PRIMARY_BLOCK_10038": "이름으로 볼륨 템플릿을 찾을 수 없습니다:%s",
   "ORG_ZSTACK_MEVOCO_10076": "공유 볼륨 [UUID: %s]이(가) 연결되어 있습니다. 그룹 스냅샷은 지원되지 않습니다.",
   "ORG_ZSTACK_AI_MESSAGE_10002": "리소스 UUID[%s] 또는 모델 센터 UUID[%s]가 null이므로 데이터세트 생성 작업을 취소할 수 없습니다",
+  "ORG_ZSTACK_AI_MESSAGE_10003": "모델 다운로드 작업을 다시 시작해야 합니다",
   "ORG_ZSTACK_AI_MESSAGE_10001": "리소스 UUID[%s] 또는 모델 센터 UUID[%s]가 null이므로 모델 서비스 다운로드 작업을 취소할 수 없습니다",
   "ORG_ZSTACK_IPSEC_VYOS_10009": "HA 그룹 적용 실패: %s",
   "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_PROMETHEUS_10013": "클라우드 환경의 모든 Prometheus 인스턴스에 HTTP 호출을 수행하지 못했습니다.",

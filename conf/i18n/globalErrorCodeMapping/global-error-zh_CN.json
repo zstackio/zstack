@@ -3517,6 +3517,7 @@
   "ORG_ZSTACK_STORAGE_PRIMARY_BLOCK_10038": "未能根据名称找到模板 LUN：%s",
   "ORG_ZSTACK_MEVOCO_10076": "可共享的卷[uuid: %s]已挂载，不支持组快照。",
   "ORG_ZSTACK_AI_MESSAGE_10002": "无法取消数据集创建任务，因为 resourceUuid[%s] 或 modelCenterUuid[%s] 为空",
+  "ORG_ZSTACK_AI_MESSAGE_10003": "模型下载任务需重新下载",
   "ORG_ZSTACK_AI_MESSAGE_10001": "无法取消模型服务下载任务，因为 resourceUuid[%s] 或 modelCenterUuid[%s] 为空",
   "ORG_ZSTACK_IPSEC_VYOS_10009": "应用到高可用组失败，因为 %s",
   "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_PROMETHEUS_10013": "失败的 HTTP 调用所有 Prometheus 实例",

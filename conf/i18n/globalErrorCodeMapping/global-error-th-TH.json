@@ -3516,6 +3516,7 @@
   "ORG_ZSTACK_STORAGE_PRIMARY_BLOCK_10038": "ไม่สามารถค้นหา volume template ตามชื่อ:%s",
   "ORG_ZSTACK_MEVOCO_10076": "shareable volume(s) [UUID: %s] ถูกแนบแล้ว; group snapshot ไม่รองรับ",
   "ORG_ZSTACK_AI_MESSAGE_10002": "ไม่สามารถยกเลิกงานสร้าง dataset ได้เนื่องจาก resource UUID[%s] หรือ model center UUID[%s] เป็น null",
+  "ORG_ZSTACK_AI_MESSAGE_10003": "งาน download ของ model จำเป็นต้องเริ่มใหม่",
   "ORG_ZSTACK_AI_MESSAGE_10001": "ไม่สามารถยกเลิกงาน download ของ model service ได้เนื่องจาก resource UUID[%s] หรือ model center UUID[%s] เป็น null",
   "ORG_ZSTACK_IPSEC_VYOS_10009": "การ apply ไปยัง HA group ล้มเหลวเนื่องจาก %s",
   "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_PROMETHEUS_10013": "ไม่สามารถทำ HTTP calls ไปยัง Prometheus instances ทั้งหมดใน cloud environment ได้",

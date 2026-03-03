@@ -3517,6 +3517,7 @@
   "ORG_ZSTACK_STORAGE_PRIMARY_BLOCK_10038": "failed to find volume template by name:%s",
   "ORG_ZSTACK_MEVOCO_10076": "shareable volume(s) [UUID: %s] attached; group snapshot is not supported.",
   "ORG_ZSTACK_AI_MESSAGE_10002": "Cannot cancel dataset creation job because the resource UUID[%s] or model center UUID[%s] is null",
+  "ORG_ZSTACK_AI_MESSAGE_10003": "The model download task needs to restart",
   "ORG_ZSTACK_AI_MESSAGE_10001": "Cannot cancel model service download task because the resource UUID[%s] or model center UUID[%s] is null",
   "ORG_ZSTACK_IPSEC_VYOS_10009": "apply to HA group failed because %s",
   "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_PROMETHEUS_10013": "Failed to perform HTTP calls to all Prometheus instances in the cloud environment.",

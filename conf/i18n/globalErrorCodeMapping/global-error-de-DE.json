@@ -3426,6 +3426,7 @@
   "ORG_ZSTACK_STORAGE_PRIMARY_BLOCK_10038": "Volume-Vorlage mit dem Namen %s konnte nicht gefunden werden",
   "ORG_ZSTACK_MEVOCO_10076": "shareable Volume(s) [UUID: %s] angehängt; Gruppensnapshot wird nicht unterstützt.",
   "ORG_ZSTACK_AI_MESSAGE_10002": "Dataset-Erstellungsauftrag kann nicht abgebrochen werden, weil die Ressourcen-UUID[%s] oder Model-Center-UUID[%s] null ist",
+  "ORG_ZSTACK_AI_MESSAGE_10003": "Die Modell-Download-Aufgabe muss neu gestartet werden",
   "ORG_ZSTACK_AI_MESSAGE_10001": "Model-Service-Download-Aufgabe kann nicht abgebrochen werden, weil die Ressourcen-UUID[%s] oder Model-Center-UUID[%s] null ist",
   "ORG_ZSTACK_IPSEC_VYOS_10009": "Anwendung auf HA-Gruppe fehlgeschlagen wegen %s",
   "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_PROMETHEUS_10013": "HTTP-Aufrufe an alle Prometheus-Instanzen in der Cloud-Umgebung fehlgeschlagen.",
