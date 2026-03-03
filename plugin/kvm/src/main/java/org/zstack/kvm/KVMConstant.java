@@ -85,6 +85,8 @@ public interface KVMConstant {
     String KVM_REGISTER_PRIMARY_VM_HEARTBEAT = "/register/primary/vm/heartbeat";
     String CLEAN_FIRMWARE_FLASH = "/clean/firmware/flash";
     String FSTRIM_VM_PATH = "/vm/fstrim";
+    String READ_VM_HOST_FILE_PATH = "/vm/hostfile/read";
+    String WRITE_VM_HOST_FILE_PATH = "/vm/hostfile/write";
 
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";
@@ -184,6 +186,15 @@ public interface KVMConstant {
     public static final String L2_PROVIDER_TYPE_MACVLAN = "MacVlan";
 
     public static final String EDK_VERSION_NONE = "None";
+    public static final String NV_RAM_FILE_PATH_FORMAT = "/var/lib/libvirt/qemu/nvram/%s-host-files/%s.fd";
+    public static String buildNvramFilePath(String vmUuid) {
+        return String.format(NV_RAM_FILE_PATH_FORMAT, vmUuid, vmUuid);
+    }
+
+    public static final String TPM_STATE_FILE_PATH_FORMAT = "/var/lib/libvirt/swtpm/%s/";
+    public static String buildTpmStateFilePath(String vmUuid) {
+        return String.format(TPM_STATE_FILE_PATH_FORMAT, vmUuid);
+    }
 
     public static final String DHCP_BIN_FILE_PATH = "/usr/local/zstack/dnsmasq";
 

@@ -10,4 +10,11 @@ public class ComputeLegacyGlobalProperty {
      */
     @GlobalProperty(name="legacyCpuTopologyFix", defaultValue = "false")
     public static boolean cpuTopologyFix;
+    /**
+     * if enableNvRamTypeVolume = true, NvRam type volume will be created if UEFI is enabled;
+     * if enableNvRamTypeVolume = false, NvRam type volume will not be created, NvRam & TpmState will save in host
+     * (not in Primary storage);
+     */
+    @GlobalProperty(name="enable.nv.ram.type.volume", defaultValue = "false")
+    public static boolean enableNvRamTypeVolume;
 }
