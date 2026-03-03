@@ -13,6 +13,7 @@ import org.zstack.header.host.HostNUMANode;
 import org.zstack.header.host.VmNicRedirectConfig;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.additions.VmHostFileContentFormat;
 import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.kvm.tpm.TpmTO;
@@ -23,6 +24,8 @@ import org.zstack.network.securitygroup.VmNicSecurityTO;
 import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.CollectionUtils.transform;
 
 public class KVMAgentCommands {
     public enum BootDev {
@@ -3110,6 +3113,63 @@ public class KVMAgentCommands {
     public static class StartVmResponse extends VmDevicesInfoResponse {
     }
 
+    public static class VmHostFileTO {
+        private String path;
+        /**
+         * maybe "NvRam" or "TpmState" ...
+         * @see org.zstack.header.vm.additions.VmHostFileType
+         */
+        private String type;
+        /**
+         * maybe "Simple" or "TarballGzip"
+         * @see VmHostFileContentFormat
+         */
+        private String fileFormat;
+        @NoLogging
+        private String contentBase64;
+        private String error;
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public String getFileFormat() {
+            return fileFormat;
+        }
+
+        public void setFileFormat(String fileFormat) {
+            this.fileFormat = fileFormat;
+        }
+
+        public String getContentBase64() {
+            return contentBase64;
+        }
+
+        public void setContentBase64(String contentBase64) {
+            this.contentBase64 = contentBase64;
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        public void setError(String error) {
+            this.error = error;
+        }
+    }
+
     public static class VmDevicesInfoResponse extends AgentResponse {
         @GrayVersion(value = "5.0.0")
         private List<VmNicInfo> nicInfos;
@@ -3196,6 +3256,52 @@ public class KVMAgentCommands {
     }
 
     public static class SyncVmDeviceInfoResponse extends VmDevicesInfoResponse {
+    }
+
+    public static class ReadVmHostFileContentCmd extends AgentCommand {
+        /**
+         * without contentBase64, fileFormat
+         */
+        private List<VmHostFileTO> hostFiles = new ArrayList<>();
+
+        public List<String> getPaths() {
+            return transform(hostFiles, VmHostFileTO::getPath);
+        }
+
+        public List<VmHostFileTO> getHostFiles() {
+            return hostFiles;
+        }
+
+        public void setHostFiles(List<VmHostFileTO> hostFiles) {
+            this.hostFiles = hostFiles;
+        }
+    }
+
+    public static class ReadVmHostFileContentResponse extends AgentResponse {
+        private List<VmHostFileTO> hostFiles = new ArrayList<>();
+
+        public List<VmHostFileTO> getHostFiles() {
+            return hostFiles;
+        }
+
+        public void setHostFiles(List<VmHostFileTO> hostFiles) {
+            this.hostFiles = hostFiles;
+        }
+    }
+
+    public static class WriteVmHostFileContentCmd extends AgentCommand {
+        private List<VmHostFileTO> hostFiles = new ArrayList<>();
+
+        public List<VmHostFileTO> getHostFiles() {
+            return hostFiles;
+        }
+
+        public void setHostFiles(List<VmHostFileTO> hostFiles) {
+            this.hostFiles = hostFiles;
+        }
+    }
+
+    public static class WriteVmHostFileContentResponse extends AgentResponse {
     }
 
     public static class VmNicInfo {

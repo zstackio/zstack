@@ -313,6 +313,8 @@ public class KVMHost extends HostBase implements Host {
     private String blockPullPath;
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
     private String hostTakeOverFlagPath = KVMGlobalProperty.TAKEVOERFLAGPATH;
+    private String readVmHostFilePath;
+    private String writeVmHostFilePath;
 
     public KVMHost(KVMHostVO self, KVMHostContext context) {
         super(self);
@@ -543,6 +545,14 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_BLOCK_PULL_VOLUME_PATH);
         blockPullPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.READ_VM_HOST_FILE_PATH);
+        readVmHostFilePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.WRITE_VM_HOST_FILE_PATH);
+        writeVmHostFilePath = ub.build().toString();
     }
 
     static {
