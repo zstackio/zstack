@@ -228,4 +228,20 @@ public class ModelEvaluationTaskInventory  {
         return this.readTimeout;
     }
 
+    public java.lang.Double totalScore;
+    public void setTotalScore(java.lang.Double totalScore) {
+        this.totalScore = totalScore;
+    }
+    public java.lang.Double getTotalScore() {
+        return this.totalScore;
+    }
+
+    public java.sql.Timestamp endTime;
+    public void setEndTime(java.sql.Timestamp endTime) {
+        this.endTime = endTime;
+    }
+    public java.sql.Timestamp getEndTime() {
+        return this.endTime;
+    }
+
 }
