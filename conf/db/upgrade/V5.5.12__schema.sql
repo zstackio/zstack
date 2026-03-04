@@ -6,7 +6,7 @@ CALL CREATE_INDEX('GpuDeviceSpecVO', 'idx_gpu_spec_normalized_model', 'normalize
 -- Previously these values were only stored inside the opaque JSON TEXT field,
 -- making them invisible to ZQL ORDER BY queries.
 CALL ADD_COLUMN('ModelEvaluationTaskVO', 'totalScore', 'DOUBLE', 1, NULL);
-CALL ADD_COLUMN('ModelEvaluationTaskVO', 'endTime', 'TIMESTAMP', 1, NULL);
+CALL ADD_COLUMN('ModelEvaluationTaskVO', 'endTime', 'TIMESTAMP', 1, '1970-01-02 00:00:00');
 
 -- Add indexes to support efficient sorting
 CALL CREATE_INDEX('ModelEvaluationTaskVO', 'idx_ModelEvaluationTaskVO_totalScore', 'totalScore');
