@@ -938,10 +938,6 @@ public class Platform {
 
     private static ErrorCodeElaboration elaborate(String fmt, Object...args) {
         try {
-            if (String.format(fmt, args).length() > StringSimilarity.maxElaborationRegex) {
-                return null;
-            }
-
             ErrorCodeElaboration elaboration = StringSimilarity.findSimilar(fmt, args);
             if (elaboration == null) {
                 return null;
