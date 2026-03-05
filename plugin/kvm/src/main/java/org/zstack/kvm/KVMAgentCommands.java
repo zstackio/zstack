@@ -1014,6 +1014,42 @@ public class KVMAgentCommands {
         public void setPassword(String password) { this.password = password; }
     }
 
+    public static class SetupVmHaEnabledMetadataLiveCmd extends AgentCommand implements Serializable {
+        @GrayVersion(value = "5.5.12")
+        private String vmUuid;
+        @GrayVersion(value = "5.5.12")
+        private Boolean enableHa;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public Boolean getEnableHa() {
+            return enableHa;
+        }
+
+        public void setEnableHa(Boolean enableHa) {
+            this.enableHa = enableHa;
+        }
+    }
+
+    public static class ReconcileVmHaEnabledMetadataLiveCmd extends AgentCommand implements Serializable {
+        @GrayVersion(value = "5.5.12")
+        private List<String> neverStopVmUuids;
+
+        public List<String> getNeverStopVmUuids() {
+            return neverStopVmUuids;
+        }
+
+        public void setNeverStopVmUuids(List<String> neverStopVmUuids) {
+            this.neverStopVmUuids = neverStopVmUuids;
+        }
+    }
+
     public static class UpdateL2NetworkCmd extends AgentCommand {
         private String physicalInterfaceName;
         private String bridgeName;
@@ -2236,6 +2272,8 @@ public class KVMAgentCommands {
         private String nestedVirtualization;
         @GrayVersion(value = "5.0.0")
         private String hostManagementIp;
+        @GrayVersion(value = "5.5.12")
+        private Boolean enableHa;
         @GrayVersion(value = "5.0.0")
         private String clock;
         @GrayVersion(value = "5.0.0")
@@ -2712,6 +2750,14 @@ public class KVMAgentCommands {
 
         public void setHostManagementIp(String hostManagementIp) {
             this.hostManagementIp = hostManagementIp;
+        }
+
+        public Boolean getEnableHa() {
+            return enableHa;
+        }
+
+        public void setEnableHa(Boolean enableHa) {
+            this.enableHa = enableHa;
         }
 
         public VolumeTO getRootVolume() {
