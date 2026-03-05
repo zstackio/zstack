@@ -936,7 +936,14 @@ public class Platform {
         }
     }
 
+    private static volatile boolean slowElaborationWired = false;
+
     private static ErrorCodeElaboration elaborate(String fmt, Object...args) {
+        if (!slowElaborationWired) {
+            StringSimilarity.slowElaborationThresholdMs = CoreGlobalProperty.ELABORATION_SLOW_THRESHOLD_MS;
+            slowElaborationWired = true;
+        }
+
         try {
             ErrorCodeElaboration elaboration = StringSimilarity.findSimilar(fmt, args);
             if (elaboration == null) {

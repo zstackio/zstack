@@ -32,6 +32,9 @@ public class StringSimilarity {
 
     private static final int mapLength = 1500;
     public static int maxElaborationRegex = 8192;
+    // slow elaboration warn threshold in ms; 0 = disabled (default)
+    // enable via GlobalProperty or test setup: StringSimilarity.slowElaborationThresholdMs = 200;
+    public static long slowElaborationThresholdMs = 0;
 
     // matched errors
     private static final Map<String, ErrorCodeElaboration> errors = new LinkedHashMap<String, ErrorCodeElaboration>(mapLength, 0.9f, true) {
@@ -280,8 +283,15 @@ public class StringSimilarity {
     }
 
     private static void logSearchSpend(String sub, long start, boolean found) {
-        logger.debug(String.format("[%s] spend %s ms to search elaboration \"%s\"", found, System.currentTimeMillis() - start,
-                sub.length() > 50 ? sub.substring(0 , 50) + "..." : sub));
+        long cost = System.currentTimeMillis() - start;
+        if (slowElaborationThresholdMs > 0 && cost > slowElaborationThresholdMs) {
+            logger.warn(String.format("[SLOW-ELABORATION] cost %d ms, found=%s, input_len=%d, input=%s",
+                    cost, found, sub.length(),
+                    sub.length() > 100 ? sub.substring(0, 100) + "..." : sub));
+        } else {
+            logger.debug(String.format("[%s] spend %s ms to search elaboration \"%s\"", found, cost,
+                    sub.length() > 50 ? sub.substring(0, 50) + "..." : sub));
+        }
     }
 
     /**
@@ -306,7 +316,10 @@ public class StringSimilarity {
         }
 
         long start = System.currentTimeMillis();
-        ErrorCodeElaboration err = errors.get(sub);
+        ErrorCodeElaboration err;
+        synchronized (errors) {
+            err = errors.get(sub);
+        }
         if (err != null && verifyElaboration(err, sub, args)) {
             logSearchSpend(sub, start, true);
             return err;
@@ -317,20 +330,26 @@ public class StringSimilarity {
         // same cause will happen
         // invalid cache, generate elaboration again
         if (err != null) {
-            errors.remove(sub);
+            synchronized (errors) {
+                errors.remove(sub);
+            }
         }
 
         // check missed cache for both fmt template and formatted string
-        if (missed.get(sub) != null) {
-            logSearchSpend(sub, start, false);
-            return null;
+        synchronized (missed) {
+            if (missed.get(sub) != null) {
+                logSearchSpend(sub, start, false);
+                return null;
+            }
         }
         if (args != null) {
             try {
                 String formatted = String.format(sub, args);
-                if (missed.get(formatted) != null) {
-                    logSearchSpend(sub, start, false);
-                    return null;
+                synchronized (missed) {
+                    if (missed.get(formatted) != null) {
+                        logSearchSpend(sub, start, false);
+                        return null;
+                    }
                 }
             } catch (Exception e) {
                 logger.trace(String.format("failed to format elaboration key: %s", e.getMessage()));
@@ -406,6 +425,7 @@ public class StringSimilarity {
                     result.setDistance(getSimilar(ela.getRegex(), sub));
                     return result;
                 })
+                .filter(ela -> ela.getDistance() < threshold)
                 .min(Comparator.comparingDouble(ErrorCodeElaboration::getDistance))
                 .orElse(null);
     }
