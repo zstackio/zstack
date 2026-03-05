@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmHostFileVO` (
 
 CREATE TABLE IF NOT EXISTS `zstack`.`VmHostFileContentVO` (
     `uuid` char(32) NOT NULL UNIQUE,
-    `content` MEDIUMBLOB DEFAULT '',
+    `content` MEDIUMBLOB DEFAULT NULL,
     `format` varchar(64) NOT NULL COMMENT 'Raw, TarballGzip',
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
