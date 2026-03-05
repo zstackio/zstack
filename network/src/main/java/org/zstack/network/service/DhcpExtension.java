@@ -136,9 +136,9 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
     }
 
     public boolean isDualStackNicInSingleL3Network(VmNicInventory nic) {
-        // Filter out IPs outside L3 CIDR range (ipRangeUuid is null)
+        // Filter out IPs outside L3 CIDR range
         List<UsedIpInventory> validIps = nic.getUsedIps().stream()
-                .filter(ip -> ip.getIpRangeUuid() != null)
+                .filter(ip -> ip.getIpRangeUuid() != null || IpRangeHelper.isIpInL3NetworkCidr(ip.getIp(), ip.getL3NetworkUuid()))
                 .collect(Collectors.toList());
 
         if (validIps.size() < 2) {
@@ -193,9 +193,9 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
     private void setDualStackNicOfSingleL3Network(DhcpStruct struct, VmNicVO nic) {
         struct.setIpVersion(IPv6Constants.DUAL_STACK);
-        // Filter out IPs outside L3 CIDR range (ipRangeUuid is null)
+        // Filter out IPs outside L3 CIDR range
         List<UsedIpVO> sortedIps = nic.getUsedIps().stream()
-                .filter(ip -> ip.getIpRangeUuid() != null)
+                .filter(ip -> ip.getIpRangeUuid() != null || IpRangeHelper.isIpInL3NetworkCidr(ip.getIp(), ip.getL3NetworkUuid()))
                 .sorted(Comparator.comparingLong(UsedIpVO::getIpVersionl))
                 .collect(Collectors.toList());
         for (UsedIpVO ip : sortedIps) {
@@ -278,8 +278,8 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
             }
 
             for (UsedIpVO ip : nic.getUsedIps()) {
-                // Skip IPs outside L3 IP range (not managed by DHCP)
-                if (ip.getIpRangeUuid() == null) {
+                // Skip IPs outside L3 CIDR (not managed by DHCP)
+                if (ip.getIpRangeUuid() == null && IpRangeHelper.isIpOutsideL3NetworkCidr(ip.getIp(), ip.getL3NetworkUuid())) {
                     continue;
                 }
 
