@@ -137,4 +137,8 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false", "auto"})
     @GlobalConfigDef(defaultValue = "false", type = String.class, description = "generate config required for vhost primary storage")
     public static GlobalConfig GENERATE_CONFIG_VHOST_REQUIRED = new GlobalConfig(CATEGORY, "generate.config.vhost.required");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable pre-push obligation checker for vm operations")
+    public static GlobalConfig PRE_PUSH_CHECKER_TEST = new GlobalConfig(CATEGORY, "prePushChecker.test");
 }

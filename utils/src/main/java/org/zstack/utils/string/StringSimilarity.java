@@ -378,6 +378,13 @@ public class StringSimilarity {
             err = findSimilarDistance(sub);
         }
 
+        // cache miss so subsequent calls for the same input skip expensive regex scan
+        if (err == null) {
+            synchronized (missed) {
+                missed.put(sub, true);
+            }
+        }
+
         logSearchSpend(sub, start, err != null);
 
         return err;
