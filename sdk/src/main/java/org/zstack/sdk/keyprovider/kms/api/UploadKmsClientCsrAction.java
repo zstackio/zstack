@@ -1,10 +1,10 @@
-package org.zstack.sdk.keyprovider.nkp.api;
+package org.zstack.sdk.keyprovider.kms.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateNkpAction extends AbstractAction {
+public class UploadKmsClientCsrAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateNkpAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.keyprovider.nkp.api.CreateNkpResult value;
+        public org.zstack.sdk.keyprovider.kms.api.UploadKmsClientCsrResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,23 +25,14 @@ public class CreateNkpAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, validValues = {"HKDF-SHA256"}, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String kdf = "HKDF-SHA256";
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String uuid;
 
-    @Param(required = false, validValues = {"providerName"}, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String saltPolicy = "providerName";
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String csrPem;
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String csrKeyPem;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -75,8 +66,8 @@ public class CreateNkpAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.keyprovider.nkp.api.CreateNkpResult value = res.getResult(org.zstack.sdk.keyprovider.nkp.api.CreateNkpResult.class);
-        ret.value = value == null ? new org.zstack.sdk.keyprovider.nkp.api.CreateNkpResult() : value; 
+        org.zstack.sdk.keyprovider.kms.api.UploadKmsClientCsrResult value = res.getResult(org.zstack.sdk.keyprovider.kms.api.UploadKmsClientCsrResult.class);
+        ret.value = value == null ? new org.zstack.sdk.keyprovider.kms.api.UploadKmsClientCsrResult() : value; 
 
         return ret;
     }
@@ -105,11 +96,11 @@ public class CreateNkpAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/key-providers/nkp";
+        info.httpMethod = "PUT";
+        info.path = "/key-providers/kms/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "uploadKmsClientCsr";
         return info;
     }
 
