@@ -1603,6 +1603,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                     changeVmStateInDb(VmInstanceStateEvent.paused, () -> self.setHostUuid(currentHostUuid));
                 } else if (currentState == VmInstanceState.Stopped) {
                     changeVmStateInDb(VmInstanceStateEvent.stopped);
+                } else if (currentState == VmInstanceState.NoState) {
+                    // ZSTAC-80898: When host reports NoState (e.g. QEMU crashed, libvirtd restarted),
+                    // update DB to reflect actual state. Without this, VMs in intermediate states
+                    // (Migrating, Starting, etc.) remain stuck in DB forever.
+                    changeVmStateInDb(VmInstanceStateEvent.noState, () -> self.setHostUuid(currentHostUuid));
                 }
 
                 fireEvent.run();
