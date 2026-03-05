@@ -52,6 +52,14 @@ public class UsedIpInventory  {
         return this.netmask;
     }
 
+    public java.lang.Integer prefixLen;
+    public void setPrefixLen(java.lang.Integer prefixLen) {
+        this.prefixLen = prefixLen;
+    }
+    public java.lang.Integer getPrefixLen() {
+        return this.prefixLen;
+    }
+
     public java.lang.String gateway;
     public void setGateway(java.lang.String gateway) {
         this.gateway = gateway;

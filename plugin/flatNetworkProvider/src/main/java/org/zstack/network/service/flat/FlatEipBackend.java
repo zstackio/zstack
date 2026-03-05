@@ -439,8 +439,15 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                         to.nicIp = ip.getIp();
                         to.nicGateway = ip.getGateway();
                         to.nicNetmask = ip.getNetmask();
-                        NormalIpRangeVO ipr = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, ip.getIpRangeUuid()).find();
-                        to.nicPrefixLen = ipr.getPrefixLen();
+                        // First try to use prefixLen from UsedIpVO (for IP outside range)
+                        if (ip.getPrefixLen() != null) {
+                            to.nicPrefixLen = ip.getPrefixLen();
+                        } else if (ip.getIpRangeUuid() != null) {
+                            NormalIpRangeVO ipr = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, ip.getIpRangeUuid()).find();
+                            if (ipr != null) {
+                                to.nicPrefixLen = ipr.getPrefixLen();
+                            }
+                        }
                         to.vmBridgeName = bridgeNames.get(ip.getL3NetworkUuid());
                     }
                 }

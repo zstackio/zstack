@@ -202,6 +202,14 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         } else {
             msg.setUsedIpUuid(nic.getUsedIpUuid());
         }
+
+        // Check if the IP is outside L3 CIDR range (ipRangeUuid is null)
+        UsedIpVO usedIpVO = dbf.findByUuid(msg.getUsedIpUuid(), UsedIpVO.class);
+        if (usedIpVO != null && usedIpVO.getIpRangeUuid() == null) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_EIP_10024,
+                    "cannot bind EIP to IP address[%s] which is outside L3 network CIDR range",
+                    usedIpVO.getIp()));
+        }
     }
 
     private void validate(APIDetachEipMsg msg) {
@@ -304,6 +312,14 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
 
         if (msg.getUsedIpUuid() != null) {
             isVipInVmNicSubnet(msg.getVipUuid(), msg.getUsedIpUuid());
+
+            // Check if the IP is outside L3 CIDR range (ipRangeUuid is null)
+            UsedIpVO usedIpVO = dbf.findByUuid(msg.getUsedIpUuid(), UsedIpVO.class);
+            if (usedIpVO != null && usedIpVO.getIpRangeUuid() == null) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_EIP_10024,
+                        "cannot bind EIP to IP address[%s] which is outside L3 network CIDR range",
+                        usedIpVO.getIp()));
+            }
         }
 
         checkNicRule(msg.getVmNicUuid());

@@ -3,6 +3,7 @@ package org.zstack.header.network.l3;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
@@ -434,6 +435,7 @@ public class L3NetworkInventory implements Serializable {
 
         return false;
     }
+
 
     public Integer getInternalId() {
         return internalId;

@@ -24,4 +24,8 @@ public class L3NetworkGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig BASIC_NETWORK_ENABLE_RA = new GlobalConfig(CATEGORY, "basic.network.enable.ra");
+
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "allow setting VM NIC IP address outside L3 network IP ranges")
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig ALLOW_IP_OUTSIDE_RANGE = new GlobalConfig(CATEGORY, "allow.ip.outside.range");
 }

@@ -292,6 +292,12 @@
             <groupId>org.jasig.cas.client</groupId>
             <artifactId>cas-client-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>eip</artifactId>
+            <version>5.5.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <profiles>

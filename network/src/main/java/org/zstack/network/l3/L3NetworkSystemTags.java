@@ -1,6 +1,5 @@
 package org.zstack.network.l3;
 
-import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.tag.PatternedSystemTag;
