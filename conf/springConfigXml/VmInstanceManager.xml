@@ -289,4 +289,10 @@
             <zstack:extension interface="org.zstack.compute.vm.BuildVmSpecExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="VmTpmRekeyAssociation" class="org.zstack.compute.vm.devices.VmTpmRekeyAssociation">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.keyprovider.KeyProviderRekeyAssociationExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>
