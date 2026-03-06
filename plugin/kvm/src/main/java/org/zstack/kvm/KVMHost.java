@@ -5317,8 +5317,17 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        syncEnvelopeKeyAfterPing();
-                        trigger.next();
+                        syncEnvelopeKeyAfterPing(new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errCode) {
+                                trigger.next();
+                            }
+                        });
                     }
                 });
 
@@ -5339,52 +5348,123 @@ public class KVMHost extends HostBase implements Host {
         }).start();
     }
 
-    private void syncEnvelopeKeyAfterPing() {
+    private static final long ENVELOPE_KEY_HTTP_TIMEOUT_SEC = 5L;
+
+    private void syncEnvelopeKeyAfterPing(Completion completion) {
         KVMHostVO kvo = dbf.reload(getSelf());
-        String hostUuid = kvo.getUuid();
+        final String hostUuid = kvo.getUuid();
         try {
             HostKeyIdentityVO identity = getHostKeyIdentity(hostUuid);
             if (identity != null && StringUtils.isNotBlank(identity.getPublicKey())) {
                 String verifyUrl = buildUrl(KVMConstant.KVM_VERIFY_ENVELOPE_KEY_PATH);
-                KVMAgentCommands.VerifyPublicKeyResponse vrsp = restf.syncJsonPost(verifyUrl,
-                        new KVMAgentCommands.VerifyPublicKeyCmd(), KVMAgentCommands.VerifyPublicKeyResponse.class);
-                if (vrsp != null && vrsp.isSuccess()) {
-                    setHostKeyIdentityVerified(hostUuid, true);
-                    return;
-                }
-                if (vrsp != null && !vrsp.isSuccess() && isRotateNeededGetError(vrsp.getErrorCode())) {
-                    String rotateUrl = buildUrl(KVMConstant.KVM_ROTATE_ENVELOPE_KEY_PATH);
-                    KVMAgentCommands.RotatePublicKeyResponse rotateRsp = restf.syncJsonPost(rotateUrl,
-                            new KVMAgentCommands.RotatePublicKeyCmd(), KVMAgentCommands.RotatePublicKeyResponse.class);
-                    if (rotateRsp.isSuccess()) {
-                        String getUrl = buildUrl(KVMConstant.KVM_GET_ENVELOPE_KEY_PATH);
-                        KVMAgentCommands.GetPublicKeyResponse getRsp = restf.syncJsonPost(getUrl,
-                                new KVMAgentCommands.GetPublicKeyCmd(), KVMAgentCommands.GetPublicKeyResponse.class);
-                        if (getRsp.isSuccess() && StringUtils.isNotBlank(getRsp.getPublicKey())) {
-                            saveOrUpdateHostKeyIdentity(hostUuid, getRsp.getPublicKey().trim(), true);
-                            return;
-                        }
-                    } else {
-                        logger.warn("verify failed then rotate key on agent failed for host " + hostUuid + ": " + rotateRsp.getError());
-                    }
-                }
-                setHostKeyIdentityVerified(hostUuid, false);
+                restf.asyncJsonPost(verifyUrl, new KVMAgentCommands.VerifyPublicKeyCmd(),
+                        new JsonAsyncRESTCallback<KVMAgentCommands.VerifyPublicKeyResponse>(completion) {
+                            @Override
+                            public void fail(ErrorCode err) {
+                                setHostKeyIdentityVerified(hostUuid, false);
+                                completion.success();
+                            }
+
+                            @Override
+                            public void success(KVMAgentCommands.VerifyPublicKeyResponse vrsp) {
+                                if (vrsp != null && vrsp.isSuccess()) {
+                                    setHostKeyIdentityVerified(hostUuid, true);
+                                    completion.success();
+                                    return;
+                                }
+                                if (vrsp != null && !vrsp.isSuccess() && isRotateNeededGetError(vrsp.getErrorCode())) {
+                                    String rotateUrl = buildUrl(KVMConstant.KVM_ROTATE_ENVELOPE_KEY_PATH);
+                                    restf.asyncJsonPost(rotateUrl, new KVMAgentCommands.RotatePublicKeyCmd(),
+                                            new JsonAsyncRESTCallback<KVMAgentCommands.RotatePublicKeyResponse>(completion) {
+                                                @Override
+                                                public void fail(ErrorCode err) {
+                                                    setHostKeyIdentityVerified(hostUuid, false);
+                                                    completion.success();
+                                                }
+
+                                                @Override
+                                                public void success(KVMAgentCommands.RotatePublicKeyResponse rotateRsp) {
+                                                    if (rotateRsp == null || !rotateRsp.isSuccess()) {
+                                                        logger.warn("verify failed then rotate key on agent failed for host " + hostUuid + ": " + (rotateRsp != null ? rotateRsp.getError() : "null"));
+                                                        setHostKeyIdentityVerified(hostUuid, false);
+                                                        completion.success();
+                                                        return;
+                                                    }
+                                                    String getUrl = buildUrl(KVMConstant.KVM_GET_ENVELOPE_KEY_PATH);
+                                                    restf.asyncJsonPost(getUrl, new KVMAgentCommands.GetPublicKeyCmd(),
+                                                            new JsonAsyncRESTCallback<KVMAgentCommands.GetPublicKeyResponse>(completion) {
+                                                                @Override
+                                                                public void fail(ErrorCode err) {
+                                                                    setHostKeyIdentityVerified(hostUuid, false);
+                                                                    completion.success();
+                                                                }
+
+                                                                @Override
+                                                                public void success(KVMAgentCommands.GetPublicKeyResponse getRsp) {
+                                                                    if (getRsp != null && getRsp.isSuccess() && StringUtils.isNotBlank(getRsp.getPublicKey())) {
+                                                                        saveOrUpdateHostKeyIdentity(hostUuid, getRsp.getPublicKey().trim(), true);
+                                                                    } else {
+                                                                        setHostKeyIdentityVerified(hostUuid, false);
+                                                                    }
+                                                                    completion.success();
+                                                                }
+
+                                                                @Override
+                                                                public Class<KVMAgentCommands.GetPublicKeyResponse> getReturnClass() {
+                                                                    return KVMAgentCommands.GetPublicKeyResponse.class;
+                                                                }
+                                                            }, TimeUnit.SECONDS, ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
+                                                }
+
+                                                @Override
+                                                public Class<KVMAgentCommands.RotatePublicKeyResponse> getReturnClass() {
+                                                    return KVMAgentCommands.RotatePublicKeyResponse.class;
+                                                }
+                                            }, TimeUnit.SECONDS, ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
+                                    return;
+                                }
+                                setHostKeyIdentityVerified(hostUuid, false);
+                                completion.success();
+                            }
+
+                            @Override
+                            public Class<KVMAgentCommands.VerifyPublicKeyResponse> getReturnClass() {
+                                return KVMAgentCommands.VerifyPublicKeyResponse.class;
+                            }
+                        }, TimeUnit.SECONDS, ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
                 return;
             }
             String createUrl = buildUrl(KVMConstant.KVM_CREATE_ENVELOPE_KEY_PATH);
-            KVMAgentCommands.CreatePublicKeyResponse createRsp = restf.syncJsonPost(createUrl,
-                    new KVMAgentCommands.CreatePublicKeyCmd(), KVMAgentCommands.CreatePublicKeyResponse.class);
-            if (!createRsp.isSuccess()) {
-                logger.warn("create key on agent failed for host " + hostUuid + ": " + createRsp.getError());
-                setHostKeyIdentityVerified(hostUuid, false);
-                return;
-            }
+            restf.asyncJsonPost(createUrl, new KVMAgentCommands.CreatePublicKeyCmd(),
+                    new JsonAsyncRESTCallback<KVMAgentCommands.CreatePublicKeyResponse>(completion) {
+                        @Override
+                        public void fail(ErrorCode err) {
+                            logger.warn("create key on agent failed for host " + hostUuid + ": " + (err != null ? err.getDetails() : ""));
+                            setHostKeyIdentityVerified(hostUuid, false);
+                            completion.success();
+                        }
+
+                        @Override
+                        public void success(KVMAgentCommands.CreatePublicKeyResponse createRsp) {
+                            if (createRsp == null || !createRsp.isSuccess()) {
+                                logger.warn("create key on agent failed for host " + hostUuid + ": " + (createRsp != null ? createRsp.getError() : "null"));
+                                setHostKeyIdentityVerified(hostUuid, false);
+                            }
+                            completion.success();
+                        }
+
+                        @Override
+                        public Class<KVMAgentCommands.CreatePublicKeyResponse> getReturnClass() {
+                            return KVMAgentCommands.CreatePublicKeyResponse.class;
+                        }
+                    }, TimeUnit.SECONDS, ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
         } catch (Exception e) {
             logger.warn("sync secret key after connect failed for host " + hostUuid + ": " + e.getMessage());
             try {
                 setHostKeyIdentityVerified(hostUuid, false);
             } catch (Exception ignored) {
             }
+            completion.success();
         }
     }
 
@@ -5491,31 +5571,40 @@ public class KVMHost extends HostBase implements Host {
             return;
         }
         String envelopeDekBase64 = java.util.Base64.getEncoder().encodeToString(envelope);
-        try {
-            String url = buildUrl(KVMConstant.KVM_ENSURE_SECRET_PATH);
-            KVMAgentCommands.SecretHostDefineCmd cmd = new KVMAgentCommands.SecretHostDefineCmd();
-            cmd.setEncryptedDek(envelopeDekBase64);
-            cmd.setVmUuid(msg.getVmUuid());
-            cmd.setPurpose(msg.getPurpose());
-            cmd.setProviderName(msg.getProviderName());
-            cmd.setDescription(msg.getDescription() != null ? msg.getDescription() : "");
-            KVMAgentCommands.SecretHostDefineResponse rsp = restf.syncJsonPost(url, cmd, KVMAgentCommands.SecretHostDefineResponse.class);
-            if (rsp.isSuccess()) {
-                if (rsp.getSecretUuid() != null) {
-                    reply.setSecretUuid(rsp.getSecretUuid());
+        String url = buildUrl(KVMConstant.KVM_ENSURE_SECRET_PATH);
+        KVMAgentCommands.SecretHostDefineCmd cmd = new KVMAgentCommands.SecretHostDefineCmd();
+        cmd.setEncryptedDek(envelopeDekBase64);
+        cmd.setVmUuid(msg.getVmUuid());
+        cmd.setPurpose(msg.getPurpose());
+        cmd.setProviderName(msg.getProviderName());
+        cmd.setDescription(msg.getDescription() != null ? msg.getDescription() : "");
+        restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<KVMAgentCommands.SecretHostDefineResponse>(msg, reply) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err != null ? err : operr("ensure secret on agent failed"));
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(KVMAgentCommands.SecretHostDefineResponse rsp) {
+                if (rsp != null && rsp.isSuccess()) {
+                    if (rsp.getSecretUuid() != null) {
+                        reply.setSecretUuid(rsp.getSecretUuid());
+                    }
+                } else {
+                    reply.setError(operr(rsp != null ? rsp.getError() : "ensure secret failed"));
+                    if (rsp != null && rsp.getErrorCode() != null) {
+                        reply.setErrorCode(rsp.getErrorCode());
+                    }
                 }
                 bus.reply(msg, reply);
-                return;
             }
-            reply.setError(operr(rsp.getError()));
-            if (rsp.getErrorCode() != null) {
-                reply.setErrorCode(rsp.getErrorCode());
+
+            @Override
+            public Class<KVMAgentCommands.SecretHostDefineResponse> getReturnClass() {
+                return KVMAgentCommands.SecretHostDefineResponse.class;
             }
-            bus.reply(msg, reply);
-        } catch (RestClientException e) {
-            reply.setError(operr("ensure secret on agent failed: %s", e.getMessage()));
-            bus.reply(msg, reply);
-        }
+        }, TimeUnit.SECONDS, ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
     }
 
     @Override
