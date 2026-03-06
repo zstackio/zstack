@@ -350,6 +350,18 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
         return null;
     }
 
+    /**
+     * 查找IP所在的NormalIpRange，若不在任何Range内返回null。
+     * 重用 getIpRangeUuid 判断IP是否在Range内。
+     */
+    public NormalIpRangeVO findMatchedNormalIpRange(String l3Uuid, String ip) {
+        String rangeUuid = getIpRangeUuid(l3Uuid, ip);
+        if (rangeUuid == null) {
+            return null;
+        }
+        return dbf.findByUuid(rangeUuid, NormalIpRangeVO.class);
+    }
+
     public void checkIpAvailability(String l3Uuid, String ip) {
         CheckIpAvailabilityMsg cmsg = new CheckIpAvailabilityMsg();
         cmsg.setIp(ip);
@@ -387,10 +399,7 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
             }
 
             if (!StringUtils.isEmpty(nicIp.ipv4Address)) {
-                NormalIpRangeVO ipRangeVO = Q.New(NormalIpRangeVO.class)
-                        .eq(NormalIpRangeVO_.l3NetworkUuid, l3Uuid)
-                        .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4)
-                        .limit(1).find();
+                NormalIpRangeVO ipRangeVO = findMatchedNormalIpRange(l3Uuid, nicIp.ipv4Address);
                 if (ipRangeVO == null) {
                     if (StringUtils.isEmpty(nicIp.ipv4Netmask)) {
                         throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10310, "netmask must be set"));
@@ -433,10 +442,7 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
             }
 
             if (!StringUtils.isEmpty(nicIp.ipv6Address)) {
-                NormalIpRangeVO ipRangeVO = Q.New(NormalIpRangeVO.class)
-                        .eq(NormalIpRangeVO_.l3NetworkUuid, l3Uuid)
-                        .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6)
-                        .limit(1).find();
+                NormalIpRangeVO ipRangeVO = findMatchedNormalIpRange(l3Uuid, nicIp.ipv6Address);
                 if (ipRangeVO == null) {
                     if (StringUtils.isEmpty(nicIp.ipv6Prefix)) {
                         throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10313, "ipv6 prefix length must be set"));

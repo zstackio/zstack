@@ -148,52 +148,68 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
      * 检查IP是否在IP范围列表中
      */
     private boolean isIpInRangeList(String ip, List<NormalIpRangeVO> ranges) {
+        return findMatchedIpRange(ip, ranges) != null;
+    }
+
+    /**
+     * 查找IP所在的IpRange，若不在任何Range内返回null
+     */
+    private NormalIpRangeVO findMatchedIpRange(String ip, List<NormalIpRangeVO> ranges) {
         for (NormalIpRangeVO ipr : ranges) {
             if (NetworkUtils.isInRange(ip, ipr.getStartIp(), ipr.getEndIp())) {
-                return true;
+                return ipr;
             }
         }
-        return false;
+        return null;
     }
 
     /**
      * 填充IPv4参数（netmask和gateway）
+     * - IP在l3 cidr之内: 掩码和网关从l3 cidr中获取
+     * - IP在l3 cidr之外: 必须指定掩码, 网关可选
      */
     private void fillIpv4Parameters(APISetVmStaticIpMsg msg, List<NormalIpRangeVO> ipv4Ranges) {
+        NormalIpRangeVO matchedRange = IpRangeHelper.findIpRangeByCidr(msg.getIp(), ipv4Ranges);
+
         if (msg.getNetmask() == null) {
-            if (ipv4Ranges.isEmpty()) {
+            if (matchedRange == null) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10137,
                         "ipv4 address need a netmask"));
             } else {
-                msg.setNetmask(ipv4Ranges.get(0).getNetmask());
+                msg.setNetmask(matchedRange.getNetmask());
             }
         }
         if (msg.getGateway() == null) {
-            if (ipv4Ranges.isEmpty()) {
+            if (matchedRange == null) {
                 msg.setGateway("");
             } else {
-                msg.setGateway(ipv4Ranges.get(0).getGateway());
+                msg.setGateway(matchedRange.getGateway());
             }
         }
     }
 
     /**
      * 填充IPv6参数（prefix和gateway）
+     * - IP在l3 cidr之内: 前缀长度和网关从l3 cidr中获取
+     * - IP在l3 cidr之外: 必须指定前缀长度, 网关可选
      */
     private void fillIpv6Parameters(APISetVmStaticIpMsg msg, List<NormalIpRangeVO> ipv6Ranges) {
+        String ip6 = msg.getIp6() != null ? msg.getIp6() : msg.getIp();
+        NormalIpRangeVO matchedRange = IpRangeHelper.findIpRangeByCidr(ip6, ipv6Ranges);
+
         if (msg.getIpv6Prefix() == null) {
-            if (ipv6Ranges.isEmpty()) {
+            if (matchedRange == null) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10139,
                         "ipv6 address need a prefix"));
             } else {
-                msg.setIpv6Prefix(ipv6Ranges.get(0).getPrefixLen().toString());
+                msg.setIpv6Prefix(matchedRange.getPrefixLen().toString());
             }
         }
         if (msg.getIpv6Gateway() == null) {
-            if (ipv6Ranges.isEmpty()) {
+            if (matchedRange == null) {
                 msg.setIpv6Gateway("");
             } else {
-                msg.setIpv6Gateway(ipv6Ranges.get(0).getGateway());
+                msg.setIpv6Gateway(matchedRange.getGateway());
             }
         }
     }
@@ -500,7 +516,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             int outsideRangeCount = rangeCounts[1];
 
             // 如果没有启用IP地址分配或允许范围外IP，则跳过范围检查
-            boolean allowOutsideRange = !l3NetworkVO.getEnableIPAM()
+            boolean allowOutsideRange = !l3NetworkVO.enableIpAddressAllocation()
                     || L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class);
 
             if (!allowOutsideRange) {
@@ -787,7 +803,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         // 提取公共条件判断（避免重复计算）
         boolean needRangeValidation = !L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class)
-            && l3NetworkVO.getEnableIPAM();
+            && l3NetworkVO.enableIpAddressAllocation();
 
         // 范围验证：当需要时检查IP是否在L3网络的IP范围列表中
         if (needRangeValidation) {
@@ -811,12 +827,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         // 参数填充和占用检查
-        if (normalizedIp != null && !l3NetworkVO.enableIpAddressAllocation()) {
+        if (normalizedIp != null && (!l3NetworkVO.enableIpAddressAllocation()
+                || L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class))) {
             l3Found = true;
             fillIpv4Parameters(msg, ipv4Ranges);
             checkIpOccupied(normalizedIp, msg.getL3NetworkUuid());
         }
-        if (normalizedIp6 != null && !l3NetworkVO.enableIpAddressAllocation()) {
+        if (normalizedIp6 != null && (!l3NetworkVO.enableIpAddressAllocation()
+                || L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class))) {
             l3Found = true;
             fillIpv6Parameters(msg, ipv6Ranges);
             checkIpOccupied(normalizedIp6, msg.getL3NetworkUuid());
@@ -962,7 +980,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
             }
 
-            if (!l3VO.enableIpAddressAllocation()) {
+            if (!l3VO.enableIpAddressAllocation()
+                    || L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class)) {
                 found = true;
             }
 
@@ -1077,7 +1096,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
             }
 
-            if (!l3NetworkVO.enableIpAddressAllocation()) {
+            if (!l3NetworkVO.enableIpAddressAllocation()
+                    || L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class)) {
                 found = true;
             }
 
@@ -1120,7 +1140,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     }
                 }
 
-                if (!l3NetworkVO.enableIpAddressAllocation()) {
+                if (!l3NetworkVO.enableIpAddressAllocation()
+                        || L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class)) {
                     found = true;
                 }
 

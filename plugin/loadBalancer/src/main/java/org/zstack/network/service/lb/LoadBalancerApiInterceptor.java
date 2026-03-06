@@ -33,6 +33,7 @@ import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.service.vip.VipNetworkServicesRefVO;
 import org.zstack.network.service.vip.VipNetworkServicesRefVO_;
 import org.zstack.network.service.vip.VipVO;
@@ -643,7 +644,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         q.setParameter("uuid", msg.getListenerUuid());
         msg.setLoadBalancerUuid(q.getSingleResult());
 
-        // When the load balancer has a VIP configured, the NIC's corresponding IP must be within L3 IP range
+        // When the load balancer has a VIP configured, the NIC's corresponding IP must be within L3 CIDR
         LoadBalancerVO lbVO = dbf.findByUuid(msg.getLoadBalancerUuid(), LoadBalancerVO.class);
         for (String nicUuid : msg.getVmNicUuids()) {
             VmNicVO nicVO = dbf.findByUuid(nicUuid, VmNicVO.class);
@@ -651,7 +652,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 continue;
             }
             for (UsedIpVO usedIpVO : nicVO.getUsedIps()) {
-                if (usedIpVO.getIpRangeUuid() != null) {
+                if (!IpRangeHelper.isIpOutsideL3NetworkCidr(usedIpVO.getIp(), usedIpVO.getL3NetworkUuid())) {
                     continue;
                 }
                 if (lbVO.getVipUuid() != null && usedIpVO.getIpVersion() == IPv6Constants.IPv4) {
@@ -1589,7 +1590,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 }
             }
 
-            // When server group has an IP version, the vmnic's corresponding IP must be within L3 IP range
+            // When server group has an IP version, the vmnic's corresponding IP must be within L3 CIDR
             if (groupVO.getIpVersion() != null) {
                 for (String nicUuid : vmNicUuids) {
                     VmNicVO nicVO = dbf.findByUuid(nicUuid, VmNicVO.class);
@@ -1597,7 +1598,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                         continue;
                     }
                     for (UsedIpVO usedIpVO : nicVO.getUsedIps()) {
-                        if (usedIpVO.getIpRangeUuid() != null) {
+                        if (!IpRangeHelper.isIpOutsideL3NetworkCidr(usedIpVO.getIp(), usedIpVO.getL3NetworkUuid())) {
                             continue;
                         }
                         if (groupVO.getIpVersion() == IPv6Constants.IPv4 && usedIpVO.getIpVersion() == IPv6Constants.IPv4) {
