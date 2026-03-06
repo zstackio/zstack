@@ -425,13 +425,51 @@ public class KVMAgentCommands {
 
     public static class SecretHostDefineCmd extends AgentCommand {
         private String envelopeDekBase64;
+        /** Base64 wrapped DEK; agent expects this field name (encryptedDek). */
+        private String encryptedDek;
+        private String vmUuid;
+        private String purpose;
+        private String providerName;
+        private String description;
 
-        public String getEnvelopeDekBase64() {
-            return envelopeDekBase64;
+        public String getEncryptedDek() {
+            return encryptedDek;
         }
 
-        public void setEnvelopeDekBase64(String envelopeDekBase64) {
-            this.envelopeDekBase64 = envelopeDekBase64;
+        public void setEncryptedDek(String encryptedDek) {
+            this.encryptedDek = encryptedDek;
+        }
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getPurpose() {
+            return purpose;
+        }
+
+        public void setPurpose(String purpose) {
+            this.purpose = purpose;
+        }
+
+        public String getProviderName() {
+            return providerName;
+        }
+
+        public void setProviderName(String providerName) {
+            this.providerName = providerName;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
         }
     }
 
