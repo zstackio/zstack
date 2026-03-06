@@ -5507,46 +5507,6 @@ public class KVMHost extends HostBase implements Host {
                 bus.reply(msg, reply);
                 return;
             }
-            if (isRotateNeededGetError(rsp.getErrorCode())) {
-                String rotateUrl = buildUrl(KVMConstant.KVM_ROTATE_ENVELOPE_KEY_PATH);
-                KVMAgentCommands.RotatePublicKeyResponse rotateRsp = restf.syncJsonPost(rotateUrl,
-                        new KVMAgentCommands.RotatePublicKeyCmd(), KVMAgentCommands.RotatePublicKeyResponse.class);
-                if (!rotateRsp.isSuccess()) {
-                    reply.setError(operr("ensure secret failed, rotate key then retry failed: %s", rotateRsp.getError()));
-                    bus.reply(msg, reply);
-                    return;
-                }
-                String getUrl = buildUrl(KVMConstant.KVM_GET_ENVELOPE_KEY_PATH);
-                KVMAgentCommands.GetPublicKeyResponse getRsp = restf.syncJsonPost(getUrl,
-                        new KVMAgentCommands.GetPublicKeyCmd(), KVMAgentCommands.GetPublicKeyResponse.class);
-                if (!getRsp.isSuccess() || StringUtils.isBlank(getRsp.getPublicKey())) {
-                    reply.setError(operr("ensure secret failed, rotate then get public key failed: %s",
-                            getRsp != null ? getRsp.getError() : "null"));
-                    bus.reply(msg, reply);
-                    return;
-                }
-                saveOrUpdateHostKeyIdentity(hostUuid, getRsp.getPublicKey().trim(), true);
-                String newPubKey = getRsp.getPublicKey().trim();
-                byte[] newPubKeyBytes = java.util.Base64.getDecoder().decode(newPubKey);
-                byte[] newEnvelope;
-                try {
-                    newEnvelope = HostSecretEnvelopeCrypto.seal(newPubKeyBytes, dekRaw);
-                } catch (org.bouncycastle.crypto.InvalidCipherTextException e) {
-                    reply.setError(operr("ensure secret failed after rotate, HPKE seal failed: %s", e.getMessage()));
-                    bus.reply(msg, reply);
-                    return;
-                }
-                String newEnvelopeDekBase64 = java.util.Base64.getEncoder().encodeToString(newEnvelope);
-                cmd.setEncryptedDek(newEnvelopeDekBase64);
-                rsp = restf.syncJsonPost(url, cmd, KVMAgentCommands.SecretHostDefineResponse.class);
-                if (rsp.isSuccess()) {
-                    if (rsp.getSecretUuid() != null) {
-                        reply.setSecretUuid(rsp.getSecretUuid());
-                    }
-                    bus.reply(msg, reply);
-                    return;
-                }
-            }
             reply.setError(operr(rsp.getError()));
             if (rsp.getErrorCode() != null) {
                 reply.setErrorCode(rsp.getErrorCode());
