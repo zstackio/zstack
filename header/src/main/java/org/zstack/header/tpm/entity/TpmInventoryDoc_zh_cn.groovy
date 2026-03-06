@@ -1,7 +1,6 @@
 package org.zstack.header.tpm.entity
 
-import java.sql.Timestamp
-import org.zstack.header.tpm.entity.TpmHostRefInventory
+import org.zstack.header.vm.additions.VmHostFileInventory
 
 doc {
 
@@ -43,6 +42,6 @@ doc {
 		desc "TPM 与主机的相关数据列表"
 		type "List"
 		since "5.0.0"
-		clz TpmHostRefInventory.class
+		clz VmHostFileInventory.class
 	}
 }
