@@ -1,23 +1,23 @@
-package org.zstack.sdk.tpm.entity;
+package org.zstack.sdk.vm.entity;
 
 
 
-public class TpmHostRefInventory  {
+public class VmHostFileInventory  {
 
-    public long id;
-    public void setId(long id) {
-        this.id = id;
+    public java.lang.String uuid;
+    public void setUuid(java.lang.String uuid) {
+        this.uuid = uuid;
     }
-    public long getId() {
-        return this.id;
+    public java.lang.String getUuid() {
+        return this.uuid;
     }
 
-    public java.lang.String tpmUuid;
-    public void setTpmUuid(java.lang.String tpmUuid) {
-        this.tpmUuid = tpmUuid;
+    public java.lang.String vmInstanceUuid;
+    public void setVmInstanceUuid(java.lang.String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
     }
-    public java.lang.String getTpmUuid() {
-        return this.tpmUuid;
+    public java.lang.String getVmInstanceUuid() {
+        return this.vmInstanceUuid;
     }
 
     public java.lang.String hostUuid;
@@ -26,6 +26,14 @@ public class TpmHostRefInventory  {
     }
     public java.lang.String getHostUuid() {
         return this.hostUuid;
+    }
+
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
+        this.type = type;
+    }
+    public java.lang.String getType() {
+        return this.type;
     }
 
     public java.lang.String path;
