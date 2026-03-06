@@ -1,7 +1,7 @@
 package org.zstack.header.tpm.entity
 
 import java.sql.Timestamp
-import org.zstack.header.tpm.entity.TpmHostRefInventory
+import org.zstack.header.vm.additions.VmHostFileInventory
 
 doc {
 
@@ -38,12 +38,12 @@ doc {
 		since "5.0.0"
 	}
 	ref {
-		name "hostRefs"
-		path "org.zstack.header.tpm.entity.TpmCapabilityView.hostRefs"
-		desc "TPM 与主机的相关数据列表"
+		name "fileRefs"
+		path "org.zstack.header.tpm.entity.TpmCapabilityView.fileRefs"
+		desc "TPM 相关的主机侧文件或目录数据列表"
 		type "List"
 		since "5.0.0"
-		clz TpmHostRefInventory.class
+		clz VmHostFileInventory.class
 	}
 	field {
 		name "edkVersion"

@@ -44,12 +44,12 @@ public class TpmCapabilityView  {
         return this.lastOpDate;
     }
 
-    public java.util.List hostRefs;
-    public void setHostRefs(java.util.List hostRefs) {
-        this.hostRefs = hostRefs;
+    public java.util.List fileRefs;
+    public void setFileRefs(java.util.List fileRefs) {
+        this.fileRefs = fileRefs;
     }
-    public java.util.List getHostRefs() {
-        return this.hostRefs;
+    public java.util.List getFileRefs() {
+        return this.fileRefs;
     }
 
     public java.lang.String edkVersion;
