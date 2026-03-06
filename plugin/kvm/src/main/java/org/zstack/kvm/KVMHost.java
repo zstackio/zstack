@@ -3870,6 +3870,9 @@ public class KVMHost extends HostBase implements Host {
             SecretHostDefineMsg defineMsg = new SecretHostDefineMsg();
             defineMsg.setHostUuid(getSelf().getUuid());
             defineMsg.setDekBase64(dekBase64);
+            defineMsg.setVmUuid(vminv.getUuid());
+            defineMsg.setPurpose("vm");
+            defineMsg.setProviderName("zstack");
             bus.makeTargetServiceIdByResourceUuid(defineMsg, HostConstant.SERVICE_ID, getSelf().getUuid());
             MessageReply defineReply = bus.call(defineMsg);
             if (!defineReply.isSuccess()) {
@@ -5433,6 +5436,11 @@ public class KVMHost extends HostBase implements Host {
             bus.reply(msg, reply);
             return;
         }
+        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) || StringUtils.isBlank(msg.getProviderName())) {
+            reply.setError(operr("vmUuid, purpose and providerName are required for ensure secret"));
+            bus.reply(msg, reply);
+            return;
+        }
         String hostUuid = getSelf().getUuid();
         HostKeyIdentityVO identity = getHostKeyIdentity(hostUuid);
         String pubKey = identity != null ? org.apache.commons.lang.StringUtils.trimToNull(identity.getPublicKey()) : null;
@@ -5486,7 +5494,11 @@ public class KVMHost extends HostBase implements Host {
         try {
             String url = buildUrl(KVMConstant.KVM_ENSURE_SECRET_PATH);
             KVMAgentCommands.SecretHostDefineCmd cmd = new KVMAgentCommands.SecretHostDefineCmd();
-            cmd.setEnvelopeDekBase64(envelopeDekBase64);
+            cmd.setEncryptedDek(envelopeDekBase64);
+            cmd.setVmUuid(msg.getVmUuid());
+            cmd.setPurpose(msg.getPurpose());
+            cmd.setProviderName(msg.getProviderName());
+            cmd.setDescription(msg.getDescription() != null ? msg.getDescription() : "");
             KVMAgentCommands.SecretHostDefineResponse rsp = restf.syncJsonPost(url, cmd, KVMAgentCommands.SecretHostDefineResponse.class);
             if (rsp.isSuccess()) {
                 if (rsp.getSecretUuid() != null) {
@@ -5525,7 +5537,7 @@ public class KVMHost extends HostBase implements Host {
                     return;
                 }
                 String newEnvelopeDekBase64 = java.util.Base64.getEncoder().encodeToString(newEnvelope);
-                cmd.setEnvelopeDekBase64(newEnvelopeDekBase64);
+                cmd.setEncryptedDek(newEnvelopeDekBase64);
                 rsp = restf.syncJsonPost(url, cmd, KVMAgentCommands.SecretHostDefineResponse.class);
                 if (rsp.isSuccess()) {
                     if (rsp.getSecretUuid() != null) {
