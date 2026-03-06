@@ -7,7 +7,6 @@ import org.zstack.header.network.l3.UsedIpVO
 import org.zstack.header.network.l3.UsedIpVO_
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmNicVO
-import org.zstack.network.l3.L3NetworkGlobalConfig
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatDhcpBackend
@@ -22,18 +21,13 @@ import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.network.IPv6Constants
 
 /**
- * Test IP outside CIDR behavior for flat networks controlled by
- * L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE (default false).
+ * Test IP outside CIDR behavior for flat networks.
+ * Outside-range IPs are always allowed (no global config needed).
  *
  * Flat network combinations (3 combos):
  *   1. flatL3_noRange_noDhcp  — no IP range, no DHCP  (enableIPAM=false, enableIpAddressAllocation()=false)
  *   2. flatL3_range_noDhcp    — has IP range, no DHCP  (enableIPAM=true,  enableIpAddressAllocation()=false)
  *   3. flatL3_range_dhcp      — has IP range, has DHCP  (enableIPAM=true,  enableIpAddressAllocation()=true)
- *
- * Outside-range IP rules (per zstack ipam.md):
- *   - enableIpAddressAllocation()=false (combo 1,2): always allow outside-range IPs, no global config needed
- *   - enableIpAddressAllocation()=true  + global config OFF (combo 3): outside-range IPs rejected
- *   - enableIpAddressAllocation()=true  + global config ON  (combo 3): outside-range IPs allowed
  *
  * pubL3_range_dhcp is included only as VIP network for EIP tests.
  *
@@ -253,18 +247,8 @@ class FlatChangeVmIpOutsideCidrCase extends SubCase {
         dbf = bean(DatabaseFacade.class)
         env.create {
             // ==========================================
-            // Part 1: Global config OFF
-            //   enableIpAddressAllocation()=true  → rejected
-            //   enableIpAddressAllocation()=false → allowed
+            // Outside-range IPs are always allowed (no global config needed)
             // ==========================================
-            testGlobalConfigOff_SetStaticIpRejected()
-            testGlobalConfigOff_SetStaticIpAllowedForNoDhcp()
-            testGlobalConfigOff_ChangeNicNetworkRejected()
-
-            // ==========================================
-            // Part 2: Global config ON — outside-range IPs allowed
-            // ==========================================
-            turnOnGlobalConfig()
 
             // --- Flat: no IP range, no DHCP ---
             testSetStaticIp_flatNoRangeNoDhcp()
@@ -286,31 +270,12 @@ class FlatChangeVmIpOutsideCidrCase extends SubCase {
 
 
             // ==========================================
-            // Part 3: Orphan IP backfill (global config ON)
+            // Orphan IP backfill
             // ==========================================
             testOrphanIpBackfillOnAddIpRange()
         }
     }
 
-    // ================================================================
-    //  Helper: turn global config on / off
-    // ================================================================
-
-    void turnOnGlobalConfig() {
-        updateGlobalConfig {
-            category = L3NetworkGlobalConfig.CATEGORY
-            name = L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.name
-            value = "true"
-        }
-    }
-
-    void turnOffGlobalConfig() {
-        updateGlobalConfig {
-            category = L3NetworkGlobalConfig.CATEGORY
-            name = L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.name
-            value = "false"
-        }
-    }
 
     // ================================================================
     //  Helper: create a VM on a given L3
@@ -326,88 +291,7 @@ class FlatChangeVmIpOutsideCidrCase extends SubCase {
     }
 
     // ================================================================
-    //  Part 1: Global config OFF
-    // ================================================================
-
-    /**
-     * Config OFF + enableIpAddressAllocation()=true (flatL3_range_dhcp):
-     * setVmStaticIp with outside-range IP should be REJECTED.
-     */
-    void testGlobalConfigOff_SetStaticIpRejected() {
-        L3NetworkInventory flatL3Dhcp = env.inventoryByName("flatL3_range_dhcp")
-        VmInstanceInventory vm = createVmOnL3("vm-configoff-set-flat-dhcp", flatL3Dhcp.uuid)
-
-        expect(AssertionError.class) {
-            setVmStaticIp {
-                vmInstanceUuid = vm.uuid
-                l3NetworkUuid = flatL3Dhcp.uuid
-                ip = "10.0.0.50"
-            }
-        }
-
-        VmNicVO nicVO = dbFindByUuid(vm.vmNics[0].uuid, VmNicVO.class)
-        assert nicVO.ip != "10.0.0.50" : "outside-range IP should not be set when config OFF"
-    }
-
-    /**
-     * Config OFF + enableIpAddressAllocation()=false (flatL3_range_noDhcp):
-     * setVmStaticIp with outside-range IP should SUCCEED,
-     * because flat network without DHCP always allows manual allocation.
-     */
-    void testGlobalConfigOff_SetStaticIpAllowedForNoDhcp() {
-        L3NetworkInventory flatL3NoDhcp = env.inventoryByName("flatL3_range_noDhcp")
-        VmInstanceInventory vm = createVmOnL3("vm-configoff-set-flat-nodhcp", flatL3NoDhcp.uuid)
-
-        setVmStaticIp {
-            vmInstanceUuid = vm.uuid
-            l3NetworkUuid = flatL3NoDhcp.uuid
-            ip = "10.0.0.51"
-            netmask = "255.255.255.0"
-            gateway = "10.0.0.1"
-        }
-
-        VmNicVO nicVO = dbFindByUuid(vm.vmNics[0].uuid, VmNicVO.class)
-        assert nicVO.ip == "10.0.0.51" : "flat/noDhcp should allow outside-range IP even with config OFF"
-
-        UsedIpVO usedIp = Q.New(UsedIpVO.class)
-                .eq(UsedIpVO_.vmNicUuid, vm.vmNics[0].uuid)
-                .eq(UsedIpVO_.ip, "10.0.0.51")
-                .find()
-        assert usedIp != null
-        assert usedIp.ipRangeUuid == null : "ipRangeUuid should be null for outside-range IP"
-    }
-
-    /**
-     * Config OFF + enableIpAddressAllocation()=true (flatL3_range_dhcp):
-     * changeVmNicNetwork with outside-range IP should be REJECTED.
-     */
-    void testGlobalConfigOff_ChangeNicNetworkRejected() {
-        L3NetworkInventory flatL3Dhcp = env.inventoryByName("flatL3_range_dhcp")
-        L3NetworkInventory srcL3 = env.inventoryByName("flatL3_dest")
-
-        VmInstanceInventory vm = createVmOnL3("vm-configoff-change", srcL3.uuid)
-        VmNicInventory vmNic = vm.vmNics[0]
-
-        // changeVmNicNetwork to flatL3_range_dhcp with outside-range IP should fail
-        expect(AssertionError.class) {
-            changeVmNicNetwork {
-                vmNicUuid = vmNic.uuid
-                destL3NetworkUuid = flatL3Dhcp.uuid
-                systemTags = [
-                        String.format("staticIp::%s::10.10.10.50", flatL3Dhcp.uuid),
-                        String.format("ipv4Netmask::%s::255.255.255.0", flatL3Dhcp.uuid),
-                        String.format("ipv4Gateway::%s::10.10.10.1", flatL3Dhcp.uuid)
-                ]
-            }
-        }
-
-        // Verify NIC still on original L3
-        VmNicVO nicVO = dbFindByUuid(vmNic.uuid, VmNicVO.class)
-        assert nicVO.l3NetworkUuid == srcL3.uuid : "NIC should remain on original L3"
-    }
-
-    // ================================================================
-    //  Part 2: Global config ON — Flat: no IP range, no DHCP
+    //  Flat: no IP range, no DHCP
     // ================================================================
 
     /**

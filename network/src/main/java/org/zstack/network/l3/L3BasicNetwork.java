@@ -768,10 +768,7 @@ public class L3BasicNetwork implements L3Network {
     @Override
     public CheckIpAvailabilityReply checkIpAvailability(CheckIpAvailabilityMsg msg) {
         CheckIpAvailabilityReply reply = new CheckIpAvailabilityReply();
-        int ipversion = IPv6Constants.IPv4;
-        if (IPv6NetworkUtils.isIpv6Address(msg.getIp())) {
-            ipversion = IPv6Constants.IPv6;
-        }
+        final int ipversion = IPv6NetworkUtils.isIpv6Address(msg.getIp()) ? IPv6Constants.IPv6 : IPv6Constants.IPv4;
         SimpleQuery<IpRangeVO> rq = dbf.createQuery(IpRangeVO.class);
         rq.select(IpRangeVO_.startIp, IpRangeVO_.endIp, IpRangeVO_.gateway);
         rq.add(IpRangeVO_.l3NetworkUuid, Op.EQ, self.getUuid());
@@ -790,10 +787,6 @@ public class L3BasicNetwork implements L3Network {
         }
 
         if (!self.enableIpAddressAllocation()) {
-            inRange = true;
-        }
-
-        if (L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class)) {
             inRange = true;
         }
 

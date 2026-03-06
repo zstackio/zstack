@@ -7,7 +7,6 @@ import org.zstack.header.network.l3.UsedIpVO
 import org.zstack.header.network.l3.UsedIpVO_
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmNicVO
-import org.zstack.network.l3.L3NetworkGlobalConfig
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatDhcpBackend
@@ -21,17 +20,12 @@ import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.network.IPv6Constants
 
 /**
- * Test IP outside CIDR behavior for public networks controlled by
- * L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE (default false).
+ * Test IP outside CIDR behavior for public networks.
+ * Outside-range IPs are always allowed (no global config needed).
  *
  * Public network combinations (2 combos):
  *   1. pubL3_range_noDhcp  — has IP range, no DHCP  (enableIPAM=true, enableIpAddressAllocation()=false)
  *   2. pubL3_range_dhcp    — has IP range, has DHCP  (enableIPAM=true, enableIpAddressAllocation()=true)
- *
- * Outside-range IP rules (per zstack ipam.md):
- *   - enableIpAddressAllocation()=false (combo 1): always allow outside-range IPs, no global config needed
- *   - enableIpAddressAllocation()=true  + global config OFF (combo 2): outside-range IPs rejected
- *   - enableIpAddressAllocation()=true  + global config ON  (combo 2): outside-range IPs allowed
  *
  * Each scenario tests: setVmStaticIp, changeVmNicNetwork, DHCP skip.
  * No EIP tests — public networks do not need EIP testing.
@@ -177,17 +171,8 @@ class PublicNetworkChangeVmIpOutsideCidrCase extends SubCase {
         dbf = bean(DatabaseFacade.class)
         env.create {
             // ==========================================
-            // Part 1: Global config OFF
-            //   enableIpAddressAllocation()=true  → rejected
-            //   enableIpAddressAllocation()=false → allowed
+            // Outside-range IPs are always allowed (no global config needed)
             // ==========================================
-            testGlobalConfigOff_SetStaticIpRejected()
-            testGlobalConfigOff_SetStaticIpAllowedForNoDhcp()
-
-            // ==========================================
-            // Part 2: Global config ON — outside-range IPs allowed
-            // ==========================================
-            turnOnGlobalConfig()
 
             // --- Public: has IP range, no DHCP ---
             testSetStaticIp_pubRangeNoDhcp()
@@ -198,18 +183,6 @@ class PublicNetworkChangeVmIpOutsideCidrCase extends SubCase {
             testSetStaticIp_pubRangeDhcp()
             testChangeNicNetwork_pubRangeDhcp()
             testDhcpSkip_pubRangeDhcp()
-        }
-    }
-
-    // ================================================================
-    //  Helper: turn global config on
-    // ================================================================
-
-    void turnOnGlobalConfig() {
-        updateGlobalConfig {
-            category = L3NetworkGlobalConfig.CATEGORY
-            name = L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.name
-            value = "true"
         }
     }
 
@@ -227,59 +200,7 @@ class PublicNetworkChangeVmIpOutsideCidrCase extends SubCase {
     }
 
     // ================================================================
-    //  Part 1: Global config OFF
-    // ================================================================
-
-    /**
-     * Config OFF + enableIpAddressAllocation()=true (pubL3_range_dhcp):
-     * setVmStaticIp with outside-range IP should be REJECTED.
-     */
-    void testGlobalConfigOff_SetStaticIpRejected() {
-        L3NetworkInventory pubL3Dhcp = env.inventoryByName("pubL3_range_dhcp")
-        VmInstanceInventory vm = createVmOnL3("vm-configoff-set-pub-dhcp", pubL3Dhcp.uuid)
-
-        expect(AssertionError.class) {
-            setVmStaticIp {
-                vmInstanceUuid = vm.uuid
-                l3NetworkUuid = pubL3Dhcp.uuid
-                ip = "10.0.0.52"
-            }
-        }
-
-        VmNicVO nicVO = dbFindByUuid(vm.vmNics[0].uuid, VmNicVO.class)
-        assert nicVO.ip != "10.0.0.52" : "outside-range IP should not be set when config OFF"
-    }
-
-    /**
-     * Config OFF + enableIpAddressAllocation()=false (pubL3_range_noDhcp):
-     * setVmStaticIp with outside-range IP should SUCCEED,
-     * because public network without DHCP always allows manual allocation.
-     */
-    void testGlobalConfigOff_SetStaticIpAllowedForNoDhcp() {
-        L3NetworkInventory pubL3NoDhcp = env.inventoryByName("pubL3_range_noDhcp")
-        VmInstanceInventory vm = createVmOnL3("vm-configoff-set-pub-nodhcp", pubL3NoDhcp.uuid)
-
-        setVmStaticIp {
-            vmInstanceUuid = vm.uuid
-            l3NetworkUuid = pubL3NoDhcp.uuid
-            ip = "10.0.0.53"
-            netmask = "255.255.255.0"
-            gateway = "10.0.0.1"
-        }
-
-        VmNicVO nicVO = dbFindByUuid(vm.vmNics[0].uuid, VmNicVO.class)
-        assert nicVO.ip == "10.0.0.53" : "pub/noDhcp should allow outside-range IP even with config OFF"
-
-        UsedIpVO usedIp = Q.New(UsedIpVO.class)
-                .eq(UsedIpVO_.vmNicUuid, vm.vmNics[0].uuid)
-                .eq(UsedIpVO_.ip, "10.0.0.53")
-                .find()
-        assert usedIp != null
-        assert usedIp.ipRangeUuid == null : "ipRangeUuid should be null for outside-range IP"
-    }
-
-    // ================================================================
-    //  Part 2: Global config ON — Public: has IP range, no DHCP
+    //  Public: has IP range, no DHCP
     // ================================================================
 
     /**
