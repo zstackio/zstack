@@ -122,6 +122,12 @@ public interface KVMConstant {
     String KVM_UPDATE_HOST_NQN_PATH = "/host/nqn/update";
     String KVM_UPDATE_HOSTNAME_PATH = "/host/hostname/update";
 
+    String KVM_CREATE_ENVELOPE_KEY_PATH = "/host/key/envelope/createEnvelopeKey";
+    String KVM_GET_ENVELOPE_KEY_PATH = "/host/key/envelope/getEnvelopePublicKey";
+    String KVM_ROTATE_ENVELOPE_KEY_PATH = "/host/key/envelope/rotateEnvelopeKey";
+    String KVM_VERIFY_ENVELOPE_KEY_PATH = "/host/key/envelope/checkEnvelopeKey";
+    String KVM_ENSURE_SECRET_PATH = "/host/key/envelope/ensureSecret";
+
     String KVM_HOST_FILE_DOWNLOAD_PATH = "/host/file/download";
     String KVM_HOST_FILE_UPLOAD_PATH = "/host/file/upload";
     String KVM_HOST_FILE_DOWNLOAD_PROGRESS_PATH = "/host/file/progress";

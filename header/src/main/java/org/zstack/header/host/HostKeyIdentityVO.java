@@ -25,6 +25,9 @@ public class HostKeyIdentityVO {
     @Column
     private String fingerprint;
 
+    @Column(nullable = false)
+    private Boolean verified = false;
+
     @Column
     private Timestamp createDate;
 
@@ -58,6 +61,14 @@ public class HostKeyIdentityVO {
 
     public void setFingerprint(String fingerprint) {
         this.fingerprint = fingerprint;
+    }
+
+    public Boolean getVerified() {
+        return verified;
+    }
+
+    public void setVerified(Boolean verified) {
+        this.verified = verified;
     }
 
     public Timestamp getCreateDate() {

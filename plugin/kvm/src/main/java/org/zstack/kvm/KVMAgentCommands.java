@@ -372,6 +372,90 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class CreatePublicKeyCmd extends AgentCommand {
+    }
+
+    public static class CreatePublicKeyResponse extends AgentResponse {
+    }
+
+    public static class GetPublicKeyCmd extends AgentCommand {
+    }
+
+    public static class GetPublicKeyResponse extends AgentResponse {
+        private String publicKey;
+        private String errorCode;
+
+        public String getPublicKey() {
+            return publicKey;
+        }
+
+        public void setPublicKey(String publicKey) {
+            this.publicKey = publicKey;
+        }
+
+        public String getErrorCode() {
+            return errorCode;
+        }
+
+        public void setErrorCode(String errorCode) {
+            this.errorCode = errorCode;
+        }
+    }
+
+    public static class RotatePublicKeyCmd extends AgentCommand {
+    }
+
+    public static class RotatePublicKeyResponse extends AgentResponse {
+    }
+
+    public static class VerifyPublicKeyCmd extends AgentCommand {
+    }
+
+    public static class VerifyPublicKeyResponse extends AgentResponse {
+        private String errorCode;
+
+        public String getErrorCode() {
+            return errorCode;
+        }
+
+        public void setErrorCode(String errorCode) {
+            this.errorCode = errorCode;
+        }
+    }
+
+    public static class SecretHostDefineCmd extends AgentCommand {
+        private String envelopeDekBase64;
+
+        public String getEnvelopeDekBase64() {
+            return envelopeDekBase64;
+        }
+
+        public void setEnvelopeDekBase64(String envelopeDekBase64) {
+            this.envelopeDekBase64 = envelopeDekBase64;
+        }
+    }
+
+    public static class SecretHostDefineResponse extends AgentResponse {
+        private String errorCode;
+        private String secretUuid;
+
+        public String getErrorCode() {
+            return errorCode;
+        }
+
+        public void setErrorCode(String errorCode) {
+            this.errorCode = errorCode;
+        }
+
+        public String getSecretUuid() {
+            return secretUuid;
+        }
+
+        public void setSecretUuid(String secretUuid) {
+            this.secretUuid = secretUuid;
+        }
+    }
+
     public static class PingCmd extends AgentCommand {
         public String hostUuid;
         public Map<String, Object> configs;
