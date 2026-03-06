@@ -3868,10 +3868,21 @@ public class KVMHost extends HostBase implements Host {
             public void success(StopVmResponse ret) {
                 StopVmOnHypervisorReply reply = new StopVmOnHypervisorReply();
                 if (!ret.isSuccess()) {
-                    reply.setError(err(ORG_ZSTACK_KVM_10076, HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, "unable to stop vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
-                            vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError()));
-                    logger.warn(reply.getError().getDetails());
-                    extEmitter.stopVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, reply.getError());
+                    // The kvmagent's _stop_vm() always invokes kill_vm() in a finally block,
+                    // so the VM process is terminated even when libvirt raises internal errors
+                    // such as "unexpected disk backing store format 0" (ZSTAC-54684).
+                    // Treat these libvirt backing-store-format errors as non-fatal warnings.
+                    if (ret.getError() != null && ret.getError().contains("unexpected disk backing store format")) {
+                        logger.warn(String.format("VM[uuid:%s] stop encountered libvirt backing store format error; " +
+                                "treating as success because kvmagent kill_vm() ensures the process is terminated: %s",
+                                vminv.getUuid(), ret.getError()));
+                        extEmitter.stopVmOnKvmSuccess(KVMHostInventory.valueOf(getSelf()), vminv);
+                    } else {
+                        reply.setError(err(ORG_ZSTACK_KVM_10076, HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, "unable to stop vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
+                                vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError()));
+                        logger.warn(reply.getError().getDetails());
+                        extEmitter.stopVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, reply.getError());
+                    }
                 } else {
                     extEmitter.stopVmOnKvmSuccess(KVMHostInventory.valueOf(getSelf()), vminv);
                 }
