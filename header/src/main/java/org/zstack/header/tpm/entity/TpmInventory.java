@@ -10,11 +10,9 @@ import org.zstack.header.vm.VmInstanceVO;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.transform;
 
 @PythonClassInventory
@@ -29,7 +27,6 @@ public class TpmInventory implements Serializable {
     private String vmInstanceUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
-    private List<TpmHostRefInventory> hostRefs = new ArrayList<>();
 
     public TpmInventory() {
     }
@@ -41,7 +38,6 @@ public class TpmInventory implements Serializable {
         inv.setVmInstanceUuid(vo.getVmInstanceUuid());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
-        inv.setHostRefs(TpmHostRefInventory.valueOf(vo.getHostRefs()));
         return inv;
     }
 
@@ -89,14 +85,6 @@ public class TpmInventory implements Serializable {
         this.lastOpDate = lastOpDate;
     }
 
-    public List<TpmHostRefInventory> getHostRefs() {
-        return hostRefs;
-    }
-
-    public void setHostRefs(List<TpmHostRefInventory> hostRefs) {
-        this.hostRefs = hostRefs;
-    }
-
     public static TpmInventory __example__() {
         TpmInventory tpm = new TpmInventory();
         tpm.setUuid(DocUtils.createFixedUuid(TpmVO.class));
@@ -104,7 +92,6 @@ public class TpmInventory implements Serializable {
         tpm.setName("TPM-for-VM-" + tpm.getVmInstanceUuid());
         tpm.setCreateDate(DocUtils.timestamp());
         tpm.setLastOpDate(DocUtils.timestamp());
-        tpm.setHostRefs(list(TpmHostRefInventory.__example__()));
         return tpm;
     }
 }

@@ -277,7 +277,6 @@ public class SourceClassMap {
 			put("org.zstack.header.tag.TagPatternType", "org.zstack.sdk.TagPatternType");
 			put("org.zstack.header.tag.UserTagInventory", "org.zstack.sdk.UserTagInventory");
 			put("org.zstack.header.tpm.entity.TpmCapabilityView", "org.zstack.sdk.tpm.entity.TpmCapabilityView");
-			put("org.zstack.header.tpm.entity.TpmHostRefInventory", "org.zstack.sdk.tpm.entity.TpmHostRefInventory");
 			put("org.zstack.header.tpm.entity.TpmInventory", "org.zstack.sdk.tpm.entity.TpmInventory");
 			put("org.zstack.header.vdpa.VmVdpaNicInventory", "org.zstack.sdk.VmVdpaNicInventory");
 			put("org.zstack.header.vipQos.VipQosInventory", "org.zstack.sdk.VipQosInventory");
@@ -295,6 +294,7 @@ public class SourceClassMap {
 			put("org.zstack.header.vm.VmPriorityConfigInventory", "org.zstack.sdk.VmPriorityConfigInventory");
 			put("org.zstack.header.vm.VmPriorityLevel", "org.zstack.sdk.VmPriorityLevel");
 			put("org.zstack.header.vm.VmSchedHistoryInventory", "org.zstack.sdk.VmSchedHistoryInventory");
+			put("org.zstack.header.vm.additions.VmHostFileInventory", "org.zstack.sdk.vm.entity.VmHostFileInventory");
 			put("org.zstack.header.vm.cdrom.VmCdRomInventory", "org.zstack.sdk.VmCdRomInventory");
 			put("org.zstack.header.vm.devices.DeviceAddress", "org.zstack.sdk.DeviceAddress");
 			put("org.zstack.header.vm.devices.VmInstanceResourceMetadataArchiveInventory", "org.zstack.sdk.VmInstanceResourceMetadataArchiveInventory");
@@ -1286,8 +1286,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.softwarePackage.header.JobDetails", "org.zstack.softwarePackage.header.JobDetails");
 			put("org.zstack.sdk.softwarePackage.header.SoftwarePackageInventory", "org.zstack.softwarePackage.header.SoftwarePackageInventory");
 			put("org.zstack.sdk.tpm.entity.TpmCapabilityView", "org.zstack.header.tpm.entity.TpmCapabilityView");
-			put("org.zstack.sdk.tpm.entity.TpmHostRefInventory", "org.zstack.header.tpm.entity.TpmHostRefInventory");
 			put("org.zstack.sdk.tpm.entity.TpmInventory", "org.zstack.header.tpm.entity.TpmInventory");
+			put("org.zstack.sdk.vm.entity.VmHostFileInventory", "org.zstack.header.vm.additions.VmHostFileInventory");
 			put("org.zstack.sdk.zbox.ZBoxBackupInventory", "org.zstack.externalbackup.zbox.ZBoxBackupInventory");
 			put("org.zstack.sdk.zbox.ZBoxBackupStorageBackupInfo", "org.zstack.externalbackup.zbox.ZBoxBackupStorageBackupInfo");
 			put("org.zstack.sdk.zbox.ZBoxInventory", "org.zstack.zbox.ZBoxInventory");

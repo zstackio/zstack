@@ -18,7 +18,6 @@
         <class>org.zstack.resourceconfig.ResourceConfigVO</class>
         <class>org.zstack.header.managementnode.ManagementNodeVO</class>
         <class>org.zstack.header.managementnode.ManagementNodeContextVO</class>
-        <class>org.zstack.header.tpm.entity.TpmHostRefVO</class>
         <class>org.zstack.header.tpm.entity.TpmVO</class>
         <class>org.zstack.header.vm.additions.VmHostFileVO</class>
         <class>org.zstack.header.vm.additions.VmHostFileContentVO</class>
