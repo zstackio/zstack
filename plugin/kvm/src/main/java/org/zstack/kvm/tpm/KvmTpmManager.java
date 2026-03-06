@@ -38,11 +38,16 @@ import org.zstack.header.tpm.message.RemoveTpmMsg;
 import org.zstack.header.tpm.message.RemoveTpmReply;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.additions.VmHostFileInventory;
+import org.zstack.header.vm.additions.VmHostFileType;
+import org.zstack.header.vm.additions.VmHostFileVO;
+import org.zstack.header.vm.additions.VmHostFileVO_;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.zstack.compute.vm.VmGlobalConfig.RESET_TPM_AFTER_VM_CLONE;
@@ -54,6 +59,7 @@ import static org.zstack.kvm.KVMSystemTags.EDK_RPM_TOKEN;
 import static org.zstack.kvm.KVMSystemTags.SWTPM_VERSION;
 import static org.zstack.kvm.KVMSystemTags.SWTPM_VERSION_TOKEN;
 import static org.zstack.kvm.KVMSystemTags.VM_EDK;
+import static org.zstack.utils.CollectionDSL.list;
 
 public class KvmTpmManager extends AbstractService {
     private static final CLogger logger = Utils.getLogger(KvmTpmManager.class);
@@ -312,8 +318,14 @@ public class KvmTpmManager extends AbstractService {
         final VmInstanceVO vm = Q.New(VmInstanceVO.class)
                 .eq(VmInstanceVO_.uuid, tpm.getVmInstanceUuid())
                 .find();
-
         view.setTpmInventory(TpmInventory.valueOf(tpm));
+
+        List<VmHostFileVO> files = Q.New(VmHostFileVO.class)
+                .eq(VmHostFileVO_.vmInstanceUuid, vm.getUuid())
+                .in(VmHostFileVO_.type, list(VmHostFileType.TpmState, VmHostFileType.NvRam))
+                .list();
+        view.setFileRefs(VmHostFileInventory.valueOf(files));
+
         view.setEdkVersion(VM_EDK.getTokenByResourceUuid(vm.getUuid(), EDK_RPM_TOKEN));
 
         if (vm.getHostUuid() != null) {

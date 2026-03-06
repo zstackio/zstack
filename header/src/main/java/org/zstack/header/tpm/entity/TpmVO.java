@@ -7,7 +7,6 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
-import org.zstack.header.vo.NoView;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.SoftDeletionCascade;
 import org.zstack.header.vo.SoftDeletionCascades;
@@ -15,14 +14,9 @@ import org.zstack.header.vo.ToInventory;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import java.sql.Timestamp;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Table
@@ -49,11 +43,6 @@ public class TpmVO extends ResourceVO implements ToInventory, OwnedByAccount {
 
     @Transient
     private String accountUuid;
-
-    @OneToMany(fetch = FetchType.EAGER)
-    @JoinColumn(name = "tpmUuid", insertable = false, updatable = false)
-    @NoView
-    private Set<TpmHostRefVO> hostRefs = new HashSet<>();
 
     public String getVmInstanceUuid() {
         return vmInstanceUuid;
@@ -87,14 +76,6 @@ public class TpmVO extends ResourceVO implements ToInventory, OwnedByAccount {
     @Override
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
-    }
-
-    public Set<TpmHostRefVO> getHostRefs() {
-        return hostRefs;
-    }
-
-    public void setHostRefs(Set<TpmHostRefVO> hostRefs) {
-        this.hostRefs = hostRefs;
     }
 
     public TpmVO() {

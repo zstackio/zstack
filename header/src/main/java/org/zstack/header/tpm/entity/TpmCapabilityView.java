@@ -1,10 +1,12 @@
 package org.zstack.header.tpm.entity;
 
 import org.zstack.header.configuration.PythonClass;
+import org.zstack.header.vm.additions.VmHostFileInventory;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.List;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 @PythonClass
 public class TpmCapabilityView {
@@ -14,7 +16,10 @@ public class TpmCapabilityView {
     private String vmInstanceUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
-    private List<TpmHostRefInventory> hostRefs;
+    /**
+     * collect VmHostFileInventory(VmHostFileVO) type=NvRam or type=TpmState
+     */
+    private List<VmHostFileInventory> fileRefs;
 
     // related table fields
     // TODO  keyProviderUuid / keyProviderType / keyProviderName / keyProviderKeyVersion
@@ -32,7 +37,6 @@ public class TpmCapabilityView {
         setVmInstanceUuid(inventory.getVmInstanceUuid());
         setCreateDate(inventory.getCreateDate());
         setLastOpDate(inventory.getLastOpDate());
-        setHostRefs(new ArrayList<>(inventory.getHostRefs()));
     }
 
     public String getUuid() {
@@ -75,12 +79,12 @@ public class TpmCapabilityView {
         this.lastOpDate = lastOpDate;
     }
 
-    public List<TpmHostRefInventory> getHostRefs() {
-        return hostRefs;
+    public List<VmHostFileInventory> getFileRefs() {
+        return fileRefs;
     }
 
-    public void setHostRefs(List<TpmHostRefInventory> hostRefs) {
-        this.hostRefs = hostRefs;
+    public void setFileRefs(List<VmHostFileInventory> fileRefs) {
+        this.fileRefs = fileRefs;
     }
 
     public String getEdkVersion() {
@@ -110,6 +114,7 @@ public class TpmCapabilityView {
     public static TpmCapabilityView __example__() {
         TpmCapabilityView view = new TpmCapabilityView();
         view.setTpmInventory(TpmInventory.__example__());
+        view.setFileRefs(list(VmHostFileInventory.__example__()));
 
         view.setEdkVersion("edk2-ovmf-20220126gitbb1bba3d77-3.el8.noarch");
         view.setSwtpmVersion("0.8.2");
