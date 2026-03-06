@@ -5305,7 +5305,7 @@ public class KVMHost extends HostBase implements Host {
                 });
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = "sync-secret-key-after-ping";
+                    String __name__ = "sync-envelope-public-key";
 
                     @Override
                     public boolean skip(Map data) {
