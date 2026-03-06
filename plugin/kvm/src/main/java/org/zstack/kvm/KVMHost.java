@@ -5509,6 +5509,8 @@ public class KVMHost extends HostBase implements Host {
         dbf.update(vo);
     }
 
+    private static final int MAX_DEK_BYTES = 1024;
+
     private void handle(SecretHostDefineMsg msg) {
         SecretHostDefineReply reply = new SecretHostDefineReply();
         if (org.apache.commons.lang.StringUtils.isBlank(msg.getDekBase64())) {
@@ -5545,6 +5547,12 @@ public class KVMHost extends HostBase implements Host {
         }
         if (dekRaw == null || dekRaw.length == 0) {
             reply.setError(operr("dekBase64 decoded to empty"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        if (dekRaw.length > MAX_DEK_BYTES) {
+            reply.setError(operr("dekBase64 decoded payload is too large"));
             bus.reply(msg, reply);
             return;
         }
