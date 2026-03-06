@@ -5376,30 +5376,6 @@ public class KVMHost extends HostBase implements Host {
                 setHostKeyIdentityVerified(hostUuid, false);
                 return;
             }
-            String getUrl = buildUrl(KVMConstant.KVM_GET_ENVELOPE_KEY_PATH);
-            KVMAgentCommands.GetPublicKeyResponse getRsp = restf.syncJsonPost(getUrl,
-                    new KVMAgentCommands.GetPublicKeyCmd(), KVMAgentCommands.GetPublicKeyResponse.class);
-            if (getRsp.isSuccess() && StringUtils.isNotBlank(getRsp.getPublicKey())) {
-                saveOrUpdateHostKeyIdentity(hostUuid, getRsp.getPublicKey().trim(), true);
-                return;
-            }
-            if (!getRsp.isSuccess() && isRotateNeededGetError(getRsp.getErrorCode())) {
-                String rotateUrl = buildUrl(KVMConstant.KVM_ROTATE_ENVELOPE_KEY_PATH);
-                KVMAgentCommands.RotatePublicKeyResponse rotateRsp = restf.syncJsonPost(rotateUrl,
-                        new KVMAgentCommands.RotatePublicKeyCmd(), KVMAgentCommands.RotatePublicKeyResponse.class);
-                if (!rotateRsp.isSuccess()) {
-                    logger.warn("rotate key on agent failed for host " + hostUuid + ": " + rotateRsp.getError());
-                    setHostKeyIdentityVerified(hostUuid, false);
-                    return;
-                }
-                getRsp = restf.syncJsonPost(getUrl, new KVMAgentCommands.GetPublicKeyCmd(), KVMAgentCommands.GetPublicKeyResponse.class);
-                if (getRsp.isSuccess() && StringUtils.isNotBlank(getRsp.getPublicKey())) {
-                    saveOrUpdateHostKeyIdentity(hostUuid, getRsp.getPublicKey().trim(), true);
-                    return;
-                }
-            }
-            logger.warn("get public key from agent failed for host " + hostUuid + ": " + (getRsp != null ? getRsp.getError() : "null"));
-            setHostKeyIdentityVerified(hostUuid, false);
         } catch (Exception e) {
             logger.warn("sync secret key after connect failed for host " + hostUuid + ": " + e.getMessage());
             try {
