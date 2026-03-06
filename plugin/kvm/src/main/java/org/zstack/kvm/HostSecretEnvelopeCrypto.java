@@ -5,8 +5,10 @@ import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
+import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
+import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
@@ -14,15 +16,19 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
 /**
- * HPKE seal (RFC 9180) compatible with Go: KEM_X25519_HKDF_SHA256, KDF_HKDF_SHA256, AEAD_AES256GCM.
+ * HPKE seal (RFC 9180) compatible with Go key-agent: KEM_X25519_HKDF_SHA256, KDF_HKDF_SHA256, AEAD_AES256GCM.
  * Seal: encrypt wrapper DEK with host public key; output = enc (32) || ciphertext (for agent to open with private key).
+ * Must use the same HPKE "info" as key-agent (cmd/key-agent: info := []byte("key-agent hpke info")) for key schedule.
  */
 public final class HostSecretEnvelopeCrypto {
     private static final String HPKE_V1 = "HPKE-v1";
+    /** HPKE application info; must match key-agent main.go: info := []byte("key-agent hpke info") */
+    private static final byte[] HPKE_INFO = "key-agent hpke info".getBytes(StandardCharsets.UTF_8);
     private static final byte[] KEM_ID = new byte[]{0x00, 0x20};   // X25519 HKDF-SHA256
     private static final byte[] KDF_ID = new byte[]{0x00, 0x01};   // HKDF-SHA256
     private static final byte[] AEAD_ID = new byte[]{0x00, 0x02};   // AES-256-GCM
@@ -62,17 +68,30 @@ public final class HostSecretEnvelopeCrypto {
         return hkdfExpand(prk, labeledInfo, L, digest);
     }
 
+    /**
+     * RFC 5869 / RFC 9180 HKDF-Extract: returns PRK = HMAC-Hash(salt, IKM).
+     * Must not use HKDFBytesGenerator with full init (that does Extract+Expand); Bouncy Castle
+     * would then return Expand(PRK, "", L) instead of PRK. We implement Extract only via HMAC.
+     */
     private static byte[] hkdfExtract(byte[] salt, byte[] ikm, Digest digest) {
-        HKDFBytesGenerator gen = new HKDFBytesGenerator(digest);
-        gen.init(new org.bouncycastle.crypto.params.HKDFParameters(ikm, salt != null ? salt : new byte[NH], null));
-        byte[] out = new byte[NH];
-        gen.generateBytes(out, 0, out.length);
-        return out;
+        byte[] saltBytes = (salt != null && salt.length > 0) ? salt : new byte[NH];
+        HMac hmac = new HMac(digest);
+        hmac.init(new KeyParameter(saltBytes));
+        hmac.update(ikm, 0, ikm.length);
+        byte[] prk = new byte[NH];
+        hmac.doFinal(prk, 0);
+        return prk;
     }
 
+    /**
+     * RFC 5869 / RFC 9180 HKDF-Expand: OKM = HKDF-Expand(PRK, info, L).
+     * Must use skipExtractParameters(prk, info) so that Bouncy Castle uses prk as PRK and
+     * only performs Expand. Using HKDFParameters(prk, null, info) would make BC do
+     * Extract(null, prk) then Expand, which is wrong.
+     */
     private static byte[] hkdfExpand(byte[] prk, byte[] info, int L, Digest digest) {
         HKDFBytesGenerator gen = new HKDFBytesGenerator(digest);
-        gen.init(new org.bouncycastle.crypto.params.HKDFParameters(prk, null, info));
+        gen.init(HKDFParameters.skipExtractParameters(prk, info != null ? info : new byte[0]));
         byte[] out = new byte[L];
         gen.generateBytes(out, 0, out.length);
         return out;
@@ -108,9 +127,9 @@ public final class HostSecretEnvelopeCrypto {
         byte[] eaePrk = labeledExtract(new byte[0], "eae_prk", sharedSecret, digest, KEM_SUITE_ID);
         byte[] kemSharedSecret = labeledExpand(eaePrk, "shared_secret", kemContext, NH, digest, KEM_SUITE_ID);
 
-        // 4. Key schedule (base mode, empty psk, empty info) with HPKE suite_id
+        // 4. Key schedule (base mode, empty psk; info must match key-agent NewReceiver(sk, info))
         byte[] pskIdHash = labeledExtract(new byte[0], "psk_id_hash", new byte[0], digest, null);
-        byte[] infoHash = labeledExtract(new byte[0], "info_hash", new byte[0], digest, null);
+        byte[] infoHash = labeledExtract(new byte[0], "info_hash", HPKE_INFO, digest, null);
         byte[] keyScheduleContext = concat(new byte[]{0x00}, concat(pskIdHash, infoHash));
         byte[] secret = labeledExtract(kemSharedSecret, "secret", new byte[0], digest, null);
         byte[] key = labeledExpand(secret, "key", keyScheduleContext, NK, digest, null);
