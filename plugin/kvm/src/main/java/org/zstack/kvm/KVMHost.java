@@ -5438,9 +5438,9 @@ public class KVMHost extends HostBase implements Host {
         if (vo == null) {
             vo = new HostKeyIdentityVO();
             vo.setHostUuid(hostUuid);
-            vo.setPublicKey("");
+            vo.setPublicKey(keyToSave);
             vo.setFingerprint("");
-            vo.setVerified(false);
+            vo.setVerified(verified);
             vo.setCreateDate(new java.sql.Timestamp(System.currentTimeMillis()));
             dbf.persist(vo);
             return;
