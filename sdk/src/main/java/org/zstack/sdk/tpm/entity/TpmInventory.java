@@ -44,12 +44,4 @@ public class TpmInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List hostRefs;
-    public void setHostRefs(java.util.List hostRefs) {
-        this.hostRefs = hostRefs;
-    }
-    public java.util.List getHostRefs() {
-        return this.hostRefs;
-    }
-
 }

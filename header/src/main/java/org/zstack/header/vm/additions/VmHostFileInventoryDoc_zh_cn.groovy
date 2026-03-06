@@ -1,20 +1,18 @@
-package org.zstack.header.tpm.entity
-
-import java.sql.Timestamp
+package org.zstack.header.vm.additions
 
 doc {
 
-	title "TPM 与主机的相关数据"
+	title "虚拟机在主机侧的相关文件或目录数据"
 
 	field {
-		name "id"
-		desc "自增主键"
-		type "long"
+		name "uuid"
+		desc "相关文件 UUID"
+		type "String"
 		since "5.0.0"
 	}
 	field {
-		name "tpmUuid"
-		desc "TPM UUID"
+		name "vmInstanceUuid"
+		desc "虚拟机 UUID"
 		type "String"
 		since "5.0.0"
 	}
@@ -25,8 +23,14 @@ doc {
 		since "5.0.0"
 	}
 	field {
+		name "type"
+		desc "文件类型, 按用途分类, 可能是 NvRam 或者 TpmState"
+		type "String"
+		since "5.0.0"
+	}
+	field {
 		name "path"
-		desc "遗留 TPM 状态文件的位置"
+		desc "主机侧相关文件或目录的路径"
 		type "String"
 		since "5.0.0"
 	}
