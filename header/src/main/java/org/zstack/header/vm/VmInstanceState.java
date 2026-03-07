@@ -171,6 +171,13 @@ public enum VmInstanceState {
                 new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
                 new Transaction(VmInstanceStateEvent.expunging, VmInstanceState.Expunging)
         );
+        // ZSTAC-80898: Expunging safety net — if expunge fails, allow recovery
+        // instead of leaving VM permanently stuck.
+        Expunging.transactions(
+                new Transaction(VmInstanceStateEvent.destroyed, VmInstanceState.Destroyed),
+                new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
+                new Transaction(VmInstanceStateEvent.unknown, VmInstanceState.Unknown)
+        );
         Destroyed.transactions(
                 new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped)
         );
