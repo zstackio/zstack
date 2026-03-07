@@ -29,13 +29,17 @@ public final class HostSecretEnvelopeCrypto {
     private static final String HPKE_V1 = "HPKE-v1";
     /** HPKE application info; must match key-agent main.go: info := []byte("key-agent hpke info") */
     private static final byte[] HPKE_INFO = "key-agent hpke info".getBytes(StandardCharsets.UTF_8);
-    private static final byte[] KEM_ID = new byte[]{0x00, 0x20};   // X25519 HKDF-SHA256
+    /** RFC 9180 / IANA HPKE: KEM_ID 0x0020 = DHKEM(X25519, HKDF-SHA256); Nenc = Npk = 32. */
+    private static final byte[] KEM_ID = new byte[]{0x00, 0x20};
     private static final byte[] KDF_ID = new byte[]{0x00, 0x01};   // HKDF-SHA256
     private static final byte[] AEAD_ID = new byte[]{0x00, 0x02};   // AES-256-GCM
-    private static final byte[] KEM_SUITE_ID = concat("KEM".getBytes(), KEM_ID);  // for DHKEM ExtractAndExpand
-    private static final byte[] SUITE_ID = concat(concat("HPKE".getBytes(), KEM_ID), concat(KDF_ID, AEAD_ID));
+    private static final byte[] KEM_SUITE_ID = concat("KEM".getBytes(StandardCharsets.UTF_8), KEM_ID);
+    private static final byte[] SUITE_ID = concat(concat("HPKE".getBytes(StandardCharsets.UTF_8), KEM_ID), concat(KDF_ID, AEAD_ID));
+    /** Nh: KDF output size (SHA-256 = 32). RFC 9180 Section 4. */
     private static final int NH = 32;
+    /** Nk: AEAD key size (AES-256 = 32). RFC 9180 Section 7.3. */
     private static final int NK = 32;
+    /** Nn: AEAD nonce size (AES-GCM = 12). RFC 9180 Section 7.3. */
     private static final int NN = 12;
 
     private static byte[] concat(byte[] a, byte[] b) {
@@ -57,14 +61,14 @@ public final class HostSecretEnvelopeCrypto {
     /** RFC 9180 LabeledExtract(salt, label, ikm); use kemSuiteId for KEM layer, null for HPKE layer (uses SUITE_ID). */
     private static byte[] labeledExtract(byte[] salt, String label, byte[] ikm, Digest digest, byte[] suiteId) {
         byte[] sid = suiteId != null ? suiteId : SUITE_ID;
-        byte[] labeledIkm = concat(concat(concat(HPKE_V1.getBytes(), sid), label.getBytes()), ikm != null ? ikm : new byte[0]);
+        byte[] labeledIkm = concat(concat(concat(HPKE_V1.getBytes(StandardCharsets.UTF_8), sid), label.getBytes(StandardCharsets.UTF_8)), ikm != null ? ikm : new byte[0]);
         return hkdfExtract(salt, labeledIkm, digest);
     }
 
     /** RFC 9180 LabeledExpand(prk, label, info, L); use kemSuiteId for KEM layer, null for HPKE layer. */
     private static byte[] labeledExpand(byte[] prk, String label, byte[] info, int L, Digest digest, byte[] suiteId) {
         byte[] sid = suiteId != null ? suiteId : SUITE_ID;
-        byte[] labeledInfo = concat(concat(concat(concat(i2osp(L, 2), HPKE_V1.getBytes()), sid), label.getBytes()), info != null ? info : new byte[0]);
+        byte[] labeledInfo = concat(concat(concat(concat(i2osp(L, 2), HPKE_V1.getBytes(StandardCharsets.UTF_8)), sid), label.getBytes(StandardCharsets.UTF_8)), info != null ? info : new byte[0]);
         return hkdfExpand(prk, labeledInfo, L, digest);
     }
 
