@@ -1128,7 +1128,7 @@ public class RestServer implements Component, CloudBusEventListener {
         if (parameter == null) {
             msg = (APIMessage) api.apiClass.newInstance();
         } else {
-            for (Field f : api.apiClass.getDeclaredFields()) {
+            for (Field f : FieldUtils.getAllFields(api.apiClass)) {
                 String fieldName = f.getName();
                 Object object = ((Map) parameter).get(fieldName);
                 if (object == null) {
