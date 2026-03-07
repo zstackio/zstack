@@ -12,6 +12,8 @@ public class CoreGlobalProperty {
     @GlobalProperty(name = "unitTestOn", defaultValue = "false")
     @AvailableValues(value ={"true","false"})
     public static boolean UNIT_TEST_ON;
+    @GlobalProperty(name = "elaboration.slowThresholdMs", defaultValue = "0")
+    public static long ELABORATION_SLOW_THRESHOLD_MS;
     @GlobalProperty(name = "beanRefContextConf", defaultValue = "beanRefContext.xml")
     public static String BEAN_REF_CONTEXT_CONF;
     @GlobalProperty(name = "beanConf", defaultValue = "zstack.xml")
