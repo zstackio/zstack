@@ -3865,26 +3865,6 @@ public class KVMHost extends HostBase implements Host {
         checkStatus();
         final VmInstanceInventory vminv = msg.getVmInventory();
 
-        {
-            String dekBase64 = "dGVzdERFSw==";
-            SecretHostDefineMsg defineMsg = new SecretHostDefineMsg();
-            defineMsg.setHostUuid(getSelf().getUuid());
-            defineMsg.setDekBase64(dekBase64);
-            defineMsg.setVmUuid(vminv.getUuid());
-            defineMsg.setPurpose("vm");
-            defineMsg.setProviderName("zstack");
-            bus.makeTargetServiceIdByResourceUuid(defineMsg, HostConstant.SERVICE_ID, getSelf().getUuid());
-            MessageReply defineReply = bus.call(defineMsg);
-            if (!defineReply.isSuccess()) {
-                logger.warn(String.format("debug SecretDefine before stop vm[uuid:%s] failed: %s", vminv.getUuid(), defineReply.getError()));
-            } else {
-                SecretHostDefineReply srep = defineReply.castReply();
-                if (srep != null && srep.getSecretUuid() != null) {
-                    logger.info(String.format("debug SecretDefine before stop vm[uuid:%s] success, secretUuid=%s", vminv.getUuid(), srep.getSecretUuid()));
-                }
-            }
-        }
-
         StopVmCmd cmd = new StopVmCmd();
         cmd.setUuid(vminv.getUuid());
         cmd.setType(msg.getType());
