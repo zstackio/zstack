@@ -41,7 +41,6 @@ import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.network.l3.IpRangeHelper;
-import org.zstack.network.l3.L3NetworkGlobalConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
@@ -82,11 +81,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     /**
      * 提取IPv4和IPv6验证的公共逻辑
-     * 检查IP格式、是否已被当前网卡使用、以及是否在已有IP的范围内
+     * 检查IP格式、是否已被当前网卡使用
      */
     private void validateStaticIpCommon(VmNicVO vmNicVO, L3NetworkVO l3NetworkVO, String ip,
-                                        int ipVersion, String formatErrorCode, String duplicateErrorCode,
-                                        String rangeErrorCode) {
+                                        int ipVersion, String formatErrorCode, String duplicateErrorCode) {
         // 1. 格式验证
         boolean isValidFormat = (ipVersion == IPv6Constants.IPv4)
                 ? NetworkUtils.isIpv4Address(ip)
@@ -105,62 +103,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
 
             if (ipVo.getL3NetworkUuid().equals(l3NetworkVO.getUuid())) {
-                // 2.1 检查IP是否重复
+                // 检查IP是否重复
                 if (ipVo.getIp().equals(ip)) {
                     throw new ApiMessageInterceptionException(argerr(duplicateErrorCode,
                             "ip address [%s] already set to vmNic [uuid:%s]", ip, vmNicVO.getUuid()));
                 }
-
-                // 2.2 如果允许范围外IP或IPAM未启用，跳过范围验证
-                if (L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class)
-                        || !l3NetworkVO.getEnableIPAM()) {
-                    continue;
-                }
-
-                // 2.3 如果IP在范围外，跳过范围验证
-                if (ipVo.getIpRangeUuid() == null) {
-                    continue;
-                }
-
-                // 2.4 检查新IP是否在已有IP所属范围的CIDR内
-                NormalIpRangeVO rangeVO = dbf.findByUuid(ipVo.getIpRangeUuid(), NormalIpRangeVO.class);
-                if (rangeVO != null) {
-                    boolean inRange = (ipVersion == IPv6Constants.IPv4)
-                            ? NetworkUtils.isIpv4InCidr(ip, rangeVO.getNetworkCidr())
-                            : IPv6NetworkUtils.isIpv6InRange(ip, rangeVO.getStartIp(), rangeVO.getEndIp());
-
-                    if (!inRange) {
-                        if (ipVersion == IPv6Constants.IPv4) {
-                            throw new ApiMessageInterceptionException(argerr(rangeErrorCode,
-                                    "ip address [%s] is not in ip range [%s]", ip, rangeVO.getNetworkCidr()));
-                        } else {
-                            throw new ApiMessageInterceptionException(argerr(rangeErrorCode,
-                                    "ip address [%s] is not in ip range [startIp %s, endIp %s]",
-                                    ip, rangeVO.getStartIp(), rangeVO.getEndIp()));
-                        }
-                    }
-                }
             }
         }
-    }
-
-    /**
-     * 检查IP是否在IP范围列表中
-     */
-    private boolean isIpInRangeList(String ip, List<NormalIpRangeVO> ranges) {
-        return findMatchedIpRange(ip, ranges) != null;
-    }
-
-    /**
-     * 查找IP所在的IpRange，若不在任何Range内返回null
-     */
-    private NormalIpRangeVO findMatchedIpRange(String ip, List<NormalIpRangeVO> ranges) {
-        for (NormalIpRangeVO ipr : ranges) {
-            if (NetworkUtils.isInRange(ip, ipr.getStartIp(), ipr.getEndIp())) {
-                return ipr;
-            }
-        }
-        return null;
     }
 
     /**
@@ -168,7 +117,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
      * - IP在l3 cidr之内: 掩码和网关从l3 cidr中获取
      * - IP在l3 cidr之外: 必须指定掩码, 网关可选
      */
-    private void fillIpv4Parameters(APISetVmStaticIpMsg msg, List<NormalIpRangeVO> ipv4Ranges) {
+    private void fillIpv4Parameters(APISetVmStaticIpMsg msg, List<NormalIpRangeVO> ipv4Ranges, String defaultL3NetworkUuid) {
         NormalIpRangeVO matchedRange = IpRangeHelper.findIpRangeByCidr(msg.getIp(), ipv4Ranges);
 
         if (msg.getNetmask() == null) {
@@ -181,6 +130,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
         if (msg.getGateway() == null) {
             if (matchedRange == null) {
+                // outside CIDR: default NIC requires gateway
+                if (msg.getL3NetworkUuid().equals(defaultL3NetworkUuid)) {
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10137,
+                            "the IP[%s] is outside L3 network CIDR and the NIC is the default NIC, gateway must be specified",
+                            msg.getIp()));
+                }
                 msg.setGateway("");
             } else {
                 msg.setGateway(matchedRange.getGateway());
@@ -193,7 +148,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
      * - IP在l3 cidr之内: 前缀长度和网关从l3 cidr中获取
      * - IP在l3 cidr之外: 必须指定前缀长度, 网关可选
      */
-    private void fillIpv6Parameters(APISetVmStaticIpMsg msg, List<NormalIpRangeVO> ipv6Ranges) {
+    private void fillIpv6Parameters(APISetVmStaticIpMsg msg, List<NormalIpRangeVO> ipv6Ranges, String defaultL3NetworkUuid) {
         String ip6 = msg.getIp6() != null ? msg.getIp6() : msg.getIp();
         NormalIpRangeVO matchedRange = IpRangeHelper.findIpRangeByCidr(ip6, ipv6Ranges);
 
@@ -207,6 +162,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
         if (msg.getIpv6Gateway() == null) {
             if (matchedRange == null) {
+                // outside CIDR: default NIC requires gateway
+                if (msg.getL3NetworkUuid().equals(defaultL3NetworkUuid)) {
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10139,
+                            "the IPv6[%s] is outside L3 network CIDR and the NIC is the default NIC, gateway must be specified",
+                            ip6));
+                }
                 msg.setIpv6Gateway("");
             } else {
                 msg.setIpv6Gateway(matchedRange.getGateway());
@@ -244,37 +205,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    /**
-     * 验证静态IP列表是否在IP范围内
-     * @return 包含两个元素的数组：[范围内数量, 范围外数量]
-     */
-    private int[] validateStaticIpsInRange(List<String> ips, List<NormalIpRangeVO> ipRanges) {
-        int inRangeCount = 0;
-        int outsideRangeCount = 0;
-
-        for (String ip : ips) {
-            int ipVersion = NetworkUtils.getIpversion(ip);
-            boolean found = false;
-
-            for (NormalIpRangeVO ipr : ipRanges) {
-                if (ipVersion != ipr.getIpVersion()) {
-                    continue;
-                }
-                if (NetworkUtils.isInRange(ip, ipr.getStartIp(), ipr.getEndIp())) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (found) {
-                inRangeCount++;
-            } else {
-                outsideRangeCount++;
-            }
-        }
-
-        return new int[]{inRangeCount, outsideRangeCount};
-    }
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof VmInstanceMessage) {
@@ -487,9 +417,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             staticIps.computeIfAbsent(msg.getDestL3NetworkUuid(), k -> new ArrayList<>()).add(msg.getStaticIp());
         }
 
-        // 性能优化：缓存IP范围查询结果，避免重复查询数据库
-        Map<String, List<NormalIpRangeVO>> l3IpRangeCache = new HashMap<>();
-
         msg.setRequiredIpMap(new HashMap<>());
 
         // 合并循环：统一处理所有静态IP的验证和设置
@@ -501,37 +428,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             if (!newAddedL3Uuids.contains(l3Uuid)) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10106,
                         "static ip l3 uuid[%s] is not included in nic l3 [%s]", l3Uuid, newAddedL3Uuids));
-            }
-
-            // 性能优化：从缓存中获取或查询IP范围（仅查询一次）
-            List<NormalIpRangeVO> ipRanges = l3IpRangeCache.computeIfAbsent(l3Uuid, uuid -> {
-                SimpleQuery<NormalIpRangeVO> iprq = dbf.createQuery(NormalIpRangeVO.class);
-                iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, uuid);
-                return iprq.list();
-            });
-
-            // 使用辅助方法统一验证IP范围
-            int[] rangeCounts = validateStaticIpsInRange(ips, ipRanges);
-            int inRangeCount = rangeCounts[0];
-            int outsideRangeCount = rangeCounts[1];
-
-            // 如果没有启用IP地址分配或允许范围外IP，则跳过范围检查
-            boolean allowOutsideRange = !l3NetworkVO.enableIpAddressAllocation()
-                    || L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class);
-
-            if (!allowOutsideRange) {
-                // 检查是否所有IP都不在范围内
-                if (inRangeCount == 0 && outsideRangeCount > 0) {
-                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10104,
-                            "the static IP%s is not in any IP range of the L3 network[uuid:%s]", ips, l3Uuid));
-                }
-
-                // 检查IP范围混合情况（部分在范围内，部分在范围外）
-                if (inRangeCount > 0 && outsideRangeCount > 0) {
-                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10107,
-                            "the static IPs for L3 network[uuid:%s] must be either all within IP ranges or all outside IP ranges, but got %d in-range and %d outside-range",
-                            l3Uuid, inRangeCount, outsideRangeCount));
-                }
             }
 
             // 性能优化：批量检查IP占用情况（一次查询替代N次查询）
@@ -750,12 +646,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     private void validateStaticIPv4(VmNicVO vmNicVO, L3NetworkVO l3NetworkVO, String ip) {
         validateStaticIpCommon(vmNicVO, l3NetworkVO, ip, IPv6Constants.IPv4,
-                ORG_ZSTACK_COMPUTE_VM_10129, ORG_ZSTACK_COMPUTE_VM_10130, ORG_ZSTACK_COMPUTE_VM_10131);
+                ORG_ZSTACK_COMPUTE_VM_10129, ORG_ZSTACK_COMPUTE_VM_10130);
     }
 
     private void validateStaticIPv6(VmNicVO vmNicVO, L3NetworkVO l3NetworkVO, String ip) {
         validateStaticIpCommon(vmNicVO, l3NetworkVO, ip, IPv6Constants.IPv6,
-                ORG_ZSTACK_COMPUTE_VM_10132, ORG_ZSTACK_COMPUTE_VM_10133, ORG_ZSTACK_COMPUTE_VM_10134);
+                ORG_ZSTACK_COMPUTE_VM_10132, ORG_ZSTACK_COMPUTE_VM_10133);
     }
 
     private void validate(APISetVmStaticIpMsg msg) {
@@ -788,7 +684,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
                     validateStaticIPv6(nic, l3NetworkVO, ip);
                     msg.setIp(ip);
-                    normalizedIp = ip;
+                    normalizedIp6 = ip;
                 } else {
                     throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10136, "static ip [%s] format error", msg.getIp()));
                 }
@@ -801,42 +697,21 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
         }
 
-        // 提取公共条件判断（避免重复计算）
-        boolean needRangeValidation = !L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class)
-            && l3NetworkVO.enableIpAddressAllocation();
-
-        // 范围验证：当需要时检查IP是否在L3网络的IP范围列表中
-        if (needRangeValidation) {
-            if (normalizedIp != null) {
-                int ipVersion = NetworkUtils.isIpv4Address(normalizedIp) ? IPv6Constants.IPv4 : IPv6Constants.IPv6;
-                List<NormalIpRangeVO> ranges = ipVersion == IPv6Constants.IPv4 ? ipv4Ranges : ipv6Ranges;
-                if (!isIpInRangeList(normalizedIp, ranges)) {
-                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10109,
-                            "the static IPs for L3 network[uuid:%s] must be within IP ranges when IPAM is enabled, but got %d outside-range",
-                            msg.getL3NetworkUuid(), 1));
-                }
-            }
-
-            if (normalizedIp6 != null) {
-                if (!isIpInRangeList(normalizedIp6, ipv6Ranges)) {
-                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10109,
-                            "the static IPs for L3 network[uuid:%s] must be within IP ranges when IPAM is enabled, but got %d outside-range",
-                            msg.getL3NetworkUuid(), 1));
-                }
-            }
-        }
+        // Get the VM's default L3 network UUID for gateway enforcement
+        String defaultL3NetworkUuid = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.defaultL3NetworkUuid)
+                .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
+                .findValue();
 
         // 参数填充和占用检查
-        if (normalizedIp != null && (!l3NetworkVO.enableIpAddressAllocation()
-                || L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class))) {
+        if (normalizedIp != null) {
             l3Found = true;
-            fillIpv4Parameters(msg, ipv4Ranges);
+            fillIpv4Parameters(msg, ipv4Ranges, defaultL3NetworkUuid);
             checkIpOccupied(normalizedIp, msg.getL3NetworkUuid());
         }
-        if (normalizedIp6 != null && (!l3NetworkVO.enableIpAddressAllocation()
-                || L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class))) {
+        if (normalizedIp6 != null) {
             l3Found = true;
-            fillIpv6Parameters(msg, ipv6Ranges);
+            fillIpv6Parameters(msg, ipv6Ranges, defaultL3NetworkUuid);
             checkIpOccupied(normalizedIp6, msg.getL3NetworkUuid());
         }
         if (!l3Found) {
@@ -968,27 +843,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getIp() != null) {
-            SimpleQuery<NormalIpRangeVO> iprq = dbf.createQuery(NormalIpRangeVO.class);
-            iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-            List<NormalIpRangeVO> iprs = iprq.list();
-
-            boolean found = false;
-            for (NormalIpRangeVO ipr : iprs) {
-                if (NetworkUtils.isInRange(msg.getIp(), ipr.getStartIp(), ipr.getEndIp())) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!l3VO.enableIpAddressAllocation()
-                    || L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class)) {
-                found = true;
-            }
-
-            if (!found) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10154, "the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getIp(), msg.getL3NetworkUuid()));
-            }
-
             SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
             uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
             uq.add(UsedIpVO_.ip, Op.EQ, msg.getIp());
@@ -1080,30 +934,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
         if (msg.getStaticIp() != null) {
             staticIps.computeIfAbsent(msg.getL3NetworkUuid(), k -> new ArrayList<>()).add(msg.getStaticIp());
-            SimpleQuery<NormalIpRangeVO> iprq = dbf.createQuery(NormalIpRangeVO.class);
-            iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-            List<NormalIpRangeVO> iprs = iprq.list();
-
-            boolean found = false;
-            for (NormalIpRangeVO ipr : iprs) {
-                if (!ipr.getIpVersion().equals(NetworkUtils.getIpversion(msg.getStaticIp()))) {
-                    continue;
-                }
-
-                if (NetworkUtils.isInRange(msg.getStaticIp(), ipr.getStartIp(), ipr.getEndIp())) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!l3NetworkVO.enableIpAddressAllocation()
-                    || L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class)) {
-                found = true;
-            }
-
-            if (!found) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10164, "the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getStaticIp(), msg.getL3NetworkUuid()));
-            }
 
             SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
             uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
@@ -1120,34 +950,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
             String l3Uuid = e.getKey();
             List<String> ips = e.getValue();
-            SimpleQuery<NormalIpRangeVO> iprq = dbf.createQuery(NormalIpRangeVO.class);
-            iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, l3Uuid);
-            List<NormalIpRangeVO> iprs = iprq.list();
 
-            boolean found = false;
             for (String staticIp : ips) {
-                int ipVersion = IPv6Constants.IPv4;
-                if (IPv6NetworkUtils.isIpv6Address(staticIp)) {
-                    ipVersion = IPv6Constants.IPv6;
-                }
-                for (NormalIpRangeVO ipr : iprs) {
-                    if (ipVersion != ipr.getIpVersion()) {
-                        continue;
-                    }
-                    if (NetworkUtils.isInRange(staticIp, ipr.getStartIp(), ipr.getEndIp())) {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!l3NetworkVO.enableIpAddressAllocation()
-                        || L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE.value(Boolean.class)) {
-                    found = true;
-                }
-
-                if (!found) {
-                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10167, "the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", staticIp, l3Uuid));
-                }
 
                 SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
                 uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());

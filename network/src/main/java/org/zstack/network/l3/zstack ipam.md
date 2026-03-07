@@ -12,6 +12,11 @@ ZStack IPAM 负责管理 L3 网络的 IP 地址分配和回收。它提供三种
 2. L3网络必须enable dhcp服务。这是个历史遗留问题: 扁平网络使用dhcp服务标识是否启用自动分配功能, 其它网络类型不受影响
 它根据用户输入的l3网络uuid和可选的ip地址, 按照地址分配算法分配一个可用地址，分配的IP地址包含: ip地址，掩码(或者前缀长度)，网关
 
+### 自动分配算法
+- 随机分配: 从可用ip地址池中随机选择一个ip地址分配给虚拟机
+- 顺序分配: 从可用ip地址池中按照顺序选择一个ip
+- 循环分配: 从可用ip地址池中按照顺序选择一个ip, 分配完最后一个ip后, 从第一个ip重新开始分配
+
 ### 当前状况
 cloud 5.5版本情况:
 1. 扁平网络可以有三种情况: no ip range, ip range without dhcp, ip range with dhcp.
@@ -35,8 +40,11 @@ cloud 5.5版本情况:
    2. 如果指定的ip地址不在l3 cidr之内，可以不指定掩码, 网关, 如果指定必须和l3 cidr一致
 
 ### 工作时机
-1. 扁平在两种情况下: no ip range, ip range without dhcp
-2. 在打开全局开关: L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE, 扁平网络, 公有网络和VPC网络也支持手动分配
+1. 在5.5.12之前, 扁平网络在两种情况下: no ip range, ip range without dhcp, 允许指定地址不在ip range之内
+2. 在5.5.12版本及其以后, 任意网络，都可以通过修改虚拟机IP(APISetVmStaticIpMsg, APIChangeVmNicNetworkMsg) 设置不在ip range之内的地址,
+
+如果指定的ip地址在ip ranges之外, 但是在l3 cidr之内, 则掩码和网关可以不指定, 系统会自动从l3 cidr中获取掩码和网关
+如果指定的ip地址在ip cidr之外, 用户输入必须同时输入IP, 掩码或者前缀长度, 如果是默认网卡，必须指定网关, 网关必须在l3 cidr之内
 
 
 ## qga获取
@@ -102,23 +110,17 @@ APIGetCandidateVmNicsForLoadBalancerServerGroupMsg, APIGetCandidateVmNicsForLoad
 
 ### APISetVmStaticIpMsg 
 通过成员字段配置虚拟机的IP地址，掩码，网关等参数。需要完整性校验
-- 如果配置ip地址，且在l3 ip range之外，
-  - 要么是扁平网络 without dhcp, 要么打开全局开关: L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE
-  - 否则报错
 - 如果配置ip地址，且在l3 cidr之内，掩码和网关从l3 cidr中获取
-- 如果配置ip地址，且在l3 cidr之外，必须指定掩码, 网关可选
+- 如果配置ip地址，且在l3 cidr之外，必须指定掩码, 网关可选; 如果是默认网卡，必须指定网关
 - 如果配置ipv6地址，且在l3 cidr之内，前缀长度和网关从l3 cidr中获取
-- 如果配置ipv6地址，且在l3 cidr之外，必须指定前缀长度, 网关可选
+- 如果配置ipv6地址，且在l3 cidr之外，必须指定前缀长度, 网关可选; 如果是默认网卡，必须指定网关
 
 ### APIChangeVmNicNetworkMsg
 通过system tags来配置虚拟机的IP地址，掩码，网关等参数。需要完整性校验
-- 如果配置ip地址，且在l3 ip range之外，
-    - 要么是扁平网络 without dhcp, 要么打开全局开关: L3NetworkGlobalConfig.ALLOW_IP_OUTSIDE_RANGE
-    - 否则报错
 - 如果配置ip地址，且在l3 cidr之内，掩码和网关从l3 cidr中获取
-- 如果配置ip地址，且在l3 cidr之外，必须指定掩码, 网关可选
+- 如果配置ip地址，且在l3 cidr之外，必须指定掩码, 网关可选; 如果是默认网卡，必须指定网关
 - 如果配置ipv6地址，且在l3 cidr之内，前缀长度和网关从l3 cidr中获取
-- 如果配置ipv6地址，且在l3 cidr之外，必须指定前缀长度, 网关可选
+- 如果配置ipv6地址，且在l3 cidr之外，必须指定前缀长度, 网关可选; 如果是默认网卡，必须指定网关
 
 ### APICreateVmInstanceMsg
 逻辑和APIChangeVmNicNetworkMsg相同
@@ -130,4 +132,8 @@ APIGetCandidateVmNicsForLoadBalancerServerGroupMsg, APIGetCandidateVmNicsForLoad
 允许给云主机设置不在ip range之内的ip地址, 这样在添加ip range的时候, 可能包含已经分配的ip地址, 此时, 让已分配的地址属于新加入的ip range
 
 ### APIAddReservedIpRangeMsg
-分配不在ip range之内的ip地址时, 不能和rervered ip range冲突
+这个api不仅添加了ReservedIpRangeVO, 还把ReservedIpRangeVO和ip range重叠的ip添加到UsedIpVO, 
+vo.setUsedFor(IpAllocatedReason.Reserved.toString());
+
+### APICheckIpAvailabilityMsg 
+这个api在5.5.12版本之前, 在扁平网络no dhcp的情况下跳过ip range的检查, 这个功能不变
