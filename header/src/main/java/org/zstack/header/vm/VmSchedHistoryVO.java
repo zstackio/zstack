@@ -56,6 +56,7 @@ public class VmSchedHistoryVO implements ToInventory {
     private String destHostUuid;
 
     @Column
+    @Index
     private Timestamp createDate;
 
     @Column
