@@ -1750,22 +1750,31 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         String hostname = VmSystemTags.HOSTNAME.getTokenByTag(sysTag, VmSystemTags.HOSTNAME_TOKEN);
 
                         validateHostname(sysTag, hostname);
+
+                        String l3Uuid = msg.getDefaultL3NetworkUuid();
+                        if (l3Uuid != null) {
+                            validateHostNameOnDefaultL3Network(sysTag, hostname, l3Uuid);
+                        }
                     }
                 }
             }
 
-            @Transactional(readOnly = true)
             private List<SystemTagVO> querySystemTagsByL3(String tag, String l3Uuid) {
-                String sql = "select t" +
-                        " from SystemTagVO t, VmInstanceVO vm, VmNicVO nic" +
-                        " where t.resourceUuid = vm.uuid" +
-                        " and vm.uuid = nic.vmInstanceUuid" +
-                        " and nic.l3NetworkUuid = :l3Uuid" +
-                        " and t.tag = :sysTag";
-                TypedQuery<SystemTagVO> q = dbf.getEntityManager().createQuery(sql, SystemTagVO.class);
-                q.setParameter("l3Uuid", l3Uuid);
-                q.setParameter("sysTag", tag);
-                return q.getResultList();
+                return new SQLBatchWithReturn<List<SystemTagVO>>() {
+                    @Override
+                    protected List<SystemTagVO> scripts() {
+                        String sql = "select t" +
+                                " from SystemTagVO t, VmInstanceVO vm, VmNicVO nic" +
+                                " where t.resourceUuid = vm.uuid" +
+                                " and vm.uuid = nic.vmInstanceUuid" +
+                                " and nic.l3NetworkUuid = :l3Uuid" +
+                                " and t.tag = :sysTag";
+                        TypedQuery<SystemTagVO> q = dbf.getEntityManager().createQuery(sql, SystemTagVO.class);
+                        q.setParameter("l3Uuid", l3Uuid);
+                        q.setParameter("sysTag", tag);
+                        return q.getResultList();
+                    }
+                }.execute();
             }
 
             private void validateHostNameOnDefaultL3Network(String tag, String hostname, String l3Uuid) {
@@ -1789,6 +1798,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     q.select(VmInstanceVO_.defaultL3NetworkUuid);
                     q.add(VmInstanceVO_.uuid, Op.EQ, resourceUuid);
                     String defaultL3Uuid = q.findValue();
+                    if (defaultL3Uuid != null) {
+                        validateHostNameOnDefaultL3Network(systemTag, hostname, defaultL3Uuid);
+                    }
                 } else if (VmSystemTags.BOOT_ORDER.isMatch(systemTag)) {
                     validateBootOrder(systemTag);
                 }
