@@ -343,14 +343,6 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         if (!aoMap.isEmpty()) {
             Integer[] priorities = aoMap.keySet().toArray(new Integer[aoMap.size()]);
             Arrays.sort(priorities);
-            if (priorities[0] != 1) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10022, "could no set vm nic security group, because invalid priority, priority expects to start at 1, but [%d]", priorities[0]));
-            }
-            for (int i = 0; i < priorities.length - 1; i++) {
-                if (priorities[i] + 1 != priorities[i + 1]) {
-                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10023, "could no set vm nic security group, because invalid priority, priority[%d] and priority[%d] expected to be consecutive", priorities[i], priorities[i + 1]));
-                }
-            }
         }
 
 
@@ -385,19 +377,6 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                 });
 
                 msg.setRefs(newAOs);
-            }
-        } else {
-            if (!adminIntegers.isEmpty()) {
-                Integer[] priorities = adminIntegers.toArray(new Integer[adminIntegers.size()]);
-                Arrays.sort(priorities);
-                if (priorities[0] != 1) {
-                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10024, "could no set vm nic security group, because admin security group priority[%d] must be higher than users", priorities[0]));
-                }
-                for (int i = 0; i < priorities.length - 1; i++) {
-                    if (priorities[i] + 1 != priorities[i + 1]) {
-                        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10025, "could no set vm nic security group, because admin security group priority[%d] must be higher than users", priorities[i + 1]));
-                    }
-                }
             }
         }
     }
@@ -498,8 +477,9 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             rvos.stream().filter(rvo -> rvo.getUuid().equals(ao.getRuleUuid())).findFirst().orElseThrow(() ->
                     new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10041, "could not update security group rule priority, because rule[uuid:%s] not in security group[uuid:%s]", ao.getRuleUuid(), msg.getSecurityGroupUuid())));
 
-            rvos.stream().filter(rvo -> rvo.getPriority() == ao.getPriority()).findFirst().orElseThrow(() ->
-                    new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10042, "could not update security group rule priority, because priority[%d] not in security group[uuid:%s]", ao.getPriority(), msg.getSecurityGroupUuid())));
+            if (ao.getPriority() < 1 || ao.getPriority() > SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10042, "could not update security group rule priority, because priority[%d] is out of valid range [1, %d]", ao.getPriority(), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
+            }
         }
 
         List<String> uuidList = new ArrayList<>(priorityMap.values());
@@ -534,8 +514,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             if (count.intValue() > SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10047, "could not change security group rule, because security group %s rules number[%d] is out of max limit[%d]", vo.getType(), count.intValue(), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
             }
-            if (msg.getPriority() > count.intValue()) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10048, "could not change security group rule, because the maximum priority of %s rule is [%d]", vo.getType().toString(), count.intValue()));
+            if (msg.getPriority() > SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10048, "could not change security group rule, because the maximum priority of %s rule is [%d]", vo.getType().toString(), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
             }
             if (msg.getPriority() < 0) {
                 msg.setPriority(SecurityGroupConstant.LOWEST_RULE_PRIORITY);
@@ -1198,11 +1178,11 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10119, "could not add security group rule, because security group %s rules number[%d] is out of max limit[%d]",
                     SecurityGroupRuleType.Egress, (egressRuleCount + toCreateEgressRuleCount), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
         }
-        if (msg.getPriority() > (ingressRuleCount + 1) && toCreateIngressRuleCount > 0) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10120, "could not add security group rule, because priority[%d] must be consecutive, the ingress rule maximum priority is [%d]", msg.getPriority(), ingressRuleCount));
+        if (msg.getPriority() > SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class) && toCreateIngressRuleCount > 0) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10120, "could not add security group rule, because priority[%d] exceeds the maximum allowed priority [%d]", msg.getPriority(), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
         }
-        if (msg.getPriority() > (egressRuleCount + 1) && toCreateEgressRuleCount > 0) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10121, "could not add security group rule, because priority[%d] must be consecutive, the egress rule maximum priority is [%d]", msg.getPriority(), egressRuleCount));
+        if (msg.getPriority() > SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class) && toCreateEgressRuleCount > 0) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10121, "could not add security group rule, because priority[%d] exceeds the maximum allowed priority [%d]", msg.getPriority(), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
         }
     }
 
