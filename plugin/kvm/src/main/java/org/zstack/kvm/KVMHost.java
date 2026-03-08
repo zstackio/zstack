@@ -101,6 +101,9 @@ import org.zstack.utils.tester.ZTester;
 import javax.persistence.TypedQuery;
 import java.io.IOException;
 import java.net.URI;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -5330,6 +5333,57 @@ public class KVMHost extends HostBase implements Host {
 
     private static final long ENVELOPE_KEY_HTTP_TIMEOUT_SEC = 5L;
 
+    private void doRotateAndGetThenSave(String hostUuid, Completion completion) {
+        String rotateUrl = buildUrl(KVMConstant.KVM_ROTATE_ENVELOPE_KEY_PATH);
+        restf.asyncJsonPost(rotateUrl, new KVMAgentCommands.RotatePublicKeyCmd(),
+                new JsonAsyncRESTCallback<KVMAgentCommands.RotatePublicKeyResponse>(completion) {
+                    @Override
+                    public void fail(ErrorCode err) {
+                        setHostKeyIdentityVerified(hostUuid, false);
+                        completion.success();
+                    }
+
+                    @Override
+                    public void success(KVMAgentCommands.RotatePublicKeyResponse rotateRsp) {
+                        if (rotateRsp == null || !rotateRsp.isSuccess()) {
+                            logger.warn("rotate key on agent failed for host " + hostUuid + ": " + (rotateRsp != null ? rotateRsp.getError() : "null"));
+                            setHostKeyIdentityVerified(hostUuid, false);
+                            completion.success();
+                            return;
+                        }
+                        String getUrl = buildUrl(KVMConstant.KVM_GET_ENVELOPE_KEY_PATH);
+                        restf.asyncJsonPost(getUrl, new KVMAgentCommands.GetPublicKeyCmd(),
+                                new JsonAsyncRESTCallback<KVMAgentCommands.GetPublicKeyResponse>(completion) {
+                                    @Override
+                                    public void fail(ErrorCode err) {
+                                        setHostKeyIdentityVerified(hostUuid, false);
+                                        completion.success();
+                                    }
+
+                                    @Override
+                                    public void success(KVMAgentCommands.GetPublicKeyResponse getRsp) {
+                                        if (getRsp != null && getRsp.isSuccess() && StringUtils.isNotBlank(getRsp.getPublicKey())) {
+                                            saveOrUpdateHostKeyIdentity(hostUuid, getRsp.getPublicKey().trim(), true);
+                                        } else {
+                                            setHostKeyIdentityVerified(hostUuid, false);
+                                        }
+                                        completion.success();
+                                    }
+
+                                    @Override
+                                    public Class<KVMAgentCommands.GetPublicKeyResponse> getReturnClass() {
+                                        return KVMAgentCommands.GetPublicKeyResponse.class;
+                                    }
+                                }, TimeUnit.SECONDS, ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
+                    }
+
+                    @Override
+                    public Class<KVMAgentCommands.RotatePublicKeyResponse> getReturnClass() {
+                        return KVMAgentCommands.RotatePublicKeyResponse.class;
+                    }
+                }, TimeUnit.SECONDS, ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
+    }
+
     private void syncEnvelopeKeyAfterPing(Completion completion) {
         KVMHostVO kvo = dbf.reload(getSelf());
         final String hostUuid = kvo.getUuid();
@@ -5348,59 +5402,21 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void success(KVMAgentCommands.VerifyPublicKeyResponse vrsp) {
                                 if (vrsp != null && vrsp.isSuccess()) {
+                                    String storedFp = identity.getFingerprint();
+                                    if (StringUtils.isNotBlank(storedFp)) {
+                                        String computed = fingerprintFromPublicKey(identity.getPublicKey());
+                                        if (!storedFp.equals(computed)) {
+                                            logger.warn("host " + hostUuid + " verify ok but fingerprint mismatch, rotating and re-getting key");
+                                            doRotateAndGetThenSave(hostUuid, completion);
+                                            return;
+                                        }
+                                    }
                                     setHostKeyIdentityVerified(hostUuid, true);
                                     completion.success();
                                     return;
                                 }
                                 if (vrsp != null && !vrsp.isSuccess() && isRotateNeededGetError(vrsp.getErrorCode())) {
-                                    String rotateUrl = buildUrl(KVMConstant.KVM_ROTATE_ENVELOPE_KEY_PATH);
-                                    restf.asyncJsonPost(rotateUrl, new KVMAgentCommands.RotatePublicKeyCmd(),
-                                            new JsonAsyncRESTCallback<KVMAgentCommands.RotatePublicKeyResponse>(completion) {
-                                                @Override
-                                                public void fail(ErrorCode err) {
-                                                    setHostKeyIdentityVerified(hostUuid, false);
-                                                    completion.success();
-                                                }
-
-                                                @Override
-                                                public void success(KVMAgentCommands.RotatePublicKeyResponse rotateRsp) {
-                                                    if (rotateRsp == null || !rotateRsp.isSuccess()) {
-                                                        logger.warn("verify failed then rotate key on agent failed for host " + hostUuid + ": " + (rotateRsp != null ? rotateRsp.getError() : "null"));
-                                                        setHostKeyIdentityVerified(hostUuid, false);
-                                                        completion.success();
-                                                        return;
-                                                    }
-                                                    String getUrl = buildUrl(KVMConstant.KVM_GET_ENVELOPE_KEY_PATH);
-                                                    restf.asyncJsonPost(getUrl, new KVMAgentCommands.GetPublicKeyCmd(),
-                                                            new JsonAsyncRESTCallback<KVMAgentCommands.GetPublicKeyResponse>(completion) {
-                                                                @Override
-                                                                public void fail(ErrorCode err) {
-                                                                    setHostKeyIdentityVerified(hostUuid, false);
-                                                                    completion.success();
-                                                                }
-
-                                                                @Override
-                                                                public void success(KVMAgentCommands.GetPublicKeyResponse getRsp) {
-                                                                    if (getRsp != null && getRsp.isSuccess() && StringUtils.isNotBlank(getRsp.getPublicKey())) {
-                                                                        saveOrUpdateHostKeyIdentity(hostUuid, getRsp.getPublicKey().trim(), true);
-                                                                    } else {
-                                                                        setHostKeyIdentityVerified(hostUuid, false);
-                                                                    }
-                                                                    completion.success();
-                                                                }
-
-                                                                @Override
-                                                                public Class<KVMAgentCommands.GetPublicKeyResponse> getReturnClass() {
-                                                                    return KVMAgentCommands.GetPublicKeyResponse.class;
-                                                                }
-                                                            }, TimeUnit.SECONDS, ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
-                                                }
-
-                                                @Override
-                                                public Class<KVMAgentCommands.RotatePublicKeyResponse> getReturnClass() {
-                                                    return KVMAgentCommands.RotatePublicKeyResponse.class;
-                                                }
-                                            }, TimeUnit.SECONDS, ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
+                                    doRotateAndGetThenSave(hostUuid, completion);
                                     return;
                                 }
                                 setHostKeyIdentityVerified(hostUuid, false);
@@ -5429,8 +5445,34 @@ public class KVMHost extends HostBase implements Host {
                             if (createRsp == null || !createRsp.isSuccess()) {
                                 logger.warn("create key on agent failed for host " + hostUuid + ": " + (createRsp != null ? createRsp.getError() : "null"));
                                 setHostKeyIdentityVerified(hostUuid, false);
+                                completion.success();
+                                return;
                             }
-                            completion.success();
+                            String getUrl = buildUrl(KVMConstant.KVM_GET_ENVELOPE_KEY_PATH);
+                            restf.asyncJsonPost(getUrl, new KVMAgentCommands.GetPublicKeyCmd(),
+                                    new JsonAsyncRESTCallback<KVMAgentCommands.GetPublicKeyResponse>(completion) {
+                                        @Override
+                                        public void fail(ErrorCode err) {
+                                            logger.warn("get public key after create failed for host " + hostUuid + ": " + (err != null ? err.getDetails() : ""));
+                                            setHostKeyIdentityVerified(hostUuid, false);
+                                            completion.success();
+                                        }
+
+                                        @Override
+                                        public void success(KVMAgentCommands.GetPublicKeyResponse getRsp) {
+                                            if (getRsp != null && getRsp.isSuccess() && StringUtils.isNotBlank(getRsp.getPublicKey())) {
+                                                saveOrUpdateHostKeyIdentity(hostUuid, getRsp.getPublicKey().trim(), true);
+                                            } else {
+                                                setHostKeyIdentityVerified(hostUuid, false);
+                                            }
+                                            completion.success();
+                                        }
+
+                                        @Override
+                                        public Class<KVMAgentCommands.GetPublicKeyResponse> getReturnClass() {
+                                            return KVMAgentCommands.GetPublicKeyResponse.class;
+                                        }
+                                    }, TimeUnit.SECONDS, ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
                         }
 
                         @Override
@@ -5468,23 +5510,50 @@ public class KVMHost extends HostBase implements Host {
         return q.find();
     }
 
+    /**
+     * Compute fingerprint from public key (base64): SHA-256 of decoded key bytes, hex-encoded.
+     * Returns empty string if key is invalid or hashing fails.
+     */
+    private static String fingerprintFromPublicKey(String publicKeyBase64) {
+        if (publicKeyBase64 == null || publicKeyBase64.isEmpty()) {
+            return "";
+        }
+        try {
+            byte[] keyBytes = Base64.getDecoder().decode(publicKeyBase64.trim());
+            if (keyBytes == null || keyBytes.length == 0) {
+                return "";
+            }
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(keyBytes);
+            StringBuilder sb = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b & 0xff));
+            }
+            return sb.toString();
+        } catch (IllegalArgumentException | NoSuchAlgorithmException e) {
+            return "";
+        }
+    }
+
     private void saveOrUpdateHostKeyIdentity(String hostUuid, String publicKey, boolean verified) {
         if (StringUtils.isBlank(publicKey)) {
             return;
         }
         String keyToSave = publicKey.trim();
+        String fingerprint = fingerprintFromPublicKey(keyToSave);
         HostKeyIdentityVO vo = getHostKeyIdentity(hostUuid);
         if (vo == null) {
             vo = new HostKeyIdentityVO();
             vo.setHostUuid(hostUuid);
             vo.setPublicKey(keyToSave);
-            vo.setFingerprint("");
+            vo.setFingerprint(fingerprint);
             vo.setVerified(verified);
             vo.setCreateDate(new java.sql.Timestamp(System.currentTimeMillis()));
             dbf.persist(vo);
             return;
         }
         vo.setPublicKey(keyToSave);
+        vo.setFingerprint(fingerprint);
         vo.setVerified(verified);
         dbf.update(vo);
     }
@@ -5511,6 +5580,15 @@ public class KVMHost extends HostBase implements Host {
             reply.setError(operr("no public key for host, connect/reconnect did not sync key"));
             bus.reply(msg, reply);
             return;
+        }
+        String storedFingerprint = identity.getFingerprint();
+        if (StringUtils.isNotBlank(storedFingerprint)) {
+            String computed = fingerprintFromPublicKey(pubKey);
+            if (!storedFingerprint.equals(computed)) {
+                reply.setError(operr("host public key fingerprint mismatch, key may be corrupted or tampered"));
+                bus.reply(msg, reply);
+                return;
+            }
         }
         if (!Boolean.TRUE.equals(verifyOk)) {
             reply.setError(operr("host secret key verify not ok, not synced"));
