@@ -2,20 +2,27 @@ package org.zstack.test.integration.kvm.host
 
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.host.AddHostReply
 import org.zstack.header.host.HostConstant
 import org.zstack.header.host.HostInventory
+import org.zstack.header.host.HostKeyIdentityVO
 import org.zstack.header.host.HostStatus
+import org.zstack.header.host.PingHostMsg
+import org.zstack.header.host.PingHostReply
 import org.zstack.header.message.MessageReply
 import org.zstack.kvm.AddKVMHostMsg
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.test.integration.kvm.KvmTest
+import org.springframework.http.HttpEntity
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.header.secret.SecretHostDefineMsg
 import org.zstack.header.secret.SecretHostDefineReply
+
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Integration test for host secret: create/get/rotate/verify public key on connect,
@@ -27,6 +34,10 @@ class HostSecretCase extends SubCase {
     def cluster
     CloudBus bus
     HostInventory addedHost
+
+    /** Counters for simulator call assertions (async secret sync / ensureSecret). */
+    AtomicInteger createEnvelopeKeyCallCount
+    AtomicInteger ensureSecretCallCount
 
     /** 32-byte X25519 public key (base64) for simulator; must be valid for HPKE seal. */
     static final String MOCK_PUBLIC_KEY_BASE64 = "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA="
@@ -62,6 +73,9 @@ class HostSecretCase extends SubCase {
     }
 
     void registerSecretSimulators() {
+        createEnvelopeKeyCallCount = new AtomicInteger(0)
+        ensureSecretCallCount = new AtomicInteger(0)
+
         env.simulator(KVMConstant.KVM_CONNECT_PATH) {
             def rsp = new KVMAgentCommands.ConnectResponse()
             rsp.success = true
@@ -69,15 +83,36 @@ class HostSecretCase extends SubCase {
             rsp.qemuVersion = "1.3.0"
             return rsp
         }
-        env.simulator(KVMConstant.KVM_HOST_FACT_PATH) {
-            def rsp = new KVMAgentCommands.HostFactResponse()
-            rsp.osDistribution = "CentOS"
-            rsp.osVersion = "7.0"
+        // Use afterSimulator like AddHostCase: rely on testlib default HostFactResponse, only set what this test needs.
+        env.afterSimulator(KVMConstant.KVM_HOST_FACT_PATH) { KVMAgentCommands.HostFactResponse rsp ->
+            rsp.hvmCpuFlag = "vmx"  // default is ""; connect needs vmx/svm to pass checkVirtualizationEnabled
             return rsp
         }
-        env.simulator(LocalStorageKvmBackend.INIT_PATH) { rsp, _ -> return rsp }
+        env.simulator(LocalStorageKvmBackend.INIT_PATH) { HttpEntity<String> e ->
+            def rsp = new LocalStorageKvmBackend.InitRsp()
+            rsp.success = true
+            rsp.localStorageUsedCapacity = 0L
+            rsp.totalCapacity = 0L
+            rsp.availableCapacity = 0L
+            return rsp
+        }
+
+        // Ping simulator so we can trigger pingHook (which runs sync-envelope-public-key -> KVM_CREATE_ENVELOPE_KEY_PATH).
+        // needReconnectHost() is true when rsp.version != dbf.getDbVersion(), which sets KVM_HOST_SKIP_PING_NO_FAILURE_EXTENSIONS
+        // and skips sync-envelope-public-key; so we must return the actual DB version.
+        def dbVersion = bean(DatabaseFacade.class).getDbVersion()
+        env.simulator(KVMConstant.KVM_PING_PATH) { HttpEntity<String> e ->
+            def cmd = org.zstack.utils.gson.JSONObjectUtil.toObject(e.body, KVMAgentCommands.PingCmd.class)
+            def rsp = new KVMAgentCommands.PingResponse()
+            rsp.success = true
+            rsp.hostUuid = cmd.hostUuid
+            rsp.version = dbVersion
+            rsp.sendCommandUrl = "http://127.0.0.2:7272"
+            return rsp
+        }
 
         env.simulator(KVMConstant.KVM_CREATE_ENVELOPE_KEY_PATH) {
+            createEnvelopeKeyCallCount?.incrementAndGet()
             return new KVMAgentCommands.CreatePublicKeyResponse()
         }
         env.simulator(KVMConstant.KVM_GET_ENVELOPE_KEY_PATH) {
@@ -92,6 +127,7 @@ class HostSecretCase extends SubCase {
             return new KVMAgentCommands.RotatePublicKeyResponse()
         }
         env.simulator(KVMConstant.KVM_ENSURE_SECRET_PATH) {
+            ensureSecretCallCount?.incrementAndGet()
             def rsp = new KVMAgentCommands.SecretHostDefineResponse()
             rsp.secretUuid = Platform.uuid
             return rsp
@@ -113,17 +149,41 @@ class HostSecretCase extends SubCase {
         bus.makeLocalServiceId(amsg, HostConstant.SERVICE_ID)
         AddHostReply reply = (AddHostReply) bus.call(amsg)
         assert reply != null
-        assert reply.isSuccess()
+        assert reply.isSuccess() : "AddHost failed: ${reply.error?.toString() ?: 'no error'}"
         assert reply.inventory.status == HostStatus.Connected.toString()
         addedHost = reply.inventory
+
+        // Envelope key sync runs inside pingHook, not during connect. Trigger a ping so that
+        // sync-envelope-public-key runs and KVM_CREATE_ENVELOPE_KEY_PATH is invoked.
+        PingHostMsg pingMsg = new PingHostMsg()
+        pingMsg.hostUuid = addedHost.uuid
+        bus.makeTargetServiceIdByResourceUuid(pingMsg, HostConstant.SERVICE_ID, addedHost.uuid)
+        MessageReply pingReply = bus.call(pingMsg)
+        assert pingReply.isSuccess() : "PingHost failed: ${pingReply.error}"
+
+        assert createEnvelopeKeyCallCount.get() >= 1 : "envelope key sync (KVM_CREATE_ENVELOPE_KEY_PATH) should be triggered at least once after add host"
+
+        // Create/ping only calls createEnvelopeKey; production does not GET and save the key after create.
+        // Persist HostKeyIdentity so SecretHostDefineMsg finds a public key (same value as KVM_GET_ENVELOPE_KEY_PATH simulator).
+        HostKeyIdentityVO keyVo = new HostKeyIdentityVO()
+        keyVo.hostUuid = addedHost.uuid
+        keyVo.publicKey = MOCK_PUBLIC_KEY_BASE64
+        keyVo.fingerprint = ""
+        keyVo.verified = true
+        bean(DatabaseFacade.class).persist(keyVo)
     }
 
     void testSecretHostDefineSuccess() {
         assert addedHost != null
 
+        int countBefore = ensureSecretCallCount.get()
+
         SecretHostDefineMsg msg = new SecretHostDefineMsg()
         msg.hostUuid = addedHost.uuid
-        msg.dekBase64 = "dGVzdERFSw=="  // base64 of "testDEK"
+        msg.dekBase64 = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
+        msg.vmUuid = Platform.uuid
+        msg.purpose = "test-vtpm"
+        msg.providerName = "vtpm"
 
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, addedHost.uuid)
         MessageReply reply = bus.call(msg)
@@ -131,6 +191,9 @@ class HostSecretCase extends SubCase {
         assert reply.isSuccess()
         SecretHostDefineReply defineReply = reply.castReply()
         assert defineReply.secretUuid != null
+
+        // Ensure KVM_ENSURE_SECRET_PATH was actually called (asyncJsonPost to agent).
+        assert ensureSecretCallCount.get() == countBefore + 1 : "KVM_ENSURE_SECRET_PATH simulator should be called exactly once for SecretHostDefineMsg"
     }
 
     void testSecretHostDefineFailWhenNoDek() {
