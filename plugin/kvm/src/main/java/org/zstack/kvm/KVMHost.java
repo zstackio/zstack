@@ -5582,13 +5582,11 @@ public class KVMHost extends HostBase implements Host {
             return;
         }
         String storedFingerprint = identity.getFingerprint();
-        if (StringUtils.isNotBlank(storedFingerprint)) {
-            String computed = fingerprintFromPublicKey(pubKey);
-            if (!storedFingerprint.equals(computed)) {
-                reply.setError(operr("host public key fingerprint mismatch, key may be corrupted or tampered"));
-                bus.reply(msg, reply);
-                return;
-            }
+        String computed = fingerprintFromPublicKey(pubKey);
+        if (!storedFingerprint.equals(computed)) {
+            reply.setError(operr("host public key fingerprint mismatch, key may be corrupted or tampered"));
+            bus.reply(msg, reply);
+            return;
         }
         if (!Boolean.TRUE.equals(verifyOk)) {
             reply.setError(operr("host secret key verify not ok, not synced"));

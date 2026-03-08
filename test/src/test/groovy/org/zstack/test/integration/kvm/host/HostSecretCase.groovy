@@ -22,6 +22,7 @@ import org.zstack.testlib.SubCase
 import org.zstack.header.secret.SecretHostDefineMsg
 import org.zstack.header.secret.SecretHostDefineReply
 
+import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -41,6 +42,22 @@ class HostSecretCase extends SubCase {
 
     /** 32-byte X25519 public key (base64) for simulator; must be valid for HPKE seal. */
     static final String MOCK_PUBLIC_KEY_BASE64 = "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA="
+
+    /** Same algorithm as KVMHost.fingerprintFromPublicKey: SHA-256(decoded base64) in hex. */
+    static String fingerprintFromPublicKey(String publicKeyBase64) {
+        if (publicKeyBase64 == null || publicKeyBase64.isEmpty()) return ""
+        try {
+            byte[] keyBytes = java.util.Base64.getDecoder().decode(publicKeyBase64.trim())
+            if (keyBytes == null || keyBytes.length == 0) return ""
+            MessageDigest md = MessageDigest.getInstance("SHA-256")
+            byte[] hash = md.digest(keyBytes)
+            StringBuilder sb = new StringBuilder(hash.length * 2)
+            for (byte b : hash) sb.append(String.format("%02x", b & 0xff))
+            return sb.toString()
+        } catch (Exception e) {
+            return ""
+        }
+    }
 
     @Override
     void setup() {
@@ -165,10 +182,11 @@ class HostSecretCase extends SubCase {
 
         // Create/ping only calls createEnvelopeKey; production does not GET and save the key after create.
         // Persist HostKeyIdentity so SecretHostDefineMsg finds a public key (same value as KVM_GET_ENVELOPE_KEY_PATH simulator).
+        // Set fingerprint so the handle(SecretHostDefineMsg) fingerprint check is exercised (must match publicKey).
         HostKeyIdentityVO keyVo = new HostKeyIdentityVO()
         keyVo.hostUuid = addedHost.uuid
         keyVo.publicKey = MOCK_PUBLIC_KEY_BASE64
-        keyVo.fingerprint = ""
+        keyVo.fingerprint = fingerprintFromPublicKey(MOCK_PUBLIC_KEY_BASE64)
         keyVo.verified = true
         bean(DatabaseFacade.class).persist(keyVo)
     }
