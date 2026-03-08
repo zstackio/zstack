@@ -3516,6 +3516,7 @@
   "ORG_ZSTACK_STORAGE_PRIMARY_BLOCK_10038": "gagal menemukan template volume berdasarkan name:%s",
   "ORG_ZSTACK_MEVOCO_10076": "volume(s) yang dapat dibagi [UUID: %s] terpasang; snapshot grup tidak didukung.",
   "ORG_ZSTACK_AI_MESSAGE_10002": "Tidak dapat membatalkan tugas pembuatan dataset karena resource UUID[%s] atau model center UUID[%s] adalah null",
+  "ORG_ZSTACK_AI_MESSAGE_10003": "Tugas unduhan model perlu dimulai ulang",
   "ORG_ZSTACK_AI_MESSAGE_10001": "Tidak dapat membatalkan tugas unduhan layanan model karena resource UUID[%s] atau model center UUID[%s] adalah null",
   "ORG_ZSTACK_IPSEC_VYOS_10009": "penerapan ke grup HA gagal karena %s",
   "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_PROMETHEUS_10013": "Gagal melakukan panggilan HTTP ke semua instance Prometheus di lingkungan cloud.",

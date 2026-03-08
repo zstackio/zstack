@@ -3486,6 +3486,7 @@
   "ORG_ZSTACK_STORAGE_PRIMARY_BLOCK_10038": "名前:%s のボリュームテンプレートが見つかりません",
   "ORG_ZSTACK_MEVOCO_10076": "共有可能ボリューム [UUID: %s] が接続されています。グループスナップショットはサポートされていません。",
   "ORG_ZSTACK_AI_MESSAGE_10002": "リソース UUID[%s] またはモデルセンター UUID[%s] が null であるため、データセット作成ジョブをキャンセルできません",
+  "ORG_ZSTACK_AI_MESSAGE_10003": "モデルダウンロードタスクを再開始する必要があります",
   "ORG_ZSTACK_AI_MESSAGE_10001": "リソース UUID[%s] またはモデルセンター UUID[%s] が null であるため、モデルサービスダウンロードタスクをキャンセルできません",
   "ORG_ZSTACK_IPSEC_VYOS_10009": "HA グループへの適用に失敗しました: %s",
   "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_PROMETHEUS_10013": "クラウド環境内のすべての Prometheus インスタンスへの HTTP 呼び出しに失敗しました。",

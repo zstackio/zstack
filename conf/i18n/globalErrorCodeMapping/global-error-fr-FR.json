@@ -3516,6 +3516,7 @@
   "ORG_ZSTACK_STORAGE_PRIMARY_BLOCK_10038": "Échec de recherche du modèle de volume par nom:%s",
   "ORG_ZSTACK_MEVOCO_10076": "Volume(s) partageable(s) [UUID: %s] attaché(s); la capture instantanée de groupe n'est pas prise en charge.",
   "ORG_ZSTACK_AI_MESSAGE_10002": "Impossible d'annuler la tâche de création de l'ensemble de données car l'UUID [%s] de la ressource ou l'UUID [%s] du centre de modèles est null",
+  "ORG_ZSTACK_AI_MESSAGE_10003": "La tâche de téléchargement du modèle doit être redémarrée",
   "ORG_ZSTACK_AI_MESSAGE_10001": "Impossible d'annuler la tâche de téléchargement du service de modèle car l'UUID [%s] de la ressource ou l'UUID [%s] du centre de modèles est null",
   "ORG_ZSTACK_IPSEC_VYOS_10009": "Échec de l'application au groupe haute disponibilité en raison de %s",
   "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_PROMETHEUS_10013": "Échec de l'exécution des appels HTTP vers toutes les instances Prometheus dans l'environnement cloud.",
