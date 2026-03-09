@@ -20,7 +20,7 @@ import java.util.List;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/nics/{vmNicUuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDetachL3NetworkFromVmEvent.class
 )
 public class APIDetachL3NetworkFromVmMsg extends APIMessage implements VmInstanceMessage, APIMultiAuditor {

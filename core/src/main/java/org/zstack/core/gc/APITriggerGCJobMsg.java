@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/gc-jobs/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APITriggerGCJobEvent.class
 )
 public class APITriggerGCJobMsg extends APIMessage implements GarbageCollectorMessage {

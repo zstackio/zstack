@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 @Action(category = VolumeSnapshotConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/volume-snapshots/batch-delete",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIBatchDeleteVolumeSnapshotEvent.class
 )

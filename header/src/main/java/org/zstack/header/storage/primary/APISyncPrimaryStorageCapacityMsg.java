@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/primary-storage/{primaryStorageUuid}/actions",
         responseClass = APISyncPrimaryStorageCapacityEvent.class,
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true
 )
 public class APISyncPrimaryStorageCapacityMsg extends APIMessage implements PrimaryStorageMessage {

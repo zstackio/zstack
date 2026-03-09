@@ -15,7 +15,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/vm-instances/appliances",
         optionalPaths = {"/vm-instances/appliances/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryApplianceVmReply.class
 )
 public class APIQueryApplianceVmMsg extends APIQueryMessage {

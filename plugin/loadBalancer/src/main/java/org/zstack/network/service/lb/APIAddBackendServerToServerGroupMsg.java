@@ -18,7 +18,7 @@ import java.util.Map;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/load-balancers/servergroups/{serverGroupUuid}/backendservers",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APIAddBackendServerToServerGroupEvent.class
 )

@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 @RestRequest(
         path = "/volumes/data/from/volume-snapshots/{volumeSnapshotUuid}",
         responseClass = APICreateDataVolumeFromVolumeSnapshotEvent.class,
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params"
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)

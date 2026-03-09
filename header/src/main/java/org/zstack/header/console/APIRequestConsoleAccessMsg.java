@@ -17,7 +17,7 @@ import org.zstack.header.vm.VmInstanceVO;
 @Action(category = ConsoleConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/consoles",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APIRequestConsoleAccessEvent.class
 )

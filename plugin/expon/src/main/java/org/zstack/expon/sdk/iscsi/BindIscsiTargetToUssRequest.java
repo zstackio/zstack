@@ -11,7 +11,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/iscsi/gateways/{id}/add_nodes",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = BindIscsiTargetToUssResponse.class
 )
 public class BindIscsiTargetToUssRequest extends ExponRequest {

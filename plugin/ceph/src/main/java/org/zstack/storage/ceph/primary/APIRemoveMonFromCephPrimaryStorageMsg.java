@@ -16,7 +16,7 @@ import java.util.List;
  */
 @RestRequest(
         path = "/primary-storage/ceph/{uuid}/mons",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIRemoveMonFromCephPrimaryStorageEvent.class
 )
 public class APIRemoveMonFromCephPrimaryStorageMsg extends APIMessage implements PrimaryStorageMessage {

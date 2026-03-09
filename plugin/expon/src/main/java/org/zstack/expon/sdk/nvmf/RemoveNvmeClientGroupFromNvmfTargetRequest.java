@@ -12,7 +12,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/nvmf/{gatewayId}/remove_clients",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = RemoveNvmeClientGroupFromNvmfTargetResponse.class
 )
 public class RemoveNvmeClientGroupFromNvmfTargetRequest extends ExponRequest {

@@ -19,7 +19,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/vmInstance/device/address/archive",
         optionalPaths = {"/vmInstance/device/address/archive/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryVmInstanceDeviceAddressArchiveReply.class
 )
 public class APIQueryVmInstanceDeviceAddressArchiveMsg extends APIQueryMessage {

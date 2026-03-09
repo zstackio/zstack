@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/load-balancers/listeners/{listenerUuid}/networks/candidates",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetCandidateL3NetworksForLoadBalancerReply.class
 )
 public class APIGetCandidateL3NetworksForLoadBalancerMsg extends APIGetMessage implements LoadBalancerMessage {

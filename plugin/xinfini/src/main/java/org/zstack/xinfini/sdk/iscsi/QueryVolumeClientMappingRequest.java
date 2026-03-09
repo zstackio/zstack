@@ -14,7 +14,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
     path = "/bs-volume-client-mappings",
-    method = HttpMethod.GET,
+    method = "GET",
     responseClass = QueryVolumeClientMappingResponse.class,
     category = XInfiniApiCategory.AFA
 )

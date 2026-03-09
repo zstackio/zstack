@@ -9,7 +9,7 @@ import org.zstack.header.storage.primary.PrimaryStorageConstant;
 
 @RestRequest(
         path = "/primary-storage/addon",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAddPrimaryStorageEvent.class,
         parameterName = "params"
 )

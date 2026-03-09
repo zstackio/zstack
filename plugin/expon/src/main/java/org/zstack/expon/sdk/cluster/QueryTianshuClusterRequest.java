@@ -9,7 +9,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/tianshu",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = QueryTianshuClusterResponse.class,
         sync = false
 )

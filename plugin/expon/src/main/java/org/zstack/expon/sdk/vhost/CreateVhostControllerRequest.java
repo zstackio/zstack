@@ -10,7 +10,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/vhost",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = CreateVhostControllerResponse.class
 )
 public class CreateVhostControllerRequest extends ExponRequest {

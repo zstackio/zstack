@@ -8,7 +8,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/global-configurations/{category}/{name}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIUpdateGlobalConfigEvent.class
 )

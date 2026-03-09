@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/disk-offerings/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteDiskOfferingEvent.class
 )
 public class APIDeleteDiskOfferingMsg extends APIDeleteMessage implements DiskOfferingMessage {

@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/backup-storage/trash",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetTrashOnBackupStorageReply.class
 )
 public class APIGetTrashOnBackupStorageMsg extends APISyncCallMessage implements BackupStorageMessage {

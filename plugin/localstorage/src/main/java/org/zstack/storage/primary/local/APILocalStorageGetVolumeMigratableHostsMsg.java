@@ -16,7 +16,7 @@ import org.zstack.header.volume.VolumeVO;
 @Action(category = VolumeConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/volumes/{volumeUuid}/migration-target-hosts",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APILocalStorageGetVolumeMigratableReply.class
 )
 public class APILocalStorageGetVolumeMigratableHostsMsg extends APISyncCallMessage implements PrimaryStorageMessage {

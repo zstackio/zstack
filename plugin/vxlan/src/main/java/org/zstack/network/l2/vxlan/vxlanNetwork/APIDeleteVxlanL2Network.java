@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/l2-networks/vxlan/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteL2NetworkEvent.class
 )
 @NoSDK

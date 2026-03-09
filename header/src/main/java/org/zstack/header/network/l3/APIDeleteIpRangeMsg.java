@@ -40,7 +40,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l3-networks/ip-ranges/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteIpRangeEvent.class
 )
 public class APIDeleteIpRangeMsg extends APIDeleteMessage implements L3NetworkMessage, IpRangeMessage {

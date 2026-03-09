@@ -6,7 +6,7 @@ import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.search.SearchConstant;
 
-@RestRequest(path = "/batch-queries", method = HttpMethod.GET, responseClass = APIBatchQueryReply.class)
+@RestRequest(path = "/batch-queries", method = "GET", responseClass = APIBatchQueryReply.class)
 @Action(category = SearchConstant.ACTION_CATEGORY, names = {"read"})
 @Deprecated
 public class APIBatchQueryMsg extends APISyncCallMessage {

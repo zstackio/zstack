@@ -30,7 +30,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/l2-networks/types",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetL2NetworkTypesReply.class
 )
 public class APIGetL2NetworkTypesMsg extends APISyncCallMessage {

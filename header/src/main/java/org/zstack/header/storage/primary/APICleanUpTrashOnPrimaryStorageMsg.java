@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/primary-storage/{uuid}/trash/actions",
         isAction = true,
         responseClass = APICleanUpTrashOnPrimaryStorageEvent.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APICleanUpTrashOnPrimaryStorageMsg extends APIMessage implements PrimaryStorageMessage, APIBatchRequest {
     @APIParam(resourceType = PrimaryStorageVO.class, checkAccount = true)

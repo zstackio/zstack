@@ -16,7 +16,7 @@ import static java.util.Arrays.asList;
 /*
 @RestRequest(
 		path = "/vm-instances/appliances/virtual-routers",
-		method = HttpMethod.POST,
+		method = "POST",
 		responseClass = APICreateVmInstanceEvent.class,
 		parameterName = "params"
 )

@@ -36,7 +36,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/backup-storage/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteBackupStorageEvent.class
 )
 public class APIDeleteBackupStorageMsg extends APIDeleteMessage implements BackupStorageMessage {

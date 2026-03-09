@@ -51,7 +51,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = PortForwardingConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/port-forwarding/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeletePortForwardingRuleEvent.class
 )
 public class APIDeletePortForwardingRuleMsg extends APIDeleteMessage {

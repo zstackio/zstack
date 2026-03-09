@@ -101,7 +101,7 @@ import static java.util.Arrays.asList;
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/security-groups/{securityGroupUuid}/rules",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAddSecurityGroupRuleEvent.class,
         parameterName = "params"
 )

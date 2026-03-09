@@ -14,7 +14,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
     path = "/cluster",
-    method = HttpMethod.GET,
+    method = "GET",
     responseClass = QueryClusterResponse.class,
     category = XInfiniApiCategory.SDDC
 )

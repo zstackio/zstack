@@ -16,7 +16,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/hosts/os/category",
         responseClass = APIQueryHostOsCategoryReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 @Action(category = HostConstant.ACTION_CATEGORY, names = {"read"})
 public class APIQueryHostOsCategoryMsg extends APIQueryMessage {

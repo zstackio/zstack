@@ -15,7 +15,7 @@ import static java.util.Arrays.asList;
         path = "/zones",
         optionalPaths = {"/zones/{uuid}"},
         responseClass = APIQueryZoneReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 @Action(category = "zone", names = {"read"})
 public class APIQueryZoneMsg extends APIQueryMessage {

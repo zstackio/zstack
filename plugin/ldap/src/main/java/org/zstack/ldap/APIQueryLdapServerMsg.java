@@ -13,7 +13,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/ldap/servers",
         optionalPaths = {"/ldap/servers/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryLdapServerReply.class
 )
 public class APIQueryLdapServerMsg extends APIQueryMessage {

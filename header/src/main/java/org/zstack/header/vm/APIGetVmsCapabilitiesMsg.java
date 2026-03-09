@@ -17,7 +17,7 @@ import java.util.List;
 @RestRequest(
         path = "/vm-instances/capabilities",
         responseClass = APIGetVmsCapabilitiesReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 public class APIGetVmsCapabilitiesMsg extends APISyncCallMessage {
     @APIParam(nonempty = true)

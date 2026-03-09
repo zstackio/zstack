@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/l2-networks/vxlan-pool/{l2NetworkUuid}/vni-ranges",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateVniRangeEvent.class,
         parameterName = "params"
 )

@@ -19,7 +19,7 @@ import org.zstack.header.storage.backup.ImageHashAlgorithm;
         path = "/images/{uuid}/actions",
         isAction = true,
         responseClass = APICalculateImageHashEvent.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APICalculateImageHashMsg extends APIMessage implements ImageMessage, APIAuditor {
 

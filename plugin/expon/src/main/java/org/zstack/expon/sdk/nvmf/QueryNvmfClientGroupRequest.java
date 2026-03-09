@@ -9,7 +9,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/nvmf_client/",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = QueryNvmfClientGroupResponse.class,
         sync = true
 )

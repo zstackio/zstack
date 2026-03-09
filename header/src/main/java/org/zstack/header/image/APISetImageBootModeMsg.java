@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/images/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APISetImageBootModeEvent.class
 )
 public class APISetImageBootModeMsg extends APIMessage implements ImageMessage {

@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/errorcode/elaborations/categories",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetElaborationCategoriesReply.class
 )
 public class APIGetElaborationCategoriesMsg extends APISyncCallMessage {

@@ -8,7 +8,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/login/procedures",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetLoginProceduresReply.class
 )
 @SuppressCredentialCheck

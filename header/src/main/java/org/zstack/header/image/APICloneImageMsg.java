@@ -11,7 +11,7 @@ import org.zstack.header.tag.TagResourceType;
 @Action(category = ImageConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/image/clone/{imageUuid}",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APICloneImageEvent.class
 )

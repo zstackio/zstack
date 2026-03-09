@@ -10,7 +10,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/snaps",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = CreateVolumeSnapshotResponse.class,
         sync = true
 )

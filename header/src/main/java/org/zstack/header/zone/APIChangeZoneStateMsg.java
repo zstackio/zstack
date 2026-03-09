@@ -44,7 +44,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/zones/{uuid}/actions",
         isAction = true,
         responseClass = APIChangeZoneStateEvent.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APIChangeZoneStateMsg extends APIMessage implements ZoneMessage {
     /**

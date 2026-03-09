@@ -16,7 +16,7 @@ import java.util.List;
  */
 @RestRequest(
         path = "/move/resources/directory",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIMoveResourcesToDirectoryEvent.class
 )

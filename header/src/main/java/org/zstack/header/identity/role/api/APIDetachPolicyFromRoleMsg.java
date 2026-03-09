@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 
 import static java.util.Arrays.asList;
 
-@RestRequest(path = "/identities/policies/{policyUuid}/roles/{roleUuid}", method = HttpMethod.DELETE, responseClass = APIDetachPolicyFromRoleEvent.class)
+@RestRequest(path = "/identities/policies/{policyUuid}/roles/{roleUuid}", method = "DELETE", responseClass = APIDetachPolicyFromRoleEvent.class)
 public class APIDetachPolicyFromRoleMsg extends APIMessage implements RoleMessage {
     @APIParam
     private String roleUuid;

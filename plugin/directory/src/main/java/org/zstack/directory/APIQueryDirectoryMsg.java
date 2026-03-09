@@ -17,7 +17,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/directories",
         optionalPaths = {"/directories/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryDirectoryReply.class
 )
 public class APIQueryDirectoryMsg extends APIQueryMessage {

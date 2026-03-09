@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 @SuppressCredentialCheck
 @RestRequest(
         path = "/management-nodes/ready",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIIsReadyToGoReply.class,
         category = "other"
 )

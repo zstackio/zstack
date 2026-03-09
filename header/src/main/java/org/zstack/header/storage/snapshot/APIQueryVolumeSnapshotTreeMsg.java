@@ -17,7 +17,7 @@ import java.util.List;
         path = "/volume-snapshots/trees",
         optionalPaths = {"/volume-snapshots/trees/{uuid}"},
         responseClass = APIQueryVolumeSnapshotTreeReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 public class APIQueryVolumeSnapshotTreeMsg extends APIQueryMessage {
 

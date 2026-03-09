@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/{vmInstanceUuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIReimageVmInstanceEvent.class,
         category = "vmInstance"

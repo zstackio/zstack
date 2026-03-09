@@ -18,7 +18,7 @@ import java.util.List;
 @RestRequest(
         path = "/volume-snapshots/group",
         optionalPaths = {"/volume-snapshots/group/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryVolumeSnapshotGroupReply.class
 )
 public class APIQueryVolumeSnapshotGroupMsg extends APIQueryMessage {

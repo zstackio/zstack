@@ -20,7 +20,7 @@ import java.util.List;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/nics/{vmNicUuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIChangeVmNicStateEvent.class,
         isAction = true
 )

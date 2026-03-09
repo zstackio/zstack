@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/load-balancers/servergroups/candidate-nics",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetCandidateVmNicsForLoadBalancerServerGroupReply.class
 )
 public class APIGetCandidateVmNicsForLoadBalancerServerGroupMsg extends APISyncCallMessage implements LoadBalancerMessage {

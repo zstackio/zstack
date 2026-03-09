@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/sdn-controllers/{uuid}/tenant/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIPullSdnControllerTenantEvent.class,
         isAction = true
 )

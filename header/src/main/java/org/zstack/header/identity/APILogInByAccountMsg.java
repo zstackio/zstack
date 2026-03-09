@@ -17,7 +17,7 @@ import java.util.Map;
 @RestRequest(
         path = "/accounts/login",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APILogInReply.class
 )
 @EncryptionParamAllowed(actions = { EncryptionParamAllowed.ACTION_PUT_USER_INFO_INTO_SYSTEM_TAG })

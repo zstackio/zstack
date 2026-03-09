@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = AccountConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/accounts/resource/api-permissions",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APICheckResourcePermissionReply.class)
 @NoDoc
 public class APICheckResourcePermissionMsg extends APISyncCallMessage {

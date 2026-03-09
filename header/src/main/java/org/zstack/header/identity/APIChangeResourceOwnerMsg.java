@@ -11,7 +11,7 @@ import org.zstack.header.vo.ResourceVO;
  */
 @RestRequest(
         path = "/account/{accountUuid}/resources",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIChangeResourceOwnerEvent.class,
         parameterName = "params"
 )

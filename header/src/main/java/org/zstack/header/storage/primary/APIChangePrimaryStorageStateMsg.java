@@ -36,7 +36,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/primary-storage/{uuid}/actions",
         isAction = true,
         responseClass = APIChangePrimaryStorageStateEvent.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APIChangePrimaryStorageStateMsg extends APIMessage implements PrimaryStorageMessage {
     /**

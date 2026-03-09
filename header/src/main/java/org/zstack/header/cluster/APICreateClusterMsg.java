@@ -45,7 +45,7 @@ import org.zstack.header.zone.ZoneVO;
 @RestRequest(
         path = "/clusters",
         parameterName = "params",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateClusterEvent.class
 )
 public class APICreateClusterMsg extends APICreateMessage implements CreateClusterMessage, APIAuditor {

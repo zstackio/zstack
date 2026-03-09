@@ -7,7 +7,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/primary-storage/{uuid}/license",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetPrimaryStorageLicenseInfoReply.class
 )
 public class APIGetPrimaryStorageLicenseInfoMsg extends APISyncCallMessage {

@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/load-balancers/servergroups/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteLoadBalancerServerGroupEvent.class
 )
 public class APIDeleteLoadBalancerServerGroupMsg extends APIMessage implements LoadBalancerMessage, APIAuditor{

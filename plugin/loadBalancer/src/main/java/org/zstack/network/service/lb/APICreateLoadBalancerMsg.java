@@ -25,7 +25,7 @@ import java.util.List;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/load-balancers",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateLoadBalancerEvent.class,
         parameterName = "params"
 )

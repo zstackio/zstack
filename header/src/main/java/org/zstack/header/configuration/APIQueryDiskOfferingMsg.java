@@ -15,7 +15,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/disk-offerings",
         optionalPaths = "/disk-offerings/{uuid}",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryDiskOfferingReply.class
 )
 public class APIQueryDiskOfferingMsg extends APIQueryMessage {

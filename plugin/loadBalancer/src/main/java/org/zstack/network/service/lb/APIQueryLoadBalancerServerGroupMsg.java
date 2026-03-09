@@ -14,7 +14,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/load-balancers/servergroups",
         optionalPaths = {"/load-balancers/servergroups/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryLoadBalancerServerGroupReply.class
 )
 public class APIQueryLoadBalancerServerGroupMsg extends APIQueryMessage{

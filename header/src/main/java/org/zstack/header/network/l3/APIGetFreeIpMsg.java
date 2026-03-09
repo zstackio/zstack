@@ -19,7 +19,7 @@ import org.zstack.header.rest.SDK;
                 "/l3-networks/ip-ranges/{ipRangeUuid}/ip/free",
         },
         responseClass = APIGetFreeIpReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 @SDK(
         actionsMapping = {

@@ -14,7 +14,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
     path = "/bdc-bdevs",
-    method = HttpMethod.GET,
+    method = "GET",
     responseClass = QueryBdcBdevResponse.class,
     category = XInfiniApiCategory.AFA
 )

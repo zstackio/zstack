@@ -18,7 +18,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/certificates",
         optionalPaths = {"/certificates/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryCertificateReply.class
 )
 public class APIQueryCertificateMsg extends APIQueryMessage {

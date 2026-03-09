@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 @Action(category = VolumeSnapshotConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/volume-snapshots/group/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteVolumeSnapshotGroupEvent.class
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)

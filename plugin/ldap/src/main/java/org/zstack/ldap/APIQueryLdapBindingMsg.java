@@ -13,7 +13,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/ldap/bindings",
         optionalPaths = {"/ldap/bindings/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryLdapBindingReply.class
 )
 public class APIQueryLdapBindingMsg extends APIQueryMessage {

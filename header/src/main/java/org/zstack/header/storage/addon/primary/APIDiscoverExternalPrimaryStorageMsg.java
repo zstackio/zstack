@@ -8,7 +8,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/primary-storage/addon/discover",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIDiscoverExternalPrimaryStorageEvent.class,
         parameterName = "params"
 )

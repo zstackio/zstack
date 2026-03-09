@@ -19,7 +19,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/access-control-lists",
         optionalPaths = {"/access-control-lists/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryAccessControlListReply.class
 )
 public class APIQueryAccessControlListMsg extends APIQueryMessage {

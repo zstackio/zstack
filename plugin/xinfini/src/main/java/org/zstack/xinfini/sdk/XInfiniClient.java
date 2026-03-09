@@ -298,9 +298,9 @@ public class XInfiniClient extends ExternalStorageApiClient {
                 }
             }
 
-            if (restInfo.method().equals(HttpMethod.GET)) {
+            if (restInfo.method().equals("GET")) {
                 reqBuilder.url(builder.build()).get();
-            } else if (restInfo.method().equals(HttpMethod.DELETE) && !restInfo.hasBody()) {
+            } else if (restInfo.method().equals("DELETE") && !restInfo.hasBody()) {
                 params.forEach((k, v) -> builder.addQueryParameter(k, v.toString()));
                 reqBuilder.url(builder.build()).delete();
             } else if (!queryableParams.isEmpty()) {

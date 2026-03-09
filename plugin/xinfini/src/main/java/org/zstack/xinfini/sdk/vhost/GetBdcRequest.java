@@ -15,7 +15,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
         path = "/bdcs/{id}",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = GetBdcResponse.class,
         category = XInfiniApiCategory.AFA
 )

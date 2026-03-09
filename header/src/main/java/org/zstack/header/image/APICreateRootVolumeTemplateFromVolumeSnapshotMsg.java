@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 @RestRequest(
         path = "/images/root-volume-templates/from/volume-snapshots/{snapshotUuid}",
         responseClass = APICreateRootVolumeTemplateFromVolumeSnapshotEvent.class,
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params"
 )
 @TagResourceType(ImageVO.class)

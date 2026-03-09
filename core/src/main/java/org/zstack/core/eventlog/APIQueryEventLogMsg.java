@@ -12,7 +12,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/eventlogs",
         optionalPaths = {"/eventlogs/{id}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryEventLogReply.class
 )
 @AutoQuery(replyClass = APIQueryEventLogReply.class, inventoryClass = EventLogInventory.class)

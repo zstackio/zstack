@@ -14,7 +14,7 @@ import org.zstack.header.tag.TagResourceType;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/load-balancers/{loadBalancerUuid}/servergroups",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateLoadBalancerServerGroupEvent.class,
         parameterName = "params"
 )

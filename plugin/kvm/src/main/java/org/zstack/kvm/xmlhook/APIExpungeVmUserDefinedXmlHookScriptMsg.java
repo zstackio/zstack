@@ -7,7 +7,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/vm-instances/xml-hook-script/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIExpungeVmUserDefinedXmlHookScriptEvent.class
 )
 public class APIExpungeVmUserDefinedXmlHookScriptMsg extends APIMessage implements XmlHookMessage {

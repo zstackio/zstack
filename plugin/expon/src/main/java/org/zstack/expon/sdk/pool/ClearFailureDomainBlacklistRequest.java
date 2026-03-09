@@ -12,7 +12,7 @@ import java.util.Map;
 @ExponRestRequest(
         path = "/failure_domain/black_list/clean",
         responseClass = ClearFailureDomainBlacklistResponse.class,
-        method = HttpMethod.PUT,
+        method = "PUT",
         sync = false
 )
 public class ClearFailureDomainBlacklistRequest extends ExponRequest {

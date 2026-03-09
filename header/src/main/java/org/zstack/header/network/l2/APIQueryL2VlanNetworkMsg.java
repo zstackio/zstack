@@ -13,7 +13,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/l2-networks/vlan",
         optionalPaths = {"/l2-networks/vlan/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryL2VlanNetworkReply.class
 )
 public class APIQueryL2VlanNetworkMsg extends APIQueryMessage {

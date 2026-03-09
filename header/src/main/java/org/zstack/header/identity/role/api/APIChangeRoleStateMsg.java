@@ -7,7 +7,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
-@RestRequest(path = "/identities/roles/{uuid}/actions", method = HttpMethod.PUT,
+@RestRequest(path = "/identities/roles/{uuid}/actions", method = "PUT",
         responseClass = APIChangeRoleStateEvent.class, isAction = true)
 public class APIChangeRoleStateMsg extends APIMessage implements RoleMessage {
     @APIParam(resourceType = RoleVO.class)

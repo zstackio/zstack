@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = HostConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/hosts/service-types/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteHostNetworkServiceTypeEvent.class
 )
 public class APIDeleteHostNetworkServiceTypeMsg extends APIDeleteMessage {

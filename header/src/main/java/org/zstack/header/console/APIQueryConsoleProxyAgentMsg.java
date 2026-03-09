@@ -16,7 +16,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/consoles/agents",
         optionalPaths = "/consoles/agents/{uuid}",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryConsoleProxyAgentReply.class
 )
 public class APIQueryConsoleProxyAgentMsg extends APIQueryMessage {

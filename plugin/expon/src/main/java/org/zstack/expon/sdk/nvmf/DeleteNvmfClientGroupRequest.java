@@ -10,7 +10,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/nvmf_client/{clientId}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = CreateNvmfClientGroupResponse.class
 )
 public class DeleteNvmfClientGroupRequest extends ExponRequest {

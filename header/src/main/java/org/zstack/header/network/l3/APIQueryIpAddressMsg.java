@@ -15,7 +15,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/l3-networks/ip-address",
         optionalPaths = {"/l3-networks/ip-address/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryIpAddressReply.class
 )
 public class APIQueryIpAddressMsg extends APIQueryMessage {

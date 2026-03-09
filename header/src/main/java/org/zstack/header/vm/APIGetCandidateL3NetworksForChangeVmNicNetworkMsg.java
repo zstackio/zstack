@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/vm-instances/nics/{vmNicUuid}/l3-networks-candidates",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetCandidateL3NetworksForChangeVmNicNetworkReply.class
 )
 public class APIGetCandidateL3NetworksForChangeVmNicNetworkMsg  extends APISyncCallMessage implements VmInstanceMessage {

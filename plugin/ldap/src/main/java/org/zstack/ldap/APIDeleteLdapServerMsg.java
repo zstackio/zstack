@@ -8,7 +8,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/ldap/servers/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteLdapServerEvent.class
 )
 public class APIDeleteLdapServerMsg extends APIDeleteMessage {

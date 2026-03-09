@@ -18,7 +18,7 @@ import static java.util.Arrays.asList;
         path = "/vm-instances/cdroms",
         optionalPaths = {"/vm-instances/cdroms/{uuid}"},
         responseClass = APIQueryVmCdRomReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 public class APIQueryVmCdRomMsg extends APIQueryMessage {
     public static List<String> __example__() {

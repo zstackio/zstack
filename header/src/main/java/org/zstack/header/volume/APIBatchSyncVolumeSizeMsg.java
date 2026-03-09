@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VolumeConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/volumes/batch-sync-volumes",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIBatchSyncVolumeSizeReply.class
 )
 public class APIBatchSyncVolumeSizeMsg extends APISyncCallMessage {

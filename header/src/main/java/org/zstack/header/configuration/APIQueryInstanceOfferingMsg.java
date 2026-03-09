@@ -16,7 +16,7 @@ import static java.util.Arrays.asList;
         path = "/instance-offerings",
         optionalPaths = "/instance-offerings/{uuid}",
         responseClass = APIQueryInstanceOfferingReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 public class APIQueryInstanceOfferingMsg extends APIQueryMessage {
 

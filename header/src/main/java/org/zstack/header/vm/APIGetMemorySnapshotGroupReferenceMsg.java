@@ -15,7 +15,7 @@ import org.zstack.header.vo.ResourceVO;
 @Action(category = VolumeSnapshotConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/memory-snapshots/group/reference",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetMemorySnapshotGroupReferenceReply.class
 )
 public class APIGetMemorySnapshotGroupReferenceMsg extends APISyncCallMessage {

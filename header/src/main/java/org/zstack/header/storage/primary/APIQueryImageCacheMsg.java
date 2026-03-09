@@ -14,7 +14,7 @@ import java.util.List;
 @AutoQuery(replyClass = APIQueryImageCacheReply.class, inventoryClass = ImageCacheInventory.class)
 @RestRequest(
         path = "/primary-storage/imagecache",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryImageCacheReply.class
 )
 public class APIQueryImageCacheMsg extends APIQueryMessage {

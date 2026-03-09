@@ -13,7 +13,7 @@ import org.zstack.header.tag.TagResourceType;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l3-networks/{l3NetworkUuid}/ip-ranges/by-cidr",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APIAddIpRangeByNetworkCidrEvent.class
 )

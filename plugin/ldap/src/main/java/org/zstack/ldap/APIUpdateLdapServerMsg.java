@@ -8,7 +8,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/ldap/servers/{ldapServerUuid}",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateLdapServerEvent.class,
         isAction = true
 )

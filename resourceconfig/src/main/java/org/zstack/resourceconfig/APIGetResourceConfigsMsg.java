@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @RestRequest(path = "/resource-configurations/{resourceUuid}/{category}",
-        method = HttpMethod.GET, responseClass = APIGetResourceConfigsReply.class)
+        method = "GET", responseClass = APIGetResourceConfigsReply.class)
 public class APIGetResourceConfigsMsg  extends APISyncCallMessage implements ResourceConfigMessage {
     @APIParam
     private String category;

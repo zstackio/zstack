@@ -18,7 +18,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/vm-instances/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APISetVmBootOrderEvent.class
 )
 public class APISetVmBootOrderMsg extends APIMessage implements VmInstanceMessage {

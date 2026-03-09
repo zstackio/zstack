@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/eips/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateEipEvent.class
 )
 public class APIUpdateEipMsg extends APIMessage implements EipMessage {

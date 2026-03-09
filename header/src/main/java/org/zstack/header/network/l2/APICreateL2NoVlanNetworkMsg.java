@@ -16,7 +16,7 @@ import org.zstack.header.zone.ZoneVO;
 })
 @RestRequest(
         path = "/l2-networks/no-vlan",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateL2NetworkEvent.class,
         parameterName = "params"
 )

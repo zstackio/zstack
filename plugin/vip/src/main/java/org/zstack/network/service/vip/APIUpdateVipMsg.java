@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VipConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vips/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateVipEvent.class,
         isAction = true
 )

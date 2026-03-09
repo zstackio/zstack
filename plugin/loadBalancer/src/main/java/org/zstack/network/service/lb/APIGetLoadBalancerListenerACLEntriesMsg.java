@@ -10,7 +10,7 @@ import java.util.List;
 
 @RestRequest(
         path = "/load-balancers/listeners/access-control-lists/entries",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetLoadBalancerListenerACLEntriesReply.class
 )
 public class APIGetLoadBalancerListenerACLEntriesMsg extends APISyncCallMessage {

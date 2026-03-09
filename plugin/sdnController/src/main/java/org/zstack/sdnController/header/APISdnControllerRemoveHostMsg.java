@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = SdnControllerConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/sdn-controllers/{sdnControllerUuid}/hosts/{hostUuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APISdnControllerRemoveHostEvent.class
 )
 public class APISdnControllerRemoveHostMsg extends APIMessage implements SdnControllerMessage {

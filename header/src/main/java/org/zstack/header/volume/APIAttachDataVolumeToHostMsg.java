@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VolumeConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/volumes/{volumeUuid}/hosts/{hostUuid}",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAttachDataVolumeToHostEvent.class,
         parameterName = "params"
 )

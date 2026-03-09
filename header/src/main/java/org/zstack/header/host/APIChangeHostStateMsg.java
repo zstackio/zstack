@@ -37,7 +37,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/hosts/{uuid}/actions",
         isAction = true,
         responseClass = APIChangeHostStateEvent.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APIChangeHostStateMsg extends APIMessage implements HostMessage {
     /**

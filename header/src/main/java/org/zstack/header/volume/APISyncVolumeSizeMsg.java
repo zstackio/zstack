@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VolumeConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/volumes/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APISyncVolumeSizeEvent.class,
         isAction = true
 )

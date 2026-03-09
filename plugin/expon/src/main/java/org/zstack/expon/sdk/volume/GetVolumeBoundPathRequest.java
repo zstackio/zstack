@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 @ExponRestRequest(
         path = "/block/volumes/{volId}/bind_status",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = GetVolumeBoundPathResponse.class
 )
 public class GetVolumeBoundPathRequest extends ExponRequest {

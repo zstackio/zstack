@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/hosts/power/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIShutdownHostEvent.class,
         isAction = true
 )

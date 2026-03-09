@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/vm-instances/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APITakeVmConsoleScreenshotEvent.class
 )
 public class APITakeVmConsoleScreenshotMsg extends APIMessage implements VmInstanceMessage {

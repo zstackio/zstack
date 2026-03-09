@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 @RestRequest(
         path = "/accounts/groups",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateUserGroupEvent.class,
         parameterName = "params"
 )

@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/accounts",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APICreateAccountEvent.class,
         morphTransform = Constants.MORPH_TRANSFORM_IAM1

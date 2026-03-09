@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/{vmInstanceUuid}/iso",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDetachIsoFromVmInstanceEvent.class
 )
 public class APIDetachIsoFromVmInstanceMsg extends APIMessage implements VmInstanceMessage, APIAuditor {

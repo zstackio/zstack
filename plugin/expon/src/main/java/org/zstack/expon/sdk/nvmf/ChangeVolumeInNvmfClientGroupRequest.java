@@ -12,7 +12,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/nvmf_client/{clientId}/luns",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = ChangeVolumeInNvmfClientGroupResponse.class
 )
 public class ChangeVolumeInNvmfClientGroupRequest extends ExponRequest {

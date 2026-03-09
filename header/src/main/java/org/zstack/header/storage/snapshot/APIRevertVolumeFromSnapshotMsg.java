@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 @RestRequest(
         path = "/volume-snapshots/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIRevertVolumeFromSnapshotEvent.class
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 24)

@@ -16,7 +16,7 @@ import static java.util.Arrays.asList;
 @Action(category = AccountConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/accounts/resources/refs",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryAccountResourceRefReply.class
 )
 public class APIQueryAccountResourceRefMsg extends APIQueryMessage {

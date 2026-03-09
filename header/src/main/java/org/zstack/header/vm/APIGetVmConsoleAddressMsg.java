@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/{uuid}/console-addresses",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetVmConsoleAddressReply.class
 )
 public class APIGetVmConsoleAddressMsg extends APISyncCallMessage implements VmInstanceMessage {

@@ -9,7 +9,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/iscsi/clients",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = QueryIscsiClientGroupResponse.class,
         sync = false
 )

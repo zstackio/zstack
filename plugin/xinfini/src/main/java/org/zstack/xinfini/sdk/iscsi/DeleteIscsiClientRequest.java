@@ -15,7 +15,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
     path = "/iscsi-clients/{id}",
-    method = HttpMethod.DELETE,
+    method = "DELETE",
     responseClass = DeleteIscsiClientResponse.class,
     category = XInfiniApiCategory.AFA
 )

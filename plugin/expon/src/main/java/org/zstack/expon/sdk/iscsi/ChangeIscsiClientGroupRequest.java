@@ -11,7 +11,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/iscsi/clients/{id}/hosts",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = ChangeIscsiClientGroupResponse.class
 )
 public class ChangeIscsiClientGroupRequest extends ExponRequest {

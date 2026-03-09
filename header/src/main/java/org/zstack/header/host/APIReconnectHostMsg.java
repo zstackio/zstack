@@ -34,7 +34,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/hosts/{uuid}/actions",
         responseClass = APIReconnectHostEvent.class,
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true
 )
 public class APIReconnectHostMsg extends APIMessage implements HostMessage {

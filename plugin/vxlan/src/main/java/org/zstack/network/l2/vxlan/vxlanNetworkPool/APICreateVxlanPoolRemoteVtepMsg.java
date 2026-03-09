@@ -15,7 +15,7 @@ import org.zstack.header.network.l2.L2NetworkVO;
 
 @RestRequest(
         path = "/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}/remote-vtep-ip",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateVxlanPoolRemoteVtepEvent.class,
         parameterName = "params"
 )

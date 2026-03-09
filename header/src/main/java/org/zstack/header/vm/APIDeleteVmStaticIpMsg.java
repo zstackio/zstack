@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/{vmInstanceUuid}/static-ips",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteVmStaticIpEvent.class
 )
 public class APIDeleteVmStaticIpMsg extends APIDeleteMessage implements VmInstanceMessage {

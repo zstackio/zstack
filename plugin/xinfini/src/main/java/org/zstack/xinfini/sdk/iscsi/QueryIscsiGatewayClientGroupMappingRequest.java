@@ -14,7 +14,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
     path = "/iscsi-gateway-client-group-mappings",
-    method = HttpMethod.GET,
+    method = "GET",
     responseClass = QueryIscsiGatewayClientGroupMappingResponse.class,
     category = XInfiniApiCategory.AFA
 )

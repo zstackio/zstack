@@ -17,7 +17,7 @@ import java.util.List;
  * Created by kayo on 2018/7/26.
  */
 @RestRequest(path = "/identities/roles/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIUpdateRoleEvent.class,
         morphTransform = Constants.MORPH_TRANSFORM_IAM1)

@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = PortForwardingConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/port-forwarding/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIChangePortForwardingRuleStateEvent.class
 )

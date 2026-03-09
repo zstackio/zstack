@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/identities/policies/{policyUuid}/roles/{roleUuid}",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APIAttachPolicyToRoleEvent.class
 )

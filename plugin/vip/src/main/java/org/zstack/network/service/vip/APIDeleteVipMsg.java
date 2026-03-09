@@ -39,7 +39,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VipConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vips/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteVipEvent.class
 )
 public class APIDeleteVipMsg extends APIDeleteMessage implements L3NetworkMessage, VipMessage {

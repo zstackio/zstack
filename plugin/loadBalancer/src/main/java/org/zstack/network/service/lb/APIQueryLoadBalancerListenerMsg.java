@@ -18,7 +18,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/load-balancers/listeners",
         optionalPaths = { "/load-balancers/listeners/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryLoadBalancerListenerReply.class
 )
 public class APIQueryLoadBalancerListenerMsg extends APIQueryMessage {

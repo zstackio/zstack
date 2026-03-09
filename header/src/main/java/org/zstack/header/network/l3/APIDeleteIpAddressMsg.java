@@ -13,7 +13,7 @@ import java.util.List;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l3-networks/{l3NetworkUuid}/ip-address",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteIpAddressEvent.class
 )
 public class APIDeleteIpAddressMsg extends APIDeleteMessage implements L3NetworkMessage {

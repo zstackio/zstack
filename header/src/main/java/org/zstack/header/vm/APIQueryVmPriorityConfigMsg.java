@@ -16,7 +16,7 @@ import static java.util.Arrays.asList;
         path = "/vm-priority-config",
         optionalPaths = {"/vm-priority-config/{uuid}"},
         responseClass = APIQueryVmPriorityConfigReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 public class APIQueryVmPriorityConfigMsg extends APIQueryMessage {
     public static List<String> __example__() {

@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/hosts/webssh",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIGetHostWebSshUrlEvent.class,
         parameterName = "params"
 )

@@ -18,7 +18,7 @@ import org.zstack.header.tag.TagResourceType;
 @Action(category = AccessControlListConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/access-control-lists",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateAccessControlListEvent.class,
         parameterName = "params"
 )

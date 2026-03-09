@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/l3-networks/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateL3NetworkEvent.class
 )
 public class APIUpdateL3NetworkMsg extends APIMessage implements L3NetworkMessage {

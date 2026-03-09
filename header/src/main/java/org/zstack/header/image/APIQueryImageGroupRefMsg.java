@@ -14,7 +14,7 @@ import java.util.List;
 @RestRequest(
         path = "/imagegrouprefs",
         optionalPaths = {"/imagegrouprefs/{imageGroupUuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryImageGroupRefReply.class
 )
 public class APIQueryImageGroupRefMsg extends APIQueryMessage {

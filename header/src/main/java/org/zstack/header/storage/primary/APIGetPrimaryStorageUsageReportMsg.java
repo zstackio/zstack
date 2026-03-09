@@ -9,7 +9,7 @@ import java.util.List;
 
 @RestRequest(
         path = "/primary-storage/{primaryStorageUuid}/usage/report",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetPrimaryStorageUsageReportReply.class
 )
 public class APIGetPrimaryStorageUsageReportMsg extends APISyncCallMessage {

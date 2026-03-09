@@ -10,7 +10,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/failure_domain/black_list",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = AddVolumePathToBlacklistResponse.class,
         sync = false
 )

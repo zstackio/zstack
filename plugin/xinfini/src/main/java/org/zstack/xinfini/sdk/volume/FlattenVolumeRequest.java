@@ -16,7 +16,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
     path = "/bs-volumes/{id}/:flatten",
-    method = HttpMethod.POST,
+    method = "POST",
     responseClass = FlattenVolumeResponse.class,
     category = XInfiniApiCategory.AFA
 )

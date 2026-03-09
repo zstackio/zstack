@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 36)
 @RestRequest(path = "/vm-instances/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIFlattenVmInstanceEvent.class,
         isAction = true
 )

@@ -13,7 +13,7 @@ import static org.zstack.utils.CollectionDSL.list;
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 @RestRequest(
         path = "/accounts/users/{userUuid}/policy-collection",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAttachPoliciesToUserEvent.class,
         parameterName = "params"
 )

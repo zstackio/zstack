@@ -14,7 +14,7 @@ import static java.util.Arrays.asList;
 @AutoQuery(replyClass = APIQueryVmNicInSecurityGroupReply.class, inventoryClass = VmNicSecurityGroupRefInventory.class)
 @RestRequest(
         path = "/security-groups/vm-instances/nics",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryVmNicInSecurityGroupReply.class
 )
 public class APIQueryVmNicInSecurityGroupMsg extends APIQueryMessage {

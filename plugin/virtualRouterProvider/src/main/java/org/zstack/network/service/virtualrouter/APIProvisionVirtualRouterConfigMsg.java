@@ -12,7 +12,7 @@ import org.zstack.header.vm.VmInstanceMessage;
 @Action(category = VirtualRouterConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/appliances/virtual-routers/{vmInstanceUuid}/provision",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIProvisionVirtualRouterConfigEvent.class,
         isAction = true
 )

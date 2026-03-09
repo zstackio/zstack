@@ -11,7 +11,7 @@ import org.zstack.sshkeypair.SshKeyPairConstant;
 @TagResourceType(VolumeVO.class)
 @RestRequest(
         path = "/ssh-key-pair",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateSshKeyPairEvent.class,
         parameterName = "params"
 )

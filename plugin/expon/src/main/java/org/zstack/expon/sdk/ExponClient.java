@@ -183,7 +183,7 @@ public class ExponClient extends ExternalStorageApiClient {
                         return res;
                     }
 
-                    boolean async = !restInfo.sync() && restInfo.method() != HttpMethod.GET;
+                    boolean async = !restInfo.sync() && !"GET".equals(restInfo.method());
                     Map rsp = res.getResult(LinkedHashMap.class);
                     Object taskId = rsp.getOrDefault("task_id", null);
                     if (async && taskId != null) {
@@ -305,9 +305,9 @@ public class ExponClient extends ExternalStorageApiClient {
                 }
             }
 
-            if (restInfo.method().equals(HttpMethod.GET)) {
+            if (restInfo.method().equals("GET")) {
                 reqBuilder.url(builder.build()).get();
-            } else if (restInfo.method().equals(HttpMethod.DELETE) && !restInfo.hasBody()) {
+            } else if (restInfo.method().equals("DELETE") && !restInfo.hasBody()) {
                 params.forEach((k, v) -> builder.addQueryParameter(k, v.toString()));
                 reqBuilder.url(builder.build()).delete();
             } else {

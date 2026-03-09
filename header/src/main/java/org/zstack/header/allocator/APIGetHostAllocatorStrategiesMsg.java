@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/hosts/allocators/strategies",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetHostAllocatorStrategiesReply.class
 )
 public class APIGetHostAllocatorStrategiesMsg extends APISyncCallMessage {

@@ -37,7 +37,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDetachL2NetworkFromClusterEvent.class
 )
 public class APIDetachL2NetworkFromClusterMsg extends APIMessage implements L2NetworkMessage {

@@ -12,7 +12,7 @@ import java.util.List;
 
 @RestRequest(
         path = "/resource-configurations/{resourceUuid}/resource-configs/actions",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APIUpdateResourceConfigsEvent.class
 )

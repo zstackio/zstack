@@ -55,7 +55,7 @@ import static java.util.Arrays.asList;
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/security-groups/{securityGroupUuid}/vm-instances/nics",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteVmNicFromSecurityGroupEvent.class
 )
 public class APIDeleteVmNicFromSecurityGroupMsg extends APIMessage {

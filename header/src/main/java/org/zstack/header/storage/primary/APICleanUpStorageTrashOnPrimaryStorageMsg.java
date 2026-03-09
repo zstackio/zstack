@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/primary-storage/{uuid}/storagetrash/actions",
         isAction = true,
         responseClass = APICleanUpStorageTrashOnPrimaryStorageEvent.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APICleanUpStorageTrashOnPrimaryStorageMsg extends APIMessage implements PrimaryStorageMessage {
     @APIParam(resourceType = PrimaryStorageVO.class, checkAccount = true)

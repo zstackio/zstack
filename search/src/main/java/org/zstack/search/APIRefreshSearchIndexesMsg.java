@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
  * @ Date   : Created in 19:23 2020/10/29
  */
 @RestRequest(path = "/search/indexes/refresh",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIRefreshSearchIndexesReply.class
 )
 public class APIRefreshSearchIndexesMsg extends APISyncCallMessage {

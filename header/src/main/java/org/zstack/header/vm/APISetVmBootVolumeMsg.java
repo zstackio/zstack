@@ -15,7 +15,7 @@ import org.zstack.header.volume.VolumeVO;
 @RestRequest(
         path = "/vm-instances/{vmInstanceUuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APISetVmBootVolumeEvent.class
 )
 public class APISetVmBootVolumeMsg extends APIMessage implements VmInstanceMessage {

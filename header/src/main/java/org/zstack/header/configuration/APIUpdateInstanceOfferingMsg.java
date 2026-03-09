@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/instance-offerings/{uuid}/actions",
         responseClass = APIUpdateInstanceOfferingEvent.class,
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true
 )
 public class APIUpdateInstanceOfferingMsg extends APIMessage implements InstanceOfferingMessage {

@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/disk-offerings/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateDiskOfferingEvent.class
 )
 public class APIUpdateDiskOfferingMsg extends APIMessage implements DiskOfferingMessage {

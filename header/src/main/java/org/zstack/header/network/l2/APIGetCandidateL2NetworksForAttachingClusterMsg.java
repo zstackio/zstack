@@ -8,7 +8,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/cluster/{clusterUuid}/l2-candidates",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetCandidateL2NetworksForAttachingClusterReply.class
 )
 public class APIGetCandidateL2NetworksForAttachingClusterMsg extends APIGetMessage {

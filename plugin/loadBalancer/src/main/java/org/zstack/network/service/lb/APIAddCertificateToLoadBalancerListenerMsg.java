@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/load-balancers/listeners/{listenerUuid}/certificate",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APIAddCertificateToLoadBalancerListenerEvent.class
 )

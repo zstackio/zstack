@@ -16,7 +16,7 @@ import java.util.List;
  */
 @RestRequest(
         path = "/remove/resources/directory",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIRemoveResourcesFromDirectoryEvent.class
 )
 public class APIRemoveResourcesFromDirectoryMsg extends APIMessage implements DirectoryMessage{

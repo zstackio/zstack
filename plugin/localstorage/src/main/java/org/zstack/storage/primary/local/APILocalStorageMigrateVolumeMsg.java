@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 @Action(category = VolumeConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/primary-storage/local-storage/volumes/{volumeUuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APILocalStorageMigrateVolumeEvent.class,
         isAction = true
 )

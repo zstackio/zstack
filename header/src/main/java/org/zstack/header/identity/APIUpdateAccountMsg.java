@@ -12,7 +12,7 @@ import java.io.Serializable;
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 @RestRequest(
         path = "/accounts/{uuid}",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIUpdateAccountEvent.class,
         morphTransform = Constants.MORPH_TRANSFORM_IAM1

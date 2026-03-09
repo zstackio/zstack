@@ -14,7 +14,7 @@ import java.util.Map;
 @SuppressCredentialCheck
 @RestRequest(
         path = "/accounts/sessions/{sessionUuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APILogOutReply.class
 )
 public class APILogOutMsg extends APISessionMessage implements APILoginAuditor {

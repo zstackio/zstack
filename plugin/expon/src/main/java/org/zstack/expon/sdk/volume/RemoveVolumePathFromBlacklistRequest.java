@@ -10,7 +10,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/failure_domain/black_list",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = RemoveVolumePathFromBlacklistResponse.class,
         hasBody = true,
         sync = false

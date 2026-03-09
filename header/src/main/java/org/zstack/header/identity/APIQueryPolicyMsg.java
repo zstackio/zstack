@@ -17,7 +17,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/accounts/policies",
         optionalPaths = {"/accounts/policies/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryPolicyReply.class
 )
 public class APIQueryPolicyMsg extends APIQueryMessage {

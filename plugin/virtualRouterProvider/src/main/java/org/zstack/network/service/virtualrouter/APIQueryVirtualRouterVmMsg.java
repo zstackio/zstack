@@ -18,7 +18,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/vm-instances/appliances/virtual-routers",
         optionalPaths = {"/vm-instances/appliances/virtual-routers/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryApplianceVmReply.class
 )
 public class APIQueryVirtualRouterVmMsg extends APIQueryApplianceVmMsg {

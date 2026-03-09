@@ -18,7 +18,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/accounts/groups",
         optionalPaths = "/accounts/groups/{uuid}",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryUserGroupReply.class
 )
 public class APIQueryUserGroupMsg extends APIQueryMessage {

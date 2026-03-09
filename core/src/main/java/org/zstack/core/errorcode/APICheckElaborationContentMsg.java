@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/errorcode/elaborations/check",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICheckElaborationContentReply.class,
         parameterName = "params"
 )

@@ -10,7 +10,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/snaps/{snapshotId}/clone",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = CloneVolumeResponse.class,
         sync = true
 )

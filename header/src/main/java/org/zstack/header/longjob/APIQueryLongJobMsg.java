@@ -17,7 +17,7 @@ import java.util.List;
 @RestRequest(
         path = "/longjobs",
         optionalPaths = {"/longjobs/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryLongJobReply.class
 )
 public class APIQueryLongJobMsg extends APIQueryMessage {

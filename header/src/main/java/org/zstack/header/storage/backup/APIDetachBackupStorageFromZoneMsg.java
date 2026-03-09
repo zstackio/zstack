@@ -36,7 +36,7 @@ import org.zstack.header.zone.ZoneVO;
  */
 @RestRequest(
         path = "/zones/{zoneUuid}/backup-storage/{backupStorageUuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDetachBackupStorageFromZoneEvent.class
 )
 public class APIDetachBackupStorageFromZoneMsg extends APIMessage implements BackupStorageMessage {

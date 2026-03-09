@@ -14,7 +14,7 @@ import java.util.function.Function;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY, adminOnly = true)
 @RestRequest(
         path = "/vm-instances/task-details",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetChainTaskReply.class
 )
 public class APIGetVmTaskMsg extends APIGetChainTaskMsg {

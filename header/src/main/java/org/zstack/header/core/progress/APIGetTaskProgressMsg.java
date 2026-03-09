@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/task-progresses/{apiId}",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetTaskProgressReply.class
 )
 public class APIGetTaskProgressMsg extends APISyncCallMessage {

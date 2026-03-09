@@ -8,7 +8,7 @@ import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vo.ResourceVO;
 
 @RestRequest(path = "/resource-configurations/{category}/{name}/{resourceUuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteResourceConfigEvent.class)
 public class APIDeleteResourceConfigMsg extends APIDeleteMessage implements ResourceConfigMessage {
     @APIParam

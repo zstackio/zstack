@@ -14,7 +14,7 @@ import java.util.List;
  */
 @RestRequest(
         path = "/primary-storage/capacities",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetPrimaryStorageCapacityReply.class
 )
 public class APIGetPrimaryStorageCapacityMsg extends APISyncCallMessage {

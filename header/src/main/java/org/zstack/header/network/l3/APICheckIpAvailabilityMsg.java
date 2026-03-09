@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/l3-networks/{l3NetworkUuid}/ip/{ip}/availability",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APICheckIpAvailabilityReply.class
 )
 public class APICheckIpAvailabilityMsg extends APISyncCallMessage implements L3NetworkMessage {

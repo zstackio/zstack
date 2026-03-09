@@ -15,7 +15,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/primary-storage/ceph/pools",
         optionalPaths = {"/primary-storage/ceph/pools/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryCephPrimaryStoragePoolReply.class
 )
 @AutoQuery(replyClass = APIQueryCephPrimaryStoragePoolReply.class, inventoryClass = CephPrimaryStoragePoolInventory.class)

@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/hosts/kvm/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateHostEvent.class,
         isAction = true
 )

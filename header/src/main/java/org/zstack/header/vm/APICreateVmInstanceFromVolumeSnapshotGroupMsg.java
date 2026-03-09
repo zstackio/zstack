@@ -29,7 +29,7 @@ import java.util.Map;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/from/volume-snapshots/group/{volumeSnapshotGroupUuid}",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateVmInstanceFromVolumeSnapshotGroupEvent.class,
         parameterName = "params"
 )

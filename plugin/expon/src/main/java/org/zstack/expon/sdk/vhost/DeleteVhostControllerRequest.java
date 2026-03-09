@@ -11,7 +11,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/vhost/{id}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = DeleteVhostControllerResponse.class
 )
 public class DeleteVhostControllerRequest extends ExponRequest {

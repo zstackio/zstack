@@ -8,7 +8,7 @@ import org.zstack.header.rest.RestRequest;
 import java.util.Collections;
 import java.util.List;
 
-@RestRequest(path = "/resource-configurations", method = HttpMethod.GET, responseClass = APIQueryResourceConfigReply.class)
+@RestRequest(path = "/resource-configurations", method = "GET", responseClass = APIQueryResourceConfigReply.class)
 @AutoQuery(replyClass = APIQueryResourceConfigReply.class, inventoryClass = ResourceConfigInventory.class)
 public class APIQueryResourceConfigMsg extends APIQueryMessage {
     public static List<String> __example__() {

@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 @RestRequest(
         path = "/volume-snapshots/group/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIRevertVmFromSnapshotGroupEvent.class
 )
 

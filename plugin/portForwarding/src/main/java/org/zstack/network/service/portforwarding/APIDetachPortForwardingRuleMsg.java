@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 
 /**
  * @api
@@ -52,7 +52,7 @@ import javax.persistence.Tuple;
 @Action(category = PortForwardingConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/port-forwarding/{uuid}/vm-instances/nics",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDetachPortForwardingRuleEvent.class
 )
 public class APIDetachPortForwardingRuleMsg extends APIMessage implements APIAuditor {

@@ -16,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = AccessControlListConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/access-control-lists/{aclUuid}/ipentries",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAddAccessControlListEntryEvent.class,
         parameterName = "params"
 )

@@ -11,7 +11,7 @@ import org.zstack.header.vm.VmInstanceMessage;
 @Action(category = VirtualRouterConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/vm-instances/appliances/virtual-routers/{vmInstanceUuid}/attachable-public-l3s",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetAttachablePublicL3ForVRouterReply.class
 )
 public class APIGetAttachablePublicL3ForVRouterMsg extends APISyncCallMessage implements VmInstanceMessage {

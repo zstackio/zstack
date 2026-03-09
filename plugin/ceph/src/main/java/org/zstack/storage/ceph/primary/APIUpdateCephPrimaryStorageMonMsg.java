@@ -16,7 +16,7 @@ import java.io.Serializable;
 @RestRequest(
         path = "/primary-storage/ceph/mons/{monUuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateCephPrimaryStorageMonEvent.class
 )
 public class APIUpdateCephPrimaryStorageMonMsg extends APIMessage implements PrimaryStorageMessage, Serializable {

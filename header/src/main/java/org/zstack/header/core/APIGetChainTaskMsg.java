@@ -12,7 +12,7 @@ import java.util.function.Function;
 @Action(category = CoreConstant.ACTION_CATEGORY, adminOnly = true)
 @RestRequest(
         path = "/core/task-details",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetChainTaskReply.class
 )
 public class APIGetChainTaskMsg extends APISyncCallMessage {

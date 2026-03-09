@@ -11,7 +11,7 @@ import org.zstack.network.hostNetworkInterface.lldp.LldpConstant;
 @Action(category = LldpConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/hostNetworkInterface/lldp/{interfaceUuid}/info",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetHostNetworkInterfaceLldpReply.class
 )
 public class APIGetHostNetworkInterfaceLldpMsg extends APISyncCallMessage {

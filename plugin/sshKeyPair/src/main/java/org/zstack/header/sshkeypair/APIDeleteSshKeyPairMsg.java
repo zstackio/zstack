@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/ssh-key-pair/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteSshKeyPairEvent.class
 )
 public class APIDeleteSshKeyPairMsg extends APIMessage implements SshKeyPairMessage, APIAuditor {

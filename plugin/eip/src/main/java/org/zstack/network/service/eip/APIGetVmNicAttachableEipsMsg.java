@@ -10,7 +10,7 @@ import org.zstack.header.vm.*;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/vm-instances/nics/{vmNicUuid}/candidate-eips",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetVmNicAttachableEipsReply.class
 )
 public class APIGetVmNicAttachableEipsMsg extends APIGetMessage {

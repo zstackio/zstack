@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 @TagResourceType(VolumeVO.class)
 @RestRequest(
         path = "/volumes/data",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APICreateDataVolumeEvent.class
 )

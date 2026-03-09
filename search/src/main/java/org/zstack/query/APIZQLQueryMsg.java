@@ -4,7 +4,7 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 
-@RestRequest(path = "/zql", method = HttpMethod.GET, responseClass = APIZQLQueryReply.class)
+@RestRequest(path = "/zql", method = "GET", responseClass = APIZQLQueryReply.class)
 public class APIZQLQueryMsg extends APISyncCallMessage {
     private String zql;
 

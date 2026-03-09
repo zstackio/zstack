@@ -11,7 +11,7 @@ import org.zstack.header.vm.VmInstanceVO;
 @Action(category = ImageConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/images/groups/from/vm-instance",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateImageGroupFromVmInstanceEvent.class,
         parameterName = "params"
 )

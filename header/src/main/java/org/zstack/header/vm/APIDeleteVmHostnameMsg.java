@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/{uuid}/hostnames",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteVmHostnameEvent.class
 )
 public class APIDeleteVmHostnameMsg extends APIDeleteMessage implements VmInstanceMessage {

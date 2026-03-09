@@ -16,7 +16,7 @@ import java.util.List;
 @Action(category = SdnControllerConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/sdn-controllers/{sdnControllerUuid}/hosts/{hostUuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APISdnControllerChangeHostEvent.class,
         isAction = true
 )

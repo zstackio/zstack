@@ -18,7 +18,7 @@ import java.util.function.Function;
 @Action(category = HostConstant.ACTION_CATEGORY, adminOnly = true)
 @RestRequest(
         path = "/hosts/task-details",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetChainTaskReply.class
 )
 public class APIGetHostTaskMsg extends APIGetChainTaskMsg {

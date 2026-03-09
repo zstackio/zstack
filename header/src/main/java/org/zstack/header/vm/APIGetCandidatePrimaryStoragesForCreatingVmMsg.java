@@ -20,7 +20,7 @@ import static java.util.Arrays.asList;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/vm-instances/candidate-storages",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetCandidatePrimaryStoragesForCreatingVmReply.class
 )
 

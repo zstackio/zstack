@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
         path = "/clusters/{uuid}/actions",
         responseClass = APIUpdateClusterOSEvent.class,
         isAction = true,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 24)
 public class APIUpdateClusterOSMsg extends APICreateMessage implements ClusterMessage {

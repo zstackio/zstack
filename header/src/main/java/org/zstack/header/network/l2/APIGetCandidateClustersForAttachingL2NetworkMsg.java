@@ -9,7 +9,7 @@ import java.util.List;
 
 @RestRequest(
         path = "/l2-networks/{l2NetworkUuid}/cluster-candidates",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetCandidateClustersForAttachingL2NetworkReply.class
 )
 public class APIGetCandidateClustersForAttachingL2NetworkMsg extends APIGetMessage {

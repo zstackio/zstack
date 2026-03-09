@@ -10,7 +10,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/vhost/unbind_uss",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = RemoveVhostControllerFromUssResponse.class
 )
 public class RemoveVhostControllerFromUssRequest extends ExponRequest {

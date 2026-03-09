@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/management-nodes/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIGetCurrentTimeReply.class
 )
 public class APIGetCurrentTimeMsg extends APISyncCallMessage implements APIManagementNodeMessage {

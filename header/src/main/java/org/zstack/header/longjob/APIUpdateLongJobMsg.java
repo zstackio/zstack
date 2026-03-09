@@ -16,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/longjobs/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateLongJobEvent.class
 )
 public class APIUpdateLongJobMsg extends APIMessage implements LongJobMessage {

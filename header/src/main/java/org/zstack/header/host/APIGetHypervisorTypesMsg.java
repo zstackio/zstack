@@ -28,7 +28,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/hosts/hypervisor-types",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetHypervisorTypesReply.class
 )
 public class APIGetHypervisorTypesMsg extends APISyncCallMessage {

@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 @RestRequest(
         path = "/volumes/data/from/data-volume-templates/{imageUuid}",
         responseClass = APICreateDataVolumeFromVolumeTemplateEvent.class,
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params"
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 72)

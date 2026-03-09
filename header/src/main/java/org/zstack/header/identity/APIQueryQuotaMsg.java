@@ -16,7 +16,7 @@ import static java.util.Arrays.asList;
 @Action(category = AccountConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/accounts/quotas",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryQuotaReply.class
 )
 public class APIQueryQuotaMsg extends APIQueryMessage {

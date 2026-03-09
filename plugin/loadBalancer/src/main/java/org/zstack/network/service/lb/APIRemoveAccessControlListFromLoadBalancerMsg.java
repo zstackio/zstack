@@ -20,7 +20,7 @@ import java.util.List;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/load-balancers/listeners/{listenerUuid}/access-control-lists",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIRemoveAccessControlListFromLoadBalancerEvent.class
 )
 public class APIRemoveAccessControlListFromLoadBalancerMsg extends APIMessage implements LoadBalancerMessage, APIAuditor {

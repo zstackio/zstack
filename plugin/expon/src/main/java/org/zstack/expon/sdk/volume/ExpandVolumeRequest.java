@@ -10,7 +10,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/volumes/{id}/expand",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = ExpandVolumeResponse.class,
         sync = true
 )

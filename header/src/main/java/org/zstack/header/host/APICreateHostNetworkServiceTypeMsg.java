@@ -17,7 +17,7 @@ import org.zstack.header.tag.TagResourceType;
 @Action(category = HostConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/hosts/service-types",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateHostNetworkServiceTypeEvent.class,
         parameterName = "params"
 )

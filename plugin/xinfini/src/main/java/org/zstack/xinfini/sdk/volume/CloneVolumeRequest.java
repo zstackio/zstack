@@ -16,7 +16,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
     path = "/bs-volumes/:clone",
-    method = HttpMethod.POST,
+    method = "POST",
     responseClass = CloneVolumeResponse.class,
     category = XInfiniApiCategory.AFA
 )

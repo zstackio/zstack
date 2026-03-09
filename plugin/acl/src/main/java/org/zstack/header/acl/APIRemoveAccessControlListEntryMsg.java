@@ -16,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = AccessControlListConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/access-control-lists/{aclUuid}/ipentries/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIRemoveAccessControlListEntryEvent.class
 )
 public class APIRemoveAccessControlListEntryMsg extends APIDeleteMessage implements APIAuditor{

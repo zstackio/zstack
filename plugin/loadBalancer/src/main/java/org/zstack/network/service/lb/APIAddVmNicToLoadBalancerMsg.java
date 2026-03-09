@@ -13,7 +13,7 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,7 +23,7 @@ import java.util.List;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/load-balancers/listeners/{listenerUuid}/vm-instances/nics",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APIAddVmNicToLoadBalancerEvent.class
 )

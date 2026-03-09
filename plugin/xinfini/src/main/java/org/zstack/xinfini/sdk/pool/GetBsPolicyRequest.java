@@ -15,7 +15,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
         path = "/bs-policies/{id}",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = GetBsPolicyResponse.class,
         category = XInfiniApiCategory.AFA
 )

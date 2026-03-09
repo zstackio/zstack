@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @SuppressCredentialCheck
 @RestRequest(
         path = "/captcha/refresh",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIRefreshCaptchaReply.class
 )
 public class APIRefreshCaptchaMsg extends APISyncCallMessage {

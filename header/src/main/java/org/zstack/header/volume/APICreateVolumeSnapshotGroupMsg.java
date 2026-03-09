@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 @Action(category = VolumeSnapshotConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/volume-snapshots/group",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateVolumeSnapshotGroupEvent.class,
         parameterName = "params"
 )

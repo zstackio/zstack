@@ -17,7 +17,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/l2-networks/vxlan-pool/vni-ranges/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteVniRangeEvent.class
 )
 public class APIDeleteVniRangeMsg extends APIDeleteMessage implements L2NetworkMessage, APIAuditor {

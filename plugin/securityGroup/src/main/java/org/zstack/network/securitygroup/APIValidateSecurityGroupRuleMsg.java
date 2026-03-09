@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
     path = "/security-groups/{securityGroupUuid}/rules/validation",
-    method = HttpMethod.GET,
+    method = "GET",
     responseClass = APIValidateSecurityGroupRuleReply.class
 )
 public class APIValidateSecurityGroupRuleMsg extends APISyncCallMessage {

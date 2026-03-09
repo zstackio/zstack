@@ -10,7 +10,7 @@ import org.zstack.network.service.vip.*;
 
 @RestRequest(
         path = "/vips/{vipUuid}/check-port-availability",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APICheckVipPortAvailabilityReply.class
 )
 public class APICheckVipPortAvailabilityMsg extends APIGetMessage {

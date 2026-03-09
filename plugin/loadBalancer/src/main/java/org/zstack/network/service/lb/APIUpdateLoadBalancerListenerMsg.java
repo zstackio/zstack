@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/load-balancers/listeners/{uuid}",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateLoadBalancerListenerEvent.class,
         isAction = true
 )

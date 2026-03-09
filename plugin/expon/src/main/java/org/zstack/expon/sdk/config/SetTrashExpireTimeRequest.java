@@ -11,7 +11,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/sys_config/trash_recycle",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = SetTrashExpireTimeResponse.class,
         sync = false,
         version = "v1"

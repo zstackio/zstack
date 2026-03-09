@@ -8,7 +8,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/spice/certificates",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetSpiceCertificatesReply.class
 )
 public class APIGetSpiceCertificatesMsg extends APISyncCallMessage {

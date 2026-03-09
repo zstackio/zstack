@@ -66,7 +66,7 @@ import org.zstack.network.service.vip.VipVO;
 @Action(category = PortForwardingConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/port-forwarding",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreatePortForwardingRuleEvent.class,
         parameterName = "params"
 )

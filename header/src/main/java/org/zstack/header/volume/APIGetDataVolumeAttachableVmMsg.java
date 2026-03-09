@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VolumeConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/volumes/{volumeUuid}/candidate-vm-instances",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetDataVolumeAttachableVmReply.class
 )
 public class APIGetDataVolumeAttachableVmMsg extends APISyncCallMessage implements VolumeMessage {

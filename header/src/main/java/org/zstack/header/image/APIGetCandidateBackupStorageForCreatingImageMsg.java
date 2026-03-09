@@ -20,7 +20,7 @@ import org.zstack.header.volume.VolumeVO;
                 "/images/volumes/{volumeUuid}/candidate-backup-storage",
                 "/images/volume-snapshots/{volumeSnapshotUuid}/candidate-backup-storage",
         },
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetCandidateBackupStorageForCreatingImageReply.class
 )
 @SDK(

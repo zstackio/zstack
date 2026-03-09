@@ -16,7 +16,7 @@ import static java.util.Arrays.asList;
         path = "/volumes",
         optionalPaths = {"/volumes/{uuid}"},
         responseClass = APIQueryVolumeReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 public class APIQueryVolumeMsg extends APIQueryMessage {
 

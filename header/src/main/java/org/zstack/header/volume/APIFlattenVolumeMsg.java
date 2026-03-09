@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 @RestRequest(
         path = "/volumes/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIFlattenVolumeEvent.class
 )
 public class APIFlattenVolumeMsg extends APIMessage implements VolumeMessage, APIAuditor {

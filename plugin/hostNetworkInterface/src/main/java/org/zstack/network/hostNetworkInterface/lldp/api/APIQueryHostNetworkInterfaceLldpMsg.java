@@ -17,7 +17,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/hostNetworkInterface/lldp/all",
         optionalPaths = {"/hostNetworkInterface/lldp/{interfaceUuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryHostNetworkInterfaceLldpReply.class
 )
 public class APIQueryHostNetworkInterfaceLldpMsg extends APIQueryMessage {

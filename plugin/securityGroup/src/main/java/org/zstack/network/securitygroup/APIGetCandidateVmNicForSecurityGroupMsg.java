@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/security-groups/{securityGroupUuid}/vm-instances/candidate-nics",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetCandidateVmNicForSecurityGroupReply.class
 )
 public class APIGetCandidateVmNicForSecurityGroupMsg extends APISyncCallMessage {

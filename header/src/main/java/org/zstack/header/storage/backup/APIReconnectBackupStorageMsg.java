@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/backup-storage/{uuid}/actions",
         isAction = true,
         responseClass = APIReconnectBackupStorageEvent.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APIReconnectBackupStorageMsg extends APIMessage implements BackupStorageMessage {
     @APIParam(resourceType = BackupStorageVO.class)

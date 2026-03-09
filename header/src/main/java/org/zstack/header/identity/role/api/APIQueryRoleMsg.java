@@ -8,6 +8,6 @@ import org.zstack.header.rest.RestRequest;
 
 @AutoQuery(replyClass = APIQueryRoleReply.class, inventoryClass = RoleInventory.class)
 @RestRequest(path = "/identities/roles", optionalPaths = {"/identities/roles/{uuid}"},
-        method = HttpMethod.GET, responseClass = APIQueryRoleReply.class)
+        method = "GET", responseClass = APIQueryRoleReply.class)
 public class APIQueryRoleMsg extends APIQueryMessage {
 }

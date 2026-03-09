@@ -14,7 +14,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 @Action(category = VolumeSnapshotConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/volume-snapshots/group/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIUpdateVolumeSnapshotGroupEvent.class
 )

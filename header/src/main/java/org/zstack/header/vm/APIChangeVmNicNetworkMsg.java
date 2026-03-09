@@ -15,7 +15,7 @@ import java.util.Map;
 @RestRequest(
         path = "/vm-instances/nics/{vmNicUuid}/l3-networks/{destL3NetworkUuid}",
         parameterName = "params",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIChangeVmNicNetworkEvent.class
 )
 public class APIChangeVmNicNetworkMsg extends APIMessage implements VmInstanceMessage{

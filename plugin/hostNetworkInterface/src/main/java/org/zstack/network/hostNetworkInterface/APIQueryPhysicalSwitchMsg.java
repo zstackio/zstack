@@ -22,7 +22,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/topo/physical-switches",
         optionalPaths = {"/topo/physical-switches/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryPhysicalSwitchReply.class
 )
 public class APIQueryPhysicalSwitchMsg extends APIQueryMessage {

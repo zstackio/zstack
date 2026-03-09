@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/consoles/agents/{uuid}/actions",
         isAction = true,
         responseClass = APIUpdateConsoleProxyAgentEvent.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APIUpdateConsoleProxyAgentMsg extends APIMessage implements ConsoleProxyAgentMessage {
     @APIParam(resourceType = ConsoleProxyAgentVO.class)

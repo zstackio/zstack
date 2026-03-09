@@ -10,7 +10,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/vhost/bind_uss",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = AddVhostControllerToUssResponse.class
 )
 public class AddVhostControllerToUssRequest extends ExponRequest {

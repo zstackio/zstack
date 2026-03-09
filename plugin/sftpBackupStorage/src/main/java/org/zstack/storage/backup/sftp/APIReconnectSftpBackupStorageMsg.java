@@ -11,7 +11,7 @@ import org.zstack.header.storage.backup.BackupStorageMessage;
         path = "/backup-storage/sftp/{uuid}/actions",
         isAction = true,
         responseClass = APIReconnectSftpBackupStorageEvent.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APIReconnectSftpBackupStorageMsg extends APIMessage implements BackupStorageMessage {
     @APIParam(resourceType = SftpBackupStorageVO.class)

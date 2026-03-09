@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/{uuid}/ssh-keys",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteVmSshKeyEvent.class
 )
 public class APIDeleteVmSshKeyMsg extends APIMessage implements VmInstanceMessage {

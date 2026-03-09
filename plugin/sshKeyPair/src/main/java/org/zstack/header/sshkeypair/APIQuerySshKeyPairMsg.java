@@ -13,7 +13,7 @@ import java.util.List;
         path = "/ssh-key-pair",
         optionalPaths = {"/ssh-key-pair/{uuid}"},
         responseClass = APIQuerySshKeyPairReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 public class APIQuerySshKeyPairMsg extends APIQueryMessage {
     public static List<String> __example__() {

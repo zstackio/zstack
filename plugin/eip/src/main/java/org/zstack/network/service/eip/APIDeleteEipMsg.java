@@ -49,7 +49,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = EipConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/eips/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteEipEvent.class
 )
 public class APIDeleteEipMsg extends APIDeleteMessage implements EipMessage {

@@ -7,7 +7,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/global-configurations/{category}/{name}",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetGlobalConfigOptionsReply.class
 )
 public class APIGetGlobalConfigOptionsMsg extends APISyncCallMessage {

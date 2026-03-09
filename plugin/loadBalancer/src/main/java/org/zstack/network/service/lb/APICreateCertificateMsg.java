@@ -17,7 +17,7 @@ import org.zstack.header.tag.TagResourceType;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/certificates",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateCertificateEvent.class,
         parameterName = "params"
 )

@@ -15,7 +15,7 @@ import java.util.List;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/load-balancers/listeners/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIChangeLoadBalancerListenerEvent.class,
         isAction = true
 )

@@ -10,7 +10,7 @@ import org.zstack.network.service.vip.VipVO;
 
 @RestRequest(
         path = "/load-balancers/{loadBalancerUuid}/vip/{vipUuid}",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APIAttachVipToLoadBalancerEvent.class
 )

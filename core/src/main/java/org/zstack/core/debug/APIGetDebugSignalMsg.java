@@ -6,7 +6,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/debug",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetDebugSignalReply.class)
 public class APIGetDebugSignalMsg extends APISyncCallMessage {
     public static APIGetDebugSignalMsg __example__() {

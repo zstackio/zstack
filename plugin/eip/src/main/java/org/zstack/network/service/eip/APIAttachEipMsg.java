@@ -12,7 +12,7 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 
 /**
  * @api
@@ -56,7 +56,7 @@ import javax.persistence.Tuple;
 @Action(category = EipConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/eips/{eipUuid}/vm-instances/nics/{vmNicUuid}",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APIAttachEipEvent.class
 )

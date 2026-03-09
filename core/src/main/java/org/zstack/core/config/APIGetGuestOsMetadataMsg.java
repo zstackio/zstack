@@ -6,7 +6,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/guest-os/metadata",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetGuestOsMetadataReply.class
 )
 public class APIGetGuestOsMetadataMsg extends APISyncCallMessage {

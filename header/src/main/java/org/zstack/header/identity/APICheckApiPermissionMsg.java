@@ -15,7 +15,7 @@ import static org.zstack.utils.CollectionDSL.list;
 @Action(category = AccountConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/accounts/permissions/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APICheckApiPermissionReply.class,
         isAction = true
 )

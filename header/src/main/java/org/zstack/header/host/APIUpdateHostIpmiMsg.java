@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/hosts/ipmi/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateHostIpmiEvent.class,
         isAction = true
 )

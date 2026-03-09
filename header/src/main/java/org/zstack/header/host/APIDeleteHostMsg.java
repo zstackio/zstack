@@ -38,7 +38,7 @@ import static org.zstack.header.message.APIDeleteMessage.DeletionMode.Permissive
  */
 @RestRequest(
         path = "/hosts/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteHostEvent.class
 )
 public class APIDeleteHostMsg extends APIDeleteMessage implements HostMessage {

@@ -51,7 +51,7 @@ import java.util.*;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l3-networks/{l3NetworkUuid}/network-services",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAttachNetworkServiceToL3NetworkEvent.class,
         parameterName = "params"
 )

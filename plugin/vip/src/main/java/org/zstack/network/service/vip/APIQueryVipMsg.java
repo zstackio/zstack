@@ -21,7 +21,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/vips",
         optionalPaths = {"/vips/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryVipReply.class
 )
 public class APIQueryVipMsg extends APIQueryMessage {

@@ -20,7 +20,7 @@ import static java.util.Arrays.asList;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/vm-instances/candidate-destinations",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetCandidateZonesClustersHostsForCreatingVmReply.class
 )
 public class APIGetCandidateZonesClustersHostsForCreatingVmMsg extends APISyncCallMessage {

@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(path = "/resource-configurations/bindable",
         optionalPaths = {"/resource-configurations/bindable/{category}"},
-        method = HttpMethod.GET, responseClass = APIGetResourceBindableConfigReply.class)
+        method = "GET", responseClass = APIGetResourceBindableConfigReply.class)
 public class APIGetResourceBindableConfigMsg extends APISyncCallMessage {
     @APIParam(required = false)
     private String category;

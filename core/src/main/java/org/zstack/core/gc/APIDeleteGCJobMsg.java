@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/gc-jobs/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteGCJobEvent.class
 )
 public class APIDeleteGCJobMsg extends APIMessage implements GarbageCollectorMessage {

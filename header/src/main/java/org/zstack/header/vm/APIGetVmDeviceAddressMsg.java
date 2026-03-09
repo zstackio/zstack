@@ -16,7 +16,7 @@ import java.util.List;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/devices",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetVmDeviceAddressReply.class
 )
 public class APIGetVmDeviceAddressMsg extends APISyncCallMessage implements VmInstanceMessage {

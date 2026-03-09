@@ -37,7 +37,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VolumeConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/volumes/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteDataVolumeEvent.class
 )
 public class APIDeleteDataVolumeMsg extends APIDeleteMessage implements VolumeMessage {

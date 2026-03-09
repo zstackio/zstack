@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/system-tags/{uuid}/actions",
         responseClass = APIUpdateSystemTagEvent.class,
         isAction = true,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APIUpdateSystemTagMsg extends APIMessage {
     @APIParam(resourceType = SystemTagVO.class, checkAccount = true, operationTarget = true)

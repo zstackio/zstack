@@ -16,7 +16,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/l2-networks/vteps",
         optionalPaths = {"/l2-networks/vteps/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryVtepReply.class
 )
 public class APIQueryVtepMsg extends APIQueryMessage {

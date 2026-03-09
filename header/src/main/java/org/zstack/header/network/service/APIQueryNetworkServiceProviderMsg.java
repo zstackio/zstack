@@ -15,7 +15,7 @@ import static java.util.Arrays.asList;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/network-services/providers",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryNetworkServiceProviderReply.class
 )
 public class APIQueryNetworkServiceProviderMsg extends APIQueryMessage {

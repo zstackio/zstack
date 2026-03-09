@@ -13,7 +13,7 @@ import org.zstack.header.tag.TagResourceType;
 @TagResourceType(PrimaryStorageVO.class)
 @RestRequest(
         path = "/primary-storage/smp",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAddPrimaryStorageEvent.class,
         parameterName = "params"
 )

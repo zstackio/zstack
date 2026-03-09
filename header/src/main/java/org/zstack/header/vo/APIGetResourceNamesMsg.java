@@ -16,7 +16,7 @@ import static java.util.Arrays.asList;
  */
 @RestRequest(
         path = "/resources/names",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetResourceNamesReply.class
 )
 @Action(category = Constants.CATEGORY_RESOURCE, names = {"read"})

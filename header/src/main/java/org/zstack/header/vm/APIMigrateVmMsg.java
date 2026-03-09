@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
         path = "/vm-instances/{vmInstanceUuid}/actions",
         isAction = true,
         responseClass = APIMigrateVmEvent.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 @SkipVmTracer(replyClass = APIMigrateVmEvent.class)
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 1)

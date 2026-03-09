@@ -16,7 +16,7 @@ import java.util.List;
 @Action(category = LldpConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/hostNetworkInterface/lldp/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIChangeHostNetworkInterfaceLldpModeEvent.class,
         isAction = true
 )

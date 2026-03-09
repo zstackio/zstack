@@ -38,7 +38,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l3-networks/{l3NetworkUuid}/dns/{dns}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIRemoveDnsFromL3NetworkEvent.class
 )
 public class APIRemoveDnsFromL3NetworkMsg extends APIMessage implements L3NetworkMessage {

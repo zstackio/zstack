@@ -8,7 +8,7 @@ import org.zstack.header.vm.VmInstanceVO;
 
 @RestRequest(
         path = "/ssh-key-pair/{sshKeyPairUuid}/vm-instance/{vmInstanceUuid}",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAttachSshKeyPairToVmInstanceEvent.class,
         parameterName = "params"
 )

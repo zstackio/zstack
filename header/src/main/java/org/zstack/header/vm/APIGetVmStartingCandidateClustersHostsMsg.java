@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/vm-instances/{uuid}/starting-target-hosts",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetVmStartingCandidateClustersHostsReply.class
 )
 public class APIGetVmStartingCandidateClustersHostsMsg extends APISyncCallMessage implements VmInstanceMessage {

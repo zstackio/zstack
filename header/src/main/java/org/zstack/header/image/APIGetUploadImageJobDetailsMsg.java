@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = ImageConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/images/upload-job/details/{imageId}",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetUploadImageJobDetailsReply.class
 )
 public class APIGetUploadImageJobDetailsMsg extends APISyncCallMessage {

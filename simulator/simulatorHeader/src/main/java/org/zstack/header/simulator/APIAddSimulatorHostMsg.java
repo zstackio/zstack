@@ -8,7 +8,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
 		path = "/hosts/simulators",
-		method = HttpMethod.POST,
+		method = "POST",
 		parameterName = "params",
 		responseClass = APIAddHostEvent.class
 )

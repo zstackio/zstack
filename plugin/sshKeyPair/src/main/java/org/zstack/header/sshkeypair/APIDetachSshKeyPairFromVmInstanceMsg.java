@@ -8,7 +8,7 @@ import org.zstack.header.vm.VmInstanceVO;
 
 @RestRequest(
         path = "/ssh-key-pair/{sshKeyPairUuid}/vm-instance/{vmInstanceUuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDetachSshKeyPairFromVmInstanceEvent.class
 )
 public class APIDetachSshKeyPairFromVmInstanceMsg extends APIMessage implements SshKeyPairMessage {

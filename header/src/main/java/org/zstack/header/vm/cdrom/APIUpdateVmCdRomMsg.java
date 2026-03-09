@@ -18,7 +18,7 @@ import org.zstack.header.vm.VmInstanceVO;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/cdroms/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIUpdateVmCdRomEvent.class
 )

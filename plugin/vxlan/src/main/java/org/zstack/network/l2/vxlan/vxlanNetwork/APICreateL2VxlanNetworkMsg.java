@@ -18,7 +18,7 @@ import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
 })
 @RestRequest(
         path = "/l2-networks/vxlan",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateL2VxlanNetworkEvent.class,
         parameterName = "params"
 )

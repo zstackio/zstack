@@ -39,7 +39,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l3-networks/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteL3NetworkEvent.class
 )
 public class APIDeleteL3NetworkMsg extends APIDeleteMessage implements L3NetworkMessage {

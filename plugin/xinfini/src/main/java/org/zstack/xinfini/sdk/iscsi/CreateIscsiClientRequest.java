@@ -15,7 +15,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
     path = "/iscsi-clients",
-    method = HttpMethod.POST,
+    method = "POST",
     responseClass = CreateIscsiClientResponse.class,
     category = XInfiniApiCategory.AFA
 )

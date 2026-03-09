@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 @Action(category = ImageConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/images",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APIAddImageEvent.class
 )

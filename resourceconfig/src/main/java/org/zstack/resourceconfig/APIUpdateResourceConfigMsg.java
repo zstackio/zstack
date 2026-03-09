@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vo.ResourceVO;
 
 @RestRequest(path = "/resource-configurations/{category}/{name}/{resourceUuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIUpdateResourceConfigEvent.class,
         morphTransform = Constants.MORPH_TRANSFORM_IAM2)

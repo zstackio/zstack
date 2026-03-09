@@ -49,7 +49,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/security-groups/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteSecurityGroupEvent.class
 )
 public class APIDeleteSecurityGroupMsg extends APIDeleteMessage implements SecurityGroupMessage {

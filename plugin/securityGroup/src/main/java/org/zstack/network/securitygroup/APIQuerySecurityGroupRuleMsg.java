@@ -17,7 +17,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/security-groups/rules",
         optionalPaths = {"/security-groups/rules/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQuerySecurityGroupRuleReply.class
 )
 public class APIQuerySecurityGroupRuleMsg extends APIQueryMessage {

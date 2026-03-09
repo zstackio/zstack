@@ -15,7 +15,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/vm-instances/nics",
         optionalPaths = {"/vm-instances/nics/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryVmNicReply.class
 )
 public class APIQueryVmNicMsg extends APIQueryMessage {

@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/primary-storage/{uuid}/actions",
         responseClass = APIReconnectPrimaryStorageEvent.class,
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true
 )
 public class APIReconnectPrimaryStorageMsg extends APIMessage implements PrimaryStorageMessage {

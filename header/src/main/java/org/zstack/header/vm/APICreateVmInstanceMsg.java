@@ -77,7 +77,7 @@ import static java.util.Arrays.asList;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateVmInstanceEvent.class,
         parameterName = "params"
 )

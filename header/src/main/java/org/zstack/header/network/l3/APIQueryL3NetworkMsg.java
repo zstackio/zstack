@@ -15,7 +15,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/l3-networks",
         optionalPaths = {"/l3-networks/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryL3NetworkReply.class
 )
 public class APIQueryL3NetworkMsg extends APIQueryMessage {

@@ -15,7 +15,7 @@ import static java.util.Arrays.asList;
 @AutoQuery(replyClass = APIQuerySharedResourceReply.class, inventoryClass = SharedResourceInventory.class)
 @RestRequest(
         path = "/accounts/resources",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQuerySharedResourceReply.class
 )
 public class APIQuerySharedResourceMsg extends APIQueryMessage {

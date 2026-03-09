@@ -11,7 +11,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/nvmf/bind_uss",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = BindNvmfTargetToUssResponse.class
 )
 public class BindNvmfTargetToUssRequest extends ExponRequest {

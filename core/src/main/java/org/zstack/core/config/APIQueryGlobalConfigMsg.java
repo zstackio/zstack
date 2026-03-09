@@ -16,7 +16,7 @@ import static java.util.Arrays.asList;
 @Action(category = "configuration", names = {"read"})
 @RestRequest(
         path = "/global-configurations",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryGlobalConfigReply.class
 )
 public class APIQueryGlobalConfigMsg extends APIQueryMessage {

@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = AccessControlListConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/access-control-lists/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteAccessControlListEvent.class
 )
 public class APIDeleteAccessControlListMsg extends APIDeleteMessage {

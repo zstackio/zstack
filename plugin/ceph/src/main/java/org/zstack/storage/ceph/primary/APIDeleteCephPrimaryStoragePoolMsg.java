@@ -15,7 +15,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
  */
 @RestRequest(
         path = "/primary-storage/ceph/pools/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteCephPrimaryStoragePoolEvent.class
 )
 public class APIDeleteCephPrimaryStoragePoolMsg extends APIMessage implements PrimaryStorageMessage, APIAuditor {

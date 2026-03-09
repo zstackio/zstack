@@ -12,7 +12,7 @@ import org.zstack.network.service.vip.VipVO;
 @Action(category = VirtualRouterConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/vips/{uuid}/usedports",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetVipUsedPortsReply.class
 )
 public class APIGetVipUsedPortsMsg extends APISyncCallMessage {

@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/accounts/users/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateUserEvent.class
 )
 public class APIUpdateUserMsg extends APIMessage implements AccountMessage {

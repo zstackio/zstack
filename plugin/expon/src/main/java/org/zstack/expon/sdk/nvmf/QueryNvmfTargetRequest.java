@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 @ExponRestRequest(
         path = "/block/nvmf",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = QueryNvmfTargetResponse.class,
         sync = true
 )

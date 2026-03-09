@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/guest-os/metadata/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIRefreshGuestOsMetadataEvent.class
 )
 public class APIRefreshGuestOsMetadataMsg extends APIMessage {

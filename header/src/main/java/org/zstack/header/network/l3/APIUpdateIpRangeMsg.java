@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/l3-networks/ip-ranges/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateIpRangeEvent.class
 )
 public class APIUpdateIpRangeMsg extends APIMessage implements L3NetworkMessage, IpRangeMessage {

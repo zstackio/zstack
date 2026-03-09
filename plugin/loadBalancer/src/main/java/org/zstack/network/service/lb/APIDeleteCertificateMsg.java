@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/certificates/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteCertificateEvent.class
 )
 public class APIDeleteCertificateMsg extends APIDeleteMessage {

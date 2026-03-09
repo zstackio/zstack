@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
 import java.util.Collections;
 import java.util.List;
 
-@RestRequest(path = "/identities/roles/{uuid}/policy-statements", method = HttpMethod.DELETE, responseClass = APIRemovePolicyStatementsFromRoleEvent.class)
+@RestRequest(path = "/identities/roles/{uuid}/policy-statements", method = "DELETE", responseClass = APIRemovePolicyStatementsFromRoleEvent.class)
 public class APIRemovePolicyStatementsFromRoleMsg extends APIMessage implements RoleMessage {
     @APIParam(resourceType = RoleVO.class)
     private String uuid;

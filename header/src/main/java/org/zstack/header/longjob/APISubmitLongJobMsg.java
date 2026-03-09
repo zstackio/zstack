@@ -21,7 +21,7 @@ import org.zstack.utils.DebugUtils;
 @Action(category = LongJobConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/longjobs",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APISubmitLongJobEvent.class
 )

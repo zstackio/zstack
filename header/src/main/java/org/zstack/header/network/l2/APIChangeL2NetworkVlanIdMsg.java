@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/l2-networks/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIChangeL2NetworkVlanIdEvent.class,
         isAction = true
 )

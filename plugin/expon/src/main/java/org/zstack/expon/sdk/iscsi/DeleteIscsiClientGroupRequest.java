@@ -10,7 +10,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/iscsi/clients/{id}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = CreateIscsiClientGroupResponse.class,
         sync = false
 )

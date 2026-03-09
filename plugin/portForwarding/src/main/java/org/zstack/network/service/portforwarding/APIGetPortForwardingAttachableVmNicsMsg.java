@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = PortForwardingConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/port-forwarding/{ruleUuid}/vm-instances/candidate-nics",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetPortForwardingAttachableVmNicsReply.class
 )
 public class APIGetPortForwardingAttachableVmNicsMsg extends APISyncCallMessage {

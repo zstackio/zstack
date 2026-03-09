@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = EipConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/eips/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIChangeEipStateEvent.class,
         isAction = true
 )

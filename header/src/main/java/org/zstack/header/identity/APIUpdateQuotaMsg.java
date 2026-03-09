@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/accounts/quotas/actions",
         responseClass = APIUpdateQuotaEvent.class,
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         morphTransform = Constants.MORPH_TRANSFORM_IAM1
 )
 public class APIUpdateQuotaMsg extends APIMessage implements AccountMessage {

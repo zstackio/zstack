@@ -11,7 +11,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/nvmf_client/{clientId}/hosts",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = ChangeNvmeClientGroupResponse.class
 )
 public class ChangeNvmeClientGroupRequest extends ExponRequest {

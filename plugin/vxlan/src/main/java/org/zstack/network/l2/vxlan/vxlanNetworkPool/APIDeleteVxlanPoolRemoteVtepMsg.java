@@ -15,7 +15,7 @@ import org.zstack.header.message.APIDeleteMessage;
 
 @RestRequest(
         path = "/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}/delete/remote-vtep-ip",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteVxlanPoolRemoteVtepEvent.class
 )
 public class APIDeleteVxlanPoolRemoteVtepMsg extends APIDeleteMessage implements L2NetworkMessage {

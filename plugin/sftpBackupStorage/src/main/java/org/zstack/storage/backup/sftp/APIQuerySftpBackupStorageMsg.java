@@ -16,7 +16,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/backup-storage/sftp",
         optionalPaths = {"/backup-storage/sftp/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQuerySftpBackupStorageReply.class
 )
 public class APIQuerySftpBackupStorageMsg extends APIQueryMessage {

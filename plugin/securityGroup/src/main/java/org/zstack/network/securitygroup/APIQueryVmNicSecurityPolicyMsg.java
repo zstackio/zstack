@@ -15,7 +15,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/security-groups/nics/security-policy",
         optionalPaths = {"/security-groups/nics/{uuid}/security-policy"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryVmNicSecurityPolicyReply.class
 )
 

@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = EncryptConstant.CERTIFICATE_ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/encrypted/fields",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetEncryptedFieldReply.class
 )
 public class APIGetEncryptedFieldMsg extends APISyncCallMessage {

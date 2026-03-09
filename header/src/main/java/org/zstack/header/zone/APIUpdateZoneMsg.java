@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/zones/{uuid}/actions",
         isAction = true,
         responseClass = APIUpdateZoneEvent.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APIUpdateZoneMsg extends APIMessage implements ZoneMessage {
     @APIParam(maxLength = 255, required = false, validRegexValues = "^(?! )[\\u4e00-\\u9fa5a-zA-Z0-9\\-_.():+\" ]*(?<! )$")

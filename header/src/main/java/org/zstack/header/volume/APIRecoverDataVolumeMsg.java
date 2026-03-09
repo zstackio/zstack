@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/volumes/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIRecoverDataVolumeEvent.class
 )
 public class APIRecoverDataVolumeMsg extends APIMessage implements VolumeMessage {

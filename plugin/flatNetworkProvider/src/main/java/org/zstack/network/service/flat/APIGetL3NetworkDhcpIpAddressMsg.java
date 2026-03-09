@@ -17,7 +17,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l3-networks/{l3NetworkUuid}/dhcp-ip",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetL3NetworkDhcpIpAddressReply.class
 )
 public class APIGetL3NetworkDhcpIpAddressMsg extends APISyncCallMessage implements L3NetworkMessage {

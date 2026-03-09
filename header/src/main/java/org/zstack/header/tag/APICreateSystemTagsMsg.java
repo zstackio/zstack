@@ -12,7 +12,7 @@ import java.util.List;
 @Action(category = TagConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/system-tags/{resourceUuid}/tags",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateSystemTagsEvent.class,
         parameterName = "params"
 )

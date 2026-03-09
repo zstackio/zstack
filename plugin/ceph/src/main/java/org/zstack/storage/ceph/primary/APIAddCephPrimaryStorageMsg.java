@@ -22,7 +22,7 @@ import java.util.List;
 @TagResourceType(PrimaryStorageVO.class)
 @RestRequest(
         path = "/primary-storage/ceph",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAddPrimaryStorageEvent.class,
         parameterName = "params"
 )

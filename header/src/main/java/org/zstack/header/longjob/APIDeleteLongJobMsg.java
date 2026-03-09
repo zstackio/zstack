@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = LongJobConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/longjobs/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteLongJobEvent.class
 )
 public class APIDeleteLongJobMsg extends APIMessage implements LongJobMessage {

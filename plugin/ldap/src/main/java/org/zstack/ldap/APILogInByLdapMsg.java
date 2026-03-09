@@ -19,7 +19,7 @@ import java.util.Map;
 @SuppressCredentialCheck
 @RestRequest(
         path = "/ldap/login",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APILogInByLdapReply.class
 )

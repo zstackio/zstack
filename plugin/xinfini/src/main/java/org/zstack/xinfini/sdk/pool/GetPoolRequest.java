@@ -15,7 +15,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
     path = "/pools/{id}",
-    method = HttpMethod.GET,
+    method = "GET",
     responseClass = GetPoolResponse.class,
     category = XInfiniApiCategory.AFA
 )

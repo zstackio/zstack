@@ -51,7 +51,7 @@ import org.zstack.header.tag.TagResourceType;
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/security-groups",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateSecurityGroupEvent.class,
         parameterName = "params"
 )

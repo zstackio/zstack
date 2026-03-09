@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/ldap/entries/candidates",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetLdapEntryReply.class
 )
 public class APIGetCandidateLdapEntryForBindingMsg extends APISyncCallMessage {

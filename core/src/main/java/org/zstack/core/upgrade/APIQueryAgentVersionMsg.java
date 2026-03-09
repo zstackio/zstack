@@ -13,7 +13,7 @@ import java.util.List;
 @RestRequest(
         path = "/agent-version",
         optionalPaths = {"/agent-version/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryAgentVersionReply.class
 )
 public class APIQueryAgentVersionMsg extends APIQueryMessage {

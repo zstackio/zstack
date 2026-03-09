@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = AccessControlListConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/access-control-lists/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateAccessControlListEvent.class,
         isAction = true
 )

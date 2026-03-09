@@ -16,7 +16,7 @@ import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
 @Action(category = VxlanNetworkPoolConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l2-networks/vxlan/vteps",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateVxlanVtepEvent.class,
         parameterName = "params"
 )

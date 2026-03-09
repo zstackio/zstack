@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 @RestRequest(
         path = "/accounts/groups/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteUserGroupEvent.class
 )
 public class APIDeleteUserGroupMsg extends APIDeleteMessage implements AccountMessage {

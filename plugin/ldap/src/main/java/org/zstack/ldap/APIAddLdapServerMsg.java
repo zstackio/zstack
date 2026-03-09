@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/ldap/servers",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAddLdapServerEvent.class,
         parameterName = "params"
 )

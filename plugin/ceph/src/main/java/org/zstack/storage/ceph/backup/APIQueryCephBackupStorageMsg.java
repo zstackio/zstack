@@ -19,7 +19,7 @@ import java.util.List;
 @RestRequest(
         path = "/backup-storage/ceph",
         optionalPaths = {"/backup-storage/ceph/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryBackupStorageReply.class
 )
 public class APIQueryCephBackupStorageMsg extends APIQueryMessage {

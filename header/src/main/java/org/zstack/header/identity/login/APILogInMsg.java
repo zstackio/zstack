@@ -17,7 +17,7 @@ import java.util.Map;
 @RestRequest(
         path = "/login",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APILogInReply.class
 )
 public class APILogInMsg extends APISessionMessage implements APILoginAuditor {

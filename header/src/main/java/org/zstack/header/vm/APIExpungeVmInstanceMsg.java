@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
         path = "/vm-instances/{uuid}/actions",
         isAction = true,
         responseClass = APIExpungeVmInstanceEvent.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class APIExpungeVmInstanceMsg extends APIMessage implements VmInstanceMessage {

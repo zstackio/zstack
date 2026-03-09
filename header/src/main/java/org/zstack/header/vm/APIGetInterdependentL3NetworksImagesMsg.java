@@ -17,7 +17,7 @@ import java.util.List;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/images-l3networks/dependencies",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetInterdependentL3NetworkImageReply.class
 )
 public class APIGetInterdependentL3NetworksImagesMsg extends APISyncCallMessage {

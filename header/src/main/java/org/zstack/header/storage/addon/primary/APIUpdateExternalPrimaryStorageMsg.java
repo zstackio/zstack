@@ -9,7 +9,7 @@ import org.zstack.header.storage.primary.PrimaryStorageMessage;
 @RestRequest(
         path = "/primary-storage/addon/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateExternalPrimaryStorageEvent.class
 )
 public class APIUpdateExternalPrimaryStorageMsg extends APIUpdatePrimaryStorageMsg implements PrimaryStorageMessage {

@@ -13,7 +13,7 @@ import static java.util.Arrays.asList;
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/security-groups/{securityGroupUuid}/rules/state/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIChangeSecurityGroupRuleStateEvent.class,
         isAction = true
 )

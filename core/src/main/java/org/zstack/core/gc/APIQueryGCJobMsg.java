@@ -16,7 +16,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/gc-jobs",
         optionalPaths = {"/gc-jobs/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryGCJobReply.class
 )
 public class APIQueryGCJobMsg extends APIQueryMessage {

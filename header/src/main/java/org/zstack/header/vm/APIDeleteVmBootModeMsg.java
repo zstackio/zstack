@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/{uuid}/bootmode",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteVmBootModeEvent.class
 )
 public class APIDeleteVmBootModeMsg extends APIDeleteMessage implements VmInstanceMessage {

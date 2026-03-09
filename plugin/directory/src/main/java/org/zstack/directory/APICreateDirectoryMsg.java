@@ -12,7 +12,7 @@ import org.zstack.header.zone.ZoneVO;
  */
 @RestRequest(
         path = "/create/directory",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateDirectoryEvent.class,
         parameterName = "params"
 )

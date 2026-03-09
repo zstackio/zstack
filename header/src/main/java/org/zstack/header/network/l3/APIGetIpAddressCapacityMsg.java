@@ -15,7 +15,7 @@ import java.util.List;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/ip-capacity",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetIpAddressCapacityReply.class
 )
 public class APIGetIpAddressCapacityMsg extends APISyncCallMessage {

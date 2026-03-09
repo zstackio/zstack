@@ -16,7 +16,7 @@ import static org.zstack.utils.CollectionDSL.list;
 @Action(category = AccountConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/accounts/resources/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIRevokeResourceSharingEvent.class
 )

@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 @RestRequest(
         path = "/vm-instances/xml-hook-script",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIUpdateVmUserDefinedXmlHookScriptEvent.class
 )

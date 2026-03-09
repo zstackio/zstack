@@ -16,7 +16,7 @@ import java.util.List;
 @RestRequest(
         path = "/load-balancers/servergroups/{serverGroupUuid}/backendservers/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIRemoveBackendServerFromServerGroupEvent.class
 )
 public class APIRemoveBackendServerFromServerGroupMsg extends APIMessage implements LoadBalancerMessage, APIAuditor {

@@ -12,7 +12,7 @@ import org.zstack.header.vo.ResourceVO;
  */
 
 @RestRequest(path = "/resource-configurations/{resourceUuid}/{category}/{name}",
-        method = HttpMethod.GET, responseClass = APIGetResourceConfigReply.class)
+        method = "GET", responseClass = APIGetResourceConfigReply.class)
 public class APIGetResourceConfigMsg extends APISyncCallMessage implements ResourceConfigMessage {
     @APIParam
     private String category;

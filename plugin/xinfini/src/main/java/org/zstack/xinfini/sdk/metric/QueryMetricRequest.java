@@ -14,7 +14,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
         path = "/samples/query",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = QueryMetricResponse.class,
         category = XInfiniApiCategory.SDDC
 )

@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/load-balancers/listeners/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteLoadBalancerListenerEvent.class
 )
 public class APIDeleteLoadBalancerListenerMsg extends APIMessage implements LoadBalancerMessage, APIAuditor {

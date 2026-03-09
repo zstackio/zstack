@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = ImageConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/images/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateImageEvent.class,
         isAction = true
 )

@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/sdn-controllers/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateSdnControllerEvent.class,
         isAction = true
 )

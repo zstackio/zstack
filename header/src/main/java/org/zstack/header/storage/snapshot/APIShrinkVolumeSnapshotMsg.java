@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 @Action(category = VolumeSnapshotConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/volume-snapshots/shrink/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIShrinkVolumeSnapshotEvent.class,
         isAction = true
 )

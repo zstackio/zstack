@@ -59,7 +59,7 @@ import org.zstack.network.service.vip.VipVO;
 @Action(category = EipConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/eips",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateEipEvent.class,
         parameterName = "params"
 )

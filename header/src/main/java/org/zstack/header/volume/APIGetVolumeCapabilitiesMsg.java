@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VolumeConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/volumes/{uuid}/capabilities",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetVolumeCapabilitiesReply.class
 )
 public class APIGetVolumeCapabilitiesMsg extends APISyncCallMessage implements VolumeMessage {

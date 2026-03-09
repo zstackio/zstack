@@ -16,7 +16,7 @@ import java.util.List;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/load-balancers/listener/acl/{aclUuid}/servergroup/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIChangeAccessControlListServerGroupEvent.class,
         isAction = true
 )

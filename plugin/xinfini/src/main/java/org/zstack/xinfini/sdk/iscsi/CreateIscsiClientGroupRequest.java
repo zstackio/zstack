@@ -17,7 +17,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
     path = "/iscsi-client-groups",
-    method = HttpMethod.POST,
+    method = "POST",
     responseClass = CreateIscsiClientGroupResponse.class,
     category = XInfiniApiCategory.AFA
 )

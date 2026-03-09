@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/management/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIGetManagementNodeOSReply.class
 )
 @SuppressCredentialCheck

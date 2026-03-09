@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 @Action(category = VolumeSnapshotConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/volumes/{volumeUuid}/volume-snapshots",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateVolumeSnapshotEvent.class,
         parameterName = "params"
 )

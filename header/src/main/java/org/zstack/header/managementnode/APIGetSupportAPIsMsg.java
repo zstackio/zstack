@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/management-nodes/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIGetSupportAPIsReply.class
 )
 public class APIGetSupportAPIsMsg extends APISyncCallMessage implements APIManagementNodeMessage {

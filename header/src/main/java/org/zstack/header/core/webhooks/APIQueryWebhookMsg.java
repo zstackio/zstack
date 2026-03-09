@@ -15,7 +15,7 @@ import java.util.List;
 @RestRequest(
         path = "/web-hooks",
         optionalPaths = {"/web-hooks/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryWebhookReply.class
 )
 @Deprecated

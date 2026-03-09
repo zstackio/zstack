@@ -11,7 +11,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/iscsi/gateways/{id}/remove_nodes",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = UnbindIscsiTargetFromUssResponse.class
 )
 public class UnbindIscsiTargetFromUssRequest extends ExponRequest {

@@ -10,7 +10,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/nvmf",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = CreateNvmfTargetResponse.class
 )
 public class CreateNvmfTargetRequest extends ExponRequest {

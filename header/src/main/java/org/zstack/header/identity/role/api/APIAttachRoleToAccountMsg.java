@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/identities/accounts/{accountUuid}/roles/{roleUuid}",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APIAttachRoleToAccountEvent.class,
         morphTransform = Constants.MORPH_TRANSFORM_IAM1

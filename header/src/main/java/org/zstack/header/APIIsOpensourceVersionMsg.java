@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = Constants.CATEGORY_METADATA, names = {"read"})
 @RestRequest(
         path = "/meta-data/opensource",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIIsOpensourceVersionReply.class
 )
 @SuppressCredentialCheck

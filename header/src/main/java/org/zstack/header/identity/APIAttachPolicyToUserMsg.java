@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/accounts/users/{userUuid}/policies",
         responseClass = APIAttachPolicyToUserEvent.class,
         parameterName = "params",
-        method = HttpMethod.POST
+        method = "POST"
 )
 public class APIAttachPolicyToUserMsg extends APIMessage implements AccountMessage {
     @APIParam(resourceType = UserVO.class, checkAccount = true, operationTarget = true)

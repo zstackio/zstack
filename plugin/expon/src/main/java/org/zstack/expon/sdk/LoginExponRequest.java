@@ -9,7 +9,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/login",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = LoginExponResponse.class,
         version = "v1",
         sync = false

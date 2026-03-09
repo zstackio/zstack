@@ -57,7 +57,7 @@ import org.zstack.header.storage.backup.APIAddBackupStorageMsg;
 
 @RestRequest(
         path = "/backup-storage/sftp",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAddSftpBackupStorageEvent.class,
         parameterName = "params"
 )

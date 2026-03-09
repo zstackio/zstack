@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/vm-instances/{uuid}/boot-orders",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetVmBootOrderReply.class
 )
 public class APIGetVmBootOrderMsg extends APISyncCallMessage implements VmInstanceMessage {

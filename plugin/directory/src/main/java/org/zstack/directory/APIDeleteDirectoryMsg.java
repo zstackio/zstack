@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/delete/directory",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteDirectoryEvent.class
 )
 public class APIDeleteDirectoryMsg extends APIDeleteMessage implements DirectoryMessage, OperateDirectoryMessage {

@@ -12,7 +12,7 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 
-@RestRequest(path = "/identities/roles/{uuid}/policy-statements", method = HttpMethod.POST,
+@RestRequest(path = "/identities/roles/{uuid}/policy-statements", method = "POST",
         parameterName = "params", responseClass = APIAddPolicyStatementsToRoleEvent.class)
 public class APIAddPolicyStatementsToRoleMsg extends APIMessage implements RoleMessage {
     @APIParam(resourceType = RoleVO.class)

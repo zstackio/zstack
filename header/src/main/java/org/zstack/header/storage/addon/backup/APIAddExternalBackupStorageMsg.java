@@ -8,7 +8,7 @@ import org.zstack.header.storage.backup.BackupStorageConstant;
 
 @RestRequest(
         path = "/backup-storage/addon",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAddExternalBackupStorageEvent.class,
         parameterName = "params"
 )

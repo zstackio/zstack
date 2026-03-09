@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/images/{uuid}/actions",
         responseClass = APISyncImageSizeEvent.class,
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true
 )
 public class APISyncImageSizeMsg extends APIMessage implements ImageMessage {

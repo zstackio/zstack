@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/update/directory",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIUpdateDirectoryEvent.class
 )

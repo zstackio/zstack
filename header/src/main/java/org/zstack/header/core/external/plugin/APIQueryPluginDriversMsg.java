@@ -12,7 +12,7 @@ import static java.util.Arrays.asList;
 @AutoQuery(replyClass = APIQueryPluginDriversReply.class, inventoryClass = PluginDriverInventory.class)
 @RestRequest(
         path = "/external/plugins",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryPluginDriversReply.class
 )
 public class APIQueryPluginDriversMsg extends APIQueryMessage {

@@ -10,7 +10,7 @@ import org.zstack.header.vm.VmNicVO;
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/security-groups/nics/{vmNicUuid}/security-policy/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIChangeVmNicSecurityPolicyEvent.class,
         isAction = true
 )

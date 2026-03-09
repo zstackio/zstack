@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 @RestRequest(
         path = "/backup-storage/{backupStorageUuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIExportImageFromBackupStorageEvent.class
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)

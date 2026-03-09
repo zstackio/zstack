@@ -17,7 +17,7 @@ import java.io.Serializable;
 @RestRequest(
         path = "/vm-instances/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APISetVmConsolePasswordEvent.class
 )
 public class APISetVmConsolePasswordMsg extends APIMessage implements VmInstanceMessage, Serializable {

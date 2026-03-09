@@ -38,7 +38,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/volumes/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIChangeVolumeStateEvent.class
 )
 public class APIChangeVolumeStateMsg extends APIMessage implements VolumeMessage {

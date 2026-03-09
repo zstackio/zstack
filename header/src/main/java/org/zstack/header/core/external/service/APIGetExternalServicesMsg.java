@@ -6,7 +6,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/external/services",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetExternalServicesReply.class
 )
 public class APIGetExternalServicesMsg extends APISyncCallMessage {

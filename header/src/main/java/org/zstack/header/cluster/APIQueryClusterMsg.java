@@ -14,7 +14,7 @@ import static java.util.Arrays.asList;
         path = "/clusters",
         optionalPaths = {"/clusters/{uuid}"},
         responseClass = APIQueryClusterReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 public class APIQueryClusterMsg extends APIQueryMessage {
 

@@ -16,7 +16,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/accounts",
         optionalPaths = {"/accounts/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryAccountReply.class
 )
 public class APIQueryAccountMsg extends APIQueryMessage {

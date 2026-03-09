@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/instance-offerings/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteInstanceOfferingEvent.class
 )
 public class APIDeleteInstanceOfferingMsg extends APIDeleteMessage implements InstanceOfferingMessage {

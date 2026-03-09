@@ -15,7 +15,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
         path = "/nodes/{id}",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = GetNodeResponse.class,
         category = XInfiniApiCategory.AFA
 )

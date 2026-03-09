@@ -16,7 +16,7 @@ import java.util.List;
 @Action(category = VolumeSnapshotConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/volume-snapshots/groups/availabilities",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APICheckVolumeSnapshotGroupAvailabilityReply.class
 )
 public class APICheckVolumeSnapshotGroupAvailabilityMsg extends APISyncCallMessage {

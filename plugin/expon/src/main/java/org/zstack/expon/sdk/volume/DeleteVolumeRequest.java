@@ -11,7 +11,7 @@ import java.util.Map;
 @ExponRestRequest(
         path = "/block/volumes/{volId}",
         responseClass = DeleteVolumeResponse.class,
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         sync = true
 )
 public class DeleteVolumeRequest extends ExponRequest {

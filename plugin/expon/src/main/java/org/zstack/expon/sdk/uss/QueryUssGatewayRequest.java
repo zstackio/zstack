@@ -10,7 +10,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/wds/uss",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = QueryUssGatewayResponse.class
 )
 @ExponQuery(replyClass = QueryUssGatewayResponse.class, inventoryClass = UssGatewayModule.class)

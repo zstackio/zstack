@@ -14,7 +14,7 @@ import static java.util.Arrays.asList;
 @Action(category = PortForwardingConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/port-forwarding",
-        method = HttpMethod.GET,
+        method = "GET",
         optionalPaths = {"/port-forwarding/{uuid}"},
         responseClass = APIQueryPortForwardingRuleReply.class
 )

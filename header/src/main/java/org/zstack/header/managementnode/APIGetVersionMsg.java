@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/management-nodes/actions",
         isAction = true,
         responseClass = APIGetVersionReply.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APIGetVersionMsg extends APISyncCallMessage implements APIManagementNodeMessage {
  

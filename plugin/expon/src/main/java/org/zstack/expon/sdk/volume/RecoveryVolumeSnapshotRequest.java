@@ -10,7 +10,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/volumes/{volumeId}/recovery",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = RecoveryVolumeSnapshotResponse.class,
         sync = true
 )

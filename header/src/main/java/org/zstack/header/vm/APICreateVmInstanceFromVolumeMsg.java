@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/from/volume",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateVmInstanceFromVolumeEvent.class,
         parameterName = "params"
 )

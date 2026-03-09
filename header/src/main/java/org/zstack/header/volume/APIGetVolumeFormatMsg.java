@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VolumeConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/volumes/formats",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetVolumeFormatReply.class
 )
 public class APIGetVolumeFormatMsg extends APISyncCallMessage {

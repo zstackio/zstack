@@ -16,7 +16,7 @@ import static org.zstack.utils.CollectionDSL.list;
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 @RestRequest(
         path = "/accounts/policies",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreatePolicyEvent.class,
         parameterName = "params",
         morphTransform = Constants.MORPH_TRANSFORM_IAM1

@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/sdn-controllers/{sdnControllerUuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIReconnectSdnControllerEvent.class,
         isAction = true
 )

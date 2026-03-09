@@ -11,7 +11,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/iscsi/clients/{id}/luns",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = GetVolumesInIscsiClientGroupResponse.class
 )
 public class GetVolumesInIscsiClientGroupRequest extends ExponRequest {

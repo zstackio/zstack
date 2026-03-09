@@ -47,7 +47,7 @@ import org.zstack.header.tag.TagResourceType;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l3-networks",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateL3NetworkEvent.class,
         parameterName = "params"
 )

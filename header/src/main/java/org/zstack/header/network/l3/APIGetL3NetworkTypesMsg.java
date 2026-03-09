@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/l3-networks/types",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetL3NetworkTypesReply.class
 )
 public class APIGetL3NetworkTypesMsg extends APISyncCallMessage {

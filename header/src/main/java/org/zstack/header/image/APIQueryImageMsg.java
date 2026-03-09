@@ -14,7 +14,7 @@ import java.util.List;
 @RestRequest(
         path = "/images",
         optionalPaths = {"/images/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryImageReply.class
 )
 public class APIQueryImageMsg extends APIQueryMessage {

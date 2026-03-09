@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/security-groups/rules/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIChangeSecurityGroupRuleEvent.class,
         isAction = true
 )

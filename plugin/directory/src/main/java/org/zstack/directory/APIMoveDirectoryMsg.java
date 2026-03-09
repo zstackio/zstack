@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/move/directory",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIMoveDirectoryEvent.class
 )

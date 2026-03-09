@@ -22,7 +22,7 @@ import java.util.List;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/load-balancers/listeners/{listenerUuid}/vm-instances/nics",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIRemoveVmNicFromLoadBalancerEvent.class
 )
 public class APIRemoveVmNicFromLoadBalancerMsg extends APIMessage implements LoadBalancerMessage, APIAuditor {

@@ -36,7 +36,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/clusters/{clusterUuid}/primary-storage/{primaryStorageUuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDetachPrimaryStorageFromClusterEvent.class
 )
 public class APIDetachPrimaryStorageFromClusterMsg extends APIMessage implements PrimaryStorageMessage {

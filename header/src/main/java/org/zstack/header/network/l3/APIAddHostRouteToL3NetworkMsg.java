@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l3-networks/{l3NetworkUuid}/hostroute",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAddHostRouteToL3NetworkEvent.class,
         parameterName = "params"
 )

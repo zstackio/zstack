@@ -19,7 +19,7 @@ import static java.util.Arrays.asList;
         path = "/user-tags",
         optionalPaths = {"/user-tags/{uuid}"},
         responseClass = APIQueryUserTagReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 public class APIQueryUserTagMsg extends APIQueryMessage {
  

@@ -19,7 +19,7 @@ import org.zstack.header.zone.ZoneVO;
 		path = "/instance-offerings/virtual-routers",
 		responseClass = APICreateInstanceOfferingEvent.class,
 		parameterName = "params",
-		method = HttpMethod.POST
+		method = "POST"
 )
 public class APICreateVirtualRouterOfferingMsg extends APICreateInstanceOfferingMsg {
 	@APIParam(resourceType = ZoneVO.class)

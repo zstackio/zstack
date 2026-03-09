@@ -17,7 +17,7 @@ import java.util.List;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/backupStorage-l3networks/dependencies",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetInterdependentL3NetworksBackupStoragesReply.class
 )
 public class APIGetInterdependentL3NetworksBackupStoragesMsg extends APISyncCallMessage {

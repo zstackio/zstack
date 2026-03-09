@@ -13,7 +13,7 @@ import java.util.List;
  */
 @RestRequest(
         path = "/backup-storage/capacities",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetBackupStorageCapacityReply.class
 )
 public class APIGetBackupStorageCapacityMsg extends APISyncCallMessage {

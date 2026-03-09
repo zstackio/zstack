@@ -44,7 +44,7 @@ import java.util.Map;
 @RestRequest(
         path = "/vm-instances/{vmInstanceUuid}/l3-networks/{l3NetworkUuid}",
         parameterName = "params",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAttachL3NetworkToVmEvent.class
 )
 public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceMessage {

@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/vm-instances/{uuid}/ssh-keys",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetVmSshKeyReply.class
 )
 public class APIGetVmSshKeyMsg extends APISyncCallMessage implements VmInstanceMessage {

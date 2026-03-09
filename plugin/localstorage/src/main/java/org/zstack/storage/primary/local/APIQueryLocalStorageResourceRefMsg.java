@@ -14,7 +14,7 @@ import java.util.List;
 @AutoQuery(replyClass = APIQueryLocalStorageResourceRefReply.class, inventoryClass = LocalStorageResourceRefInventory.class)
 @RestRequest(
         path = "/primary-storage/local-storage/resource-refs",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryLocalStorageResourceRefReply.class
 )
 public class APIQueryLocalStorageResourceRefMsg extends APIQueryMessage {

@@ -19,7 +19,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/vmInstance/device/address/group",
         optionalPaths = {"/vmInstance/device/address/group/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryVmInstanceDeviceAddressGroupReply.class
 )
 public class APIQueryVmInstanceDeviceAddressGroupMsg extends APIQueryMessage {

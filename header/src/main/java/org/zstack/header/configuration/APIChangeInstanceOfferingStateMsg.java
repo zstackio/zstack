@@ -16,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/instance-offerings/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIChangeInstanceOfferingStateEvent.class
 )

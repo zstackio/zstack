@@ -20,7 +20,7 @@ import java.util.List;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/load-balancers/{loadBalancerUuid}/listeners",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateLoadBalancerListenerEvent.class,
         parameterName = "params"
 )

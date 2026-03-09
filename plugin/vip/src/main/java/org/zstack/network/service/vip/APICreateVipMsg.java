@@ -53,7 +53,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VipConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vips",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateVipEvent.class,
         parameterName = "params"
 )

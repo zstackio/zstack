@@ -16,7 +16,7 @@ import static org.zstack.utils.CollectionDSL.list;
         path = "/consoles/agents",
         isAction = true,
         responseClass = APIReconnectConsoleProxyAgentEvent.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APIReconnectConsoleProxyAgentMsg extends APIMessage implements ConsoleProxyAgentMessage {
     @APIParam(required = false, nonempty = true)

@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/vm-instances/nics/{vmNicUuid}/attached-networkservices",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetVmNicAttachedNetworkServiceReply.class
 )
 public class APIGetVmNicAttachedNetworkServiceMsg extends APISyncCallMessage {

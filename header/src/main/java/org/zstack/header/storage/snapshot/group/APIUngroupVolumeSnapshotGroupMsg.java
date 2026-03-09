@@ -14,7 +14,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 @Action(category = VolumeSnapshotConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/volume-snapshots/ungroup/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIUngroupVolumeSnapshotGroupEvent.class
 )
 public class APIUngroupVolumeSnapshotGroupMsg extends APIMessage implements VolumeSnapshotGroupMessage {

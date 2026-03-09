@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l3-networks/{l3NetworkUuid}/dhcp-ip",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIChangeL3NetworkDhcpIpAddressEvent.class
 )

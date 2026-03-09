@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 @Action(category = ImageConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/images/root-volume-templates/from/volumes/{rootVolumeUuid}",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateRootVolumeTemplateFromRootVolumeEvent.class,
         parameterName = "params"
 )

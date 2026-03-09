@@ -63,7 +63,7 @@ import java.util.concurrent.TimeUnit;
 @TagResourceType(HostVO.class)
 @RestRequest(
         path = "/hosts/kvm",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APIAddHostEvent.class
 )

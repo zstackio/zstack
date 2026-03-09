@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 @RestRequest(
         path = "/accounts/users/{userUuid}/policies/{policyUuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDetachPolicyFromUserEvent.class
 )
 public class APIDetachPolicyFromUserMsg extends APIMessage implements AccountMessage {

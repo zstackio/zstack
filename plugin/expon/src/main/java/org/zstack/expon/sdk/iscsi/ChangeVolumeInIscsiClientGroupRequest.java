@@ -12,7 +12,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/iscsi/clients/{id}/luns",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = ChangeVolumeInIscsiClientGroupResponse.class
 )
 public class ChangeVolumeInIscsiClientGroupRequest extends ExponRequest {

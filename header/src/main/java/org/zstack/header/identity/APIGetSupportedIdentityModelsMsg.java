@@ -7,7 +7,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = AccountConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/identity-models",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetSupportedIdentityModelsReply.class
 )
 @SuppressCredentialCheck

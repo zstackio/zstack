@@ -16,7 +16,7 @@ import static org.zstack.utils.CollectionDSL.list;
 
 @RestRequest(
         path = "/resources/accounts",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetResourceAccountReply.class
 )
 @Action(category = Constants.CATEGORY_RESOURCE, names = {"read"})

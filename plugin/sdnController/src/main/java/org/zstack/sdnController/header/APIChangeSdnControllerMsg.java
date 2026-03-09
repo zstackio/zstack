@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 @Action(category = SdnControllerConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/sdn-controllers/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIChangeSdnControllerEvent.class,
         isAction = true
 )

@@ -16,7 +16,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
     path = "/bs-volumes/{id}/:rollback",
-    method = HttpMethod.POST,
+    method = "POST",
     responseClass = RollbackSnapshotResponse.class,
     category = XInfiniApiCategory.AFA
 )

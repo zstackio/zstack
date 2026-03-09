@@ -13,7 +13,7 @@ import java.util.List;
  */
 @RestRequest(
         path = "/debug",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APIDebugSignalEvent.class
 )

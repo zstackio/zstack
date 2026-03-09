@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/{uuid}/hostnames",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetVmHostnameReply.class
 )
 public class APIGetVmHostnameMsg extends APISyncCallMessage implements VmInstanceMessage {

@@ -12,7 +12,7 @@ import java.util.List;
 @Action(category = ImageConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/imagegroup/from/image/{rootVolumeTemplateUuid}",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateImageGroupFromImageEvent.class,
         parameterName = "params"
 )

@@ -7,7 +7,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/v2/logout",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = LogoutExponResponse.class,
         version = "v1",
         sync = false

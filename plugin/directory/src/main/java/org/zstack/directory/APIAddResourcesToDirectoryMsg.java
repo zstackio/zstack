@@ -17,7 +17,7 @@ import java.util.List;
  */
 @RestRequest(
         path = "/add/resources/directory",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAddResourcesToDirectoryEvent.class,
         parameterName = "params"
 )

@@ -16,7 +16,7 @@ import static java.util.Arrays.asList;
         path = "/vm-instances",
         optionalPaths = {"/vm-instances/{uuid}"},
         responseClass = APIQueryVmInstanceReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 public class APIQueryVmInstanceMsg extends APIQueryMessage {
     public static List<String> __example__() {

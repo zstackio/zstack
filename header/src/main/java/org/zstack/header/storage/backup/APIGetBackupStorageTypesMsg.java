@@ -29,7 +29,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/backup-storage/types",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetBackupStorageTypesReply.class
 )
 public class APIGetBackupStorageTypesMsg extends APISyncCallMessage {

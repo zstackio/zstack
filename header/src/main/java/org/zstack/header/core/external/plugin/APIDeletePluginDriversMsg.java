@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/external/plugins/{uuid}",
         responseClass = APIDeletePluginDriversEvent.class,
-        method = HttpMethod.DELETE
+        method = "DELETE"
 )
 public class APIDeletePluginDriversMsg extends APIDeleteMessage {
     @APIParam(resourceType = PluginDriverVO.class, successIfResourceNotExisting = true)

@@ -11,7 +11,7 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 
 /**
  * @api
@@ -54,7 +54,7 @@ import javax.persistence.Tuple;
 @Action(category = PortForwardingConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/port-forwarding/{ruleUuid}/vm-instances/nics/{vmNicUuid}",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APIAttachPortForwardingRuleEvent.class
 )

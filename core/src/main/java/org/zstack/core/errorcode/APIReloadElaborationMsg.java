@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/errorcode/actions",
         isAction = true,
         responseClass = APIReloadElaborationEvent.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APIReloadElaborationMsg extends APIMessage {
 

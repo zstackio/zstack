@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/ldap/bindings/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APICleanInvalidLdapBindingEvent.class
 )

@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/external/services",
         isAction = true,
         responseClass = APIReloadExternalServiceEvent.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APIReloadExternalServiceMsg extends APIMessage {
     @APIParam

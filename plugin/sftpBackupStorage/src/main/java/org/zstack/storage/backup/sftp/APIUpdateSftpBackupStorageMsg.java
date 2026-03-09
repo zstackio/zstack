@@ -13,7 +13,7 @@ import org.zstack.header.storage.backup.APIUpdateBackupStorageMsg;
 @RestRequest(
         path = "/backup-storage/sftp/{uuid}/actions",
         responseClass = APIUpdateBackupStorageEvent.class,
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true
 )
 public class APIUpdateSftpBackupStorageMsg extends APIUpdateBackupStorageMsg {

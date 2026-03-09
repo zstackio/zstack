@@ -37,7 +37,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAttachL2NetworkToClusterEvent.class,
         parameterName = "null"
 )

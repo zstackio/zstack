@@ -17,7 +17,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/system-tags",
         optionalPaths = {"/system-tags/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQuerySystemTagReply.class
 )
 public class APIQuerySystemTagMsg extends APIQueryMessage {

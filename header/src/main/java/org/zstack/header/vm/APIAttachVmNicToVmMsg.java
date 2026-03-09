@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/{vmInstanceUuid}/nices/{vmNicUuid}",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAttachVmNicToVmEvent.class,
         parameterName = "params"
 )

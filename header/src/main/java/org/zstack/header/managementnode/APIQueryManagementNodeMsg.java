@@ -15,7 +15,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/management-nodes",
         optionalPaths = {"/management-nodes/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryManagementNodeReply.class
 )
 public class APIQueryManagementNodeMsg extends APIQueryMessage {

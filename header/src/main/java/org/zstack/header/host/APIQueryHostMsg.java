@@ -14,7 +14,7 @@ import java.util.List;
         path = "/hosts",
         optionalPaths = {"/hosts/{uuid}"},
         responseClass = APIQueryHostReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 public class APIQueryHostMsg extends APIQueryMessage {
 

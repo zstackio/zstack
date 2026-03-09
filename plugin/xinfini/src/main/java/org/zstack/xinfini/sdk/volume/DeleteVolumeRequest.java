@@ -16,7 +16,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
     path = "/bs-volumes/{id}",
-    method = HttpMethod.DELETE,
+    method = "DELETE",
     responseClass = DeleteVolumeResponse.class,
     category = XInfiniApiCategory.AFA
 )

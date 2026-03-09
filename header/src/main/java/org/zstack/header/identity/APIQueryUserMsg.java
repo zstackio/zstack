@@ -18,7 +18,7 @@ import static java.util.Arrays.asList;
         path = "/accounts/users",
         optionalPaths = {"/accounts/users/{uuid}"},
         responseClass = APIQueryUserReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 public class APIQueryUserMsg extends APIQueryMessage {
 

@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/web-hooks",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APICreateWebhookEvent.class
 )

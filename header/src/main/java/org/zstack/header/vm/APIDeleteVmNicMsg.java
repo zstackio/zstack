@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/nics/{uuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteVmNicEvent.class
 )
 public class APIDeleteVmNicMsg extends APIDeleteMessage {

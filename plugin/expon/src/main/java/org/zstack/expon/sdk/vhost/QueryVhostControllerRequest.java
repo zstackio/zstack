@@ -11,7 +11,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/vhost",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = QueryVhostControllerResponse.class,
         sync = true
 )

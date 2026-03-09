@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/clusters/{uuid}/actions",
         responseClass = APIUpdateClusterEvent.class,
         isAction = true,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APIUpdateClusterMsg extends APIMessage implements ClusterMessage {
     @APIParam(resourceType = ClusterVO.class)

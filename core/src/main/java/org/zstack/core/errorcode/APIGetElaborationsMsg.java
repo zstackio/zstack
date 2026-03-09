@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/errorcode/elaborations",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetElaborationsReply.class
 )
 public class APIGetElaborationsMsg extends APISyncCallMessage {

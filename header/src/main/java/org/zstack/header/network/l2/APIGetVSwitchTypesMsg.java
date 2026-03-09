@@ -31,7 +31,7 @@ import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/l2-networks/vSwitchTypes",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetVSwitchTypesReply.class
 )
 public class APIGetVSwitchTypesMsg extends APISyncCallMessage {

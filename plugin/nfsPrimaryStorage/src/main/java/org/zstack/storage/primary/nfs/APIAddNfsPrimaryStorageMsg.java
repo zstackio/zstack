@@ -55,7 +55,7 @@ import org.zstack.header.tag.TagResourceType;
 @TagResourceType(PrimaryStorageVO.class)
 @RestRequest(
         path = "/primary-storage/nfs",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAddPrimaryStorageEvent.class,
         parameterName = "params"
 )

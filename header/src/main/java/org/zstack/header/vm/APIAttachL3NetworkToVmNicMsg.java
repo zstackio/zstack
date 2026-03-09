@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/nics/{vmNicUuid}/l3-networks/{l3NetworkUuid}",
         parameterName = "params",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAttachL3NetworkToVmNicEvent.class
 )
 @Deprecated

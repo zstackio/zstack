@@ -12,7 +12,7 @@ import static java.util.Arrays.asList;
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/security-groups/{securityGroupUuid}/rules/priority/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateSecurityGroupRulePriorityEvent.class,
         isAction = true
 )

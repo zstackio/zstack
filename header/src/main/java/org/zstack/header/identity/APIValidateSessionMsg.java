@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/accounts/sessions/{sessionUuid}/valid",
         responseClass = APIValidateSessionReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 public class APIValidateSessionMsg extends APISessionMessage {
     @APIParam

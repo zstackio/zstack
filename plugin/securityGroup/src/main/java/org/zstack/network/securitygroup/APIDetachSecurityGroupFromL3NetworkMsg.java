@@ -42,7 +42,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/security-groups/{securityGroupUuid}/l3-networks/{l3NetworkUuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDetachSecurityGroupFromL3NetworkEvent.class
 )
 public class APIDetachSecurityGroupFromL3NetworkMsg extends APIMessage implements SecurityGroupMessage {

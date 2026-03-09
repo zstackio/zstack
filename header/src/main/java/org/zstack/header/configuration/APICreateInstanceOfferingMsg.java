@@ -19,7 +19,7 @@ import static org.zstack.header.vm.VmInstanceConstant.USER_VM_TYPE;
         path = "/instance-offerings",
         responseClass = APICreateInstanceOfferingEvent.class,
         parameterName = "params",
-        method = HttpMethod.POST
+        method = "POST"
 )
 public class APICreateInstanceOfferingMsg extends APICreateMessage implements APIAuditor {
     @APIParam(maxLength = 255)

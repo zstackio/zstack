@@ -37,7 +37,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/backup-storage/{uuid}/actions",
         isAction = true,
         responseClass = APIChangeBackupStorageStateEvent.class,
-        method = HttpMethod.PUT
+        method = "PUT"
 )
 public class APIChangeBackupStorageStateMsg extends APIMessage implements BackupStorageMessage {
     /**

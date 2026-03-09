@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/clean/queue",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APICleanQueueEvent.class)
 public class APICleanQueueMsg extends APIMessage {
     @APIParam()

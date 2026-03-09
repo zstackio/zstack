@@ -19,7 +19,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/hosts/kvm/hypervisor/info",
         responseClass = APIQueryKvmHypervisorInfoReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 @Action(category = HostConstant.ACTION_CATEGORY, names = {"read"})
 public class APIQueryKvmHypervisorInfoMsg extends APIQueryMessage {

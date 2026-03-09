@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = ImageConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/imagegroups/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIExpungeImageGroupEvent.class,
         isAction = true
 )

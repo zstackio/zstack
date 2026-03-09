@@ -14,7 +14,7 @@ import static java.util.Arrays.asList;
         path = "/vm-instances/xml-hook-script",
         optionalPaths = {"/vm-instances/xml-hook-script/{uuid}"},
         responseClass = APIQueryVmUserDefinedXmlHookScriptReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 public class APIQueryVmUserDefinedXmlHookScriptMsg extends APIQueryMessage {
     public static List<String> __example__() {

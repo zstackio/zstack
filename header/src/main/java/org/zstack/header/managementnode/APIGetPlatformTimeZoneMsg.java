@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/management-nodes/platform-timezone",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetPlatformTimeZoneReply.class
 )
 public class APIGetPlatformTimeZoneMsg extends APISyncCallMessage implements APIManagementNodeMessage {

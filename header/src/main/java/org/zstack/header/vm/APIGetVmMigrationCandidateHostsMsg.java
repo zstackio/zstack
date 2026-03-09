@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/vm-instances/{vmInstanceUuid}/migration-target-hosts",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetVmMigrationCandidateHostsReply.class
 )
 public class APIGetVmMigrationCandidateHostsMsg extends APISyncCallMessage implements VmInstanceMessage {

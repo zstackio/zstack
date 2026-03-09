@@ -21,7 +21,7 @@ import org.zstack.header.vm.VmInstanceVO;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/cdroms",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateVmCdRomEvent.class,
         parameterName = "params"
 )

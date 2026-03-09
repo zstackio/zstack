@@ -13,7 +13,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
  */
 @RestRequest(
         path = "/primary-storage/local-storage/{primaryStorageUuid}/capacities",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetLocalStorageHostDiskCapacityReply.class
 )
 public class APIGetLocalStorageHostDiskCapacityMsg extends APISyncCallMessage implements PrimaryStorageMessage {

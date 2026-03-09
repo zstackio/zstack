@@ -8,7 +8,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/tasks/{id}",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = GetTaskStatusResponse.class,
         version = "v1",
         sync = false

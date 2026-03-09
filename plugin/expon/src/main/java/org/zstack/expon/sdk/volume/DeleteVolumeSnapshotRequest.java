@@ -10,7 +10,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/snaps/{snapshotId}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = DeleteVolumeSnapshotResponse.class,
         sync = true
 )

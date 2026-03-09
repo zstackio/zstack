@@ -14,7 +14,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/vm-instances/{vmInstanceUuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APISetVmStaticIpEvent.class
 )
 public class APISetVmStaticIpMsg extends APIMessage implements VmInstanceMessage {

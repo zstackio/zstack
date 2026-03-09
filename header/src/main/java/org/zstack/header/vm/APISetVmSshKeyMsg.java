@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/vm-instances/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APISetVmSshKeyEvent.class
 )
 public class APISetVmSshKeyMsg extends APIMessage implements VmInstanceMessage {

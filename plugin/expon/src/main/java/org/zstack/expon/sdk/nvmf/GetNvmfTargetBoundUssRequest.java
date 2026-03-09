@@ -11,7 +11,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/nvmf/{nvmfId}/nvmf_binded_uss",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = GetVolumeResponse.class,
         sync = false
 )

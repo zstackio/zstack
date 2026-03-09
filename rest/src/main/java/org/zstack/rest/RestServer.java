@@ -87,9 +87,9 @@ import org.zstack.utils.path.PathUtil;
 
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -523,7 +523,7 @@ public class RestServer implements Component, CloudBusEventListener {
                 actionName = StringUtils.uncapitalize(actionName);
             }
 
-            if (!at.isAction() && requestAnnotation.parameterName().isEmpty() && requestAnnotation.method() == HttpMethod.PUT) {
+            if (!at.isAction() && requestAnnotation.parameterName().isEmpty() && "PUT".equals(requestAnnotation.method())) {
                 throw new CloudRuntimeException(String.format("Invalid @RestRequest of %s, either isAction must be set to true or" +
                         " parameterName is set to a non-empty string", apiClass.getName()));
             }
@@ -533,7 +533,7 @@ public class RestServer implements Component, CloudBusEventListener {
             for (Field f : fs) {
                 allApiClassFields.put(f.getName(), f);
 
-                if (requestAnnotation.method() == HttpMethod.GET) {
+                if ("GET".equals(requestAnnotation.method())) {
                     if (APIQueryMessage.class.isAssignableFrom(apiClass)) {
                         // query messages are specially handled
                         continue;
@@ -940,7 +940,7 @@ public class RestServer implements Component, CloudBusEventListener {
         String parameterName = null;
         if ("POST".equals(req.getMethod())) {
             // create API
-            Optional<Api> o = apis.stream().filter(a -> a.requestAnnotation.method().name().equals("POST")).findAny();
+            Optional<Api> o = apis.stream().filter(a -> "POST".equals(a.requestAnnotation.method())).findAny();
             if (!o.isPresent()) {
                 throw new RestException(HttpStatus.INTERNAL_SERVER_ERROR.value(), String.format("No creational API found" +
                         " for the path[%s]", req.getRequestURI()));
@@ -960,7 +960,7 @@ public class RestServer implements Component, CloudBusEventListener {
             parameterName = api.actionName;
         } else if ("GET".equals(req.getMethod())) {
             // query API
-            Optional<Api> o = apis.stream().filter(a -> a.requestAnnotation.method().name().equals("GET")).findAny();
+            Optional<Api> o = apis.stream().filter(a -> "GET".equals(a.requestAnnotation.method())).findAny();
             if (!o.isPresent()) {
                 throw new RestException(HttpStatus.INTERNAL_SERVER_ERROR.value(), String.format("No query API found" +
                         " for the path[%s]", req.getRequestURI()));
@@ -969,7 +969,7 @@ public class RestServer implements Component, CloudBusEventListener {
             api = o.get();
         } else if ("DELETE".equals(req.getMethod())) {
             // DELETE API
-            Optional<Api> o = apis.stream().filter(a -> a.requestAnnotation.method().name().equals("DELETE")).findAny();
+            Optional<Api> o = apis.stream().filter(a -> "DELETE".equals(a.requestAnnotation.method())).findAny();
             if (!o.isPresent()) {
                 throw new RestException(HttpStatus.INTERNAL_SERVER_ERROR.value(), String.format("No delete API found" +
                         " for the path[%s]", req.getRequestURI()));
@@ -1528,11 +1528,11 @@ public class RestServer implements Component, CloudBusEventListener {
     private void collectRestRequestErrConfigApi(List<String> errorApiList, Class apiClass, RestRequest apiRestRequest){
         if (apiRestRequest.isAction() && !RESTConstant.DEFAULT_PARAMETER_NAME.equals(apiRestRequest.parameterName())) {
             errorApiList.add(String.format("[%s] RestRequest config error, Setting parameterName is not allowed when isAction set true", apiClass.getName()));
-        } else if (apiRestRequest.isAction() && HttpMethod.PUT != apiRestRequest.method()) {
+        } else if (apiRestRequest.isAction() && !"PUT".equals(apiRestRequest.method())) {
             errorApiList.add(String.format("[%s] RestRequest config error, method can only be set to HttpMethod.PUT when isAction set true", apiClass.getName()));
-        }else if (!RESTConstant.DEFAULT_PARAMETER_NAME.equals(apiRestRequest.parameterName()) && (HttpMethod.PUT == apiRestRequest.method() || HttpMethod.DELETE == apiRestRequest.method())){
+        }else if (!RESTConstant.DEFAULT_PARAMETER_NAME.equals(apiRestRequest.parameterName()) && ("PUT".equals(apiRestRequest.method()) || "DELETE".equals(apiRestRequest.method()))){
             errorApiList.add(String.format("[%s] RestRequest config error, method is not allowed to set to HttpMethod.PUT(HttpMethod.DELETE) when parameterName set a value", apiClass.getName()));
-        }else if(HttpMethod.GET == apiRestRequest.method() && !RESTConstant.DEFAULT_PARAMETER_NAME.equals(apiRestRequest.parameterName())){
+        }else if("GET".equals(apiRestRequest.method()) && !RESTConstant.DEFAULT_PARAMETER_NAME.equals(apiRestRequest.parameterName())){
             errorApiList.add(String.format("[%s] RestRequest config error, Setting parameterName is not allowed when method set HttpMethod.GET", apiClass.getName()));
         }
     }

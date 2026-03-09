@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/accounts/sessions/{sessionUuid}/renew",
         responseClass = APIRenewSessionEvent.class,
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true
 )
 public class APIRenewSessionMsg extends APIMessage {

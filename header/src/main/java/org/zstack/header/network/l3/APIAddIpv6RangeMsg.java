@@ -15,7 +15,7 @@ import org.zstack.utils.network.IPv6Constants;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l3-networks/{l3NetworkUuid}/ipv6-ranges",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAddIpRangeEvent.class,
         parameterName = "params"
 )

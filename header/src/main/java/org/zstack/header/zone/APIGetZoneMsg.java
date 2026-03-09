@@ -8,7 +8,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = ZoneConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/zones/{uuid}/info",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetZoneReply.class
 )
 public class APIGetZoneMsg extends APISyncCallMessage {

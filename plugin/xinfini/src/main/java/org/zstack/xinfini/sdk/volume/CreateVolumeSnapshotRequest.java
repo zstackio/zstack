@@ -16,7 +16,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
     path = "/bs-snaps",
-    method = HttpMethod.POST,
+    method = "POST",
     responseClass = CreateVolumeSnapshotResponse.class,
     category = XInfiniApiCategory.AFA
 )

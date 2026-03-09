@@ -17,7 +17,7 @@ import java.util.Set;
 @RestRequest(
         path = "/hosts/kvm/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIKvmRunShellEvent.class
 )
 public class APIKvmRunShellMsg extends APIMessage {

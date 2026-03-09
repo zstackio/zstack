@@ -6,7 +6,7 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
-@RestRequest(path = "/identities/accounts/{accountUuid}/roles/{roleUuid}", method = HttpMethod.DELETE, responseClass = APIDetachRoleFromAccountEvent.class, morphTransform = Constants.MORPH_TRANSFORM_IAM1)
+@RestRequest(path = "/identities/accounts/{accountUuid}/roles/{roleUuid}", method = "DELETE", responseClass = APIDetachRoleFromAccountEvent.class, morphTransform = Constants.MORPH_TRANSFORM_IAM1)
 public class APIDetachRoleFromAccountMsg extends APIDeleteMessage implements RoleMessage {
     @APIParam
     private String roleUuid;

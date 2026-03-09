@@ -11,7 +11,7 @@ import java.util.List;
 @RestRequest(
         path = "/primary-storage/ceph/osdgroups",
         optionalPaths = {"/primary-storage/ceph/osdgroups/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryCephOsdGroupReply.class
 )
 @AutoQuery(replyClass = APIQueryCephOsdGroupReply.class, inventoryClass = CephOsdGroupInventory.class)

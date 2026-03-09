@@ -12,7 +12,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/iscsi/gateways/{id}/remove_clients",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = RemoveIscsiClientGroupFromIscsiTargetResponse.class
 )
 public class RemoveIscsiClientGroupFromIscsiTargetRequest extends ExponRequest {

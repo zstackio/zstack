@@ -14,7 +14,7 @@ import org.zstack.header.vm.VmInstanceVO;
 @Action(category = VirtualRouterConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/vm-instances/appliances/virtual-routers/{vmInstanceUuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIReconnectVirtualRouterEvent.class,
         isAction = true
 )

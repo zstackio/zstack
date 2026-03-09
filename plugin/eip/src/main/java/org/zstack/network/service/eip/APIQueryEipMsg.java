@@ -17,7 +17,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/eips",
         optionalPaths = {"/eips/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryEipReply.class
 )
 public class APIQueryEipMsg extends APIQueryMessage {

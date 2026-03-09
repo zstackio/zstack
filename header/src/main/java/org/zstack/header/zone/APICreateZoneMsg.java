@@ -38,7 +38,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/zones",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APICreateZoneEvent.class
 )

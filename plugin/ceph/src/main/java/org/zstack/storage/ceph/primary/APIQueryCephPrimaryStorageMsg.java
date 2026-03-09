@@ -16,7 +16,7 @@ import java.util.List;
 @RestRequest(
         path = "/primary-storage/ceph",
         optionalPaths = {"/primary-storage/ceph/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryPrimaryStorageReply.class
 )
 public class APIQueryCephPrimaryStorageMsg extends APIQueryMessage {

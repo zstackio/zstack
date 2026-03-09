@@ -23,7 +23,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/sdn-controllers",
         optionalPaths = {"/sdn-controllers/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQuerySdnControllerReply.class
 )
 public class APIQuerySdnControllerMsg extends APIQueryMessage {

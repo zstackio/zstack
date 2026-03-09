@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = ImageConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/backup-storage/{backupStorageUuid}/exported-images/{imageUuid}",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDeleteExportedImageFromBackupStorageEvent.class
 )
 public class APIDeleteExportedImageFromBackupStorageMsg extends APIMessage implements BackupStorageMessage {

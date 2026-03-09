@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = TagConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/system-tags",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateSystemTagEvent.class,
         parameterName = "params"
 )

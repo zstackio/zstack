@@ -11,7 +11,7 @@ import java.util.List;
 @AutoQuery(replyClass = APIQueryPrimaryStorageReply.class, inventoryClass = PrimaryStorageInventory.class)
 @RestRequest(
         path = "/primary-storage",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryPrimaryStorageReply.class
 )
 public class APIQueryPrimaryStorageMsg extends APIQueryMessage {

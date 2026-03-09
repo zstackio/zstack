@@ -16,7 +16,7 @@ import org.zstack.header.tag.TagResourceType;
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/nics",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateVmNicEvent.class,
         parameterName = "params"
 )

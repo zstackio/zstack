@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 @ExponRestRequest(
         path = "/block/iscsi/gateways",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = QueryIscsiTargetResponse.class,
         sync = true
 )

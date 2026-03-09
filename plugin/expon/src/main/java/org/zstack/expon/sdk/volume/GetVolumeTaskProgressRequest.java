@@ -11,7 +11,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/volumes/tasks/{taskId}",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = GetVolumeTaskProgressResponse.class,
         sync = true
 )

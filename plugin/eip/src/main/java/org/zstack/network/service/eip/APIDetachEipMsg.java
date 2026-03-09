@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,7 +56,7 @@ import java.util.List;
 @Action(category = EipConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/eips/{uuid}/vm-instances/nics",
-        method = HttpMethod.DELETE,
+        method = "DELETE",
         responseClass = APIDetachEipEvent.class
 )
 public class APIDetachEipMsg extends APIMessage implements EipMessage, APIMultiAuditor {

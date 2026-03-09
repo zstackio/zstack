@@ -15,7 +15,7 @@ import java.util.Map;
  */
 @XInfiniRestRequest(
     path = "/bs-volume-client-group-mappings/{id}",
-    method = HttpMethod.DELETE,
+    method = "DELETE",
     responseClass = DeleteVolumeClientGroupMappingResponse.class,
     category = XInfiniApiCategory.AFA
 )

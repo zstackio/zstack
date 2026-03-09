@@ -10,7 +10,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/failure_domain/{id}",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = GetFailureDomainResponse.class,
         sync = false
 )

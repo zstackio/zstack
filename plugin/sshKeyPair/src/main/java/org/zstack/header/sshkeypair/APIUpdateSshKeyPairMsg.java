@@ -10,7 +10,7 @@ import org.zstack.sshkeypair.SshKeyPairConstant;
 
 @RestRequest(
         path = "/ssh-key-pair/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUpdateSshKeyPairEvent.class,
         isAction = true
 )

@@ -19,7 +19,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/l2-networks/vxlan-pool",
         optionalPaths = {"/l2-networks/vxlan-pool/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryL2VxlanNetworkPoolReply.class
 )
 public class APIQueryL2VxlanNetworkPoolMsg extends APIQueryMessage {

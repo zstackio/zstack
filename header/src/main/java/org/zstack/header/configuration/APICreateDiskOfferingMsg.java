@@ -14,7 +14,7 @@ import org.zstack.header.tag.TagResourceType;
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/disk-offerings",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APICreateDiskOfferingEvent.class,
         parameterName = "params"
 )

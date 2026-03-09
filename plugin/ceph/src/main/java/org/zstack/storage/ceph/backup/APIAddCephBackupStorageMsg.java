@@ -25,7 +25,7 @@ import java.util.List;
 })
 @RestRequest(
         path = "/backup-storage/ceph",
-        method = HttpMethod.POST,
+        method = "POST",
         parameterName = "params",
         responseClass = APIAddBackupStorageEvent.class
 )

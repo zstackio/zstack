@@ -15,7 +15,7 @@ import java.io.Serializable;
  */
 @RestRequest(
         path = "/backup-storage/ceph/mons/{monUuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         isAction = true,
         responseClass = APIUpdateCephBackupStorageMonEvent.class
 )

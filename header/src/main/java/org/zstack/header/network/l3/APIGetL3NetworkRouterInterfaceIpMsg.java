@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l3-networks/{l3NetworkUuid}/router-interface-ip",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIGetL3NetworkRouterInterfaceIpReply.class
 )
 public class APIGetL3NetworkRouterInterfaceIpMsg extends APISyncCallMessage implements L3NetworkMessage {

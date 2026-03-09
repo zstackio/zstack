@@ -15,7 +15,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 @RestRequest(
         path = "/volumes/{uuid}/actions",
         isAction = true,
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIUndoSnapshotCreationEvent.class
 )
 public class APIUndoSnapshotCreationMsg extends APIMessage implements VolumeMessage {

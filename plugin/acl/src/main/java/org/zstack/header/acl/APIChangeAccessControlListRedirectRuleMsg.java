@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = AccessControlListConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/access-control-lists/redirectRules/{uuid}/actions",
-        method = HttpMethod.PUT,
+        method = "PUT",
         responseClass = APIChangeAccessControlListRedirectRuleEvent.class,
         isAction = true
 )

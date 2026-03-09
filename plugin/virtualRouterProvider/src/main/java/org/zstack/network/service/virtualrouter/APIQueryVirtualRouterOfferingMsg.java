@@ -17,7 +17,7 @@ import static java.util.Arrays.asList;
         path = "/instance-offerings/virtual-routers",
         optionalPaths = {"/instance-offerings/virtual-routers/{uuid}"},
         responseClass = APIQueryVirtualRouterOfferingReply.class,
-        method = HttpMethod.GET
+        method = "GET"
 )
 public class APIQueryVirtualRouterOfferingMsg extends APIQueryMessage {
 

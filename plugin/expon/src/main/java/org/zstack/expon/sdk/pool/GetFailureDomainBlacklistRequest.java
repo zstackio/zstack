@@ -11,7 +11,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/failure_domain/black_list/{id}",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = GetFailureDomainBlacklistResponse.class,
         sync = false
 )

@@ -7,7 +7,7 @@ import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
 
 @RestRequest(
         path = "/primary-storage/simulators",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAddPrimaryStorageEvent.class,
         parameterName = "params"
 )

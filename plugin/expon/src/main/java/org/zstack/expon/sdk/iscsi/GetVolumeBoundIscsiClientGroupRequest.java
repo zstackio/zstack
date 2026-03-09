@@ -11,7 +11,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/volumes/{volumeId}/clients",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = GetVolumeBoundIscsiClientGroupResponse.class,
         sync = false
 )

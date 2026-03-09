@@ -11,7 +11,7 @@ import java.util.Map;
 
 @ExponRestRequest(
         path = "/block/vhost/{vhostId}/vhost_binded_uss",
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = GetVhostControllerBoundUssResponse.class
 )
 public class GetVhostControllerBoundUssRequest extends ExponRequest {

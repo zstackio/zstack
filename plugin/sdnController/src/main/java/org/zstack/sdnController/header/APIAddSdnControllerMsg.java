@@ -14,7 +14,7 @@ import org.zstack.header.tag.TagResourceType;
 @Action(category = SdnControllerConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/sdn-controllers",
-        method = HttpMethod.POST,
+        method = "POST",
         responseClass = APIAddSdnControllerEvent.class,
         parameterName = "params"
 )

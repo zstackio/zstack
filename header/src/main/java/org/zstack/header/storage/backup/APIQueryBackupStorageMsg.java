@@ -14,7 +14,7 @@ import java.util.List;
 @RestRequest(
         path = "/backup-storage",
         optionalPaths = {"/backup-storage/{uuid}"},
-        method = HttpMethod.GET,
+        method = "GET",
         responseClass = APIQueryBackupStorageReply.class
 )
 public class APIQueryBackupStorageMsg extends APIQueryMessage {
