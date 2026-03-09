@@ -3,10 +3,13 @@ package org.zstack.test.integration.kvm.host
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.SimpleQuery
+import org.zstack.core.db.SimpleQuery.Op
 import org.zstack.header.host.AddHostReply
 import org.zstack.header.host.HostConstant
 import org.zstack.header.host.HostInventory
 import org.zstack.header.host.HostKeyIdentityVO
+import org.zstack.header.host.HostKeyIdentityVO_
 import org.zstack.header.host.HostStatus
 import org.zstack.header.host.PingHostMsg
 import org.zstack.header.host.PingHostReply
@@ -180,15 +183,25 @@ class HostSecretCase extends SubCase {
 
         assert createEnvelopeKeyCallCount.get() >= 1 : "envelope key sync (KVM_CREATE_ENVELOPE_KEY_PATH) should be triggered at least once after add host"
 
-        // Create/ping only calls createEnvelopeKey; production does not GET and save the key after create.
-        // Persist HostKeyIdentity so SecretHostDefineMsg finds a public key (same value as KVM_GET_ENVELOPE_KEY_PATH simulator).
-        // Set fingerprint so the handle(SecretHostDefineMsg) fingerprint check is exercised (must match publicKey).
-        HostKeyIdentityVO keyVo = new HostKeyIdentityVO()
-        keyVo.hostUuid = addedHost.uuid
-        keyVo.publicKey = MOCK_PUBLIC_KEY_BASE64
-        keyVo.fingerprint = fingerprintFromPublicKey(MOCK_PUBLIC_KEY_BASE64)
-        keyVo.verified = true
-        bean(DatabaseFacade.class).persist(keyVo)
+        // Create/ping may already persist HostKeyIdentityVO (sync path calls GET then saveOrUpdateHostKeyIdentity).
+        // Ensure HostKeyIdentity exists with expected key so SecretHostDefineMsg finds it and fingerprint check passes.
+        DatabaseFacade dbf = bean(DatabaseFacade.class)
+        SimpleQuery<HostKeyIdentityVO> q = dbf.createQuery(HostKeyIdentityVO.class)
+        q.add(HostKeyIdentityVO_.hostUuid, Op.EQ, addedHost.uuid)
+        HostKeyIdentityVO keyVo = q.find()
+        if (keyVo == null) {
+            keyVo = new HostKeyIdentityVO()
+            keyVo.hostUuid = addedHost.uuid
+            keyVo.publicKey = MOCK_PUBLIC_KEY_BASE64
+            keyVo.fingerprint = fingerprintFromPublicKey(MOCK_PUBLIC_KEY_BASE64)
+            keyVo.verified = true
+            dbf.persist(keyVo)
+        } else {
+            keyVo.publicKey = MOCK_PUBLIC_KEY_BASE64
+            keyVo.fingerprint = fingerprintFromPublicKey(MOCK_PUBLIC_KEY_BASE64)
+            keyVo.verified = true
+            dbf.update(keyVo)
+        }
     }
 
     void testSecretHostDefineSuccess() {
