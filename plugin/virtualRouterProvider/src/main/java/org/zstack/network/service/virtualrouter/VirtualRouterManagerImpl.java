@@ -83,7 +83,7 @@ import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -163,7 +163,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private TagManager tagMgr;
     @Autowired
     private NetworkServiceManager nwServiceMgr;
-    @Autowired
+    @Autowired(required = false)
     private VyosVersionManager vyosVersionManager;
     @Autowired
     private LbConfigProxy lbProxy;
@@ -2258,6 +2258,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
         if (vrVo.getHaStatus() == ApplianceVmHaStatus.Backup) {
             reconenctVirtualRouter(inv.getUuid(), false);
+            return;
+        }
+
+        if (vyosVersionManager == null) {
             return;
         }
 

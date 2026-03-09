@@ -11,14 +11,14 @@ import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SharedLoadBalancerFactory implements LoadBalancerFactory {
     @Autowired
     DatabaseFacade dbf;
-    @Autowired
+    @Autowired(required = false)
     LoadBalancerManager lbMgr;
 
     @Override
@@ -57,6 +57,10 @@ public class SharedLoadBalancerFactory implements LoadBalancerFactory {
             return null;
         }
 
+        if (lbMgr == null) {
+            return null;
+        }
+
         return lbMgr.getBackend(vo.getProviderType());
     }
 
@@ -85,6 +89,10 @@ public class SharedLoadBalancerFactory implements LoadBalancerFactory {
     @Override
     public List<VmNicVO> getAttachableVmNicsForServerGroup(LoadBalancerVO lbVO,
                                                            LoadBalancerServerGroupVO groupVO, int ipVersion) {
+        if (lbMgr == null) {
+            return new java.util.ArrayList<>();
+        }
+
         String providerType = VyosConstants.VYOS_ROUTER_PROVIDER_TYPE;
         if (lbVO.getProviderType() != null) {
             providerType = lbVO.getProviderType();

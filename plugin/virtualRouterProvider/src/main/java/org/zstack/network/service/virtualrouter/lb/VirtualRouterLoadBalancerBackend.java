@@ -97,7 +97,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     private LbConfigProxy proxy;
     @Autowired
     private VirtualRouterHaBackend haBackend;
-    @Autowired
+    @Autowired(required = false)
     private LoadBalancerManager lbMgr;
     @Autowired
     private VipConfigProxy vipProxy;
