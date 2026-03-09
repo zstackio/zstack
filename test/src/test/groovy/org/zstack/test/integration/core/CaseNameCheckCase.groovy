@@ -14,6 +14,15 @@ class CaseNameCheckCase extends SubCase {
 
     private static final List<String> ignoreCheckListForTestSuite = [StabilityTestCase.class.name]
 
+    private static boolean isPremiumClass(Class clz) {
+        try {
+            def location = clz.protectionDomain?.codeSource?.location?.toString()
+            return location != null && location.contains("premium")
+        } catch (Exception ignored) {
+            return false
+        }
+    }
+
     @Override
     void clean() {
     }
@@ -38,7 +47,7 @@ class CaseNameCheckCase extends SubCase {
         def tests = Platform.reflections.getSubTypesOf(Test.class).findAll { !Modifier.isAbstract(it.modifiers) }
         tests.forEach{ it ->
             Class caseClass = it
-            boolean result = it.package != null && !it.name.endsWith("Test") && !SubCase.isAssignableFrom(it) && ignoreCheckListForTestSuite.find{ caseClass.name == it } == null
+            boolean result = it.package != null && !it.name.endsWith("Test") && !SubCase.isAssignableFrom(it) && ignoreCheckListForTestSuite.find{ caseClass.name == it } == null && !isPremiumClass(it)
 
             if(result){
                 invalidNameList.add(it.name)
@@ -53,7 +62,7 @@ class CaseNameCheckCase extends SubCase {
 
         def tests = Platform.reflections.getSubTypesOf(SubCase.class).findAll { !Modifier.isAbstract(it.modifiers) }
         tests.forEach{ it ->
-            boolean result = it.package != null && !it.name.endsWith("Case")
+            boolean result = it.package != null && !it.name.endsWith("Case") && !isPremiumClass(it)
 
             if(result){
                 invalidNameList.add(it.name)

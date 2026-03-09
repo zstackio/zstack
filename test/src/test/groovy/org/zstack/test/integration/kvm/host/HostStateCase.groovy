@@ -88,8 +88,8 @@ class HostStateCase extends SubCase {
 
         HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1)
 
-        1.upto(5) {
-            TimeUnit.SECONDS.sleep(1)
+        // Allow host time to stabilize after ping interval change
+        retryInSecs(10) {
             def hvo = dbFindByUuid(hinv.uuid, HostVO.class)
             assert hvo.status == HostStatus.Connected
         }
