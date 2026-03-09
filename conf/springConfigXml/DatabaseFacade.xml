@@ -18,40 +18,30 @@
         <property name="entityManagerFactory" ref="entityManagerFactory"/>
     </bean>
 
-    <bean id="DbFacadeDataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
-        <property name="driverClass" value="com.mysql.jdbc.Driver"/>
+    <bean id="DbFacadeDataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
         <property name="jdbcUrl" value="${DbFacadeDataSource.jdbcUrl:jdbc:mysql://localhost:3306/zstack}"/>
-        <property name="user" value="${DbFacadeDataSource.user:root}"/>
+        <property name="username" value="${DbFacadeDataSource.user:root}"/>
         <property name="password" value="${DbFacadeDataSource.password:}"/>
-        <property name="initialPoolSize" value="10"/>
-        <property name="maxPoolSize" value="${DbFacadeDataSource.maxPoolSize:100}"/>
-        <property name="idleConnectionTestPeriod" value="${DbFacadeDataSource.idleConnectionTestPeriod:3000}"/>
-        <property name="loginTimeout" value="${DbFacadeDataSource.loginTimeout:300}"/>
-        <property name="connectionCustomizerClassName" value="org.zstack.core.db.TransactionIsolationLevelSetter"/>
-        <property name="numHelperThreads" value="${DbFacadeDataSource.numHelperThreads:15}"/>
-        <property name="acquireIncrement" value="50"/>
-        <property name="maxIdleTime" value="${DbFacadeDataSource.maxIdleTime:3600}"/>
-        <property name="testConnectionOnCheckout" value="${DbFacadeDataSource.testConnectionOnCheckout:true}"/>
-        <property name="connectionTesterClassName" value="${DbFacadeDataSource.connectionTesterClassName:org.zstack.core.db.C3p0ConnectionTester}"/>
-        <!--
-        <property name="maxIdleTime" value="${DbFacadeDataSource.maxIdleTime:3600}" />
-        <property name="unreturnedConnectionTimeout" value="10" />
-        <property name="debugUnreturnedConnectionStackTraces" value="true" />
-        -->
+        <property name="minimumIdle" value="10"/>
+        <property name="maximumPoolSize" value="${DbFacadeDataSource.maxPoolSize:100}"/>
+        <property name="connectionTimeout" value="300000"/>
+        <property name="idleTimeout" value="3600000"/>
+        <property name="maxLifetime" value="7200000"/>
+        <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+        <property name="connectionTestQuery" value="SELECT 1"/>
     </bean>
 
-    <bean id="ExtraDataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
-        <property name="driverClass" value="com.mysql.jdbc.Driver"/>
+    <bean id="ExtraDataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
         <property name="jdbcUrl" value="${DbFacadeDataSource.jdbcUrl:jdbc:mysql://localhost:3306/zstack}"/>
-        <property name="user" value="${DbFacadeDataSource.user:root}"/>
+        <property name="username" value="${DbFacadeDataSource.user:root}"/>
         <property name="password" value="${DbFacadeDataSource.password:}"/>
-        <property name="maxPoolSize" value="5"/>
-        <property name="idleConnectionTestPeriod" value="${ExtraDataSource.idleConnectionTestPeriod:3000}"/>
-        <property name="loginTimeout" value="${DbFacadeDataSource.loginTimeout:300}"/>
-        <property name="connectionCustomizerClassName" value="org.zstack.core.db.TransactionIsolationLevelSetter"/>
-        <property name="testConnectionOnCheckout" value="${DbFacadeDataSource.testConnectionOnCheckout:true}"/>
-        <property name="connectionTesterClassName" value="${DbFacadeDataSource.connectionTesterClassName:org.zstack.core.db.C3p0ConnectionTester}"/>
-        <property name="maxIdleTime" value="${ExtraDataSource.maxIdleTime:3600}"/>
+        <property name="maximumPoolSize" value="5"/>
+        <property name="connectionTimeout" value="300000"/>
+        <property name="idleTimeout" value="3600000"/>
+        <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+        <property name="connectionTestQuery" value="SELECT 1"/>
     </bean>
 
     <bean id="entityManagerFactory"

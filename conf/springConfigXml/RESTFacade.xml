@@ -29,21 +29,17 @@
         </zstack:plugin>
     </bean>
     
-    <bean id="RESTApiDataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
-        <property name="initialPoolSize" value="10" />
-        <property name="driverClass" value="com.mysql.jdbc.Driver" />
+    <bean id="RESTApiDataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver" />
         <property name="jdbcUrl" value="${RESTApiDataSource.jdbcUrl:jdbc:mysql://localhost:3306/zstack_rest}" />
-        <property name="user" value="${DbFacadeDataSource.user:root}" />
+        <property name="username" value="${DbFacadeDataSource.user:root}" />
         <property name="password" value="${DbFacadeDataSource.password:}" />
-        <property name="maxPoolSize" value="${RestFacadeDataSource.maxPoolSize:20}" />
-        <property name="idleConnectionTestPeriod" value="${DbFacadeDataSource.idleConnectionTestPeriod:3000}" />
-        <property name="loginTimeout" value="${DbFacadeDataSource.loginTimeout:300}" />
-        <property name="connectionCustomizerClassName" value="org.zstack.core.db.TransactionIsolationLevelSetter" />
-        <property name="maxIdleTime" value="${DbFacadeDataSource.maxIdleTime:3600}"/>
-        <property name="numHelperThreads" value="${DbFacadeDataSource.numHelperThreads:15}" />
-        <property name="testConnectionOnCheckout" value="${DbFacadeDataSource.testConnectionOnCheckout:false}"/>
-        <property name="acquireIncrement" value="50" />
-        <property name="preferredTestQuery" value="SELECT 1"/>
+        <property name="minimumIdle" value="10" />
+        <property name="maximumPoolSize" value="${RestFacadeDataSource.maxPoolSize:20}" />
+        <property name="connectionTimeout" value="300000" />
+        <property name="idleTimeout" value="3600000" />
+        <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED" />
+        <property name="connectionTestQuery" value="SELECT 1" />
     </bean>
     
     <bean id="RESTApiEntityManagerFactory"
