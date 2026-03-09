@@ -8,16 +8,17 @@
     </dependencies>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.compiler.version>3.6.1</project.compiler.version>
-        <project.java.version>1.8</project.java.version>
-        <spring.framework.version>5.2.25.RELEASE</spring.framework.version>
-        <spring.security.version>5.7.13</spring.security.version>
-        <hibernate.version>5.3.26.Final</hibernate.version>
-        <aspectj.version>1.8.9</aspectj.version>
-        <aspectj.plugin.version>1.10</aspectj.plugin.version>
-        <groovy.eclipse.compiler>2.9.2-01</groovy.eclipse.compiler>
-        <groovy.eclipse.batch>2.4.3-01</groovy.eclipse.batch>
+        <project.compiler.version>3.13.0</project.compiler.version>
+        <project.java.version>21</project.java.version>
+        <spring.framework.version>6.1.14</spring.framework.version>
+        <spring.security.version>6.2.7</spring.security.version>
+        <hibernate.version>6.4.10.Final</hibernate.version>
+        <aspectj.version>1.9.22.1</aspectj.version>
+        <aspectj.plugin.version>1.14</aspectj.plugin.version>
+        <groovy.version>4.0.28</groovy.version>
+        
         <hibernate.search.version>5.10.12.Final</hibernate.search.version>
+        <maven.compiler.proc>none</maven.compiler.proc>
     </properties>
 
     <modelVersion>4.0.0</modelVersion>
@@ -131,20 +132,18 @@
                 <version>2.18.0</version>
             </dependency>
             <dependency>
-                <groupId>org.codehaus.groovy</groupId>
+                <groupId>org.apache.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
-                <version>2.4.21</version>
+                <version>${groovy.version}</version>
+                <type>pom</type>
             </dependency>
             <dependency>
-                <groupId>org.hibernate.javax.persistence</groupId>
-                <artifactId>hibernate-jpa-2.1-api</artifactId>
-                <version>1.0.0.Final</version>
+                <groupId>org.apache.groovy</groupId>
+                <artifactId>groovy</artifactId>
+                <version>${groovy.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-entitymanager</artifactId>
-                <version>${hibernate.version}</version>
-            </dependency>
+            
+            
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-search-orm</artifactId>
@@ -172,7 +171,7 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>org.hibernate</groupId>
+                <groupId>org.hibernate.orm</groupId>
                 <artifactId>hibernate-core</artifactId>
                 <version>${hibernate.version}</version>
             </dependency>
@@ -267,9 +266,9 @@
                 <version>4.1.4</version>
             </dependency>
             <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>javax.servlet-api</artifactId>
-                <version>3.1.0</version>
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <version>6.0.0</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
@@ -309,19 +308,18 @@
             </dependency>-->
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
-                <version>1.67</version>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>1.78.1</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcmail-jdk15on</artifactId>
-                <version>1.67</version>
+                <artifactId>bcjmail-jdk18on</artifactId>
+                <version>1.78.1</version>
             </dependency>
-            <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcpkix-jdk15on -->
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
-                <version>1.66</version>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>1.78.1</version>
             </dependency>
 
 
@@ -346,9 +344,9 @@
                 <version>4.0.3</version>
             </dependency>
             <dependency>
-                <groupId>com.sun.mail</groupId>
-                <artifactId>javax.mail</artifactId>
-                <version>1.6.2</version>
+                <groupId>org.eclipse.angus</groupId>
+                <artifactId>angus-mail</artifactId>
+                <version>2.0.3</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils -->
             <dependency>
@@ -594,6 +592,36 @@
                 <groupId>io.opentelemetry.semconv</groupId>
                 <artifactId>opentelemetry-semconv-incubating</artifactId>
                 <version>1.32.0-alpha</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.persistence</groupId>
+                <artifactId>jakarta.persistence-api</artifactId>
+                <version>3.1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>5.1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>4.0.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>5.3.1</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.annotation</groupId>
+                <artifactId>jakarta.annotation-api</artifactId>
+                <version>2.1.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>4.0.5</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

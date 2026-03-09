@@ -26,9 +26,19 @@
 
     <dependencies>
         <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.kohsuke</groupId>
             <artifactId>groovy-sandbox</artifactId>
             <version>1.19</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.codehaus.groovy</groupId>
+                    <artifactId>groovy</artifactId>
+                </exclusion>
+            </exclusions>
            <!-- <scope>system</scope>
             <systemPath>${project.basedir}/ext-libs/groovy-sandbox-1.27-SNAPSHOT.jar</systemPath>-->
         </dependency>
@@ -517,34 +527,95 @@
             </plugin>
 
 	    <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>add-test-source</id>
+                        <phase>generate-test-sources</phase>
+                        <goals><goal>add-test-source</goal></goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.basedir}/src/test/groovy</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+	    <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.6.1</version>
                 <configuration>
-                    <compilerId>groovy-eclipse-compiler</compilerId>
                     <source>${project.java.version}</source>
                     <target>${project.java.version}</target>
 		            <debuglevel>lines,vars,source</debuglevel>
 		            <debug>true</debug>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.codehaus.groovy</groupId>
-                        <artifactId>groovy-eclipse-compiler</artifactId>
-                        <version>2.9.2-01</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.codehaus.groovy</groupId>
-                        <artifactId>groovy-eclipse-batch</artifactId>
-                        <version>2.4.3-01</version>
-                    </dependency>
-                </dependencies>
             </plugin>
 
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
+				<groupId>org.codehaus.gmavenplus</groupId>
+				<artifactId>gmavenplus-plugin</artifactId>
+				<version>3.0.2</version>
+				<configuration>
+					<sources>
+						<fileset>
+							<directory>${project.basedir}/src/main/java</directory>
+							<includes>
+								<include>**/*.groovy</include>
+							</includes>
+						</fileset>
+					</sources>
+					<testSources>
+						<fileset>
+							<directory>${project.basedir}/src/test/groovy</directory>
+							<includes>
+								<include>**/*.groovy</include>
+							</includes>
+						</fileset>
+						<fileset>
+							<directory>${project.basedir}/src/test/java</directory>
+							<includes>
+								<include>**/*.groovy</include>
+							</includes>
+						</fileset>
+					</testSources>
+				</configuration>
+				<executions>
+					<execution>
+						<id>groovy-stubs</id>
+						<goals><goal>generateStubs</goal><goal>removeStubs</goal></goals>
+					</execution>
+					<execution>
+						<id>groovy-compile</id>
+						<goals><goal>compile</goal></goals>
+					</execution>
+					<execution>
+						<id>groovy-test-compile</id>
+						<goals><goal>compileTests</goal></goals>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>org.apache.groovy</groupId>
+						<artifactId>groovy</artifactId>
+						<version>${groovy.version}</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+			<plugin>
+                <groupId>dev.aspectj</groupId>
                 <artifactId>aspectj-maven-plugin</artifactId>
                 <version>${aspectj.plugin.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.aspectj</groupId>
+                        <artifactId>aspectjtools</artifactId>
+                        <version>${aspectj.version}</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <goals>

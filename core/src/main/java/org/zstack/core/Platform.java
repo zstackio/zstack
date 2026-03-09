@@ -477,6 +477,7 @@ public class Platform {
     }
 
     static {
+        if (!"true".equals(System.getProperty("zstack.skipPlatformInit"))) {
         FileInputStream in = null;
         try {
             Set<Class> baseResourceClasses = reflections.getTypesAnnotatedWith(BaseResource.class).stream()
@@ -522,6 +523,7 @@ public class Platform {
                 }
             }
         }
+        } // end skipPlatformInit guard
     }
 
     private static void collectDynamicObjectMetadata() {
