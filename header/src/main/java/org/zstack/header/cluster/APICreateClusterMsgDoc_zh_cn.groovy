@@ -56,7 +56,7 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					values ("KVM","Simulator","baremetal","baremetal2","xdragon")
+					values ("KVM","Simulator","baremetal","baremetal2","xdragon","baremetal2Dpu")
 				}
 				column {
 					name "type"
