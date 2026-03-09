@@ -122,3 +122,6 @@ ALTER TABLE `zstack`.`BareMetal2InstanceVO`
         FOREIGN KEY (`lastGatewayUuid`)
         REFERENCES `HostEO` (`uuid`)
         ON DELETE SET NULL;
+
+-- ZSTAC-68709: Add targetQueueKey for evaluation task queuing per service endpoint
+CALL ADD_COLUMN('ModelEvaluationTaskVO', 'targetQueueKey', 'TEXT', 1, NULL);
