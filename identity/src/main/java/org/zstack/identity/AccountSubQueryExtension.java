@@ -9,7 +9,7 @@ import org.zstack.query.MysqlQuerySubQueryExtension;
 import org.zstack.query.QueryUtils;
 import org.zstack.utils.FieldUtils;
 
-import javax.persistence.Id;
+import jakarta.persistence.Id;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +37,7 @@ public class AccountSubQueryExtension extends AbstractMysqlQuerySubQueryExtensio
         String resourceType = acntMgr.getBaseResourceType(entityClass).getSimpleName();
         return String.format("(%s.%s in (select accountresourcerefvo.resourceUuid from AccountResourceRefVO accountresourcerefvo where accountresourcerefvo.ownerAccountUuid = '%s'" +
                 " and accountresourcerefvo.resourceType = '%s') or %s.%s in (select sharedresourcevo.resourceUuid from SharedResourceVO sharedresourcevo where" +
-                " (sharedresourcevo.receiverAccountUuid = '%s' or sharedresourcevo.toPublic = 1) and sharedresourcevo.resourceType = '%s'))",
+                " (sharedresourcevo.receiverAccountUuid = '%s' or sharedresourcevo.toPublic = true) and sharedresourcevo.resourceType = '%s'))",
         inventoryClass.getSimpleName().toLowerCase(), priKey, msg.getSession().getAccountUuid(), resourceType,
         inventoryClass.getSimpleName().toLowerCase(), priKey, msg.getSession().getAccountUuid(), resourceType);
     }

@@ -85,7 +85,7 @@ public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, Re
         return String.format("(%s.%s IN (SELECT accountresourcerefvo.resourceUuid FROM AccountResourceRefVO accountresourcerefvo WHERE" +
                         "  accountresourcerefvo.ownerAccountUuid in (%s) OR (accountresourcerefvo.resourceUuid" +
                         " IN (SELECT sharedresourcevo.resourceUuid FROM SharedResourceVO sharedresourcevo WHERE" +
-                        " sharedresourcevo.receiverAccountUuid in (%s) OR sharedresourcevo.toPublic = 1))))",
+                        " sharedresourcevo.receiverAccountUuid in (%s) OR sharedresourcevo.toPublic = true))))",
                 inventoryName, primaryKey, accountStr, accountStr);
     }
 }

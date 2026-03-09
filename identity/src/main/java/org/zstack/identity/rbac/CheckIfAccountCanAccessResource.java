@@ -19,7 +19,7 @@ public class CheckIfAccountCanAccessResource {
                 String text = "select ref.resourceUuid from AccountResourceRefVO ref where" +
                         " ref.ownerAccountUuid = :accountUuid" +
                         " or ref.resourceUuid in" +
-                        " (select sh.resourceUuid from SharedResourceVO sh where sh.receiverAccountUuid = :accountUuid or sh.toPublic = 1)" +
+                        " (select sh.resourceUuid from SharedResourceVO sh where sh.receiverAccountUuid = :accountUuid or sh.toPublic = true)" +
                         " and ref.resourceUuid in (:uuids)";
 
                 List<String> auuids = sql(text, String.class)

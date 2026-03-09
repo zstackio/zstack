@@ -1,6 +1,6 @@
 package org.zstack.zql.sql;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.zstack.core.db.EntityMetadata;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -245,8 +245,23 @@ public class SQLConditionBuilder {
                 entityName, right.selfKeyName, value);
     }
 
+    private static boolean isNumericType(Class<?> type) {
+        return Number.class.isAssignableFrom(type)
+                || type == int.class || type == long.class
+                || type == short.class || type == float.class
+                || type == double.class;
+    }
+
     private String normalizeValue(String value) {
-        if (Boolean.class.isAssignableFrom(conditionField.getType()) || boolean.class.isAssignableFrom(conditionField.getType())) {
+        if (conditionField == null) {
+            return value;
+        }
+
+        Class<?> type = conditionField.getType();
+        if (Boolean.class.isAssignableFrom(type) || boolean.class.isAssignableFrom(type)) {
+            return StringUtils.strip(value, "'");
+        } else if (isNumericType(type)) {
+            // Hibernate 6 requires numeric literals without quotes
             return StringUtils.strip(value, "'");
         } else {
             return value;
