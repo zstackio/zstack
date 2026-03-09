@@ -6,7 +6,7 @@ import org.zstack.header.search.Inventory;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.volume.VolumeInventory;
 
-import javax.persistence.JoinColumn;
+import jakarta.persistence.JoinColumn;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;

@@ -1,6 +1,6 @@
 package org.zstack.zql.ast.visitors;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.zstack.core.Platform;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.zql.ASTNode;

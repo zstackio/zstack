@@ -25,7 +25,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

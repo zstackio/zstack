@@ -8,7 +8,7 @@ import org.zstack.header.vo.SoftDeletionCascades;
 import org.zstack.header.zone.ZoneEO;
 import org.zstack.header.zone.ZoneVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity

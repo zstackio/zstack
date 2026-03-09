@@ -9,7 +9,7 @@ import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.NoView;
 import org.zstack.header.vo.ResourceVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashSet;

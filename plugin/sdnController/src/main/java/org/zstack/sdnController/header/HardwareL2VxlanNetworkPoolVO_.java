@@ -2,8 +2,8 @@ package org.zstack.sdnController.header;
 
 import org.zstack.header.network.l2.L2NetworkVO_;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 /**
  * Created by shixin.ruan on 09/20/2019.

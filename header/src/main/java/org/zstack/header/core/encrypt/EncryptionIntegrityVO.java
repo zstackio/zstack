@@ -1,6 +1,6 @@
 package org.zstack.header.core.encrypt;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 /**

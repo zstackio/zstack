@@ -12,7 +12,7 @@ import org.zstack.header.message.Message;
 import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.lang.reflect.Method;
 import java.util.*;
 

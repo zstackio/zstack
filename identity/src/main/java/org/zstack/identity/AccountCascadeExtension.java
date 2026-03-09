@@ -17,7 +17,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
-import javax.persistence.Query;
+import jakarta.persistence.Query;
 import java.util.Arrays;
 import java.util.List;
 

@@ -53,8 +53,8 @@ import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 

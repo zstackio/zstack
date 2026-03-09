@@ -2,8 +2,8 @@ package org.zstack.test.core.db;
 
 import org.zstack.test.core.db.PersonVO.Sex;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 import java.util.Date;
 
 @StaticMetamodel(PersonVO.class)

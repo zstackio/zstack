@@ -54,7 +54,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 import static org.zstack.core.Platform.*;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 

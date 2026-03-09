@@ -2,8 +2,8 @@ package org.zstack.network.securitygroup;
 
 import org.zstack.header.vo.ResourceVO_;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
 
 @StaticMetamodel(SecurityGroupRuleVO.class)

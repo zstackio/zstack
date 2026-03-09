@@ -7,7 +7,7 @@ import org.zstack.header.search.Parent;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.storage.ceph.CephConstants;
 
-import javax.persistence.Column;
+import jakarta.persistence.Column;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;

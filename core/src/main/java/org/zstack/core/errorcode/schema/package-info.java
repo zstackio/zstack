@@ -5,10 +5,10 @@
 // Generated on: 2014.01.04 at 04:43:49 PM GMT-08:00 
 //
 
-@javax.xml.bind.annotation.XmlSchema(elementFormDefault = javax.xml.bind.annotation.XmlNsForm.QUALIFIED)
+@jakarta.xml.bind.annotation.XmlSchema(elementFormDefault = jakarta.xml.bind.annotation.XmlNsForm.QUALIFIED)
 @XmlJavaTypeAdapter(value=StringTrimAdapter.class,type=String.class)
 package org.zstack.core.errorcode.schema;
 
 import org.zstack.utils.jaxb.StringTrimAdapter;
 
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;

@@ -1,7 +1,7 @@
 package org.zstack.storage.primary.local;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
 
 /**

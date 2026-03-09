@@ -1,7 +1,7 @@
 package org.zstack.network.service.virtualrouter.portforwarding;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(VirtualRouterPortForwardingRuleRefVO.class)
 public class VirtualRouterPortForwardingRuleRefVO_ {

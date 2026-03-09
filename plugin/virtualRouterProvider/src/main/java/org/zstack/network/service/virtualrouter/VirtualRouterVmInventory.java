@@ -17,7 +17,7 @@ import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
-import javax.persistence.JoinColumn;
+import jakarta.persistence.JoinColumn;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;

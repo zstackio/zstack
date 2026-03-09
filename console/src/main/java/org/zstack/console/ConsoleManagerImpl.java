@@ -32,7 +32,7 @@ import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Query;
+import jakarta.persistence.Query;
 import java.util.HashMap;
 import java.util.Map;
 

@@ -9,7 +9,7 @@ import org.zstack.header.vo.Index;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.util.Collection;
 

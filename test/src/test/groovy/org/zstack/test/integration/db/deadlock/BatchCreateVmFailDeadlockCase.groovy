@@ -28,7 +28,7 @@ import org.zstack.testlib.SubCase
 import org.zstack.testlib.Test
 import org.zstack.utils.data.SizeUnit
 
-import javax.persistence.LockTimeoutException
+import jakarta.persistence.LockTimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Collectors
 /**

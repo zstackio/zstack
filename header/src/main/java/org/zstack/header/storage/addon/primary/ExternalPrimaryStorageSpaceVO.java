@@ -4,7 +4,7 @@ import org.zstack.header.storage.primary.PrimaryStorageEO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ToInventory;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity

@@ -4,16 +4,13 @@ import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.Index;
 
-import javax.persistence.Column;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Table;
-
+import jakarta.persistence.Column;
+import jakarta.persistence.MappedSuperclass;
 @org.zstack.header.vo.EntityGraph(
         parents = {
                 @EntityGraph.Neighbour(type = PrimaryStorageEO.class, myField = "primaryStorageUuid", targetField = "uuid")
         }
 )
-@Table
 @MappedSuperclass
 public class PrimaryStorageHistoricalUsageBaseVO extends HistoricalUsageAO {
 

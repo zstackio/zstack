@@ -2,8 +2,8 @@ package org.zstack.header.acl;
 
 import org.apache.commons.net.ntp.TimeStamp;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 /**
  * @author: zhanyong.miao

@@ -310,7 +310,7 @@ class VxlanLazyAttachCase extends SubCase {
             return rsp
         }
 
-        def realizeRecords = [] as SynchronizedList<String>
+        def realizeRecords = [] as SynchronizedList
         List<VxlanKvmAgentCommands.CreateVxlanBridgeCmd> createBridgeCmds = new ArrayList<>()
         createBridgeCmds = Collections.synchronizedList(new ArrayList())
         env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->

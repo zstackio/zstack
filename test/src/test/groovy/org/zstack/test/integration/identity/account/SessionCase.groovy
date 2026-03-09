@@ -14,7 +14,7 @@ import org.zstack.testlib.SubCase
 import org.zstack.sdk.LogInByAccountAction
 import org.zstack.header.identity.IdentityErrors
 
-import javax.persistence.Query
+import jakarta.persistence.Query
 import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
 

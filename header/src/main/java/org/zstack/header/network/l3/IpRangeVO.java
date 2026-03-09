@@ -6,9 +6,9 @@ import org.zstack.header.vo.EO;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 @Entity
 @Table

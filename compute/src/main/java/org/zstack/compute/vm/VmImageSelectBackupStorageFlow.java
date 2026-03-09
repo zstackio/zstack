@@ -22,7 +22,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;

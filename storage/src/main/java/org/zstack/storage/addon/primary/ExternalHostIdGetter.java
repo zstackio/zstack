@@ -18,7 +18,7 @@ import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.LockModeType;
+import jakarta.persistence.LockModeType;
 import java.sql.Timestamp;
 import java.util.BitSet;
 import java.util.Collections;

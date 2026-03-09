@@ -18,7 +18,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 public class ConsoleProxySimulator {
     CLogger logger = Utils.getLogger(ConsoleProxySimulator.class);

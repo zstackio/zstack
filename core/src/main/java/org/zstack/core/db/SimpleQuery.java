@@ -1,23 +1,22 @@
 package org.zstack.core.db;
 
-import javax.persistence.Tuple;
-import javax.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.Tuple;
 import java.util.Collection;
 import java.util.List;
 
 
 public interface SimpleQuery<T> {
-    SimpleQuery<T> select(SingularAttribute...attrs);
+    SimpleQuery<T> select(Object...attrs);
 
-    SimpleQuery<T> add(SingularAttribute attr, Op op, Collection vals);
+    SimpleQuery<T> add(Object attr, Op op, Collection vals);
 
-    SimpleQuery<T> add(SingularAttribute attr, Op op, Object...val);
-    
-    SimpleQuery<T> isSoftDeleted(SingularAttribute attr);
-    
-    SimpleQuery<T> orderBy(SingularAttribute attr, Od order);
-    
-    SimpleQuery<T> groupBy(SingularAttribute attr);
+    SimpleQuery<T> add(Object attr, Op op, Object...val);
+
+    SimpleQuery<T> isSoftDeleted(Object attr);
+
+    SimpleQuery<T> orderBy(Object attr, Od order);
+
+    SimpleQuery<T> groupBy(Object attr);
     
     SimpleQuery<T> setLimit(int limit);
     

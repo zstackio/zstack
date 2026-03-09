@@ -29,7 +29,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.stopwatch.StopWatch;
 
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;

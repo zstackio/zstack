@@ -1,6 +1,6 @@
 package org.zstack.query;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.objenesis.Objenesis;
 import org.objenesis.ObjenesisStd;
 import org.objenesis.instantiator.ObjectInstantiator;
@@ -29,8 +29,8 @@ import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.argerr;
 
-import javax.persistence.*;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.*;
+import jakarta.persistence.metamodel.StaticMetamodel;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

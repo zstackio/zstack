@@ -3,7 +3,7 @@ package org.zstack.zql;
 import com.google.common.collect.Sets;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -45,7 +45,7 @@ import org.zstack.zql.ast.visitors.result.QueryResult;
 import org.zstack.zql.ast.visitors.result.ReturnWithResult;
 import org.zstack.zql.ast.visitors.result.SearchResult;
 
-import javax.persistence.Query;
+import jakarta.persistence.Query;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

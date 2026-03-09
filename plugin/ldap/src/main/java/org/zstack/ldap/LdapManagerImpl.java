@@ -41,8 +41,8 @@ import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.PersistenceException;
-import javax.persistence.Query;
+import jakarta.persistence.PersistenceException;
+import jakarta.persistence.Query;
 import java.sql.Timestamp;
 import java.util.*;
 

@@ -2,8 +2,8 @@ package org.zstack.appliancevm;
 
 import org.zstack.header.vm.VmInstanceVO_;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 /**
  * Created with IntelliJ IDEA.

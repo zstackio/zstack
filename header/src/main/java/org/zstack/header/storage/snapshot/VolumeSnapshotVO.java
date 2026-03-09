@@ -7,7 +7,7 @@ import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.*;
 import org.zstack.header.volume.VolumeVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 

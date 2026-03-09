@@ -1,6 +1,6 @@
 package org.zstack.header.image;
 
-import javax.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.SingularAttribute;
 import java.sql.Timestamp;
 
 public class ImageGroupRefVO_ {

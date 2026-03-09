@@ -31,7 +31,7 @@ import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

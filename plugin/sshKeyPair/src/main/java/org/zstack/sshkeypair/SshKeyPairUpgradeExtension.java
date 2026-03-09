@@ -12,7 +12,7 @@ import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.sshkeypair.*;
 import org.zstack.header.vm.VmInstanceVO;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.sql.Timestamp;
 import java.util.*;
 

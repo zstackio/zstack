@@ -6,7 +6,7 @@ import org.zstack.header.vo.*;
 import org.zstack.header.vo.Index;
 import org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity

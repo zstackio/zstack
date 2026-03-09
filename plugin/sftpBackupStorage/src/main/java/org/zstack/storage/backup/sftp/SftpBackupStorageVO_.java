@@ -2,8 +2,8 @@ package org.zstack.storage.backup.sftp;
 
 import org.zstack.header.storage.backup.BackupStorageVO_;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(SftpBackupStorageVO.class)
 public class SftpBackupStorageVO_ extends BackupStorageVO_ {

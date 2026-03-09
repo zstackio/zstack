@@ -1,4 +1,4 @@
-// Generated from ZQL.g4 by ANTLR 4.7
+// Generated from /home/test/modernize/search/src/main/antlr4/ZQL.g4 by ANTLR 4.13.0
 
 package org.zstack.zql.antlr4;
 
@@ -235,13 +235,6 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitWithMultiFields(ZQLParser.WithMultiFieldsContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code withMultiTableFields}
-	 * labeled alternative in {@link ZQLParser#queryTarget}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitWithMultiTableFields(ZQLParser.WithMultiTableFieldsContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ZQLParser#function}.
 	 * @param ctx the parse tree

@@ -2,8 +2,8 @@ package org.zstack.header.storage.snapshot.reference;
 
 import org.zstack.header.vo.ResourceVO_;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 
 @StaticMetamodel(VolumeSnapshotReferenceTreeVO.class)

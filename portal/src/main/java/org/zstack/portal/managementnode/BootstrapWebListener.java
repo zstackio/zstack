@@ -3,8 +3,8 @@ package org.zstack.portal.managementnode;
 import org.zstack.core.Platform;
 import org.zstack.utils.BootErrorLog;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 
 /**
  */

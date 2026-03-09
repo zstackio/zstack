@@ -73,9 +73,8 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.zql.ZQL;
 
-import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
-import javax.xml.ws.ResponseWrapper;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TypedQuery;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Timestamp;

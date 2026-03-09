@@ -21,8 +21,8 @@ import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
-import javax.persistence.*;
-import javax.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.*;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import javax.sql.DataSource;
 import java.lang.reflect.Field;
 import java.sql.SQLIntegrityConstraintViolationException;

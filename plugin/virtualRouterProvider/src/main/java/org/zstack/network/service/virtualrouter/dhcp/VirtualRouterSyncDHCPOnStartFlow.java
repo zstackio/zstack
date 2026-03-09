@@ -35,8 +35,8 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.DhcpInfo;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TypedQuery;
 import java.util.*;
 
 import static org.zstack.core.Platform.operr;

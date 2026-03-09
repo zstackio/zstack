@@ -1,6 +1,6 @@
 package org.zstack.header.volume;
 
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 
 @StaticMetamodel(VolumeVO.class)

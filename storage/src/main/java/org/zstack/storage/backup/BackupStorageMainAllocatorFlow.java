@@ -14,7 +14,7 @@ import org.zstack.header.storage.backup.BackupStorageConstant.AllocatorParams;
 
 import static org.zstack.core.Platform.operr;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 import java.util.Map;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;

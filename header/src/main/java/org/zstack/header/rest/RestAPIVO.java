@@ -1,6 +1,6 @@
 package org.zstack.header.rest;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity

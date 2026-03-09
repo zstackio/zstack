@@ -182,6 +182,7 @@ public class SearchFacadeImpl extends AbstractService implements SearchFacade {
 
     @Override
     public FullTextEntityManager getFullTextEntityManager() {
-        return Search.getFullTextEntityManager(dbf.getEntityManager());
+        // TODO: Hibernate Search 5.x is incompatible with Jakarta namespace. Upgrade to Hibernate Search 7.x
+        throw new UnsupportedOperationException("Hibernate Search needs upgrade to 7.x for Jakarta namespace support");
     }
 }

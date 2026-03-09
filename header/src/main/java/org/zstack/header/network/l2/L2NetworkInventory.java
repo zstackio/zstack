@@ -7,7 +7,7 @@ import org.zstack.header.search.Inventory;
 import org.zstack.header.search.TypeField;
 import org.zstack.header.zone.ZoneInventory;
 
-import javax.persistence.JoinColumn;
+import jakarta.persistence.JoinColumn;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;

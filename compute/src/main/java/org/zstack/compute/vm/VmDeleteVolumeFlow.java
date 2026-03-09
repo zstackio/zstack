@@ -23,7 +23,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Query;
+import jakarta.persistence.Query;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;

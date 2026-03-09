@@ -21,8 +21,8 @@ import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 import java.util.stream.Collectors;
 

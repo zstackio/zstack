@@ -12,7 +12,7 @@ import org.zstack.sugonSdnController.controller.api.TfCommands
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import org.springframework.http.ResponseEntity
 import org.springframework.http.HttpStatus
 

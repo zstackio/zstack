@@ -19,7 +19,7 @@ import org.zstack.utils.CollectionUtils
 import org.zstack.utils.function.Function
 import org.zstack.utils.gson.JSONObjectUtil
 
-import javax.persistence.Tuple
+import jakarta.persistence.Tuple
 
 /**
  * Created by xing5 on 2017/3/7.

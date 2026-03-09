@@ -19,7 +19,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import javax.persistence.Query;
+import jakarta.persistence.Query;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;

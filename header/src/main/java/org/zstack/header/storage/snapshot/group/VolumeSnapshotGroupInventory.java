@@ -3,7 +3,7 @@ package org.zstack.header.storage.snapshot.group;
 import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
 
-import javax.persistence.JoinColumn;
+import jakarta.persistence.JoinColumn;
 import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.List;

@@ -2,8 +2,8 @@ package org.zstack.header.storage.addon.primary;
 
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(ExternalPrimaryStorageVO.class)
 public class ExternalPrimaryStorageVO_ extends PrimaryStorageVO_ {

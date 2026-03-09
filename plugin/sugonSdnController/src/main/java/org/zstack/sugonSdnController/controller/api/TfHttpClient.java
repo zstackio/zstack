@@ -315,7 +315,7 @@ public class TfHttpClient<T> {
         if (response == null) {
             return Status.failure("No response from API server.");
         }
-        HttpStatus status = response.getStatusCode();
+        HttpStatus status = HttpStatus.valueOf(response.getStatusCode().value());
         if (status != HttpStatus.OK
                 && status != HttpStatus.CREATED
                 && status != HttpStatus.ACCEPTED ) {
@@ -358,7 +358,7 @@ public class TfHttpClient<T> {
             return Status.failure("No response from API server.");
         }
 
-        HttpStatus status = response.getStatusCode();
+        HttpStatus status = HttpStatus.valueOf(response.getStatusCode().value());
         if (status != HttpStatus.OK
                 && status != HttpStatus.ACCEPTED ) {
             String reason = response.getBody();
@@ -383,7 +383,7 @@ public class TfHttpClient<T> {
             return Status.failure("No response from API server.");
         }
 
-        HttpStatus status = response.getStatusCode();
+        HttpStatus status = HttpStatus.valueOf(response.getStatusCode().value());
         if (status != HttpStatus.OK
                 && status != HttpStatus.NO_CONTENT
                 && status != HttpStatus.ACCEPTED ) {

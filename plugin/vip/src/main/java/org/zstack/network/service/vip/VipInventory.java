@@ -9,7 +9,7 @@ import org.zstack.header.search.Inventory;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.Column;
+import jakarta.persistence.Column;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.*;

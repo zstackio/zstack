@@ -6,7 +6,7 @@ import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.ToInventory;
 import org.zstack.header.acl.AccessControlListVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 /**

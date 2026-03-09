@@ -18,7 +18,7 @@ import org.zstack.header.storage.backup.GetLocalFileSizeOnBackupStorageReply;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 /**

@@ -1,7 +1,5 @@
 package org.zstack.header.rest;
 
-import org.springframework.http.HttpMethod;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -15,7 +13,7 @@ import java.lang.annotation.Target;
 public @interface RestRequest {
     String path();
     String[] optionalPaths() default  {};
-    HttpMethod method();
+    String method();
     boolean isAction() default false;
     String parameterName() default RESTConstant.DEFAULT_PARAMETER_NAME;
     String[] mappingFields() default {};

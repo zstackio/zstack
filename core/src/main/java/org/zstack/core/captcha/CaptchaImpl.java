@@ -24,7 +24,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.imageio.ImageIO;
-import javax.persistence.Query;
+import jakarta.persistence.Query;
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;

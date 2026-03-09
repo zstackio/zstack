@@ -3,9 +3,9 @@ package org.zstack.core.db;
 import org.zstack.core.db.TransactionalCallback.Operation;
 import org.zstack.header.message.APIListMessage;
 
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
-import javax.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import javax.sql.DataSource;
 import java.sql.Timestamp;
 import java.util.Collection;

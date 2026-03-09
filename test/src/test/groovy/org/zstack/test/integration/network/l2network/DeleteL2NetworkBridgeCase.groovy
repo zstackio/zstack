@@ -129,7 +129,7 @@ class DeleteL2NetworkBridgeCase extends SubCase {
             clusterUuid = cluster.uuid
         }
 
-        def cmds = [] as SynchronizedList<KVMAgentCommands.DeleteBridgeCmd>
+        def cmds = [] as SynchronizedList
         env.afterSimulator(KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
             def deleteBridgeCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.DeleteBridgeCmd.class)
             cmds.add(deleteBridgeCmd)
@@ -158,7 +158,7 @@ class DeleteL2NetworkBridgeCase extends SubCase {
             clusterUuid = cluster.uuid
         }
 
-        def cmds = [] as SynchronizedList<KVMAgentCommands.DeleteBridgeCmd>
+        def cmds = [] as SynchronizedList
         env.afterSimulator(KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
             def deleteBridgeCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.DeleteBridgeCmd.class)
             cmds.add(deleteBridgeCmd)
@@ -192,7 +192,7 @@ class DeleteL2NetworkBridgeCase extends SubCase {
             clusterUuid = cluster.uuid
         }
 
-        def cmds = [] as SynchronizedList<KVMAgentCommands.DeleteVlanBridgeCmd>
+        def cmds = [] as SynchronizedList
         env.afterSimulator(KVMConstant.KVM_DELETE_L2VLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
             def deleteVlanBridgeCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.DeleteVlanBridgeCmd.class)
             cmds.add(deleteVlanBridgeCmd)
@@ -223,7 +223,7 @@ class DeleteL2NetworkBridgeCase extends SubCase {
             clusterUuid = cluster.uuid
         }
 
-        def cmds = [] as SynchronizedList<KVMAgentCommands.DeleteVlanBridgeCmd>
+        def cmds = [] as SynchronizedList
         env.afterSimulator(KVMConstant.KVM_DELETE_L2VLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
             def deleteVlanBridgeCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.DeleteVlanBridgeCmd.class)
             cmds.add(deleteVlanBridgeCmd)
@@ -278,7 +278,7 @@ class DeleteL2NetworkBridgeCase extends SubCase {
         }
 
 
-        def cmds = [] as SynchronizedList<VxlanKvmAgentCommands.DeleteVxlanBridgeCmd>
+        def cmds = [] as SynchronizedList
         env.afterSimulator(VxlanNetworkPoolConstant.VXLAN_KVM_DELETE_L2VXLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
             def deleteVxlanBridgeCmd = JSONObjectUtil.toObject(e.body, VxlanKvmAgentCommands.DeleteVxlanBridgeCmd.class)
             cmds.add(deleteVxlanBridgeCmd)
@@ -336,7 +336,7 @@ class DeleteL2NetworkBridgeCase extends SubCase {
         }
 
 
-        def cmds = [] as SynchronizedList<VxlanKvmAgentCommands.DeleteVxlanBridgeCmd>
+        def cmds = [] as SynchronizedList
         env.afterSimulator(VxlanNetworkPoolConstant.VXLAN_KVM_DELETE_L2VXLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
             def deleteVxlanBridgeCmd = JSONObjectUtil.toObject(e.body, VxlanKvmAgentCommands.DeleteVxlanBridgeCmd.class)
             cmds.add(deleteVxlanBridgeCmd)
@@ -393,7 +393,7 @@ class DeleteL2NetworkBridgeCase extends SubCase {
         }
 
 
-        def cmds = [] as SynchronizedList<VxlanKvmAgentCommands.DeleteVxlanBridgeCmd>
+        def cmds = [] as SynchronizedList
         env.afterSimulator(VxlanNetworkPoolConstant.VXLAN_KVM_DELETE_L2VXLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
             def deleteVxlanBridgeCmd = JSONObjectUtil.toObject(e.body, VxlanKvmAgentCommands.DeleteVxlanBridgeCmd.class)
             cmds.add(deleteVxlanBridgeCmd)
@@ -431,7 +431,7 @@ class DeleteL2NetworkBridgeCase extends SubCase {
             return resp
         }
 
-        def cmds = [] as SynchronizedList<KVMAgentCommands.DeleteBridgeCmd>
+        def cmds = [] as SynchronizedList
         env.afterSimulator(KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
             def deleteBridgeCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.DeleteBridgeCmd.class)
             cmds.add(deleteBridgeCmd)

@@ -3,9 +3,9 @@ package org.zstack.header.core.external.plugin;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ResourceVO;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import java.sql.Timestamp;
 
 @Entity

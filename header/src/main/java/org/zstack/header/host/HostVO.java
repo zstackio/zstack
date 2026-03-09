@@ -9,7 +9,7 @@ import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.NoView;
 import org.zstack.header.zone.ZoneVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table

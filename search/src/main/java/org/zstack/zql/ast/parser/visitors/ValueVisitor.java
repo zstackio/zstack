@@ -1,7 +1,7 @@
 package org.zstack.zql.ast.parser.visitors;
 
 import com.google.common.base.Throwables;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.zstack.core.Platform;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.zql.ASTNode;

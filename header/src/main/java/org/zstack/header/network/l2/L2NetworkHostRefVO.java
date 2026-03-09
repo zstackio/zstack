@@ -12,7 +12,7 @@ import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.SoftDeletionCascade;
 import org.zstack.header.vo.SoftDeletionCascades;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity

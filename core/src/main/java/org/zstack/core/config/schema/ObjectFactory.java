@@ -8,7 +8,7 @@
 
 package org.zstack.core.config.schema;
 
-import javax.xml.bind.annotation.XmlRegistry;
+import jakarta.xml.bind.annotation.XmlRegistry;
 
 
 /**

@@ -5,6 +5,9 @@ import org.codehaus.groovy.runtime.InvokerHelper
 import org.springframework.http.*
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.web.client.RestTemplate
+import org.apache.hc.client5.http.config.RequestConfig
+import org.apache.hc.client5.http.impl.classic.HttpClients
+import java.util.concurrent.TimeUnit
 import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.configuration.SqlForeignKeyGenerator
 import org.zstack.core.CoreGlobalProperty
@@ -65,8 +68,8 @@ import org.zstack.utils.DebugUtils
 import org.zstack.utils.data.Pair
 import org.zstack.utils.gson.JSONObjectUtil
 
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import java.lang.reflect.Modifier
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -237,8 +240,14 @@ class EnvSpec extends ApiHelper implements Node  {
     }
 
     static {
-        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory()
-        factory.setReadTimeout(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT)
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setResponseTimeout(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT, TimeUnit.MILLISECONDS)
+                .setConnectionRequestTimeout(CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)
+                .build()
+        def httpClient = HttpClients.custom()
+                .setDefaultRequestConfig(requestConfig)
+                .build()
+        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient)
         factory.setConnectTimeout(CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT)
         restTemplate = new RestTemplate(factory)
     }

@@ -242,14 +242,14 @@ class VxlanVtepIpChangedCase extends SubCase {
             return resp
         }
 
-        def records = [] as SynchronizedList<VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd>
+        def records = [] as SynchronizedList
         env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(entity.body, VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd.class)
             records.add(cmd.networkUuids)
             return new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd()
         }
 
-        def realizeRecords = [] as SynchronizedList<Integer>
+        def realizeRecords = [] as SynchronizedList
         env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORKS_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(entity.body, VxlanKvmAgentCommands.CreateVxlanBridgesCmd.class)
             for (VxlanKvmAgentCommands.CreateVxlanBridgeCmd bcmd : cmd.bridgeCmds) {

@@ -13,6 +13,7 @@ import org.zstack.sdk.ZoneInventory
 import org.zstack.sdnController.SdnControllerGlobalConfig
 import org.zstack.sdnController.SdnControllerSystemTags
 import org.zstack.sdnController.h3cVcfc.H3cVcfcV2Commands
+import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands
 import org.zstack.header.network.sdncontroller.SdnControllerConstant
 import org.zstack.sdnController.header.H3cSdnControllerTenantVO
 import org.zstack.sdnController.header.H3cSdnControllerTenantVO_
@@ -374,8 +375,8 @@ class SdnControllerCase extends SubCase {
     void testSdnControllerPing() {
         // Setup mock simulator for successful controller creation
         env.simulator(H3cVcfcV2Commands.H3C_VCFC_GET_TOKEN) { HttpEntity<String> e, EnvSpec spec ->
-            def rsp = new H3cVcfcV2Commands.LoginRsp()
-            rsp.record = new H3cVcfcV2Commands.LoginReply()
+            def rsp = new H3cVcfcCommands.LoginRsp()
+            rsp.record = new H3cVcfcCommands.LoginReply()
             rsp.record.token = "init-token-12345"
             rsp.record.userName = "user"
             rsp.record.domainName = "default"
@@ -400,7 +401,7 @@ class SdnControllerCase extends SubCase {
 
         // Mock token retrieval failure to simulate ping failure
         env.simulator(H3cVcfcV2Commands.H3C_VCFC_GET_TOKEN) { HttpEntity<String> e, EnvSpec spec ->
-            def rsp = new H3cVcfcV2Commands.LoginRsp()
+            def rsp = new H3cVcfcCommands.LoginRsp()
             rsp.record = null
             return rsp
         }
@@ -413,8 +414,8 @@ class SdnControllerCase extends SubCase {
 
         // Mock token retrieval success to simulate ping recovery
         env.simulator(H3cVcfcV2Commands.H3C_VCFC_GET_TOKEN) { HttpEntity<String> e, EnvSpec spec ->
-            def rsp = new H3cVcfcV2Commands.LoginRsp()
-            rsp.record = new H3cVcfcV2Commands.LoginReply()
+            def rsp = new H3cVcfcCommands.LoginRsp()
+            rsp.record = new H3cVcfcCommands.LoginReply()
             rsp.record.token = "test-token-12345"
             rsp.record.userName = "user"
             rsp.record.domainName = "default"
@@ -436,8 +437,8 @@ class SdnControllerCase extends SubCase {
     void testSdnControllerReconnect() {
         // Setup mock simulator for successful controller creation
         env.simulator(H3cVcfcV2Commands.H3C_VCFC_GET_TOKEN) { HttpEntity<String> e, EnvSpec spec ->
-            def rsp = new H3cVcfcV2Commands.LoginRsp()
-            rsp.record = new H3cVcfcV2Commands.LoginReply()
+            def rsp = new H3cVcfcCommands.LoginRsp()
+            rsp.record = new H3cVcfcCommands.LoginReply()
             rsp.record.token = "init-token-67890"
             rsp.record.userName = "user"
             rsp.record.domainName = "default"
@@ -461,8 +462,8 @@ class SdnControllerCase extends SubCase {
         boolean reconnectCalled = false
         env.simulator(H3cVcfcV2Commands.H3C_VCFC_GET_TOKEN) { HttpEntity<String> e, EnvSpec spec ->
             reconnectCalled = true
-            def rsp = new H3cVcfcV2Commands.LoginRsp()
-            rsp.record = new H3cVcfcV2Commands.LoginReply()
+            def rsp = new H3cVcfcCommands.LoginRsp()
+            rsp.record = new H3cVcfcCommands.LoginReply()
             rsp.record.token = "reconnect-token-67890"
             rsp.record.userName = "user"
             rsp.record.domainName = "default"

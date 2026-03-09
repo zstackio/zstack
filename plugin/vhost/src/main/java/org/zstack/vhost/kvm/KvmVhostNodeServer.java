@@ -1,6 +1,6 @@
 package org.zstack.vhost.kvm;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.componentloader.PluginRegistry;

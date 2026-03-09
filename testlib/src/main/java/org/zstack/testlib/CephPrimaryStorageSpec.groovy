@@ -20,7 +20,7 @@ import org.zstack.testlib.vfs.VFSFile
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
-import javax.persistence.Tuple
+import jakarta.persistence.Tuple
 import java.nio.file.Path
 
 /**

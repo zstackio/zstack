@@ -5,7 +5,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.web.context.ContextLoaderListener;
 import org.zstack.core.CoreGlobalProperty;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 
 public class BootstrapContextLoaderListener extends ContextLoaderListener {
     private static ApplicationContext parent;

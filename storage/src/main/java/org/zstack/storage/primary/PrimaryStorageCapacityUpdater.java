@@ -17,9 +17,9 @@ import org.zstack.header.storage.primary.RecalculatePrimaryStorageCapacityMsg;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 import static org.zstack.core.Platform.operr;

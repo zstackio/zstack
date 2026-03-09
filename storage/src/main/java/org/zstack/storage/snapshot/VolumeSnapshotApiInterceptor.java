@@ -28,7 +28,7 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.storage.snapshot.VolumeSnapshotMessageRouter.getResourceIdToRouteMsg;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;

@@ -8,7 +8,7 @@ import org.zstack.utils.FieldUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
 
-import javax.persistence.Entity
+import jakarta.persistence.Entity
 import java.lang.reflect.Field
 
 /**

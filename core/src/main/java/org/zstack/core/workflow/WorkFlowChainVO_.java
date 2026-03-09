@@ -1,7 +1,7 @@
 package org.zstack.core.workflow;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 import java.util.Date;
 
 @StaticMetamodel(WorkFlowChainVO.class)

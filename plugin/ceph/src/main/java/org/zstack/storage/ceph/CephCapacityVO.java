@@ -1,6 +1,6 @@
 package org.zstack.storage.ceph;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 /**

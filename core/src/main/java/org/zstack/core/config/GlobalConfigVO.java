@@ -1,6 +1,6 @@
 package org.zstack.core.config;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table

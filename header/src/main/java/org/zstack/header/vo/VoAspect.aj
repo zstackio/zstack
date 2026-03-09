@@ -6,7 +6,7 @@ import org.zstack.utils.BeanUtils;
 import org.zstack.utils.FieldUtils;
 import org.zstack.header.vo.ToInventory;
 
-import javax.persistence.Entity;
+import jakarta.persistence.Entity;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
@@ -16,7 +16,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public aspect VoAspect {
-    pointcut completeVO(Object entity) : target(entity) && execution((@javax.persistence.Entity Object)+.new(..));
+    pointcut completeVO(Object entity) : target(entity) && execution((@jakarta.persistence.Entity Object)+.new(..));
     pointcut completeKeyValueEntity(Object entity) : target(entity) && execution(org.zstack.header.core.keyvalue.KeyValueEntity+.new(..));
 
     private static Map<Class, Field> objectUuidMap =  new ConcurrentHashMap<Class, Field>();

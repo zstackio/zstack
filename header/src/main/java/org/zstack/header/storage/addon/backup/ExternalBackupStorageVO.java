@@ -2,7 +2,7 @@ package org.zstack.header.storage.addon.backup;
 
 import org.zstack.header.storage.backup.BackupStorageVO;
 
-import javax.persistence.Column;
+import jakarta.persistence.Column;
 
 /*
 @Entity

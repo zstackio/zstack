@@ -11,7 +11,7 @@ import org.zstack.header.vo.Index;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Set;

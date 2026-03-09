@@ -19,7 +19,7 @@ import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
 
-import javax.persistence.JoinColumn;
+import jakarta.persistence.JoinColumn;
 import java.util.*;
 import java.util.regex.Pattern;
 

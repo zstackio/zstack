@@ -1,7 +1,7 @@
 package org.zstack.header.allocator;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(HostCapacityVO.class)
 public class HostCapacityVO_ {

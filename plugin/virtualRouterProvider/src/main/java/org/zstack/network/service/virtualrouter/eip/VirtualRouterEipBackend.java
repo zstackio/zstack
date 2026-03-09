@@ -37,7 +37,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.*;
 import java.util.stream.Collectors;
 

@@ -2,40 +2,40 @@ package org.zstack.core.db;
 
 import org.zstack.core.db.SimpleQuery.Op;
 
-import javax.persistence.metamodel.SingularAttribute;
+
 import java.util.Collection;
 
 /**
  * Created by xing5 on 2016/6/29.
  */
 public interface UpdateQuery {
-    UpdateQuery set(SingularAttribute attr, Object val);
+    UpdateQuery set(Object attr, Object val);
 
-    UpdateQuery condAnd(SingularAttribute attr, Op op, Object val);
+    UpdateQuery condAnd(Object attr, Op op, Object val);
 
-    UpdateQuery eq(SingularAttribute attr, Object val);
+    UpdateQuery eq(Object attr, Object val);
 
-    UpdateQuery notEq(SingularAttribute attr, Object val);
+    UpdateQuery notEq(Object attr, Object val);
 
-    UpdateQuery in(SingularAttribute attr, Collection val);
+    UpdateQuery in(Object attr, Collection val);
 
-    UpdateQuery notIn(SingularAttribute attr, Collection val);
+    UpdateQuery notIn(Object attr, Collection val);
 
-    UpdateQuery isNull(SingularAttribute attr);
+    UpdateQuery isNull(Object attr);
 
-    UpdateQuery notNull(SingularAttribute attr);
+    UpdateQuery notNull(Object attr);
 
-    UpdateQuery gt(SingularAttribute attr, Object val);
+    UpdateQuery gt(Object attr, Object val);
 
-    UpdateQuery gte(SingularAttribute attr, Object val);
+    UpdateQuery gte(Object attr, Object val);
 
-    UpdateQuery lt(SingularAttribute attr, Object val);
+    UpdateQuery lt(Object attr, Object val);
 
-    UpdateQuery lte(SingularAttribute attr, Object val);
+    UpdateQuery lte(Object attr, Object val);
 
-    UpdateQuery like(SingularAttribute attr, Object val);
+    UpdateQuery like(Object attr, Object val);
 
-    UpdateQuery notLike(SingularAttribute attr, Object val);
+    UpdateQuery notLike(Object attr, Object val);
 
     void delete();
 

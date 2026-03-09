@@ -1,6 +1,6 @@
 package org.zstack.header.configuration;
 
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(DiskOfferingVO.class)
 public class DiskOfferingVO_ extends DiskOfferingAO_ {

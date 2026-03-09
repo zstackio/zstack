@@ -8,7 +8,7 @@
 
 package org.zstack.configuration.testlink.schema;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 

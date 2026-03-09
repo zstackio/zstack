@@ -2,8 +2,8 @@ package org.zstack.header.volume.block;
 
 import org.zstack.header.volume.VolumeVO_;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 /**
  * @author shenjin

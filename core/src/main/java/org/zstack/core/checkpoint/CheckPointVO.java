@@ -2,7 +2,7 @@ package org.zstack.core.checkpoint;
 
 import org.zstack.header.vo.Uuid;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity

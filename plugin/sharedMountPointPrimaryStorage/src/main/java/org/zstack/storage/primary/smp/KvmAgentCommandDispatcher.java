@@ -30,7 +30,7 @@ import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;

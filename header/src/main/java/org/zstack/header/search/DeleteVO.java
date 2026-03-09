@@ -1,6 +1,6 @@
 package org.zstack.header.search;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity

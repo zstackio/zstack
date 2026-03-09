@@ -9,7 +9,7 @@ import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 /**

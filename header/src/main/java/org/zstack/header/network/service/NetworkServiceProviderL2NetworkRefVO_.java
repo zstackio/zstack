@@ -1,7 +1,7 @@
 package org.zstack.header.network.service;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(NetworkServiceProviderL2NetworkRefVO.class)
 public class NetworkServiceProviderL2NetworkRefVO_ {

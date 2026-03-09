@@ -84,7 +84,7 @@ import org.zstack.utils.function.ValidateFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;

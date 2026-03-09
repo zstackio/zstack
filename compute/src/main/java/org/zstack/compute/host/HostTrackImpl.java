@@ -25,7 +25,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;

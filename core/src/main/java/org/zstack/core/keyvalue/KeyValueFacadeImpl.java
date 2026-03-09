@@ -7,7 +7,7 @@ import org.zstack.header.core.keyvalue.KeyValueEntity;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.serializable.SerializableHelper;
 
-import javax.persistence.Query;
+import jakarta.persistence.Query;
 import java.io.IOException;
 import java.util.List;
 

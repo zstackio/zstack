@@ -6,7 +6,7 @@ import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ToInventory;
 import org.zstack.header.zone.ZoneVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity

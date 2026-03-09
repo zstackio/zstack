@@ -4,7 +4,7 @@ import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ResourceVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity

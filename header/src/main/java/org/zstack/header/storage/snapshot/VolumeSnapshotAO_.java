@@ -3,8 +3,8 @@ package org.zstack.header.storage.snapshot;
 import org.zstack.header.vo.ResourceVO_;
 import org.zstack.header.volume.VolumeType;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
 
 /**

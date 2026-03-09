@@ -15,19 +15,19 @@
 	<aop:config>
 		<aop:aspect id="CloudBusAdvice" ref="CloudBusAopProxy">
 			<aop:pointcut expression="execution(public void org.zstack.core.cloudbus.CloudBus+.send(org.zstack.header.message.Message)) and args(msg)" id="sendSignleMessage"/>
-			<aop:around pointcut-ref="sendSignleMessage" method="singleMessageAdvice"/>
-			
+			<aop:around pointcut-ref="sendSignleMessage" method="singleMessageAdvice" arg-names="pjp,msg"/>
+
 			<aop:pointcut expression="execution(public void org.zstack.core.cloudbus.CloudBus+.send(org.zstack.header.message.NeedReplyMessage, org.zstack.core.cloudbus.CloudBusCallBack)) and args(msg,callback)" id="sendCallbackSignleMessage"/>
-			<aop:around pointcut-ref="sendCallbackSignleMessage" method="singleCallbackMessageAdvice"/>
-			
+			<aop:around pointcut-ref="sendCallbackSignleMessage" method="singleCallbackMessageAdvice" arg-names="pjp,msg,callback"/>
+
 			<aop:pointcut expression="execution(public void org.zstack.core.cloudbus.CloudBus+.send(*)) and args(msgs)" id="sendListMessage"/>
-			<aop:around pointcut-ref="sendListMessage" method="listMessageAdvice"/>
-			
+			<aop:around pointcut-ref="sendListMessage" method="listMessageAdvice" arg-names="pjp,msgs"/>
+
 			<aop:pointcut expression="execution(public * org.zstack.core.cloudbus.CloudBus+.call(org.zstack.header.message.NeedReplyMessage)) and args(msg)" id="callSignleMessage"/>
-			<aop:around pointcut-ref="callSignleMessage" method="singleMessageAdvice"/>
-			
+			<aop:around pointcut-ref="callSignleMessage" method="singleMessageAdvice" arg-names="pjp,msg"/>
+
 			<aop:pointcut expression="execution(public * org.zstack.core.cloudbus.CloudBus+.call(*)) and args(msgs)" id="callMultiMessage"/>
-			<aop:around pointcut-ref="callMultiMessage" method="listMessageAdvice"/>
+			<aop:around pointcut-ref="callMultiMessage" method="listMessageAdvice" arg-names="pjp,msgs"/>
 		</aop:aspect>
 	</aop:config>
 	

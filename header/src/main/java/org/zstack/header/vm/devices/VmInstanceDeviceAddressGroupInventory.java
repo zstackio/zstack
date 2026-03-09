@@ -5,7 +5,7 @@ import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.query.Queryable;
 import org.zstack.header.search.Inventory;
 
-import javax.persistence.JoinColumn;
+import jakarta.persistence.JoinColumn;
 import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.List;

@@ -35,7 +35,7 @@ import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshException;
 
-import javax.persistence.Query;
+import jakarta.persistence.Query;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;

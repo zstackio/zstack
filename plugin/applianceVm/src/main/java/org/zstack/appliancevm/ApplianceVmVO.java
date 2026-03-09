@@ -8,7 +8,7 @@ import org.zstack.header.vo.EO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 /**
  * Created with IntelliJ IDEA.

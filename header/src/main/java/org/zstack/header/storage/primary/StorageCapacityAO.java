@@ -2,7 +2,7 @@ package org.zstack.header.storage.primary;
 
 import org.zstack.header.vo.Index;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @MappedSuperclass
 public abstract class StorageCapacityAO {

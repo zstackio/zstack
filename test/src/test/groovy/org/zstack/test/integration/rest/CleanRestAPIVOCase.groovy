@@ -8,10 +8,10 @@ import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 
-import javax.persistence.EntityManager
-import javax.persistence.EntityManagerFactory
-import javax.persistence.EntityTransaction
-import javax.persistence.Query
+import jakarta.persistence.EntityManager
+import jakarta.persistence.EntityManagerFactory
+import jakarta.persistence.EntityTransaction
+import jakarta.persistence.Query
 import java.sql.Timestamp
 import java.util.concurrent.TimeUnit;
 

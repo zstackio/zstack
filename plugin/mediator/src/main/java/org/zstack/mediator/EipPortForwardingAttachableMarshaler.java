@@ -10,7 +10,7 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.eip.APIGetEipAttachableVmNicsReply;
 import org.zstack.network.service.portforwarding.APIGetPortForwardingAttachableVmNicsReply;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;

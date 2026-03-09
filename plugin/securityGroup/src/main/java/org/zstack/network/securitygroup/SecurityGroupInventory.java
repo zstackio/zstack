@@ -5,8 +5,8 @@ import org.zstack.header.query.*;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 
-import javax.persistence.Column;
-import javax.persistence.JoinColumn;
+import jakarta.persistence.Column;
+import jakarta.persistence.JoinColumn;
 import java.sql.Timestamp;
 import java.util.*;
 /**

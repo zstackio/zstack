@@ -38,9 +38,9 @@ import org.zstack.utils.path.PathUtil
 import org.zstack.utils.string.ErrorCodeElaboration
 import org.zstack.utils.string.StringSimilarity
 
-import javax.xml.bind.JAXBContext
-import javax.xml.bind.JAXBException
-import javax.xml.bind.Unmarshaller
+import jakarta.xml.bind.JAXBContext
+import jakarta.xml.bind.JAXBException
+import jakarta.xml.bind.Unmarshaller
 import java.lang.reflect.Field
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method

@@ -8,7 +8,7 @@ import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.volume.VolumeEO;
 import org.zstack.header.volume.VolumeVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 

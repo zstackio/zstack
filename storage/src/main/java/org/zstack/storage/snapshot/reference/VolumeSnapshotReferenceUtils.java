@@ -24,8 +24,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.LockModeType;
-import javax.persistence.Tuple;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.Tuple;
 import java.util.*;
 import java.util.stream.Collectors;
 

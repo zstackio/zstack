@@ -1,6 +1,6 @@
 package org.zstack.header.host;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table

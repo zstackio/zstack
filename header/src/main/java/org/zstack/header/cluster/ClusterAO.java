@@ -6,7 +6,7 @@ import org.zstack.header.vo.Index;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.zone.ZoneEO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 /**

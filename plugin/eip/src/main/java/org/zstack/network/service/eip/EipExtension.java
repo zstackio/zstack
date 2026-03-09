@@ -28,8 +28,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.function.FunctionNoArg;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 

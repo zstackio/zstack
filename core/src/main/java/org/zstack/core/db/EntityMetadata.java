@@ -6,8 +6,8 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.FieldUtils;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import java.lang.reflect.Field;
 import java.util.*;
 

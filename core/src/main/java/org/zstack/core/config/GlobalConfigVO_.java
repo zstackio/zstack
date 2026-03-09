@@ -1,7 +1,7 @@
 package org.zstack.core.config;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(GlobalConfigVO.class)
 public class GlobalConfigVO_ {

@@ -11,9 +11,9 @@ import org.zstack.header.vo.EO;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ToInventory;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.util.List;
 
 @Entity

@@ -8,7 +8,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.message.*;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.function.Consumer;
 

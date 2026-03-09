@@ -1,7 +1,7 @@
 package org.zstack.header.network.sdncontroller;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(SdnControllerHostRefVO.class)
 public class SdnControllerHostRefVO_ {

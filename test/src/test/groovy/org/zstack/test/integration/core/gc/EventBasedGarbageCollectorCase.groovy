@@ -78,7 +78,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
         }
     }
 
-    static Map<String, Closure<EventBasedGCInDbBehavior>> testLogicForJobLoadedFromDbMap = new HashedMap<>()
+    static Map<String, Closure<EventBasedGCInDbBehavior>> testLogicForJobLoadedFromDbMap = new HashedMap()
 
     static enum EventBasedGCInDbBehavior {
         SUCCESS,
@@ -125,7 +125,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
         }
     }
 
-    static Map<String, Closure<EventBasedGCInDbBehavior>> testTriggerNowForJobLoadedFromDbMap = new HashedMap<>()
+    static Map<String, Closure<EventBasedGCInDbBehavior>> testTriggerNowForJobLoadedFromDbMap = new HashedMap()
 
     static class EventBasedGCInDbTriggerNow extends EventBasedGarbageCollector {
         Closure trigger = { true }

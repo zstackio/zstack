@@ -1,6 +1,6 @@
 package org.zstack.zql.ast;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.zstack.core.db.EntityMetadata;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;

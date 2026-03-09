@@ -7,7 +7,7 @@ import org.zstack.header.vo.EO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 /**
  * Created by weiwang on 02/03/2017.

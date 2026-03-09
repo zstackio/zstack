@@ -1,7 +1,7 @@
 package org.zstack.network.service.virtualrouter.vip;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(VirtualRouterVipVO.class)
 public class VirtualRouterVipVO_ {

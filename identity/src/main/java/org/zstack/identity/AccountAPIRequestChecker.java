@@ -14,7 +14,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.identity.rbac.RBACEntity;
 import static org.zstack.core.Platform.*;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.lang.reflect.Field;
 import java.util.*;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;

@@ -1,6 +1,6 @@
 package org.zstack.zql.ast.parser.visitors;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.zstack.zql.antlr4.ZQLBaseVisitor;
 import org.zstack.zql.antlr4.ZQLParser;
 

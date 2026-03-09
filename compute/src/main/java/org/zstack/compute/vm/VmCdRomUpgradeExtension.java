@@ -18,7 +18,7 @@ import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.identity.Account;
 import java.util.HashMap;
 import java.util.Map;
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.List;
 

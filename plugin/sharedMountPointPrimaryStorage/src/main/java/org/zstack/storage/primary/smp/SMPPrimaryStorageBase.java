@@ -46,7 +46,7 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.Callable;

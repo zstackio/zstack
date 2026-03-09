@@ -3,7 +3,7 @@ package org.zstack.header.identity.role;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ResourceVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.util.UUID;
 

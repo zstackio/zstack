@@ -10,7 +10,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.volume.VolumeType;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.List;
 
 /**

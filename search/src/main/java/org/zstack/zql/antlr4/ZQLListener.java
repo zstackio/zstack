@@ -1,4 +1,4 @@
-// Generated from ZQL.g4 by ANTLR 4.7
+// Generated from /home/test/modernize/search/src/main/antlr4/ZQL.g4 by ANTLR 4.13.0
 
 package org.zstack.zql.antlr4;
 
@@ -387,18 +387,6 @@ public interface ZQLListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitWithMultiFields(ZQLParser.WithMultiFieldsContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code withMultiTableFields}
-	 * labeled alternative in {@link ZQLParser#queryTarget}.
-	 * @param ctx the parse tree
-	 */
-	void enterWithMultiTableFields(ZQLParser.WithMultiTableFieldsContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code withMultiTableFields}
-	 * labeled alternative in {@link ZQLParser#queryTarget}.
-	 * @param ctx the parse tree
-	 */
-	void exitWithMultiTableFields(ZQLParser.WithMultiTableFieldsContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ZQLParser#function}.
 	 * @param ctx the parse tree

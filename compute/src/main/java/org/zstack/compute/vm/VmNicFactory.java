@@ -12,7 +12,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 import java.sql.SQLIntegrityConstraintViolationException;
 
 import static org.zstack.core.Platform.err;

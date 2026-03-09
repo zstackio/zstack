@@ -28,7 +28,7 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.CollectionUtils
 import org.zstack.utils.data.SizeUnit
 
-import javax.persistence.Tuple
+import jakarta.persistence.Tuple
 
 import static org.zstack.core.Platform.operr
 

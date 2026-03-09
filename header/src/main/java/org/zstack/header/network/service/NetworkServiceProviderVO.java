@@ -3,7 +3,7 @@ package org.zstack.header.network.service;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.Index;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Set;

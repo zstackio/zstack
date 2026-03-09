@@ -48,7 +48,7 @@ else
  fi
 fi
 
-CP="$INSTALLDIR/lib/*:$INSTALLDIR/drivers/*"
+CP="$INSTALLDIR/lib/*:$INSTALLDIR/drivers-lib/*"
 
 if $cygwin; then
   CP=$(cygpath -pw "$CP")

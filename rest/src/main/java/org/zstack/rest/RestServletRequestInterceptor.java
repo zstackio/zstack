@@ -1,6 +1,6 @@
 package org.zstack.rest;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Created by xing5 on 2017/9/15.

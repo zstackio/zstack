@@ -21,7 +21,7 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
-import javax.persistence.Query;
+import jakarta.persistence.Query;
 import java.util.Arrays;
 import java.util.List;
 

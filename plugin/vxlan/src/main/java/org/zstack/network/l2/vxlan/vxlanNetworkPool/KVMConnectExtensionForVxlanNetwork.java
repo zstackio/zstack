@@ -28,7 +28,7 @@ import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
 import org.zstack.network.l2.vxlan.vtep.PopulateVtepPeersMsg;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;

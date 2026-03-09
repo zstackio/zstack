@@ -5,7 +5,7 @@ import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.util.function.Function;
 
 public aspect OwnedByAccountAspect {

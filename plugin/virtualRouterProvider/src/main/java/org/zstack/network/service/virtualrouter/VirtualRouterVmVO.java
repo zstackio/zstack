@@ -10,7 +10,7 @@ import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;

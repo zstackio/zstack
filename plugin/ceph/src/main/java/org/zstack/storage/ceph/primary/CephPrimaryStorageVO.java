@@ -7,7 +7,7 @@ import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
 

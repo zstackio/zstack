@@ -1,8 +1,8 @@
 package org.zstack.header.allocator;
 
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(HostAllocatedCpuVO.class)
 public class HostAllocatedCpuVO_ {

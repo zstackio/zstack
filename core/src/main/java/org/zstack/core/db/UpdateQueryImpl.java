@@ -12,8 +12,8 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Query;
-import javax.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.Query;
+import jakarta.persistence.metamodel.SingularAttribute;
 import java.util.*;
 
 /**
@@ -42,103 +42,105 @@ public class UpdateQueryImpl implements UpdateQuery {
     }
 
     @Override
-    public UpdateQuery set(SingularAttribute attr, Object val) {
-        if (setValues.containsKey(attr)) {
-            throw new CloudRuntimeException(String.format("unable to set a column[%s] twice", attr.getName()));
+    public UpdateQuery set(Object attr, Object val) {
+        SingularAttribute sa = (SingularAttribute) attr;
+        if (setValues.containsKey(sa)) {
+            throw new CloudRuntimeException(String.format("unable to set a column[%s] twice", sa.getName()));
         }
 
-        setValues.put(attr, val);
+        setValues.put(sa, val);
         return this;
     }
 
     @Override
-    public UpdateQuery condAnd(SingularAttribute attr, Op op, Object val) {
+    public UpdateQuery condAnd(Object attr, Op op, Object val) {
+        SingularAttribute sa = (SingularAttribute) attr;
         if ((op == Op.IN || op == Op.NOT_IN) && !(val instanceof Collection)) {
             throw new CloudRuntimeException(String.format("for operation IN or NOT IN, a Collection value is expected, but %s got", val.getClass()));
         }
 
         Cond cond = new Cond();
-        cond.attr = attr;
+        cond.attr = sa;
         cond.op = op;
         cond.val = val;
 
-        List<Cond> conds = andConditions.get(attr);
+        List<Cond> conds = andConditions.get(sa);
         if (conds == null) {
             conds = new ArrayList<>();
-            andConditions.put(attr, conds);
+            andConditions.put(sa, conds);
         }
         conds.add(cond);
         return this;
     }
 
     @Override
-    public UpdateQuery eq(SingularAttribute attr, Object val) {
+    public UpdateQuery eq(Object attr, Object val) {
         condAnd(attr, Op.EQ, val);
         return this;
     }
 
     @Override
-    public UpdateQuery notEq(SingularAttribute attr, Object val) {
+    public UpdateQuery notEq(Object attr, Object val) {
         condAnd(attr, Op.NOT_EQ, val);
         return this;
     }
 
     @Override
-    public UpdateQuery in(SingularAttribute attr, Collection val) {
+    public UpdateQuery in(Object attr, Collection val) {
         condAnd(attr, Op.IN, val);
         return this;
     }
 
     @Override
-    public UpdateQuery notIn(SingularAttribute attr, Collection val) {
+    public UpdateQuery notIn(Object attr, Collection val) {
         condAnd(attr, Op.NOT_IN, val);
         return this;
     }
 
     @Override
-    public UpdateQuery isNull(SingularAttribute attr) {
+    public UpdateQuery isNull(Object attr) {
         condAnd(attr, Op.NULL, null);
         return this;
     }
 
     @Override
-    public UpdateQuery notNull(SingularAttribute attr) {
+    public UpdateQuery notNull(Object attr) {
         condAnd(attr, Op.NOT_NULL, null);
         return this;
     }
 
     @Override
-    public UpdateQuery gt(SingularAttribute attr, Object val) {
+    public UpdateQuery gt(Object attr, Object val) {
         condAnd(attr, Op.GT, val);
         return this;
     }
 
     @Override
-    public UpdateQuery gte(SingularAttribute attr, Object val) {
+    public UpdateQuery gte(Object attr, Object val) {
         condAnd(attr, Op.GTE, val);
         return this;
     }
 
     @Override
-    public UpdateQuery lt(SingularAttribute attr, Object val) {
+    public UpdateQuery lt(Object attr, Object val) {
         condAnd(attr, Op.LT, val);
         return this;
     }
 
     @Override
-    public UpdateQuery lte(SingularAttribute attr, Object val) {
+    public UpdateQuery lte(Object attr, Object val) {
         condAnd(attr, Op.LTE, val);
         return this;
     }
 
     @Override
-    public UpdateQuery like(SingularAttribute attr, Object val) {
+    public UpdateQuery like(Object attr, Object val) {
         condAnd(attr, Op.LIKE, val);
         return this;
     }
 
     @Override
-    public UpdateQuery notLike(SingularAttribute attr, Object val) {
+    public UpdateQuery notLike(Object attr, Object val) {
         condAnd(attr, Op.NOT_LIKE, val);
         return this;
     }

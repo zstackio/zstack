@@ -11,8 +11,8 @@ import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.kvm.KVMSystemTags;
 import org.zstack.utils.TagUtils;
 
-import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TypedQuery;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;

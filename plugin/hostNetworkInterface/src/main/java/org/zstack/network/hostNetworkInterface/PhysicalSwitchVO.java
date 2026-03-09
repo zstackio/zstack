@@ -7,7 +7,7 @@ import org.zstack.header.vo.NoView;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ToInventory;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Set;

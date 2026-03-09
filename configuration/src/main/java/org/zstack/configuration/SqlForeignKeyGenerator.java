@@ -14,8 +14,8 @@ import org.zstack.utils.data.Pair;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;

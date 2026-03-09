@@ -8,7 +8,7 @@ import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ShadowEntity;
 import org.zstack.header.volume.VolumeEO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 /**

@@ -13,7 +13,7 @@ import org.zstack.header.network.sdncontroller.SdnControllerInventory;
 import org.zstack.sdnController.header.SdnVlanRange;
 import org.zstack.sdnController.header.SdnVniRange;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.List;
 

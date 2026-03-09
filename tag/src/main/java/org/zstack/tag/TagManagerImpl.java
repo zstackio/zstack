@@ -31,9 +31,9 @@ import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
-import javax.persistence.metamodel.EntityType;
+import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.metamodel.EntityType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;

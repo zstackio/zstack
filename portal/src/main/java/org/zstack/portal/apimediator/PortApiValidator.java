@@ -17,7 +17,7 @@ import org.zstack.header.message.ApiMessageValidator;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.utils.DebugUtils;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;

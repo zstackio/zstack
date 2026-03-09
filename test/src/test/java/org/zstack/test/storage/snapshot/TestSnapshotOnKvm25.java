@@ -25,7 +25,7 @@ import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Query;
+import jakarta.persistence.Query;
 
 /*
 * 1. take 4 snapshot from vm's root volume

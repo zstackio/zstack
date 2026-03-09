@@ -30,7 +30,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;

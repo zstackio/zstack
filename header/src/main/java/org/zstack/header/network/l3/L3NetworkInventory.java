@@ -10,7 +10,7 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.utils.network.IPv6Constants;
 
-import javax.persistence.JoinColumn;
+import jakarta.persistence.JoinColumn;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;

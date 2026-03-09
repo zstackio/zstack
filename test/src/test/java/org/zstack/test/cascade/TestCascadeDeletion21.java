@@ -17,7 +17,7 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
-import javax.persistence.Query;
+import jakarta.persistence.Query;
 import java.math.BigInteger;
 import java.util.concurrent.Callable;
 
@@ -69,7 +69,7 @@ public class TestCascadeDeletion21 {
             public Long call() {
                 String sql = "select count(*) from ApplianceVmVO";
                 Query q = dbf.getEntityManager().createNativeQuery(sql);
-                BigInteger ret = (BigInteger) q.getSingleResult();
+                Number ret = (Number) q.getSingleResult();
                 return ret.longValue();
             }
         }.call();

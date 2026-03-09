@@ -11,7 +11,7 @@ import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.volume.*;
 import org.zstack.header.zone.ZoneVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;

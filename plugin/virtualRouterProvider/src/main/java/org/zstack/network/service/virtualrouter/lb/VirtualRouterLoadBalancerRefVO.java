@@ -8,7 +8,7 @@ import org.zstack.network.service.lb.LoadBalancerVO;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 /**

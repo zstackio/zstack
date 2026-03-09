@@ -13,7 +13,7 @@ import org.zstack.kvm.hypervisor.datatype.HostOsCategoryVO_;
 import org.zstack.kvm.hypervisor.datatype.HypervisorVersionState;
 import org.zstack.utils.data.Pair;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.*;
 import java.util.stream.Collectors;
 

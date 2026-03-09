@@ -1,6 +1,6 @@
 package org.zstack.header.vm;
 
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 /**
  */

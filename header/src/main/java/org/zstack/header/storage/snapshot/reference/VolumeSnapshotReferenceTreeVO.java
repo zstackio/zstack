@@ -3,7 +3,7 @@ package org.zstack.header.storage.snapshot.reference;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ToInventory;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity

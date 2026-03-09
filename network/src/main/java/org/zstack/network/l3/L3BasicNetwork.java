@@ -59,7 +59,7 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.stopwatch.StopWatch;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;

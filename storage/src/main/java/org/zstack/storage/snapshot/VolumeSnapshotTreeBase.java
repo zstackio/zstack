@@ -29,6 +29,10 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.host.CommitVolumeSnapshotOnHypervisorMsg;
+import org.zstack.header.host.CommitVolumeSnapshotOnHypervisorReply;
+import org.zstack.header.host.PullVolumeSnapshotOnHypervisorMsg;
+import org.zstack.header.host.PullVolumeSnapshotOnHypervisorReply;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
@@ -65,7 +69,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.message.OperationChecker;
 
-import javax.persistence.Query;
+import jakarta.persistence.Query;
 import java.util.*;
 import java.util.stream.Collectors;
 

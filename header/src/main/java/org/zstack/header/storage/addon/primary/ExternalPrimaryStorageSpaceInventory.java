@@ -2,7 +2,7 @@ package org.zstack.header.storage.addon.primary;
 
 import org.zstack.header.search.Inventory;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.Collection;

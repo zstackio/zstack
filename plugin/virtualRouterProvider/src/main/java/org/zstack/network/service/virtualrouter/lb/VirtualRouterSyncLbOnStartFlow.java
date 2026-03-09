@@ -31,7 +31,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.function.ListFunction;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;

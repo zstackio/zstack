@@ -8,7 +8,7 @@ import org.reflections.util.FilterBuilder
 import org.zstack.utils.BeanUtils
 import org.zstack.utils.StringTemplateUtils
 
-import javax.persistence.*
+import jakarta.persistence.*
 import java.lang.reflect.Field
 
 /**

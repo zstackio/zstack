@@ -23,9 +23,9 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.PersistenceException;
-import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.PersistenceException;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TypedQuery;
 import java.util.*;
 
 import static java.util.Arrays.asList;

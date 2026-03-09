@@ -4,7 +4,7 @@ import org.zstack.core.convert.PasswordConverter;
 import org.zstack.header.core.encrypt.EncryptColumn;
 import org.zstack.header.vo.ResourceVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 /**

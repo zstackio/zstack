@@ -14,7 +14,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.List;
 
 import static org.zstack.core.Platform.argerr;

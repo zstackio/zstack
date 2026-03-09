@@ -1,7 +1,7 @@
 package org.zstack.query;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.path.PathUtil;
 

@@ -3,7 +3,7 @@ package org.zstack.header.vo;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.FieldUtils;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

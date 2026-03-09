@@ -11,8 +11,8 @@ import org.zstack.header.core.encrypt.PasswordEncryptType;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 
 /**
  * Created by kayo on 2018/9/7.

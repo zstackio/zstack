@@ -1,6 +1,6 @@
 package org.zstack.header.identity.role;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Table
 @Entity

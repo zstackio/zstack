@@ -15,7 +15,7 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.LockModeType;
+import jakarta.persistence.LockModeType;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;

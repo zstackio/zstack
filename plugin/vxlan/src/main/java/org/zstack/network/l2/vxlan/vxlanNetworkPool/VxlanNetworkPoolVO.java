@@ -9,7 +9,7 @@ import org.zstack.network.l2.vxlan.vtep.VtepVO;
 import org.zstack.network.l2.vxlan.vtep.RemoteVtepVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
 

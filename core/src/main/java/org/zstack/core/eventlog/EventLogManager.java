@@ -17,7 +17,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Query;
+import jakarta.persistence.Query;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;

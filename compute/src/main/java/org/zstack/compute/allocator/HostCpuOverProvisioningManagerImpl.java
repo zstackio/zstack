@@ -15,7 +15,7 @@ import org.zstack.header.zone.ZoneVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
-import javax.persistence.Query;
+import jakarta.persistence.Query;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

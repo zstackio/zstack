@@ -18,8 +18,8 @@ import org.zstack.header.identity.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;

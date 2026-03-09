@@ -1,6 +1,6 @@
 package org.zstack.zql.ast.visitors;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.zql.ASTNode;
@@ -14,8 +14,8 @@ import org.zstack.zql.ast.visitors.plugin.QueryVisitorPlugin;
 import org.zstack.zql.ast.visitors.result.QueryResult;
 import org.zstack.zql.ast.visitors.result.ReturnWithResult;
 
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.stream.Collectors;

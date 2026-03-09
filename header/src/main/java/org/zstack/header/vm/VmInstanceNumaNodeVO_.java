@@ -1,7 +1,7 @@
 package org.zstack.header.vm;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(VmInstanceNumaNodeVO.class)
 public class VmInstanceNumaNodeVO_ {

@@ -5,8 +5,8 @@ import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 
 @Entity
 @Table

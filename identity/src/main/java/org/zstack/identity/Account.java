@@ -9,7 +9,7 @@ import org.zstack.header.identity.*;
 import org.zstack.header.message.Message;
 import org.zstack.utils.DebugUtils;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

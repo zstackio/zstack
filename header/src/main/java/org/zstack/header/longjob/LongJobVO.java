@@ -6,7 +6,7 @@ import org.zstack.header.managementnode.ManagementNodeVO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ResourceVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 /**

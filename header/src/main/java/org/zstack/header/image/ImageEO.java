@@ -1,6 +1,6 @@
 package org.zstack.header.image;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 /**
  */

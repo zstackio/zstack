@@ -4,8 +4,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.utils.DebugUtils;
 
-import javax.persistence.Tuple;
-import javax.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.Tuple;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -21,27 +20,27 @@ public class Q {
         q = new SimpleQueryImpl(clz);
     }
 
-    public Q select(SingularAttribute... attrs) {
+    public Q select(Object... attrs) {
         q.select(attrs);
         return this;
     }
 
-    public Q orderBy(SingularAttribute attr, SimpleQuery.Od order) {
+    public Q orderBy(Object attr, SimpleQuery.Od order) {
         q.orderBy(attr, order);
         return this;
     }
 
-    public Q orderByAsc(SingularAttribute<?, ?> attr) {
+    public Q orderByAsc(Object attr) {
         q.orderBy(attr, SimpleQuery.Od.ASC);
         return this;
     }
 
-    public Q orderByDesc(SingularAttribute<?, ?> attr) {
+    public Q orderByDesc(Object attr) {
         q.orderBy(attr, SimpleQuery.Od.DESC);
         return this;
     }
 
-    public Q groupBy(SingularAttribute attr) {
+    public Q groupBy(Object attr) {
         q.groupBy(attr);
         return this;
     }
@@ -110,71 +109,71 @@ public class Q {
         return Collections.emptyList();
     }
 
-    public Q eq(SingularAttribute attr, Object val) {
+    public Q eq(Object attr, Object val) {
         q.add(attr, SimpleQuery.Op.EQ, val);
         return this;
     }
 
-    public Q notEq(SingularAttribute attr, Object val) {
+    public Q notEq(Object attr, Object val) {
         q.add(attr, SimpleQuery.Op.NOT_EQ, val);
         return this;
     }
 
-    public Q in(SingularAttribute attr, Collection val) {
+    public Q in(Object attr, Collection val) {
         DebugUtils.Assert(CollectionUtils.isNotEmpty(val), "Op.IN value cannot be null or empty");
         q.add(attr, SimpleQuery.Op.IN, val);
         return this;
     }
 
-    public QueryMore in(SingularAttribute<?, ?> attr, Q subQuery) {
+    public QueryMore in(Object attr, Q subQuery) {
         return toQueryMore().in(attr, subQuery);
     }
 
-    public Q notIn(SingularAttribute attr, Collection val) {
+    public Q notIn(Object attr, Collection val) {
         q.add(attr, SimpleQuery.Op.NOT_IN, val);
         return this;
     }
 
-    public QueryMore notIn(SingularAttribute<?, ?> attr, Q subQuery) {
+    public QueryMore notIn(Object attr, Q subQuery) {
         return toQueryMore().notIn(attr, subQuery);
     }
 
-    public Q isNull(SingularAttribute attr) {
+    public Q isNull(Object attr) {
         q.add(attr, SimpleQuery.Op.NULL);
         return this;
     }
 
-    public Q notNull(SingularAttribute attr) {
+    public Q notNull(Object attr) {
         q.add(attr, SimpleQuery.Op.NOT_NULL);
         return this;
     }
 
-    public Q gt(SingularAttribute attr, Object val) {
+    public Q gt(Object attr, Object val) {
         q.add(attr, SimpleQuery.Op.GT, val);
         return this;
     }
 
-    public Q gte(SingularAttribute attr, Object val) {
+    public Q gte(Object attr, Object val) {
         q.add(attr, SimpleQuery.Op.GTE, val);
         return this;
     }
 
-    public Q lt(SingularAttribute attr, Object val) {
+    public Q lt(Object attr, Object val) {
         q.add(attr, SimpleQuery.Op.LT, val);
         return this;
     }
 
-    public Q lte(SingularAttribute attr, Object val) {
+    public Q lte(Object attr, Object val) {
         q.add(attr, SimpleQuery.Op.LTE, val);
         return this;
     }
 
-    public Q like(SingularAttribute attr, Object val) {
+    public Q like(Object attr, Object val) {
         q.add(attr, SimpleQuery.Op.LIKE, val);
         return this;
     }
 
-    public Q notLike(SingularAttribute attr, Object val) {
+    public Q notLike(Object attr, Object val) {
         q.add(attr, SimpleQuery.Op.NOT_LIKE, val);
         return this;
     }

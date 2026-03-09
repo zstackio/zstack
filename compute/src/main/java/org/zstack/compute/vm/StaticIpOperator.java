@@ -28,7 +28,7 @@ import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

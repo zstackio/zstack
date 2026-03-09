@@ -9,12 +9,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
-import javax.persistence.NoResultException;
-import javax.persistence.Query;
-import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.*;
-import javax.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.Query;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.*;
+import jakarta.persistence.metamodel.SingularAttribute;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -77,22 +77,25 @@ public class SimpleQueryImpl<T> implements SimpleQuery<T> {
     }
 
     @Override
-    public SimpleQuery<T> select(SingularAttribute... attrs) {
+    @SuppressWarnings("unchecked")
+    public SimpleQuery<T> select(Object... attrs) {
         for (int i=0; i<attrs.length; i++) {
-            _selects.add(new AttrInfo(attrs[i], attrs[i].getJavaType()));
+            SingularAttribute a = (SingularAttribute) attrs[i];
+            _selects.add(new AttrInfo(a, a.getJavaType()));
         }
         return this;
     }
 
     @Override
-    public SimpleQuery<T> add(SingularAttribute attr, Op op, Collection vals) {
-        _conditions.add(new Condition(attr, op, vals.toArray(new Object[vals.size()])));
+    @SuppressWarnings("unchecked")
+    public SimpleQuery<T> add(Object attr, Op op, Collection vals) {
+        _conditions.add(new Condition((SingularAttribute) attr, op, vals.toArray(new Object[vals.size()])));
         return this;
     }
 
     @Override
-    public SimpleQuery<T> add(SingularAttribute attr, Op op, Object... val) {
-        _conditions.add(new Condition(attr, op, val));
+    public SimpleQuery<T> add(Object attr, Op op, Object... val) {
+        _conditions.add(new Condition((SingularAttribute) attr, op, val));
         return this;
     }
     
@@ -359,19 +362,19 @@ public class SimpleQueryImpl<T> implements SimpleQuery<T> {
     }
 
     @Override
-    public SimpleQuery<T> orderBy(SingularAttribute attr, org.zstack.core.db.SimpleQuery.Od order) {
-        orderInfos.add(new OrderInfo(attr, order));
+    public SimpleQuery<T> orderBy(Object attr, org.zstack.core.db.SimpleQuery.Od order) {
+        orderInfos.add(new OrderInfo((SingularAttribute) attr, order));
         return this;
     }
 
     @Override
-    public SimpleQuery<T> groupBy(SingularAttribute attr) {
-        this.groupByInfo = attr;
+    public SimpleQuery<T> groupBy(Object attr) {
+        this.groupByInfo = (SingularAttribute) attr;
         return this;
     }
 
 	@Override
-    public SimpleQuery<T> isSoftDeleted(SingularAttribute attr) {
+    public SimpleQuery<T> isSoftDeleted(Object attr) {
 	    return add(attr, Op.NULL);
     }
 

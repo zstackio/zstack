@@ -15,7 +15,7 @@ import org.zstack.header.host.HostVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;

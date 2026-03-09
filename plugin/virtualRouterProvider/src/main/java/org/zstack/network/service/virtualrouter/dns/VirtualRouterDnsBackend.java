@@ -26,7 +26,7 @@ import org.zstack.utils.logging.CLogger;
 import static org.zstack.core.Platform.operr;
 
 import java.util.*;
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**

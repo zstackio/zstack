@@ -1,4 +1,4 @@
-// Generated from ZQL.g4 by ANTLR 4.7
+// Generated from /home/test/modernize/search/src/main/antlr4/ZQL.g4 by ANTLR 4.13.0
 
 package org.zstack.zql.antlr4;
 
@@ -12,6 +12,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
  * which can be extended to create a listener which only needs to handle a subset
  * of the available methods.
  */
+@SuppressWarnings("CheckReturnValue")
 public class ZQLBaseListener implements ZQLListener {
 	/**
 	 * {@inheritDoc}
@@ -421,18 +422,6 @@ public class ZQLBaseListener implements ZQLListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitWithMultiFields(ZQLParser.WithMultiFieldsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterWithMultiTableFields(ZQLParser.WithMultiTableFieldsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitWithMultiTableFields(ZQLParser.WithMultiTableFieldsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

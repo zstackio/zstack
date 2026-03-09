@@ -4,10 +4,10 @@ import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.vo.ToInventory;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;

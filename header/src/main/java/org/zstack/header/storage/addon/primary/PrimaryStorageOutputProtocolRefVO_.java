@@ -1,7 +1,7 @@
 package org.zstack.header.storage.addon.primary;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(PrimaryStorageOutputProtocolRefVO.class)
 public class PrimaryStorageOutputProtocolRefVO_ {

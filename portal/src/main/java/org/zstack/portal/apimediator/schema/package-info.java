@@ -5,10 +5,10 @@
 // Generated on: 2013.11.23 at 02:21:36 PM PST 
 //
 
-@javax.xml.bind.annotation.XmlSchema(namespace = "http://zstack.org/schema/zstack", elementFormDefault = javax.xml.bind.annotation.XmlNsForm.QUALIFIED)
+@jakarta.xml.bind.annotation.XmlSchema(namespace = "http://zstack.org/schema/zstack", elementFormDefault = jakarta.xml.bind.annotation.XmlNsForm.QUALIFIED)
 @XmlJavaTypeAdapter(value=StringTrimAdapter.class,type=String.class)
 package org.zstack.portal.apimediator.schema;
 
 import org.zstack.utils.jaxb.StringTrimAdapter;
 
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;

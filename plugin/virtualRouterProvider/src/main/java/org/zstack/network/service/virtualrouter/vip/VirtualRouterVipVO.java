@@ -10,7 +10,7 @@ import org.zstack.header.vo.SoftDeletionCascades;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table

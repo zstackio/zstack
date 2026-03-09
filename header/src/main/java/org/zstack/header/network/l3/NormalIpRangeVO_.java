@@ -1,6 +1,6 @@
 package org.zstack.header.network.l3;
 
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(NormalIpRangeVO.class)
 public class NormalIpRangeVO_ extends IpRangeVO_ {

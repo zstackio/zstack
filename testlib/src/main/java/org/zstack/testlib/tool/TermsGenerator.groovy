@@ -6,7 +6,7 @@ import org.zstack.header.vo.EO
 import org.zstack.header.vo.ResourceVO
 import org.zstack.utils.path.PathUtil
 
-import javax.persistence.Entity
+import jakarta.persistence.Entity
 
 class TermsGenerator {
     static String termFileFormat = "terms_%s.properties"

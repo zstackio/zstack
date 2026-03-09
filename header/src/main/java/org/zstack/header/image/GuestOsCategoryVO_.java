@@ -2,8 +2,8 @@ package org.zstack.header.image;
 
 import org.zstack.header.vo.ResourceVO_;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(GuestOsCategoryVO.class)
 public class GuestOsCategoryVO_ extends ResourceVO_ {

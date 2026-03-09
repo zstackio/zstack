@@ -4,9 +4,9 @@ import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ResourceVO;
 
-import javax.persistence.Column;
+import jakarta.persistence.Column;
 import java.sql.Timestamp;
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table

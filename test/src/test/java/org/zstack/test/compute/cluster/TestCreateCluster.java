@@ -32,7 +32,7 @@ public class TestCreateCluster {
             ZoneInventory zone = api.createZones(1).get(0);
             ClusterInventory cluster = api.createClusters(1, zone.getUuid()).get(0);
             ClusterVO vo = dbf.findByUuid(cluster.getUuid(), ClusterVO.class);
-            Assert.notNull(vo);
+            Assert.notNull(vo, "ClusterVO must not be null");
         } finally {
             api.stopServer();
         }

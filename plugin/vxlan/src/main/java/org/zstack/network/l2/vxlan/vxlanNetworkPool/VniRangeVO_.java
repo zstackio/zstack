@@ -3,8 +3,8 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 import org.zstack.header.vo.ResourceVO_;
 import org.zstack.network.l2.vxlan.vtep.VtepVO;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
 
 /**

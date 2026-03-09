@@ -19,9 +19,9 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.BeanUtils
 
-import javax.persistence.Convert
-import javax.persistence.Entity
-import javax.persistence.Table
+import jakarta.persistence.Convert
+import jakarta.persistence.Entity
+import jakarta.persistence.Table
 
 /**
  * Created by kayo on 2018/9/12.

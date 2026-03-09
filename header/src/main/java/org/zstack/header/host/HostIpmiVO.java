@@ -3,7 +3,7 @@ package org.zstack.header.host;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 /**
  * @Author : jingwang

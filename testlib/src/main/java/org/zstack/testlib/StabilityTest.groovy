@@ -125,7 +125,7 @@ abstract class StabilityTest extends Test implements Case{
 
         String caseLogStartLine = "stability test, a sub case \\[class ${caseName}\\] start running"
 
-        subCase.metaClass.collectErrorLog = {
+        subCase.collectErrorLog = {
             File failureLogDir = new File([dir.absolutePath, "failureLogs", caseName.replace(".", "_")].join("/"))
             failureLogDir.mkdirs()
             File failureLog = new File([failureLogDir.absolutePath, "case.log"].join("/"))

@@ -21,10 +21,10 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.Query;
-import javax.persistence.Table;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Query;
+import jakarta.persistence.Table;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -288,7 +288,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
             @Override
             public void beforeUpdateExtensionPoint(GlobalConfig oldConfig, String newValue) {
                 // avoid encrypt twice need to do synchronized encrypted(decrypted)
-                // e.g. use javax.persistence.Query set password to update encrypt password
+                // e.g. use jakarta.persistence.Query set password to update encrypt password
                 // when PasswordConverter check this value is true the password will be encrypt
                 // again before persist, so this beforeUpdateExtension is necessary
                 if (PasswordEncryptType.LocalEncryption.toString().equals(newValue)

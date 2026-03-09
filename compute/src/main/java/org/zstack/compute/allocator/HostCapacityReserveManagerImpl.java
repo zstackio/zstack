@@ -18,7 +18,7 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;

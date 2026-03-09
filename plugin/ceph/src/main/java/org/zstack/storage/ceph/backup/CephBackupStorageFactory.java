@@ -12,9 +12,9 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.storage.ceph.*;
 import org.zstack.tag.SystemTagCreator;
 
-import javax.persistence.LockModeType;
-import javax.persistence.NoResultException;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 /**

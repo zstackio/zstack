@@ -1,6 +1,6 @@
 package org.zstack.zql.ast.visitors;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.ASTVisitor;
 import org.zstack.zql.ZQLContext;

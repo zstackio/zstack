@@ -30,9 +30,9 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.serializable.SerializableHelper;
 
-import javax.persistence.NoResultException;
-import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TypedQuery;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.*;

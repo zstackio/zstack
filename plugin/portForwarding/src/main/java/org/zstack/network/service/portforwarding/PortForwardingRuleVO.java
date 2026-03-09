@@ -10,7 +10,7 @@ import org.zstack.header.vo.Index;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.network.service.vip.VipVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity

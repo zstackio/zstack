@@ -4,8 +4,8 @@ import org.apache.commons.collections.CollectionUtils;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.DebugUtils;
 
-import javax.persistence.Tuple;
-import javax.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.metamodel.SingularAttribute;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -69,24 +69,24 @@ public class QueryMore {
         IntFunction<ResultType> function;
         Consumer<SingularAttribute<?, ?>> attrConsumer;
 
-        public ResultType table0(SingularAttribute<?, ?> attr) {
+        public ResultType table0(Object attr) {
             return table(0, attr);
         }
 
-        public ResultType table1(SingularAttribute<?, ?> attr) {
+        public ResultType table1(Object attr) {
             return table(1, attr);
         }
 
-        public ResultType table2(SingularAttribute<?, ?> attr) {
+        public ResultType table2(Object attr) {
             return table(2, attr);
         }
 
-        public ResultType table3(SingularAttribute<?, ?> attr) {
+        public ResultType table3(Object attr) {
             return table(3, attr);
         }
 
-        public ResultType table(int tableIndex, SingularAttribute<?, ?> attr) {
-            attrConsumer.accept(attr);
+        public ResultType table(int tableIndex, Object attr) {
+            attrConsumer.accept((SingularAttribute<?, ?>) attr);
             return function.apply(tableIndex);
         }
     }
@@ -142,9 +142,9 @@ public class QueryMore {
         }
     }
 
-    public QueryMore condition(SingularAttribute<?, ?> attr, SimpleQuery.Op op, Object value) {
+    public QueryMore condition(Object attr, SimpleQuery.Op op, Object value) {
         Condition c = new Condition();
-        c.attr = attr;
+        c.attr = (SingularAttribute<?, ?>) attr;
         c.op = op;
         c.value = value;
         c.tableIndex = tableIndex;
@@ -167,43 +167,44 @@ public class QueryMore {
         return this;
     }
 
-    public QueryMore select(SingularAttribute<?, ?>... attrs) {
+    @SuppressWarnings("unchecked")
+    public QueryMore select(Object... attrs) {
         for (int i = 0; i < attrs.length; i++) {
             AttrInfo info = new AttrInfo();
-            info.attr = attrs[i];
+            info.attr = (SingularAttribute<?, ?>) attrs[i];
             info.tableIndex = tableIndex;
             selects.add(info);
         }
         return this;
     }
 
-    public QueryMore selectSum(SingularAttribute<?, ?> attr) {
+    public QueryMore selectSum(Object attr) {
         AttrInfo info = new AttrInfo();
-        info.attr = attr;
+        info.attr = (SingularAttribute<?, ?>) attr;
         info.function = "sum";
         info.tableIndex = tableIndex;
         selects.add(info);
         return this;
     }
 
-    public QueryMore selectCount(SingularAttribute<?, ?> attr) {
+    public QueryMore selectCount(Object attr) {
         AttrInfo info = new AttrInfo();
-        info.attr = attr;
+        info.attr = (SingularAttribute<?, ?>) attr;
         info.function = "count";
         info.tableIndex = tableIndex;
         selects.add(info);
         return this;
     }
 
-    public QueryMore eq(SingularAttribute<?, ?> attr, Object value) {
+    public QueryMore eq(Object attr, Object value) {
         return condition(attr, EQ, value);
     }
 
     // table0.uuid = table1.refUuid
-    public TableOption<QueryMore> eq(SingularAttribute<?, ?> attr) {
+    public TableOption<QueryMore> eq(Object attr) {
         ConditionBetweenTables condition = new ConditionBetweenTables();
         condition.tableIndex1 = tableIndex;
-        condition.attr1 = attr;
+        condition.attr1 = (SingularAttribute<?, ?>) attr;
         condition.op = SimpleQuery.Op.EQ;
 
         TableOption<QueryMore> result = new TableOption<>();
@@ -216,64 +217,64 @@ public class QueryMore {
         return result;
     }
 
-    public QueryMore notEq(SingularAttribute<?, ?> attr, Object value) {
+    public QueryMore notEq(Object attr, Object value) {
         return condition(attr, NOT_EQ, value);
     }
 
-    public QueryMore in(SingularAttribute<?, ?> attr, Collection<?> collection) {
+    public QueryMore in(Object attr, Collection<?> collection) {
         DebugUtils.Assert(CollectionUtils.isNotEmpty(collection), "Op.IN value cannot be null or empty");
         return condition(attr, IN, collection);
     }
 
-    public QueryMore in(SingularAttribute<?, ?> attr, QueryMore subQuery) {
+    public QueryMore in(Object attr, QueryMore subQuery) {
         return condition(attr, IN, subQuery);
     }
 
-    public QueryMore in(SingularAttribute<?, ?> attr, Q subQuery) {
+    public QueryMore in(Object attr, Q subQuery) {
         return in(attr, subQuery.toQueryMore());
     }
 
-    public QueryMore notIn(SingularAttribute<?, ?> attr, Collection<?> collection) {
+    public QueryMore notIn(Object attr, Collection<?> collection) {
         return condition(attr, NOT_IN, collection);
     }
 
-    public QueryMore notIn(SingularAttribute<?, ?> attr, QueryMore subQuery) {
+    public QueryMore notIn(Object attr, QueryMore subQuery) {
         return condition(attr, NOT_IN, subQuery);
     }
 
-    public QueryMore notIn(SingularAttribute<?, ?> attr, Q subQuery) {
+    public QueryMore notIn(Object attr, Q subQuery) {
         return notIn(attr, subQuery.toQueryMore());
     }
 
-    public QueryMore isNull(SingularAttribute<?, ?> attr) {
+    public QueryMore isNull(Object attr) {
         return condition(attr, NULL, null);
     }
 
-    public QueryMore notNull(SingularAttribute<?, ?> attr) {
+    public QueryMore notNull(Object attr) {
         return condition(attr, NOT_NULL, null);
     }
 
-    public QueryMore gt(SingularAttribute<?, ?> attr, Object value) {
+    public QueryMore gt(Object attr, Object value) {
         return condition(attr, GT, value);
     }
 
-    public QueryMore gte(SingularAttribute<?, ?> attr, Object value) {
+    public QueryMore gte(Object attr, Object value) {
         return condition(attr, GTE, value);
     }
 
-    public QueryMore lt(SingularAttribute<?, ?> attr, Object value) {
+    public QueryMore lt(Object attr, Object value) {
         return condition(attr, LT, value);
     }
 
-    public QueryMore lte(SingularAttribute<?, ?> attr, Object value) {
+    public QueryMore lte(Object attr, Object value) {
         return condition(attr, LTE, value);
     }
 
-    public QueryMore like(SingularAttribute<?, ?> attr, Object value) {
+    public QueryMore like(Object attr, Object value) {
         return condition(attr, LIKE, value);
     }
 
-    public QueryMore notLike(SingularAttribute<?, ?> attr, Object value) {
+    public QueryMore notLike(Object attr, Object value) {
         return condition(attr, NOT_LIKE, value);
         }
 
@@ -298,20 +299,20 @@ public class QueryMore {
         return table(3);
     }
 
-    public QueryMore orderByAsc(SingularAttribute<?, ?> attr) {
+    public QueryMore orderByAsc(Object attr) {
         OrderInfo order = new OrderInfo();
         order.tableIndex = tableIndex;
         order.od = SimpleQuery.Od.ASC;
-        order.attr = attr;
+        order.attr = (SingularAttribute<?, ?>) attr;
         orders.add(order);
         return this;
     }
 
-    public QueryMore orderByDesc(SingularAttribute<?, ?> attr) {
+    public QueryMore orderByDesc(Object attr) {
         OrderInfo order = new OrderInfo();
         order.tableIndex = tableIndex;
         order.od = SimpleQuery.Od.DESC;
-        order.attr = attr;
+        order.attr = (SingularAttribute<?, ?>) attr;
         orders.add(order);
         return this;
     }

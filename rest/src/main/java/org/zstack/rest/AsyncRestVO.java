@@ -3,7 +3,7 @@ package org.zstack.rest;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.Index;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 /**

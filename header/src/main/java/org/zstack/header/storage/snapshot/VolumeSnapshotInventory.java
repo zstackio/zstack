@@ -6,7 +6,7 @@ import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefInventory;
 import org.zstack.header.volume.VolumeInventory;
 
-import javax.persistence.JoinColumn;
+import jakarta.persistence.JoinColumn;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;

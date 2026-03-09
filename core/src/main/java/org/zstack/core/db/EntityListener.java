@@ -7,7 +7,7 @@ import org.zstack.header.vo.ShadowEntity;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.io.Serializable;
 
 /**

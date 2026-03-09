@@ -9,8 +9,8 @@ import org.zstack.header.core.PaginateCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.utils.DebugUtils;
 
-import javax.persistence.LockModeType;
-import javax.persistence.Query;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.Query;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

@@ -9,7 +9,7 @@ import org.zstack.header.vo.SoftDeletionCascade;
 import org.zstack.header.vo.SoftDeletionCascades;
 import org.zstack.header.volume.VolumeVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 /**

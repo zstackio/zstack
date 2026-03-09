@@ -4,7 +4,7 @@ import org.zstack.header.host.HostAO;
 import org.zstack.header.vo.Index;
 import org.zstack.header.vo.ToInventory;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.util.List;
 

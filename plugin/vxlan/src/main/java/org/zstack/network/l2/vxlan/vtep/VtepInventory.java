@@ -8,7 +8,7 @@ import org.zstack.header.search.Inventory;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolInventory;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
 
-import javax.persistence.JoinColumn;
+import jakarta.persistence.JoinColumn;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;

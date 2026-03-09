@@ -4,7 +4,7 @@ package org.zstack.header.vm;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table

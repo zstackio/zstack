@@ -18,7 +18,7 @@ import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 import static org.zstack.core.Platform.inerr;

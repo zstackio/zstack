@@ -6,7 +6,7 @@ import org.zstack.header.host.HostEO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.vo.EO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table

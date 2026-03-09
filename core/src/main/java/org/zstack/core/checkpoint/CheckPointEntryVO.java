@@ -1,6 +1,6 @@
 package org.zstack.core.checkpoint;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name="check_point_entry")

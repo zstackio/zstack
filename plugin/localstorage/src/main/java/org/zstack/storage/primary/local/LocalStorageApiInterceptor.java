@@ -25,7 +25,7 @@ import org.zstack.header.volume.*;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.utils.CollectionDSL;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;

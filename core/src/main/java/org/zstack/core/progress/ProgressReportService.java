@@ -33,8 +33,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Query;
-import javax.persistence.Tuple;
+import jakarta.persistence.Query;
+import jakarta.persistence.Tuple;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -98,11 +98,12 @@ public class ProgressReportService extends AbstractService implements Management
                     @Override
                     protected void scripts() {
                         Query query = dbf.getEntityManager().createNativeQuery("select unix_timestamp()");
-                        Long current = ((BigInteger) query.getSingleResult()).longValue() * 1000;
+                        Long current = ((Number) query.getSingleResult()).longValue() * 1000;
                         sql(TaskProgressVO.class).notNull(TaskProgressVO_.timeToDelete)
                                 .lte(TaskProgressVO_.timeToDelete, current).hardDelete();
-                        sql("delete from TaskProgressVO vo where vo.time + :ttl <= UNIX_TIMESTAMP() * 1000")
-                                .param("ttl", TimeUnit.SECONDS.toMillis(ProgressGlobalConfig.PROGRESS_TTL.value(Long.class))).execute();
+                        sql("delete from TaskProgressVO vo where vo.time + :ttl <= :current")
+                                .param("ttl", TimeUnit.SECONDS.toMillis(ProgressGlobalConfig.PROGRESS_TTL.value(Long.class)))
+                                .param("current", current).execute();
                     }
                 }.execute();
             }
@@ -173,7 +174,7 @@ public class ProgressReportService extends AbstractService implements Management
         }
 
         Query query = dbf.getEntityManager().createNativeQuery("select unix_timestamp()");
-        Long current = ((BigInteger) query.getSingleResult()).longValue() * 1000;
+        Long current = ((Number) query.getSingleResult()).longValue() * 1000;
         SQL.New(TaskProgressVO.class).eq(TaskProgressVO_.apiId, apiId).set(TaskProgressVO_.timeToDelete,
                 current + TimeUnit.SECONDS.toMillis(DELETE_DELAY)).update();
     }

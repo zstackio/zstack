@@ -29,7 +29,7 @@ import org.zstack.storage.primary.CheckHostStorageConnectionMsg;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 import java.util.Map;
 

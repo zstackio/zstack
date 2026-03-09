@@ -15,8 +15,8 @@ import org.zstack.header.image.GuestOsCategoryVO;
 import org.zstack.header.image.GuestOsCategoryVO_;
 import org.zstack.utils.path.PathUtil;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Unmarshaller;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;

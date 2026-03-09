@@ -5,5 +5,5 @@
 // Generated on: 2014.03.02 at 01:27:06 PM GMT-08:00 
 //
 
-@javax.xml.bind.annotation.XmlSchema(namespace = "http://zstack.org/schema/zstack", elementFormDefault = javax.xml.bind.annotation.XmlNsForm.QUALIFIED)
+@jakarta.xml.bind.annotation.XmlSchema(namespace = "http://zstack.org/schema/zstack", elementFormDefault = jakarta.xml.bind.annotation.XmlNsForm.QUALIFIED)
 package org.zstack.core.config.schema;

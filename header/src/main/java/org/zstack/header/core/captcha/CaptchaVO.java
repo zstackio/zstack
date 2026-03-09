@@ -3,10 +3,10 @@ package org.zstack.header.core.captcha;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ResourceVO;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.PreUpdate;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 import java.sql.Timestamp;
 
 /**

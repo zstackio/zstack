@@ -2,7 +2,7 @@ package org.zstack.test.core.db;
 
 import org.zstack.header.vo.Uuid;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity

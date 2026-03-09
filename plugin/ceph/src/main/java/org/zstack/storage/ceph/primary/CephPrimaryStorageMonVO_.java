@@ -6,8 +6,8 @@ package org.zstack.storage.ceph.primary;
 
 import org.zstack.storage.ceph.CephMonAO_;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(CephPrimaryStorageMonVO.class)
 public class CephPrimaryStorageMonVO_ extends CephMonAO_ {

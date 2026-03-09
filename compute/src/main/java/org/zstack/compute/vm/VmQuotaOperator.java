@@ -20,8 +20,8 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.utils.data.Pair;
 
-import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

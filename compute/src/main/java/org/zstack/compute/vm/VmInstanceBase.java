@@ -83,8 +83,8 @@ import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.PersistenceException;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.PersistenceException;
+import jakarta.persistence.TypedQuery;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;

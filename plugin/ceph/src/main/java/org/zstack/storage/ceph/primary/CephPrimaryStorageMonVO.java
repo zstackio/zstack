@@ -8,7 +8,7 @@ import org.zstack.header.vo.SoftDeletionCascade;
 import org.zstack.header.vo.SoftDeletionCascades;
 import org.zstack.storage.ceph.CephMonAO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 /**
  * Created by frank on 7/28/2015.

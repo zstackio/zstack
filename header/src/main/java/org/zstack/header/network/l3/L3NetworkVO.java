@@ -10,7 +10,7 @@ import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 import org.zstack.header.zone.ZoneVO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.*;
 import java.util.stream.Collectors;
 

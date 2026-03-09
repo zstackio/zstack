@@ -3,7 +3,7 @@ package org.zstack.header.network.service;
 import org.zstack.header.query.Queryable;
 import org.zstack.header.search.Inventory;
 
-import javax.persistence.JoinColumn;
+import jakarta.persistence.JoinColumn;
 import java.sql.Timestamp;
 import java.util.*;
 

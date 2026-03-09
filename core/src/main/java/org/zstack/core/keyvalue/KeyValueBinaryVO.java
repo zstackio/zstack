@@ -1,6 +1,6 @@
 package org.zstack.core.keyvalue;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 /**

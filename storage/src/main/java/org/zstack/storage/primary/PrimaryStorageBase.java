@@ -59,8 +59,8 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.LockModeType;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.TypedQuery;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;

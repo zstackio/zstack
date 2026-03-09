@@ -1,7 +1,12 @@
 package org.zstack.header.rest;
 
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.core5.util.Timeout;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -13,7 +18,7 @@ import org.springframework.web.client.RestTemplate;
 import org.zstack.header.core.Completion;
 
 import javax.net.ssl.SSLContext;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -111,19 +116,29 @@ public interface RESTFacade {
 
     // timeout are in milliseconds
     static TimeoutRestTemplate createRestTemplate(int readTimeout, int connectTimeout) {
-        HttpComponentsClientHttpRequestFactory factory = new TimeoutHttpComponentsClientHttpRequestFactory();
-        factory.setReadTimeout(readTimeout);
-        factory.setConnectTimeout(connectTimeout);
-        factory.setConnectionRequestTimeout(connectTimeout * 2);
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setResponseTimeout(Timeout.ofMilliseconds(readTimeout))
+                .setConnectionRequestTimeout(Timeout.ofMilliseconds(connectTimeout * 2))
+                .build();
 
         SSLContext sslContext = DefaultSSLVerifier.getSSLContext(DefaultSSLVerifier.trustAllCerts);
 
+        var httpClientBuilder = HttpClients.custom()
+                .setDefaultRequestConfig(requestConfig);
+
         if (sslContext != null) {
-            factory.setHttpClient(HttpClients.custom()
-                    .setSSLHostnameVerifier(new NoopHostnameVerifier())
-                    .setSSLContext(sslContext)
-                    .build());
+            HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create()
+                    .setSSLSocketFactory(SSLConnectionSocketFactoryBuilder.create()
+                            .setSslContext(sslContext)
+                            .setHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                            .build())
+                    .build();
+            httpClientBuilder.setConnectionManager(cm);
         }
+
+        HttpComponentsClientHttpRequestFactory factory = new TimeoutHttpComponentsClientHttpRequestFactory();
+        factory.setHttpClient(httpClientBuilder.build());
+        factory.setConnectTimeout(connectTimeout);
 
         TimeoutRestTemplate template = new TimeoutRestTemplate(factory);
         setMessageConverter(template.getMessageConverters());

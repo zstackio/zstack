@@ -54,8 +54,8 @@ import org.zstack.utils.data.FieldPrinter;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;

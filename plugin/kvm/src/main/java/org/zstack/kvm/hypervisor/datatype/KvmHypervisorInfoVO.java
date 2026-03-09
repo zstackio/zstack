@@ -5,7 +5,7 @@ import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.Index;
 import org.zstack.kvm.KVMConstant;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity

@@ -6,7 +6,7 @@ import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.Index;
 import org.zstack.header.vo.*;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Set;

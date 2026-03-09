@@ -4,7 +4,7 @@ import org.zstack.header.vm.VmInstanceEO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table

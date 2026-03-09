@@ -2,7 +2,7 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 import org.zstack.header.network.l2.L2NetworkVO_;
 
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 /**
  * Created by weiwang on 02/03/2017.

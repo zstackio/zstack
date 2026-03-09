@@ -2,7 +2,7 @@ package org.zstack.query
 
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.reflection.ClassInfo
 import org.codehaus.groovy.reflection.GroovyClassValue

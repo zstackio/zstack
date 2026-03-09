@@ -13,7 +13,7 @@ import org.zstack.header.volume.VolumeEO;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.zone.ZoneEO;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @MappedSuperclass

@@ -4,9 +4,9 @@ import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 @Entity
 @Table

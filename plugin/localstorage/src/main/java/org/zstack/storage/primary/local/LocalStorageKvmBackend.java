@@ -64,7 +64,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;

@@ -8,7 +8,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.storage.backup.BackupStorageStatus;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 /**

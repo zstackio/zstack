@@ -2,8 +2,8 @@ package org.zstack.network.l3;
 import org.zstack.core.Platform;
 import org.zstack.header.exception.CloudRuntimeException;
 
-import javax.persistence.Tuple;
-import javax.persistence.TupleElement;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TupleElement;
 
 import org.apache.commons.net.util.SubnetUtils;
 import org.zstack.core.db.Q;

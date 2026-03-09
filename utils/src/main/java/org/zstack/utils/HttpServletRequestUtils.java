@@ -2,7 +2,7 @@ package org.zstack.utils;
 
 import org.apache.commons.lang.StringUtils;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.function.Predicate;
 
 public class HttpServletRequestUtils {

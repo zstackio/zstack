@@ -4,7 +4,7 @@ import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
 
-import javax.persistence.JoinColumn;
+import jakarta.persistence.JoinColumn;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.Collection;

@@ -35,7 +35,7 @@ import org.zstack.utils.logging.CLogger;
 
 import org.apache.commons.lang.StringUtils;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 
 import java.util.ArrayList;
 import java.util.Arrays;

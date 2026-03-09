@@ -11,7 +11,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.data.Pair;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmSchedHistoryRecorder {

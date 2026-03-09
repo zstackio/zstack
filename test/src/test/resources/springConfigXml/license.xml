@@ -11,7 +11,7 @@
     http://zstack.org/schema/zstack/plugin.xsd"
        default-init-method="init" default-destroy-method="destroy">
 
-    <bean id="LicenseManager" class="org.zstack.test.mevoco.MockLicenseManagerImpl">
+    <bean id="LicenseManager" class="org.zstack.license.LicenseManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />

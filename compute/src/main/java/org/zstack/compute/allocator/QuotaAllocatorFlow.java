@@ -19,7 +19,7 @@ import org.zstack.core.db.Q;
 import org.zstack.utils.Utils;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.host.*;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.*;
 
 

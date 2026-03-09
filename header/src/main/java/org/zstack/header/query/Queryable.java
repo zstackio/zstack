@@ -1,6 +1,6 @@
 package org.zstack.header.query;
 
-import javax.persistence.JoinColumn;
+import jakarta.persistence.JoinColumn;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

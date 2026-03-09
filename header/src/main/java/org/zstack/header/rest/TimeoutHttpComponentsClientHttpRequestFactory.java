@@ -1,14 +1,16 @@
 package org.zstack.header.rest;
 
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.protocol.HttpContext;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.core5.util.Timeout;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.ClientHttpRequest;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URI;
 
 /**
@@ -17,7 +19,7 @@ import java.net.URI;
 public class TimeoutHttpComponentsClientHttpRequestFactory extends HttpComponentsClientHttpRequestFactory {
     private static final CLogger logger = Utils.getLogger(TimeoutHttpComponentsClientHttpRequestFactory.class);
 
-    private static final ThreadLocal<TimeoutConfig> timeoutConfig = new ThreadLocal();
+    private static final ThreadLocal<TimeoutConfig> timeoutConfig = new ThreadLocal<>();
 
     @Override
     public ClientHttpRequest createRequest(URI uri, HttpMethod httpMethod) throws IOException {
@@ -31,20 +33,20 @@ public class TimeoutHttpComponentsClientHttpRequestFactory extends HttpComponent
         timeoutConfig.remove();
 
         try {
-            Field httpContextField = request.getClass().getDeclaredField("httpContext");
-            httpContextField.setAccessible(true);
-            HttpContext httpContext = (HttpContext) httpContextField.get(request);
-            RequestConfig requestConfig = (RequestConfig) httpContext.getAttribute("http.request-config");
+            // HC5: set per-request config via reflection on the underlying HttpUriRequestBase
+            Field httpRequestField = request.getClass().getDeclaredField("httpRequest");
+            httpRequestField.setAccessible(true);
+            Object httpRequest = httpRequestField.get(request);
 
-            Field connectTimeoutField = requestConfig.getClass().getDeclaredField("connectTimeout");
-            connectTimeoutField.setAccessible(true);
-            connectTimeoutField.set(requestConfig, config.connectTimeout);
-            Field socketTimeoutField = requestConfig.getClass().getDeclaredField("socketTimeout");
-            socketTimeoutField.setAccessible(true);
-            socketTimeoutField.set(requestConfig, config.readTimeout);
+            RequestConfig requestConfig = RequestConfig.custom()
+                    .setResponseTimeout(Timeout.ofMilliseconds(config.readTimeout))
+                    .setConnectionRequestTimeout(Timeout.ofMilliseconds(config.connectTimeout))
+                    .build();
 
+            Method setConfigMethod = httpRequest.getClass().getMethod("setConfig", RequestConfig.class);
+            setConfigMethod.invoke(httpRequest, requestConfig);
         }catch (Throwable t){
-            throw new IOException(t.getCause());
+            logger.warn(String.format("failed to set per-request timeout config: %s", t.getMessage()));
         }
 
         return request;
@@ -80,6 +82,3 @@ public class TimeoutHttpComponentsClientHttpRequestFactory extends HttpComponent
         }
     }
 }
-
-
-

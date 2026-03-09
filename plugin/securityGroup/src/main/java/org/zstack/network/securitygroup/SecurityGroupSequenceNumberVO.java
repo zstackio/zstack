@@ -1,6 +1,6 @@
 package org.zstack.network.securitygroup;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table

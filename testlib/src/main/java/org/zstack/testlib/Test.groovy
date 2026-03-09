@@ -32,8 +32,8 @@ import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 import org.zstack.utils.path.PathUtil
 
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -53,6 +53,7 @@ abstract class Test extends ApiHelper implements Retry {
     static Map<Class, Closure> functionForMockTestObjectFactory = new ConcurrentHashMap<>()
 
     protected List<Closure> methodsOnClean = []
+    protected Closure collectErrorLog = {}
 
     protected List zqlQuery(String text) {
         return zQLQuery { zql = text }.results[0].inventories
@@ -743,7 +744,7 @@ abstract class Test extends ApiHelper implements Retry {
             def caseStartTime = System.currentTimeMillis()
             try {
                 CURRENT_SUB_CASE = c
-                c.metaClass.collectErrorLog = {
+                c.collectErrorLog = {
                     File failureLogDir = new File([dir.absolutePath, "failureLogs", r.caseType.name.replace(".", "_")].join("/"))
                     failureLogDir.mkdirs()
                     File failureLog = new File([failureLogDir.absolutePath, "case.log"].join("/"))

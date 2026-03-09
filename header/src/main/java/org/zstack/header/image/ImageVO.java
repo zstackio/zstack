@@ -4,7 +4,7 @@ import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.*;
 import org.zstack.header.vo.EntityGraph;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
 

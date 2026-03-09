@@ -28,7 +28,7 @@ import org.zstack.utils.BeanUtils
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
-import javax.persistence.Tuple
+import jakarta.persistence.Tuple
 import java.util.concurrent.ConcurrentHashMap
 
 import static org.zstack.kvm.KVMAgentCommands.*

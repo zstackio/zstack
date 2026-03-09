@@ -10,7 +10,7 @@ import org.zstack.header.vm.ArchiveVmNicBundle;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO_;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 /**

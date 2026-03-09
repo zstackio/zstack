@@ -14,7 +14,7 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.*;
 import java.util.stream.Collectors;
 

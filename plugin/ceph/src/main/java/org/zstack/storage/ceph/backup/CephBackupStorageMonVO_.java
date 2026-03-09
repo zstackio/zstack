@@ -2,8 +2,8 @@ package org.zstack.storage.ceph.backup;
 
 import org.zstack.storage.ceph.CephMonAO_;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 /**
  * Created by frank on 7/29/2015.

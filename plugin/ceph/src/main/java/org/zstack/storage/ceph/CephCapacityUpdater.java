@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
-import javax.persistence.LockModeType;
+import jakarta.persistence.LockModeType;
 import java.util.List;
 
 /**

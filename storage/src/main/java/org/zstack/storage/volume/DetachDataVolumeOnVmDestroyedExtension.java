@@ -12,7 +12,7 @@ import org.zstack.header.vm.VmReleaseResourceExtensionPoint;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 
-import javax.persistence.Query;
+import jakarta.persistence.Query;
 
 public class DetachDataVolumeOnVmDestroyedExtension implements VmReleaseResourceExtensionPoint {
     @Autowired

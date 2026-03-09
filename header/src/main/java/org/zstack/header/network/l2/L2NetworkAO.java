@@ -6,10 +6,10 @@ import org.zstack.header.vo.Index;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.zone.ZoneEO;
 
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.PreUpdate;
+import jakarta.persistence.Column;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PreUpdate;
 import java.sql.Timestamp;
 
 @MappedSuperclass

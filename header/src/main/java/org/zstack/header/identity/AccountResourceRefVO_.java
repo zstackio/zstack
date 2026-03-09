@@ -1,7 +1,7 @@
 package org.zstack.header.identity;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
 
 @StaticMetamodel(AccountResourceRefVO.class)

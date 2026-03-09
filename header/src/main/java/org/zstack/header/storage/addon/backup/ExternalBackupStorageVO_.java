@@ -2,8 +2,8 @@ package org.zstack.header.storage.addon.backup;
 
 import org.zstack.header.storage.backup.BackupStorageVO_;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(ExternalBackupStorageVO.class)
 public class ExternalBackupStorageVO_ extends BackupStorageVO_ {

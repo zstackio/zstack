@@ -2,7 +2,7 @@ package org.zstack.header.vm.devices;
 
 import org.zstack.header.vo.ToInventory;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.util.List;
 

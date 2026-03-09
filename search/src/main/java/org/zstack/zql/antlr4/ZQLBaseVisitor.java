@@ -1,4 +1,4 @@
-// Generated from ZQL.g4 by ANTLR 4.7
+// Generated from /home/test/modernize/search/src/main/antlr4/ZQL.g4 by ANTLR 4.13.0
 
 package org.zstack.zql.antlr4;
 
@@ -12,6 +12,7 @@ import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
  * @param <T> The return type of the visit operation. Use {@link Void} for
  * operations with no return type.
  */
+@SuppressWarnings("CheckReturnValue")
 public class ZQLBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements ZQLVisitor<T> {
 	/**
 	 * {@inheritDoc}
@@ -251,13 +252,6 @@ public class ZQLBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements ZQ
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitWithMultiFields(ZQLParser.WithMultiFieldsContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitWithMultiTableFields(ZQLParser.WithMultiTableFieldsContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

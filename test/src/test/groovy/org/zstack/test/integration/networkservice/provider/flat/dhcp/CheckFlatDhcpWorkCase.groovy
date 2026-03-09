@@ -180,7 +180,7 @@ class CheckFlatDhcpWorkCase extends SubCase{
     }
 
     void testFlatDhcpUpgrade() {
-        final L3NetworkInventory l32 = env.inventoryByName("l3-2")
+        L3NetworkInventory l32 = env.inventoryByName("l3-2")
         FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.deleteInherentTag(l32.uuid)
         GetL3NetworkDhcpIpAddressResult ret = getL3NetworkDhcpIpAddress {
             l3NetworkUuid = l32.uuid
@@ -197,8 +197,8 @@ class CheckFlatDhcpWorkCase extends SubCase{
 
     void checkDhcpWork(){
         VmInstanceInventory vm = env.inventoryByName("vm-1")
-        final L3NetworkInventory l31 = env.inventoryByName("l3-1")
-        final L3NetworkInventory l32 = env.inventoryByName("l3-2")
+        L3NetworkInventory l31 = env.inventoryByName("l3-1")
+        L3NetworkInventory l32 = env.inventoryByName("l3-2")
 
         VmNicInventory n = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
             @Override
@@ -242,7 +242,7 @@ class CheckFlatDhcpWorkCase extends SubCase{
     }
 
     void testDisableIpv4Dhcp(){
-        final L3NetworkInventory l31 = env.inventoryByName("l3-1")
+        L3NetworkInventory l31 = env.inventoryByName("l3-1")
         VmInstanceInventory vm = env.inventoryByName("vm-1")
 
         List<FlatDhcpBackend.FlushDhcpNamespaceCmd> flushCmds = Collections.synchronizedList(new ArrayList<FlatDhcpBackend.FlushDhcpNamespaceCmd>())
@@ -365,7 +365,7 @@ class CheckFlatDhcpWorkCase extends SubCase{
     }
 
     void testDisableDualStackDhcp(){
-        final L3NetworkInventory l32 = env.inventoryByName("l3-2")
+        L3NetworkInventory l32 = env.inventoryByName("l3-2")
 
         List<FlatDhcpBackend.FlushDhcpNamespaceCmd> flushCmds = Collections.synchronizedList(new ArrayList<FlatDhcpBackend.FlushDhcpNamespaceCmd>())
         env.afterSimulator(FlatDhcpBackend.DHCP_FLUSH_NAMESPACE_PATH) { rsp, HttpEntity<String> e1 ->

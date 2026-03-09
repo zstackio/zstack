@@ -3,7 +3,7 @@ package org.zstack.query;
 import org.zstack.header.search.Inventory;
 import org.zstack.utils.FieldUtils;
 
-import javax.persistence.Id;
+import jakarta.persistence.Id;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;

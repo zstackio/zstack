@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.sql.Timestamp;
 import java.util.concurrent.TimeUnit;
 

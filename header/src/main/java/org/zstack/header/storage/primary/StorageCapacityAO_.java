@@ -3,8 +3,8 @@ package org.zstack.header.storage.primary;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeAO_;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeEO;
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(StorageCapacityAO.class)
 public class StorageCapacityAO_ {

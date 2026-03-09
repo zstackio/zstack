@@ -15,7 +15,7 @@ import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
 import org.zstack.test.core.db.PersonVO.Sex;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.Date;
 import java.util.List;
 

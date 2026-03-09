@@ -5,7 +5,7 @@ import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.ResourceTypeMetadata;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 public class OwnedByAccountAspectHelper {
     public static void createAccountResourceRefVO(OwnedByAccount oa, EntityManager entityManager, Object entity) {

@@ -2,7 +2,7 @@ package org.zstack.core.config.schema;
 
 import org.zstack.header.image.ImagePlatform;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 

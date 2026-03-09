@@ -5,8 +5,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.header.message.APIListMessage;
 
-import javax.persistence.Entity;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.Entity;
+import jakarta.persistence.TypedQuery;
 import java.lang.reflect.Field;
 import java.util.List;
 

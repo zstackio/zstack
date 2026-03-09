@@ -2,7 +2,7 @@ package org.zstack.header.core.webhooks;
 
 import org.zstack.header.vo.BaseResource;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 /**

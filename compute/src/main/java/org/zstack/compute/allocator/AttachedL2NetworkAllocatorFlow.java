@@ -14,8 +14,8 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
 
-import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 

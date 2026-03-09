@@ -2,7 +2,7 @@ package org.zstack.storage.ceph.primary;
 
 import org.zstack.header.search.Inventory;
 
-import javax.persistence.Column;
+import jakarta.persistence.Column;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;

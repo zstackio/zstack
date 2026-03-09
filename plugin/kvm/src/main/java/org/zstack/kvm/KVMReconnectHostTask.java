@@ -8,7 +8,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostErrors;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 import java.util.concurrent.TimeUnit;
 
 public class KVMReconnectHostTask extends HostReconnectTask {

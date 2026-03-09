@@ -3,8 +3,8 @@ package org.zstack.header.tag;
 /**
  */
 
-import javax.persistence.metamodel.SingularAttribute;
-import javax.persistence.metamodel.StaticMetamodel;
+import jakarta.persistence.metamodel.SingularAttribute;
+import jakarta.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(UserTagVO.class)
 public class UserTagVO_ extends TagAO_ {

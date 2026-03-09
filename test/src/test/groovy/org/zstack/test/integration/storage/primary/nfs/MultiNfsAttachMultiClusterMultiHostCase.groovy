@@ -37,7 +37,7 @@ import org.zstack.testlib.NfsPrimaryStorageSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
 
-import javax.persistence.Tuple
+import jakarta.persistence.Tuple
 
 /**
  * Created by MaJin on 2017-05-08.

@@ -2,7 +2,7 @@ package org.zstack.core.eventlog;
 
 import org.zstack.header.vo.BaseResource;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.io.Serializable;
 import java.sql.Timestamp;
 

@@ -14,7 +14,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.tag.*;
 import org.zstack.identity.QuotaUtil;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
