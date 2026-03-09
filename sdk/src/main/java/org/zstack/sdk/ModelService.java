@@ -108,6 +108,14 @@ public class ModelService  {
         return this.cpuNum;
     }
 
+    public java.lang.Integer requestCpuNum;
+    public void setRequestCpuNum(java.lang.Integer requestCpuNum) {
+        this.requestCpuNum = requestCpuNum;
+    }
+    public java.lang.Integer getRequestCpuNum() {
+        return this.requestCpuNum;
+    }
+
     public java.lang.String name;
     public void setName(java.lang.String name) {
         this.name = name;
@@ -154,6 +162,14 @@ public class ModelService  {
     }
     public java.lang.Long getMemorySize() {
         return this.memorySize;
+    }
+
+    public java.lang.Long requestMemorySize;
+    public void setRequestMemorySize(java.lang.Long requestMemorySize) {
+        this.requestMemorySize = requestMemorySize;
+    }
+    public java.lang.Long getRequestMemorySize() {
+        return this.requestMemorySize;
     }
 
     public java.util.List l3NetworkUuids;
