@@ -243,7 +243,7 @@ class WhileCase extends SubCase{
         WhileGlobalProperty.CONCURRENCY_LEVEL_OF_ALL_MODE = 10
 
         List<Integer> items = new ArrayList()
-        int size = ThreadGlobalProperty.MAX_THREAD_NUM  * WhileGlobalProperty.CONCURRENCY_LEVEL_OF_ALL_MODE / 100
+        int size = (ThreadGlobalProperty.MAX_THREAD_NUM  * WhileGlobalProperty.CONCURRENCY_LEVEL_OF_ALL_MODE).intdiv(100)
         size = size == 0 ? 1 : size
         for (int i = 0; i <= size + 10; i ++) {
             items.add(i)

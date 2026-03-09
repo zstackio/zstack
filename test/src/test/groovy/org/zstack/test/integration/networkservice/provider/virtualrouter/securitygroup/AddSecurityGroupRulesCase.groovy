@@ -69,8 +69,8 @@ class AddSecurityGroupRulesCase extends SubCase{
             APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rule = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO(
                     type: i % 2 == 0 ? "Ingress" : "Egress",
                     ipVersion: 4,
-                    startPort: 10000 + i / 2,
-                    endPort: 10000 + i / 2,
+                    startPort: 10000 + i.intdiv(2),
+                    endPort: 10000 + i.intdiv(2),
                     allowedCidr: "192.168.100.0/24",
                     protocol: "TCP"
             )

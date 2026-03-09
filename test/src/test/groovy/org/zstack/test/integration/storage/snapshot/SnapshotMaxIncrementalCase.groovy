@@ -147,7 +147,7 @@ class SnapshotMaxIncrementalCase extends SubCase {
         }
 
         assert Q.New(VolumeSnapshotVO.class).count() == 100
-        int expectedTreeCount = ((100 + 1) + MaxIncrementalSnapshot) / (MaxIncrementalSnapshot + 1)
+        int expectedTreeCount = ((100 + 1) + MaxIncrementalSnapshot).intdiv(MaxIncrementalSnapshot + 1)
         assert Q.New(VolumeSnapshotTreeVO.class).count() == expectedTreeCount
 
         def threads = []

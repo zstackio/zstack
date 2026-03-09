@@ -514,8 +514,8 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         UpdateVmInstanceAction.Result updateVmInstanceResult2 = updateVmInstanceAction2.call()
         assert updateVmInstanceResult2.error == null
 
-        assert SizeUnit.MEGABYTE.toByte(64) % SizeUnit.MEGABYTE.toByte(128) == SizeUnit.MEGABYTE.toByte(128) / 2
-        assert ((((long) (SizeUnit.MEGABYTE.toByte(64))/ SizeUnit.MEGABYTE.toByte(128)) + (long) 1) * SizeUnit.MEGABYTE.toByte(128)
+        assert SizeUnit.MEGABYTE.toByte(64) % SizeUnit.MEGABYTE.toByte(128) == SizeUnit.MEGABYTE.toByte(128).intdiv(2)
+        assert ((((long) (SizeUnit.MEGABYTE.toByte(64)).intdiv(SizeUnit.MEGABYTE.toByte(128))) + (long) 1) * SizeUnit.MEGABYTE.toByte(128)
         + (long) SizeUnit.MEGABYTE.toByte(1) + (long) SizeUnit.MEGABYTE.toByte(128)) == cmd.memorySize
         assert ((long) SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(256)) == cmd.memorySize
         assert cmd != null
@@ -529,8 +529,8 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         UpdateVmInstanceAction.Result updateVmInstanceResult3 = updateVmInstanceAction3.call()
         assert updateVmInstanceResult3.error == null
 
-        assert SizeUnit.MEGABYTE.toByte(63) % SizeUnit.MEGABYTE.toByte(128) < SizeUnit.MEGABYTE.toByte(128) / 2
-        assert (((long) (SizeUnit.MEGABYTE.toByte(63)) / SizeUnit.MEGABYTE.toByte(128) + (long) 1) * SizeUnit.MEGABYTE.toByte(128)
+        assert SizeUnit.MEGABYTE.toByte(63) % SizeUnit.MEGABYTE.toByte(128) < SizeUnit.MEGABYTE.toByte(128).intdiv(2)
+        assert (((long) (SizeUnit.MEGABYTE.toByte(63)).intdiv(SizeUnit.MEGABYTE.toByte(128)) + (long) 1) * SizeUnit.MEGABYTE.toByte(128)
         + (long) SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(256)) == cmd.memorySize
         assert cmd.memorySize == SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(384)
         assert cmd != null
@@ -544,8 +544,8 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         UpdateVmInstanceAction.Result updateVmInstanceResult4 = updateVmInstanceAction4.call()
         assert updateVmInstanceResult4.error == null
 
-        assert SizeUnit.MEGABYTE.toByte(129) % SizeUnit.MEGABYTE.toByte(128) < SizeUnit.MEGABYTE.toByte(128) / 2
-        assert (((long) (SizeUnit.MEGABYTE.toByte(129)) / SizeUnit.MEGABYTE.toByte(128)) * SizeUnit.MEGABYTE.toByte(128) + (long) SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(384)) == cmd.memorySize
+        assert SizeUnit.MEGABYTE.toByte(129) % SizeUnit.MEGABYTE.toByte(128) < SizeUnit.MEGABYTE.toByte(128).intdiv(2)
+        assert (((long) (SizeUnit.MEGABYTE.toByte(129)).intdiv(SizeUnit.MEGABYTE.toByte(128))) * SizeUnit.MEGABYTE.toByte(128) + (long) SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(384)) == cmd.memorySize
         assert cmd.memorySize == SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(512)
         assert cmd != null
 
@@ -572,8 +572,8 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         UpdateVmInstanceAction.Result updateVmInstanceResult6 = updateVmInstanceAction6.call()
         assert updateVmInstanceResult6.error == null
 
-        assert SizeUnit.MEGABYTE.toByte(193) % SizeUnit.MEGABYTE.toByte(128) > SizeUnit.MEGABYTE.toByte(128) / 2
-        assert ((((long) (SizeUnit.MEGABYTE.toByte(193)) / SizeUnit.MEGABYTE.toByte(128) + (long) 1)) * SizeUnit.MEGABYTE.toByte(128) + SizeUnit.MEGABYTE.toByte(640) + (long) SizeUnit.MEGABYTE.toByte(1)) == cmd.memorySize
+        assert SizeUnit.MEGABYTE.toByte(193) % SizeUnit.MEGABYTE.toByte(128) > SizeUnit.MEGABYTE.toByte(128).intdiv(2)
+        assert ((((long) (SizeUnit.MEGABYTE.toByte(193)).intdiv(SizeUnit.MEGABYTE.toByte(128)) + (long) 1)) * SizeUnit.MEGABYTE.toByte(128) + SizeUnit.MEGABYTE.toByte(640) + (long) SizeUnit.MEGABYTE.toByte(1)) == cmd.memorySize
         assert cmd.memorySize == SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(640) + SizeUnit.MEGABYTE.toByte(256)
         assert cmd != null
 
@@ -588,8 +588,8 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         assert updateVmInstanceResult7.error == null
 
         long increase = (long) SizeUnit.GIGABYTE.toByte(31) - (long) SizeUnit.MEGABYTE.toByte(1) - SizeUnit.MEGABYTE.toByte(896)
-        assert increase % SizeUnit.MEGABYTE.toByte(128) > SizeUnit.MEGABYTE.toByte(128) / 2
-        assert ((((increase / SizeUnit.MEGABYTE.toByte(128)) as long) + (long) 1) * SizeUnit.MEGABYTE.toByte(128))
+        assert increase % SizeUnit.MEGABYTE.toByte(128) > SizeUnit.MEGABYTE.toByte(128).intdiv(2)
+        assert (((increase.intdiv(SizeUnit.MEGABYTE.toByte(128)) as long) + (long) 1) * SizeUnit.MEGABYTE.toByte(128))
         + SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(896) == cmd.memorySize
         assert cmd != null
 
@@ -679,17 +679,17 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
             }
         } else {
             def reminder = increaseMem % SizeUnit.MEGABYTE.toByte(128) as long
-            if (reminder < SizeUnit.MEGABYTE.toByte(128) / 2) {
+            if (reminder < SizeUnit.MEGABYTE.toByte(128).intdiv(2)) {
                 if (increaseMem > SizeUnit.MEGABYTE.toByte(128)) {
                     assert cmd != null
-                    assert cmd.memorySize == vo.getMemorySize() + (increaseMem / SizeUnit.MEGABYTE.toByte(128) as long) * SizeUnit.MEGABYTE.toByte(128)
+                    assert cmd.memorySize == vo.getMemorySize() + (increaseMem.intdiv(SizeUnit.MEGABYTE.toByte(128)) as long) * SizeUnit.MEGABYTE.toByte(128)
                 } else {
                     assert cmd != null
                     assert cmd.memorySize == vo.getMemorySize() + SizeUnit.MEGABYTE.toByte(128)
                 }
             } else {
                 assert cmd != null
-                assert cmd.memorySize == vo.getMemorySize() + ((increaseMem / SizeUnit.MEGABYTE.toByte(128) as long) + 1) * SizeUnit.MEGABYTE.toByte(128)
+                assert cmd.memorySize == vo.getMemorySize() + ((increaseMem.intdiv(SizeUnit.MEGABYTE.toByte(128)) as long) + 1) * SizeUnit.MEGABYTE.toByte(128)
             }
         }
     }
