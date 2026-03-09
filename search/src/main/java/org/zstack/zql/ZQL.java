@@ -413,7 +413,7 @@ public class ZQL {
                 searchResult.getSearchs()
                         .parallelStream()
                         .forEach(v -> {
-                            List result = v.getQuery().getResultList();
+                            List result = ((jakarta.persistence.Query) v.getQuery()).getResultList();
                             Set<String> searchResults = Sets.newConcurrentHashSet();
                             for (Object o : result) {
                                 Object[] rarray = (Object[]) o;

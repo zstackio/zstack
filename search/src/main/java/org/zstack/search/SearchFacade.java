@@ -1,8 +1,9 @@
 package org.zstack.search;
 
-import org.hibernate.search.jpa.FullTextEntityManager;
-
+/**
+ * Search facade interface.
+ * Hibernate Search 5 removed — incompatible with Jakarta namespace.
+ * Full-text search is disabled until upgrade to Hibernate Search 7.x.
+ */
 public interface SearchFacade {
-
-    FullTextEntityManager getFullTextEntityManager();
 }

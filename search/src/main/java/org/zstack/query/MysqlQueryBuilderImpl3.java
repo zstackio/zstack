@@ -1052,7 +1052,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             Query q = msg.isFieldQuery() ? dbf.getEntityManager().createQuery(jpql, Tuple.class) : dbf.getEntityManager().createQuery(jpql);
 
             if (logger.isTraceEnabled()) {
-                org.hibernate.Query hq = q.unwrap(org.hibernate.Query.class);
+                org.hibernate.query.Query<?> hq = q.unwrap(org.hibernate.query.Query.class);
                 logger.trace(hq.getQueryString());
             }
             setQueryValue(q, root);
@@ -1077,7 +1077,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             String jpql = build(true);
             Query q = dbf.getEntityManager().createQuery(jpql);
             if (logger.isTraceEnabled()) {
-                org.hibernate.Query hq = q.unwrap(org.hibernate.Query.class);
+                org.hibernate.query.Query<?> hq = q.unwrap(org.hibernate.query.Query.class);
                 logger.trace(hq.getQueryString());
             }
             setQueryValue(q, root);

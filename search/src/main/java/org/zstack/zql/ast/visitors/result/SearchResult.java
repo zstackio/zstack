@@ -1,26 +1,22 @@
 package org.zstack.zql.ast.visitors.result;
 
-import org.hibernate.search.jpa.FullTextQuery;
-import org.zstack.core.db.DBGraph;
-
 import java.util.List;
-import java.util.Map;
 
 /**
- * @ Author : yh.w
- * @ Date   : Created in 16:40 2020/10/27
+ * Hibernate Search 5 removed — incompatible with Jakarta namespace.
+ * FullTextQuery references replaced with Object until upgrade to 7.x.
  */
 public class SearchResult {
 
     public static class Search {
-        FullTextQuery query;
+        Object query;
         String restrictSql;
 
-        public FullTextQuery getQuery() {
+        public Object getQuery() {
             return query;
         }
 
-        public void setQuery(FullTextQuery query) {
+        public void setQuery(Object query) {
             this.query = query;
         }
 
