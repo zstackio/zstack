@@ -1,0 +1,1 @@
+update zstack.ApplianceVmVO set applianceVmType='vpcvrouter_temp' where applianceVmType='vpcvrouter';

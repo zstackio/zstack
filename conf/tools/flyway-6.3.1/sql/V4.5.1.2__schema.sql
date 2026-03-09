@@ -1,0 +1,37 @@
+CREATE TABLE IF NOT EXISTS `zstack`.`PluginDriverVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `name` varchar(64) NOT NULL,
+    `type` varchar(64) NOT NULL,
+    `vendor` varchar(64) NOT NULL,
+    `features` varchar(1024) NOT NULL,
+    `optionTypes` text DEFAULT NULL,
+    `description` varchar(1024) DEFAULT NULL,
+    `deleted` BOOLEAN NOT NULL,
+    `license` varchar(1024) DEFAULT NULL,
+    `version` varchar(1024) DEFAULT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`SNSPluginEndpointVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `timeoutInSeconds` int NOT NULL,
+    `properties` varchar(1024) NOT NULL,
+    `pluginDriverUuid` varchar(32) NOT NULL,
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT fkPluginEndpointVOSNSApplicationEndpointVO FOREIGN KEY (uuid) REFERENCES SNSApplicationEndpointVO (uuid) ON DELETE CASCADE,
+    CONSTRAINT fkPluginEndpointVOPluginDriverVO FOREIGN KEY (pluginDriverUuid) REFERENCES PluginDriverVO (uuid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`PluginSecretResourcePoolVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `properties` varchar(1024) NOT NULL,
+    `pluginDriverUuid` varchar(32) NOT NULL,
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT fkPluginSecretResourcePoolVOSecretResourcePoolVO FOREIGN KEY (uuid) REFERENCES SecretResourcePoolVO (uuid) ON DELETE CASCADE,
+    CONSTRAINT fkPluginSecretResourcePoolVOPluginDriverVO FOREIGN KEY (pluginDriverUuid) REFERENCES PluginDriverVO (uuid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+update EventSubscriptionVO set name='Cryptographic Resource Status Abnormal' where uuid='eecc7b576c05391bb01fd956964d3ba4';
+update SystemTagVO set tag='name::cn::密码资源状态异常' where resourceUuid='eecc7b576c05391bb01fd956964d3ba4';

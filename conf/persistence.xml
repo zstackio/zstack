@@ -14,8 +14,18 @@
         <class>org.zstack.core.job.JobQueueEntryVO</class>
         <class>org.zstack.core.config.GlobalConfigVO</class>
         <class>org.zstack.core.eventlog.EventLogVO</class>
-        <class>org.zstack.core.plugin.PluginDriverVO</class>
+        <class>org.zstack.header.core.external.plugin.PluginDriverVO</class>
+        <class>org.zstack.templateConfig.GlobalConfigTemplateVO</class>
+        <class>org.zstack.templateConfig.TemplateConfigVO</class>
         <class>org.zstack.resourceconfig.ResourceConfigVO</class>
+        <class>org.zstack.header.scheduler.SchedulerVO</class>
+        <class>org.zstack.header.scheduler.SchedulerJobVO</class>
+        <class>org.zstack.header.scheduler.SchedulerJobGroupVO</class>
+        <class>org.zstack.header.scheduler.SchedulerTriggerVO</class>
+        <class>org.zstack.header.scheduler.SchedulerJobSchedulerTriggerRefVO</class>
+        <class>org.zstack.header.scheduler.SchedulerJobGroupSchedulerTriggerRefVO</class>
+        <class>org.zstack.header.scheduler.SchedulerJobGroupJobRefVO</class>
+        <class>org.zstack.header.scheduler.SchedulerJobHistoryVO</class>
         <class>org.zstack.header.managementnode.ManagementNodeVO</class>
         <class>org.zstack.header.managementnode.ManagementNodeContextVO</class>
         <class>org.zstack.header.zone.ZoneVO</class>
@@ -34,12 +44,17 @@
         <class>org.zstack.header.storage.backup.BackupStorageVO</class>
         <class>org.zstack.header.storage.backup.BackupStorageEO</class>
         <class>org.zstack.header.storage.backup.BackupStorageZoneRefVO</class>
+        <class>org.zstack.header.storage.cdp.CdpPolicyVO</class>
+        <class>org.zstack.header.storage.cdp.CdpPolicyEO</class>
+        <class>org.zstack.header.storage.cdp.CdpTaskResourceRefVO</class>
+        <class>org.zstack.header.storage.cdp.CdpTaskVO</class>
+        <class>org.zstack.header.storage.cdp.CdpVolumeHistoryVO</class>
         <class>org.zstack.header.image.ImageVO</class>
         <class>org.zstack.header.image.ImageEO</class>
         <class>org.zstack.header.image.ImageGroupVO</class>
         <class>org.zstack.header.image.ImageGroupRefVO</class>
-        <class>org.zstack.header.image.GuestOsCategoryVO</class>
         <class>org.zstack.header.image.ImageBackupStorageRefVO</class>
+        <class>org.zstack.header.image.GuestOsCategoryVO</class>
         <class>org.zstack.header.allocator.HostCapacityVO</class>
         <class>org.zstack.header.configuration.InstanceOfferingVO</class>
         <class>org.zstack.header.configuration.InstanceOfferingEO</class>
@@ -50,13 +65,21 @@
         <class>org.zstack.header.network.l2.L2NetworkVO</class>
         <class>org.zstack.header.network.l2.L2NetworkEO</class>
         <class>org.zstack.header.network.l2.L2VlanNetworkVO</class>
+        <class>org.zstack.header.network.l2.L2NetworkClusterRefVO</class>
+        <class>org.zstack.header.network.l2.L2NetworkHostRefVO</class>
         <class>org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO</class>
         <class>org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO</class>
         <class>org.zstack.network.l2.vxlan.vtep.VtepVO</class>
         <class>org.zstack.network.l2.vxlan.vtep.RemoteVtepVO</class>
         <class>org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeVO</class>
-        <class>org.zstack.header.network.l2.L2NetworkClusterRefVO</class>
-        <class>org.zstack.header.network.l2.L2NetworkHostRefVO</class>
+        <class>org.zstack.header.network.sdncontroller.SdnControllerVO</class>
+        <class>org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO</class>
+        <class>org.zstack.sdnController.header.HardwareL2VxlanNetworkVO</class>
+        <class>org.zstack.sdnController.header.VxlanHostMappingVO</class>
+        <class>org.zstack.sdnController.header.VxlanClusterMappingVO</class>
+        <class>org.zstack.sdnController.header.H3cSdnControllerTenantVO</class>
+        <class>org.zstack.sdnController.header.H3cSdnSubnetIpRangeRefVO</class>
+        <class>org.zstack.header.network.sdncontroller.SdnControllerHostRefVO</class>
         <class>org.zstack.header.network.l3.L3NetworkVO</class>
         <class>org.zstack.header.network.l3.L3NetworkEO</class>
         <class>org.zstack.header.network.l3.L3NetworkDnsVO</class>
@@ -67,8 +90,6 @@
         <class>org.zstack.header.network.l3.AddressPoolVO</class>
         <class>org.zstack.header.network.l3.NormalIpRangeVO</class>
         <class>org.zstack.header.network.l3.ReservedIpRangeVO</class>
-        <class>org.zstack.network.hostNetworkInterface.HostNetworkBondingVO</class>
-        <class>org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO</class>
         <class>org.zstack.network.service.vip.VipVO</class>
         <class>org.zstack.network.service.vip.VipNetworkServicesRefVO</class>
         <class>org.zstack.network.service.vip.VipPeerL3NetworkRefVO</class>
@@ -86,7 +107,8 @@
         <class>org.zstack.appliancevm.ApplianceVmVO</class>
         <class>org.zstack.appliancevm.ApplianceVmFirewallRuleVO</class>
         <class>org.zstack.header.vm.VmNicVO</class>
-        <class>org.zstack.header.vm.VmSchedHistoryVO</class>
+        <class>org.zstack.header.vm.VmPriorityConfigVO</class>
+	    <class>org.zstack.header.vm.VmSchedHistoryVO</class>
         <class>org.zstack.header.identity.SessionVO</class>
         <class>org.zstack.header.identity.AccountVO</class>
         <class>org.zstack.header.identity.AccountResourceRefVO</class>
@@ -105,8 +127,15 @@
         <class>org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoVO</class>
         <class>org.zstack.kvm.hypervisor.datatype.HostOsCategoryVO</class>
         <class>org.zstack.kvm.hypervisor.datatype.KvmHostHypervisorMetadataVO</class>
+        <class>org.zstack.xdragon.XDragonHostVO</class>
         <class>org.zstack.storage.backup.sftp.SftpBackupStorageVO</class>
         <class>org.zstack.storage.backup.imagestore.ImageStoreBackupStorageVO</class>
+        <class>org.zstack.vmware.VCenterVO</class>
+        <class>org.zstack.vmware.VCenterClusterVO</class>
+        <class>org.zstack.vmware.VCenterBackupStorageVO</class>
+        <class>org.zstack.vmware.VCenterDatacenterVO</class>
+        <class>org.zstack.vmware.VCenterPrimaryStorageVO</class>
+        <class>org.zstack.vmware.ESXHostVO</class>
         <class>org.zstack.header.simulator.SimulatorHostVO</class>
         <class>org.zstack.header.storage.primary.ImageCacheVO</class>
         <class>org.zstack.network.service.virtualrouter.VirtualRouterOfferingVO</class>
@@ -135,7 +164,6 @@
         <class>org.zstack.header.tag.TagPatternVO</class>
         <class>org.zstack.network.service.virtualrouter.VirtualRouterVmVO</class>
         <class>org.zstack.network.service.virtualrouter.VirtualRouterMetadataVO</class>
-        <class>org.zstack.network.service.virtualrouter.VirtualRouterSoftwareVersionVO</class>
         <class>org.zstack.storage.primary.local.LocalStorageResourceRefVO</class>
         <class>org.zstack.storage.primary.local.LocalStorageHostRefVO</class>
         <class>org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO</class>
@@ -156,23 +184,162 @@
         <class>org.zstack.network.service.lb.LoadBalancerListenerACLRefVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerListenerVmNicRefVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerListenerVO</class>
+        <class>org.zstack.network.service.lb.CertificateVO</class>
+        <class>org.zstack.network.service.lb.LoadBalancerListenerCertificateRefVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerServerGroupVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerServerGroupServerIpVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefVO</class>
-        <class>org.zstack.network.service.lb.CertificateVO</class>
-        <class>org.zstack.network.service.lb.LoadBalancerListenerCertificateRefVO</class>
         <class>org.zstack.header.console.ConsoleProxyAgentVO</class>
         <class>org.zstack.header.storage.primary.ImageCacheShadowVO</class>
         <class>org.zstack.ldap.LdapServerVO</class>
         <class>org.zstack.ldap.LdapAccountRefVO</class>
+        <class>org.zstack.login.entity.LdapResourceRefVO</class>
         <class>org.zstack.core.jsonlabel.JsonLabelVO</class>
+        <class>org.zstack.billing.PriceVO</class>
+        <class>org.zstack.billing.spendingcalculator.pcidevice.PricePciDeviceOfferingRefVO</class>
+        <class>org.zstack.billing.spendingcalculator.pcidevice.PciDeviceUsageVO</class>
+        <class>org.zstack.billing.spendingcalculator.volume.data.DataVolumeUsageVO</class>
+        <class>org.zstack.billing.spendingcalculator.volume.root.RootVolumeUsageVO</class>
+        <class>org.zstack.billing.spendingcalculator.vm.VmUsageVO</class>
+        <class>org.zstack.billing.spendingcalculator.snapshot.SnapShotUsageVO</class>
+        <class>org.zstack.ipsec.IPsecConnectionVO</class>
+        <class>org.zstack.ipsec.IPsecPeerCidrVO</class>
+        <class>org.zstack.ipsec.IPsecL3NetworkRefVO</class>
+        <class>org.zstack.mevoco.ShareableVolumeVmInstanceRefVO</class>
         <class>org.zstack.rest.AsyncRestVO</class>
-        <class>org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO</class>
+        <class>org.zstack.header.aliyun.network.vpc.EcsVpcVO</class>
+        <class>org.zstack.header.aliyun.network.vpc.EcsVSwitchVO</class>
+        <class>org.zstack.header.hybrid.network.eip.HybridEipAddressVO</class>
+        <class>org.zstack.header.aliyun.network.group.EcsSecurityGroupVO</class>
+        <class>org.zstack.header.aliyun.image.EcsImageUsageVO</class>
+        <class>org.zstack.header.aliyun.ecs.EcsInstanceVO</class>
+        <class>org.zstack.header.identityzone.IdentityZoneVO</class>
+        <class>org.zstack.header.aliyun.image.EcsImageVO</class>
+        <class>org.zstack.header.datacenter.DataCenterVO</class>
+        <class>org.zstack.hybrid.account.HybridAccountVO</class>
+        <class>org.zstack.header.aliyun.oss.OssBucketVO</class>
+        <class>org.zstack.header.aliyun.oss.OssUploadPartsVO</class>
+        <class>org.zstack.header.aliyun.oss.OssBucketDomainVO</class>
+        <class>org.zstack.header.hybrid.network.eip.HybridEipAddressVO</class>
+        <class>org.zstack.header.aliyun.network.group.EcsSecurityGroupRuleVO</class>
+        <class>org.zstack.header.aliyun.network.connection.ConnectionAccessPointVO</class>
+        <class>org.zstack.header.aliyun.network.connection.VirtualBorderRouterVO</class>
+        <class>org.zstack.header.aliyun.network.connection.AliyunRouterInterfaceVO</class>
+        <class>org.zstack.header.aliyun.network.vrouter.VpcVirtualRouteEntryVO</class>
+        <class>org.zstack.header.aliyun.network.vrouter.VpcVirtualRouterVO</class>
+        <class>org.zstack.header.aliyun.network.connection.ConnectionRelationShipVO</class>
+        <class>org.zstack.header.aliyun.network.connection.HybridConnectionRefVO</class>
+	    <class>org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO</class>
         <class>org.zstack.header.core.progress.TaskProgressVO</class>
         <class>org.zstack.header.vo.ResourceVO</class>
         <class>org.zstack.header.core.webhooks.WebhookVO</class>
+        <class>org.zstack.header.baremetal.pxeserver.BaremetalPxeServerClusterRefVO</class>
+        <class>org.zstack.header.baremetal.pxeserver.BaremetalPxeServerVO</class>
+        <class>org.zstack.header.baremetal.chassis.BaremetalChassisVO</class>
+        <class>org.zstack.header.baremetal.chassis.BaremetalHardwareInfoVO</class>
+        <class>org.zstack.header.baremetal.instance.BaremetalInstanceVO</class>
+        <class>org.zstack.header.baremetal.instance.BaremetalInstanceSequenceNumberVO</class>
+        <class>org.zstack.header.baremetal.instance.BaremetalConsoleProxyVO</class>
+        <class>org.zstack.header.baremetal.network.BaremetalNicVO</class>
+        <class>org.zstack.header.baremetal.network.BaremetalVlanNicVO</class>
+        <class>org.zstack.header.baremetal.network.BaremetalBondingVO</class>
+        <class>org.zstack.header.baremetal.instance.BaremetalImageCacheVO</class>
+        <class>org.zstack.header.baremetal.preconfiguration.CustomPreconfigurationVO</class>
+        <class>org.zstack.header.baremetal.preconfiguration.TemplateCustomParamVO</class>
+        <class>org.zstack.header.baremetal.preconfiguration.PreconfigurationTemplateVO</class>
+        <class>org.zstack.baremetal2.chassis.BareMetal2ChassisVO</class>
+        <class>org.zstack.baremetal2.chassis.BareMetal2ChassisNicVO</class>
+        <class>org.zstack.baremetal2.chassis.BareMetal2ChassisDiskVO</class>
+        <class>org.zstack.baremetal2.chassis.ipmi.BareMetal2IpmiChassisVO</class>
+        <class>org.zstack.baremetal2.configuration.BareMetal2ChassisOfferingVO</class>
+        <class>org.zstack.baremetal2.provisionnetwork.BareMetal2ProvisionNetworkVO</class>
+        <class>org.zstack.baremetal2.provisionnetwork.BareMetal2ProvisionNetworkClusterRefVO</class>
+        <class>org.zstack.baremetal2.gateway.BareMetal2GatewayVO</class>
+        <class>org.zstack.baremetal2.gateway.BareMetal2GatewayClusterRefVO</class>
+        <class>org.zstack.baremetal2.gateway.BareMetal2GatewayProvisionNicVO</class>
+        <class>org.zstack.baremetal2.instance.BareMetal2InstanceVO</class>
+        <class>org.zstack.baremetal2.instance.BareMetal2InstanceProvisionNicVO</class>
+        <class>org.zstack.header.hybrid.network.vpn.VpcUserVpnGatewayVO</class>
+        <class>org.zstack.header.hybrid.network.vpn.VpcVpnGatewayVO</class>
+        <class>org.zstack.header.hybrid.network.vpn.VpcVpnConnectionVO</class>
+        <class>org.zstack.header.hybrid.network.vpn.VpcVpnIpSecConfigVO</class>
+        <class>org.zstack.header.hybrid.network.vpn.VpcVpnIkeConfigVO</class>
+        <class>org.zstack.header.storageDevice.ScsiLunVO</class>
+        <class>org.zstack.header.storageDevice.ScsiLunVmInstanceRefVO</class>
+        <class>org.zstack.header.storageDevice.ScsiLunHostRefVO</class>
+        <class>org.zstack.storage.device.localRaid.RaidControllerVO</class>
+        <class>org.zstack.storage.device.localRaid.RaidPhysicalDriveVO</class>
+        <class>org.zstack.storage.device.localRaid.PhysicalDriveSmartSelfTestHistoryVO</class>
+        <class>org.zstack.storage.device.iscsi.IscsiServerVO</class>
+        <class>org.zstack.storage.device.iscsi.IscsiTargetVO</class>
+        <class>org.zstack.storage.device.iscsi.IscsiLunVO</class>
+        <class>org.zstack.storage.device.iscsi.IscsiServerClusterRefVO</class>
+        <class>org.zstack.storage.device.fibreChannel.FiberChannelLunVO</class>
+        <class>org.zstack.storage.device.fibreChannel.FiberChannelStorageVO</class>
+        <class>org.zstack.storage.device.nvme.NvmeLunVO</class>
+        <class>org.zstack.storage.device.nvme.NvmeTargetVO</class>
+        <class>org.zstack.storage.device.nvme.NvmeLunHostRefVO</class>
+        <class>org.zstack.storage.device.nvme.NvmeServerVO</class>
+        <class>org.zstack.storage.device.nvme.NvmeServerClusterRefVO</class>
+        <class>org.zstack.vrouterRoute.VRouterRouteTableVO</class>
+        <class>org.zstack.vrouterRoute.VRouterRouteEntryVO</class>
+        <class>org.zstack.vrouterRoute.VirtualRouterVRouterRouteTableRefVO</class>
+        <class>org.zstack.pciDevice.PciDeviceVO</class>
+        <class>org.zstack.pciDevice.PciDeviceOfferingVO</class>
+        <class>org.zstack.pciDevice.PciDevicePciDeviceOfferingRefVO</class>
+        <class>org.zstack.pciDevice.PciDeviceOfferingInstanceOfferingRefVO</class>
+        <class>org.zstack.pciDevice.specification.pci.PciDeviceSpecVO</class>
+        <class>org.zstack.pciDevice.specification.pci.VmInstancePciDeviceSpecRefVO</class>
+        <class>org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceVO</class>
+        <class>org.zstack.pciDevice.specification.mdev.MdevDeviceSpecVO</class>
+        <class>org.zstack.pciDevice.specification.mdev.PciDeviceMdevSpecRefVO</class>
+        <class>org.zstack.pciDevice.specification.mdev.VmInstanceMdevDeviceSpecRefVO</class>
+        <class>org.zstack.header.aliyun.storage.snapshot.AliyunSnapshotVO</class>
+        <class>org.zstack.header.aliyun.storage.disk.AliyunDiskVO</class>
+        <class>org.zstack.sns.platform.email.SNSEmailEndpointVO</class>
+        <class>org.zstack.sns.platform.email.SNSEmailPlatformVO</class>
+        <class>org.zstack.sns.platform.email.SNSEmailAddressVO</class>
+        <class>org.zstack.sns.platform.http.SNSHttpEndpointVO</class>
+        <class>org.zstack.sns.platform.dingtalk.SNSDingTalkEndpointVO</class>
+        <class>org.zstack.sns.platform.dingtalk.SNSDingTalkAtPersonVO</class>
+        <class>org.zstack.sns.SNSApplicationEndpointVO</class>
+        <class>org.zstack.sns.SNSApplicationPlatformVO</class>
+        <class>org.zstack.sns.SNSTopicVO</class>
+        <class>org.zstack.sns.SNSSubscriberVO</class>
+        <class>org.zstack.zwatch.alarm.sns.SNSTextTemplateVO</class>
+        <class>org.zstack.zwatch.alarm.AlarmVO</class>
+        <class>org.zstack.zwatch.alarm.AlarmActionVO</class>
+        <class>org.zstack.zwatch.alarm.AlarmLabelVO</class>
+        <class>org.zstack.zwatch.alarm.EventSubscriptionActionVO</class>
+        <class>org.zstack.zwatch.alarm.EventSubscriptionLabelVO</class>
+        <class>org.zstack.zwatch.alarm.EventSubscriptionVO</class>
+        <class>org.zstack.monitoring.MonitorTriggerVO</class>
+        <class>org.zstack.monitoring.media.EmailMediaVO</class>
+        <class>org.zstack.monitoring.media.MediaVO</class>
+        <class>org.zstack.monitoring.actions.MonitorTriggerActionVO</class>
+        <class>org.zstack.monitoring.actions.EmailTriggerActionVO</class>
+        <class>org.zstack.monitoring.MonitorTriggerActionRefVO</class>
+        <class>org.zstack.monitoring.AlertVO</class>
+        <class>org.zstack.header.storage.backup.VolumeBackupVO</class>
+        <class>org.zstack.header.storage.backup.VolumeBackupHistoryVO</class>
+        <class>org.zstack.header.storage.backup.VolumeBackupStorageRefVO</class>
+        <class>org.zstack.header.storage.database.backup.DatabaseBackupVO</class>
+        <class>org.zstack.header.storage.database.backup.DatabaseBackupStorageRefVO</class>
+        <class>org.zstack.pciDevice.PciDeviceVO</class>
+        <class>org.zstack.pciDevice.PciDeviceOfferingVO</class>
+        <class>org.zstack.pciDevice.PciDevicePciDeviceOfferingRefVO</class>
+        <class>org.zstack.pciDevice.PciDeviceOfferingInstanceOfferingRefVO</class>
+        <class>org.zstack.pciDevice.specification.pci.PciDeviceSpecVO</class>
+        <class>org.zstack.header.aliyun.storage.snapshot.AliyunSnapshotVO</class>
+        <class>org.zstack.header.aliyun.storage.disk.AliyunDiskVO</class>
+        <class>org.zstack.usbDevice.UsbDeviceVO</class>
+        <class>org.zstack.header.affinitygroup.AffinityGroupVO</class>
+        <class>org.zstack.header.affinitygroup.AffinityGroupUsageVO</class>
         <class>org.zstack.header.longjob.LongJobVO</class>
+        <class>org.zstack.header.vipQos.VipQosVO</class>
+        <class>org.zstack.header.vipQos.VpcSharedQosVO</class>
+        <class>org.zstack.header.vipQos.VpcSharedQosRefVipVO</class>
         <class>org.zstack.header.identity.role.RoleAccountRefVO</class>
         <class>org.zstack.header.identity.role.RolePolicyRefVO</class>
         <class>org.zstack.header.identity.role.RoleUserGroupRefVO</class>
@@ -180,48 +347,376 @@
         <class>org.zstack.header.identity.role.RoleVO</class>
         <class>org.zstack.header.identity.role.SystemRoleVO</class>
         <class>org.zstack.header.identity.role.RolePolicyStatementVO</class>
+        <class>org.zstack.iam2.entity.IAM2GroupVirtualIDRefVO</class>
+        <class>org.zstack.iam2.entity.IAM2OrganizationAttributeVO</class>
+        <class>org.zstack.iam2.entity.IAM2OrganizationVO</class>
+        <class>org.zstack.iam2.entity.IAM2ProjectAttributeVO</class>
+        <class>org.zstack.iam2.entity.IAM2ProjectResourceRefVO</class>
+        <class>org.zstack.iam2.entity.IAM2ProjectVirtualIDRefVO</class>
+        <class>org.zstack.iam2.entity.IAM2ProjectVO</class>
+        <class>org.zstack.iam2.entity.IAM2VirtualIDAttributeVO</class>
+        <class>org.zstack.iam2.entity.IAM2VirtualIDGroupAttributeVO</class>
+        <class>org.zstack.iam2.entity.IAM2VirtualIDGroupRefVO</class>
+        <class>org.zstack.iam2.entity.IAM2VirtualIDGroupRoleRefVO</class>
+        <class>org.zstack.iam2.entity.IAM2VirtualIDGroupVO</class>
+        <class>org.zstack.iam2.entity.IAM2VirtualIDOrganizationRefVO</class>
+        <class>org.zstack.iam2.entity.IAM2VirtualIDRoleRefVO</class>
+        <class>org.zstack.iam2.entity.IAM2VirtualIDVO</class>
+        <class>org.zstack.iam2.entity.IAM2ProjectAccountRefVO</class>
+        <class>org.zstack.iam2.entity.IAM2ProjectTemplateVO</class>
+        <class>org.zstack.storage.primary.sharedblock.SharedBlockGroupVO</class>
+        <class>org.zstack.storage.primary.sharedblock.SharedBlockVO</class>
+        <class>org.zstack.storage.primary.sharedblock.SharedBlockGroupPrimaryStorageHostRefVO</class>
+        <class>org.zstack.storage.primary.ministorage.MiniStorageVO</class>
+        <class>org.zstack.storage.primary.ministorage.MiniStorageHostRefVO</class>
+        <class>org.zstack.storage.primary.ministorage.MiniStorageResourceReplicationVO</class>
+        <class>org.zstack.storage.primary.block.BlockPrimaryStorageVO</class>
+        <class>org.zstack.storage.primary.block.BlockScsiLunVO</class>
+        <class>org.zstack.storage.primary.block.BlockPrimaryStorageHostRefVO</class>
+        <class>org.zstack.imagereplicator.ImageReplicationGroupVO</class>
+        <class>org.zstack.imagereplicator.ImageReplicationGroupBackupStorageRefVO</class>
+        <class>org.zstack.imagereplicator.ImageOpsJournalVO</class>
+        <class>org.zstack.imagereplicator.ImageReplicationHistoryVO</class>
+        <class>org.zstack.ticket.entity.TicketFlowCollectionVO</class>
+        <class>org.zstack.ticket.entity.TicketFlowVO</class>
+        <class>org.zstack.ticket.iam2.entity.IAM2TicketFlowVO</class>
+        <class>org.zstack.ticket.iam2.entity.IAM2TicketFlowCollectionVO</class>
+        <class>org.zstack.ticket.entity.TicketTypeVO</class>
+        <class>org.zstack.ticket.entity.TicketTypeTicketFlowCollectionRefVO</class>
+        <class>org.zstack.ticket.entity.TicketStatusHistoryVO</class>
+        <class>org.zstack.ticket.entity.TicketVO</class>
+        <class>org.zstack.ticket.entity.ArchiveTicketVO</class>
+        <class>org.zstack.ticket.entity.ArchiveTicketStatusHistoryVO</class>
+        <class>org.zstack.nas.NasFileSystemVO</class>
+        <class>org.zstack.aliyun.nas.filesystem.AliyunNasFileSystemVO</class>
+        <class>org.zstack.nas.NasMountTargetVO</class>
+        <class>org.zstack.aliyun.nas.filesystem.AliyunNasMountTargetVO</class>
+        <class>org.zstack.aliyun.nas.filesystem.AliyunNasAccessGroupVO</class>
+        <class>org.zstack.aliyun.nas.filesystem.AliyunNasAccessRuleVO</class>
+        <class>org.zstack.aliyun.nas.storage.primary.AliyunNasPrimaryStorageFileSystemRefVO</class>
+        <class>org.zstack.aliyun.nas.storage.primary.AliyunNasPrimaryStorageMountPointVO</class>
+        <class>org.zstack.aliyun.nas.storage.primary.AliyunNasMountVolumeRefVO</class>
+        <class>org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleTriggerVO</class>
+        <class>org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleAlarmTriggerVO</class>
+        <class>org.zstack.autoscaling.group.rule.AutoScalingHorizontalScalingProfileVO</class>
+        <class>org.zstack.autoscaling.template.AutoScalingVmTemplateVO</class>
+        <class>org.zstack.autoscaling.template.AutoScalingTemplateVO</class>
+        <class>org.zstack.autoscaling.template.AutoScalingTemplateGroupRefVO</class>
+        <class>org.zstack.autoscaling.group.AutoScalingGroupVO</class>
+        <class>org.zstack.autoscaling.group.activity.AutoScalingGroupActivityVO</class>
+        <class>org.zstack.autoscaling.group.instance.AutoScalingGroupInstanceVO</class>
+        <class>org.zstack.autoscaling.group.rule.AddingNewInstanceRuleVO</class>
+        <class>org.zstack.autoscaling.group.rule.RemovalInstanceRuleVO</class>
+        <class>org.zstack.header.aliyun.ebs.AliyunEbsPrimaryStorageVO</class>
+        <class>org.zstack.header.vpc.VpcRouterDnsVO</class>
+        <class>org.zstack.header.vpc.VpcRouterVmVO</class>
+        <class>org.zstack.header.cloudformation.ResourceStackVO</class>
+        <class>org.zstack.header.cloudformation.StackTemplateVO</class>
+        <class>org.zstack.header.cloudformation.CloudFormationStackResourceRefVO</class>
+        <class>org.zstack.header.cloudformation.CloudFormationStackEventVO</class>
+        <class>org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretVO</class>
         <class>org.zstack.header.core.captcha.CaptchaVO</class>
+        <class>org.zstack.loginControl.entity.LoginAttemptsVO</class>
+        <class>org.zstack.aliyunproxy.vpc.AliyunProxyVpcVO</class>
+        <class>org.zstack.aliyunproxy.vpc.AliyunProxyVSwitchVO</class>
+        <class>org.zstack.v2v.V2VConversionHostVO</class>
+        <class>org.zstack.v2v.V2VConversionCacheVO</class>
+        <class>org.zstack.accessKey.AccessKeyVO</class>
+        <class>org.zstack.aliyun.pangu.AliyunPanguPartitionVO</class>
+        <class>org.zstack.header.aliyun.ebs.AliyunEbsBackupStorageVO</class>
+        <class>org.zstack.billing.spendingcalculator.vmnic.PubIpVmNicBandwidthUsageVO</class>
+        <class>org.zstack.billing.spendingcalculator.vip.PubIpVipBandwidthUsageVO</class>
+        <class>org.zstack.vmware.VCenterResourcePoolVO</class>
+        <class>org.zstack.vmware.VCenterResourcePoolUsageVO</class>
         <class>org.zstack.header.vm.cdrom.VmCdRomVO</class>
+        <class>org.zstack.header.protocol.RouterAreaVO</class>
+        <class>org.zstack.header.protocol.NetworkRouterAreaRefVO</class>
+        <class>org.zstack.header.flowMeter.FlowMeterVO</class>
+        <class>org.zstack.header.flowMeter.FlowCollectorVO</class>
+        <class>org.zstack.header.flowMeter.FlowRouterVO</class>
+        <class>org.zstack.header.flowMeter.NetworkRouterFlowMeterRefVO</class>
+        <class>org.zstack.billing.generator.BillingVO</class>
+        <class>org.zstack.billing.generator.BillingResourceLabelVO</class>
+        <class>org.zstack.billing.generator.volume.root.RootVolumeBillingVO</class>
+        <class>org.zstack.billing.generator.volume.data.DataVolumeBillingVO</class>
+        <class>org.zstack.billing.generator.volume.data.DataVolumeUsageHistoryVO</class>
+        <class>org.zstack.billing.generator.volume.root.RootVolumeUsageHistoryVO</class>
+        <class>org.zstack.billing.generator.vm.cpu.VmCPUBillingVO</class>
+        <class>org.zstack.billing.generator.vm.memory.VmMemoryBillingVO</class>
+        <class>org.zstack.billing.generator.vm.VmUsageHistoryVO</class>
+        <class>org.zstack.billing.generator.pcidevice.PciDeviceBillingVO</class>
+        <class>org.zstack.billing.generator.pcidevice.PciDeviceUsageHistoryVO</class>
+        <class>org.zstack.billing.generator.pubip.vip.PubIpVipBandwidthUsageHistoryVO</class>
+        <class>org.zstack.billing.generator.pubip.vip.PubIpVipBandwidthOutBillingVO</class>
+        <class>org.zstack.billing.generator.pubip.vip.PubIpVipBandwidthInBillingVO</class>
+        <class>org.zstack.billing.generator.pubip.vip.PubIpVipBandwidthOutBillingVO</class>
+        <class>org.zstack.billing.generator.pubip.vmnic.PubIpVmNicBandwidthInBillingVO</class>
+        <class>org.zstack.billing.generator.pubip.vmnic.PubIpVmNicBandwidthOutBillingVO</class>
+        <class>org.zstack.billing.generator.pubip.vmnic.PubIpVmNicBandwidthUsageHistoryVO</class>
+        <class>org.zstack.billing.spendingcalculator.volume.data.DataVolumeUsageExtensionVO</class>
+        <class>org.zstack.billing.spendingcalculator.volume.root.RootVolumeUsageExtensionVO</class>
+        <class>org.zstack.header.vpc.ha.VpcHaGroupVO</class>
+        <class>org.zstack.header.vpc.ha.VpcHaGroupMonitorIpVO</class>
+        <class>org.zstack.header.vpc.ha.VpcHaGroupNetworkServiceRefVO</class>
+        <class>org.zstack.header.vpc.ha.VpcHaGroupApplianceVmRefVO</class>
+        <class>org.zstack.header.vpc.ha.VpcHaGroupVipRefVO</class>
+        <class>org.zstack.header.vpc.VpcSnatStateVO</class>
+        <class>org.zstack.loginControl.entity.AccessControlRuleVO</class>
+        <class>org.zstack.loginControl.entity.HistoricalPasswordVO</class>
+        <class>org.zstack.policyRoute.PolicyRouteRuleSetL3RefVO</class>
+        <class>org.zstack.policyRoute.PolicyRouteRuleSetVO</class>
+        <class>org.zstack.policyRoute.PolicyRouteRuleVO</class>
+        <class>org.zstack.policyRoute.PolicyRouteTableVO</class>
+        <class>org.zstack.policyRoute.PolicyRouteTableRouteEntryVO</class>
+        <class>org.zstack.policyRoute.PolicyRouteRuleSetVRouterRefVO</class>
+        <class>org.zstack.policyRoute.PolicyRouteTableVRouterRefVO</class>
+        <class>org.zstack.iam2.entity.IAM2OrganizationProjectRefVO</class>
+        <class>org.zstack.vpcfirewall.entity.VpcFirewallVO</class>
+        <class>org.zstack.vpcfirewall.entity.VpcFirewallRuleSetVO</class>
+        <class>org.zstack.vpcfirewall.entity.VpcFirewallRuleVO</class>
+        <class>org.zstack.vpcfirewall.entity.VpcFirewallRuleTemplateVO</class>
+        <class>org.zstack.vpcfirewall.entity.VpcFirewallIpSetTemplateVO</class>
+        <class>org.zstack.vpcfirewall.entity.VpcFirewallRuleSetL3RefVO</class>
+        <class>org.zstack.vpcfirewall.entity.VpcFirewallVRouterRefVO</class>
         <class>org.zstack.header.core.trash.InstallPathRecycleVO</class>
-        <class>org.zstack.header.vm.VmPriorityConfigVO</class>
+        <class>org.zstack.sns.SNSAliyunSmsEndpointVO</class>
+        <class>org.zstack.sns.SNSSmsReceiverVO</class>
+        <class>org.zstack.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateVO</class>
+        <class>org.zstack.multicast.router.header.MulticastRouterVO</class>
+        <class>org.zstack.multicast.router.header.MulticastRouterVpcVRouterRefVO</class>
+        <class>org.zstack.multicast.router.header.MulticastRouterRendezvousPointVO</class>
+        <class>org.zstack.guesttools.GuestToolsVO</class>
+        <class>org.zstack.header.portMirror.PortMirrorVO</class>
+        <class>org.zstack.header.portMirror.PortMirrorSessionVO</class>
+        <class>org.zstack.header.portMirror.MirrorNetworkUsedIpVO</class>
+        <class>org.zstack.header.portMirror.PortMirrorSessionMirrorNetworkRefVO</class>
+        <class>org.zstack.header.portMirror.PortMirrorSessionSequenceNumberVO</class>
+        <class>org.zstack.billing.table.PriceTableVO</class>
+        <class>org.zstack.billing.table.AccountPriceTableRefVO</class>
+        <class>org.zstack.drs.entity.ClusterDRSVO</class>
+        <class>org.zstack.drs.entity.DRSAdviceVO</class>
+        <class>org.zstack.drs.entity.DRSVmMigrationActivityVO</class>
+        <class>org.zstack.header.buildsystem.AppBuildSystemVO</class>
+        <class>org.zstack.header.buildsystem.AppBuildSystemZoneRefVO</class>
+        <class>org.zstack.header.buildapp.BuildAppExportHistoryVO</class>
+        <class>org.zstack.header.buildapp.BuildApplicationVO</class>
+        <class>org.zstack.header.buildapp.BuildAppImageRefVO</class>
+        <class>org.zstack.header.appcenter.PublishAppVO</class>
+        <class>org.zstack.header.appcenter.PublishAppResourceRefVO</class>
+        <class>org.zstack.header.cloudformation.monitor.ResourceStackVmPortRefVO</class>
+        <class>org.zstack.zbox.ZBoxVO</class>
+        <class>org.zstack.zbox.ZBoxLocationRefVO</class>
+        <class>org.zstack.header.sriov.VmVfNicVO</class>
+        <class>org.zstack.header.sriov.EthernetVfPciDeviceVO</class>
+        <class>org.zstack.header.vdpa.VmVdpaNicVO</class>
+        <class>org.zstack.header.host.HostNetworkBondingServiceRefVO</class>
+        <class>org.zstack.header.host.HostNetworkInterfaceServiceRefVO</class>
+        <class>org.zstack.network.hostNetworkInterface.HostNetworkBondingVO</class>
+        <class>org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO</class>
+        <class>org.zstack.header.host.HostPhysicalMemoryVO</class>
+        <class>org.zstack.externalbackup.zbox.ZBoxBackupVO</class>
+        <class>org.zstack.externalbackup.ExternalBackupVO</class>
+        <class>org.zstack.externalbackup.ExternalBackupMetadataVO</class>
+        <class>org.zstack.zwatch.metricpusher.MetricDataHttpReceiverVO</class>
+        <class>org.zstack.zwatch.metricpusher.MetricTemplateVO</class>
+        <class>org.zstack.sns.platform.universalsms.SNSUniversalSmsEndpointVO</class>
+        <class>org.zstack.sns.platform.universalsms.supplier.emay.SNSEmaySmsEndpointVO</class>
+        <class>org.zstack.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointVO</class>
+        <class>org.zstack.sns.platform.plugin.SNSPluginEndpointVO</class>
         <class>org.zstack.header.host.HostPortVO</class>
+        <class>org.zstack.faulttolerance.entity.FaultToleranceVmGroupVO</class>
+        <class>org.zstack.faulttolerance.entity.CacheVolumeRefVO</class>
+        <class>org.zstack.faulttolerance.entity.FaultToleranceVmInstanceGroupHostPortRefVO</class>
+        <class>org.zstack.faulttolerance.entity.VmInstanceVmNicRedirectPortRefVO</class>
+        <class>org.zstack.zwatch.thirdparty.entity.ThirdpartyPlatformVO</class>
+        <class>org.zstack.zwatch.thirdparty.entity.ThirdpartyOriginalAlertVO</class>
+        <class>org.zstack.zwatch.thirdparty.entity.SNSEndpointThirdpartyAlertHistoryVO</class>
+        <class>org.zstack.iam2.entity.IAM2ProjectRoleVO</class>
+        <class>org.zstack.iam2.entity.IAM2ProjectVirtualIDGroupRefVO</class>
+        <class>org.zstack.zwatch.monitorgroup.entity.EventRuleTemplateVO</class>
+        <class>org.zstack.zwatch.monitorgroup.entity.MetricRuleTemplateVO</class>
+        <class>org.zstack.zwatch.monitorgroup.entity.MonitorGroupAlarmVO</class>
+        <class>org.zstack.zwatch.monitorgroup.entity.MonitorGroupEventSubscriptionVO</class>
+        <class>org.zstack.zwatch.monitorgroup.entity.MonitorGroupInstanceVO</class>
+        <class>org.zstack.zwatch.monitorgroup.entity.MonitorGroupTemplateRefVO</class>
+        <class>org.zstack.zwatch.monitorgroup.entity.MonitorGroupVO</class>
+        <class>org.zstack.zwatch.monitorgroup.entity.MonitorTemplateVO</class>
+        <class>org.zstack.zwatch.alarm.activealarm.entity.ActiveAlarmVO</class>
+        <class>org.zstack.zwatch.alarm.activealarm.entity.ActiveAlarmTemplateVO</class>
+        <class>org.zstack.zwatch.alarm.AlertDataAckVO</class>
+        <class>org.zstack.zwatch.alarm.AlarmDataAckVO</class>
+        <class>org.zstack.zwatch.alarm.EventDataAckVO</class>
+        <class>org.zstack.network.service.slb.SlbOfferingVO</class>
+        <class>org.zstack.network.service.slb.SlbLoadBalancerVO</class>
+        <class>org.zstack.network.service.slb.SlbVmInstanceVO</class>
+        <class>org.zstack.network.service.slb.SlbGroupVO</class>
+        <class>org.zstack.network.service.slb.SlbGroupL3NetworkRefVO</class>
+        <class>org.zstack.network.service.slb.SlbGroupMonitorIpVO</class>
+        <class>org.zstack.network.service.nfvinstgroup.NfvInstGroupVO</class>
+        <class>org.zstack.network.service.nfvinstgroup.NfvInstGroupMonitorIpVO</class>
+        <class>org.zstack.network.service.nfvinstgroup.NfvInstGroupNetworkServiceRefVO</class>
+        <class>org.zstack.network.service.nfvinstgroup.NfvInstGroupL3NetworkRefVO</class>
+        <class>org.zstack.network.service.header.nfvinstgroup.NfvInstGroupConfigTaskVO</class>
+        <class>org.zstack.network.service.header.nfvinstgroup.NfvInstVO</class>
+        <class>org.zstack.network.service.header.nfvinstgroup.NfvInstOfferingVO</class>
+        <class>org.zstack.network.service.nfvinst.NfvInstMetaDataVO</class>
+        <class>org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleSchedulerJobTriggerVO</class>
+        <class>org.zstack.license.LicenseHistoryVO</class>
+        <class>org.zstack.license.UKeyLicenseVO</class>
+        <class>org.zstack.license.RegisterLicenseApplicationVO</class>
+        <class>org.zstack.license.header.server.LicenseAuthorizedCapacityVO</class>
+        <class>org.zstack.license.header.server.LicenseAuthorizedNodeVO</class>
+        <class>org.zstack.license.header.server.LicenseAuthorizeHistoryVO</class>
+        <class>org.zstack.zwatch.migratedb.AuditsVO</class>
+        <class>org.zstack.zwatch.migratedb.AlarmRecordsVO</class>
+        <class>org.zstack.zwatch.migratedb.EventRecordsVO</class>
+        <class>org.zstack.billing.spendingcalculator.baremetal2.BareMetal2UsageVO</class>
+        <class>org.zstack.billing.spendingcalculator.baremetal2.PriceBareMetal2ChassisOfferingRefVO</class>
+        <class>org.zstack.billing.generator.baremetal2.BareMetal2BillingVO</class>
+        <class>org.zstack.billing.generator.baremetal2.BareMetal2UsageHistoryVO</class>
+        <class>org.zstack.header.message.ReplayMessageVO</class>
         <class>org.zstack.header.allocator.HostAllocatedCpuVO</class>
         <class>org.zstack.header.vm.VmInstanceNumaNodeVO</class>
         <class>org.zstack.header.host.HostNumaNodeVO</class>
+        <class>org.zstack.crypto.ccs.CCSCertificateVO</class>
+        <class>org.zstack.crypto.ccs.CCSCertificateUserRefVO</class>
+        <class>org.zstack.header.securitymachine.SecretResourcePoolVO</class>
+        <class>org.zstack.header.securitymachine.SecurityMachineVO</class>
+        <class>org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecurityMachineVO</class>
+        <class>org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecretResourcePoolVO</class>
+        <class>org.zstack.crypto.securitymachine.thirdparty.aisino.AiSiNoSecretResourcePoolVO</class>
+        <class>org.zstack.crypto.securitymachine.thirdparty.haitai.HaiTaiSecretResourcePoolVO</class>
+        <class>org.zstack.crypto.securitymachine.thirdparty.csp.CSPSecretResourcePoolVO</class>
+        <class>org.zstack.crypto.securitymachine.thirdparty.koal.KoAlSecretResourcePoolVO</class>
+        <class>org.zstack.crypto.securitymachine.thirdparty.plugin.PluginSecretResourcePoolVO</class>
         <class>org.zstack.header.core.encrypt.EncryptionIntegrityVO</class>
+        <class>org.zstack.iam2.entity.IAM2ProjectResourceRefVO</class>
+        <class>org.zstack.ovf.datatype.ImagePackageVO</class>
         <class>org.zstack.storage.primary.sharedblock.SharedBlockCapacityVO</class>
+        <class>org.zstack.baremetal2.chassis.BareMetal2BondingVO</class>
+        <class>org.zstack.baremetal2.chassis.BareMetal2BondingNicRefVO</class>
+        <class>org.zstack.network.service.virtualrouter.VirtualRouterSoftwareVersionVO</class>
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressVO</class>
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO</class>
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO</class>
         <class>org.zstack.header.core.encrypt.EncryptEntityMetadataVO</class>
         <class>org.zstack.storage.ceph.primary.CephOsdGroupVO</class>
-        <class>org.zstack.header.network.sdncontroller.SdnControllerVO</class>
-        <class>org.zstack.header.network.sdncontroller.SdnControllerHostRefVO</class>
-        <class>org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO</class>
-        <class>org.zstack.sdnController.header.HardwareL2VxlanNetworkVO</class>
-        <class>org.zstack.sdnController.header.VxlanHostMappingVO</class>
-        <class>org.zstack.sdnController.header.VxlanClusterMappingVO</class>
-        <class>org.zstack.sdnController.header.H3cSdnControllerTenantVO</class>
-        <class>org.zstack.sdnController.header.H3cSdnSubnetIpRangeRefVO</class>
         <class>org.zstack.header.volume.VolumeHostRefVO</class>
+        <class>org.zstack.sso.header.SSOClientVO</class>
+        <class>org.zstack.sso.header.SSOClientAttributeVO</class>
+        <class>org.zstack.sso.header.CasClientVO</class>
+        <class>org.zstack.sso.header.OAuth2ClientVO</class>
+        <class>org.zstack.sso.header.SAML2ClientVO</class>
+        <class>org.zstack.sso.header.SSORedirectTemplateVO</class>
+        <class>org.zstack.sso.header.ThirdClientAccountRefVO</class>
+        <class>org.zstack.header.vmscheduling.HostSchedulingRuleGroupRefVO</class>
+        <class>org.zstack.header.vmscheduling.HostSchedulingRuleGroupVO</class>
+        <class>org.zstack.header.vmscheduling.VmSchedulingRuleGroupRefVO</class>
+        <class>org.zstack.header.vmscheduling.VmSchedulingRuleGroupVO</class>
+        <class>org.zstack.header.vmscheduling.VmSchedulingRuleRefVO</class>
+        <class>org.zstack.header.vmscheduling.VmSchedulingRuleVO</class>
         <class>org.zstack.directory.DirectoryVO</class>
         <class>org.zstack.directory.ResourceDirectoryRefVO</class>
+        <class>org.zstack.crypto.securitymachine.thirdparty.sansec.SanSecSecretResourcePoolVO</class>
+        <class>org.zstack.crypto.securitymachine.thirdparty.sansec.SanSecSecurityMachineVO</class>
+        <class>org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecretResourcePoolVO</class>
+        <class>org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecurityMachineVO</class>
+        <class>org.zstack.crypto.securitymachine.thirdparty.fiSec.FiSecSecretResourcePoolVO</class>
+        <class>org.zstack.crypto.securitymachine.thirdparty.fiSec.FiSecSecurityMachineVO</class>
+        <class>org.zstack.mttyDevice.MttyDeviceVO</class>
         <class>org.zstack.core.upgrade.AgentVersionVO</class>
+        <class>org.zstack.guesttools.GuestToolsStateVO</class>
+        <class>org.zstack.header.core.encrypt.FileIntegrityVerificationVO</class>
+        <class>org.zstack.sso.header.SSOTokenVO</class>
+        <class>org.zstack.sso.header.OAuth2TokenVO</class>
+        <class>org.zstack.sso.header.SSOServerTokenVO</class>
         <class>org.zstack.header.host.HostIpmiVO</class>
+        <class>org.zstack.ha.HaStrategyConditionVO</class>
+        <class>org.zstack.ha.hostHastate.HostHaStateVO</class>
+        <class>org.zstack.license.LicenseAppIdRefVO</class>
+        <class>org.zstack.header.volume.block.BlockVolumeVO</class>
+        <class>org.zstack.header.volume.block.XskyBlockVolumeVO</class>
         <class>org.zstack.header.sshkeypair.SshKeyPairVO</class>
         <class>org.zstack.header.sshkeypair.SshKeyPairRefVO</class>
+        <class>org.zstack.snmp.agent.SnmpAgentVO</class>
+        <class>org.zstack.sns.platform.snmp.SNSSnmpPlatformVO</class>
         <class>org.zstack.header.storage.primary.PrimaryStorageHistoricalUsageVO</class>
         <class>org.zstack.storage.ceph.primary.CephOsdGroupHistoricalUsageVO</class>
         <class>org.zstack.storage.primary.local.LocalStorageHostHistoricalUsageVO</class>
+        <class>org.zstack.network.l2.virtualSwitch.header.L2VirtualSwitchNetworkVO</class>
+        <class>org.zstack.network.l2.virtualSwitch.header.L2PortGroupNetworkVO</class>
         <class>org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpVO </class>
         <class>org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpRefVO</class>
-        <class>org.zstack.header.volume.block.BlockVolumeVO</class>
+        <class>org.zstack.sns.platform.wecom.SNSWeComEndpointVO</class>
+        <class>org.zstack.sns.platform.wecom.SNSWeComAtPersonVO</class>
+        <class>org.zstack.sns.platform.feishu.SNSFeiShuEndpointVO</class>
+        <class>org.zstack.sns.platform.feishu.SNSFeiShuAtPersonVO</class>
+        <class>org.zstack.crypto.securitymachine.thirdparty.jit.JitSecurityMachineVO</class>
+        <class>org.zstack.network.service.slb.configManager.SlbVmInstanceConfigTaskVO</class>
+        <class>org.zstack.header.volume.block.ExponBlockVolumeVO</class>
+        <class>org.zstack.pciDevice.gpu.GpuDeviceVO</class>
+        <class>org.zstack.pciDevice.gpu.GpuDeviceSpecVO</class>
         <class>org.zstack.header.host.HostHwMonitorStatusVO</class>
+        <class>org.zstack.baremetal2.chassis.BareMetal2ChassisPciDeviceVO</class>
+        <class>org.zstack.baremetal2.chassis.BareMetal2ChassisGpuDeviceVO</class>
         <class>org.zstack.kvm.xmlhook.XmlHookVO</class>
         <class>org.zstack.kvm.xmlhook.XmlHookVmInstanceRefVO</class>
+        <class>org.zstack.guesttools.GuestVmScriptEO</class>
+        <class>org.zstack.guesttools.GuestVmScriptVO</class>
+        <class>org.zstack.guesttools.GuestVmScriptExecutedRecordVO</class>
+        <class>org.zstack.guesttools.GuestVmScriptExecutedRecordDetailVO</class>
+        <class>org.zstack.storage.device.hba.HbaDeviceVO</class>
+        <class>org.zstack.storage.device.hba.FcHbaDeviceVO</class>
+        <class>org.zstack.ai.entity.ApplicationDevelopmentServiceVO</class>
+        <class>org.zstack.ai.entity.DatasetVO</class>
+        <class>org.zstack.ai.entity.ModelServiceVO</class>
+        <class>org.zstack.ai.entity.ModelServiceCpuArchitectureVO</class>
+        <class>org.zstack.ai.entity.ModelServiceTemplateVO</class>
+        <class>org.zstack.ai.entity.ModelServiceGpuVendorVO</class>
+        <class>org.zstack.ai.entity.ModelServiceGpuVendorSpecRefVO</class>
+        <class>org.zstack.ai.entity.ModelVO</class>
+        <class>org.zstack.ai.entity.ModelCenterVO</class>
+        <class>org.zstack.ai.entity.ModelCenterCapacityVO</class>
+        <class>org.zstack.ai.entity.ModelServiceRefVO</class>
+        <class>org.zstack.ai.entity.ModelServiceInstanceGroupVO</class>
+        <class>org.zstack.ai.entity.ModelEvalServiceInstanceGroupVO</class>
+        <class>org.zstack.ai.entity.ModelEvaluationTaskVO</class>
+        <class>org.zstack.ai.entity.ModelServiceGroupDatasetRefVO</class>
+        <class>org.zstack.ai.entity.ModelServiceGroupModelServiceRefVO</class>
+        <class>org.zstack.ai.entity.ModelServiceInstanceVO</class>
+        <class>org.zstack.ai.entity.TrainedModelRecordVO</class>
+        <class>org.zstack.container.entity.ContainerImageVO</class>
+        <class>org.zstack.container.entity.ContainerManagementEndpointVO</class>
+        <class>org.zstack.container.entity.ContainerBackupStorageVO</class>
+        <class>org.zstack.container.entity.NativeClusterVO</class>
+        <class>org.zstack.container.entity.NativeHostVO</class>
+        <class>org.zstack.container.entity.PodVO</class>
+        <class>org.zstack.container.entity.PodGpuStatsVO</class>
+        <class>org.zstack.container.entity.KubernetesServiceVO</class>
+        <class>org.zstack.proxy.UserProxyConfigVO</class>
+        <class>org.zstack.proxy.UserProxyConfigResourceRefVO</class>
+        <class>org.zstack.network.ovn.OvnControllerVmInstanceVO</class>
+        <class>org.zstack.network.ovn.OvnControllerVmOfferingVO</class>
+        <class>org.zstack.observabilityServer.ObservabilityServerOfferingVO</class>
+        <class>org.zstack.observabilityServer.ObservabilityServerVmVO</class>
+        <class>org.zstack.header.cbt.CbtTaskVO</class>
+        <class>org.zstack.header.cbt.CbtTaskResourceRefVO</class>
+        <class>org.zstack.header.cbt.VolumeCbtBackupRecordVO</class>
+        <class>org.zstack.observabilityServer.service.ObservabilityServerServiceRefVO</class>
         <class>org.zstack.log.server.LogServerVO</class>
+        <class>org.zstack.header.zdfs.ZdfsVO</class>
+        <class>org.zstack.header.zdfs.ZdfsStorageVO</class>
         <class>org.zstack.header.network.l3.L3NetworkSequenceNumberVO</class>
         <class>org.zstack.network.hostNetworkInterface.PhysicalSwitchVO</class>
         <class>org.zstack.network.hostNetworkInterface.PhysicalSwitchPortVO</class>
+        <class>org.zstack.network.huawei.imaster.HuaweiIMasterFabricVO</class>
+        <class>org.zstack.network.huawei.imaster.HuaweiIMasterVpcVO</class>
+        <class>org.zstack.network.huawei.imaster.HuaweiIMasterTenantVO</class>
+        <class>org.zstack.network.huawei.imaster.HuaweiIMasterTenantFabricRefVO</class>
+        <class>org.zstack.network.huawei.imaster.HuaweiIMasterVRouterVO</class>
+        <class>org.zstack.network.huawei.imaster.HuaweiIMasterSdnControllerVO</class>
+        <class>org.zstack.hygon.HygonCcpDeviceVO</class>
+        <class>org.zstack.hygon.HygonCcpMdevVO</class>
+        <class>org.zstack.network.ovn.OvnControllerVO</class>
     </persistence-unit>
 </persistence>

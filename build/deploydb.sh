@@ -70,12 +70,16 @@ mkdir -p ${flyway_sql}
 
 eval "rm -f ${flyway_sql}/*"
 cp ${base}/../conf/db/V0.6__schema.sql ${flyway_sql}
-cp ${base}/../conf/db/upgrade/* ${flyway_sql}
+for f in ${base}/../conf/db/upgrade/*; do
+  [ "$(basename "$f")" = "beforeValidate.sql" ] && continue
+  cp "$f" ${flyway_sql}
+done
 
+tz_param="?serverTimezone=Asia/Shanghai"
 if [[ ! -n $host ]] || [[ ! -n $port ]];then
-  url="jdbc:mysql://localhost:3306/zstack"
+  url="jdbc:mysql://localhost:3306/zstack${tz_param}"
 else
-  url="jdbc:mysql://$host:$port/zstack"
+  url="jdbc:mysql://$host:$port/zstack${tz_param}"
 fi
 ${flyway} -user=${user} -password=${password} -url=${url} clean
 
@@ -90,9 +94,9 @@ eval "rm -f ${flyway_sql}/*"
 cp ${base}/../conf/db/V0.6__schema_buildin_httpserver.sql ${flyway_sql}
 
 if [[ ! -n $host ]] || [[ ! -n $port ]];then
-  url="jdbc:mysql://localhost:3306/zstack_rest"
+  url="jdbc:mysql://localhost:3306/zstack_rest${tz_param}"
 else
-  url="jdbc:mysql://$host:$port/zstack_rest"
+  url="jdbc:mysql://$host:$port/zstack_rest${tz_param}"
 fi
 ${flyway} -user=${user} -password=${password} -url=${url} clean
 ${flyway} -outOfOrder=true -user=${user} -password=${password} -url=${url} migrate

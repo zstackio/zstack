@@ -1,0 +1,1 @@
+UPDATE CloudFormationStackResourceRefVO AS t1, ApplianceVmVO AS t2 SET t1.reserve=true WHERE t1.resourceUuid=t2.uuid AND t2.applianceVmType IN ('vpcvrouter','vrouter');
