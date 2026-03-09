@@ -62,6 +62,13 @@ class SpringSpec {
         include("VirtualRouter.xml")
         include("NetworkService.xml")
         include("vip.xml")
+        // VirtualRouter.xml defines flow classes that @Autowired managers from these modules.
+        // Spring 6.1 strictly enforces @Autowired(required=true) for @Configurable classes.
+        include("lb.xml")
+        include("acl.xml")
+        include("eip.xml")
+        include("PortForwarding.xml")
+        include("vyos.xml")
     }
 
     void flatNetwork() {
