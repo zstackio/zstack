@@ -6,19 +6,16 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import org.apache.http.HttpStatus;
-import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
-import org.apache.http.impl.nio.client.HttpAsyncClients;
-import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
-import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
-import org.apache.http.impl.nio.reactor.IOReactorConfig;
-import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
-import org.springframework.http.client.HttpComponentsAsyncClientHttpRequestFactory;
-import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.client.*;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
@@ -48,8 +45,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URI;
@@ -78,7 +75,8 @@ public class RESTFacadeImpl implements RESTFacade {
     private String path;
     private String callbackUrl;
     private TimeoutRestTemplate template;
-    private AsyncRestTemplate asyncRestTemplate;
+    private RestTemplate asyncRestTemplate;
+    private final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
     private String baseUrl;
     private String sendCommandUrl;
     private String callbackHostName;
@@ -219,30 +217,10 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     // timeout are in milliseconds
-    private static AsyncRestTemplate createAsyncRestTemplate(int readTimeout, int connectTimeout, int maxPerRoute, int maxTotal) {
-        PoolingNHttpClientConnectionManager connectionManager;
-        try {
-            connectionManager = new PoolingNHttpClientConnectionManager(new DefaultConnectingIOReactor(IOReactorConfig.DEFAULT));
-        } catch (IOReactorException ex) {
-            throw new CloudRuntimeException(ex);
-        }
-
-        connectionManager.setDefaultMaxPerRoute(maxPerRoute);
-        connectionManager.setMaxTotal(maxTotal);
-
-        CloseableHttpAsyncClient httpAsyncClient = HttpAsyncClients.custom()
-                .setConnectionManager(connectionManager)
-                .build();
-
-        HttpComponentsAsyncClientHttpRequestFactory cf = new HttpComponentsAsyncClientHttpRequestFactory(httpAsyncClient);
-        cf.setConnectTimeout(connectTimeout);
-        cf.setReadTimeout(readTimeout);
-        cf.setConnectionRequestTimeout(connectTimeout * 2);
-
-        AsyncRestTemplate asyncRestTemplate = new AsyncRestTemplate(cf);
-        RESTFacade.setMessageConverter(asyncRestTemplate.getMessageConverters());
-
-        return asyncRestTemplate;
+    private static RestTemplate createAsyncRestTemplate(int readTimeout, int connectTimeout, int maxPerRoute, int maxTotal) {
+        // Spring 6 removed AsyncRestTemplate; use a regular RestTemplate with CompletableFuture for async calls
+        RestTemplate restTemplate = RESTFacade.createRestTemplate(readTimeout, connectTimeout);
+        return restTemplate;
     }
 
     void notifyCallback(HttpServletRequest req, HttpServletResponse rsp) {
@@ -297,7 +275,7 @@ public class RESTFacadeImpl implements RESTFacade {
             if (ret == null) {
                 rsp.setStatus(HttpStatus.SC_OK);
             } else {
-                rsp.setStatus(HttpStatus.SC_OK, ret);
+                rsp.setStatus(HttpStatus.SC_OK);
             }
         } catch (IOException e) {
             logger.warn(e.getMessage(), e);
@@ -387,7 +365,7 @@ public class RESTFacadeImpl implements RESTFacade {
         final long finalStime = stime;
 
         HttpHeaders requestHeaders = new HttpHeaders();
-        requestHeaders.setContentLength(body.length());
+        requestHeaders.setContentLength(body.getBytes(StandardCharsets.UTF_8).length);
         requestHeaders.set(RESTConstant.TASK_UUID, taskUuid);
         requestHeaders.set(RESTConstant.CALLBACK_URL, callbackUrl);
         MediaType JSON = MediaType.parseMediaType("application/json; charset=utf-8");
@@ -574,8 +552,8 @@ public class RESTFacadeImpl implements RESTFacade {
                 logger.trace(String.format("json %s [%s], %s", method.toString(), url, req));
             }
 
-            ListenableFuture<ResponseEntity<String>> f = asyncRestTemplate.exchange(url, method, req, String.class);
-            f.addCallback(rsp -> {}, e -> wrapper.fail(err(ORG_ZSTACK_CORE_REST_10003, SysErrors.HTTP_ERROR, e.getLocalizedMessage())));
+            CompletableFuture.supplyAsync(() -> asyncRestTemplate.exchange(url, method, req, String.class), asyncExecutor)
+                    .exceptionally(e -> { wrapper.fail(err(ORG_ZSTACK_CORE_REST_10003, SysErrors.HTTP_ERROR, e.getLocalizedMessage())); return null; });
         } catch (RestClientException e) {
             logger.warn(String.format("Unable to %s to %s: %s", method.toString(), url, e.getMessage()));
             wrapper.fail(ExceptionDSL.isCausedBy(e, ResourceAccessException.class) ? err(ORG_ZSTACK_CORE_REST_10004, SysErrors.IO_ERROR, e.getMessage()) : inerr(ORG_ZSTACK_CORE_REST_10005, e.getMessage()));
@@ -683,7 +661,7 @@ public class RESTFacadeImpl implements RESTFacade {
 
         HttpHeaders requestHeaders = new HttpHeaders();
         requestHeaders.setAll(http.getHeaders());
-        requestHeaders.setContentLength(body.length());
+        requestHeaders.setContentLength(body.getBytes(StandardCharsets.UTF_8).length);
         HttpEntity<String> req = new HttpEntity<>(body, requestHeaders);
         ResponseEntity<String> rsp = syncRawJson(req, http);
 
@@ -809,7 +787,7 @@ public class RESTFacadeImpl implements RESTFacade {
             requestHeaders.setAll(headers);
         }
         requestHeaders.setContentType(MediaType.APPLICATION_JSON);
-        requestHeaders.setContentLength(body.length());
+        requestHeaders.setContentLength(body.getBytes(StandardCharsets.UTF_8).length);
         HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
         ResponseEntity<String> rsp = syncRawJson(url, req, method, unit, timeout);
 
