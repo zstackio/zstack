@@ -11,7 +11,6 @@ import org.zstack.storage.ceph.backup.CephBackupStorageBase
 import org.zstack.storage.ceph.backup.CephBackupStorageMonBase
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO_
-import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.testlib.vfs.VFS
 import org.zstack.utils.gson.JSONObjectUtil
 
@@ -229,6 +228,51 @@ class CephBackupStorageSpec extends BackupStorageSpec {
 
             simulator(CephBackupStorageBase.CEPH_TO_CEPH_MIGRATE_IMAGE_PATH) { HttpEntity<String> entity ->
                 return new CephBackupStorageBase.StorageMigrationRsp()
+            }
+
+            simulator(CephBackupStorageBase.FILE_DOWNLOAD_PATH) { HttpEntity<String> entity ->
+                def rsp = new CephBackupStorageBase.DownloadFileResponse()
+                rsp.md5sum = "d41d8cd98f00b204e9800998ecf8427e"
+                rsp.size = 3L * 1024 * 1024 * 1024
+                return rsp
+            }
+
+            simulator(CephBackupStorageBase.FILE_UPLOAD_PATH) { HttpEntity<String> entity ->
+                def rsp = new CephBackupStorageBase.UploadFileResponse()
+                rsp.directUploadUrl = "http://127.0.0.1:7761/ceph/file/direct/upload"
+                return rsp
+            }
+            simulator(CephBackupStorageBase.FILE_DOWNLOAD_PROGRESS_PATH) { HttpEntity<String> entity ->
+                def rsp = new CephBackupStorageBase.GetDownloadFileProgressResponse()
+                rsp.completed = true
+                rsp.progress = 100
+                rsp.size = 3L * 1024 * 1024 * 1024
+                rsp.actualSize = 3L * 1024 * 1024 * 1024
+                rsp.installPath = "/tmp/test-software-package/unzipInstallPath"
+                rsp.format = "qcow2"
+                rsp.lastOpTime = System.currentTimeMillis()
+                rsp.downloadSize = 3L * 1024 * 1024 * 1024
+                rsp.md5sum = "d41d8cd98f00b204e9800998ecf8427e"
+                rsp.supportSuspend = true
+                return rsp
+            }
+            simulator(CephBackupStorageBase.DELETE_FILES_PATH) { HttpEntity<String> entity ->
+                def rsp = new CephBackupStorageBase.DeleteFilesResponse()
+                return rsp
+            }
+            simulator(CephBackupStorageBase.UNZIP_FILE_PATH) { HttpEntity<String> entity ->
+                def rsp = new CephBackupStorageBase.UnzipFileResponse()
+                rsp.unzipInstallPath = "/tmp/test-software-package/unzipInstallPath"
+                rsp.fileSizes = [:]
+                rsp.fileSizes.put("/tmp/test-software-package/unzipInstallPath/Gateway_Linux_Server.qcow2", 1024L * 1024 * 1024)
+                rsp.fileSizes.put("/tmp/test-software-package/unzipInstallPath/BootImage_for_Linux.qcow2", 1024L * 1024 * 1024)
+                rsp.fileSizes.put("/tmp/test-software-package/unzipInstallPath/BootImage_for_Windows.qcow2", 1024L * 1024 * 1024)
+                rsp.fileSizes.put("/tmp/test-software-package/unzipInstallPath/TrekerInstallation.tar.gz", 1024)
+                return rsp
+            }
+            simulator(CephBackupStorageBase.SOFTWARE_UPGRADE_PACKAGE_DEPLOY_PATH) { HttpEntity<String> entity ->
+                def rsp = new CephBackupStorageBase.SoftwareUpgradePackageResponse()
+                return rsp
             }
         }
     }
