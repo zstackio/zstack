@@ -11,7 +11,7 @@ import org.zstack.header.message.NeedReplyMessage;
  */
 public class SecretHostDefineMsg extends NeedReplyMessage implements HostMessage {
     private String hostUuid;
-    @NoLogging(type = NoLogging.Type.Simple)
+    @NoLogging
     private String dekBase64;
     private String vmUuid;
     private String purpose;
