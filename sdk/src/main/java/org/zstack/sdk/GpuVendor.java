@@ -7,6 +7,7 @@ public enum GpuVendor {
 	Haiguang,
 	Huawei,
 	TianShu,
+	Kunlunxin,
 	Other,
 	Alibaba,
 }
