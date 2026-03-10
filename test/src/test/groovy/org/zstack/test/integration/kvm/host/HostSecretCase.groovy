@@ -64,7 +64,26 @@ class HostSecretCase extends SubCase {
 
     @Override
     void setup() {
-        useSpring(KvmTest.springSpec)
+        // Use KvmTest spring spec plus mock HostSecretEnvelopeCryptoExtensionPoint (premium/crypto not on test classpath)
+        useSpring(makeSpring {
+            sftpBackupStorage()
+            localStorage()
+            nfsPrimaryStorage()
+            smp()
+            virtualRouter()
+            flatNetwork()
+            securityGroup()
+            kvm()
+            ceph()
+            vyos()
+            flatNetwork()
+            eip()
+            lb()
+            portForwarding()
+            include("LongJobManager.xml")
+            include("HostAllocateExtension.xml")
+            include("HostSecretEnvelopeCryptoExtensionPointMock.xml")
+        })
     }
 
     @Override

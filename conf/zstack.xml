@@ -58,6 +58,7 @@
     <import resource="springConfigXml/debug.xml"/>
     <import resource="springConfigXml/eip.xml"/>
     <import resource="springConfigXml/encrypt.xml"/>
+    <import resource="springConfigXml/hostSecretEnvelopeCrypto.xml"/>
     <import resource="springConfigXml/Error.xml"/>
     <import resource="springConfigXml/flatNetworkProvider.xml"/>
     <import resource="springConfigXml/gc.xml"/>
