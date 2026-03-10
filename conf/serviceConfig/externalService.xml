@@ -9,4 +9,21 @@
     <message>
         <name>org.zstack.header.core.external.service.APIReloadExternalServiceMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.core.external.service.APIAddExternalServiceConfigurationMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.core.external.service.APIQueryExternalServiceConfigurationMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.core.external.service.APIUpdateExternalServiceConfigurationMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.core.external.service.APIDeleteExternalServiceConfigurationMsg</name>
+    </message>
 </service>
