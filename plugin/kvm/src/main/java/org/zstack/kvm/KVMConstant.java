@@ -131,6 +131,9 @@ public interface KVMConstant {
     /** HTTP timeout in seconds for envelope key sync (verify/create/rotate/get) to agent. */
     long ENVELOPE_KEY_HTTP_TIMEOUT_SEC = 5L;
 
+    /** Max size in bytes for DEK payload in SecretHostDefine (decoded from dekBase64). */
+    int MAX_DEK_BYTES = 1024;
+
     String KVM_HOST_FILE_DOWNLOAD_PATH = "/host/file/download";
     String KVM_HOST_FILE_UPLOAD_PATH = "/host/file/upload";
     String KVM_HOST_FILE_DOWNLOAD_PROGRESS_PATH = "/host/file/progress";

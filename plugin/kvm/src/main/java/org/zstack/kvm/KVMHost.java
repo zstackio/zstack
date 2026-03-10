@@ -5307,76 +5307,6 @@ public class KVMHost extends HostBase implements Host {
         }).start();
     }
 
-    private void setHostKeyIdentityVerified(String hostUuid, boolean verified) {
-        HostKeyIdentityVO vo = getHostKeyIdentity(hostUuid);
-        if (vo != null) {
-            vo.setVerified(verified);
-            dbf.update(vo);
-        }
-    }
-
-    private static boolean isRotateNeededGetError(String errorCode) {
-        if (errorCode == null) return false;
-        return SecretHostDefineReply.ERROR_CODE_KEYS_NOT_ON_DISK.equals(errorCode)
-                || SecretHostDefineReply.ERROR_CODE_KEY_FILES_INTEGRITY_MISMATCH.equals(errorCode);
-    }
-
-    private HostKeyIdentityVO getHostKeyIdentity(String hostUuid) {
-        SimpleQuery<HostKeyIdentityVO> q = dbf.createQuery(HostKeyIdentityVO.class);
-        q.add(HostKeyIdentityVO_.hostUuid, Op.EQ, hostUuid);
-        return q.find();
-    }
-
-    /**
-     * Compute fingerprint from public key (base64): SHA-256 of decoded key bytes, hex-encoded.
-     * Returns empty string if key is invalid or hashing fails.
-     */
-    private static String fingerprintFromPublicKey(String publicKeyBase64) {
-        if (publicKeyBase64 == null || publicKeyBase64.isEmpty()) {
-            return "";
-        }
-        try {
-            byte[] keyBytes = Base64.getDecoder().decode(publicKeyBase64.trim());
-            if (keyBytes == null || keyBytes.length == 0) {
-                return "";
-            }
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(keyBytes);
-            StringBuilder sb = new StringBuilder(hash.length * 2);
-            for (byte b : hash) {
-                sb.append(String.format("%02x", b & 0xff));
-            }
-            return sb.toString();
-        } catch (IllegalArgumentException | NoSuchAlgorithmException e) {
-            return "";
-        }
-    }
-
-    private void saveOrUpdateHostKeyIdentity(String hostUuid, String publicKey, boolean verified) {
-        if (StringUtils.isBlank(publicKey)) {
-            return;
-        }
-        String keyToSave = publicKey.trim();
-        String fingerprint = fingerprintFromPublicKey(keyToSave);
-        HostKeyIdentityVO vo = getHostKeyIdentity(hostUuid);
-        if (vo == null) {
-            vo = new HostKeyIdentityVO();
-            vo.setHostUuid(hostUuid);
-            vo.setPublicKey(keyToSave);
-            vo.setFingerprint(fingerprint);
-            vo.setVerified(verified);
-            vo.setCreateDate(new java.sql.Timestamp(System.currentTimeMillis()));
-            dbf.persist(vo);
-            return;
-        }
-        vo.setPublicKey(keyToSave);
-        vo.setFingerprint(fingerprint);
-        vo.setVerified(verified);
-        dbf.update(vo);
-    }
-
-    private static final int MAX_DEK_BYTES = 1024;
-
     private void handle(SecretHostDefineMsg msg) {
         SecretHostDefineReply reply = new SecretHostDefineReply();
         if (org.apache.commons.lang.StringUtils.isBlank(msg.getDekBase64())) {
@@ -5390,7 +5320,7 @@ public class KVMHost extends HostBase implements Host {
             return;
         }
         String hostUuid = getSelf().getUuid();
-        HostKeyIdentityVO identity = getHostKeyIdentity(hostUuid);
+        HostKeyIdentityVO identity = HostKeyIdentityHelper.getHostKeyIdentity(dbf, hostUuid);
         String pubKey = identity != null ? org.apache.commons.lang.StringUtils.trimToNull(identity.getPublicKey()) : null;
         Boolean verifyOk = identity != null ? identity.getVerified() : null;
         if (pubKey == null) {
@@ -5399,7 +5329,7 @@ public class KVMHost extends HostBase implements Host {
             return;
         }
         String storedFingerprint = identity.getFingerprint();
-        String computed = fingerprintFromPublicKey(pubKey);
+        String computed = HostKeyIdentityHelper.fingerprintFromPublicKey(pubKey);
         if (!storedFingerprint.equals(computed)) {
             reply.setError(operr("host public key fingerprint mismatch, key may be corrupted or tampered"));
             bus.reply(msg, reply);
@@ -5424,7 +5354,7 @@ public class KVMHost extends HostBase implements Host {
             return;
         }
 
-        if (dekRaw.length > MAX_DEK_BYTES) {
+        if (dekRaw.length > KVMConstant.MAX_DEK_BYTES) {
             reply.setError(operr("dekBase64 decoded payload is too large"));
             bus.reply(msg, reply);
             return;
