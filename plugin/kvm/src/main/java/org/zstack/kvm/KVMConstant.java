@@ -193,7 +193,8 @@ public interface KVMConstant {
 
     public static final String TPM_STATE_FILE_PATH_FORMAT = "/var/lib/libvirt/swtpm/%s/";
     public static String buildTpmStateFilePath(String vmUuid) {
-        return String.format(TPM_STATE_FILE_PATH_FORMAT, vmUuid);
+        String vmUuidWithHyphen = vmUuid.replaceFirst("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5");
+        return String.format(TPM_STATE_FILE_PATH_FORMAT, vmUuidWithHyphen);
     }
 
     public static final String DHCP_BIN_FILE_PATH = "/usr/local/zstack/dnsmasq";
