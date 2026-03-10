@@ -25,7 +25,7 @@ public class HostKeyIdentityVO {
     @Column
     private String fingerprint;
 
-    @Column(nullable = false)
+    @Column
     private Boolean verified = false;
 
     @Column
