@@ -121,6 +121,10 @@ public class ZSClient {
             if (item != null && item.isJsonPrimitive()) {
                 wrapper.setGlobalErrorCode(item.getAsString());
             }
+            item = object.get("message");
+            if (item != null && item.isJsonPrimitive()) {
+                wrapper.setMessage(item.getAsString());
+            }
             return wrapper;
         }
     }
