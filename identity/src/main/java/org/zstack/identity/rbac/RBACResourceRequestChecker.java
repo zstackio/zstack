@@ -10,7 +10,6 @@ import org.zstack.header.identity.rbac.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APIResourceScope;
-import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vo.ResourceVO;
@@ -107,7 +106,7 @@ public class RBACResourceRequestChecker implements APIRequestChecker {
                     return;
                 }
 
-                if (message instanceof APISyncCallMessage) {
+                if (APIMessage.isReadOnlyApi(message.getClass())) {
                     // no check to read api
                     return;
                 }

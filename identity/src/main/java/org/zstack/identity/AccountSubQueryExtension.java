@@ -13,7 +13,7 @@ public class AccountSubQueryExtension extends AbstractMysqlQuerySubQueryExtensio
 
     @Override
     public String makeSubquery(APIQueryMessage msg, Class inventoryClass) {
-        if (Account.isAdminPermission(msg.getSession()))  {
+        if (Account.isAllResourcesReadable(msg.getSession()))  {
             return null;
         }
 

@@ -76,6 +76,14 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                     apiClass.getName()));
         }
 
+        if (APIMessage.isReadOnlyApi(apiClass) && Account.isAllResourcesReadable(session)) {
+            // exclude audits / event api
+            if (!"APIGetAuditDataMsg".equals(apiClass.getSimpleName())
+                    && !"APIGetEventDataMsg".equals(apiClass.getSimpleName())) {
+                return;
+            }
+        }
+
         if (!check()) {
             permissionDenied();
         }

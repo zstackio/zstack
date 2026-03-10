@@ -5,6 +5,7 @@ import org.zstack.header.identity.*;
 import org.zstack.header.identity.role.RoleAccountRefVO;
 import org.zstack.header.identity.role.RoleAccountRefVO_;
 
+import static org.zstack.header.identity.AccountConstant.ALL_RESOURCES_READABLE_ROLE_UUID;
 import static org.zstack.header.identity.AccountConstant.SOD_AUDITOR_ROLE_UUID;
 import static org.zstack.header.identity.AccountConstant.SOD_SYSTEM_ADMIN_ROLE_UUID;
 
@@ -38,6 +39,21 @@ public interface Account {
 
     static boolean isAdmin(String accountUuid) {
         return AccountConstant.isAdmin(accountUuid);
+    }
+
+    static boolean isAllResourcesReadable(SessionInventory session) {
+        return isAllResourcesReadable(session.getAccountUuid());
+    }
+
+    static boolean isAllResourcesReadable(String accountUuid) {
+        if (isAdminPermission(accountUuid)) {
+            return true;
+        }
+
+        return Q.New(RoleAccountRefVO.class)
+                    .eq(RoleAccountRefVO_.accountUuid, accountUuid)
+                    .eq(RoleAccountRefVO_.roleUuid, ALL_RESOURCES_READABLE_ROLE_UUID)
+                    .isExists();
     }
 
     static boolean supportToQueryAuditsFromAllAccounts(SessionInventory session) {
