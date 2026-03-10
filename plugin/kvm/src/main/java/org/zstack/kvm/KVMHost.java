@@ -55,7 +55,6 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
-import org.zstack.header.secret.HostSecretEnvelopeCryptoExtensionPoint;
 import org.zstack.header.secret.SecretHostDefineMsg;
 import org.zstack.header.secret.SecretHostDefineReply;
 import org.zstack.header.message.APIMessage;
@@ -5308,8 +5307,6 @@ public class KVMHost extends HostBase implements Host {
         }).start();
     }
 
-    private static final long ENVELOPE_KEY_HTTP_TIMEOUT_SEC = 5L;
-
     private void setHostKeyIdentityVerified(String hostUuid, boolean verified) {
         HostKeyIdentityVO vo = getHostKeyIdentity(hostUuid);
         if (vo != null) {
@@ -5498,7 +5495,7 @@ public class KVMHost extends HostBase implements Host {
             public Class<KVMAgentCommands.SecretHostDefineResponse> getReturnClass() {
                 return KVMAgentCommands.SecretHostDefineResponse.class;
             }
-        }, TimeUnit.SECONDS, ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
+        }, TimeUnit.SECONDS, KVMConstant.ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
     }
 
     @Override

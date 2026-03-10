@@ -29,9 +29,8 @@ import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Integration test for host secret: create/get/rotate/verify public key on connect,
- * and SecretHostDefine (ensure secret on agent).
- * Uses simulated agent for all secret paths.
+ * Integration test for SecretHostDefine (ensure secret on agent) on KVM host.
+ * Uses simulated agent; envelope key sync-on-ping and HPKE seal are covered in premium tests.
  */
 class HostSecretCase extends SubCase {
     EnvSpec env
@@ -39,8 +38,7 @@ class HostSecretCase extends SubCase {
     CloudBus bus
     HostInventory addedHost
 
-    /** Counters for simulator call assertions (async secret sync / ensureSecret). */
-    AtomicInteger createEnvelopeKeyCallCount
+    /** Counters for simulator call assertions (ensureSecret). */
     AtomicInteger ensureSecretCallCount
 
     /** 32-byte X25519 public key (base64) for simulator; must be valid for HPKE seal. */
@@ -64,7 +62,8 @@ class HostSecretCase extends SubCase {
 
     @Override
     void setup() {
-        // Use KvmTest spring spec plus mock HostSecretEnvelopeCryptoExtensionPoint (premium/crypto not on test classpath)
+        // Run without premium/crypto; use test extension HostSecretEnvelopeCryptoTestExtension so that
+        // SecretHostDefine path can run and call the agent simulator. Sync-on-ping is covered in premium tests.
         useSpring(makeSpring {
             sftpBackupStorage()
             localStorage()
@@ -82,7 +81,7 @@ class HostSecretCase extends SubCase {
             portForwarding()
             include("LongJobManager.xml")
             include("HostAllocateExtension.xml")
-            include("HostSecretEnvelopeCryptoExtensionPointMock.xml")
+            include("HostSecretEnvelopeCryptoTestExtension.xml")
         })
     }
 
@@ -95,7 +94,7 @@ class HostSecretCase extends SubCase {
     void test() {
         env.create {
             prepare()
-            testAddHostWithSecretSync()
+            prepareHostForSecretTests()
             testSecretHostDefineSuccess()
             testSecretHostDefineFailWhenNoDek()
         }
@@ -112,7 +111,6 @@ class HostSecretCase extends SubCase {
     }
 
     void registerSecretSimulators() {
-        createEnvelopeKeyCallCount = new AtomicInteger(0)
         ensureSecretCallCount = new AtomicInteger(0)
 
         env.simulator(KVMConstant.KVM_CONNECT_PATH) {
@@ -136,35 +134,6 @@ class HostSecretCase extends SubCase {
             return rsp
         }
 
-        // Ping simulator so we can trigger pingHook (which runs sync-envelope-public-key -> KVM_CREATE_ENVELOPE_KEY_PATH).
-        // needReconnectHost() is true when rsp.version != dbf.getDbVersion(), which sets KVM_HOST_SKIP_PING_NO_FAILURE_EXTENSIONS
-        // and skips sync-envelope-public-key; so we must return the actual DB version.
-        def dbVersion = bean(DatabaseFacade.class).getDbVersion()
-        env.simulator(KVMConstant.KVM_PING_PATH) { HttpEntity<String> e ->
-            def cmd = org.zstack.utils.gson.JSONObjectUtil.toObject(e.body, KVMAgentCommands.PingCmd.class)
-            def rsp = new KVMAgentCommands.PingResponse()
-            rsp.success = true
-            rsp.hostUuid = cmd.hostUuid
-            rsp.version = dbVersion
-            rsp.sendCommandUrl = "http://127.0.0.2:7272"
-            return rsp
-        }
-
-        env.simulator(KVMConstant.KVM_CREATE_ENVELOPE_KEY_PATH) {
-            createEnvelopeKeyCallCount?.incrementAndGet()
-            return new KVMAgentCommands.CreatePublicKeyResponse()
-        }
-        env.simulator(KVMConstant.KVM_GET_ENVELOPE_KEY_PATH) {
-            def rsp = new KVMAgentCommands.GetPublicKeyResponse()
-            rsp.publicKey = MOCK_PUBLIC_KEY_BASE64
-            return rsp
-        }
-        env.simulator(KVMConstant.KVM_VERIFY_ENVELOPE_KEY_PATH) {
-            return new KVMAgentCommands.VerifyPublicKeyResponse()
-        }
-        env.simulator(KVMConstant.KVM_ROTATE_ENVELOPE_KEY_PATH) {
-            return new KVMAgentCommands.RotatePublicKeyResponse()
-        }
         env.simulator(KVMConstant.KVM_ENSURE_SECRET_PATH) {
             ensureSecretCallCount?.incrementAndGet()
             def rsp = new KVMAgentCommands.SecretHostDefineResponse()
@@ -173,7 +142,12 @@ class HostSecretCase extends SubCase {
         }
     }
 
-    void testAddHostWithSecretSync() {
+    /**
+     * Prepare a connected KVM host and corresponding HostKeyIdentityVO so that
+     * SecretHostDefineMsg can succeed. Envelope key sync-on-ping itself is
+     * covered by premium KVMEnvelopeKeySyncExtensionCase.
+     */
+    void prepareHostForSecretTests() {
         registerSecretSimulators()
 
         AddKVMHostMsg amsg = new AddKVMHostMsg()
@@ -192,17 +166,6 @@ class HostSecretCase extends SubCase {
         assert reply.inventory.status == HostStatus.Connected.toString()
         addedHost = reply.inventory
 
-        // Envelope key sync runs inside pingHook, not during connect. Trigger a ping so that
-        // sync-envelope-public-key runs and KVM_CREATE_ENVELOPE_KEY_PATH is invoked.
-        PingHostMsg pingMsg = new PingHostMsg()
-        pingMsg.hostUuid = addedHost.uuid
-        bus.makeTargetServiceIdByResourceUuid(pingMsg, HostConstant.SERVICE_ID, addedHost.uuid)
-        MessageReply pingReply = bus.call(pingMsg)
-        assert pingReply.isSuccess() : "PingHost failed: ${pingReply.error}"
-
-        assert createEnvelopeKeyCallCount.get() >= 1 : "envelope key sync (KVM_CREATE_ENVELOPE_KEY_PATH) should be triggered at least once after add host"
-
-        // Create/ping may already persist HostKeyIdentityVO (sync path calls GET then saveOrUpdateHostKeyIdentity).
         // Ensure HostKeyIdentity exists with expected key so SecretHostDefineMsg finds it and fingerprint check passes.
         DatabaseFacade dbf = bean(DatabaseFacade.class)
         SimpleQuery<HostKeyIdentityVO> q = dbf.createQuery(HostKeyIdentityVO.class)
