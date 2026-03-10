@@ -10,11 +10,6 @@
     <artifactId>kvm</artifactId>
     <dependencies>
         <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-            <version>1.67</version>
-        </dependency>
-        <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>compute</artifactId>
             <version>${project.version}</version>
