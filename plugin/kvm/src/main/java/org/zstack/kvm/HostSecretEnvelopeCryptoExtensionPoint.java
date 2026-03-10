@@ -1,4 +1,4 @@
-package org.zstack.header.secret;
+package org.zstack.kvm;
 
 /**
  * Extension point for sealing plaintext (e.g. DEK) with recipient's X25519 public key for host secret (e.g. vTPM).
