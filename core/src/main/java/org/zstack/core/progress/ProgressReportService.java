@@ -225,6 +225,9 @@ public class ProgressReportService extends AbstractService implements Management
         if (!StringUtils.isEmpty(vo.getArguments())) {
             inv.setArguments(vo.getArguments());
         }
+
+        inv.setProgressDetail(LongJobProgressDetailBuilder.fromTaskProgressVO(vo));
+
         return inv;
     }
 

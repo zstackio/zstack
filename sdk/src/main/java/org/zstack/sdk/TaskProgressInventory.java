@@ -76,4 +76,12 @@ public class TaskProgressInventory  {
         return this.arguments;
     }
 
+    public org.zstack.sdk.LongJobProgressDetail progressDetail;
+    public void setProgressDetail(org.zstack.sdk.LongJobProgressDetail progressDetail) {
+        this.progressDetail = progressDetail;
+    }
+    public org.zstack.sdk.LongJobProgressDetail getProgressDetail() {
+        return this.progressDetail;
+    }
+
 }
