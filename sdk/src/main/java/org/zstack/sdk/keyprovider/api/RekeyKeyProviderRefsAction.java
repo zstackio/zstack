@@ -25,11 +25,20 @@ public class RekeyKeyProviderRefsAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = false, noTrim = false)
     public java.util.List refIds;
+
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = false, noTrim = false)
+    public java.util.List resourceUuids;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String resourceType;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String providerUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean rekeyAll = false;
 
     @Param(required = false)
     public java.util.List systemTags;
