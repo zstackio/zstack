@@ -33,7 +33,7 @@ public final class HostKeyIdentityHelper {
         }
         try {
             byte[] keyBytes = Base64.getDecoder().decode(publicKeyBase64.trim());
-            if (keyBytes == null || keyBytes.length == 0) {
+            if (keyBytes.length == 0) {
                 return "";
             }
             MessageDigest md = MessageDigest.getInstance("SHA-256");
