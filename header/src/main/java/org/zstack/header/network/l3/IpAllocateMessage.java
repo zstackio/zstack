@@ -15,6 +15,22 @@ public interface IpAllocateMessage {
 
     default boolean isDuplicatedIpAllowed() {return false;}
 
+    default String getNetmask() {
+        return null;
+    }
+
+    default String getGateway() {
+        return null;
+    }
+
+    default String getIpv6Gateway() {
+        return null;
+    }
+
+    default String getIpv6Prefix() {
+        return null;
+    }
+
     void setIpRangeUuid(String ipRangeUuid);
 
     void setRequiredIp(String requiredIp);
