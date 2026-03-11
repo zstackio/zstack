@@ -247,6 +247,7 @@ public class SourceClassMap {
 			put("org.zstack.header.core.external.service.ExternalServiceCapabilities", "org.zstack.sdk.ExternalServiceCapabilities");
 			put("org.zstack.header.core.external.service.ExternalServiceInventory", "org.zstack.sdk.ExternalServiceInventory");
 			put("org.zstack.header.core.progress.ChainInfo", "org.zstack.sdk.ChainInfo");
+			put("org.zstack.header.core.progress.LongJobProgressDetail", "org.zstack.sdk.LongJobProgressDetail");
 			put("org.zstack.header.core.progress.PendingTaskInfo", "org.zstack.sdk.PendingTaskInfo");
 			put("org.zstack.header.core.progress.RunningTaskInfo", "org.zstack.sdk.RunningTaskInfo");
 			put("org.zstack.header.core.progress.TaskInfo", "org.zstack.sdk.TaskInfo");
@@ -1208,6 +1209,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LogType", "org.zstack.log.server.LogType");
 			put("org.zstack.sdk.LoginAuthenticationProcedureDesc", "org.zstack.header.identity.login.LoginAuthenticationProcedureDesc");
 			put("org.zstack.sdk.LongJobInventory", "org.zstack.header.longjob.LongJobInventory");
+			put("org.zstack.sdk.LongJobProgressDetail", "org.zstack.header.core.progress.LongJobProgressDetail");
 			put("org.zstack.sdk.LongJobState", "org.zstack.header.longjob.LongJobState");
 			put("org.zstack.sdk.LunInventory", "org.zstack.header.storageDevice.LunInventory");
 			put("org.zstack.sdk.MaaSUsage", "org.zstack.ai.message.MaaSUsage");

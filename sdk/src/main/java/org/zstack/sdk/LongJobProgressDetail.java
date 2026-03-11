@@ -84,11 +84,11 @@ public class LongJobProgressDetail  {
         return this.estimatedRemainingSeconds;
     }
 
-    public java.util.LinkedHashMap extra;
-    public void setExtra(java.util.LinkedHashMap extra) {
+    public java.util.Map extra;
+    public void setExtra(java.util.Map extra) {
         this.extra = extra;
     }
-    public java.util.LinkedHashMap getExtra() {
+    public java.util.Map getExtra() {
         return this.extra;
     }
 
