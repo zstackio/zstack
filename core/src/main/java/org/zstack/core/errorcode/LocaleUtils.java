@@ -88,7 +88,13 @@ public class LocaleUtils {
                 continue;
             }
             String[] tagAndParams = part.split(";");
+            if (tagAndParams.length == 0) {
+                continue;
+            }
             String tag = tagAndParams[0].trim();
+            if (tag.isEmpty()) {
+                continue;
+            }
             double quality = 1.0;
             for (int i = 1; i < tagAndParams.length; i++) {
                 String param = tagAndParams[i].trim();
