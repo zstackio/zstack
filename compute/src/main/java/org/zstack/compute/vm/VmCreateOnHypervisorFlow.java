@@ -79,20 +79,23 @@ public class VmCreateOnHypervisorFlow implements Flow {
                             spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
                             spec.getDestHost().getUuid(), spec.getDestHost().getName(), reply.getError()));
 
-                    if (reply.getError().isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
-                        String gcName = String.format("gc-vm-%s-on-host-%s", spec.getVmInventory().getUuid(), spec.getDestHost().getUuid());
+                    // Always submit GC to clean up the VM on the hypervisor,
+                    // regardless of whether the error is GC_ELIGIBLE or not.
+                    // This prevents orphaned VMs and GPU dirty data (ZSTAC-68874).
+                    String gcName = String.format("gc-vm-%s-on-host-%s", spec.getVmInventory().getUuid(), spec.getDestHost().getUuid());
 
-                        DeleteVmGC gc = new DeleteVmGC();
-                        gc.NAME = gcName;
-                        gc.hostUuid = spec.getVmInventory().getHostUuid();
-                        gc.inventory = spec.getVmInventory();
-                        if (gc.existedAndNotCompleted()) {
-                            logger.debug(String.format("There is already a DeleteVmGC of vm[uuid:%s] " +
-                                    "on host[uuid:%s], skip.", spec.getVmInventory().getUuid(), spec.getDestHost().getUuid()));
-                        } else {
-                            gc.submit();
-                        }
+                    DeleteVmGC gc = new DeleteVmGC();
+                    gc.NAME = gcName;
+                    gc.hostUuid = spec.getVmInventory().getHostUuid();
+                    gc.inventory = spec.getVmInventory();
+                    if (gc.existedAndNotCompleted()) {
+                        logger.debug(String.format("There is already a DeleteVmGC of vm[uuid:%s] " +
+                                "on host[uuid:%s], skip.", spec.getVmInventory().getUuid(), spec.getDestHost().getUuid()));
                     } else {
+                        gc.submit();
+                    }
+
+                    if (!reply.getError().isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
                         VmTracerCanonicalEvents.OperateFailOnHypervisorData data = new VmTracerCanonicalEvents.OperateFailOnHypervisorData();
                         data.setHostUuid(spec.getVmInventory().getHostUuid());
                         data.setVmUuid(spec.getVmInventory().getUuid());
