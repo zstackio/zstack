@@ -383,7 +383,6 @@ public class KVMAgentCommands {
 
     public static class GetPublicKeyResponse extends AgentResponse {
         private String publicKey;
-        private String errorCode;
 
         public String getPublicKey() {
             return publicKey;
@@ -391,14 +390,6 @@ public class KVMAgentCommands {
 
         public void setPublicKey(String publicKey) {
             this.publicKey = publicKey;
-        }
-
-        public String getErrorCode() {
-            return errorCode;
-        }
-
-        public void setErrorCode(String errorCode) {
-            this.errorCode = errorCode;
         }
     }
 
@@ -412,15 +403,6 @@ public class KVMAgentCommands {
     }
 
     public static class VerifyPublicKeyResponse extends AgentResponse {
-        private String errorCode;
-
-        public String getErrorCode() {
-            return errorCode;
-        }
-
-        public void setErrorCode(String errorCode) {
-            this.errorCode = errorCode;
-        }
     }
 
     public static class SecretHostDefineCmd extends AgentCommand {
@@ -473,16 +455,7 @@ public class KVMAgentCommands {
     }
 
     public static class SecretHostDefineResponse extends AgentResponse {
-        private String errorCode;
         private String secretUuid;
-
-        public String getErrorCode() {
-            return errorCode;
-        }
-
-        public void setErrorCode(String errorCode) {
-            this.errorCode = errorCode;
-        }
 
         public String getSecretUuid() {
             return secretUuid;

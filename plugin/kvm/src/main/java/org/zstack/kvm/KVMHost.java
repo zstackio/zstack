@@ -5409,10 +5409,10 @@ public class KVMHost extends HostBase implements Host {
                         reply.setSecretUuid(rsp.getSecretUuid());
                     }
                 } else {
-                    if (rsp != null && rsp.getErrorCode() != null) {
+                    if (rsp != null && rsp.getError() != null) {
                         ErrorCode err = new ErrorCode();
-                        err.setCode(rsp.getErrorCode());
-                        err.setDetails(rsp.getError() != null ? rsp.getError() : "ensure secret failed");
+                        err.setCode(rsp.getError());
+                        err.setDetails(rsp.getError());
                         reply.setError(err);
                     } else {
                         reply.setError(operr(rsp != null ? rsp.getError() : "ensure secret failed"));
