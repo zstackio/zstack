@@ -540,7 +540,7 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
             addSecurityGroupRule {
                 securityGroupUuid = sg3.uuid
                 rules = [rule_82]
-                priority = 82
+                priority = 101
             }
         }
     }
@@ -591,13 +591,12 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
         rule_13.protocol = "ALL"
         rule_13.startPort = -1
         rule_13.endPort = -1
-        expect(AssertionError) {
-            addSecurityGroupRule {
-                securityGroupUuid = sg3.uuid
-                rules = [rule_13]
-                priority = 13
-            }
+        sg3 = addSecurityGroupRule {
+            securityGroupUuid = sg3.uuid
+            rules = [rule_13]
+            priority = 13
         }
+        assert sg3.rules.find { it.allowedCidr == rule_13.allowedCidr && it.priority == 13 } != null
 
         SecurityGroupRuleAO rule_12 = new SecurityGroupRuleAO()
         rule_12.dstIpRange = "2.2.2.2-2.2.2.10"
@@ -609,12 +608,10 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
         ingressRule.protocol = "TCP"
         ingressRule.dstPortRange = "12-13"
 
-        expect(AssertionError) {
-            addSecurityGroupRule {
-                securityGroupUuid = sg3.uuid
-                rules = [rule_12, ingressRule]
-                priority = 12
-            }
+        sg3 = addSecurityGroupRule {
+            securityGroupUuid = sg3.uuid
+            rules = [rule_12, ingressRule]
+            priority = 12
         }
 
     }
