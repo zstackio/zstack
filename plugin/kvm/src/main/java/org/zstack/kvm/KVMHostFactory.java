@@ -1,5 +1,6 @@
 package org.zstack.kvm;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -9,6 +10,8 @@ import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.VmNicManager;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleFacade;
+import org.zstack.core.jsonlabel.JsonLabel;
+import org.zstack.core.jsonlabel.JsonLabelInventory;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.CloudBusSteppingCallback;
@@ -75,6 +78,7 @@ import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.IpRangeSet;
+import org.zstack.utils.ShellUtils;
 import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
@@ -85,6 +89,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
+import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -121,6 +126,10 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         GuestOsExtensionPoint,
         HypervisorMessageFactory {
     private static final CLogger logger = Utils.getLogger(KVMHostFactory.class);
+
+    private static final String LIBVIRT_TLS_CA_KEY = "libvirtTLSCA";
+    private static final String LIBVIRT_TLS_PRIVATE_KEY = "libvirtTLSPrivateKey";
+    private static final String CA_DIR = "/var/lib/zstack/pki/CA";
 
     public static final HypervisorType hypervisorType = new HypervisorType(KVMConstant.KVM_HYPERVISOR_TYPE);
     public static final VolumeFormat QCOW2_FORMAT = new VolumeFormat(VolumeConstant.VOLUME_FORMAT_QCOW2, hypervisorType);
@@ -458,8 +467,56 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         bus.send(restartKvmAgentMsg);
     }
 
+    private void initLibvirtTlsCA() {
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            return;
+        }
+
+        try {
+            ShellUtils.run(String.format("mkdir -p %s", CA_DIR));
+            ShellUtils.run("chown -R zstack:zstack /var/lib/zstack/pki");
+
+            File caFile = new File(CA_DIR + "/cacert.pem");
+            File keyFile = new File(CA_DIR + "/cakey.pem");
+
+            // Local CA missing — generate with openssl
+            // NOTE: ShellUtils.run() prepends sudo only to the first command in &&-chains,
+            // so each command must be a separate call.
+            if (!caFile.exists() || !keyFile.exists()) {
+                ShellUtils.run(String.format(
+                        "openssl genrsa -out %s/cakey.pem 4096", CA_DIR));
+                ShellUtils.run(String.format(
+                        "openssl req -new -x509 -days 3650 -key %s/cakey.pem " +
+                        "-out %s/cacert.pem -subj '/O=ZStack/CN=ZStack Libvirt CA'",
+                        CA_DIR, CA_DIR));
+                ShellUtils.run(String.format("chown zstack:zstack %s/cakey.pem %s/cacert.pem",
+                        CA_DIR, CA_DIR));
+                ShellUtils.run(String.format("chmod 600 %s/cakey.pem", CA_DIR));
+                ShellUtils.run(String.format("chmod 644 %s/cacert.pem", CA_DIR));
+            }
+
+            String ca = FileUtils.readFileToString(caFile).trim();
+            String key = FileUtils.readFileToString(keyFile).trim();
+
+            // createIfAbsent: DB has no record → write; DB has record → return DB value
+            JsonLabelInventory caInv = new JsonLabel().createIfAbsent(LIBVIRT_TLS_CA_KEY, ca);
+            JsonLabelInventory keyInv = new JsonLabel().createIfAbsent(LIBVIRT_TLS_PRIVATE_KEY, key);
+
+            // Use DB as source of truth — overwrite local files (HA: MN2 uses MN1's CA from DB)
+            FileUtils.writeStringToFile(caFile, caInv.getLabelValue());
+            FileUtils.writeStringToFile(keyFile, keyInv.getLabelValue());
+            ShellUtils.run(String.format("chmod 600 %s/cakey.pem", CA_DIR));
+            ShellUtils.run(String.format("chmod 644 %s/cacert.pem", CA_DIR));
+
+            logger.info("Libvirt TLS CA initialized and persisted to database");
+        } catch (Exception e) {
+            logger.warn("Failed to initialize libvirt TLS CA", e);
+        }
+    }
+
     @Override
     public boolean start() {
+        initLibvirtTlsCA();
         deployAnsibleModule();
         populateExtensions();
         configKVMDeviceType();

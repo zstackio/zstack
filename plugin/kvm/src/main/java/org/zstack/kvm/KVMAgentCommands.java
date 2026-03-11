@@ -3805,6 +3805,26 @@ public class KVMAgentCommands {
         private boolean reload;
         @GrayVersion(value = "5.0.0")
         private long bandwidth;
+        @GrayVersion(value = "5.5.12")
+        private boolean useTls;
+        @GrayVersion(value = "5.5.12")
+        private String srcHostManagementIp;
+
+        public String getSrcHostManagementIp() {
+            return srcHostManagementIp;
+        }
+
+        public void setSrcHostManagementIp(String srcHostManagementIp) {
+            this.srcHostManagementIp = srcHostManagementIp;
+        }
+
+        public boolean isUseTls() {
+            return useTls;
+        }
+
+        public void setUseTls(boolean useTls) {
+            this.useTls = useTls;
+        }
 
         public Integer getDownTime() {
             return downTime;
