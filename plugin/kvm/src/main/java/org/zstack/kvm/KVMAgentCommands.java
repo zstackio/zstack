@@ -424,7 +424,6 @@ public class KVMAgentCommands {
     }
 
     public static class SecretHostDefineCmd extends AgentCommand {
-        private String envelopeDekBase64;
         /** Base64 envelope of DEK; agent expects this field name (encryptedDek). */
         private String encryptedDek;
         private String vmUuid;
