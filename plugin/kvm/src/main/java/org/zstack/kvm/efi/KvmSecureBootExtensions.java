@@ -209,14 +209,16 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                     existsContentUuid = Collections.emptyList();
                 }
 
+                List<ErrorCode> errors = new ArrayList<>();
                 for (String path : cmd.getPaths()) {
                     VmHostFileTO to = findOneOrNull(readRsp.getHostFiles(), item -> item.getPath().equals(path));
                     if (to == null) {
                         continue;
                     }
                     if (to.getError() != null) {
-                        logger.warn(String.format("failed to read file content from host[uuid=%s] with file %s: %s",
-                                context.hostUuid, path, to.getError()));
+                        errors.add(operr("failed to read file %s", path)
+                                .withOpaque("path", path)
+                                .withException(to.getError()));
                         continue;
                     }
 
@@ -264,7 +266,11 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                     }
                 }
 
-                completion.success();
+                if (errors.isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(operr("failed to read file content from host[uuid=%s]", context.hostUuid).withCause(errors));
+                }
             }
 
             @Override
@@ -406,6 +412,8 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
 
         // whether the NvRam is on the same host as before
         private boolean sameHost = false;
+        private boolean firstReadSuccess = false;
+        private boolean writeSuccess = false;
         private VmHostFileVO vmHostFile;
     }
 
@@ -424,14 +432,6 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                         .orderByDesc(VmHostFileVO_.lastOpDate)
                         .limit(1)
                         .find();
-                context.sameHost = vmHostFile != null && vmHostFile.getHostUuid().equals(context.hostUuid);
-                if (context.sameHost) {
-                    logger.debug(String.format("skip to read/write %s host file for VM[vmUuid=%s]: vm.host is not changed",
-                            context.type, context.vmUuid));
-                    trigger.next();
-                    return;
-                }
-
                 if (vmHostFile == null) {
                     logger.debug(String.format("skip to read/write %s host file for VM[vmUuid=%s]: file is not registered in MN",
                             context.type, context.vmUuid));
@@ -439,6 +439,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                     return;
                 }
 
+                context.sameHost = vmHostFile.getHostUuid().equals(context.hostUuid);
                 SyncVmHostFilesFromHostContext syncContext = new SyncVmHostFilesFromHostContext();
                 syncContext.hostUuid = vmHostFile.getHostUuid();
                 syncContext.vmUuid = context.vmUuid;
@@ -454,12 +455,15 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 syncVmHostFilesFromHost(syncContext, new Completion(trigger) {
                     @Override
                     public void success() {
+                        context.firstReadSuccess = true;
                         trigger.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
+                        logger.warn(String.format("failed to read vm host file for VM[vmUuid=%s] but still continue: %s",
+                                context.vmUuid, errorCode.getReadableDetails()));
+                        trigger.next();
                     }
                 });
             }
@@ -468,7 +472,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
 
             @Override
             public boolean skip(Map data) {
-                return context.sameHost || context.vmHostFile == null;
+                return context.vmHostFile == null || (context.sameHost && context.firstReadSuccess);
             }
 
             @Override
@@ -498,6 +502,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 rewriteVmHostFiles(rewriteContext, new Completion(trigger) {
                     @Override
                     public void success() {
+                        context.writeSuccess = true;
                         trigger.next();
                     }
 
@@ -512,8 +517,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
 
             @Override
             public boolean skip(Map data) {
-                // if context.sameHost is true, we also need to re-read the host file for cache.
-                return context.vmHostFile == null;
+                return !context.writeSuccess;
             }
 
             @Override
