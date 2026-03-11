@@ -18,7 +18,7 @@ public class TaskProgressInventory {
     private Long time;
     private List<TaskProgressInventory> subTasks;
     private String arguments;
-    /** Typed progress detail parsed from opaque. Null when opaque is absent or unrecognized. */
+    /** Typed progress detail parsed from opaque. Null when opaque is absent or parsing fails. */
     private LongJobProgressDetail progressDetail;
 
     public TaskProgressInventory() {

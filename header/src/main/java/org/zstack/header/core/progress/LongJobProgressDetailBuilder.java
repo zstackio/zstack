@@ -142,6 +142,7 @@ public class LongJobProgressDetailBuilder {
             }
 
             LongJobProgressDetail detail = new LongJobProgressDetail();
+            Map<String, Object> extra = new HashMap<>();
 
             // state field
             Object stateVal = inner.get("state");
@@ -156,7 +157,7 @@ public class LongJobProgressDetailBuilder {
 
                 Number percent = toNumber(progress.get("percent"));
                 if (percent != null) {
-                    detail.setPercent((int) Math.round(percent.doubleValue()));
+                    detail.setPercent(Math.max(0, Math.min(100, (int) Math.round(percent.doubleValue()))));
                 }
 
                 // AI agent uses snake_case field names
@@ -205,9 +206,7 @@ public class LongJobProgressDetailBuilder {
                 extraProgress.remove("downloaded_files");
                 extraProgress.remove("total_files");
                 extraProgress.remove("stage");
-                if (!extraProgress.isEmpty()) {
-                    detail.setExtra(extraProgress);
-                }
+                extra.putAll(extraProgress);
             }
 
             // stateReason field — can be String or Map (structured reason with code/description)
@@ -216,6 +215,22 @@ public class LongJobProgressDetailBuilder {
                 detail.setStateReason((String) stateReason);
             } else if (stateReason instanceof Map) {
                 detail.setStateReason(JSONObjectUtil.toJsonString(stateReason));
+            }
+
+            // preserve unknown keys from inner top-level
+            Map<String, Object> extraInner = new HashMap<>(inner);
+            extraInner.remove("state");
+            extraInner.remove("progress");
+            extraInner.remove("state_reason");
+            extra.putAll(extraInner);
+
+            // preserve unknown keys from raw outer-level
+            Map<String, Object> extraRaw = new HashMap<>(raw);
+            extraRaw.remove("data");
+            extra.putAll(extraRaw);
+
+            if (!extra.isEmpty()) {
+                detail.setExtra(extra);
             }
 
             return detail;
