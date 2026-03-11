@@ -104,6 +104,8 @@ public class ErrorCode implements Serializable, Cloneable {
         this.message = other.message;
         this.formatArgs = other.formatArgs == null ? null : other.formatArgs.clone();
         this.globalErrorCode = other.globalErrorCode;
+        this.cost = other.cost;
+        this.opaque = other.opaque;
     }
 
     public void setCode(String code) {
