@@ -5,12 +5,12 @@ DELIMITER $$
 DROP FUNCTION IF EXISTS `Json_getKeyValue` $$
 
 CREATE FUNCTION `Json_getKeyValue`(
-    in_JsonArray VARCHAR(4096),
+    in_JsonArray MEDIUMTEXT,
     in_KeyName VARCHAR(64)
-) RETURNS VARCHAR(4096) CHARSET utf8
+) RETURNS MEDIUMTEXT CHARSET utf8
 
 BEGIN
-    DECLARE vs_return, vs_JsonArray, vs_JsonString, vs_Json, vs_KeyName VARCHAR(4096);
+    DECLARE vs_return, vs_JsonArray, vs_JsonString, vs_Json, vs_KeyName MEDIUMTEXT;
     DECLARE vi_pos1, vi_pos2 SMALLINT UNSIGNED;
 
     SET vs_JsonArray = TRIM(in_JsonArray);
