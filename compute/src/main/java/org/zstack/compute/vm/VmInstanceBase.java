@@ -929,6 +929,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         amsg.setL3NetworkUuids(VmNicHelper.getL3Uuids(VmNicInventory.valueOf(self.getVmNics())));
         amsg.setDryRun(true);
         amsg.setListAllHosts(true);
+        amsg.setAllowNoL3Networks(true);
 
         bus.send(amsg, new CloudBusCallBack(completion) {
             @Override
