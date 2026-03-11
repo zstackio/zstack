@@ -1045,7 +1045,46 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void changeVmIp(final String l3Uuid, final Map<Integer, String> staticIpMap, final Completion completion) {
+    static class IpOverrideInfo {
+        private String netmask;
+        private String gateway;
+        private String ipv6Gateway;
+        private String ipv6Prefix;
+
+        public String getNetmask() {
+            return netmask;
+        }
+
+        public void setNetmask(String netmask) {
+            this.netmask = netmask;
+        }
+
+        public String getGateway() {
+            return gateway;
+        }
+
+        public void setGateway(String gateway) {
+            this.gateway = gateway;
+        }
+
+        public String getIpv6Gateway() {
+            return ipv6Gateway;
+        }
+
+        public void setIpv6Gateway(String ipv6Gateway) {
+            this.ipv6Gateway = ipv6Gateway;
+        }
+
+        public String getIpv6Prefix() {
+            return ipv6Prefix;
+        }
+
+        public void setIpv6Prefix(String ipv6Prefix) {
+            this.ipv6Prefix = ipv6Prefix;
+        }
+    }
+
+    private void changeVmIp(final String l3Uuid, final Map<Integer, String> staticIpMap, final IpOverrideInfo overrideInfo, final Completion completion) {
         final VmNicVO targetNic = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
             @Override
             public VmNicVO call(VmNicVO arg) {
@@ -1104,6 +1143,15 @@ public class VmInstanceBase extends AbstractVmInstance {
                             amsg.setL3NetworkUuid(l3Uuid);
                             amsg.setRequiredIp(entry.getValue());
                             amsg.setIpVersion(entry.getKey());
+                            if (overrideInfo != null) {
+                                if (entry.getKey() == IPv6Constants.IPv4) {
+                                    amsg.setNetmask(overrideInfo.getNetmask());
+                                    amsg.setGateway(overrideInfo.getGateway());
+                                } else if (entry.getKey() == IPv6Constants.IPv6) {
+                                    amsg.setIpv6Gateway(overrideInfo.getIpv6Gateway());
+                                    amsg.setIpv6Prefix(overrideInfo.getIpv6Prefix());
+                                }
+                            }
                             bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, l3Uuid);
                             bus.send(amsg, new CloudBusCallBack(trigger) {
                                 @Override
@@ -3690,7 +3738,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             staticIpMap.put(IPv6Constants.IPv6, msg.getIp6());
         }
 
-        changeVmIp(msg.getL3NetworkUuid(), staticIpMap, new Completion(msg, completion) {
+        IpOverrideInfo overrideInfo = new IpOverrideInfo();
+        overrideInfo.setNetmask(msg.getNetmask());
+        overrideInfo.setGateway(msg.getGateway());
+        overrideInfo.setIpv6Gateway(msg.getIpv6Gateway());
+        overrideInfo.setIpv6Prefix(msg.getIpv6Prefix());
+
+        changeVmIp(msg.getL3NetworkUuid(), staticIpMap, overrideInfo, new Completion(msg, completion) {
             @Override
             public void success() {
                 if (msg.getIp() != null) {
@@ -6365,7 +6419,17 @@ public class VmInstanceBase extends AbstractVmInstance {
                             trigger.next();
                             return;
                         }
-                        allocateIp(destL3, nic, new ReturnValueCompletion<List<UsedIpInventory>>(chain) {
+                        IpOverrideInfo nicOverrideInfo = null;
+                        Map<String, NicIpAddressInfo> nicNetworkInfo = new StaticIpOperator().getNicNetworkInfoBySystemTag(msg.getSystemTags());
+                        NicIpAddressInfo nicIpInfo = nicNetworkInfo.get(msg.getDestL3NetworkUuid());
+                        if (nicIpInfo != null) {
+                            nicOverrideInfo = new IpOverrideInfo();
+                            nicOverrideInfo.setNetmask(nicIpInfo.ipv4Netmask);
+                            nicOverrideInfo.setGateway(nicIpInfo.ipv4Gateway);
+                            nicOverrideInfo.setIpv6Gateway(nicIpInfo.ipv6Gateway);
+                            nicOverrideInfo.setIpv6Prefix(nicIpInfo.ipv6Prefix);
+                        }
+                        allocateIp(destL3, nic, nicOverrideInfo, new ReturnValueCompletion<List<UsedIpInventory>>(chain) {
                             @Override
                             public void success(List<UsedIpInventory> returnValue) {
                                 data.put(VmInstanceConstant.Params.VmAllocateNicFlow_ips.toString(), returnValue);
@@ -6666,7 +6730,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void allocateIp(L3NetworkInventory l3, VmNicInventory nic,final ReturnValueCompletion<List<UsedIpInventory>> completion) {
+    private void allocateIp(L3NetworkInventory l3, VmNicInventory nic, final IpOverrideInfo overrideInfo, final ReturnValueCompletion<List<UsedIpInventory>> completion) {
         L3NetworkInventory nw = l3;
         Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(getSelf().getUuid());
         List<Integer> ipVersions = nw.getIpVersions();
@@ -6690,6 +6754,15 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
             }
             msg.setIpVersion(ipversion);
+            if (overrideInfo != null) {
+                if (ipversion == IPv6Constants.IPv4) {
+                    msg.setNetmask(overrideInfo.getNetmask());
+                    msg.setGateway(overrideInfo.getGateway());
+                } else if (ipversion == IPv6Constants.IPv6) {
+                    msg.setIpv6Gateway(overrideInfo.getIpv6Gateway());
+                    msg.setIpv6Prefix(overrideInfo.getIpv6Prefix());
+                }
+            }
             bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nw.getUuid());
             msgs.add(msg);
         }

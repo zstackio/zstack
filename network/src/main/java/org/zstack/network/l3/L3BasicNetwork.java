@@ -556,6 +556,8 @@ public class L3BasicNetwork implements L3Network {
                     return;
                 }
 
+                ip = overrideUsedIpIfNeeded(msg, ip);
+
                 logger.debug(String.format("Ip allocator strategy[%s] successfully allocates an ip[%s]", strategyType, ip.getIp()));
                 reply.setIpInventory(ip);
                 bus.reply(msg, reply);
@@ -567,6 +569,43 @@ public class L3BasicNetwork implements L3Network {
                 return "allocate-ip-of-l3-" + msg.getL3NetworkUuid();
             }
         });
+    }
+
+    private UsedIpInventory overrideUsedIpIfNeeded(AllocateIpMsg msg, UsedIpInventory ip) {
+        String overrideNetmask = null;
+        String overrideGateway = null;
+
+        if (ip.getIpVersion() != null && ip.getIpVersion() == IPv6Constants.IPv4) {
+            if (msg.getNetmask() != null) {
+                overrideNetmask = msg.getNetmask();
+            }
+            if (msg.getGateway() != null) {
+                overrideGateway = msg.getGateway();
+            }
+        } else if (ip.getIpVersion() != null && ip.getIpVersion() == IPv6Constants.IPv6) {
+            if (msg.getIpv6Prefix() != null) {
+                overrideNetmask = IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(ip.getIp() + "/" + msg.getIpv6Prefix());
+            }
+            if (msg.getIpv6Gateway() != null) {
+                overrideGateway = msg.getIpv6Gateway().isEmpty() ? "" : IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIpv6Gateway());
+            }
+        }
+
+        if (overrideNetmask != null || overrideGateway != null) {
+            UsedIpVO vo = dbf.findByUuid(ip.getUuid(), UsedIpVO.class);
+            if (vo != null) {
+                if (overrideNetmask != null) {
+                    vo.setNetmask(overrideNetmask);
+                }
+                if (overrideGateway != null) {
+                    vo.setGateway(overrideGateway);
+                }
+                vo = dbf.updateAndRefresh(vo);
+                ip = UsedIpInventory.valueOf(vo);
+            }
+        }
+
+        return ip;
     }
 
     private void handleApiMessage(APIMessage msg) {
