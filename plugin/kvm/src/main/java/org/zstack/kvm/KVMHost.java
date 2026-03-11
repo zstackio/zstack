@@ -3163,6 +3163,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setDestHostIp(dstHostMigrateIp);
                         cmd.setSrcHostIp(srcHostMigrateIp);
                         cmd.setDestHostManagementIp(dstHostMnIp);
+                        cmd.setSrcHostManagementIp(srcHostMnIp);
                         cmd.setMigrateFromDestination(migrateFromDestination);
                         cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
                         cmd.setVmUuid(vmUuid);
@@ -3174,6 +3175,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setDownTime(s.downTime);
                         cmd.setBandwidth(s.bandwidth);
                         cmd.setNics(nicTos);
+                        cmd.setUseTls(KVMGlobalConfig.LIBVIRT_TLS_ENABLED.value(Boolean.class));
 
                         if (s.diskMigrationMap != null) {
                             Map<String, VolumeTO> diskMigrationMap = new HashMap<>();
