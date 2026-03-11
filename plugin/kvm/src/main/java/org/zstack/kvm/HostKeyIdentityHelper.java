@@ -99,7 +99,7 @@ public final class HostKeyIdentityHelper {
             try {
                 dbf.persist(vo);
                 return;
-            } catch (EntityExistsException | PersistenceException e) {
+            } catch (PersistenceException e) {
                 if (!ExceptionDSL.isCausedBy(e, EntityExistsException.class)
                         && !ExceptionDSL.isCausedBy(e, SQLIntegrityConstraintViolationException.class, "Duplicate entry")) {
                     throw e;
