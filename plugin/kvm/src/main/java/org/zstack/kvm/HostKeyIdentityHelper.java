@@ -7,10 +7,14 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostKeyIdentityVO;
 import org.zstack.header.host.HostKeyIdentityVO_;
 import org.zstack.header.secret.SecretHostDefineReply;
+import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.EntityExistsException;
+import javax.persistence.PersistenceException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.Base64;
 
 /**
@@ -92,8 +96,19 @@ public final class HostKeyIdentityHelper {
             vo.setFingerprint(fingerprint);
             vo.setVerified(verified);
             vo.setCreateDate(new java.sql.Timestamp(System.currentTimeMillis()));
-            dbf.persist(vo);
-            return;
+            try {
+                dbf.persist(vo);
+                return;
+            } catch (EntityExistsException | PersistenceException e) {
+                if (!ExceptionDSL.isCausedBy(e, EntityExistsException.class)
+                        && !ExceptionDSL.isCausedBy(e, SQLIntegrityConstraintViolationException.class, "Duplicate entry")) {
+                    throw e;
+                }
+                vo = getHostKeyIdentity(dbf, hostUuid);
+                if (vo == null) {
+                    throw e;
+                }
+            }
         }
         vo.setPublicKey(keyToSave);
         vo.setFingerprint(fingerprint);
