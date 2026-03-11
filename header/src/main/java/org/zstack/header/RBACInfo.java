@@ -33,6 +33,11 @@ public class RBACInfo implements RBACDescription {
                 .build();
 
         roleBuilder()
+                .name("resource-viewer")
+                .uuid(AccountConstant.ALL_RESOURCES_READABLE_ROLE_UUID)
+                .build();
+
+        roleBuilder()
                 .name("sod-system-administrator")
                 .uuid(AccountConstant.SOD_SYSTEM_ADMIN_ROLE_UUID)
                 .build();

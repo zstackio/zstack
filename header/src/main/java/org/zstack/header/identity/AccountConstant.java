@@ -41,6 +41,12 @@ public interface AccountConstant {
     String OTHER_ROLE_UUID = "80315b1f85314917826b182bf6def552";
     String LEGACY_ROLE_UUID = "85cfac2138494b2db6501881e1e68045";
 
+    /**
+     * Allow querying all resources.
+     * Querying audit data is not allowed
+     */
+    String ALL_RESOURCES_READABLE_ROLE_UUID = "8550153cd5474c79850566787fe0f055";
+
     // for: Separation of Duties
     String SOD_SYSTEM_ADMIN_ROLE_UUID = "8550125df53c54edb33d1b8ae83ded55";
     String SOD_SECURITY_ADMIN_ROLE_UUID = "855013d87cf55944b4a6c6ae729b3f55";
