@@ -5328,9 +5328,9 @@ public class KVMHost extends HostBase implements Host {
             bus.reply(msg, reply);
             return;
         }
-        String storedFingerprint = identity.getFingerprint();
+        String storedFingerprint = StringUtils.trimToNull(identity.getFingerprint());
         String computed = HostKeyIdentityHelper.fingerprintFromPublicKey(pubKey);
-        if (!storedFingerprint.equals(computed)) {
+        if (storedFingerprint == null || !StringUtils.equals(storedFingerprint, computed)) {
             reply.setError(operr("host public key fingerprint mismatch, key may be corrupted or tampered"));
             bus.reply(msg, reply);
             return;
