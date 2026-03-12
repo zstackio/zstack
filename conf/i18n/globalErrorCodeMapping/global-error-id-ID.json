@@ -35,7 +35,7 @@
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10008": "tidak dapat mengatur ulang volume[uuid:%s] ke snapshot[uuid:%s], volume vm[uuid:%s] tidak dalam keadaan Berhenti, keadaan saat ini adalah %s",
   "ORG_ZSTACK_STORAGE_PRIMARY_10044": "tidak dapat menemukan primary storage yang memenuhi syarat; error adalah %s",
   "ORG_ZSTACK_NETWORK_SERVICE_NFVINSTGROUP_10000": "Gagal memperbarui status grup: %s",
-  "ORG_ZSTACK_STORAGE_PRIMARY_10050": "Konflik primaryStorageUuid: Primary storage yang ditentukan oleh compute offering adalah %s, sementara primary storage yang ditentukan dalam parameter pembuatan adalah %s",
+  "ORG_ZSTACK_STORAGE_PRIMARY_10050": "Konflik primaryStorageUuid: Primary storage yang ditentukan oleh instance offering adalah %s, sementara primary storage yang ditentukan dalam parameter pembuatan adalah %s",
   "ORG_ZSTACK_STORAGE_PRIMARY_10051": "Konflik primaryStorageUuid: Primary storage yang ditentukan oleh root disk offering adalah %s, sementara primary storage yang ditentukan dalam parameter pembuatan adalah %s",
   "ORG_ZSTACK_V2V_10008": "Alamat MAC [%s] yang sama tidak diperbolehkan dalam jaringan[%s]",
   "ORG_ZSTACK_V2V_10009": "Alamat MAC duplikat [%s] dalam jaringan[%s]",

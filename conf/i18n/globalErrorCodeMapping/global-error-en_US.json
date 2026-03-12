@@ -35,7 +35,7 @@
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10008": "unable to reset volume[uuid:%s] to snapshot[uuid:%s], the vm[uuid:%s] volume is not in Stopped state, current state is %s",
   "ORG_ZSTACK_STORAGE_PRIMARY_10044": "cannot find any qualified primary storage; errors are %s",
   "ORG_ZSTACK_NETWORK_SERVICE_NFVINSTGROUP_10000": "Failed to update group status: %s",
-  "ORG_ZSTACK_STORAGE_PRIMARY_10050": "primaryStorageUuid Conflict: The primary storage specified by the compute offering is %s, while the primary storage specified in the creation parameter is %s.",
+  "ORG_ZSTACK_STORAGE_PRIMARY_10050": "primaryStorageUuid Conflict: The primary storage specified by the instance offering is %s, while the primary storage specified in the creation parameter is %s.",
   "ORG_ZSTACK_STORAGE_PRIMARY_10051": "primaryStorageUuid Conflict: The primary storage specified by the root disk offering is %s, while the primary storage specified in the creation parameter is %s.",
   "ORG_ZSTACK_V2V_10008": "Not allowed the same MAC address [%s] in network[%s]",
   "ORG_ZSTACK_V2V_10009": "Duplicate MAC address [%s] in network[%s]",

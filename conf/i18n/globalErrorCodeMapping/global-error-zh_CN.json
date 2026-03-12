@@ -29,7 +29,7 @@
   "ORG_ZSTACK_STORAGE_PRIMARY_10047": "cidr[%s] 输入格式错误",
   "ORG_ZSTACK_LICENSE_COMPUTE_SERVER_10050": "ZSha2 显示存在另一个管理节点，但数据库中未找到该节点",
   "ORG_ZSTACK_STORAGE_PRIMARY_10046": "仅允许一个主要存储 CIDR 系统标签，但获得了 %d 个",
-  "ORG_ZSTACK_STORAGE_PRIMARY_10049": "集群Uuid冲突，实例提供中指定的集群是%s，而创建参数中指定的集群是%s",
+  "ORG_ZSTACK_STORAGE_PRIMARY_10049": "集群Uuid冲突，计算规格中指定的集群是%s，而创建参数中指定的集群是%s",
   "ORG_ZSTACK_LICENSE_COMPUTE_SERVER_10052": "未找到解注册的appId!",
   "ORG_ZSTACK_STORAGE_PRIMARY_10042": "请指定分配空间的目的",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10008": "无法将卷[uuid:%s]恢复至快照[uuid:%s]，关联的虚拟机[uuid:%s]卷当前不在已停止状态，当前状态是%s",

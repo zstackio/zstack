@@ -35,7 +35,7 @@
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10008": "볼륨[uuid:%s]을 스냅샷[uuid:%s]으로 재설정할 수 없습니다, vm[uuid:%s] 볼륨이 Stopped 상태가 아니며, 현재 상태는 %s입니다",
   "ORG_ZSTACK_STORAGE_PRIMARY_10044": "적합한 기본 스토리지를 찾을 수 없습니다; 오류: %s",
   "ORG_ZSTACK_NETWORK_SERVICE_NFVINSTGROUP_10000": "그룹 상태 업데이트 실패: %s",
-  "ORG_ZSTACK_STORAGE_PRIMARY_10050": "primaryStorageUuid 충돌: 컴퓨트 오퍼링에서 지정한 기본 스토리지가 %s이며, 생성 파라미터에서 지정한 기본 스토리지가 %s입니다",
+  "ORG_ZSTACK_STORAGE_PRIMARY_10050": "primaryStorageUuid 충돌: 인스턴스 오퍼링에서 지정한 기본 스토리지가 %s이며, 생성 파라미터에서 지정한 기본 스토리지가 %s입니다",
   "ORG_ZSTACK_STORAGE_PRIMARY_10051": "primaryStorageUuid 충돌: 루트 디스크 오퍼링에서 지정한 기본 스토리지가 %s이며, 생성 파라미터에서 지정한 기본 스토리지가 %s입니다",
   "ORG_ZSTACK_V2V_10008": "네트워크[%s]에서 동일한 MAC 주소 [%s]가 허용되지 않습니다",
   "ORG_ZSTACK_V2V_10009": "네트워크[%s]에서 중복된 MAC 주소 [%s]",
