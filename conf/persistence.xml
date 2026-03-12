@@ -20,6 +20,7 @@
         <class>org.zstack.header.managementnode.ManagementNodeContextVO</class>
         <class>org.zstack.header.tpm.entity.TpmVO</class>
         <class>org.zstack.header.vm.additions.VmHostFileVO</class>
+        <class>org.zstack.header.vm.additions.VmHostBackupFileVO</class>
         <class>org.zstack.header.vm.additions.VmHostFileContentVO</class>
         <class>org.zstack.header.zone.ZoneVO</class>
         <class>org.zstack.header.zone.ZoneEO</class>
