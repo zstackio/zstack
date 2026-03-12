@@ -1,5 +1,7 @@
 package org.zstack.core.db;
 
+import com.google.common.collect.Maps;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.NestedExceptionUtils;
@@ -66,7 +68,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         Field eoSoftDeleteColumn;
         Class eoClass;
         Class voClass;
-        Map<EntityEvent, EntityLifeCycleCallback> listeners = new HashMap<EntityEvent, EntityLifeCycleCallback>();
+        Map<EntityEvent, List<EntityLifeCycleCallback>> listeners = Maps.newConcurrentMap();
 
         EntityInfo(Class voClazz) {
             voClass = voClazz;
@@ -82,12 +84,16 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
             EO at = (EO) voClazz.getAnnotation(EO.class);
             if (at != null) {
                 eoClass = at.EOClazz();
-                DebugUtils.Assert(eoClass != null, String.format("cannot find EO entity specified by VO entity[%s]", voClazz.getName()));
+                DebugUtils.Assert(eoClass != null,
+                        String.format("cannot find EO entity specified by VO entity[%s]", voClazz.getName()));
                 eoPrimaryKeyField = FieldUtils.getAnnotatedField(Id.class, eoClass);
-                DebugUtils.Assert(eoPrimaryKeyField != null, String.format("cannot find primary key field(@Id annotated) in EO entity[%s]", eoClass.getName()));
+                DebugUtils.Assert(eoPrimaryKeyField != null, String
+                        .format("cannot find primary key field(@Id annotated) in EO entity[%s]", eoClass.getName()));
                 eoPrimaryKeyField.setAccessible(true);
                 eoSoftDeleteColumn = FieldUtils.getField(at.softDeletedColumn(), eoClass);
-                DebugUtils.Assert(eoSoftDeleteColumn != null, String.format("cannot find soft delete column[%s] in EO entity[%s]", at.softDeletedColumn(), eoClass.getName()));
+                DebugUtils.Assert(eoSoftDeleteColumn != null,
+                        String.format("cannot find soft delete column[%s] in EO entity[%s]", at.softDeletedColumn(),
+                                eoClass.getName()));
                 eoSoftDeleteColumn.setAccessible(true);
             }
 
@@ -108,7 +114,8 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
             for (final SoftDeletionCascade at : ats.value()) {
                 final Class parent = at.parent();
                 if (!parent.isAnnotationPresent(Entity.class)) {
-                    throw new CloudRuntimeException(String.format("class[%s] has annotation @SoftDeletionCascade but its parent class[%s] is not annotated by @Entity",
+                    throw new CloudRuntimeException(String.format(
+                            "class[%s] has annotation @SoftDeletionCascade but its parent class[%s] is not annotated by @Entity",
                             voClass, parent));
                 }
 
@@ -131,7 +138,8 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
                     @Override
                     @Transactional
                     public void postSoftDelete(Collection entityIds, Class entityClass) {
-                        String sql = String.format("delete from %s me where me.%s in (:ids)", voClass.getSimpleName(), at.joinColumn());
+                        String sql = String.format("delete from %s me where me.%s in (:ids)", voClass.getSimpleName(),
+                                at.joinColumn());
                         Query q = getEntityManager().createQuery(sql);
                         q.setParameter("ids", entityIds);
                         q.executeUpdate();
@@ -148,7 +156,8 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
             final Class parent = voClass.getSuperclass();
             if (!parent.isAnnotationPresent(Entity.class)) {
-                throw new CloudRuntimeException(String.format("class[%s] has annotation @PrimaryKeyJoinColumn but its parent class[%s] is not annotated by @Entity",
+                throw new CloudRuntimeException(String.format(
+                        "class[%s] has annotation @PrimaryKeyJoinColumn but its parent class[%s] is not annotated by @Entity",
                         voClass, parent));
             }
 
@@ -245,7 +254,8 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
             }
 
             SQLIntegrityConstraintViolationException me = (SQLIntegrityConstraintViolationException) rootCause;
-            if (!(me.getErrorCode() == 1062 && "23000".equals(me.getSQLState()) && me.getMessage().contains("PRIMARY"))) {
+            if (!(me.getErrorCode() == 1062 && "23000".equals(me.getSQLState())
+                    && me.getMessage().contains("PRIMARY"))) {
                 throw de;
             }
 
@@ -253,9 +263,12 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
                 throw de;
             }
 
-            // at this point, the error is caused by a update tried on VO entity which has been soft deleted. This is mostly
-            // caused by a deletion cascade(e.g deleting host will cause vm running on it to be deleted, and deleting vm is trying to return capacity
-            // to host which has been soft deleted, because vm deletion is executed in async manner). In this case, we make the update to EO table
+            // at this point, the error is caused by a update tried on VO entity which has
+            // been soft deleted. This is mostly
+            // caused by a deletion cascade(e.g deleting host will cause vm running on it to
+            // be deleted, and deleting vm is trying to return capacity
+            // to host which has been soft deleted, because vm deletion is executed in async
+            // manner). In this case, we make the update to EO table
 
             Object idval = getEOPrimaryKeyValue(entity);
             Object eo = getEntityManager().find(eoClass, idval);
@@ -360,8 +373,10 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
         @Transactional
         private void nativeSqlDelete(Collection ids) {
-            // native sql can avoid JPA cascades a deletion to parent entity when deleting a child entity
-            String sql = String.format("delete from %s where %s in (:ids)", voClass.getSimpleName(), voPrimaryKeyField.getName());
+            // native sql can avoid JPA cascades a deletion to parent entity when deleting a
+            // child entity
+            String sql = String.format("delete from %s where %s in (:ids)", voClass.getSimpleName(),
+                    voPrimaryKeyField.getName());
             Query q = getEntityManager().createNativeQuery(sql);
             q.setParameter("ids", ids);
             q.executeUpdate();
@@ -418,7 +433,8 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
                 sql = String.format("select e from %s e", voClass.getSimpleName());
                 query = getEntityManager().createQuery(sql, voClass);
             } else {
-                sql = String.format("select e from %s e where e.%s in (:ids)", voClass.getSimpleName(), voPrimaryKeyField.getName());
+                sql = String.format("select e from %s e where e.%s in (:ids)", voClass.getSimpleName(),
+                        voPrimaryKeyField.getName());
                 query = getEntityManager().createQuery(sql, voClass);
                 query.setParameter("ids", ids);
             }
@@ -429,7 +445,8 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
         @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
         boolean isExist(Object id) {
-            String sql = String.format("select count(*) from %s ref where ref.%s = :id", voClass.getSimpleName(), voPrimaryKeyField.getName());
+            String sql = String.format("select count(*) from %s ref where ref.%s = :id", voClass.getSimpleName(),
+                    voPrimaryKeyField.getName());
             TypedQuery<Long> q = getEntityManager().createQuery(sql, Long.class);
             q.setParameter("id", id);
             q.setMaxResults(1);
@@ -438,13 +455,25 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
 
         void installLifeCycleCallback(EntityEvent evt, EntityLifeCycleCallback l) {
-            listeners.put(evt, l);
+            List<EntityLifeCycleCallback> cbs = listeners.computeIfAbsent(evt, k -> new CopyOnWriteArrayList<>());
+            if (!cbs.contains(l)) {
+                cbs.add(l);
+            }
+        }
+
+        void uninstallLifeCycleCallback(EntityEvent evt, EntityLifeCycleCallback l) {
+            List<EntityLifeCycleCallback> cbs = listeners.get(evt);
+            if (cbs != null) {
+                cbs.remove(l);
+            }
         }
 
         void fireLifeCycleEvent(EntityEvent evt, Object o) {
-            EntityLifeCycleCallback cb = listeners.get(evt);
-            if (cb != null) {
-                cb.entityLifeCycleEvent(evt, o);
+            List<EntityLifeCycleCallback> cbs = listeners.get(evt);
+            if (cbs != null) {
+                for (EntityLifeCycleCallback cb : cbs) {
+                    cb.entityLifeCycleEvent(evt, o);
+                }
             }
         }
     }
@@ -491,7 +520,8 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
     @Override
     public <T> SimpleQuery<T> createQuery(Class<T> entityClass) {
-        assert entityClass.isAnnotationPresent(Entity.class) : entityClass.getName() + " is not annotated by JPA @Entity";
+        assert entityClass.isAnnotationPresent(Entity.class)
+                : entityClass.getName() + " is not annotated by JPA @Entity";
         return new SimpleQueryImpl<T>(entityClass);
     }
 
@@ -529,7 +559,6 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
         getEntityInfo(entityClazz).removeByPrimaryKeys(priKeys);
     }
-
 
     @Override
     public <T> T updateAndRefresh(T entity) {
@@ -636,7 +665,9 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
                 sb.append(c.getName()).append(",");
             }
 
-            String err = String.format("entityForTranscationCallback is called but transcation is not active. Did you forget adding @Transactional to method??? [operation: %s, entity classes: %s]", op, sb.toString());
+            String err = String.format(
+                    "entityForTranscationCallback is called but transcation is not active. Did you forget adding @Transactional to method??? [operation: %s, entity classes: %s]",
+                    op, sb.toString());
             logger.warn(err);
         }
     }
@@ -668,7 +699,8 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         try {
             Field id = seqTable.getDeclaredField("id");
             if (id == null) {
-                throw new CloudRuntimeException(String.format("sequence VO[%s] must have 'id' field", seqTable.getName()));
+                throw new CloudRuntimeException(
+                        String.format("sequence VO[%s] must have 'id' field", seqTable.getName()));
             }
             Object vo = seqTable.newInstance();
             vo = persistAndRefresh(vo);
@@ -770,7 +802,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     @Override
     @DeadlockAutoRestart
     public void eoCleanup(Class VOClazz, Object id) {
-        if(id == null) {
+        if (id == null) {
             throw new RuntimeException(String.format("Cleanup %s EO  fail, id is null", VOClazz.getSimpleName()));
         }
 
@@ -798,7 +830,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     }
 
     private void buildEntityInfo() {
-        BeanUtils.reflections.getTypesAnnotatedWith(Entity.class).forEach(clz-> {
+        BeanUtils.reflections.getTypesAnnotatedWith(Entity.class).forEach(clz -> {
             entityInfoMap.put(clz, new EntityInfo(clz));
         });
     }
@@ -820,7 +852,8 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
             }
         }
 
-        for (SoftDeleteEntityByEOExtensionPoint ext : pluginRgty.getExtensionList(SoftDeleteEntityByEOExtensionPoint.class)) {
+        for (SoftDeleteEntityByEOExtensionPoint ext : pluginRgty
+                .getExtensionList(SoftDeleteEntityByEOExtensionPoint.class)) {
             for (Class eoClass : ext.getEOClassForSoftDeleteEntityExtension()) {
                 List<SoftDeleteEntityByEOExtensionPoint> exts = softDeleteByEOExtensions.get(eoClass);
                 if (exts == null) {
@@ -874,6 +907,20 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     }
 
     @Override
+    public void uninstallEntityLifeCycleCallback(Class clz, EntityEvent evt, EntityLifeCycleCallback cb) {
+        if (clz != null) {
+            EntityInfo info = entityInfoMap.get(clz);
+            if (info != null) {
+                info.uninstallLifeCycleCallback(evt, cb);
+            }
+        } else {
+            for (EntityInfo info : entityInfoMap.values()) {
+                info.uninstallLifeCycleCallback(evt, cb);
+            }
+        }
+    }
+
+    @Override
     public boolean stop() {
         return true;
     }
@@ -881,7 +928,8 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     void entityEvent(EntityEvent evt, Object entity) {
         EntityInfo info = entityInfoMap.get(entity.getClass());
         if (info == null) {
-            logger.warn(String.format("cannot find EntityInfo for the class[%s], not entity events will be fired", entity.getClass()));
+            logger.warn(String.format("cannot find EntityInfo for the class[%s], not entity events will be fired",
+                    entity.getClass()));
             return;
         }
 
