@@ -372,6 +372,100 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class CreatePublicKeyCmd extends AgentCommand {
+    }
+
+    public static class CreatePublicKeyResponse extends AgentResponse {
+    }
+
+    public static class GetPublicKeyCmd extends AgentCommand {
+    }
+
+    public static class GetPublicKeyResponse extends AgentResponse {
+        private String publicKey;
+
+        public String getPublicKey() {
+            return publicKey;
+        }
+
+        public void setPublicKey(String publicKey) {
+            this.publicKey = publicKey;
+        }
+    }
+
+    public static class RotatePublicKeyCmd extends AgentCommand {
+    }
+
+    public static class RotatePublicKeyResponse extends AgentResponse {
+    }
+
+    public static class VerifyPublicKeyCmd extends AgentCommand {
+    }
+
+    public static class VerifyPublicKeyResponse extends AgentResponse {
+    }
+
+    public static class SecretHostDefineCmd extends AgentCommand {
+        /** Base64 envelope of DEK; agent expects this field name (encryptedDek). */
+        private String encryptedDek;
+        private String vmUuid;
+        private String purpose;
+        private String providerName;
+        private String description;
+
+        public String getEncryptedDek() {
+            return encryptedDek;
+        }
+
+        public void setEncryptedDek(String encryptedDek) {
+            this.encryptedDek = encryptedDek;
+        }
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getPurpose() {
+            return purpose;
+        }
+
+        public void setPurpose(String purpose) {
+            this.purpose = purpose;
+        }
+
+        public String getProviderName() {
+            return providerName;
+        }
+
+        public void setProviderName(String providerName) {
+            this.providerName = providerName;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+    }
+
+    public static class SecretHostDefineResponse extends AgentResponse {
+        private String secretUuid;
+
+        public String getSecretUuid() {
+            return secretUuid;
+        }
+
+        public void setSecretUuid(String secretUuid) {
+            this.secretUuid = secretUuid;
+        }
+    }
+
     public static class PingCmd extends AgentCommand {
         public String hostUuid;
         public Map<String, Object> configs;

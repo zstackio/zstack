@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostKeyIdentityVO` (
     `hostUuid` varchar(32) NOT NULL UNIQUE,
     `publicKey` text NOT NULL,
     `fingerprint` varchar(128) NOT NULL,
+    `verified` boolean NOT NULL DEFAULT FALSE,
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
     PRIMARY KEY (`hostUuid`),

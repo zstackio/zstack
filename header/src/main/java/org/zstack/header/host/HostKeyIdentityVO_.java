@@ -9,6 +9,7 @@ public class HostKeyIdentityVO_ {
     public static volatile SingularAttribute<HostKeyIdentityVO, String> hostUuid;
     public static volatile SingularAttribute<HostKeyIdentityVO, String> publicKey;
     public static volatile SingularAttribute<HostKeyIdentityVO, String> fingerprint;
+    public static volatile SingularAttribute<HostKeyIdentityVO, Boolean> verified;
     public static volatile SingularAttribute<HostKeyIdentityVO, Timestamp> createDate;
     public static volatile SingularAttribute<HostKeyIdentityVO, Timestamp> lastOpDate;
 }

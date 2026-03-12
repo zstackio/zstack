@@ -122,6 +122,18 @@ public interface KVMConstant {
     String KVM_UPDATE_HOST_NQN_PATH = "/host/nqn/update";
     String KVM_UPDATE_HOSTNAME_PATH = "/host/hostname/update";
 
+    String KVM_CREATE_ENVELOPE_KEY_PATH = "/host/key/envelope/createEnvelopeKey";
+    String KVM_GET_ENVELOPE_KEY_PATH = "/host/key/envelope/getEnvelopePublicKey";
+    String KVM_ROTATE_ENVELOPE_KEY_PATH = "/host/key/envelope/rotateEnvelopeKey";
+    String KVM_VERIFY_ENVELOPE_KEY_PATH = "/host/key/envelope/checkEnvelopeKey";
+    String KVM_ENSURE_SECRET_PATH = "/host/key/envelope/ensureSecret";
+
+    /** HTTP timeout in seconds for envelope key sync (verify/create/rotate/get) to agent. */
+    long ENVELOPE_KEY_HTTP_TIMEOUT_SEC = 5L;
+
+    /** Max size in bytes for DEK payload in SecretHostDefine (decoded from dekBase64). */
+    int MAX_DEK_BYTES = 1024;
+
     String KVM_HOST_FILE_DOWNLOAD_PATH = "/host/file/download";
     String KVM_HOST_FILE_UPLOAD_PATH = "/host/file/upload";
     String KVM_HOST_FILE_DOWNLOAD_PROGRESS_PATH = "/host/file/progress";
