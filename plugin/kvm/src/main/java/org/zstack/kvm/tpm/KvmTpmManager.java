@@ -2,6 +2,7 @@ package org.zstack.kvm.tpm;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.devices.VmTpmManager;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -13,11 +14,15 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -44,14 +49,17 @@ import org.zstack.header.vm.additions.VmHostFileVO;
 import org.zstack.header.vm.additions.VmHostFileVO_;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static org.zstack.compute.vm.VmGlobalConfig.RESET_TPM_AFTER_VM_CLONE;
 import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.header.errorcode.SysErrors.NOT_SUPPORTED;
 import static org.zstack.header.tpm.TpmConstants.*;
 import static org.zstack.header.tpm.TpmErrors.VM_STATE_ERROR;
@@ -60,6 +68,7 @@ import static org.zstack.kvm.KVMSystemTags.SWTPM_VERSION;
 import static org.zstack.kvm.KVMSystemTags.SWTPM_VERSION_TOKEN;
 import static org.zstack.kvm.KVMSystemTags.VM_EDK;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.transform;
 
 public class KvmTpmManager extends AbstractService {
     private static final CLogger logger = Utils.getLogger(KvmTpmManager.class);
@@ -72,6 +81,8 @@ public class KvmTpmManager extends AbstractService {
     private ResourceConfigFacade resourceConfigFacade;
     @Autowired
     private VmTpmManager vmTpmManager;
+    @Autowired
+    private TpmEncryptedResourceKeyBackend tpmKeyBackend;
 
     @Override
     public boolean start() {
@@ -106,6 +117,8 @@ public class KvmTpmManager extends AbstractService {
             handle((AddTpmMsg) msg);
         } else if (msg instanceof RemoveTpmMsg) {
             handle((RemoveTpmMsg) msg);
+        } else if (msg instanceof CloneVmTpmMsg) {
+            handle((CloneVmTpmMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -305,6 +318,103 @@ public class KvmTpmManager extends AbstractService {
             @Override
             public void handle(ErrorCode errorCode, Map data) {
                 completion.fail(errorCode);
+            }
+        }).start();
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void handle(CloneVmTpmMsg msg) {
+        CloneVmTpmReply reply = new CloneVmTpmReply();
+
+        String originTpmUuid = Q.New(TpmVO.class)
+                .eq(TpmVO_.vmInstanceUuid, msg.getSrcVmUuid())
+                .select(TpmVO_.uuid)
+                .findValue();
+        if (originTpmUuid == null) {
+            bus.reply(msg, reply);
+            return;
+        }
+
+        SimpleFlowChain chain = new SimpleFlowChain();
+        chain.setName("clone-VM-TPM");
+        chain.then(new Flow() {
+            String __name__ = "persist-TPM-VO";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                reply.setInventories(new ArrayList<>());
+                for (String dstVmUuid : msg.getDstVmUuidList()) {
+                    TpmVO dstTpm = vmTpmManager.persistTpmVO(null, dstVmUuid);
+                    reply.getInventories().add(TpmInventory.valueOf(dstTpm));
+                }
+                trigger.next();
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                if (CollectionUtils.isEmpty(reply.getInventories())) {
+                    trigger.rollback();
+                    return;
+                }
+                SQL.New(TpmVO.class)
+                        .in(TpmVO_.uuid, transform(reply.getInventories(), TpmInventory::getUuid))
+                        .delete();
+                trigger.rollback();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "clone-encrypted-resource-key-if-needed";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                boolean resetTpm;
+                if (msg.getResetTpm() == null) {
+                    ResourceConfig resourceConfig = resourceConfigFacade.getResourceConfig(RESET_TPM_AFTER_VM_CLONE.getIdentity());
+                    resetTpm = resourceConfig.getResourceConfigValue(msg.getSrcVmUuid(), Boolean.class);
+                } else {
+                    resetTpm = msg.getResetTpm();
+                }
+
+                new While<>(reply.getInventories()).each((inventory, whileCompletion) -> {
+                    TpmEncryptedResourceKeyBackend.CloneEncryptedResourceKeyContext context =
+                            new TpmEncryptedResourceKeyBackend.CloneEncryptedResourceKeyContext();
+                    context.srcTpmUuid = originTpmUuid;
+                    context.dstTpmUuid = inventory.getUuid();
+                    context.resetTpm = resetTpm;
+                    tpmKeyBackend.cloneEncryptedResourceKey(context, new Completion(whileCompletion) {
+                        @Override
+                        public void success() {
+                            whileCompletion.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            whileCompletion.addError(errorCode);
+                            whileCompletion.allDone();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (errorCodeList.isEmpty()) {
+                            trigger.next();
+                            return;
+                        }
+                        trigger.fail(operr("Failed to clone encrypted resource key")
+                                .withOpaque("src.tpm.uuid", originTpmUuid)
+                                .withCause(errorCodeList));
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                bus.reply(msg, reply);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                reply.setError(errCode);
+                bus.reply(msg, reply);
             }
         }).start();
     }
