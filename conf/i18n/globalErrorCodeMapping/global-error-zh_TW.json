@@ -29,7 +29,7 @@
   "ORG_ZSTACK_STORAGE_PRIMARY_10047": "cidr[%s] 輸入格式錯誤誤",
   "ORG_ZSTACK_LICENSE_COMPUTE_SERVER_10050": "ZSha2 显示儲在另一個管理節點，但數据库中未找到該節點",
   "ORG_ZSTACK_STORAGE_PRIMARY_10046": "仅允許一個主要儲儲 CIDR 系統統標签，但獲得了 %d 個",
-  "ORG_ZSTACK_STORAGE_PRIMARY_10049": "叢叢Uuid冲突，实例提供中指定的叢叢是%s，而創建參數中指定的叢叢是%s",
+  "ORG_ZSTACK_STORAGE_PRIMARY_10049": "叢集Uuid衝突，計算規格中指定的叢集是%s，而創建參數中指定的叢集是%s",
   "ORG_ZSTACK_LICENSE_COMPUTE_SERVER_10052": "未找到解注册的appId!",
   "ORG_ZSTACK_STORAGE_PRIMARY_10042": "請指定分配空間的目的",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10008": "無法将卷[uuid:%s]恢复至快照[uuid:%s]，關聯的虚拟機[uuid:%s]卷當前不在已停止状态，當前状态是%s",
