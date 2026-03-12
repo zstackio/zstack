@@ -31,3 +31,71 @@ WHERE `opaque` IS NOT NULL
   AND `endTime` IS NULL
   AND Json_getKeyValue(`opaque`, 'end_time') IS NOT NULL
   AND Json_getKeyValue(`opaque`, 'end_time') != '';
+
+-- dGPU (TensorFusion) support tables
+
+CREATE TABLE IF NOT EXISTS `zstack`.`DGpuProfileVO` (
+    `uuid`        VARCHAR(32)      NOT NULL,
+    `gpuSpecUuid` VARCHAR(32)      NOT NULL,
+    `memorySize`  BIGINT UNSIGNED  NOT NULL,
+    `shmemSize`   BIGINT UNSIGNED  NOT NULL DEFAULT 268435456,
+    `createDate`  TIMESTAMP        NOT NULL,
+    `lastOpDate`  TIMESTAMP        NOT NULL,
+    PRIMARY KEY (`uuid`),
+    UNIQUE KEY `uk_dgpu_profile` (`gpuSpecUuid`, `memorySize`),
+    CONSTRAINT `fk_dgpu_profile_spec`
+        FOREIGN KEY (`gpuSpecUuid`) REFERENCES `zstack`.`GpuDeviceSpecVO`(`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`DGpuDeviceVO` (
+    `uuid`             VARCHAR(32)      NOT NULL,
+    `name`             VARCHAR(255)     NOT NULL,
+    `parentGpuUuid`    VARCHAR(32)      NOT NULL,
+    `gpuSpecUuid`      VARCHAR(32)      NOT NULL,
+    `hostUuid`         VARCHAR(32)      NOT NULL,
+    `vmInstanceUuid`   VARCHAR(32)      DEFAULT NULL,
+    `allocatedMemory`  BIGINT UNSIGNED  NOT NULL,
+    `shmemSize`        BIGINT UNSIGNED  NOT NULL DEFAULT 268435456,
+    `smPercentLimit`   INT              NOT NULL DEFAULT 0,
+    `protocol`         VARCHAR(16)      NOT NULL DEFAULT 'shmem',
+    `status`           VARCHAR(32)      NOT NULL,
+    `vendorId`         VARCHAR(64)      DEFAULT NULL,
+    `vendor`           VARCHAR(255)     DEFAULT NULL,
+    `createDate`       TIMESTAMP        NOT NULL,
+    `lastOpDate`       TIMESTAMP        NOT NULL,
+    PRIMARY KEY (`uuid`),
+    INDEX `idx_dgpu_device_parent` (`parentGpuUuid`),
+    INDEX `idx_dgpu_device_spec`   (`gpuSpecUuid`),
+    INDEX `idx_dgpu_device_host`   (`hostUuid`),
+    INDEX `idx_dgpu_device_vm`     (`vmInstanceUuid`),
+    CONSTRAINT `fk_dgpu_device_parent`
+        FOREIGN KEY (`parentGpuUuid`) REFERENCES `zstack`.`PciDeviceVO`(`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fk_dgpu_device_spec`
+        FOREIGN KEY (`gpuSpecUuid`) REFERENCES `zstack`.`GpuDeviceSpecVO`(`uuid`) ON DELETE RESTRICT,
+    CONSTRAINT `fk_dgpu_device_host`
+        FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO`(`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fk_dgpu_device_vm`
+        FOREIGN KEY (`vmInstanceUuid`) REFERENCES `zstack`.`VmInstanceEO`(`uuid`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`VmInstanceDGpuStrategyVO` (
+    `id`               BIGINT          NOT NULL AUTO_INCREMENT,
+    `vmInstanceUuid`   VARCHAR(32)     NOT NULL,
+    `gpuSpecUuid`      VARCHAR(32)     NOT NULL,
+    `memorySize`       BIGINT UNSIGNED NOT NULL,
+    `shmemSize`        BIGINT UNSIGNED NOT NULL DEFAULT 268435456,
+    `gpuDeviceUuid`    VARCHAR(32)     DEFAULT NULL,
+    `chooser`          VARCHAR(16)     NOT NULL,
+    `autoDetachOnStop` TINYINT(1)      NOT NULL DEFAULT 1,
+    `createDate`       TIMESTAMP       NOT NULL,
+    `lastOpDate`       TIMESTAMP       NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_vm_dgpu_strategy`       (`vmInstanceUuid`),
+    INDEX      `idx_vm_dgpu_strategy_spec` (`gpuSpecUuid`),
+    CONSTRAINT `fk_vm_dgpu_strategy_vm`
+        FOREIGN KEY (`vmInstanceUuid`) REFERENCES `zstack`.`VmInstanceEO`(`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fk_vm_dgpu_strategy_spec`
+        FOREIGN KEY (`gpuSpecUuid`) REFERENCES `zstack`.`GpuDeviceSpecVO`(`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fk_vm_dgpu_strategy_device`
+        FOREIGN KEY (`gpuDeviceUuid`) REFERENCES `zstack`.`PciDeviceVO`(`uuid`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
