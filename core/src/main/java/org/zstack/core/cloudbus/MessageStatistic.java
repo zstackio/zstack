@@ -4,7 +4,10 @@ import org.zstack.header.core.AbstractCompositeType;
 import org.zstack.header.exception.CloudRuntimeException;
 
 import javax.management.MXBean;
-import javax.management.openmbean.*;
+import javax.management.openmbean.CompositeType;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.OpenType;
+import javax.management.openmbean.SimpleType;
 
 /**
  */

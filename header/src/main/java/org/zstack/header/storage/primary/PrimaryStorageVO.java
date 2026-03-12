@@ -1,6 +1,9 @@
 package org.zstack.header.storage.primary;
 
-import org.zstack.header.vo.*;
+import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.EO;
+import org.zstack.header.vo.NoView;
+import org.zstack.header.vo.ToInventory;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.zone.ZoneVO;
 

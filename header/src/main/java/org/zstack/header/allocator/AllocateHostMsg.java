@@ -5,7 +5,10 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceInventory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class AllocateHostMsg extends NeedReplyMessage {
     private long cpuCapacity;

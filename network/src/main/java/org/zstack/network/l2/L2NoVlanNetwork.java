@@ -10,7 +10,11 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
@@ -24,19 +28,72 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.HypervisorType;
 import org.zstack.header.identity.SharedResourceVO;
 import org.zstack.header.identity.SharedResourceVO_;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.APIAttachL2NetworkToClusterEvent;
+import org.zstack.header.network.l2.APIAttachL2NetworkToClusterMsg;
+import org.zstack.header.network.l2.APIChangeL2NetworkVlanIdEvent;
+import org.zstack.header.network.l2.APIChangeL2NetworkVlanIdMsg;
+import org.zstack.header.network.l2.APIDeleteL2NetworkEvent;
+import org.zstack.header.network.l2.APIDeleteL2NetworkMsg;
+import org.zstack.header.network.l2.APIDetachL2NetworkFromClusterEvent;
+import org.zstack.header.network.l2.APIDetachL2NetworkFromClusterMsg;
+import org.zstack.header.network.l2.APIUpdateL2NetworkEvent;
+import org.zstack.header.network.l2.APIUpdateL2NetworkMsg;
+import org.zstack.header.network.l2.AttachL2NetworkToClusterMsg;
+import org.zstack.header.network.l2.AttachL2NetworkToClusterReply;
+import org.zstack.header.network.l2.CheckL2NetworkOnHostMsg;
+import org.zstack.header.network.l2.CheckL2NetworkOnHostReply;
+import org.zstack.header.network.l2.CheckNetworkPhysicalInterfaceMsg;
+import org.zstack.header.network.l2.DeleteL2NetworkMsg;
+import org.zstack.header.network.l2.DeleteL2NetworkReply;
+import org.zstack.header.network.l2.DetachL2NetworkFromClusterMsg;
+import org.zstack.header.network.l2.DetachL2NetworkFromClusterReply;
+import org.zstack.header.network.l2.L2Errors;
+import org.zstack.header.network.l2.L2Network;
+import org.zstack.header.network.l2.L2NetworkAttachClusterExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkDeleteExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkDeletionMsg;
+import org.zstack.header.network.l2.L2NetworkDeletionReply;
+import org.zstack.header.network.l2.L2NetworkDetachFromClusterMsg;
+import org.zstack.header.network.l2.L2NetworkDetachFromClusterReply;
+import org.zstack.header.network.l2.L2NetworkDetachStruct;
+import org.zstack.header.network.l2.L2NetworkHostRefInventory;
+import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
+import org.zstack.header.network.l2.L2VlanNetworkVO;
+import org.zstack.header.network.l2.L2VlanNetworkVO_;
+import org.zstack.header.network.l2.PrepareL2NetworkOnHostMsg;
+import org.zstack.header.network.l2.PrepareL2NetworkOnHostReply;
+import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.network.l3.ServiceTypeExtensionPoint;
@@ -44,7 +101,12 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.transaction.Transactional;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -159,6 +221,7 @@ public class L2NoVlanNetwork implements L2Network {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-l2Network-%s", msg.getL2NetworkUuid()));
         if (msg.isForceDelete() == false) {
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -174,6 +237,7 @@ public class L2NoVlanNetwork implements L2Network {
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — reason TBD
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -191,6 +255,7 @@ public class L2NoVlanNetwork implements L2Network {
                 }
             });
         } else {
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -346,6 +411,7 @@ public class L2NoVlanNetwork implements L2Network {
 
         FlowChain chain = new SimpleFlowChain();
         chain.setName("delete-l2-network-" + inv.getUuid());
+        // DEBT: NoRollbackFlow — reason TBD
         chain.then(new NoRollbackFlow() {
             String __name__ = "delete-l2-network-extension";
 
@@ -368,6 +434,7 @@ public class L2NoVlanNetwork implements L2Network {
                             }
                         });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = "delete-l2-network";
 
@@ -681,6 +748,7 @@ public class L2NoVlanNetwork implements L2Network {
     protected void prepareL2NetworkOnHosts(final List<HostInventory> hosts, String providerType, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("prepare-l2-%s-on-hosts", self.getUuid()));
+        // DEBT: NoRollbackFlow — in prepareL2NetworkOnHosts
         chain.then(new NoRollbackFlow() {
             @Override
             public boolean skip(Map data) {
@@ -717,6 +785,7 @@ public class L2NoVlanNetwork implements L2Network {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in prepareL2NetworkOnHosts
         }).then(new NoRollbackFlow() {
 
             @Override
@@ -753,6 +822,7 @@ public class L2NoVlanNetwork implements L2Network {
                 });
             }
 
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = "after-l2-network-attached";
 
@@ -858,6 +928,7 @@ public class L2NoVlanNetwork implements L2Network {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-l2Network-%s", msg.getL2NetworkUuid()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            // DEBT: NoRollbackFlow — in getName
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -873,6 +944,7 @@ public class L2NoVlanNetwork implements L2Network {
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — in getName
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -890,6 +962,7 @@ public class L2NoVlanNetwork implements L2Network {
                 }
             });
         } else {
+            // DEBT: NoRollbackFlow — in getName
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {

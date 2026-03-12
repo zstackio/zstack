@@ -11,7 +11,10 @@ import org.zstack.header.core.validation.Validation;
 import org.zstack.header.host.HostNUMANode;
 import org.zstack.header.host.VmNicRedirectConfig;
 import org.zstack.header.log.NoLogging;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.PriorityConfigStruct;
+import org.zstack.header.vm.VmBootDevice;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmPriorityConfigVO;
 import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.network.securitygroup.RuleTO;
@@ -19,7 +22,13 @@ import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.VmNicSecurityTO;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class KVMAgentCommands {

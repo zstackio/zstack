@@ -1,6 +1,9 @@
 package org.zstack.storage.addon.primary;
 
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.DeleteSnapshotOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DeleteVolumeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.InstantiateVolumeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.TakeSnapshotMsg;
 import org.zstack.header.volume.block.GetAccessPathMsg;
 
 /**

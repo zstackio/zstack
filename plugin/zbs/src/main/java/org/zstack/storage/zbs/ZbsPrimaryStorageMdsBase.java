@@ -4,7 +4,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
-import org.zstack.core.ansible.*;
+import org.zstack.core.ansible.AnsibleGlobalProperty;
+import org.zstack.core.ansible.AnsibleRunner;
+import org.zstack.core.ansible.CallBackNetworkChecker;
+import org.zstack.core.ansible.SshChronyConfigChecker;
+import org.zstack.core.ansible.SshFileMd5Checker;
+import org.zstack.core.ansible.SshYumRepoChecker;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
@@ -16,7 +21,11 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -71,6 +80,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
             @Override
             public void setup() {
                 if (!CoreGlobalProperty.UNIT_TEST_ON) {
+                    // DEBT: NoRollbackFlow — in doConnect
                     flow(new NoRollbackFlow() {
                         String __name__ = "check-mds";
 
@@ -82,6 +92,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                         }
                     });
 
+                    // DEBT: NoRollbackFlow — in doConnect
                     flow(new NoRollbackFlow() {
                         String __name__ = "deploy-agent";
 
@@ -145,6 +156,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                         }
                     });
 
+                    // DEBT: NoRollbackFlow — reason TBD
                     flow(new NoRollbackFlow() {
                         String __name__ = "configure-iptables";
 
@@ -180,6 +192,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                     });
                 }
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "echo-agent";
 
@@ -199,6 +212,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "sync-metadata";
 

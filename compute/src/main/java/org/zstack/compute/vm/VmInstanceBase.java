@@ -11,9 +11,20 @@ import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.AutoOffEventCallback;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
@@ -25,28 +36,369 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.core.workflow.SimpleFlowChain;
-import org.zstack.header.allocator.*;
+import org.zstack.header.allocator.AllocateHostDryRunReply;
+import org.zstack.header.allocator.AllocationScene;
+import org.zstack.header.allocator.DesignatedAllocateHostMsg;
+import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.allocator.HostAllocatorError;
+import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterState;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
-import org.zstack.header.configuration.*;
-import org.zstack.header.core.*;
+import org.zstack.header.configuration.DiskOfferingInventory;
+import org.zstack.header.configuration.DiskOfferingVO;
+import org.zstack.header.configuration.DiskOfferingVO_;
+import org.zstack.header.configuration.InstanceOfferingInventory;
+import org.zstack.header.configuration.InstanceOfferingVO;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowMarshaller;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.*;
-import org.zstack.header.image.*;
+import org.zstack.header.host.AttachNicToVmOnHypervisorMsg;
+import org.zstack.header.host.CancelHostTaskMsg;
+import org.zstack.header.host.CancelHostTasksMsg;
+import org.zstack.header.host.ChangeVmNicStateOnHypervisorMsg;
+import org.zstack.header.host.CheckVmStateOnHypervisorMsg;
+import org.zstack.header.host.CheckVmStateOnHypervisorReply;
+import org.zstack.header.host.GetVmConsoleAddressFromHostMsg;
+import org.zstack.header.host.GetVmConsoleAddressFromHostReply;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostErrors;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.header.image.ImageBackupStorageRefVO;
+import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.ImageEO;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.image.ImageState;
+import org.zstack.header.image.ImageStatus;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.message.*;
-import org.zstack.header.network.l3.*;
-import org.zstack.header.storage.primary.*;
-import org.zstack.header.vm.*;
+import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.LockResourceMessage;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.message.OverlayMessage;
+import org.zstack.header.network.l3.AllocateIpMsg;
+import org.zstack.header.network.l3.AllocateIpReply;
+import org.zstack.header.network.l3.L3Network;
+import org.zstack.header.network.l3.L3NetworkCategory;
+import org.zstack.header.network.l3.L3NetworkConstant;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkState;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.ReturnIpMsg;
+import org.zstack.header.network.l3.ReturnIpReply;
+import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.header.network.l3.UsedIpVO_;
+import org.zstack.header.storage.primary.CancelJobOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.CreateTemplateFromVolumeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.CreateTemplateFromVolumeOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.ImageCacheShadowVO;
+import org.zstack.header.storage.primary.ImageCacheShadowVO_;
+import org.zstack.header.storage.primary.ImageCacheVO;
+import org.zstack.header.storage.primary.ImageCacheVO_;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageState;
+import org.zstack.header.storage.primary.PrimaryStorageStatus;
+import org.zstack.header.storage.primary.PrimaryStorageType;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.vm.APIAttachIsoToVmInstanceEvent;
+import org.zstack.header.vm.APIAttachIsoToVmInstanceMsg;
+import org.zstack.header.vm.APIAttachL3NetworkToVmEvent;
+import org.zstack.header.vm.APIAttachL3NetworkToVmMsg;
+import org.zstack.header.vm.APIAttachVmNicToVmEvent;
+import org.zstack.header.vm.APIAttachVmNicToVmMsg;
+import org.zstack.header.vm.APIChangeInstanceOfferingEvent;
+import org.zstack.header.vm.APIChangeInstanceOfferingMsg;
+import org.zstack.header.vm.APIChangeVmNicNetworkEvent;
+import org.zstack.header.vm.APIChangeVmNicNetworkMsg;
+import org.zstack.header.vm.APIChangeVmNicStateEvent;
+import org.zstack.header.vm.APIChangeVmNicStateMsg;
+import org.zstack.header.vm.APIDeleteVmBootModeEvent;
+import org.zstack.header.vm.APIDeleteVmBootModeMsg;
+import org.zstack.header.vm.APIDeleteVmConsolePasswordEvent;
+import org.zstack.header.vm.APIDeleteVmConsolePasswordMsg;
+import org.zstack.header.vm.APIDeleteVmHostnameEvent;
+import org.zstack.header.vm.APIDeleteVmHostnameMsg;
+import org.zstack.header.vm.APIDeleteVmSshKeyEvent;
+import org.zstack.header.vm.APIDeleteVmSshKeyMsg;
+import org.zstack.header.vm.APIDeleteVmStaticIpEvent;
+import org.zstack.header.vm.APIDeleteVmStaticIpMsg;
+import org.zstack.header.vm.APIDestroyVmInstanceEvent;
+import org.zstack.header.vm.APIDestroyVmInstanceMsg;
+import org.zstack.header.vm.APIDetachIsoFromVmInstanceEvent;
+import org.zstack.header.vm.APIDetachIsoFromVmInstanceMsg;
+import org.zstack.header.vm.APIDetachL3NetworkFromVmEvent;
+import org.zstack.header.vm.APIDetachL3NetworkFromVmMsg;
+import org.zstack.header.vm.APIExpungeVmInstanceEvent;
+import org.zstack.header.vm.APIExpungeVmInstanceMsg;
+import org.zstack.header.vm.APIFlattenVmInstanceEvent;
+import org.zstack.header.vm.APIFlattenVmInstanceMsg;
+import org.zstack.header.vm.APIFstrimVmEvent;
+import org.zstack.header.vm.APIFstrimVmMsg;
+import org.zstack.header.vm.APIGetCandidateIsoForAttachingVmMsg;
+import org.zstack.header.vm.APIGetCandidateIsoForAttachingVmReply;
+import org.zstack.header.vm.APIGetCandidateL3NetworksForChangeVmNicNetworkMsg;
+import org.zstack.header.vm.APIGetVmAttachableDataVolumeMsg;
+import org.zstack.header.vm.APIGetVmAttachableDataVolumeReply;
+import org.zstack.header.vm.APIGetVmAttachableL3NetworkMsg;
+import org.zstack.header.vm.APIGetVmAttachableL3NetworkReply;
+import org.zstack.header.vm.APIGetVmBootOrderMsg;
+import org.zstack.header.vm.APIGetVmBootOrderReply;
+import org.zstack.header.vm.APIGetVmCapabilitiesMsg;
+import org.zstack.header.vm.APIGetVmCapabilitiesReply;
+import org.zstack.header.vm.APIGetVmConsoleAddressMsg;
+import org.zstack.header.vm.APIGetVmConsoleAddressReply;
+import org.zstack.header.vm.APIGetVmConsolePasswordMsg;
+import org.zstack.header.vm.APIGetVmConsolePasswordReply;
+import org.zstack.header.vm.APIGetVmDeviceAddressMsg;
+import org.zstack.header.vm.APIGetVmDeviceAddressReply;
+import org.zstack.header.vm.APIGetVmHostnameMsg;
+import org.zstack.header.vm.APIGetVmHostnameReply;
+import org.zstack.header.vm.APIGetVmMigrationCandidateHostsMsg;
+import org.zstack.header.vm.APIGetVmMigrationCandidateHostsReply;
+import org.zstack.header.vm.APIGetVmSshKeyMsg;
+import org.zstack.header.vm.APIGetVmSshKeyReply;
+import org.zstack.header.vm.APIGetVmStartingCandidateClustersHostsMsg;
+import org.zstack.header.vm.APIGetVmStartingCandidateClustersHostsReply;
+import org.zstack.header.vm.APIMigrateVmEvent;
+import org.zstack.header.vm.APIMigrateVmMsg;
+import org.zstack.header.vm.APIPauseVmInstanceEvent;
+import org.zstack.header.vm.APIPauseVmInstanceMsg;
+import org.zstack.header.vm.APIRebootVmInstanceEvent;
+import org.zstack.header.vm.APIRebootVmInstanceMsg;
+import org.zstack.header.vm.APIRecoverVmInstanceEvent;
+import org.zstack.header.vm.APIRecoverVmInstanceMsg;
+import org.zstack.header.vm.APIReimageVmInstanceEvent;
+import org.zstack.header.vm.APIReimageVmInstanceMsg;
+import org.zstack.header.vm.APIResumeVmInstanceEvent;
+import org.zstack.header.vm.APIResumeVmInstanceMsg;
+import org.zstack.header.vm.APISetVmBootModeEvent;
+import org.zstack.header.vm.APISetVmBootModeMsg;
+import org.zstack.header.vm.APISetVmBootOrderEvent;
+import org.zstack.header.vm.APISetVmBootOrderMsg;
+import org.zstack.header.vm.APISetVmBootVolumeEvent;
+import org.zstack.header.vm.APISetVmBootVolumeMsg;
+import org.zstack.header.vm.APISetVmClockTrackEvent;
+import org.zstack.header.vm.APISetVmClockTrackMsg;
+import org.zstack.header.vm.APISetVmConsolePasswordEvent;
+import org.zstack.header.vm.APISetVmConsolePasswordMsg;
+import org.zstack.header.vm.APISetVmHostnameEvent;
+import org.zstack.header.vm.APISetVmHostnameMsg;
+import org.zstack.header.vm.APISetVmQxlMemoryEvent;
+import org.zstack.header.vm.APISetVmQxlMemoryMsg;
+import org.zstack.header.vm.APISetVmSoundTypeEvent;
+import org.zstack.header.vm.APISetVmSoundTypeMsg;
+import org.zstack.header.vm.APISetVmSshKeyEvent;
+import org.zstack.header.vm.APISetVmSshKeyMsg;
+import org.zstack.header.vm.APISetVmStaticIpEvent;
+import org.zstack.header.vm.APISetVmStaticIpMsg;
+import org.zstack.header.vm.APIStartVmInstanceEvent;
+import org.zstack.header.vm.APIStartVmInstanceMsg;
+import org.zstack.header.vm.APIStopVmInstanceEvent;
+import org.zstack.header.vm.APIStopVmInstanceMsg;
+import org.zstack.header.vm.APITakeVmConsoleScreenshotEvent;
+import org.zstack.header.vm.APITakeVmConsoleScreenshotMsg;
+import org.zstack.header.vm.APIUpdateConsolePasswordEvent;
+import org.zstack.header.vm.APIUpdateConsolePasswordMsg;
+import org.zstack.header.vm.APIUpdateVmInstanceEvent;
+import org.zstack.header.vm.APIUpdateVmInstanceMsg;
+import org.zstack.header.vm.APIUpdateVmNicDriverEvent;
+import org.zstack.header.vm.APIUpdateVmNicDriverMsg;
+import org.zstack.header.vm.APIUpdateVmPriorityEvent;
+import org.zstack.header.vm.APIUpdateVmPriorityMsg;
+import org.zstack.header.vm.AddL3NetworkToVmNicMsg;
+import org.zstack.header.vm.AddL3NetworkToVmNicReply;
+import org.zstack.header.vm.AttachDataVolumeToVmMsg;
+import org.zstack.header.vm.AttachDataVolumeToVmReply;
+import org.zstack.header.vm.AttachIsoToVmInstanceMsg;
+import org.zstack.header.vm.AttachIsoToVmInstanceReply;
+import org.zstack.header.vm.AttachNicToVmMsg;
+import org.zstack.header.vm.AttachNicToVmReply;
+import org.zstack.header.vm.BeforeHaStartVmInstanceExtensionPoint;
+import org.zstack.header.vm.BeforeStartNewCreatedVmExtensionPoint;
+import org.zstack.header.vm.BuildVolumeSpecExtensionPoint;
+import org.zstack.header.vm.CancelFlattenVmInstanceMsg;
+import org.zstack.header.vm.CancelFlattenVmInstanceReply;
+import org.zstack.header.vm.CancelMigrateVmMsg;
+import org.zstack.header.vm.CancelMigrateVmReply;
+import org.zstack.header.vm.ChangeInstanceOfferingExtensionPoint;
+import org.zstack.header.vm.ChangeVmMetaDataMsg;
+import org.zstack.header.vm.ChangeVmMetaDataReply;
+import org.zstack.header.vm.ChangeVmNicNetworkMsg;
+import org.zstack.header.vm.ChangeVmNicNetworkReply;
+import org.zstack.header.vm.ChangeVmStateMsg;
+import org.zstack.header.vm.CheckAndStartVmInstanceMsg;
+import org.zstack.header.vm.CheckAndStartVmInstanceReply;
+import org.zstack.header.vm.CheckAttachedVolumesMessage;
+import org.zstack.header.vm.CreateTemplateFromRootVolumeSnapShotVmMsg;
+import org.zstack.header.vm.CreateTemplateFromRootVolumeVmMsg;
+import org.zstack.header.vm.CreateTemplateFromRootVolumeVmReply;
+import org.zstack.header.vm.CreateVmCdRomMsg;
+import org.zstack.header.vm.CreateVmCdRomReply;
+import org.zstack.header.vm.DeleteL3NetworkFromVmNicMsg;
+import org.zstack.header.vm.DeleteL3NetworkFromVmNicReply;
+import org.zstack.header.vm.DestroyVmInstanceMsg;
+import org.zstack.header.vm.DestroyVmInstanceReply;
+import org.zstack.header.vm.DestroyVmOnHypervisorMsg;
+import org.zstack.header.vm.DetachDataVolumeFromVmMsg;
+import org.zstack.header.vm.DetachDataVolumeFromVmReply;
+import org.zstack.header.vm.DetachIsoFromVmInstanceMsg;
+import org.zstack.header.vm.DetachIsoFromVmInstanceReply;
+import org.zstack.header.vm.DetachNicFromVmMsg;
+import org.zstack.header.vm.DetachNicFromVmReply;
+import org.zstack.header.vm.DetachVolumeFromVmOnHypervisorMsg;
+import org.zstack.header.vm.ExpungeVmMsg;
+import org.zstack.header.vm.ExpungeVmReply;
+import org.zstack.header.vm.FilterAttachableL3NetworkExtensionPoint;
+import org.zstack.header.vm.FilterVmNicChangeableL3NetworkExtensionPoint;
+import org.zstack.header.vm.FlattenVmInstanceMsg;
+import org.zstack.header.vm.FlattenVmInstanceReply;
+import org.zstack.header.vm.FstrimVmMsg;
+import org.zstack.header.vm.GetAttachableVolumeExtensionPoint;
+import org.zstack.header.vm.GetVmCapabilitiesMsg;
+import org.zstack.header.vm.GetVmCapabilitiesReply;
+import org.zstack.header.vm.GetVmDeviceAddressMsg;
+import org.zstack.header.vm.GetVmDeviceAddressReply;
+import org.zstack.header.vm.GetVmMigrationTargetHostMsg;
+import org.zstack.header.vm.GetVmMigrationTargetHostReply;
+import org.zstack.header.vm.GetVmStartingCandidateClustersHostsMsg;
+import org.zstack.header.vm.GetVmStartingCandidateClustersHostsReply;
+import org.zstack.header.vm.HaStartVmInstanceMsg;
+import org.zstack.header.vm.HaStartVmInstanceReply;
+import org.zstack.header.vm.HaStartVmJudger;
+import org.zstack.header.vm.InstantiateNewCreatedVmInstanceMsg;
+import org.zstack.header.vm.InstantiateNewCreatedVmInstanceReply;
+import org.zstack.header.vm.KvmReportVmShutdownEventExtensionPoint;
+import org.zstack.header.vm.KvmReportVmShutdownEventMsg;
+import org.zstack.header.vm.KvmReportVmShutdownEventReply;
+import org.zstack.header.vm.KvmReportVmShutdownFromGuestEventExtensionPoint;
+import org.zstack.header.vm.KvmReportVmShutdownFromGuestEventMsg;
+import org.zstack.header.vm.KvmReportVmShutdownFromGuestEventReply;
+import org.zstack.header.vm.LockVmInstanceMsg;
+import org.zstack.header.vm.LockVmInstanceReply;
+import org.zstack.header.vm.MarshalVmOperationFlowExtensionPoint;
+import org.zstack.header.vm.MigrateVmInnerMsg;
+import org.zstack.header.vm.MigrateVmInnerReply;
+import org.zstack.header.vm.MigrateVmMessage;
+import org.zstack.header.vm.MigrateVmMsg;
+import org.zstack.header.vm.MigrateVmReply;
+import org.zstack.header.vm.PriorityConfigStruct;
+import org.zstack.header.vm.RebootVmInstanceMsg;
+import org.zstack.header.vm.RebootVmInstanceReply;
+import org.zstack.header.vm.RecoverVmExtensionPoint;
+import org.zstack.header.vm.RecoverVmInstanceMsg;
+import org.zstack.header.vm.RecoverVmInstanceReply;
+import org.zstack.header.vm.ReimageVmInstanceMsg;
+import org.zstack.header.vm.ReimageVmInstanceReply;
+import org.zstack.header.vm.ReimageVolumeOverlayMsg;
+import org.zstack.header.vm.ReleaseResourceMessage;
+import org.zstack.header.vm.RestoreVmInstanceMsg;
+import org.zstack.header.vm.SetVmHostNameFlowInterface;
+import org.zstack.header.vm.SetVmQgaSyncClockTaskMsg;
+import org.zstack.header.vm.SetVmStaticIpMsg;
+import org.zstack.header.vm.SetVmStaticIpReply;
+import org.zstack.header.vm.StartVmInstanceMsg;
+import org.zstack.header.vm.StartVmInstanceReply;
+import org.zstack.header.vm.StopVmInstanceMsg;
+import org.zstack.header.vm.StopVmInstanceReply;
+import org.zstack.header.vm.StopVmType;
+import org.zstack.header.vm.SyncVmDeviceInfoMsg;
+import org.zstack.header.vm.TakeVmConsoleScreenshotMsg;
+import org.zstack.header.vm.TakeVmConsoleScreenshotReply;
+import org.zstack.header.vm.UpdateVmConsolePasswordOnHypervisorMsg;
+import org.zstack.header.vm.UpdateVmInstanceMsg;
+import org.zstack.header.vm.UpdateVmInstanceReply;
+import org.zstack.header.vm.UpdateVmOnHypervisorMsg;
+import org.zstack.header.vm.UpdateVmOnHypervisorReply;
+import org.zstack.header.vm.UpdateVmPriorityMsg;
+import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
+import org.zstack.header.vm.VmAbnormalLifeCycleStruct;
+import org.zstack.header.vm.VmAfterAttachL3NetworkExtensionPoint;
+import org.zstack.header.vm.VmAfterAttachNicExtensionPoint;
+import org.zstack.header.vm.VmAfterExpungeExtensionPoint;
+import org.zstack.header.vm.VmAttachIsoExtensionPoint;
+import org.zstack.header.vm.VmAttachNicMsg;
+import org.zstack.header.vm.VmAttachNicReply;
+import org.zstack.header.vm.VmBeforeAttachL3NetworkExtensionPoint;
+import org.zstack.header.vm.VmBeforeExpungeExtensionPoint;
+import org.zstack.header.vm.VmBootDevice;
+import org.zstack.header.vm.VmCanonicalEvents;
+import org.zstack.header.vm.VmCheckOwnStateMsg;
+import org.zstack.header.vm.VmCheckOwnStateReply;
+import org.zstack.header.vm.VmCreationStrategy;
+import org.zstack.header.vm.VmDefaultL3NetworkChangedExtensionPoint;
+import org.zstack.header.vm.VmDeletionStruct;
+import org.zstack.header.vm.VmDetachNicExtensionPoint;
+import org.zstack.header.vm.VmErrors;
+import org.zstack.header.vm.VmFailToAttachL3NetworkExtensionPoint;
+import org.zstack.header.vm.VmInstance;
+import org.zstack.header.vm.VmInstanceAttachNicExtensionPoint;
+import org.zstack.header.vm.VmInstanceBaseExtensionFactory;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceDeletionMsg;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager;
+import org.zstack.header.vm.VmInstanceDeletionReply;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceMessage;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceStateEvent;
+import org.zstack.header.vm.VmInstanceType;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.VmIpChangedExtensionPoint;
+import org.zstack.header.vm.VmJustAfterDeleteFromDbExtensionPoint;
+import org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint;
+import org.zstack.header.vm.VmMigrationType;
+import org.zstack.header.vm.VmNicCanonicalEvents;
+import org.zstack.header.vm.VmNicHelper;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicParam;
+import org.zstack.header.vm.VmNicSpec;
+import org.zstack.header.vm.VmNicState;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
+import org.zstack.header.vm.VmOperationAdditionalFlowExtensionPoint;
+import org.zstack.header.vm.VmPlatformChangedExtensionPoint;
+import org.zstack.header.vm.VmPreAttachL3NetworkExtensionPoint;
+import org.zstack.header.vm.VmPreMigrationExtensionPoint;
+import org.zstack.header.vm.VmPriorityConfigVO;
+import org.zstack.header.vm.VmPriorityConfigVO_;
+import org.zstack.header.vm.VmPriorityLevel;
+import org.zstack.header.vm.VmStateChangedExtensionPoint;
+import org.zstack.header.vm.VmStateChangedOnHostMsg;
+import org.zstack.header.vm.VmStateChangedOnHostReply;
+import org.zstack.header.vm.VmTracerCanonicalEvents;
+import org.zstack.header.vm.VmUpdateNicExtensionPoint;
+import org.zstack.header.vm.VmUpdateNicOnHypervisorMsg;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
@@ -57,10 +409,37 @@ import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPo
 import org.zstack.header.vm.VmInstanceSpec.CdRomSpec;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
-import org.zstack.header.vm.cdrom.*;
+import org.zstack.header.vm.cdrom.APICreateVmCdRomEvent;
+import org.zstack.header.vm.cdrom.APICreateVmCdRomMsg;
+import org.zstack.header.vm.cdrom.APIDeleteVmCdRomEvent;
+import org.zstack.header.vm.cdrom.APIDeleteVmCdRomMsg;
+import org.zstack.header.vm.cdrom.APISetVmInstanceDefaultCdRomEvent;
+import org.zstack.header.vm.cdrom.APISetVmInstanceDefaultCdRomMsg;
+import org.zstack.header.vm.cdrom.APIUpdateVmCdRomEvent;
+import org.zstack.header.vm.cdrom.APIUpdateVmCdRomMsg;
+import org.zstack.header.vm.cdrom.DeleteVmCdRomMsg;
+import org.zstack.header.vm.cdrom.DeleteVmCdRomReply;
+import org.zstack.header.vm.cdrom.VmCdRomInventory;
+import org.zstack.header.vm.cdrom.VmCdRomVO;
+import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.vo.ResourceVO;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.FlattenVolumeMsg;
+import org.zstack.header.volume.FlattenVolumeReply;
+import org.zstack.header.volume.GetVolumeTaskMsg;
+import org.zstack.header.volume.GetVolumeTaskReply;
+import org.zstack.header.volume.ReInitVolumeMsg;
+import org.zstack.header.volume.RecoverVolumeMsg;
+import org.zstack.header.volume.SetVmBootVolumeMsg;
+import org.zstack.header.volume.VolumeCanonicalEvents;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeFormat;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeState;
+import org.zstack.header.volume.VolumeStatus;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.IpRangeHelper;
@@ -87,7 +466,17 @@ import javax.persistence.PersistenceException;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -1163,6 +1552,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     flow(new VmReleaseNetworkServiceOnChangeIPFlow());
                 }
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "change-ip-in-database";
 
@@ -1179,6 +1569,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "return-old-ip";
 
@@ -1211,6 +1602,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "post-change-nic-ip";
 
@@ -2534,6 +2926,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                             }
                         });
                     }
+                // DEBT: NoRollbackFlow — in rollback
                 }).then(new NoRollbackFlow() {
                     String __name__ = "after-attach-nic";
 
@@ -2988,6 +3381,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         final FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("destroy-vm-%s", self.getUuid()));
+        // DEBT: NoRollbackFlow — in getName
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
@@ -3565,6 +3959,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     flow(new VmReleaseNetworkServiceOnChangeIPFlow());
                 }
 
+                // DEBT: NoRollbackFlow — in setNoIpamStaticIp
                 flow(new NoRollbackFlow() {
                     String __name__ = "change-ip-in-database";
 
@@ -3992,6 +4387,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void setVmClockTrack(APISetVmClockTrackMsg msg, Completion completion) {
         FlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("set-vm-clock-track-for-%s", msg.getUuid()));
+        // DEBT: NoRollbackFlow — in setVmClockTrack
         chain.then(new NoRollbackFlow() {
             String __name__ = "set-QGA-sync-clock-task";
 
@@ -4025,6 +4421,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in setVmClockTrack
         }).then(new NoRollbackFlow() {
             String __name__ = "set-vm-clock-track";
 
@@ -4272,6 +4669,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 fchain.then(new NoRollbackFlow() {
                     String __name__ = "apply-new-console-password-on-hypervisor";
 
@@ -4350,6 +4748,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         APIDeleteVmConsolePasswordEvent evt = new APIDeleteVmConsolePasswordEvent(msg.getId());
 
         FlowChain chain = new SimpleFlowChain();
+        // DEBT: NoRollbackFlow — reason TBD
         chain.then(new NoRollbackFlow() {
             String __name__ = "delete-vm-console-password";
 
@@ -4446,6 +4845,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in recoverVm
                 flow(new NoRollbackFlow() {
                     String __name__ = "check-ip-conflict";
 
@@ -4456,6 +4856,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in recoverVm
                 flow(new NoRollbackFlow() {
                     String __name__ = "recover-root-volume";
 
@@ -4477,6 +4878,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "recover-cache-volume";
 
@@ -4513,6 +4915,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "recover-vm";
 
@@ -5130,6 +5533,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void doDetachNic(VmNicInventory vmNic, boolean releaseNic, boolean isRollback, boolean dbOnly, Completion completion) {
         FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
         fchain.setName(String.format("detach-l3-network-from-vm-%s", vmNic.getVmInstanceUuid()));
+        // DEBT: NoRollbackFlow — in doDetachNic
         fchain.then(new NoRollbackFlow() {
             String __name__ = "before-detach-nic";
 
@@ -5147,6 +5551,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in doDetachNic
         }).then(new NoRollbackFlow() {
             String __name__ = "detach-nic";
 
@@ -5408,6 +5813,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
         flowChain.then(new VmReleaseResourceOnDetachingNicFlow());
         flowChain.then(new VmDetachNicFlow());
+        // DEBT: NoRollbackFlow — in detachNic
         flowChain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -5551,6 +5957,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.setName(String.format("update-vm-instance-%s-in-database", self.getUuid()));
 
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        // DEBT: NoRollbackFlow — in doVmInstanceUpdate
         chain.then(new NoRollbackFlow() {
             String __name__ = "update-vm-properties-without-cpu-and-memory";
             @Override
@@ -5642,6 +6049,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         });
 
+        // DEBT: NoRollbackFlow — in onPlatformUpdated
         chain.then(new NoRollbackFlow() {
             String __name__ = "update-vm-properties-on-hypervisor";
 
@@ -6076,6 +6484,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("attach-nic-to-vm-%s", msg.getVmInstanceUuid()));
+        // DEBT: NoRollbackFlow — reason TBD
         chain.then(new NoRollbackFlow() {
             String __name__ = "attach-nic";
 
@@ -6094,6 +6503,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = "after-attach-nic";
 
@@ -6300,6 +6710,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
                 flowChain.getData().put(VmInstanceConstant.Params.L3NetworkInventory.toString(), destL3);
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flowChain.then(new NoRollbackFlow() {
                     String __name__ = "before-change-nic-network-extension";
 
@@ -6311,6 +6722,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flowChain.then(new NoRollbackFlow() {
                     String __name__ = "allocate-ip-for-change-nic-network";
 
@@ -6365,6 +6777,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flowChain.then(new NoRollbackFlow() {
                     String __name__ = "update-nic-ip-for-disable-ipam";
 
@@ -6440,6 +6853,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flowChain.then(new NoRollbackFlow() {
                     String __name__ = "update-nic-ip";
 
@@ -6485,6 +6899,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flowChain.then(new NoRollbackFlow() {
                     String __name__ = "update-nic-bridge";
 
@@ -6528,6 +6943,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     flowChain.then(new VmApplyNetworkServiceOnChangeIPFlow());
                 }
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flowChain.then(new NoRollbackFlow() {
                     String __name__ = "return-old-ip";
 
@@ -6553,6 +6969,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flowChain.then(new NoRollbackFlow() {
                     String __name__ = "after-change-nic-network-extension";
 
@@ -6727,6 +7144,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         FlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("detach-volume-%s-from-vm-%s", self.getUuid(), msg.getVmInstanceUuid()));
+        // DEBT: NoRollbackFlow — in detachVolume
         chain.then(new NoRollbackFlow() {
             String __name__ = "pre-detach-volume";
             @Override
@@ -6734,6 +7152,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 extEmitter.beforeDetachVolume(getSelfInventory(), volume);
                 trigger.next();
             }
+        // DEBT: NoRollbackFlow — in detachVolume
         }).then(new NoRollbackFlow() {
             String __name__ = "before-detaching-volume";
             @Override
@@ -6784,6 +7203,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 extEmitter.failedToDetachVolume(getSelfInventory(), volume, trigger.getErrorCode());
                 trigger.rollback();
             }
+        // DEBT: NoRollbackFlow — in rollback
         }).then(new NoRollbackFlow() {
             String __name__ = "update-volume-in-database";
             @Override
@@ -6793,6 +7213,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 dbf.update(vvo);
                 trigger.next();
             }
+        // DEBT: NoRollbackFlow — in rollback
         }).then(new NoRollbackFlow() {
             String __name__ = "after-detaching-volume";
             @Override
@@ -6853,6 +7274,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         setFlowMarshaller(chain);
+        // DEBT: NoRollbackFlow — in attachDataVolume
         chain.insert(new NoRollbackFlow() {
             final String __name__ = "call-pre-attach-volume-extension";
 
@@ -6872,6 +7294,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         });
 
+        // DEBT: NoRollbackFlow — in attachDataVolume
         chain.insert(1, new NoRollbackFlow() {
             final String __name__ = "call-before-attach-volume-extension";
 
@@ -6931,6 +7354,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("migrate-vm-%s", self.getUuid()));
+        // DEBT: NoRollbackFlow — in migrateVm
         chain.then(new NoRollbackFlow() {
             String __name__ = "call-pre-vm-migration-extension";
             @Override
@@ -6959,6 +7383,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }
                     });
             }
+        // DEBT: NoRollbackFlow — in migrateVm
         }).then(new NoRollbackFlow() {
             String __name__ = String.format("migrate-vm-%s", self.getUuid());
             @Override
@@ -7008,6 +7433,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         String lastHostUuid = self.getHostUuid();
         chain.setName(String.format("do-migrate-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        // DEBT: NoRollbackFlow — in doMigrateVm
         chain.then(new NoRollbackFlow() {
             final String __name__ = String.format("sync-vm-%s-stat-after-migrate", self.getUuid());
 
@@ -7487,6 +7913,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         chain.setName(String.format("create-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        // DEBT: NoRollbackFlow — in instantiateVmFromNewCreate
         chain.then(new NoRollbackFlow() {
             String __name__ = "after-started-vm-" + self.getUuid();
 
@@ -7513,6 +7940,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
 
         if (struct.getStrategy() == VmCreationStrategy.CreateStopped) {
+            // DEBT: NoRollbackFlow — in instantiateVmFromNewCreate
             chain.then(new NoRollbackFlow() {
                 String __name__ = "stop-vm-" + self.getUuid();
 
@@ -7652,6 +8080,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-vm-%s", msg.getUuid()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            // DEBT: NoRollbackFlow — in destroyVm
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -7667,6 +8096,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — in destroyVm
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -7684,6 +8114,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
             });
         } else {
+            // DEBT: NoRollbackFlow — in destroyVm
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {

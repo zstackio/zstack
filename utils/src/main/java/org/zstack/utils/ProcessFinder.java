@@ -36,7 +36,7 @@ public class ProcessFinder {
                 p.procFolder = f;
                 procs.add(p);
             } catch (NumberFormatException e) {
-                // pass
+                /* intentionally ignored: non-PID directory names in /proc */
             }
         }
 
@@ -66,7 +66,9 @@ public class ProcessFinder {
                 if (count == words.length) {
                     return p.pid;
                 }
-            } catch (IOException ignore) {}
+            } catch (IOException e) {
+                /* intentionally ignored: process may have exited between listing and reading */
+            }
         }
 
         return null;

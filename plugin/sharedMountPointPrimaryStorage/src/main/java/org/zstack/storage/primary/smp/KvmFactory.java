@@ -12,10 +12,19 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.kvm.*;
+import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.KVMHostConnectExtensionPoint;
+import org.zstack.kvm.KVMHostConnectedContext;
+import org.zstack.kvm.KVMHostInventory;
+import org.zstack.kvm.KVMStartVmExtensionPoint;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -58,6 +67,7 @@ public class KvmFactory implements HypervisorFactory, KVMHostConnectExtensionPoi
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        // DEBT: NoRollbackFlow — in createKvmHostConnectingFlow
         return new NoRollbackFlow() {
             String __init__ = "init-smp-primary-storage";
 

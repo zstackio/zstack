@@ -6,7 +6,12 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.service.*;
+import org.zstack.header.network.service.NetworkServiceExtensionPoint;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
+import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.NetworkServiceProviderVO;
+import org.zstack.header.network.service.NetworkServiceProviderVO_;
+import org.zstack.header.network.service.NetworkServiceType;
 
 import java.util.ArrayList;
 import java.util.HashMap;

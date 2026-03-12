@@ -1,6 +1,10 @@
 package org.zstack.compute.allocator;
 
-import org.zstack.header.allocator.*;
+import org.zstack.header.allocator.AllocateHostMsg;
+import org.zstack.header.allocator.DesignatedAllocateHostMsg;
+import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.allocator.HostAllocatorSpec;
+import org.zstack.header.allocator.HostAllocatorStrategyType;
 
 public class DesignatedHostAllocatorStrategyFactory extends AbstractHostAllocatorStrategyFactory {
     private static final HostAllocatorStrategyType type = new HostAllocatorStrategyType(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE, false);

@@ -12,13 +12,18 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.VirtualRouterAsyncHttpCallMsg;
+import org.zstack.network.service.virtualrouter.VirtualRouterAsyncHttpCallReply;
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands;
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
 

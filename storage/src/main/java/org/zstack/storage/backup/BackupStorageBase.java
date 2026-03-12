@@ -25,22 +25,87 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.header.core.*;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.trash.CleanTrashResult;
 import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.header.core.trash.TrashCleanupResult;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.image.*;
+import org.zstack.header.image.CancelDownloadImageMsg;
+import org.zstack.header.image.ImageBackupStorageRefVO;
+import org.zstack.header.image.ImageBackupStorageRefVO_;
+import org.zstack.header.image.ImageConstant;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.backup.APIAttachBackupStorageToZoneEvent;
+import org.zstack.header.storage.backup.APIAttachBackupStorageToZoneMsg;
+import org.zstack.header.storage.backup.APIChangeBackupStorageStateEvent;
+import org.zstack.header.storage.backup.APIChangeBackupStorageStateMsg;
+import org.zstack.header.storage.backup.APICleanUpTrashOnBackupStorageEvent;
+import org.zstack.header.storage.backup.APICleanUpTrashOnBackupStorageMsg;
+import org.zstack.header.storage.backup.APIDeleteBackupStorageEvent;
+import org.zstack.header.storage.backup.APIDeleteBackupStorageMsg;
+import org.zstack.header.storage.backup.APIDetachBackupStorageFromZoneEvent;
+import org.zstack.header.storage.backup.APIDetachBackupStorageFromZoneMsg;
+import org.zstack.header.storage.backup.APIGetTrashOnBackupStorageMsg;
+import org.zstack.header.storage.backup.APIGetTrashOnBackupStorageReply;
+import org.zstack.header.storage.backup.APIReconnectBackupStorageEvent;
+import org.zstack.header.storage.backup.APIReconnectBackupStorageMsg;
+import org.zstack.header.storage.backup.APIScanBackupStorageEvent;
+import org.zstack.header.storage.backup.APIScanBackupStorageMsg;
+import org.zstack.header.storage.backup.APIUpdateBackupStorageEvent;
+import org.zstack.header.storage.backup.APIUpdateBackupStorageMsg;
+import org.zstack.header.storage.backup.BackupStorage;
+import org.zstack.header.storage.backup.BackupStorageAskInstallPathMsg;
+import org.zstack.header.storage.backup.BackupStorageCanonicalEvents;
+import org.zstack.header.storage.backup.BackupStorageConstant;
+import org.zstack.header.storage.backup.BackupStorageDeletionMsg;
+import org.zstack.header.storage.backup.BackupStorageDeletionReply;
+import org.zstack.header.storage.backup.BackupStorageErrors;
+import org.zstack.header.storage.backup.BackupStorageException;
+import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.header.storage.backup.BackupStorageState;
+import org.zstack.header.storage.backup.BackupStorageStateEvent;
+import org.zstack.header.storage.backup.BackupStorageStatus;
+import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.backup.BackupStorageVO_;
+import org.zstack.header.storage.backup.BackupStorageZoneRefVO;
+import org.zstack.header.storage.backup.CalculateImageHashOnBackupStorageMsg;
+import org.zstack.header.storage.backup.ChangeBackupStorageStatusMsg;
+import org.zstack.header.storage.backup.ChangeBackupStorageStatusReply;
+import org.zstack.header.storage.backup.CheckInstallPathOnBSMsg;
+import org.zstack.header.storage.backup.CheckInstallPathOnBSReply;
+import org.zstack.header.storage.backup.ConnectBackupStorageMsg;
+import org.zstack.header.storage.backup.ConnectBackupStorageReply;
+import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
+import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageReply;
+import org.zstack.header.storage.backup.DownloadImageMsg;
+import org.zstack.header.storage.backup.DownloadVolumeMsg;
+import org.zstack.header.storage.backup.GetBackupStorageManagerHostnameMsg;
+import org.zstack.header.storage.backup.GetImageEncryptedOnBackupStorageMsg;
+import org.zstack.header.storage.backup.GetImageSizeOnBackupStorageMsg;
+import org.zstack.header.storage.backup.GetLocalFileSizeOnBackupStorageMsg;
+import org.zstack.header.storage.backup.PingBackupStorageMsg;
+import org.zstack.header.storage.backup.PingBackupStorageReply;
+import org.zstack.header.storage.backup.RestoreImagesBackupStorageMetadataToDatabaseMsg;
+import org.zstack.header.storage.backup.ReturnBackupStorageMsg;
+import org.zstack.header.storage.backup.ReturnBackupStorageReply;
+import org.zstack.header.storage.backup.ScanBackupStorageMsg;
+import org.zstack.header.storage.backup.SyncImageSizeOnBackupStorageMsg;
 import org.zstack.header.storage.backup.BackupStorageCanonicalEvents.BackupStorageStatusChangedData;
 import org.zstack.header.storage.backup.BackupStorageErrors.Opaque;
 import org.zstack.utils.CollectionDSL;
@@ -52,7 +117,11 @@ import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
@@ -852,6 +921,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-backup-storage-%s", msg.getUuid()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -867,6 +937,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — reason TBD
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -884,6 +955,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                 }
             });
         } else {
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {

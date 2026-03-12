@@ -9,7 +9,10 @@ import org.zstack.header.image.ImageConstant;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.ChangeVmImageExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.InstantiateRootVolumeMsg;
+import org.zstack.header.volume.InstantiateTemporaryRootVolumeMsg;
+import org.zstack.header.volume.InstantiateVolumeMsg;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

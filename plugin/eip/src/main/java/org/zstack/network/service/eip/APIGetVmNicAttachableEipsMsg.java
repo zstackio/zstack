@@ -5,7 +5,8 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIGetMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmNicVO;
 
 @Action(category = VmInstanceConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(

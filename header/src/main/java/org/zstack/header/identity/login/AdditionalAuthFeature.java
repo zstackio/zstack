@@ -1,6 +1,10 @@
 package org.zstack.header.identity.login;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class AdditionalAuthFeature {
     private static final Map<String, AdditionalAuthFeature> types = Collections.synchronizedMap(new HashMap<String, AdditionalAuthFeature>());

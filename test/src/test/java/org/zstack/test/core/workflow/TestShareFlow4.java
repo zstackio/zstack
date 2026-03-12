@@ -5,7 +5,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.AfterDone;
+import org.zstack.header.core.workflow.AfterError;
+import org.zstack.header.core.workflow.AfterFinal;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.test.BeanConstructor;
 
@@ -25,6 +32,7 @@ public class TestShareFlow4 {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in test
                 flow(new NoRollbackFlow() {
                     @AfterDone
                     List<Runnable> afterDone = new ArrayList<Runnable>();
@@ -39,6 +47,7 @@ public class TestShareFlow4 {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in test
                 flow(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -58,6 +67,7 @@ public class TestShareFlow4 {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in test
                 flow(new NoRollbackFlow() {
                     @AfterError
                     List<Runnable> afterError = new ArrayList<Runnable>();
@@ -72,6 +82,7 @@ public class TestShareFlow4 {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -95,6 +106,7 @@ public class TestShareFlow4 {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     @AfterFinal
                     List<Runnable> afterFinal = new ArrayList<Runnable>();
@@ -109,6 +121,7 @@ public class TestShareFlow4 {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {

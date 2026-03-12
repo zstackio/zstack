@@ -1,6 +1,10 @@
 package org.zstack.header.host;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class HypervisorType {
     private static Map<String, HypervisorType> types = Collections.synchronizedMap(new HashMap<String, HypervisorType>());

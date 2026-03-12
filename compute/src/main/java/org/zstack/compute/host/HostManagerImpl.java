@@ -5,15 +5,31 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusSteppingCallback;
+import org.zstack.core.cloudbus.EventCallback;
+import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.DbEntityLister;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.*;
+import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.PeriodicTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.SyncThread;
+import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.thread.ThreadGlobalProperty;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.HostAllocatorConstant;
@@ -21,15 +37,71 @@ import org.zstack.header.allocator.HostCpuOverProvisioningManager;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
-import org.zstack.header.core.*;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NopeWhileDoneCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.*;
-import org.zstack.header.managementnode.*;
+import org.zstack.header.host.APIAddHostEvent;
+import org.zstack.header.host.APIAddHostMsg;
+import org.zstack.header.host.APICreateHostNetworkServiceTypeEvent;
+import org.zstack.header.host.APICreateHostNetworkServiceTypeMsg;
+import org.zstack.header.host.APIDeleteHostNetworkServiceTypeEvent;
+import org.zstack.header.host.APIDeleteHostNetworkServiceTypeMsg;
+import org.zstack.header.host.APIGetHostWebSshUrlEvent;
+import org.zstack.header.host.APIGetHostWebSshUrlMsg;
+import org.zstack.header.host.APIGetHypervisorTypesMsg;
+import org.zstack.header.host.APIGetHypervisorTypesReply;
+import org.zstack.header.host.APIUpdateHostNetworkServiceTypeEvent;
+import org.zstack.header.host.APIUpdateHostNetworkServiceTypeMsg;
+import org.zstack.header.host.AddHostMessage;
+import org.zstack.header.host.AddHostMsg;
+import org.zstack.header.host.AddHostReply;
+import org.zstack.header.host.CancelHostTaskMsg;
+import org.zstack.header.host.CancelHostTasksMsg;
+import org.zstack.header.host.CancelHostsTaskReply;
+import org.zstack.header.host.ChangeHostConnectionStateMsg;
+import org.zstack.header.host.CheckHostCapacityMsg;
+import org.zstack.header.host.ConnectHostMsg;
+import org.zstack.header.host.FailToAddHostExtensionPoint;
+import org.zstack.header.host.GetHostWebSshUrlMsg;
+import org.zstack.header.host.GetHostWebSshUrlReply;
+import org.zstack.header.host.Host;
+import org.zstack.header.host.HostAddExtensionPoint;
+import org.zstack.header.host.HostBaseExtensionFactory;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostDeletionMsg;
+import org.zstack.header.host.HostEO;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostIpmiVO;
+import org.zstack.header.host.HostIpmiVO_;
+import org.zstack.header.host.HostMessage;
+import org.zstack.header.host.HostNetworkLabelExtensionPoint;
+import org.zstack.header.host.HostNetworkLabelInventory;
+import org.zstack.header.host.HostNetworkLabelVO;
+import org.zstack.header.host.HostPowerStatus;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostStatusEvent;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.HypervisorFactory;
+import org.zstack.header.host.HypervisorType;
+import org.zstack.header.host.RecalculateHostCapacityMsg;
+import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeInventory;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
+import org.zstack.header.managementnode.ManagementNodeVO;
+import org.zstack.header.managementnode.ManagementNodeVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -45,13 +117,24 @@ import org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.*;
+import org.zstack.utils.Bucket;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.data.Pair;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -419,6 +502,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         HostInventory inv = HostInventory.valueOf(vo);
         chain.setName(String.format("add-host-%s", vo.getUuid()));
+        // DEBT: NoRollbackFlow — in doAddHost
         chain.then(new NoRollbackFlow() {
             String __name__ = "call-before-add-host-extension";
 
@@ -448,6 +532,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 callPlugins(exts.iterator(), trigger);
             }
 
+        // DEBT: NoRollbackFlow — in callPlugins
         }).then(new NoRollbackFlow() {
             String __name__ = "send-connect-host-message";
 
@@ -468,6 +553,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in callPlugins
         }).then(new NoRollbackFlow() {
             @Override
             public boolean skip(Map data) {
@@ -504,6 +590,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
                 trigger.next();
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = "check-host-os-version";
 
@@ -516,6 +603,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 }
                 trigger.next();
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = "call-after-add-host-extension";
 

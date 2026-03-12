@@ -11,7 +11,13 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
-import org.zstack.header.image.*;
+import org.zstack.header.image.ImageBackupStorageRefVO;
+import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.ImageDeletionMsg;
+import org.zstack.header.image.ImageDeletionStruct;
+import org.zstack.header.image.ImageEO;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageInventory;
@@ -23,7 +29,11 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**

@@ -20,7 +20,10 @@ import org.zstack.header.host.*;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.service.*;
+import org.zstack.header.network.service.DnsStruct;
+import org.zstack.header.network.service.L3NetworkUpdateDhcpMsg;
+import org.zstack.header.network.service.NetworkServiceDnsBackend;
+import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.kvm.*;
 import org.zstack.utils.CollectionUtils;
@@ -29,7 +32,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 /**

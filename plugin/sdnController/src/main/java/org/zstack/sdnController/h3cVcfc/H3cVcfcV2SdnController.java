@@ -9,7 +9,11 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkInventory;
@@ -21,12 +25,21 @@ import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.sdnController.SdnControllerLog;
 import org.zstack.sdnController.SdnControllerSystemTags;
-import org.zstack.sdnController.header.*;
+import org.zstack.sdnController.header.APICreateL2HardwareVxlanNetworkMsg;
+import org.zstack.sdnController.header.AddSdnControllerMsg;
+import org.zstack.sdnController.header.H3cSdnControllerTenantVO;
+import org.zstack.sdnController.header.H3cSdnControllerTenantVO_;
+import org.zstack.sdnController.header.H3cSdnSubnetIpRangeRefVO;
+import org.zstack.sdnController.header.H3cSdnSubnetIpRangeRefVO_;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
@@ -339,6 +352,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
     private void getH3cParameters(AddSdnControllerMsg msg, Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("get-h3c-parameters-%s", self.getIp()));
+        // DEBT: NoRollbackFlow — in getH3cParameters
         chain.then(new NoRollbackFlow() {
             String __name__ = "get_h3c_controller_token";
 
@@ -356,6 +370,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in getH3cParameters
         }).then(new NoRollbackFlow() {
             String __name__ = "get_h3c_vni_ranges";
 

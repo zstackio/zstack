@@ -2,7 +2,11 @@ package org.zstack.header.identity;
 
 import org.zstack.header.host.HypervisorType;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by kayo on 2018/7/11.

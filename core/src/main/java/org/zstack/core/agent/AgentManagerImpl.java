@@ -19,7 +19,11 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Message;
@@ -118,6 +122,7 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
 
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in url
                 flow(new NoRollbackFlow() {
                     String __name__ = "echo-server";
 
@@ -137,6 +142,7 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in url
                 flow(new NoRollbackFlow() {
                     String __name__= "init-server";
 

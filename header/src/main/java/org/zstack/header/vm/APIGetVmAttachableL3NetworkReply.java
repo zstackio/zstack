@@ -1,7 +1,10 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.message.APIReply;
-import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.IpRangeInventory;
+import org.zstack.header.network.l3.L3NetworkConstant;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkState;
 import org.zstack.header.network.service.NetworkServiceConstants;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
 import org.zstack.header.network.service.NetworkServiceType;

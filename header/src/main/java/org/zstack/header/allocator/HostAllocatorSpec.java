@@ -4,7 +4,12 @@ import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  */

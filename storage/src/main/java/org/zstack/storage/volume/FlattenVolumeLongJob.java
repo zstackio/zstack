@@ -11,7 +11,13 @@ import org.zstack.header.longjob.LongJobFor;
 import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.APIFlattenVolumeEvent;
+import org.zstack.header.volume.APIFlattenVolumeMsg;
+import org.zstack.header.volume.CancelFlattenVolumeMsg;
+import org.zstack.header.volume.FlattenVolumeMsg;
+import org.zstack.header.volume.FlattenVolumeReply;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 @LongJobFor(APIFlattenVolumeMsg.class)

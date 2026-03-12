@@ -9,7 +9,15 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.UpdateQuery;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.webhooks.*;
+import org.zstack.header.core.webhooks.APICreateWebhookEvent;
+import org.zstack.header.core.webhooks.APICreateWebhookMsg;
+import org.zstack.header.core.webhooks.APIDeleteWebhookEvent;
+import org.zstack.header.core.webhooks.APIDeleteWebhookMsg;
+import org.zstack.header.core.webhooks.APIUpdateWebhookEvent;
+import org.zstack.header.core.webhooks.APIUpdateWebhookMsg;
+import org.zstack.header.core.webhooks.WebhookInventory;
+import org.zstack.header.core.webhooks.WebhookVO;
+import org.zstack.header.core.webhooks.WebhookVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 

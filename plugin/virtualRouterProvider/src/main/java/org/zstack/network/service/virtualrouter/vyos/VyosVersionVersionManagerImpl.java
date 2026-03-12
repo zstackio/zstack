@@ -1,7 +1,7 @@
 package org.zstack.network.service.virtualrouter.vyos;
 
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.VirtualRouterMetadataOperator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.VersionComparator;
 import org.zstack.utils.logging.CLogger;

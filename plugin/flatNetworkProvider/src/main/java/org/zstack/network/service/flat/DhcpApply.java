@@ -8,7 +8,11 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostConstant;
@@ -140,6 +144,7 @@ public class DhcpApply {
 
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "batch-acquire-dhcp-ip";
 
@@ -174,6 +179,7 @@ public class DhcpApply {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "batch-prepare-distributed-dhcp-server-on-host";
 
@@ -233,6 +239,7 @@ public class DhcpApply {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "batch-apply-dhcp";
 

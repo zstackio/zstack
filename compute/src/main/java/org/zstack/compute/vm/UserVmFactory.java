@@ -3,7 +3,12 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.CreateVmInstanceMsg;
+import org.zstack.header.vm.VmInstance;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceFactory;
+import org.zstack.header.vm.VmInstanceType;
+import org.zstack.header.vm.VmInstanceVO;
 
 public class UserVmFactory implements VmInstanceFactory {
     private static final VmInstanceType type = new VmInstanceType(VmInstanceConstant.USER_VM_TYPE);

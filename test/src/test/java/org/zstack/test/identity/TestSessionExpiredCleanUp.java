@@ -9,7 +9,11 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SessionVO;
 import org.zstack.identity.IdentityGlobalConfig;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.BeanConstructor;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 
 import java.util.concurrent.TimeUnit;
 

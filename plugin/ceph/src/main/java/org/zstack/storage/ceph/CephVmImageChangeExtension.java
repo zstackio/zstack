@@ -6,7 +6,10 @@ import org.zstack.header.vm.ChangeVmImageExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstantiateResourceException;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.VolumeStatus;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.tag.SystemTagCreator;
 
 import java.util.List;

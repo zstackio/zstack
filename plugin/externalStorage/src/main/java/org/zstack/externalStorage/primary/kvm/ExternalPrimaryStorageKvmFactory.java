@@ -11,8 +11,18 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.externalStorage.primary.ExternalStorageConstant;
-import org.zstack.header.core.*;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.core.workflow.NopeFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -22,14 +32,31 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.addon.NodeHealthy;
 import org.zstack.header.storage.addon.StorageHealthy;
-import org.zstack.header.storage.addon.primary.*;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.addon.primary.ActiveVolumeClient;
+import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_;
+import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
+import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.primary.UpdatePrimaryStorageHostStatusMsg;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
-import org.zstack.kvm.*;
+import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.KVMHostConnectExtensionPoint;
+import org.zstack.kvm.KVMHostConnectedContext;
+import org.zstack.kvm.KVMHostInventory;
+import org.zstack.kvm.KVMPingAgentNoFailureExtensionPoint;
+import org.zstack.kvm.KVMStartVmExtensionPoint;
+import org.zstack.kvm.KvmVmActiveVolumeSyncExtensionPoint;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -85,6 +112,7 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
             return new NopeFlow();
         }
 
+        // DEBT: NoRollbackFlow — in createKvmHostConnectingFlow
         return new NoRollbackFlow() {
             final String __name__ = "prepare-external-primary-storage";
 
@@ -124,6 +152,7 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
     private void doPrepareExternalPrimaryStorage(final KVMHostConnectedContext context, List<ExternalPrimaryStorageVO> extPss, Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName("do-prepare-external-primary-storage");
+        // DEBT: NoRollbackFlow — in doPrepareExternalPrimaryStorage
         chain.then(new NoRollbackFlow() {
             String __name__ = "deploy-client";
 
@@ -141,6 +170,7 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in doPrepareExternalPrimaryStorage
         }).then(new NoRollbackFlow() {
             String __name__ = "check-host-status";
 

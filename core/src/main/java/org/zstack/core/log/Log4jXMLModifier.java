@@ -1,6 +1,10 @@
 package org.zstack.core.log;
 
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.path.PathUtil;
 import javax.xml.parsers.DocumentBuilder;

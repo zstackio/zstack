@@ -3,7 +3,12 @@ package org.zstack.utils.hash;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public class ConsistentHash<T> {
     private final CLogger logger = Utils.getLogger(ConsistentHash.class);

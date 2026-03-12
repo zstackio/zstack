@@ -16,7 +16,11 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.Message;
@@ -25,7 +29,19 @@ import org.zstack.header.storage.primary.DeleteSnapshotOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.IncreasePrimaryStorageCapacityMsg;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.ReleasePrimaryStorageSpaceMsg;
-import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.BackupVolumeSnapshotMsg;
+import org.zstack.header.storage.snapshot.BackupVolumeSnapshotReply;
+import org.zstack.header.storage.snapshot.ChangeVolumeSnapshotStatusMsg;
+import org.zstack.header.storage.snapshot.ChangeVolumeSnapshotStatusReply;
+import org.zstack.header.storage.snapshot.VolumeSnapshotAfterDeleteExtensionPoint;
+import org.zstack.header.storage.snapshot.VolumeSnapshotBackupStorageDeletionMsg;
+import org.zstack.header.storage.snapshot.VolumeSnapshotBackupStorageDeletionReply;
+import org.zstack.header.storage.snapshot.VolumeSnapshotBackupStorageRefVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotPrimaryStorageDeletionMsg;
+import org.zstack.header.storage.snapshot.VolumeSnapshotPrimaryStorageDeletionReply;
+import org.zstack.header.storage.snapshot.VolumeSnapshotStatus;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus.StatusEvent;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ExceptionDSL;
@@ -108,6 +124,7 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
 
                 @Override
                 public void setup() {
+                    // DEBT: NoRollbackFlow — in handleLocalMessage
                     flow(new NoRollbackFlow() {
                         String __name__ = String.format("delete-on-backup-storage-%s", bsUuid);
                         @Override
@@ -139,6 +156,7 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                         }
                     });
 
+                    // DEBT: NoRollbackFlow — reason TBD
                     flow(new NoRollbackFlow() {
                         String __name__ = String.format("return-capacity-to-backup-storage-%s", bsUuid);
 
@@ -258,6 +276,7 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
 
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in errors
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-on-primary-storage";
                     @Override
@@ -279,6 +298,7 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in errors
                 flow(new NoRollbackFlow() {
                     String __name__ = "return-capacity-to-primary-storage";
 

@@ -2,10 +2,14 @@ package org.zstack.core.cascade;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.workflow.*;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.Bucket;
@@ -13,7 +17,13 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
 /**
@@ -218,6 +228,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
         for (Bucket path : paths) {
             final Node node = path.get(0);
             final CascadeAction caction = path.get(1);
+            // DEBT: NoRollbackFlow — in asyncCascade
             chain.then(new NoRollbackFlow() {
                 String __name__ = String.format("async-cascade(%s)[%s --> %s]", caction.getActionCode(), caction.getParentIssuer(), node.getName());
                 @Override
@@ -276,6 +287,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("branch-cascade-extension-points-for-%s", node.getName()));
+        // DEBT: NoRollbackFlow — in runNode
         branches.forEach(b -> chain.then(new NoRollbackFlow() {
             String __name__ = String.format("branch-asycascade-extension-points-for-%s", b.getCascadeResourceName());
             @Override
@@ -298,6 +310,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
         CascadeExtensionPoint addon = wrapper.findAddon(caction.getParentIssuer());
 
         if (addon != null) {
+            // DEBT: NoRollbackFlow — in runNode
             chain.then(new NoRollbackFlow() {
                 String __name__ = String.format("call-addon-%s", addon.getClass().getName());
 

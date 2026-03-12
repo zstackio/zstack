@@ -11,7 +11,10 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.InstantiateResourceOnAttachingNicExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicSpec;
 
 import java.util.Iterator;
 import java.util.List;

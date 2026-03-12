@@ -40,6 +40,7 @@ public class TestShareFlow2 {
 
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in test
                 flow(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -49,6 +50,7 @@ public class TestShareFlow2 {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in test
                 flow(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {

@@ -2,7 +2,7 @@ package org.zstack.header.image;
 
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.log.NoLogging;
-import org.zstack.header.message.*;
+import org.zstack.header.message.NeedReplyMessage;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -19,11 +19,35 @@ import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.header.cluster.*;
+import org.zstack.header.cluster.APIChangeClusterStateEvent;
+import org.zstack.header.cluster.APIChangeClusterStateMsg;
+import org.zstack.header.cluster.APIDeleteClusterEvent;
+import org.zstack.header.cluster.APIDeleteClusterMsg;
+import org.zstack.header.cluster.APIUpdateClusterEvent;
+import org.zstack.header.cluster.APIUpdateClusterMsg;
+import org.zstack.header.cluster.APIUpdateClusterOSEvent;
+import org.zstack.header.cluster.APIUpdateClusterOSMsg;
+import org.zstack.header.cluster.ChangeClusterStateMsg;
+import org.zstack.header.cluster.ChangeClusterStateReply;
+import org.zstack.header.cluster.Cluster;
+import org.zstack.header.cluster.ClusterDeletionMsg;
+import org.zstack.header.cluster.ClusterDeletionReply;
+import org.zstack.header.cluster.ClusterException;
+import org.zstack.header.cluster.ClusterInventory;
+import org.zstack.header.cluster.ClusterState;
+import org.zstack.header.cluster.ClusterStateEvent;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.UpdateClusterOSMsg;
+import org.zstack.header.cluster.UpdateClusterOSReply;
+import org.zstack.header.cluster.UpdateClusterOSStruct;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.NopeCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.SysErrors;
@@ -180,6 +204,7 @@ public class ClusterBase extends AbstractCluster {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-cluster-%s", msg.getUuid()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -195,6 +220,7 @@ public class ClusterBase extends AbstractCluster {
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — reason TBD
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -212,6 +238,7 @@ public class ClusterBase extends AbstractCluster {
                 }
             });
         } else {
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {

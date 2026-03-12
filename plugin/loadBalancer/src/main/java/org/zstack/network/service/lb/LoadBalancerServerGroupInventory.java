@@ -13,7 +13,9 @@ import org.zstack.header.vo.NoView;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Inventory(mappingVOClass = LoadBalancerServerGroupVO.class)

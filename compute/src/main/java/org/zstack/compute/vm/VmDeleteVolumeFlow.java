@@ -11,13 +11,20 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.Params;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.VolumeDeletionStruct;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -80,6 +87,7 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
         final String issuer = VolumeVO.class.getSimpleName();
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName("delete-volumes-in-VmDeleteVolumeFlow");
+        // DEBT: NoRollbackFlow — reason TBD
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger1, Map data1) {

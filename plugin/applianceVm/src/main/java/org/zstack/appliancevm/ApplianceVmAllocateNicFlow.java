@@ -26,16 +26,34 @@ import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.VSwitchType;
-import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.AllocateIpMsg;
+import org.zstack.header.network.l3.AllocateIpReply;
+import org.zstack.header.network.l3.L3NetworkConstant;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.ReturnIpMsg;
+import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceNicFactory;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicState;
+import org.zstack.header.vm.VmNicType;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**

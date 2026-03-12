@@ -2,7 +2,12 @@ package org.zstack.compute.vm;
 
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.message.Message;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceBaseExtensionFactory;
+import org.zstack.header.vm.VmInstanceFactory;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceNicFactory;
+import org.zstack.header.vm.VmInstanceType;
+import org.zstack.header.vm.VmNicType;
 
 public interface VmInstanceManager {
     FlowChain getCreateVmWorkFlowChain(VmInstanceInventory inv);

@@ -12,7 +12,11 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -21,12 +25,24 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.VirtualRouterHaTask;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.vip.AfterAcquireVipExtensionPoint;
 import org.zstack.network.service.vip.VipBaseBackend;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.VirtualRouterAsyncHttpCallMsg;
+import org.zstack.network.service.virtualrouter.VirtualRouterAsyncHttpCallReply;
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands;
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterManager;
+import org.zstack.network.service.virtualrouter.VirtualRouterStruct;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO_;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.utils.CollectionUtils;
@@ -269,6 +285,7 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("prepare-vr-for-vip-%s-%s", self.getUuid(), self.getIp()));
+        // DEBT: NoRollbackFlow — in acquireVip
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, final Map data) {
@@ -317,6 +334,7 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {

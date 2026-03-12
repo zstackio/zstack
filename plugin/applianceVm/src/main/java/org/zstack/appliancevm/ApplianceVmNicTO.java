@@ -1,7 +1,9 @@
 package org.zstack.appliancevm;
 
 import org.zstack.core.db.Q;
-import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.NormalIpRangeVO;
+import org.zstack.header.network.l3.NormalIpRangeVO_;
+import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.utils.network.IPv6Constants;
 

@@ -3,7 +3,11 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.header.core.Completion;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.HypervisorBasedVmConfigurationFactory;
+import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstantiateResourceException;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

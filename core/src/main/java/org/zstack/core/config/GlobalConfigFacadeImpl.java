@@ -14,7 +14,11 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -39,7 +43,14 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -103,6 +114,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         APIRefreshGuestOsMetadataEvent evt = new APIRefreshGuestOsMetadataEvent(msg.getId());
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName("refresh-guest-os-metadata");
+        // DEBT: NoRollbackFlow — in handleMessage
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -133,6 +145,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {

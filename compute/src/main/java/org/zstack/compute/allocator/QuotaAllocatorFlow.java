@@ -20,7 +20,8 @@ import org.zstack.utils.Utils;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.host.*;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)

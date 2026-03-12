@@ -23,7 +23,13 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.ImageCacheShadowVO;
+import org.zstack.header.storage.primary.ImageCacheVO;
+import org.zstack.header.storage.primary.PrimaryStorage;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.SyncPrimaryStorageCapacityMsg;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.ImageCacheCleanParam;
@@ -281,6 +287,7 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
 
         SimpleFlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("do-clean-up-image-cache-on-local-storage-%s", psUuid));
+        // DEBT: NoRollbackFlow — in doCleanup
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -291,6 +298,7 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in doCleanup
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -314,6 +322,7 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in doCleanup
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {

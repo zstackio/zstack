@@ -9,19 +9,30 @@ import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.*;
-import org.zstack.network.l2.vxlan.vtep.*;
+import org.zstack.header.network.l2.APIDetachL2NetworkFromClusterMsg;
+import org.zstack.header.network.l2.CheckNetworkPhysicalInterfaceMsg;
+import org.zstack.header.network.l2.DeleteL2NetworkMsg;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.network.l2.vxlan.vtep.APICreateVxlanVtepMsg;
+import org.zstack.network.l2.vxlan.vtep.CreateVtepMsg;
+import org.zstack.network.l2.vxlan.vtep.DeleteVtepMsg;
+import org.zstack.network.l2.vxlan.vtep.PopulateVtepPeersMsg;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
-import org.zstack.network.l2.vxlan.vxlanNetworkPool.*;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPool;
 import org.zstack.sdnController.SdnControllerFactory;
 import org.zstack.sdnController.SdnControllerL2;
 import org.zstack.sdnController.SdnControllerManager;
@@ -31,7 +42,9 @@ import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
@@ -97,6 +110,7 @@ public class HardwareVxlanNetworkPool extends VxlanNetworkPool {
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("prepare-l2-%s-on-hosts", self.getUuid()));
+        // DEBT: NoRollbackFlow — in prepareL2NetworkOnHosts
         chain.then(new NoRollbackFlow() {
             String __name__ = "check-physical-interface";
 
@@ -139,6 +153,7 @@ public class HardwareVxlanNetworkPool extends VxlanNetworkPool {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = "realize-vxlan-network";
 
@@ -177,6 +192,7 @@ public class HardwareVxlanNetworkPool extends VxlanNetworkPool {
                 });
             }
 
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = "attach-vxlan-network-on-sdn";
             @Override

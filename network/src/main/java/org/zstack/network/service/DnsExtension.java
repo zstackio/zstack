@@ -15,14 +15,26 @@ import org.zstack.header.network.l3.L3NetworkDnsVO;
 import org.zstack.header.network.l3.L3NetworkDnsVO_;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.service.*;
+import org.zstack.header.network.service.AddDnsMsg;
+import org.zstack.header.network.service.AddDnsReply;
+import org.zstack.header.network.service.DnsStruct;
+import org.zstack.header.network.service.NetworkServiceConstants;
+import org.zstack.header.network.service.NetworkServiceDnsBackend;
+import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.network.service.RemoveDnsMsg;
+import org.zstack.header.network.service.RemoveDnsReply;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicHelper;
 import org.zstack.header.vm.VmNicSpec;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;

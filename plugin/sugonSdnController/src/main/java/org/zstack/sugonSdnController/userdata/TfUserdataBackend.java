@@ -16,7 +16,12 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
@@ -24,13 +29,30 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.service.NetworkServiceProviderType;
-import org.zstack.header.vm.*;
-import org.zstack.kvm.*;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
+import org.zstack.kvm.KVMHostAsyncHttpCallReply;
+import org.zstack.kvm.KVMHostConnectExtensionPoint;
+import org.zstack.kvm.KVMHostConnectedContext;
+import org.zstack.kvm.KvmCommandFailureChecker;
+import org.zstack.kvm.KvmCommandSender;
+import org.zstack.kvm.KvmResponseWrapper;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.network.service.NetworkProviderFinder;
 import org.zstack.network.service.NetworkServiceFilter;
 import org.zstack.network.service.NetworkServiceManager;
-import org.zstack.network.service.userdata.*;
+import org.zstack.network.service.userdata.UserdataBackend;
+import org.zstack.network.service.userdata.UserdataConstant;
+import org.zstack.network.service.userdata.UserdataGlobalConfig;
+import org.zstack.network.service.userdata.UserdataGlobalProperty;
+import org.zstack.network.service.userdata.UserdataStruct;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -39,7 +61,11 @@ import org.zstack.utils.network.IPv6Constants;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -66,6 +92,7 @@ public class TfUserdataBackend implements UserdataBackend, KVMHostConnectExtensi
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        // DEBT: NoRollbackFlow — in createKvmHostConnectingFlow
         return new NoRollbackFlow() {
             String __name__ = "prepare-userdata";
 
@@ -423,6 +450,7 @@ public class TfUserdataBackend implements UserdataBackend, KVMHostConnectExtensi
 
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in applyUserdata
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-user-data";
 
@@ -505,6 +533,7 @@ public class TfUserdataBackend implements UserdataBackend, KVMHostConnectExtensi
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in releaseUserdata
                 flow(new NoRollbackFlow() {
                     String __name__ = "release-user-data";
 

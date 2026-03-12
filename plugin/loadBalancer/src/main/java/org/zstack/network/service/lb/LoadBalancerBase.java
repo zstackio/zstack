@@ -12,7 +12,11 @@ import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -27,7 +31,13 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -40,11 +50,19 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.tag.SystemTagInventory;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.identity.Account;
 import org.zstack.network.l3.L3NetworkManager;
-import org.zstack.network.service.vip.*;
+import org.zstack.network.service.vip.ModifyVipAttributesStruct;
+import org.zstack.network.service.vip.Vip;
+import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipVO_;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
@@ -58,7 +76,12 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -403,6 +426,7 @@ public class LoadBalancerBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "deactive-nics-on-backend";
 
@@ -492,6 +516,7 @@ public class LoadBalancerBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "active-nics-on-backend";
 
@@ -909,6 +934,7 @@ public class LoadBalancerBase {
 
                 FlowChain flowChain = new SimpleFlowChain();
                 flowChain.setName("detach-vip-from-lb-and-release-vip");
+                // DEBT: NoRollbackFlow — reason TBD
                 flowChain.then(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -925,6 +951,7 @@ public class LoadBalancerBase {
                             }
                         });
                     }
+                // DEBT: NoRollbackFlow — reason TBD
                 }).then(new NoRollbackFlow() {
                     String __name__ = "release-vip";
                     @Transactional(readOnly = true)
@@ -1110,6 +1137,7 @@ public class LoadBalancerBase {
             @Override
             public void setup() {
                 if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+                    // DEBT: NoRollbackFlow — in getName
                     flow(new NoRollbackFlow() {
                         String __name__ = "delete-loadBalancer-permissive-check";
 
@@ -1129,6 +1157,7 @@ public class LoadBalancerBase {
                         }
                     });
 
+                    // DEBT: NoRollbackFlow — in getName
                     flow(new NoRollbackFlow() {
                         String __name__ = "delete-loadBalancer-permissive-delete";
 
@@ -1148,6 +1177,7 @@ public class LoadBalancerBase {
                         }
                     });
                 } else {
+                    // DEBT: NoRollbackFlow — reason TBD
                     flow(new NoRollbackFlow() {
                         String __name__ = "delete-loadBalancer-force-delete";
 
@@ -1194,6 +1224,7 @@ public class LoadBalancerBase {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in delete
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-lb";
 
@@ -1220,6 +1251,7 @@ public class LoadBalancerBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in delete
                 flow(new NoRollbackFlow() {
                     String __name__ = "release-vip";
                     @Transactional(readOnly = true)
@@ -1705,6 +1737,7 @@ public class LoadBalancerBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "add-nic-to-lb";
 
@@ -2030,6 +2063,7 @@ public class LoadBalancerBase {
         final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
         flowChain.setData(data);
 
+        // DEBT: NoRollbackFlow — in doAddAccessControlListToLoadBalancer
         flowChain.then(new NoRollbackFlow() {
             String __name__ = "add-acl-to-lb-listener";
             @Override
@@ -2073,6 +2107,7 @@ public class LoadBalancerBase {
                 data.put("refs", refs);
                 trigger.next();
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = "refresh-lb-listener";
 
@@ -2870,6 +2905,7 @@ public class LoadBalancerBase {
 
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "add-to-backend";
 

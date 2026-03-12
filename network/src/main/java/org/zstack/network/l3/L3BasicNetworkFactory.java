@@ -3,7 +3,13 @@ package org.zstack.network.l3;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.APICreateL3NetworkMsg;
+import org.zstack.header.network.l3.L3Network;
+import org.zstack.header.network.l3.L3NetworkConstant;
+import org.zstack.header.network.l3.L3NetworkFactory;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkType;
+import org.zstack.header.network.l3.L3NetworkVO;
 
 public class L3BasicNetworkFactory implements L3NetworkFactory {
     private static final L3NetworkType type = new L3NetworkType(L3NetworkConstant.L3_BASIC_NETWORK_TYPE);

@@ -10,7 +10,11 @@ import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public interface ToInventory {
     CLogger logger = Utils.getLogger(ToInventory.class);

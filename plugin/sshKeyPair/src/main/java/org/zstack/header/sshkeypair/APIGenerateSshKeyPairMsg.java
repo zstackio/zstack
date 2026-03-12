@@ -1,7 +1,8 @@
 package org.zstack.header.sshkeypair;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIParam;
+import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
 import org.zstack.header.volume.VolumeVO;

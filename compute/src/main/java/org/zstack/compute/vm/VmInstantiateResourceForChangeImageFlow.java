@@ -10,7 +10,10 @@ import org.zstack.header.core.workflow.FlowException;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.ChangeVmImageExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstantiateResourceException;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

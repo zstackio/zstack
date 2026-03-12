@@ -16,7 +16,13 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostDeleteExtensionPoint;
+import org.zstack.header.host.HostException;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.HypervisorType;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
@@ -24,10 +30,34 @@ import org.zstack.header.storage.backup.BackupStorageAskInstallPathMsg;
 import org.zstack.header.storage.backup.BackupStorageAskInstallPathReply;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DeleteVolumeBitsOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.InstantiateMemoryVolumeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.InstantiateVolumeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.PrimaryStorage;
+import org.zstack.header.storage.primary.PrimaryStorageAttachExtensionPoint;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageDetachExtensionPoint;
+import org.zstack.header.storage.primary.PrimaryStorageException;
+import org.zstack.header.storage.primary.PrimaryStorageFactory;
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
+import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.primary.PrimaryStorageType;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.PrimaryStorageVO_;
+import org.zstack.header.storage.primary.RecalculatePrimaryStorageCapacityMsg;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.AfterInstantiateVolumeExtensionPoint;
+import org.zstack.header.volume.CreateQcow2VolumeProvisioningStrategyExtensionPoint;
+import org.zstack.header.volume.VolumeFormat;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -232,6 +262,7 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
             }
         });
 
+        // DEBT: NoRollbackFlow — in rollback
         template.setDeleteTemporaryTemplate(new NoRollbackFlow() {
             String __name__ = "delete-temporary-template";
 

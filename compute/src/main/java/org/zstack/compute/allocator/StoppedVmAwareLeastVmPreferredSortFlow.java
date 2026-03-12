@@ -15,7 +15,10 @@ import org.zstack.header.vm.VmInstanceState;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)

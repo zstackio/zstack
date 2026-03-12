@@ -1,6 +1,10 @@
 package org.zstack.network.hostNetworkInterface;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class HostNetworkBondingType {
     private static Map<String, HostNetworkBondingType> types = Collections.synchronizedMap(new HashMap<String, HostNetworkBondingType>());

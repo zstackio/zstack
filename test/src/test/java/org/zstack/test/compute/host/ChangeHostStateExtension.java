@@ -1,6 +1,10 @@
 package org.zstack.test.compute.host;
 
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostChangeStateExtensionPoint;
+import org.zstack.header.host.HostException;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStateEvent;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

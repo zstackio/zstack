@@ -17,7 +17,10 @@ import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l2.PrepareL2NetworkOnHostMsg;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.NetworkServiceConstants;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstantiateResourceException;
+import org.zstack.header.vm.VmNicSpec;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

@@ -10,7 +10,9 @@ public class WebUtils {
             ServerSocket s = new ServerSocket(0);
             port = s.getLocalPort();
             s.close();
-        } catch (IOException ignored) {}
+        } catch (IOException e) {
+            /* intentionally ignored: port allocation is best-effort */
+        }
         return port;
     }
 }

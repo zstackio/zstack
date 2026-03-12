@@ -7,7 +7,11 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.zone.*;
+import org.zstack.header.zone.APIDeleteZoneEvent;
+import org.zstack.header.zone.APIDeleteZoneMsg;
+import org.zstack.header.zone.ZoneConstant;
+import org.zstack.header.zone.ZoneMessage;
+import org.zstack.header.zone.ZoneVO;
 
 /**
  * Created with IntelliJ IDEA.

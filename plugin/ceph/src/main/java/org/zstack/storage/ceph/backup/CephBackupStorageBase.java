@@ -23,23 +23,82 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
 import org.zstack.header.HasThreadContext;
-import org.zstack.header.core.*;
+import org.zstack.header.core.AsyncLatch;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.image.*;
+import org.zstack.header.image.CancelDownloadImageMsg;
+import org.zstack.header.image.CancelDownloadImageReply;
+import org.zstack.header.image.ImageBackupStorageRefInventory;
+import org.zstack.header.image.ImageBackupStorageRefVO;
+import org.zstack.header.image.ImageBackupStorageRefVO_;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.ImageVO_;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.backup.APIDeleteExportedImageFromBackupStorageEvent;
+import org.zstack.header.storage.backup.APIDeleteExportedImageFromBackupStorageMsg;
+import org.zstack.header.storage.backup.APIExportImageFromBackupStorageEvent;
+import org.zstack.header.storage.backup.APIExportImageFromBackupStorageMsg;
+import org.zstack.header.storage.backup.BackupStorageAskInstallPathMsg;
+import org.zstack.header.storage.backup.BackupStorageAskInstallPathReply;
+import org.zstack.header.storage.backup.BackupStorageConstant;
+import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.backup.BakeImageMetadataMsg;
+import org.zstack.header.storage.backup.BakeImageMetadataReply;
+import org.zstack.header.storage.backup.CalculateImageHashOnBackupStorageMsg;
+import org.zstack.header.storage.backup.CalculateImageHashOnBackupStorageReply;
+import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
+import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageReply;
+import org.zstack.header.storage.backup.DownloadImageMsg;
+import org.zstack.header.storage.backup.DownloadImageReply;
+import org.zstack.header.storage.backup.DownloadVolumeMsg;
+import org.zstack.header.storage.backup.DownloadVolumeReply;
+import org.zstack.header.storage.backup.ExportImageFromBackupStorageMsg;
+import org.zstack.header.storage.backup.ExportImageFromBackupStorageReply;
+import org.zstack.header.storage.backup.GetImageDownloadProgressMsg;
+import org.zstack.header.storage.backup.GetImageDownloadProgressReply;
+import org.zstack.header.storage.backup.GetImageEncryptedOnBackupStorageMsg;
+import org.zstack.header.storage.backup.GetImageEncryptedOnBackupStorageReply;
+import org.zstack.header.storage.backup.GetImageSizeOnBackupStorageMsg;
+import org.zstack.header.storage.backup.GetImageSizeOnBackupStorageReply;
+import org.zstack.header.storage.backup.GetLocalFileSizeOnBackupStorageMsg;
+import org.zstack.header.storage.backup.GetLocalFileSizeOnBackupStorageReply;
+import org.zstack.header.storage.backup.RestoreImagesBackupStorageMetadataToDatabaseMsg;
+import org.zstack.header.storage.backup.RestoreImagesBackupStorageMetadataToDatabaseReply;
+import org.zstack.header.storage.backup.SyncImageSizeOnBackupStorageMsg;
+import org.zstack.header.storage.backup.SyncImageSizeOnBackupStorageReply;
 import org.zstack.storage.backup.BackupStorageBase;
-import org.zstack.storage.ceph.*;
+import org.zstack.storage.ceph.CephAgentUrl;
+import org.zstack.storage.ceph.CephCapacity;
+import org.zstack.storage.ceph.CephCapacityUpdater;
+import org.zstack.storage.ceph.CephCapacityVO;
+import org.zstack.storage.ceph.CephCapacityVO_;
+import org.zstack.storage.ceph.CephConstants;
+import org.zstack.storage.ceph.CephGlobalConfig;
+import org.zstack.storage.ceph.CephMonBase;
+import org.zstack.storage.ceph.CephPoolCapacity;
+import org.zstack.storage.ceph.CephSystemTags;
+import org.zstack.storage.ceph.MonStatus;
+import org.zstack.storage.ceph.MonUri;
 import org.zstack.storage.ceph.CephMonBase.PingResult;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageVO;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageVO_;
@@ -54,7 +113,14 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.Serializable;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -1309,6 +1375,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "connect-monitor";
 
@@ -1318,6 +1385,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "check-mon-integrity";
 
@@ -1397,6 +1465,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String _name_ = "check-pool";
 
@@ -1428,6 +1497,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "init";
 
@@ -1464,6 +1534,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "generate-ceph-images-metadata-file";
                     @Override
@@ -1881,6 +1952,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "connect-mons";
 
@@ -1922,6 +1994,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "check-mon-integrity";
 

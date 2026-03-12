@@ -1,6 +1,9 @@
 package org.zstack.header.sshkeypair;
 
-import org.zstack.header.vo.*;
+import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.vo.SoftDeletionCascade;
+import org.zstack.header.vo.SoftDeletionCascades;
+import org.zstack.header.vo.ToInventory;
 import org.zstack.header.vo.ForeignKey;
 
 import javax.persistence.*;

@@ -11,7 +11,11 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.VirtualRouterAsyncHttpCallMsg;
+import org.zstack.network.service.virtualrouter.VirtualRouterAsyncHttpCallReply;
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands;
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

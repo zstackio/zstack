@@ -1,6 +1,10 @@
 package org.zstack.header.console;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by xing5 on 2016/3/15.

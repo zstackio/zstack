@@ -9,7 +9,11 @@ import org.zstack.header.identity.APIQueryAccountMsg;
 import org.zstack.header.identity.APIQueryAccountReply;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.BeanConstructor;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.search.QueryTestValidator;
 
 /**

@@ -468,6 +468,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     bus.stop();
                     trigger.rollback();
                 }
+            // DEBT: NoRollbackFlow — in rollback
             }).then(new NoRollbackFlow() {
                 String __name__ = "populate-components";
 
@@ -490,6 +491,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     bus.unregisterService(self);
                     trigger.rollback();
                 }
+            // DEBT: NoRollbackFlow — in rollback
             }).then(new NoRollbackFlow() {
                 String __name__ = "call-prepare-db-extension";
 
@@ -545,6 +547,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                     trigger.rollback();
                 }
+            // DEBT: NoRollbackFlow — in rollback
             }).then(new NoRollbackFlow() {
                 String __name__ = "start-heartbeat";
 
@@ -567,6 +570,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     apim.stop();
                     trigger.rollback();
                 }
+            // DEBT: NoRollbackFlow — in rollback
             }).then(new NoRollbackFlow() {
                 String __name__ = "set-node-to-running";
 
@@ -576,6 +580,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     node = dbf.updateAndRefresh(node);
                     trigger.next();
                 }
+            // DEBT: NoRollbackFlow — in rollback
             }).then(new NoRollbackFlow() {
                 String __name__ = "I-join";
 
@@ -584,6 +589,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     nodeLifeCycle.iJoin(ManagementNodeInventory.valueOf(node));
                     trigger.next();
                 }
+            // DEBT: NoRollbackFlow — in rollback
             }).then(new NoRollbackFlow() {
                 String __name__ = "node-is-ready";
 
@@ -595,6 +601,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                     trigger.next();
                 }
+            // DEBT: NoRollbackFlow — in rollback
             }).then(new NoRollbackFlow() {
                 String __name__ = "listen-node-life-cycle-events";
 
@@ -603,6 +610,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     evtf.on(ManagementNodeCanonicalEvent.NODE_LIFECYCLE_PATH, nodeLifeCycleCallback);
                     trigger.next();
                 }
+            // DEBT: NoRollbackFlow — in rollback
             }).then(new NoRollbackFlow() {
                 String __name__ = "say-I-join";
 

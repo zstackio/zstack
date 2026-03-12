@@ -28,6 +28,7 @@ public class TestSimpleFlow5 {
         Map<String, Object> data = new HashMap<String, Object>();
         new SimpleFlowChain()
                 .setData(data)
+                // DEBT: NoRollbackFlow — in test
                 .then(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger chain, Map data) {
@@ -35,6 +36,7 @@ public class TestSimpleFlow5 {
                         chain.next();
                     }
                 })
+                // DEBT: NoRollbackFlow — in test
                 .then(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger chain, Map data) {

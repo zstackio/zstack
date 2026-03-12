@@ -13,7 +13,11 @@ import org.zstack.header.core.keyvalue.KeyValueEntity;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;

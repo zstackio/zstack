@@ -4,12 +4,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.identity.*;
-import org.zstack.header.identity.login.*;
+import org.zstack.header.identity.AccountConstant;
+import org.zstack.header.identity.AccountVO;
+import org.zstack.header.identity.AccountVO_;
+import org.zstack.header.identity.IdentityErrors;
+import org.zstack.header.identity.LoginType;
+import org.zstack.header.identity.login.AdditionalAuthFeature;
+import org.zstack.header.identity.login.LoginAuthConstant;
+import org.zstack.header.identity.login.LoginBackend;
+import org.zstack.header.identity.login.LoginContext;
+import org.zstack.header.identity.login.LoginSessionInfo;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;

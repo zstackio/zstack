@@ -4,7 +4,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.core.workflow.WorkFlowException;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 
@@ -23,6 +27,7 @@ public class TestSimpleFlow13 {
     public void test() throws WorkFlowException {
         final int[] count = {0};
 
+        // DEBT: NoRollbackFlow — in test
         new SimpleFlowChain().then(new NoRollbackFlow() {
             final String __name__ = "flow1_skip";
             @Override
@@ -41,6 +46,7 @@ public class TestSimpleFlow13 {
                 count[0] = count[0] - 1;
                 trigger.rollback();
             }
+        // DEBT: NoRollbackFlow — in rollback
         }).then(new NoRollbackFlow() {
             final String __name__ = "flow2";
 
@@ -55,6 +61,7 @@ public class TestSimpleFlow13 {
                 count[0] = count[0] - 1;
                 trigger.rollback();
             }
+        // DEBT: NoRollbackFlow — in rollback
         }).then(new NoRollbackFlow() {
             final String __name__ = "flow3_error";
             @Override

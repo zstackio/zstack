@@ -5,7 +5,13 @@ import org.zstack.core.config.GlobalConfigVO;
 import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
-import org.zstack.header.identity.*;
+import org.zstack.header.identity.AccountConstant;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.AccountResourceRefVO_;
+import org.zstack.header.identity.AccountType;
+import org.zstack.header.identity.AccountVO;
+import org.zstack.header.identity.QuotaVO;
 import org.zstack.header.message.Message;
 import org.zstack.utils.DebugUtils;
 

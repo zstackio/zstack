@@ -162,6 +162,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
 
                 @Override
                 public void setup() {
+                    // DEBT: NoRollbackFlow — in grantConsoleAccess
                     flow(new NoRollbackFlow() {
                         String __name__ = "delete-old-console";
 
@@ -181,6 +182,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
                         }
                     });
 
+                    // DEBT: NoRollbackFlow — reason TBD
                     flow(new NoRollbackFlow() {
                         String __name__ = "create-new-console";
 

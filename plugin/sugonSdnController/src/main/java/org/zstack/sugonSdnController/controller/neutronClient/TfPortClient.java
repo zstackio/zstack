@@ -8,14 +8,34 @@ import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.network.sdncontroller.SdnControllerVO_;
-import org.zstack.sugonSdnController.controller.api.*;
-import org.zstack.sugonSdnController.controller.api.types.*;
+import org.zstack.sugonSdnController.controller.api.Status;
+import org.zstack.sugonSdnController.controller.api.TfHttpClient;
+import org.zstack.sugonSdnController.controller.api.types.FloatingIp;
+import org.zstack.sugonSdnController.controller.api.types.FloatingIpPool;
+import org.zstack.sugonSdnController.controller.api.types.IdPermsType;
+import org.zstack.sugonSdnController.controller.api.types.InstanceIp;
+import org.zstack.sugonSdnController.controller.api.types.IpamSubnetType;
+import org.zstack.sugonSdnController.controller.api.types.KeyValuePair;
+import org.zstack.sugonSdnController.controller.api.types.KeyValuePairs;
+import org.zstack.sugonSdnController.controller.api.types.MacAddressesType;
+import org.zstack.sugonSdnController.controller.api.types.PermType2;
+import org.zstack.sugonSdnController.controller.api.types.Project;
+import org.zstack.sugonSdnController.controller.api.types.RouteTableType;
+import org.zstack.sugonSdnController.controller.api.types.RouteType;
+import org.zstack.sugonSdnController.controller.api.types.VirtualMachine;
+import org.zstack.sugonSdnController.controller.api.types.VirtualMachineInterface;
+import org.zstack.sugonSdnController.controller.api.types.VirtualNetwork;
+import org.zstack.sugonSdnController.controller.api.types.VnSubnetsType;
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 
 public class TfPortClient {

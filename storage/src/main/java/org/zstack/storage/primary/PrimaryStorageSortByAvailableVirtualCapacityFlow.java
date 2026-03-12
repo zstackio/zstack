@@ -8,7 +8,11 @@ import org.zstack.header.storage.primary.PrimaryStorageAllocationSpec;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class PrimaryStorageSortByAvailableVirtualCapacityFlow extends NoRollbackFlow {

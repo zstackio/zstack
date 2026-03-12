@@ -3,7 +3,9 @@ package org.zstack.network.hostNetworkInterface.lldp.entity;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.Index;
-import org.zstack.header.vo.*;
+import org.zstack.header.vo.SoftDeletionCascade;
+import org.zstack.header.vo.SoftDeletionCascades;
+import org.zstack.header.vo.ToInventory;
 
 import javax.persistence.*;
 import java.sql.Timestamp;

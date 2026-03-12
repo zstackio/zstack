@@ -13,7 +13,11 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.RebootVmInstanceMsg;
+import org.zstack.header.vm.StopVmMessage;
+import org.zstack.header.vm.StopVmOnHypervisorMsg;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
 
 import java.util.Map;
 

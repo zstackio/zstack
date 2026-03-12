@@ -1,14 +1,30 @@
 package org.zstack.compute.vm;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventCallback;
+import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.db.Q;
 import org.zstack.header.Component;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostCanonicalEvents;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.PriorityConfigStruct;
+import org.zstack.header.vm.UpdateVmPriorityMsg;
+import org.zstack.header.vm.UpdateVmPriorityReply;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.VmPriorityConfigVO;
+import org.zstack.header.vm.VmPriorityConfigVO_;
+import org.zstack.header.vm.VmPriorityLevel;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

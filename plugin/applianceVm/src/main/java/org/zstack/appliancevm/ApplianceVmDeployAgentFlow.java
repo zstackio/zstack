@@ -20,7 +20,11 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
@@ -60,6 +64,7 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in continueConnect
                 flow(new NoRollbackFlow() {
                     String __name__ = "echo";
 
@@ -79,6 +84,7 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in continueConnect
                 flow(new NoRollbackFlow() {
                     String __name__ = "init";
 

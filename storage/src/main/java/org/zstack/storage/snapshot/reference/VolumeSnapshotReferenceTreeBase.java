@@ -13,7 +13,13 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -30,7 +36,12 @@ import org.zstack.header.volume.VolumeVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -168,6 +179,7 @@ public class VolumeSnapshotReferenceTreeBase {
             public void rollback(FlowRollback trigger, Map data) {
                 trigger.rollback();
             }
+        // DEBT: NoRollbackFlow — in rollback
         }).then(new NoRollbackFlow() {
             String __name__ = "ensure-leafs-are-not-in-use";
 
@@ -196,6 +208,7 @@ public class VolumeSnapshotReferenceTreeBase {
                 logger.debug("delete snapshot reference leafs: " + toDeletePaths);
                 trigger.next();
             }
+        // DEBT: NoRollbackFlow — in rollback
         }).then(new NoRollbackFlow() {
             String __name__ = "delete-leafs-on-primary-storage";
             @Override

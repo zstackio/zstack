@@ -10,7 +10,9 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -109,6 +111,7 @@ public class KVMConnectExtensionForVxlanNetwork implements KVMHostConnectExtensi
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        // DEBT: NoRollbackFlow — in createKvmHostConnectingFlow
         return new NoRollbackFlow() {
             String __name__ = "prepare-vxlan-network";
 

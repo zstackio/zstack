@@ -6,7 +6,9 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.message.APIGetMessage;
-import org.zstack.network.service.vip.*;
+import org.zstack.network.service.vip.APICheckVipPortAvailabilityMsg;
+import org.zstack.network.service.vip.APICheckVipPortAvailabilityReply;
+import org.zstack.network.service.vip.VipVO;
 
 @RestRequest(
         path = "/vips/{vipUuid}/check-port-availability",

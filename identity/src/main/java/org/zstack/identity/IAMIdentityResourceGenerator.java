@@ -1,7 +1,12 @@
 package org.zstack.identity;
 
 import org.zstack.core.db.SQLBatch;
-import org.zstack.header.identity.*;
+import org.zstack.header.identity.APIUpdateUserMsg;
+import org.zstack.header.identity.AccountConstant;
+import org.zstack.header.identity.PolicyStatement;
+import org.zstack.header.identity.PolicyStatementEffect;
+import org.zstack.header.identity.PolicyVO;
+import org.zstack.header.identity.PolicyVO_;
 import org.zstack.header.identity.rbac.RBAC;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APISyncCallMessage;

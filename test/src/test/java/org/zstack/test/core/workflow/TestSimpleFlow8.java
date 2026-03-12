@@ -28,6 +28,7 @@ public class TestSimpleFlow8 {
         final int[] count = {0};
 
         new SimpleFlowChain()
+                // DEBT: NoRollbackFlow — in test
                 .then(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger chain, Map data) {
@@ -35,6 +36,7 @@ public class TestSimpleFlow8 {
                         chain.next();
                     }
                 })
+                // DEBT: NoRollbackFlow — in test
                 .then(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger chain, Map data) {
@@ -42,6 +44,7 @@ public class TestSimpleFlow8 {
                         chain.fail(null);
                     }
                 })
+                // DEBT: NoRollbackFlow — in test
                 .then(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger chain, Map data) {

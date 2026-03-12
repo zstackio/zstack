@@ -8,34 +8,145 @@ import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.cloudbus.MarshalReplyMessageExtensionPoint;
+import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.*;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.ExceptionSafe;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.*;
+import org.zstack.header.identity.APIChangeResourceOwnerMsg;
+import org.zstack.header.identity.AccountResourceRefInventory;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.ReportQuotaExtensionPoint;
+import org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.NeedQuotaCheckMessage;
+import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.storage.backup.CleanUpVmBackupExtensionPoint;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceMsg;
+import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceReply;
+import org.zstack.header.storage.primary.AskVolumeSnapshotCapabilityMsg;
+import org.zstack.header.storage.primary.AskVolumeSnapshotCapabilityReply;
+import org.zstack.header.storage.primary.CheckVolumeSnapshotOperationOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.GetVolumeSnapshotEncryptedOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.GetVolumeSnapshotEncryptedOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.PrimaryStorageVO_;
+import org.zstack.header.storage.primary.ReleasePrimaryStorageSpaceMsg;
+import org.zstack.header.storage.primary.SyncVolumeSizeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.SyncVolumeSizeOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.TakeSnapshotMsg;
+import org.zstack.header.storage.primary.TakeSnapshotReply;
+import org.zstack.header.storage.primary.VolumeSnapshotCapability;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
-import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.storage.snapshot.group.*;
+import org.zstack.header.storage.snapshot.APIBatchDeleteVolumeSnapshotEvent;
+import org.zstack.header.storage.snapshot.APIBatchDeleteVolumeSnapshotMsg;
+import org.zstack.header.storage.snapshot.APIGetVolumeSnapshotTreeReply;
+import org.zstack.header.storage.snapshot.APIQueryVolumeSnapshotTreeReply;
+import org.zstack.header.storage.snapshot.AskVolumeSnapshotStructMsg;
+import org.zstack.header.storage.snapshot.AskVolumeSnapshotStructReply;
+import org.zstack.header.storage.snapshot.BatchDeleteVolumeSnapshotStruct;
+import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
+import org.zstack.header.storage.snapshot.CreateVolumeSnapshotMsg;
+import org.zstack.header.storage.snapshot.CreateVolumeSnapshotReply;
+import org.zstack.header.storage.snapshot.CreateVolumesSnapshotMsg;
+import org.zstack.header.storage.snapshot.DeleteVolumeSnapshotDirection;
+import org.zstack.header.storage.snapshot.DeleteVolumeSnapshotScope;
+import org.zstack.header.storage.snapshot.GetVolumeSnapshotEncryptedMsg;
+import org.zstack.header.storage.snapshot.GetVolumeSnapshotEncryptedReply;
+import org.zstack.header.storage.snapshot.GetVolumeSnapshotTreeRootNodeMsg;
+import org.zstack.header.storage.snapshot.GetVolumeSnapshotTreeRootNodeReply;
+import org.zstack.header.storage.snapshot.MarkRootVolumeAsSnapshotMsg;
+import org.zstack.header.storage.snapshot.MarkRootVolumeAsSnapshotReply;
+import org.zstack.header.storage.snapshot.SnapshotBackendOperation;
+import org.zstack.header.storage.snapshot.SnapshotMode;
+import org.zstack.header.storage.snapshot.VolumeSnapshotAfterCreateExtensionPoint;
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.VolumeSnapshotCreationExtensionPoint;
+import org.zstack.header.storage.snapshot.VolumeSnapshotDeletionMsg;
+import org.zstack.header.storage.snapshot.VolumeSnapshotDeletionStructs;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotMessage;
+import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageMsg;
+import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageReply;
+import org.zstack.header.storage.snapshot.VolumeSnapshotState;
+import org.zstack.header.storage.snapshot.VolumeSnapshotStatus;
+import org.zstack.header.storage.snapshot.VolumeSnapshotStruct;
+import org.zstack.header.storage.snapshot.VolumeSnapshotTree;
+import org.zstack.header.storage.snapshot.VolumeSnapshotTreeInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotTreeStatus;
+import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
+import org.zstack.header.storage.snapshot.group.APICheckVolumeSnapshotGroupAvailabilityMsg;
+import org.zstack.header.storage.snapshot.group.APICheckVolumeSnapshotGroupAvailabilityReply;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupMessage;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO_;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceMessage;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.APIGetMemorySnapshotGroupReferenceMsg;
+import org.zstack.header.vm.APIGetMemorySnapshotGroupReferenceReply;
+import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.APICreateVolumeSnapshotGroupMsg;
+import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
+import org.zstack.header.volume.APIRecoverDataVolumeMsg;
+import org.zstack.header.volume.FlattenVolumeExtensionPoint;
+import org.zstack.header.volume.OverwriteVolumeExtensionPoint;
+import org.zstack.header.volume.Volume;
+import org.zstack.header.volume.VolumeBeforeExpungeExtensionPoint;
+import org.zstack.header.volume.VolumeCreateSnapshotMsg;
+import org.zstack.header.volume.VolumeDeletionPolicyManager;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeJustBeforeDeleteFromDbExtensionPoint;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.storage.snapshot.group.MemorySnapshotGroupReferenceFactory;
@@ -55,7 +166,15 @@ import org.zstack.zql.ZQL;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -286,6 +405,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
         reportProgress("20");
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            // DEBT: NoRollbackFlow — in handleSnapshotReference
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -301,6 +421,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — in handleSnapshotReference
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -318,6 +439,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 }
             });
         } else {
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -784,6 +906,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in scripts
                 flow(new NoRollbackFlow() {
                     String __name__ = "create-new-tree-if-needed";
                     @Override
@@ -799,6 +922,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                             .eq(VmInstanceVO_.uuid, volumeVO.getVmInstanceUuid())
                             .findValue();
                 } else {
+                    // DEBT: NoRollbackFlow — reason TBD
                     flow(new NoRollbackFlow() {
                         String __name__ = "sync-root-volume-size";
                         @Override
@@ -875,6 +999,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "take-volume-snapshot";
 
@@ -903,6 +1028,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "after-volume-snapshot-created";
 
@@ -936,6 +1062,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "adjust-snapshot-capacity-on-primary-storage";
 
@@ -1063,6 +1190,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             VolumeSnapshotCapability capability;
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in callExtensionPoints
                 flow(new NoRollbackFlow() {
                     String __name__ = "ask-volume-snapshot-capability";
                     @Override
@@ -1108,6 +1236,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 if (customizedFlows != null) {
                     customizedFlows.forEach(this::flow);
                 } else {
+                    // DEBT: NoRollbackFlow — reason TBD
                     flow(new NoRollbackFlow() {
                         String __name__ = "mark-rootVolume-as-snapshot";
                         @Override
@@ -1140,6 +1269,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     });
                 }
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "post-mark-rootVolume-as-snapshot";
 

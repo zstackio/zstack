@@ -1,7 +1,14 @@
 package org.zstack.compute.allocator;
 
 import org.zstack.header.Component;
-import org.zstack.header.allocator.*;
+import org.zstack.header.allocator.AllocateHostMsg;
+import org.zstack.header.allocator.DesignatedAllocateHostMsg;
+import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.allocator.HostAllocatorSpec;
+import org.zstack.header.allocator.HostAllocatorStrategy;
+import org.zstack.header.allocator.HostAllocatorStrategyFactory;
+import org.zstack.header.allocator.HostAllocatorStrategyType;
+import org.zstack.header.allocator.HostSortorStrategy;
 
 import java.util.ArrayList;
 import java.util.List;

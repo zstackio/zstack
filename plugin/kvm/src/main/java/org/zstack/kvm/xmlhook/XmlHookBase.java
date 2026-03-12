@@ -16,7 +16,11 @@ import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.APIMessage;
@@ -27,7 +31,11 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.utils.CollectionUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
@@ -150,6 +158,7 @@ public class XmlHookBase {
     private void updateVmUserDefinedXmlHook(APIUpdateVmUserDefinedXmlHookScriptMsg msg, ReturnValueCompletion<XmlHookInventory> completion) {
         FlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("update-user-defined-xml-hook-%s-script", msg.getXmlHookUuid()));
+        // DEBT: NoRollbackFlow — in updateVmUserDefinedXmlHook
         chain.then(new NoRollbackFlow() {
             String __name__ = "refresh-db";
 
@@ -167,6 +176,7 @@ public class XmlHookBase {
                 dbf.updateAndRefresh(self);
                 trigger.next();
             }
+        // DEBT: NoRollbackFlow — in updateVmUserDefinedXmlHook
         }).then(new NoRollbackFlow() {
             String __name__ = "startup-vm-instances";
 

@@ -36,7 +36,11 @@ import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigVali
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.core.workflow.NopeFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -46,14 +50,76 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.backup.*;
-import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.*;
-import org.zstack.header.volume.*;
+import org.zstack.header.storage.backup.BackupStorageAskInstallPathMsg;
+import org.zstack.header.storage.backup.BackupStorageAskInstallPathReply;
+import org.zstack.header.storage.backup.BackupStorageConstant;
+import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint;
+import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
+import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
+import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceMsg;
+import org.zstack.header.storage.primary.CephPrimaryStorageAllocateConfig;
+import org.zstack.header.storage.primary.ImageCacheVO;
+import org.zstack.header.storage.primary.PSCapacityExtensionPoint;
+import org.zstack.header.storage.primary.PrimaryStorage;
+import org.zstack.header.storage.primary.PrimaryStorageAllocateConfig;
+import org.zstack.header.storage.primary.PrimaryStorageAllocationPurpose;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageFactory;
+import org.zstack.header.storage.primary.PrimaryStorageFindBackupStorage;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.primary.PrimaryStorageType;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.PrimaryStorageVO_;
+import org.zstack.header.storage.primary.RecalculatePrimaryStorageCapacityExtensionPoint;
+import org.zstack.header.storage.primary.RecalculatePrimaryStorageCapacityStruct;
+import org.zstack.header.storage.primary.TakeSnapshotMsg;
+import org.zstack.header.storage.primary.TakeSnapshotReply;
+import org.zstack.header.storage.snapshot.BeforeTakeLiveSnapshotsOnVolumes;
+import org.zstack.header.storage.snapshot.ConsistentType;
+import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
+import org.zstack.header.storage.snapshot.CreateVolumeSnapshotMsg;
+import org.zstack.header.storage.snapshot.CreateVolumeSnapshotReply;
+import org.zstack.header.storage.snapshot.CreateVolumesSnapshotOverlayInnerMsg;
+import org.zstack.header.storage.snapshot.CreateVolumesSnapshotsJobStruct;
+import org.zstack.header.storage.snapshot.TakeVolumesSnapshotOnKvmMsg;
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotStatus;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
+import org.zstack.header.vm.CreateVmInstanceMsg;
+import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
+import org.zstack.header.vm.VmCapabilities;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceCreateExtensionPoint;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstantiateResourceException;
+import org.zstack.header.volume.CreateDataVolumeExtensionPoint;
+import org.zstack.header.volume.SyncVolumeSizeMsg;
+import org.zstack.header.volume.SyncVolumeSizeReply;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeCreateMessage;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.kvm.KVMAgentCommands.*;
-import org.zstack.kvm.*;
-import org.zstack.storage.ceph.*;
+import org.zstack.kvm.KVMAttachVolumeExtensionPoint;
+import org.zstack.kvm.KVMDetachVolumeExtensionPoint;
+import org.zstack.kvm.KVMHostInventory;
+import org.zstack.kvm.KVMPreAttachIsoExtensionPoint;
+import org.zstack.kvm.KVMStartVmExtensionPoint;
+import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint;
+import org.zstack.kvm.VolumeTO;
+import org.zstack.storage.ceph.CephCapacity;
+import org.zstack.storage.ceph.CephCapacityUpdateExtensionPoint;
+import org.zstack.storage.ceph.CephConstants;
+import org.zstack.storage.ceph.CephGlobalConfig;
+import org.zstack.storage.ceph.CephGlobalProperty;
+import org.zstack.storage.ceph.CephSystemTags;
+import org.zstack.storage.ceph.MonStatus;
+import org.zstack.storage.ceph.MonUri;
 import org.zstack.storage.ceph.primary.KVMCephVolumeTO.MonInfo;
 import org.zstack.storage.ceph.primary.capacity.CephOsdGroupCapacityHelper;
 import org.zstack.storage.ceph.primary.capacity.CephPrimaryCapacityUpdater;
@@ -70,7 +136,12 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -587,6 +658,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         final TaskProgressRange UPLOAD_STAGE = new TaskProgressRange(10, 95);
 
         final TaskProgressRange parentStage = getTaskStage();
+        // DEBT: NoRollbackFlow — in createTemplateFromVolumeSnapshot
         template.setCreateTemporaryTemplate(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, final Map data) {
@@ -1108,6 +1180,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     @Override
     public List<Flow> markRootVolumeAsSnapshot(VolumeInventory vol, VolumeSnapshotVO vo, String accountUuid) {
         List<Flow> flows = new ArrayList<>();
+        // DEBT: NoRollbackFlow — reason TBD
         flows.add(new NoRollbackFlow() {
             String __name__ = "create-snapshot-before-reimage";
 

@@ -12,7 +12,11 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.zone.ZoneEO;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.BeanConstructor;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 
 import java.util.Arrays;
 import java.util.List;

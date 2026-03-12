@@ -2,7 +2,11 @@ package org.zstack.network.service.virtualrouter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.network.service.*;
+import org.zstack.header.network.service.APIAddNetworkServiceProviderMsg;
+import org.zstack.header.network.service.NetworkServiceProvider;
+import org.zstack.header.network.service.NetworkServiceProviderFactory;
+import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.NetworkServiceProviderVO;
 
 public class VirtualRouterProviderFactory implements NetworkServiceProviderFactory {
 	public static final NetworkServiceProviderType type = new NetworkServiceProviderType(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE);

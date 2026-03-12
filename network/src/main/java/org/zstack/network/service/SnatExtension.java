@@ -13,11 +13,18 @@ import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.network.service.NetworkServiceSnatBackend;
 import org.zstack.header.network.service.SnatStruct;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicHelper;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicSpec;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**

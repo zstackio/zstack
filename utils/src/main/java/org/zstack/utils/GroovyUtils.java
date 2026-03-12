@@ -63,7 +63,9 @@ public class GroovyUtils {
             InputStream in = parent.getResourceAsStream(scriptPath);
             String script = StringDSL.inputStreamToString(in);
             clz = loader.parseClass(script);
-        } catch (IOException ignore) {}
+        } catch (IOException e) {
+            /* intentionally ignored: GroovyClassLoader close failure is non-critical */
+        }
         groovyClasses.put(scriptPath, clz);
         return clz;
     }

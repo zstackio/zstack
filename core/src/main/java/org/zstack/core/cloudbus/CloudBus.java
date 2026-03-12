@@ -6,7 +6,15 @@ import org.zstack.header.Service;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudConfigureFailException;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.BeforeDeliveryMessageInterceptor;
+import org.zstack.header.message.BeforePublishEventInterceptor;
+import org.zstack.header.message.BeforeSendMessageInterceptor;
+import org.zstack.header.message.Event;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.NeedReplyMessage;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;

@@ -5,12 +5,23 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.IpAllocateMessage;
+import org.zstack.header.network.l3.IpAllocatorType;
+import org.zstack.header.network.l3.IpRangeVO;
+import org.zstack.header.network.l3.IpRangeVO_;
+import org.zstack.header.network.l3.L3NetworkConstant;
+import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.header.network.l3.UsedIpVO_;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {

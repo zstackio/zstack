@@ -1,6 +1,10 @@
 package org.zstack.core.log;
 
-import org.zstack.core.config.*;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigBeforeUpdateExtensionPoint;
+import org.zstack.core.config.GlobalConfigException;
+import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.Component;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;

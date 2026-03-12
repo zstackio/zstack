@@ -19,7 +19,10 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.*;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SingleFlightTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.allocator.AllocationScene;
@@ -28,13 +31,88 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowFinallyHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.*;
+import org.zstack.header.host.APIChangeHostStateEvent;
+import org.zstack.header.host.APIChangeHostStateMsg;
+import org.zstack.header.host.APIDeleteHostEvent;
+import org.zstack.header.host.APIDeleteHostMsg;
+import org.zstack.header.host.APIGetHostPowerStatusEvent;
+import org.zstack.header.host.APIGetHostPowerStatusMsg;
+import org.zstack.header.host.APIPowerOnHostEvent;
+import org.zstack.header.host.APIPowerOnHostMsg;
+import org.zstack.header.host.APIPowerResetHostEvent;
+import org.zstack.header.host.APIPowerResetHostMsg;
+import org.zstack.header.host.APIReconnectHostEvent;
+import org.zstack.header.host.APIReconnectHostMsg;
+import org.zstack.header.host.APIShutdownHostEvent;
+import org.zstack.header.host.APIShutdownHostMsg;
+import org.zstack.header.host.APIUpdateHostEvent;
+import org.zstack.header.host.APIUpdateHostIpmiEvent;
+import org.zstack.header.host.APIUpdateHostIpmiMsg;
+import org.zstack.header.host.APIUpdateHostMsg;
+import org.zstack.header.host.AfterChangeHostStatusExtensionPoint;
+import org.zstack.header.host.ChangeHostConnectionStateMsg;
+import org.zstack.header.host.ChangeHostConnectionStateReply;
+import org.zstack.header.host.ChangeHostStateMsg;
+import org.zstack.header.host.ChangeHostStateReply;
+import org.zstack.header.host.ChangeHostStatusMsg;
+import org.zstack.header.host.ChangeHostStatusReply;
+import org.zstack.header.host.ConnectHostInfo;
+import org.zstack.header.host.ConnectHostMsg;
+import org.zstack.header.host.ConnectHostReply;
+import org.zstack.header.host.GetHostPowerStatusMsg;
+import org.zstack.header.host.GetHostPowerStatusReply;
+import org.zstack.header.host.Host;
+import org.zstack.header.host.HostAfterConnectedExtensionPoint;
+import org.zstack.header.host.HostAfterMaintenanceExtensionPoint;
+import org.zstack.header.host.HostBaseExtensionFactory;
+import org.zstack.header.host.HostCanonicalEvents;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostDeletionMsg;
+import org.zstack.header.host.HostDeletionReply;
+import org.zstack.header.host.HostErrors;
+import org.zstack.header.host.HostException;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostIpmiInventory;
+import org.zstack.header.host.HostIpmiVO;
+import org.zstack.header.host.HostMaintenanceExtensionPoint;
+import org.zstack.header.host.HostMaintenancePolicyExtensionPoint;
+import org.zstack.header.host.HostPowerManagementMethod;
+import org.zstack.header.host.HostPowerStatus;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStateEvent;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostStatusEvent;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.HypervisorType;
+import org.zstack.header.host.OrderVmBeforeMigrationDuringHostMaintenanceExtensionPoint;
+import org.zstack.header.host.PingHostMsg;
+import org.zstack.header.host.PingHostReply;
+import org.zstack.header.host.PowerOnHostMsg;
+import org.zstack.header.host.PowerOnHostReply;
+import org.zstack.header.host.RebootHostMsg;
+import org.zstack.header.host.RebootHostReply;
+import org.zstack.header.host.RecalculateHostCapacityMsg;
+import org.zstack.header.host.ReconnectHostMsg;
+import org.zstack.header.host.ReconnectHostReply;
+import org.zstack.header.host.ScanVmPortMsg;
+import org.zstack.header.host.ScanVmPortReply;
+import org.zstack.header.host.ShutdownHostMsg;
+import org.zstack.header.host.ShutdownHostReply;
+import org.zstack.header.host.UpdateHostOSMsg;
+import org.zstack.header.host.UpdateHostOSReply;
 import org.zstack.header.host.HostCanonicalEvents.HostDeletedData;
 import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData;
 import org.zstack.header.host.HostErrors.Opaque;
@@ -45,14 +123,31 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.MigrateVmMsg;
+import org.zstack.header.vm.StopVmInstanceMsg;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.VmTracerCanonicalEvents;
 import org.zstack.tag.SystemTagCreator;
-import org.zstack.utils.*;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.data.Pair;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -392,6 +487,7 @@ public abstract class HostBase extends AbstractHost {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in maintenanceHook
                 flow(new NoRollbackFlow() {
                     String __name__ = "try-migrate-vm";
 
@@ -477,6 +573,7 @@ public abstract class HostBase extends AbstractHost {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "stop-vm-not-migrated";
 
@@ -530,6 +627,7 @@ public abstract class HostBase extends AbstractHost {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in stopFailedToMigrateVms
                 flow(new NoRollbackFlow() {
                     String __name__ = "run-extension-point-after-maintenance";
 
@@ -619,6 +717,7 @@ public abstract class HostBase extends AbstractHost {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-host-%s", msg.getUuid()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            // DEBT: NoRollbackFlow — in deleteHostByApiMessage
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -634,6 +733,7 @@ public abstract class HostBase extends AbstractHost {
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — in deleteHostByApiMessage
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -651,6 +751,7 @@ public abstract class HostBase extends AbstractHost {
                 }
             });
         } else {
+            // DEBT: NoRollbackFlow — in deleteHostByApiMessage
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -669,6 +770,7 @@ public abstract class HostBase extends AbstractHost {
             });
         }
 
+        // DEBT: NoRollbackFlow — reason TBD
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -1286,6 +1388,7 @@ public abstract class HostBase extends AbstractHost {
                 flowChain.then(new ShareFlow() {
                     @Override
                     public void setup() {
+                        // DEBT: NoRollbackFlow — in getSyncLevel
                         flow(new NoRollbackFlow() {
                             String __name__ = "check-conditions-of-connection";
 
@@ -1305,6 +1408,7 @@ public abstract class HostBase extends AbstractHost {
                             }
                         });
 
+                        // DEBT: NoRollbackFlow — in getSyncLevel
                         flow(new NoRollbackFlow() {
                             String __name__ = "connect-host";
 
@@ -1325,6 +1429,7 @@ public abstract class HostBase extends AbstractHost {
                             }
                         });
 
+                        // DEBT: NoRollbackFlow — reason TBD
                         flow(new NoRollbackFlow() {
                             String __name__ = "call-pre-connect-extensions";
 
@@ -1357,6 +1462,7 @@ public abstract class HostBase extends AbstractHost {
                             }
                         });
 
+                        // DEBT: NoRollbackFlow — reason TBD
                         flow(new NoRollbackFlow() {
                             String __name__ = "call-post-connect-extensions";
 
@@ -1389,6 +1495,7 @@ public abstract class HostBase extends AbstractHost {
                             }
                         });
 
+                        // DEBT: NoRollbackFlow — reason TBD
                         flow(new NoRollbackFlow() {
                             String __name__ = "recalculate-host-capacity";
 

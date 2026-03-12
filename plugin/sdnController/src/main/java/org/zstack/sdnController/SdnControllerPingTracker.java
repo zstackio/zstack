@@ -20,7 +20,7 @@ import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.sdncontroller.SdnControllerStatus;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.network.sdncontroller.SdnControllerVO_;
-import org.zstack.sdnController.header.*;
+import org.zstack.sdnController.header.ReconnectSdnControllerMsg;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;

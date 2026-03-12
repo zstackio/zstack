@@ -25,7 +25,13 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeStats;
-import org.zstack.kvm.*;
+import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.KVMHostConnectExtensionPoint;
+import org.zstack.kvm.KVMHostConnectedContext;
+import org.zstack.kvm.KVMHostInventory;
+import org.zstack.kvm.KVMStartVmExtensionPoint;
+import org.zstack.kvm.KVMTakeSnapshotExtensionPoint;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -77,6 +83,7 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        // DEBT: NoRollbackFlow — in createKvmHostConnectingFlow
         return new NoRollbackFlow() {
             String __name__ = "init-local-storage";
 

@@ -4,7 +4,12 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.cluster.*;
+import org.zstack.header.cluster.Cluster;
+import org.zstack.header.cluster.ClusterConstant;
+import org.zstack.header.cluster.ClusterFactory;
+import org.zstack.header.cluster.ClusterType;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.CreateClusterMessage;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class BaseClusterFactory implements ClusterFactory {
     static final ClusterType type = new ClusterType(ClusterConstant.ZSTACK_CLUSTER_TYPE);

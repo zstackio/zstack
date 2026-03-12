@@ -1,6 +1,10 @@
 package org.zstack.header.storage.snapshot;
 
-import org.zstack.header.query.*;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.ExpandedQueryAlias;
+import org.zstack.header.query.ExpandedQueryAliases;
+import org.zstack.header.query.Queryable;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefInventory;

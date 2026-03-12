@@ -16,7 +16,12 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.thread.*;
+import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.RunInQueue;
+import org.zstack.core.thread.SingleFlightTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.trash.TrashType;
 import org.zstack.core.upgrade.GrayVersion;
@@ -28,18 +33,34 @@ import org.zstack.header.agent.CancelCommand;
 import org.zstack.header.agent.ReloadableCommand;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
-import org.zstack.header.core.*;
+import org.zstack.header.core.AsyncLatch;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.FutureReturnValueCompletion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.PaginateCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.header.core.trash.TrashCleanupResult;
 import org.zstack.header.core.validation.Validation;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
@@ -50,10 +71,143 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.header.storage.backup.*;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.backup.BackupStorageAskInstallPathMsg;
+import org.zstack.header.storage.backup.BackupStorageAskInstallPathReply;
+import org.zstack.header.storage.backup.BackupStorageConstant;
+import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.backup.BackupStorageVO_;
+import org.zstack.header.storage.primary.APICleanUpImageCacheOnPrimaryStorageEvent;
+import org.zstack.header.storage.primary.APICleanUpImageCacheOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.APICleanUpStorageTrashOnPrimaryStorageEvent;
+import org.zstack.header.storage.primary.APICleanUpStorageTrashOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.APICleanUpTrashOnPrimaryStorageEvent;
+import org.zstack.header.storage.primary.APICleanUpTrashOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.APIReconnectPrimaryStorageEvent;
+import org.zstack.header.storage.primary.APIReconnectPrimaryStorageMsg;
+import org.zstack.header.storage.primary.AfterCreateImageCacheExtensionPoint;
+import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceMsg;
+import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceReply;
+import org.zstack.header.storage.primary.AskInstallPathForNewSnapshotMsg;
+import org.zstack.header.storage.primary.AskInstallPathForNewSnapshotReply;
+import org.zstack.header.storage.primary.AskVolumeSnapshotCapabilityMsg;
+import org.zstack.header.storage.primary.AskVolumeSnapshotCapabilityReply;
+import org.zstack.header.storage.primary.BackupStorageMediator;
+import org.zstack.header.storage.primary.BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg;
+import org.zstack.header.storage.primary.BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply;
+import org.zstack.header.storage.primary.CancelDownloadBitsFromKVMHostToPrimaryStorageMsg;
+import org.zstack.header.storage.primary.CancelDownloadBitsFromKVMHostToPrimaryStorageReply;
+import org.zstack.header.storage.primary.CancelJobOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.CancelJobOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.CheckSnapshotMsg;
+import org.zstack.header.storage.primary.CheckSnapshotReply;
+import org.zstack.header.storage.primary.CheckVolumeSnapshotOperationOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.CheckVolumeSnapshotOperationOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.CleanUpStorageTrashOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.CleanUpStorageTrashOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.CleanUpTrashOnPrimaryStroageMsg;
+import org.zstack.header.storage.primary.CreateImageCacheFromVolumeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.CreateImageCacheFromVolumeOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.CreateTemplateFromVolumeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.CreateTemplateFromVolumeOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.DeleteBitsOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DeleteBitsOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.DeleteImageCacheOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DeleteImageCacheOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.DeleteIsoFromPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DeleteIsoFromPrimaryStorageReply;
+import org.zstack.header.storage.primary.DeleteSnapshotOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DeleteSnapshotOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.DeleteVolumeBitsOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DeleteVolumeBitsOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.DeleteVolumeChainOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DeleteVolumeChainOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.DeleteVolumeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DeleteVolumeOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.DownloadBitsFromKVMHostToPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DownloadBitsFromKVMHostToPrimaryStorageReply;
+import org.zstack.header.storage.primary.DownloadBitsFromNbdToPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DownloadBitsFromNbdToPrimaryStorageReply;
+import org.zstack.header.storage.primary.DownloadBitsFromRemoteTargetOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DownloadDataVolumeToPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DownloadDataVolumeToPrimaryStorageReply;
+import org.zstack.header.storage.primary.DownloadIsoToPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DownloadIsoToPrimaryStorageReply;
+import org.zstack.header.storage.primary.DownloadVolumeTemplateToPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DownloadVolumeTemplateToPrimaryStorageReply;
+import org.zstack.header.storage.primary.FlattenVolumeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.FlattenVolumeOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.GetDownloadBitsFromKVMHostProgressMsg;
+import org.zstack.header.storage.primary.GetDownloadBitsFromKVMHostProgressReply;
+import org.zstack.header.storage.primary.GetInstallPathForDataVolumeDownloadMsg;
+import org.zstack.header.storage.primary.GetInstallPathForDataVolumeDownloadReply;
+import org.zstack.header.storage.primary.GetOwningVolumePathFromInternalSnapshotMsg;
+import org.zstack.header.storage.primary.GetOwningVolumePathFromInternalSnapshotReply;
+import org.zstack.header.storage.primary.GetPrimaryStorageResourceLocationMsg;
+import org.zstack.header.storage.primary.GetPrimaryStorageResourceLocationReply;
+import org.zstack.header.storage.primary.GetPrimaryStorageUsageReportMsg;
+import org.zstack.header.storage.primary.GetPrimaryStorageUsedPhysicalCapacityForecastReply;
+import org.zstack.header.storage.primary.GetVolumeBackingChainFromPrimaryStorageMsg;
+import org.zstack.header.storage.primary.GetVolumeBackingChainFromPrimaryStorageReply;
+import org.zstack.header.storage.primary.GetVolumeSnapshotEncryptedOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.GetVolumeSnapshotEncryptedOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.ImageCacheInventory;
+import org.zstack.header.storage.primary.ImageCacheState;
+import org.zstack.header.storage.primary.ImageCacheVO;
+import org.zstack.header.storage.primary.ImageCacheVO_;
+import org.zstack.header.storage.primary.ImageCacheVolumeRefVO;
+import org.zstack.header.storage.primary.IncreasePrimaryStorageCapacityMsg;
+import org.zstack.header.storage.primary.InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.InstantiateVolumeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.InstantiateVolumeOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.MediatorDownloadParam;
+import org.zstack.header.storage.primary.MediatorUploadParam;
+import org.zstack.header.storage.primary.MergeVolumeSnapshotOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.MergeVolumeSnapshotOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.PrimaryStorageAllocationPurpose;
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
+import org.zstack.header.storage.primary.PrimaryStorageLicenseInfo;
+import org.zstack.header.storage.primary.PrimaryStorageLicenseInfoFactory;
+import org.zstack.header.storage.primary.PrimaryStorageToBackupStorageMediatorExtensionPoint;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.PurgeSnapshotOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.PurgeSnapshotOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.ReInitRootVolumeFromTemplateOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.ReInitRootVolumeFromTemplateOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.ReconnectPrimaryStorageMsg;
+import org.zstack.header.storage.primary.ReleasePrimaryStorageSpaceMsg;
+import org.zstack.header.storage.primary.ResizeVolumeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.RevertVolumeFromSnapshotOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.RevertVolumeFromSnapshotOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.SyncVolumeSizeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.SyncVolumeSizeOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.TakeSnapshotMsg;
+import org.zstack.header.storage.primary.TakeSnapshotReply;
+import org.zstack.header.storage.primary.UpdatePrimaryStorageHostStatusMsg;
+import org.zstack.header.storage.primary.UsageReport;
+import org.zstack.header.storage.primary.VolumeSnapshotCapability;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
-import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotMsg;
+import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotReply;
+import org.zstack.header.storage.snapshot.CreateVolumeSnapshotMsg;
+import org.zstack.header.storage.snapshot.CreateVolumeSnapshotReply;
+import org.zstack.header.storage.snapshot.DeleteVolumeSnapshotDirection;
+import org.zstack.header.storage.snapshot.DeleteVolumeSnapshotScope;
+import org.zstack.header.storage.snapshot.GetVolumeSnapshotSizeOnPrimaryStorageMsg;
+import org.zstack.header.storage.snapshot.GetVolumeSnapshotSizeOnPrimaryStorageReply;
+import org.zstack.header.storage.snapshot.ShrinkVolumeSnapshotOnPrimaryStorageMsg;
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.VolumeSnapshotDeletionMsg;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -61,21 +215,58 @@ import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vo.ResourceVO;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageMsg;
+import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageReply;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.identity.AccountManager;
-import org.zstack.kvm.*;
+import org.zstack.kvm.GetKVMHostDownloadCredentialMsg;
+import org.zstack.kvm.GetKVMHostDownloadCredentialReply;
+import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
+import org.zstack.kvm.KVMHostAsyncHttpCallReply;
+import org.zstack.kvm.KvmCommandFailureChecker;
+import org.zstack.kvm.KvmCommandSender;
+import org.zstack.kvm.KvmResponseWrapper;
 import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint.KvmCancelSelfFencerParam;
 import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint.KvmSetupSelfFencerParam;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
-import org.zstack.storage.ceph.*;
+import org.zstack.storage.ceph.CephCapacity;
+import org.zstack.storage.ceph.CephCapacityUpdater;
+import org.zstack.storage.ceph.CephCapacityVO;
+import org.zstack.storage.ceph.CephCapacityVO_;
+import org.zstack.storage.ceph.CephConstants;
+import org.zstack.storage.ceph.CephGlobalConfig;
+import org.zstack.storage.ceph.CephMonBase;
+import org.zstack.storage.ceph.CephMonSystemTags;
+import org.zstack.storage.ceph.CephPoolCapacity;
+import org.zstack.storage.ceph.CephSystemTags;
+import org.zstack.storage.ceph.MonStatus;
+import org.zstack.storage.ceph.MonUri;
 import org.zstack.storage.ceph.CephMonBase.PingResult;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
 import org.zstack.storage.ceph.primary.capacity.CephOsdGroupCapacityHelper;
-import org.zstack.storage.primary.*;
+import org.zstack.storage.primary.CheckHostStorageConnectionMsg;
+import org.zstack.storage.primary.CheckHostStorageConnectionReply;
+import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
+import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
+import org.zstack.storage.primary.GetPrimaryStorageLicenseInfoMsg;
+import org.zstack.storage.primary.GetPrimaryStorageLicenseInfoReply;
+import org.zstack.storage.primary.ImageCacheCleanParam;
+import org.zstack.storage.primary.ImageCacheUtil;
+import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
+import org.zstack.storage.primary.PrimaryStorageGlobalProperty;
+import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
+import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.snapshot.DeleteVolumeSnapshotGC;
 import org.zstack.storage.snapshot.VolumeSnapshotGlobalConfig;
 import org.zstack.storage.volume.VolumeErrors;
@@ -83,7 +274,10 @@ import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.*;
+import org.zstack.utils.CollectionDSL;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -92,7 +286,17 @@ import org.zstack.utils.network.NetworkUtils;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -1462,6 +1666,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                 @Override
                 public void setup() {
+                    // DEBT: NoRollbackFlow — in download
                     flow(new NoRollbackFlow() {
                         String __name__ = "get-sftp-credentials";
 
@@ -1485,6 +1690,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
                     });
 
+                    // DEBT: NoRollbackFlow — in download
                     flow(new NoRollbackFlow() {
                         String __name__ = "download-image";
 
@@ -1550,6 +1756,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                 @Override
                 public void setup() {
+                    // DEBT: NoRollbackFlow — in upload
                     flow(new NoRollbackFlow() {
                         String __name__ = "get-sftp-credentials";
 
@@ -1573,6 +1780,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
                     });
 
+                    // DEBT: NoRollbackFlow — in upload
                     flow(new NoRollbackFlow() {
                         String __name__ = "get-backup-storage-install-path";
 
@@ -1600,6 +1808,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
                     });
 
+                    // DEBT: NoRollbackFlow — reason TBD
                     flow(new NoRollbackFlow() {
                         String __name__ = "upload-to-backup-storage";
 
@@ -1808,6 +2017,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("clean-trash-on-volume-%s", inv.getInstallPath()));
+        // DEBT: NoRollbackFlow — in cleanTrash
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -1827,6 +2037,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in cleanTrash
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -1905,6 +2116,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
             chain.setName(String.format("clean-trash-on-volume-%s", inv.getInstallPath()));
+            // DEBT: NoRollbackFlow — in cleanUpTrash
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
@@ -1924,6 +2136,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — reason TBD
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
@@ -2380,6 +2593,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
                     });
 
+                    // DEBT: NoRollbackFlow — in rollback
                     flow(new NoRollbackFlow() {
                         String __name__ = "protect-snapshot";
 
@@ -2429,6 +2643,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
                     });
 
+                    // DEBT: NoRollbackFlow — in rollback
                     flow(new NoRollbackFlow() {
                         String __name__ = "save-encryption-Integrity-after-create-image-cache";
 
@@ -2605,6 +2820,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in createVolumeFromTemplate
                 flow(new NoRollbackFlow() {
                     String __name__ = "download-image-to-cache";
 
@@ -2632,6 +2848,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 });
 
 
+                // DEBT: NoRollbackFlow — in createVolumeFromTemplate
                 flow(new NoRollbackFlow() {
                     String __name__ = "clone-image";
 
@@ -2656,6 +2873,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "resize-volume-on-primary-storage";
 
@@ -2852,6 +3070,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in checkCephFsId
                 flow(new NoRollbackFlow() {
                     String __name__ = "create-volume-snapshot";
 
@@ -2885,6 +3104,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "create-image-cache-from-volume-snapshot";
 
@@ -3081,6 +3301,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "create-template-from-volume-snapshot";
 
@@ -3117,6 +3338,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-temp-snapshot";
 
@@ -3683,6 +3905,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "connect-monitor";
 
@@ -3692,6 +3915,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "check-mon-integrity";
 
@@ -3777,6 +4001,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "check_pool";
 
@@ -3819,6 +4044,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
                     }
                 });
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "init";
 
@@ -4327,6 +4553,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "connect-mons";
 
@@ -4364,6 +4591,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "check-mon-integrity";
 
@@ -5186,6 +5414,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 String volumePath = getVolumePathFromSnapshot(snapShotPath);
                 final String newVolumePath = makeVolumeInstallPathByTargetPool(Platform.getUuid(), getTargetPoolNameFromAllocatedUrl(snapShotPath));
 
+                // DEBT: NoRollbackFlow — in createVolumeFromSnapshot
                 flow(new NoRollbackFlow() {
                     String __name__ = "revert-volume-from-snapshot";
 
@@ -5223,6 +5452,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 });
 
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "fast-revert-volume-from-snapshot";
 
@@ -5324,6 +5554,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "download-image-to-cache";
 
@@ -5356,6 +5587,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "clone-image";
 
@@ -5378,6 +5610,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-origin-root-volume-which-has-no-snapshot";
 
@@ -5593,6 +5826,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             chain.then(attachToKvmCluster(clusterUuid));
         }
 
+        // DEBT: NoRollbackFlow — in attachHook
         chain.then(new NoRollbackFlow() {
             String __name__ = String.format("create-primary-storage-%s-host-in-cluster-%s-refs", self.getUuid(), clusterUuid);
 
@@ -5687,6 +5921,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private Flow attachToKvmCluster(String clusterUuid) {
+        // DEBT: NoRollbackFlow — in attachToKvmCluster
         return new NoRollbackFlow() {
             String __name__ = String.format("create-secret-on-kvm-hosts-in-cluster-%s", clusterUuid);
 

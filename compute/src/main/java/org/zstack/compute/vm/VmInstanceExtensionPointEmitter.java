@@ -9,11 +9,29 @@ import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.BeforeVmInstanceStopExtensionPoint;
+import org.zstack.header.vm.SshKeyPairAssociateExtensionPoint;
+import org.zstack.header.vm.VmAttachVolumeExtensionPoint;
+import org.zstack.header.vm.VmCapabilities;
+import org.zstack.header.vm.VmDetachVolumeExtensionPoint;
+import org.zstack.header.vm.VmInstanceBeforeStartExtensionPoint;
+import org.zstack.header.vm.VmInstanceDestroyExtensionPoint;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
+import org.zstack.header.vm.VmInstanceRebootExtensionPoint;
+import org.zstack.header.vm.VmInstanceResumeExtensionPoint;
+import org.zstack.header.vm.VmInstanceStartExtensionPoint;
+import org.zstack.header.vm.VmInstanceStartNewCreatedVmExtensionPoint;
+import org.zstack.header.vm.VmInstanceStopExtensionPoint;
+import org.zstack.header.vm.VmNicChangeStateExtensionPoint;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -109,6 +127,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.allowEmptyFlow();
         for(BeforeVmInstanceStopExtensionPoint ext: beforeVmStopExtensions) {
+            // DEBT: NoRollbackFlow — in beforeVmStop
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
@@ -517,6 +536,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
         CollectionUtils.safeForEach(detachVolumeExtensions, new ForEachFunction<VmDetachVolumeExtensionPoint>() {
             @Override
             public void run(VmDetachVolumeExtensionPoint arg) {
+                // DEBT: NoRollbackFlow — in afterDetachVolume
                 chain.then(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {

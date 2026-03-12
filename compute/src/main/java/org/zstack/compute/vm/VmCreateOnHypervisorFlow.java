@@ -13,7 +13,12 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.CreateVmOnHypervisorMsg;
+import org.zstack.header.vm.DestroyVmOnHypervisorMsg;
+import org.zstack.header.vm.VmBeforeCreateOnHypervisorExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmTracerCanonicalEvents;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

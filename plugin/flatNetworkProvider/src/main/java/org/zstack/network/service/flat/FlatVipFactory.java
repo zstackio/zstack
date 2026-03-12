@@ -2,7 +2,9 @@ package org.zstack.network.service.flat;
 
 import org.zstack.header.core.Completion;
 import org.zstack.header.message.Message;
-import org.zstack.network.service.vip.*;
+import org.zstack.network.service.vip.VipBaseBackend;
+import org.zstack.network.service.vip.VipFactory;
+import org.zstack.network.service.vip.VipVO;
 
 /**
  * Created by xing5 on 2016/12/5.

@@ -25,7 +25,11 @@ import org.zstack.storage.ceph.primary.CephPrimaryStorageBase;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig.CephPrimaryStorageConfig;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSender;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.data.SizeUnit;
 

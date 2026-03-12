@@ -9,7 +9,11 @@ import org.zstack.header.managementnode.APIQueryManagementNodeMsg;
 import org.zstack.header.managementnode.APIQueryManagementNodeReply;
 import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.query.QueryCondition;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.BeanConstructor;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.search.QueryTestValidator;
 
 import java.util.ArrayList;

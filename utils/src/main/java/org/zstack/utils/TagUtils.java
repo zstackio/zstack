@@ -3,7 +3,11 @@ package org.zstack.utils;
 import org.apache.commons.codec.binary.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  */

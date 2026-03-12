@@ -2,7 +2,10 @@ package org.zstack.utils;
 
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 
 /**
  * Created by shixin 2017/10/06

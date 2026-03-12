@@ -11,7 +11,12 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.progressbar.InProgressEvent;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIListMessage;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APIReply;
+import org.zstack.header.message.Event;
+import org.zstack.header.message.MessageReply;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

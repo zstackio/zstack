@@ -10,7 +10,7 @@ import org.zstack.utils.gson.OffsetDateTimeGsonTypeCoder;
 
 import java.lang.reflect.Type;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.Map;
 
 public class CloudBusGson {
     private static Gson gson = new GsonUtil().setCoder(Message.class, new GsonTypeCoder<Message>() {

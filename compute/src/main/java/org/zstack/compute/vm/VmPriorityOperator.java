@@ -10,7 +10,10 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmPriorityConfigVO;
+import org.zstack.header.vm.VmPriorityConfigVO_;
+import org.zstack.header.vm.VmPriorityLevel;
 import org.zstack.tag.SystemTagCreator;
 
 import java.util.List;

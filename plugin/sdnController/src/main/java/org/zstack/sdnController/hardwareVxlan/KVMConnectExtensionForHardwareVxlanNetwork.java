@@ -8,10 +8,19 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostConnectionReestablishExtensionPoint;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostException;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.CheckNetworkPhysicalInterfaceMsg;
 import org.zstack.header.network.l2.L2NetworkInventory;
@@ -65,6 +74,7 @@ public class KVMConnectExtensionForHardwareVxlanNetwork implements KVMHostConnec
         final L2NetworkInventory l2 = it.next();
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("prepare-hareware-vxlan-%s-for-kvm-%s-connect", l2.getUuid(), host.getUuid()));
+        // DEBT: NoRollbackFlow — in prepareNetwork
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
@@ -85,6 +95,7 @@ public class KVMConnectExtensionForHardwareVxlanNetwork implements KVMHostConnec
             }
         });
 
+        // DEBT: NoRollbackFlow — in prepareNetwork
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
@@ -138,6 +149,7 @@ public class KVMConnectExtensionForHardwareVxlanNetwork implements KVMHostConnec
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        // DEBT: NoRollbackFlow — in createKvmHostConnectingFlow
         return new NoRollbackFlow() {
             String __name__ = "prepare-hardware-vxlan-network";
 

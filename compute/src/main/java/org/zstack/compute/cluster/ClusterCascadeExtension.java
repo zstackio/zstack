@@ -1,13 +1,21 @@
 package org.zstack.compute.cluster;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.cascade.*;
+import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
+import org.zstack.core.cascade.CascadeAction;
+import org.zstack.core.cascade.CascadeConstant;
+import org.zstack.core.cascade.CascadeException;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.cluster.*;
+import org.zstack.header.cluster.ClusterConstant;
+import org.zstack.header.cluster.ClusterDeletionMsg;
+import org.zstack.header.cluster.ClusterException;
+import org.zstack.header.cluster.ClusterInventory;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.Completion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.zone.ZoneInventory;

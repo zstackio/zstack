@@ -13,7 +13,11 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -23,12 +27,23 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
+import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.InstantiateResourceOnAttachingNicExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.kvm.*;
+import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.kvm.KVMCompleteNicInformationExtensionPoint;
+import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
+import org.zstack.kvm.KVMHostAsyncHttpCallReply;
+import org.zstack.kvm.KVMSystemTags;
 import org.zstack.network.l2.vxlan.vtep.CreateVtepMsg;
 import org.zstack.network.l2.vxlan.vtep.VtepVO;
 import org.zstack.network.l2.vxlan.vtep.VtepVO_;
@@ -41,7 +56,12 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -230,6 +250,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("check-l2-vxlan-%s-on-host-%s", l2Network.getUuid(), hostUuid));
+        // DEBT: NoRollbackFlow — reason TBD
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -276,6 +297,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -335,6 +357,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -469,6 +492,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
             FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
             L2VxlanNetworkInventory l2 = L2VxlanNetworkInventory.valueOf((VxlanNetworkVO) Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.uuid, vo.getUuid()).find());
             chain.setName(String.format("attach-l2-vxlan-%s-on-host-%s", l2.getUuid(), spec.getDestHost().getUuid()));
+            // DEBT: NoRollbackFlow — in instantiateResourceOnAttachingNic
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
@@ -485,6 +509,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — in instantiateResourceOnAttachingNic
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(FlowTrigger trigger, Map data) {

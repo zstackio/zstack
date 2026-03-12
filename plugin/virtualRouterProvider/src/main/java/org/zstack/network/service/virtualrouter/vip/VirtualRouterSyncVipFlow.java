@@ -12,13 +12,22 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.network.service.vip.*;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipPeerL3NetworkRefVO;
+import org.zstack.network.service.vip.VipPeerL3NetworkRefVO_;
+import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipVO_;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterSyncVipFlow implements Flow {

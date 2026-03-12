@@ -23,7 +23,13 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.APIDeleteMessage;
@@ -32,10 +38,47 @@ import org.zstack.header.network.l2.DeleteL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.SdnControllerDeleteExtensionPoint;
 import org.zstack.header.network.l3.SdnControllerL3;
-import org.zstack.header.network.sdncontroller.*;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
+import org.zstack.header.network.sdncontroller.SdnControllerDeletionMsg;
+import org.zstack.header.network.sdncontroller.SdnControllerDeletionReply;
+import org.zstack.header.network.sdncontroller.SdnControllerHostRefVO;
+import org.zstack.header.network.sdncontroller.SdnControllerHostRefVO_;
+import org.zstack.header.network.sdncontroller.SdnControllerInventory;
+import org.zstack.header.network.sdncontroller.SdnControllerMessage;
+import org.zstack.header.network.sdncontroller.SdnControllerRemoveHostMsg;
+import org.zstack.header.network.sdncontroller.SdnControllerRemoveHostReply;
+import org.zstack.header.network.sdncontroller.SdnControllerStatus;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO;
 import org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO_;
-import org.zstack.sdnController.header.*;
+import org.zstack.sdnController.header.APIChangeSdnControllerEvent;
+import org.zstack.sdnController.header.APIChangeSdnControllerMsg;
+import org.zstack.sdnController.header.APIPullSdnControllerTenantEvent;
+import org.zstack.sdnController.header.APIPullSdnControllerTenantMsg;
+import org.zstack.sdnController.header.APIReconnectSdnControllerEvent;
+import org.zstack.sdnController.header.APIReconnectSdnControllerMsg;
+import org.zstack.sdnController.header.APIRemoveSdnControllerEvent;
+import org.zstack.sdnController.header.APIRemoveSdnControllerMsg;
+import org.zstack.sdnController.header.APISdnControllerAddHostEvent;
+import org.zstack.sdnController.header.APISdnControllerAddHostMsg;
+import org.zstack.sdnController.header.APISdnControllerChangeHostEvent;
+import org.zstack.sdnController.header.APISdnControllerChangeHostMsg;
+import org.zstack.sdnController.header.APISdnControllerRemoveHostEvent;
+import org.zstack.sdnController.header.APISdnControllerRemoveHostMsg;
+import org.zstack.sdnController.header.APIUpdateSdnControllerEvent;
+import org.zstack.sdnController.header.APIUpdateSdnControllerMsg;
+import org.zstack.sdnController.header.H3cSdnControllerTenantInventory;
+import org.zstack.sdnController.header.H3cSdnControllerTenantVO;
+import org.zstack.sdnController.header.H3cSdnControllerTenantVO_;
+import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO;
+import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO_;
+import org.zstack.sdnController.header.PullSdnControllerTenantMsg;
+import org.zstack.sdnController.header.PullSdnControllerTenantReply;
+import org.zstack.sdnController.header.ReconnectSdnControllerMsg;
+import org.zstack.sdnController.header.ReconnectSdnControllerReply;
+import org.zstack.sdnController.header.SdnControllerCanonicalEvents;
+import org.zstack.sdnController.header.SyncSdnControllerDataMsg;
+import org.zstack.sdnController.header.SyncSdnControllerDataReply;
 import org.zstack.sdnController.h3cVcfc.H3cVcfcV2Commands;
 import org.zstack.sdnController.h3cVcfc.H3cVcfcV2SdnController;
 import org.zstack.tag.SystemTagCreator;
@@ -45,7 +88,15 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import java.lang.reflect.Type;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -262,6 +313,7 @@ public class SdnControllerBase {
 
                 trigger.rollback();
             }
+        // DEBT: NoRollbackFlow — in rollback
         }).then(new NoRollbackFlow() {
             String __name__ = "ping-sdn-controller";
 
@@ -431,6 +483,7 @@ public class SdnControllerBase {
                 changeSdnControllerStatus(SdnControllerStatus.Disconnected);
                 trigger.rollback();
             }
+        // DEBT: NoRollbackFlow — in rollback
         }).then(new NoRollbackFlow() {
             String __name__ = "reconnect-to-sdn-controller";
 
@@ -449,6 +502,7 @@ public class SdnControllerBase {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in rollback
         }).then(new NoRollbackFlow() {
             String __name__ = "change-sdn-controller-status-to-connected";
 
@@ -751,6 +805,7 @@ public class SdnControllerBase {
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("sdn-controller-deletion-%s", msg.getSdnControllerUuid()));
+        // DEBT: NoRollbackFlow — in doDeletionSdnController
         chain.then(new NoRollbackFlow() {
             String __name__ =  String.format("detach-hardvxlan-network-of-sdn-controller-%s", self.getName());
 
@@ -778,6 +833,7 @@ public class SdnControllerBase {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in doDeletionSdnController
         }).then(new NoRollbackFlow() {
             String __name__ =  "delete-sdn-network";
 
@@ -815,6 +871,7 @@ public class SdnControllerBase {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ =  "remove-host-from-sdn-controller";
             @Override
@@ -855,6 +912,7 @@ public class SdnControllerBase {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = String.format("delete-network-service");
 
@@ -881,6 +939,7 @@ public class SdnControllerBase {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = String.format("delete-from-sdn-controller");
 
@@ -898,6 +957,7 @@ public class SdnControllerBase {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = "delete-sdn-controller-on-db";
             @Override
@@ -961,6 +1021,7 @@ public class SdnControllerBase {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-sdn-controller-%s-name-%s", msg.getUuid(), vo.getName()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            // DEBT: NoRollbackFlow — in getName
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -976,6 +1037,7 @@ public class SdnControllerBase {
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — in getName
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -993,6 +1055,7 @@ public class SdnControllerBase {
                 }
             });
         } else {
+            // DEBT: NoRollbackFlow — in getName
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -1111,6 +1174,7 @@ public class SdnControllerBase {
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("pull-tenant-for-h3c-sdn-%s", self.getUuid()));
+        // DEBT: NoRollbackFlow — in pullSdnControllerTenant
         chain.then(new NoRollbackFlow() {
             String __name__ = "pull-h3c-vds-tenant";
 
@@ -1135,6 +1199,7 @@ public class SdnControllerBase {
                     trigger.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10012, "Failed to pull tenant data: %s", e.getMessage()));
                 }
             }
+        // DEBT: NoRollbackFlow — in pullSdnControllerTenant
         }).then(new NoRollbackFlow() {
             String __name__ = "pull-h3c-vni-ranges";
 

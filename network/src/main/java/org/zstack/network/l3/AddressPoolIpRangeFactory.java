@@ -7,7 +7,13 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.message.APICreateMessage;
-import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.AddressPoolInventory;
+import org.zstack.header.network.l3.AddressPoolVO;
+import org.zstack.header.network.l3.AfterAddIpRangeExtensionPoint;
+import org.zstack.header.network.l3.IpRangeFactory;
+import org.zstack.header.network.l3.IpRangeInventory;
+import org.zstack.header.network.l3.IpRangeType;
+import org.zstack.header.network.l3.IpRangeVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.ForEachFunction;
 

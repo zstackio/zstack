@@ -28,7 +28,13 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
-import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.VirtualRouterAsyncHttpCallMsg;
+import org.zstack.network.service.virtualrouter.VirtualRouterAsyncHttpCallReply;
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterManager;
+import org.zstack.network.service.virtualrouter.VirtualRouterRoleManager;
+import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AddDhcpEntryCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AddDhcpEntryRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.DhcpInfo;
@@ -37,7 +43,11 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;

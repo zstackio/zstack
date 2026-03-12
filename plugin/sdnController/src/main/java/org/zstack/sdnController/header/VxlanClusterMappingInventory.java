@@ -5,7 +5,11 @@ import org.zstack.header.search.Inventory;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @PythonClassInventory
 @Inventory(mappingVOClass = VxlanClusterMappingVO.class, collectionValueOfMethod = "valueOf1")

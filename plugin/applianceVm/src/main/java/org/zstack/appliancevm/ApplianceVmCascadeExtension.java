@@ -17,11 +17,18 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.workflow.*;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.core.*;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -34,12 +41,31 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkDetachStruct;
 import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.IpRangeInventory;
+import org.zstack.header.network.l3.IpRangeVO;
+import org.zstack.header.network.l3.L3NetworkConstant;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.NormalIpRangeVO;
+import org.zstack.header.network.l3.NormalIpRangeVO_;
+import org.zstack.header.network.l3.ReturnIpMsg;
+import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageDetachStruct;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.DetachNicFromVmMsg;
+import org.zstack.header.vm.GetVmMigrationTargetHostMsg;
+import org.zstack.header.vm.GetVmMigrationTargetHostReply;
+import org.zstack.header.vm.MigrateVmMsg;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceDeletionMsg;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
@@ -54,7 +80,15 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -191,6 +225,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                             }
                         });
 
+                // DEBT: NoRollbackFlow — in migrateOrStopVmOnClusterDetach
                 flow(new NoRollbackFlow() {
                     String __name__ = "migrate-appliance-vm";
 
@@ -213,6 +248,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in migrateOrStopVmOnClusterDetach
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-appliance-vm";
 
@@ -394,6 +430,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
     }
 
     protected Flow returnUsedIpFlow() {
+        // DEBT: NoRollbackFlow — in returnUsedIpFlow
         return new NoRollbackFlow() {
 
             String __name__ = "delete-ip";
@@ -441,6 +478,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
     }
 
     protected Flow deleteVmNicFlow() {
+        // DEBT: NoRollbackFlow — in deleteVmNicFlow
         return new NoRollbackFlow() {
             String __name__ = "delete-vmnic";
 
@@ -544,6 +582,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                     final List<String> finalAvoidHostUuids = avoidHostUuids;
 
                     if (!apvmToMigrate.isEmpty()) {
+                        // DEBT: NoRollbackFlow — reason TBD
                         flow(new NoRollbackFlow() {
                             String __name__ = "try-migrate-appliancevm";
 
@@ -581,6 +620,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                             }
                         });
 
+                        // DEBT: NoRollbackFlow — reason TBD
                         flow(new NoRollbackFlow() {
                             String __name__ = "migrate-appliancevm";
 
@@ -631,6 +671,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                 flow(returnUsedIpFlow());
                 flow(deleteVmNicFlow());
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-appliancevm";
 

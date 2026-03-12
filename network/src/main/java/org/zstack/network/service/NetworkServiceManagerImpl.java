@@ -12,7 +12,13 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -21,15 +27,55 @@ import org.zstack.header.message.Message;
 import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l3.*;
-import org.zstack.header.network.service.*;
+import org.zstack.header.network.l3.L3Network;
+import org.zstack.header.network.l3.L3NetworkDnsVO;
+import org.zstack.header.network.l3.L3NetworkDnsVO_;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.service.APIAttachNetworkServiceProviderToL2NetworkEvent;
+import org.zstack.header.network.service.APIAttachNetworkServiceProviderToL2NetworkMsg;
+import org.zstack.header.network.service.APIDetachNetworkServiceProviderFromL2NetworkEvent;
+import org.zstack.header.network.service.APIDetachNetworkServiceProviderFromL2NetworkMsg;
+import org.zstack.header.network.service.APIGetNetworkServiceTypesMsg;
+import org.zstack.header.network.service.APIGetNetworkServiceTypesReply;
+import org.zstack.header.network.service.APIQueryNetworkServiceProviderMsg;
+import org.zstack.header.network.service.APIQueryNetworkServiceProviderReply;
+import org.zstack.header.network.service.ApplyNetworkServiceExtensionPoint;
+import org.zstack.header.network.service.DnsServiceExtensionPoint;
+import org.zstack.header.network.service.NetworkServiceConstants;
+import org.zstack.header.network.service.NetworkServiceErrors;
+import org.zstack.header.network.service.NetworkServiceExtensionPoint;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
+import org.zstack.header.network.service.NetworkServiceProvider;
+import org.zstack.header.network.service.NetworkServiceProviderFactory;
+import org.zstack.header.network.service.NetworkServiceProviderInventory;
+import org.zstack.header.network.service.NetworkServiceProviderL2NetworkRefVO;
+import org.zstack.header.network.service.NetworkServiceProviderL2NetworkRefVO_;
+import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.NetworkServiceProviderVO;
+import org.zstack.header.network.service.NetworkServiceProviderVO_;
+import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.network.service.NetworkServiceTypeVO;
 import org.zstack.header.network.service.NetworkServiceExtensionPoint.NetworkServiceExtensionPosition;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.InstantiateResourceOnAttachingNicExtensionPoint;
+import org.zstack.header.vm.PostVmInstantiateResourceExtensionPoint;
+import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
+import org.zstack.header.vm.ReleaseNetworkServiceOnDetachingNicExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmReleaseResourceExtensionPoint;
 import org.zstack.query.QueryFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
@@ -394,6 +440,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
                 continue;
             }
 
+            // DEBT: NoRollbackFlow — in releaseNetworkServices
             NoRollbackFlow flow = new NoRollbackFlow() {
                 String __name__ = String.format("release-network-service-%s", ns.getNetworkServiceType());
 

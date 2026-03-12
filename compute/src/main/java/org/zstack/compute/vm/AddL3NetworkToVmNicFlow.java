@@ -11,7 +11,11 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.AddL3NetworkToVmNicMsg;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

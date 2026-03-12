@@ -3,7 +3,8 @@ package org.zstack.utils.test;
 import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
-import java.net.*;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import static org.zstack.utils.CollectionDSL.list;

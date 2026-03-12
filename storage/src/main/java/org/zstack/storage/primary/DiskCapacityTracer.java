@@ -8,7 +8,12 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.EntityEvent;
 import org.zstack.core.db.EntityLifeCycleCallback;
 import org.zstack.header.Component;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowChainMutable;
+import org.zstack.header.core.workflow.FlowChainProcessor;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.PrimaryStorageAllocationSpec;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
@@ -49,6 +54,7 @@ public class DiskCapacityTracer implements Component {
                 List<Flow> flows = new ArrayList<Flow>();
                 for (Flow f : chain.getFlows()) {
                     flows.add(f);
+                    // DEBT: NoRollbackFlow — in processFlowChain
                     flows.add(new NoRollbackFlow() {
                         String __name__ = "disk-capacity-tracker";
 

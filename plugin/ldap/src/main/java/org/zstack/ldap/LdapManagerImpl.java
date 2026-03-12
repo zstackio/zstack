@@ -22,12 +22,28 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.captcha.Captcha;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.identity.*;
-import org.zstack.header.identity.login.*;
+import org.zstack.header.identity.AccountConstant;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountVO;
+import org.zstack.header.identity.AccountVO_;
+import org.zstack.header.identity.IdentityErrors;
+import org.zstack.header.identity.LoginType;
+import org.zstack.header.identity.login.AdditionalAuthFeature;
+import org.zstack.header.identity.login.LogInMsg;
+import org.zstack.header.identity.login.LogInReply;
+import org.zstack.header.identity.login.LoginAuthConstant;
+import org.zstack.header.identity.login.LoginBackend;
+import org.zstack.header.identity.login.LoginContext;
+import org.zstack.header.identity.login.LoginManager;
+import org.zstack.header.identity.login.LoginSessionInfo;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -44,7 +60,10 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
@@ -296,6 +315,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
 
         FlowChain chain = new SimpleFlowChain();
         chain.setName("delete-ldap-server");
+        // DEBT: NoRollbackFlow — in saveLdapUseAsLoginNameTag
         chain.then(new NoRollbackFlow() {
             String __name__ = "before-delete-ldap-server";
 

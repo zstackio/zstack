@@ -15,7 +15,10 @@ import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.MigrateVmMessage;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicSpec;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -4,7 +4,20 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.appliancevm.*;
+import org.zstack.appliancevm.ApplianceVmBase;
+import org.zstack.appliancevm.ApplianceVmConstant;
+import org.zstack.appliancevm.ApplianceVmFirewallRuleInventory;
+import org.zstack.appliancevm.ApplianceVmFirewallRuleVO;
+import org.zstack.appliancevm.ApplianceVmFirewallRuleVO_;
+import org.zstack.appliancevm.ApplianceVmGlobalConfig;
+import org.zstack.appliancevm.ApplianceVmHaStatus;
+import org.zstack.appliancevm.ApplianceVmInventory;
+import org.zstack.appliancevm.ApplianceVmNicBootstrapExtensionPoint;
+import org.zstack.appliancevm.ApplianceVmNicTO;
+import org.zstack.appliancevm.ApplianceVmStatus;
+import org.zstack.appliancevm.ApplianceVmType;
+import org.zstack.appliancevm.ApplianceVmVO;
+import org.zstack.appliancevm.ApplianceVmVO_;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
 import org.zstack.core.upgrade.UpgradeChecker;
 import org.zstack.core.upgrade.UpgradeGlobalConfig;
@@ -23,7 +36,13 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -35,13 +54,39 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l2.L2NetworkGetVniExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
-import org.zstack.header.network.l3.*;
-import org.zstack.header.network.service.*;
+import org.zstack.header.network.l3.L3NetworkCategory;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.NormalIpRangeVO;
+import org.zstack.header.network.l3.NormalIpRangeVO_;
+import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.header.network.l3.UsedIpVO_;
+import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterAfterDetachNicExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterHaTask;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.APIAttachL3NetworkToVmEvent;
+import org.zstack.header.vm.APIAttachL3NetworkToVmMsg;
+import org.zstack.header.vm.APIDetachL3NetworkFromVmEvent;
+import org.zstack.header.vm.APIDetachL3NetworkFromVmMsg;
+import org.zstack.header.vm.DetachNicFromVmMsg;
+import org.zstack.header.vm.DetachNicFromVmReply;
+import org.zstack.header.vm.VmAttachNicReply;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.MtuGetter;
-import org.zstack.network.service.vip.*;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipManager;
+import org.zstack.network.service.vip.VipPeerL3NetworkRefVO;
+import org.zstack.network.service.vip.VipReleaseExtensionPoint;
+import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
@@ -53,7 +98,15 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.*;
@@ -792,6 +845,7 @@ public class VirtualRouter extends ApplianceVmBase {
                         vrVO.getDefaultRouteL3NetworkUuid());
                 trigger.rollback();
             }
+        // DEBT: NoRollbackFlow — in rollback
         }).then(new NoRollbackFlow() {
             String __name__ = "update-virtual-router-backend";
 
@@ -910,6 +964,7 @@ public class VirtualRouter extends ApplianceVmBase {
                 changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
                 trigger.rollback();
             }
+        // DEBT: NoRollbackFlow — in rollback
         }).then(new NoRollbackFlow() {
             String __name__ = "change-appliancevm-status-to-connected";
 

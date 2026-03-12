@@ -11,7 +11,12 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.host.*;
+import org.zstack.header.host.CheckHostCapacityMsg;
+import org.zstack.header.host.HostConnectionReestablishExtensionPoint;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostException;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 
@@ -57,6 +62,7 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        // DEBT: NoRollbackFlow — in createKvmHostConnectingFlow
         return new NoRollbackFlow() {
             String __name__ = "sync-host-capacity";
 

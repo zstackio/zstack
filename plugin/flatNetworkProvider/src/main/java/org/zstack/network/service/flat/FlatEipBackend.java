@@ -28,9 +28,31 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
-import org.zstack.header.network.l3.*;
-import org.zstack.header.network.service.*;
-import org.zstack.header.vm.*;
+import org.zstack.header.network.l3.L3Network;
+import org.zstack.header.network.l3.L3NetworkCategory;
+import org.zstack.header.network.l3.L3NetworkConstant;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.NormalIpRangeVO;
+import org.zstack.header.network.l3.NormalIpRangeVO_;
+import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.header.network.service.AfterApplyFlatEipExtensionPoint;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
+import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.NetworkServiceProviderVO;
+import org.zstack.header.network.service.NetworkServiceProviderVO_;
+import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
+import org.zstack.header.vm.VmAbnormalLifeCycleStruct;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
+import org.zstack.header.vm.VmInstanceNicFactory;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicType;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
@@ -38,7 +60,15 @@ import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
 import org.zstack.network.service.NetworkServiceFilter;
 import org.zstack.network.service.NetworkServiceManager;
-import org.zstack.network.service.eip.*;
+import org.zstack.network.service.eip.EipBackend;
+import org.zstack.network.service.eip.EipConstant;
+import org.zstack.network.service.eip.EipInventory;
+import org.zstack.network.service.eip.EipStruct;
+import org.zstack.network.service.eip.EipVO;
+import org.zstack.network.service.eip.EipVO_;
+import org.zstack.network.service.eip.FilterVmNicsForEipInVirtualRouterExtensionPoint;
+import org.zstack.network.service.eip.GetEipAttachableL3UuidsForVmNicExtensionPoint;
+import org.zstack.network.service.eip.GetL3NetworkForEipInVirtualRouterExtensionPoint;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentCmd;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentRsp;
 import org.zstack.network.service.vip.VipInventory;
@@ -55,7 +85,11 @@ import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -558,6 +592,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        // DEBT: NoRollbackFlow — in createKvmHostConnectingFlow
         return new NoRollbackFlow() {
             String __name__ = "sync-distributed-eip";
 

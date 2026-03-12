@@ -1,6 +1,8 @@
 package org.zstack.identity;
 
-import org.zstack.core.config.*;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDefinition;
+import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.header.core.encrypt.GlobalConfigEncrypt;
 
 /**

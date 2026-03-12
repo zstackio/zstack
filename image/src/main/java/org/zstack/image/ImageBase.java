@@ -3,14 +3,19 @@ package org.zstack.image;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.compute.vm.*;
+import org.zstack.compute.vm.IsoOperator;
+import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
@@ -22,20 +27,90 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.SharedResourceVO;
 import org.zstack.header.identity.SharedResourceVO_;
-import org.zstack.header.image.*;
+import org.zstack.header.image.APICalculateImageHashEvent;
+import org.zstack.header.image.APICalculateImageHashMsg;
+import org.zstack.header.image.APIChangeImageStateEvent;
+import org.zstack.header.image.APIChangeImageStateMsg;
+import org.zstack.header.image.APIDeleteImageEvent;
+import org.zstack.header.image.APIDeleteImageMsg;
+import org.zstack.header.image.APIExpungeImageEvent;
+import org.zstack.header.image.APIExpungeImageMsg;
+import org.zstack.header.image.APIRecoverImageEvent;
+import org.zstack.header.image.APIRecoverImageMsg;
+import org.zstack.header.image.APISetImageBootModeEvent;
+import org.zstack.header.image.APISetImageBootModeMsg;
+import org.zstack.header.image.APISyncImageSizeEvent;
+import org.zstack.header.image.APISyncImageSizeMsg;
+import org.zstack.header.image.APIUpdateImageEvent;
+import org.zstack.header.image.APIUpdateImageMsg;
+import org.zstack.header.image.AddImageMsg;
+import org.zstack.header.image.CalculateImageHashMsg;
+import org.zstack.header.image.CalculateImageHashReply;
+import org.zstack.header.image.CancelAddImageMsg;
+import org.zstack.header.image.CancelDownloadImageMsg;
+import org.zstack.header.image.CancelDownloadImageReply;
+import org.zstack.header.image.ExpungeImageExtensionPoint;
+import org.zstack.header.image.ExpungeImageMsg;
+import org.zstack.header.image.ExpungeImageReply;
+import org.zstack.header.image.GetImageEncryptedMsg;
+import org.zstack.header.image.Image;
+import org.zstack.header.image.ImageArchitecture;
+import org.zstack.header.image.ImageBackupStorageRefVO;
+import org.zstack.header.image.ImageBackupStorageRefVO_;
+import org.zstack.header.image.ImageBootMode;
+import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.ImageDeletionMsg;
+import org.zstack.header.image.ImageDeletionPolicyManager;
+import org.zstack.header.image.ImageDeletionReply;
+import org.zstack.header.image.ImageDeletionStruct;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.image.ImageState;
+import org.zstack.header.image.ImageStateEvent;
+import org.zstack.header.image.ImageStatus;
+import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.ImageVO_;
+import org.zstack.header.image.SyncImageSizeMsg;
+import org.zstack.header.image.SyncImageSizeReply;
+import org.zstack.header.image.SyncSystemTagFromTagMsg;
+import org.zstack.header.image.SyncSystemTagFromTagReply;
+import org.zstack.header.image.SyncSystemTagFromVolumeMsg;
+import org.zstack.header.image.SyncSystemTagFromVolumeReply;
+import org.zstack.header.image.UpdateImageMsg;
+import org.zstack.header.image.UpdateImageReply;
 import org.zstack.header.image.GetImageEncryptedReply;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
-import org.zstack.header.message.*;
-import org.zstack.header.storage.backup.*;
-import org.zstack.header.vm.*;
+import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.OverlayMessage;
+import org.zstack.header.storage.backup.BackupStorageConstant;
+import org.zstack.header.storage.backup.BackupStorageStatus;
+import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.backup.BackupStorageVO_;
+import org.zstack.header.storage.backup.CalculateImageHashOnBackupStorageMsg;
+import org.zstack.header.storage.backup.CalculateImageHashOnBackupStorageReply;
+import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
+import org.zstack.header.storage.backup.GetImageEncryptedOnBackupStorageMsg;
+import org.zstack.header.storage.backup.GetImageEncryptedOnBackupStorageReply;
+import org.zstack.header.storage.backup.ReturnBackupStorageMsg;
+import org.zstack.header.storage.backup.SyncImageSizeOnBackupStorageMsg;
+import org.zstack.header.storage.backup.SyncImageSizeOnBackupStorageReply;
+import org.zstack.header.vm.DetachIsoFromVmInstanceMsg;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
@@ -45,7 +120,14 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.*;
@@ -407,6 +489,7 @@ public class ImageBase implements Image {
                 }
         );
 
+        // DEBT: NoRollbackFlow — in scripts
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -453,6 +536,7 @@ public class ImageBase implements Image {
 
         List<Object> refs = new ArrayList<>();
         for (final ImageBackupStorageRefVO ref : toDelete) {
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 String __name__ = String.format("delete-image-%s-from-backup-storage-%s", self.getUuid(), ref.getBackupStorageUuid());
 
@@ -966,6 +1050,7 @@ public class ImageBase implements Image {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-image-%s", msg.getUuid()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -981,6 +1066,7 @@ public class ImageBase implements Image {
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — reason TBD
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -998,6 +1084,7 @@ public class ImageBase implements Image {
                 }
             });
         } else {
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {

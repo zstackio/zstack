@@ -7,11 +7,23 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.identity.*;
+import org.zstack.header.identity.APIQueryPolicyMsg;
+import org.zstack.header.identity.APIQueryPolicyReply;
+import org.zstack.header.identity.PolicyInventory;
+import org.zstack.header.identity.UserGroupInventory;
+import org.zstack.header.identity.UserGroupPolicyRefVO;
+import org.zstack.header.identity.UserGroupPolicyRefVO_;
+import org.zstack.header.identity.UserInventory;
+import org.zstack.header.identity.UserPolicyRefVO;
+import org.zstack.header.identity.UserPolicyRefVO_;
 import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.query.QueryOp;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.BeanConstructor;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**

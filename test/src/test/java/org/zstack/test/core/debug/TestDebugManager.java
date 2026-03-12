@@ -8,7 +8,12 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.debug.*;
+import org.zstack.core.debug.APIDebugSignalEvent;
+import org.zstack.core.debug.APIDebugSignalMsg;
+import org.zstack.core.debug.DebugManager;
+import org.zstack.core.debug.DebugManagerImpl;
+import org.zstack.core.debug.DebugSignal;
+import org.zstack.core.debug.DebugSignalHandler;
 
 import java.util.Collections;
 

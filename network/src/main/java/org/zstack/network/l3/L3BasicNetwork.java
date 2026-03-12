@@ -11,7 +11,10 @@ import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -27,22 +30,127 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.identity.SharedResourceVO;
 import org.zstack.header.identity.SharedResourceVO_;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.IpAllocatedReason;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.APIAddDnsToL3NetworkEvent;
+import org.zstack.header.network.l3.APIAddDnsToL3NetworkMsg;
+import org.zstack.header.network.l3.APIAddHostRouteToL3NetworkEvent;
+import org.zstack.header.network.l3.APIAddHostRouteToL3NetworkMsg;
+import org.zstack.header.network.l3.APIAddIpRangeByNetworkCidrEvent;
+import org.zstack.header.network.l3.APIAddIpRangeByNetworkCidrMsg;
+import org.zstack.header.network.l3.APIAddIpRangeEvent;
+import org.zstack.header.network.l3.APIAddIpRangeMsg;
+import org.zstack.header.network.l3.APIAddIpv6RangeByNetworkCidrMsg;
+import org.zstack.header.network.l3.APIAddIpv6RangeMsg;
+import org.zstack.header.network.l3.APIAddReservedIpRangeEvent;
+import org.zstack.header.network.l3.APIAddReservedIpRangeMsg;
+import org.zstack.header.network.l3.APIChangeL3NetworkStateEvent;
+import org.zstack.header.network.l3.APIChangeL3NetworkStateMsg;
+import org.zstack.header.network.l3.APICheckIpAvailabilityMsg;
+import org.zstack.header.network.l3.APICheckIpAvailabilityReply;
+import org.zstack.header.network.l3.APIDeleteIpAddressEvent;
+import org.zstack.header.network.l3.APIDeleteIpAddressMsg;
+import org.zstack.header.network.l3.APIDeleteIpRangeEvent;
+import org.zstack.header.network.l3.APIDeleteIpRangeMsg;
+import org.zstack.header.network.l3.APIDeleteL3NetworkEvent;
+import org.zstack.header.network.l3.APIDeleteL3NetworkMsg;
+import org.zstack.header.network.l3.APIDeleteReservedIpRangeMsg;
+import org.zstack.header.network.l3.APIGetFreeIpMsg;
+import org.zstack.header.network.l3.APIGetFreeIpReply;
+import org.zstack.header.network.l3.APIGetL3NetworkRouterInterfaceIpMsg;
+import org.zstack.header.network.l3.APIGetL3NetworkRouterInterfaceIpReply;
+import org.zstack.header.network.l3.APIRemoveDnsFromL3NetworkEvent;
+import org.zstack.header.network.l3.APIRemoveDnsFromL3NetworkMsg;
+import org.zstack.header.network.l3.APIRemoveHostRouteFromL3NetworkEvent;
+import org.zstack.header.network.l3.APIRemoveHostRouteFromL3NetworkMsg;
+import org.zstack.header.network.l3.APISetL3NetworkRouterInterfaceIpEvent;
+import org.zstack.header.network.l3.APISetL3NetworkRouterInterfaceIpMsg;
+import org.zstack.header.network.l3.APIUpdateIpRangeEvent;
+import org.zstack.header.network.l3.APIUpdateIpRangeMsg;
+import org.zstack.header.network.l3.APIUpdateL3NetworkEvent;
+import org.zstack.header.network.l3.APIUpdateL3NetworkMsg;
+import org.zstack.header.network.l3.AddressPoolVO;
+import org.zstack.header.network.l3.AddressPoolVO_;
+import org.zstack.header.network.l3.AfterDeleteIpRangeExtensionPoint;
+import org.zstack.header.network.l3.AllocateIpMsg;
+import org.zstack.header.network.l3.AllocateIpReply;
+import org.zstack.header.network.l3.CheckIpAvailabilityMsg;
+import org.zstack.header.network.l3.CheckIpAvailabilityReply;
+import org.zstack.header.network.l3.FreeIpInventory;
+import org.zstack.header.network.l3.IpAllocatorStrategy;
+import org.zstack.header.network.l3.IpAllocatorType;
+import org.zstack.header.network.l3.IpRangeDeletionExtensionPoint;
+import org.zstack.header.network.l3.IpRangeDeletionMsg;
+import org.zstack.header.network.l3.IpRangeDeletionReply;
+import org.zstack.header.network.l3.IpRangeFactory;
+import org.zstack.header.network.l3.IpRangeInventory;
+import org.zstack.header.network.l3.IpRangeType;
+import org.zstack.header.network.l3.IpRangeVO;
+import org.zstack.header.network.l3.IpRangeVO_;
+import org.zstack.header.network.l3.L3Errors;
+import org.zstack.header.network.l3.L3Network;
+import org.zstack.header.network.l3.L3NetworkCategory;
+import org.zstack.header.network.l3.L3NetworkConstant;
+import org.zstack.header.network.l3.L3NetworkDeletionMsg;
+import org.zstack.header.network.l3.L3NetworkDeletionReply;
+import org.zstack.header.network.l3.L3NetworkDnsVO;
+import org.zstack.header.network.l3.L3NetworkDnsVO_;
+import org.zstack.header.network.l3.L3NetworkHostRouteVO;
+import org.zstack.header.network.l3.L3NetworkHostRouteVO_;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkState;
+import org.zstack.header.network.l3.L3NetworkStateEvent;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.NormalIpRangeVO;
+import org.zstack.header.network.l3.NormalIpRangeVO_;
+import org.zstack.header.network.l3.ReservedIpRangeInventory;
+import org.zstack.header.network.l3.ReservedIpRangeVO;
+import org.zstack.header.network.l3.ReservedIpRangeVO_;
+import org.zstack.header.network.l3.ReturnIpMsg;
+import org.zstack.header.network.l3.ReturnIpReply;
+import org.zstack.header.network.l3.SdnControllerDisableDHCPMsg;
+import org.zstack.header.network.l3.SdnControllerL3;
+import org.zstack.header.network.l3.SdnControllerUpdateDHCPMsg;
+import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.header.network.l3.UsedIpVO_;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
-import org.zstack.header.network.service.*;
+import org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkEvent;
+import org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkMsg;
+import org.zstack.header.network.service.APIDetachNetworkServiceFromL3NetworkEvent;
+import org.zstack.header.network.service.APIDetachNetworkServiceFromL3NetworkMsg;
+import org.zstack.header.network.service.AddDnsMsg;
+import org.zstack.header.network.service.AddHostRouteMsg;
+import org.zstack.header.network.service.NetworkServiceConstants;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
+import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.NetworkServiceProviderVO;
+import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.network.service.RemoveDnsMsg;
+import org.zstack.header.network.service.RemoveHostRouteMsg;
+import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -61,7 +169,15 @@ import org.zstack.utils.stopwatch.StopWatch;
 
 import javax.persistence.Tuple;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
@@ -256,6 +372,7 @@ public class L3BasicNetwork implements L3Network {
 
                 FlowChain chain = new SimpleFlowChain();
                 chain.setName(String.format("del-ip-range-%s", inv.getUuid()));
+                // DEBT: NoRollbackFlow — in doDeleteIpRange
                 chain.then(new NoRollbackFlow() {
                     String __name__ = "disable-sdn-dhcp";
 
@@ -284,6 +401,7 @@ public class L3BasicNetwork implements L3Network {
                             }
                         });
                     }
+                // DEBT: NoRollbackFlow — reason TBD
                 }).then(new NoRollbackFlow() {
                     String __name__ = "delete-ip-range";
 
@@ -314,6 +432,7 @@ public class L3BasicNetwork implements L3Network {
                             trigger.next();
                         }
                     }
+                // DEBT: NoRollbackFlow — reason TBD
                 }).then(new NoRollbackFlow() {
                     String __name__ = "remove-db";
 
@@ -330,6 +449,7 @@ public class L3BasicNetwork implements L3Network {
                         });
                         trigger.next();
                     }
+                // DEBT: NoRollbackFlow — reason TBD
                 }).then(new NoRollbackFlow() {
                     String __name__ = "after-delete-ip-range";
 
@@ -380,6 +500,7 @@ public class L3BasicNetwork implements L3Network {
 
                 FlowChain fchain = new SimpleFlowChain();
                 fchain.setName(String.format("del-l3-network-%s", msg.getL3NetworkUuid()));
+                // DEBT: NoRollbackFlow — in getName
                 fchain.then(new NoRollbackFlow() {
                     String __name__ = "remove-from-sdn-controller";
 
@@ -404,6 +525,7 @@ public class L3BasicNetwork implements L3Network {
                             }
                         });
                     }
+                // DEBT: NoRollbackFlow — in getName
                 }).then(new NoRollbackFlow() {
                     String __name__ = "remove-db";
 
@@ -847,6 +969,7 @@ public class L3BasicNetwork implements L3Network {
         flowChain.setName(String.format("check-ip-address-availability-%s-%s",
                 msg.getL3NetworkUuid(), msg.getIp()));
         for (CheckIpAddressAvailabilityExtensionPoint exp : pluginRgty.getExtensionList(CheckIpAddressAvailabilityExtensionPoint.class)) {
+            // DEBT: NoRollbackFlow — reason TBD
             flowChain.then(new NoRollbackFlow() {
                 String __name__ = "check-ip-address-availability-" + exp.getClass().getSimpleName();
 
@@ -1213,6 +1336,7 @@ public class L3BasicNetwork implements L3Network {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "remove-dns-from-db";
 
@@ -1230,6 +1354,7 @@ public class L3BasicNetwork implements L3Network {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "remove-dns-from-sdn";
 
@@ -1264,6 +1389,7 @@ public class L3BasicNetwork implements L3Network {
                 });
 
                 if (L3NetworkConstant.L3_BASIC_NETWORK_TYPE.equals(self.getType()) && !self.getNetworkServices().isEmpty()) {
+                    // DEBT: NoRollbackFlow — reason TBD
                     flow(new NoRollbackFlow() {
                         String __name__ = "remove-dns-from-backend";
 
@@ -1346,6 +1472,7 @@ public class L3BasicNetwork implements L3Network {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-to-sdn";
 
@@ -1380,6 +1507,7 @@ public class L3BasicNetwork implements L3Network {
                 });
 
                 if (L3NetworkConstant.L3_BASIC_NETWORK_TYPE.equals(self.getType()) && !self.getNetworkServices().isEmpty()) {
+                    // DEBT: NoRollbackFlow — in rollback
                     flow(new NoRollbackFlow() {
                         String __name__ = "apply-to-backend";
 
@@ -1535,6 +1663,7 @@ public class L3BasicNetwork implements L3Network {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-ip-range-%s", vo.getUuid()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            // DEBT: NoRollbackFlow — in doDeleteIpRange
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -1550,6 +1679,7 @@ public class L3BasicNetwork implements L3Network {
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — in doDeleteIpRange
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -1567,6 +1697,7 @@ public class L3BasicNetwork implements L3Network {
                 }
             });
         } else {
+            // DEBT: NoRollbackFlow — in doDeleteIpRange
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -1656,6 +1787,7 @@ public class L3BasicNetwork implements L3Network {
         L2NetworkVO l2NetworkVO = dbf.findByUuid(l3NetworkVO.getL2NetworkUuid(), L2NetworkVO.class);
         chain.setName(String.format("delete-l3-network-%s", msg.getUuid()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            // DEBT: NoRollbackFlow — in doDeleteL3Network
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -1671,6 +1803,7 @@ public class L3BasicNetwork implements L3Network {
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — in doDeleteL3Network
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -1688,6 +1821,7 @@ public class L3BasicNetwork implements L3Network {
                 }
             });
         } else {
+            // DEBT: NoRollbackFlow — in doDeleteL3Network
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -1785,6 +1919,7 @@ public class L3BasicNetwork implements L3Network {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-to-backend";
 
@@ -1838,6 +1973,7 @@ public class L3BasicNetwork implements L3Network {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "remove-hostroute-from-db";
 
@@ -1855,6 +1991,7 @@ public class L3BasicNetwork implements L3Network {
                 });
 
                 if (!self.getNetworkServices().isEmpty()) {
+                    // DEBT: NoRollbackFlow — reason TBD
                     flow(new NoRollbackFlow() {
                         String __name__ = "remove-hostroute-from-backend";
 

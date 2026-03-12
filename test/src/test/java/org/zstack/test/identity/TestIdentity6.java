@@ -7,8 +7,20 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.identity.*;
-import org.zstack.test.*;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.SessionVO;
+import org.zstack.header.identity.SessionVO_;
+import org.zstack.header.identity.UserGroupInventory;
+import org.zstack.header.identity.UserGroupUserRefVO;
+import org.zstack.header.identity.UserGroupUserRefVO_;
+import org.zstack.header.identity.UserGroupVO;
+import org.zstack.header.identity.UserInventory;
+import org.zstack.header.identity.UserVO;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.BeanConstructor;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 
 import java.util.concurrent.TimeUnit;
 

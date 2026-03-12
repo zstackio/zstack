@@ -1,6 +1,10 @@
 package org.zstack.test.compute.cluster;
 
-import org.zstack.header.cluster.*;
+import org.zstack.header.cluster.ClusterChangeStateExtensionPoint;
+import org.zstack.header.cluster.ClusterException;
+import org.zstack.header.cluster.ClusterInventory;
+import org.zstack.header.cluster.ClusterState;
+import org.zstack.header.cluster.ClusterStateEvent;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

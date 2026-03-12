@@ -1,6 +1,10 @@
 package org.zstack.header.storage.primary;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class PrimaryStorageAllocatorStrategyType {
     private static Map<String, PrimaryStorageAllocatorStrategyType> types = Collections.synchronizedMap(new HashMap<String, PrimaryStorageAllocatorStrategyType>());

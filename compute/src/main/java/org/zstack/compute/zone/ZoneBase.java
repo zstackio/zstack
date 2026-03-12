@@ -17,13 +17,30 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.zone.*;
+import org.zstack.header.zone.APIChangeZoneStateEvent;
+import org.zstack.header.zone.APIChangeZoneStateMsg;
+import org.zstack.header.zone.APIDeleteZoneEvent;
+import org.zstack.header.zone.APIDeleteZoneMsg;
+import org.zstack.header.zone.APIUpdateZoneEvent;
+import org.zstack.header.zone.APIUpdateZoneMsg;
+import org.zstack.header.zone.ZoneDeletionMsg;
+import org.zstack.header.zone.ZoneDeletionReply;
+import org.zstack.header.zone.ZoneException;
+import org.zstack.header.zone.ZoneInventory;
+import org.zstack.header.zone.ZoneState;
+import org.zstack.header.zone.ZoneStateEvent;
+import org.zstack.header.zone.ZoneVO;
+import org.zstack.header.zone.ZoneVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -181,6 +198,7 @@ public class ZoneBase extends AbstractZone {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-zone-%s", msg.getUuid()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            // DEBT: NoRollbackFlow — in getName
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -196,6 +214,7 @@ public class ZoneBase extends AbstractZone {
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — in getName
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -213,6 +232,7 @@ public class ZoneBase extends AbstractZone {
                 }
             });
         } else {
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {

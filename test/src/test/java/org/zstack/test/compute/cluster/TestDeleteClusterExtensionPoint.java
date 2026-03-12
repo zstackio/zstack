@@ -10,7 +10,11 @@ import org.zstack.header.cluster.APIDeleteClusterMsg;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.zone.ZoneInventory;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.BeanConstructor;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 
 public class TestDeleteClusterExtensionPoint {
     Api api;

@@ -25,12 +25,29 @@ import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
-import org.zstack.header.core.*;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.NopeNoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostErrors;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -38,16 +55,78 @@ import org.zstack.header.network.IpAllocatedReason;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.APIAddIpRangeByNetworkCidrMsg;
+import org.zstack.header.network.l3.APIAddIpRangeMsg;
+import org.zstack.header.network.l3.APIAddIpv6RangeByNetworkCidrMsg;
+import org.zstack.header.network.l3.APIAddIpv6RangeMsg;
+import org.zstack.header.network.l3.APIDeleteIpAddressMsg;
+import org.zstack.header.network.l3.APIDeleteIpRangeMsg;
+import org.zstack.header.network.l3.AfterAddIpRangeExtensionPoint;
+import org.zstack.header.network.l3.AllocateIpMsg;
+import org.zstack.header.network.l3.AllocateIpReply;
+import org.zstack.header.network.l3.CheckIpAvailabilityMsg;
+import org.zstack.header.network.l3.CheckIpAvailabilityReply;
+import org.zstack.header.network.l3.IpAllocatorStrategy;
+import org.zstack.header.network.l3.IpAllocatorType;
+import org.zstack.header.network.l3.IpRangeDeletionExtensionPoint;
+import org.zstack.header.network.l3.IpRangeInventory;
+import org.zstack.header.network.l3.IpRangeVO;
+import org.zstack.header.network.l3.L3NetworkConstant;
+import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.NormalIpRangeVO;
+import org.zstack.header.network.l3.NormalIpRangeVO_;
+import org.zstack.header.network.l3.ReservedIpRangeVO;
+import org.zstack.header.network.l3.ReturnIpMsg;
+import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.header.network.l3.UsedIpVO_;
 import org.zstack.header.network.l3.SdnControllerUpdateDHCPMsg;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
-import org.zstack.header.network.service.*;
+import org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkMsg;
+import org.zstack.header.network.service.APIDetachNetworkServiceFromL3NetworkMsg;
+import org.zstack.header.network.service.DhcpServerExtensionPoint;
+import org.zstack.header.network.service.DhcpStruct;
+import org.zstack.header.network.service.DnsServiceExtensionPoint;
+import org.zstack.header.network.service.L3NetworkUpdateDhcpMsg;
+import org.zstack.header.network.service.L3NetworkUpdateDhcpReply;
+import org.zstack.header.network.service.NetworkServiceDhcpBackend;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
+import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.NetworkServiceProviderVO;
+import org.zstack.header.network.service.NetworkServiceProviderVO_;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.network.l3.L3NetworkHelper;
 
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.BeforeStartNewCreatedVmExtensionPoint;
+import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
+import org.zstack.header.vm.VmAbnormalLifeCycleStruct;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.VmNicHelper;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicSpec;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.identity.AccountManager;
-import org.zstack.kvm.*;
+import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
+import org.zstack.kvm.KVMHostAsyncHttpCallReply;
+import org.zstack.kvm.KVMHostConnectExtensionPoint;
+import org.zstack.kvm.KVMHostConnectedContext;
+import org.zstack.kvm.KVMHostInventory;
+import org.zstack.kvm.KVMSystemTags;
+import org.zstack.kvm.KvmCommandSender;
+import org.zstack.kvm.KvmResponseWrapper;
 import org.zstack.kvm.KvmCommandSender.SteppingSendCallback;
 import org.zstack.network.l3.CheckIpAddressAvailabilityExtensionPoint;
 import org.zstack.network.l3.L3NetworkManager;
@@ -76,7 +155,14 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.math.BigInteger;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -341,6 +427,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                 trigger.rollback();
             }
+        // DEBT: NoRollbackFlow — in rollback
         }).then(new NoRollbackFlow() {
             String __name__ = "refresh-dhcp-server-on-hosts";
 
@@ -363,6 +450,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in rollback
         }).then(new NoRollbackFlow() {
             String __name__ = "refresh-dhcp-server-on-sdn-controller";
 
@@ -1691,6 +1779,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        // DEBT: NoRollbackFlow — in createKvmHostConnectingFlow
         return new NoRollbackFlow() {
             String __name__ = "prepare-flat-dhcp";
 

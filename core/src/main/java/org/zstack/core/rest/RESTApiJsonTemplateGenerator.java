@@ -15,7 +15,13 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
 
 public class RESTApiJsonTemplateGenerator {
     private static final CLogger logger = Utils.getLogger(RESTApiJsonTemplateGenerator.class);

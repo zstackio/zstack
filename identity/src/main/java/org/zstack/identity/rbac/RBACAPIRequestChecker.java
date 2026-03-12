@@ -3,7 +3,12 @@ package org.zstack.identity.rbac;
 import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.*;
+import org.zstack.header.identity.AccountConstant;
+import org.zstack.header.identity.IdentityByPassCheck;
+import org.zstack.header.identity.IdentityErrors;
+import org.zstack.header.identity.PolicyInventory;
+import org.zstack.header.identity.PolicyStatement;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.rbac.PolicyMatcher;
 import org.zstack.header.identity.rbac.RBAC;
 import org.zstack.header.identity.rbac.RBACEntity;
@@ -14,7 +19,11 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;

@@ -10,7 +10,11 @@ import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.PrimaryStorageAllocationSpec;
+import org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategy;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
 
 import java.util.ArrayList;
 import java.util.Collections;

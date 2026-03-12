@@ -9,12 +9,20 @@ import org.zstack.core.db.SQL;
 import org.zstack.header.Component;
 import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
-import org.zstack.header.sshkeypair.*;
+import org.zstack.header.sshkeypair.SshKeyPairGlobalProperty;
+import org.zstack.header.sshkeypair.SshKeyPairRefVO;
+import org.zstack.header.sshkeypair.SshKeyPairRefVO_;
+import org.zstack.header.sshkeypair.SshKeyPairVO;
+import org.zstack.header.sshkeypair.SshKeyPairVO_;
 import org.zstack.header.vm.VmInstanceVO;
 
 import javax.persistence.Tuple;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SshKeyPairUpgradeExtension implements Component {
     @Autowired

@@ -17,7 +17,11 @@ import org.zstack.header.message.APIListMessage;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.SoftDeletionCascade;
 import org.zstack.header.vo.SoftDeletionCascades;
-import org.zstack.utils.*;
+import org.zstack.utils.BeanUtils;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.FieldUtils;
+import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.VersionComparator;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
@@ -27,7 +31,13 @@ import javax.sql.DataSource;
 import java.lang.reflect.Field;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.zstack.utils.CollectionDSL.list;

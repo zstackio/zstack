@@ -66,7 +66,9 @@ public class CsvReader implements FormReader {
                 if (records.isEmpty() || tempRecords.get(0).length > records.get(0).length) {
                     records = tempRecords;
                 }
-            } catch (IOException ignored) {}
+            } catch (IOException e) {
+                /* intentionally ignored: try next CSV format */
+            }
         }
 
         if (records.size() > 1 && records.get(0).length != 0) {

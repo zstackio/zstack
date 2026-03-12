@@ -19,7 +19,11 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.Message;
@@ -34,7 +38,13 @@ import org.zstack.utils.string.StringSimilarity;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -95,6 +105,7 @@ public class ElaborationManagerImpl extends AbstractService {
             @Override
             public void setup() {
                 if (filename != null) {
+                    // DEBT: NoRollbackFlow — in preCheckElaborationContent
                     flow(new NoRollbackFlow() {
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
@@ -117,6 +128,7 @@ public class ElaborationManagerImpl extends AbstractService {
                         }
                     });
 
+                    // DEBT: NoRollbackFlow — reason TBD
                     flow(new NoRollbackFlow() {
                         String __name__ = "FileNameWithoutJson";
                         @Override
@@ -132,6 +144,7 @@ public class ElaborationManagerImpl extends AbstractService {
                     });
 
 
+                    // DEBT: NoRollbackFlow — reason TBD
                     flow(new NoRollbackFlow() {
                         String __name__ = "InValidJsonArraySchema";
                         @Override
@@ -164,6 +177,7 @@ public class ElaborationManagerImpl extends AbstractService {
                         }
                     });
                 } else {
+                    // DEBT: NoRollbackFlow — reason TBD
                     flow(new NoRollbackFlow() {
                         String __name__ = "InValidJsonArraySchema";
                         @Override
@@ -186,6 +200,7 @@ public class ElaborationManagerImpl extends AbstractService {
                     });
                 }
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "RegexAlreadyExisted, DuplicatedRegex, MessageNotFound and RegexNotFound";
                     @Override
@@ -219,6 +234,7 @@ public class ElaborationManagerImpl extends AbstractService {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "CategoryNotFound and NotSameCategoriesInFile";
                     @Override
@@ -235,6 +251,7 @@ public class ElaborationManagerImpl extends AbstractService {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "DuplicatedErrorCode and ErrorCodeAlreadyExisted";
                     @Override
@@ -306,6 +323,7 @@ public class ElaborationManagerImpl extends AbstractService {
     private void refreshElaboration(final Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName("refresh-elaboration");
+        // DEBT: NoRollbackFlow — in refreshElaboration
         chain.then(new NoRollbackFlow() {
             String __name__ = "check elaboration contents first";
             @Override
@@ -326,6 +344,7 @@ public class ElaborationManagerImpl extends AbstractService {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in refreshElaboration
         }).then(new NoRollbackFlow() {
             String __name__ = "refresh error templates";
             @Override

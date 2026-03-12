@@ -1,6 +1,10 @@
 package org.zstack.header.network.l2;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class L2NetworkType {
     private static Map<String, L2NetworkType> types = Collections.synchronizedMap(new HashMap<String, L2NetworkType>());

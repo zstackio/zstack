@@ -15,23 +15,66 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
-import org.zstack.header.allocator.*;
+import org.zstack.header.allocator.APIGetCpuMemoryCapacityMsg;
+import org.zstack.header.allocator.APIGetCpuMemoryCapacityReply;
+import org.zstack.header.allocator.APIGetHostAllocatorStrategiesMsg;
+import org.zstack.header.allocator.APIGetHostAllocatorStrategiesReply;
+import org.zstack.header.allocator.AllocateHostDryRunReply;
+import org.zstack.header.allocator.AllocateHostMsg;
+import org.zstack.header.allocator.AllocateHostReply;
+import org.zstack.header.allocator.BackupStorageAllocatorFilterExtensionPoint;
+import org.zstack.header.allocator.CollectCapacityUnsupportedVmTypeExtensionPoint;
+import org.zstack.header.allocator.DesignatedAllocateHostMsg;
+import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.allocator.HostAllocatorSpec;
+import org.zstack.header.allocator.HostAllocatorStrategy;
+import org.zstack.header.allocator.HostAllocatorStrategyExtensionPoint;
+import org.zstack.header.allocator.HostAllocatorStrategyFactory;
+import org.zstack.header.allocator.HostAllocatorStrategyType;
+import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
+import org.zstack.header.allocator.HostCapacityStruct;
+import org.zstack.header.allocator.HostCapacityVO;
+import org.zstack.header.allocator.HostCpuOverProvisioningManager;
+import org.zstack.header.allocator.HostSortorStrategy;
+import org.zstack.header.allocator.ReportHostCapacityExtensionPoint;
+import org.zstack.header.allocator.ReservedHostCapacity;
+import org.zstack.header.allocator.ReturnHostCapacityMsg;
+import org.zstack.header.allocator.UnableToReserveHostCapacityException;
 import org.zstack.header.allocator.datatypes.CpuMemoryCapacityData;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.*;
+import org.zstack.header.host.Host;
+import org.zstack.header.host.HostAllocateExtensionPoint;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.HypervisorType;
+import org.zstack.header.host.RecalculateHostCapacityMsg;
 import org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageMsg;
 import org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageReply;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.header.storage.backup.BackupStorageState;
+import org.zstack.header.storage.backup.BackupStorageStatus;
+import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.backup.BackupStorageVO_;
+import org.zstack.header.storage.backup.BackupStorageZoneRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageType;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
@@ -48,7 +91,13 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.operr;
@@ -496,6 +545,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
             String allocatedHosts = "HOST_CANDIDATES";
             chain.setName("do-handle-allocate-host-flow");
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 String __name__ = "allocate-host-candidates";
 
@@ -550,6 +600,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     }
                     trigger.rollback();
                 }
+            // DEBT: NoRollbackFlow — in rollback
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(FlowTrigger trigger, Map data) {

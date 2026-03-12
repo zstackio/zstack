@@ -16,24 +16,57 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.HypervisorType;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.*;
-import org.zstack.network.l2.*;
+import org.zstack.header.network.l2.APIAttachL2NetworkToClusterMsg;
+import org.zstack.header.network.l2.APIChangeL2NetworkVlanIdEvent;
+import org.zstack.header.network.l2.APIChangeL2NetworkVlanIdMsg;
+import org.zstack.header.network.l2.APIDetachL2NetworkFromClusterMsg;
+import org.zstack.header.network.l2.CheckL2NetworkOnHostMsg;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkDeletionMsg;
+import org.zstack.header.network.l2.L2NetworkDeletionReply;
+import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.L2NetworkMessage;
+import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.PrepareL2NetworkOnHostMsg;
+import org.zstack.header.network.l2.PrepareL2NetworkOnHostReply;
+import org.zstack.header.network.l2.PrepareL2NetworkOnHostsMsg;
+import org.zstack.header.network.l2.PrepareL2NetworkOnHostsReply;
+import org.zstack.header.network.l2.VSwitchType;
+import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
+import org.zstack.network.l2.L2NetworkGlobalConfig;
+import org.zstack.network.l2.L2NetworkHostHelper;
+import org.zstack.network.l2.L2NetworkManager;
+import org.zstack.network.l2.L2NoVlanNetwork;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.transaction.Transactional;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -269,6 +302,7 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
     private void prepareL2NetworkOnHosts(final List<HostInventory> hosts, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("prepare-l2-%s-on-hosts", self.getUuid()));
+        // DEBT: NoRollbackFlow — in prepareL2NetworkOnHosts
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
@@ -300,6 +334,7 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in prepareL2NetworkOnHosts
         }).then(new NoRollbackFlow() {
             private void realize(final Iterator<HostInventory> it, final FlowTrigger trigger) {
                 if (!it.hasNext()) {

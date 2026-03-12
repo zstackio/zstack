@@ -1,6 +1,10 @@
 package org.zstack.test.storage.primary;
 
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.PrimaryStorageChangeStateExtensionPoint;
+import org.zstack.header.storage.primary.PrimaryStorageException;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.primary.PrimaryStorageState;
+import org.zstack.header.storage.primary.PrimaryStorageStateEvent;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

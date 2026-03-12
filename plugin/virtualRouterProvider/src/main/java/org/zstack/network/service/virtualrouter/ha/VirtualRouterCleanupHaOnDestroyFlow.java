@@ -18,7 +18,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.Map;
 
 /**
  */

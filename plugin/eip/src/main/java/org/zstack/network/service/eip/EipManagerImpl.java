@@ -7,7 +7,11 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -16,27 +20,59 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.*;
+import org.zstack.header.identity.APIChangeResourceOwnerMsg;
+import org.zstack.header.identity.AccountResourceRefInventory;
+import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.ReportQuotaExtensionPoint;
+import org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
-import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.FilterAttachableL3NetworkExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.VmIpChangedExtensionPoint;
+import org.zstack.header.vm.VmNicChangeNetworkExtensionPoint;
+import org.zstack.header.vm.VmNicHelper;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
+import org.zstack.header.vm.VmPreAttachL3NetworkExtensionPoint;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceManager;
-import org.zstack.network.service.vip.*;
+import org.zstack.network.service.vip.ModifyVipAttributesStruct;
+import org.zstack.network.service.vip.Vip;
+import org.zstack.network.service.vip.VipGetServiceReferencePoint;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipReleaseExtensionPoint;
+import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipVO_;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -48,7 +84,13 @@ import org.zstack.utils.network.NetworkUtils;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -722,6 +764,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
 
             String temp = flowName;
+            // DEBT: NoRollbackFlow — in rollback
             flows.add(new NoRollbackFlow() {
                 String __name__ = String.format("additional-apply-eip-on-backend-%s", temp);
 
@@ -769,6 +812,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
             String temp = flowName;
 
+            // DEBT: NoRollbackFlow — reason TBD
             flows.add(new NoRollbackFlow() {
                 String __name__ = String.format("additional-delete-eip-from-backend-%s", temp);
 
@@ -875,6 +919,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in deleteEip
                 flow(new NoRollbackFlow() {
                     String __name__ = "pre-delete-eip";
 
@@ -888,6 +933,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-eip-from-backend";
 
@@ -915,6 +961,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     flow(f);
                 }
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "release-vip";
 
@@ -1208,6 +1255,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in detachEip
                 flow(new NoRollbackFlow() {
                     String __name__ = "pre-delete-eip";
 
@@ -1221,6 +1269,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in detachEip
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-eip-from-backend";
 
@@ -1250,6 +1299,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     }
                 }
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "remove-l3network-from-vip";
                     @Override
@@ -1329,6 +1379,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in doAttachEip
                 flow(new NoRollbackFlow() {
                     String __name__ = "pre-create-eip";
 

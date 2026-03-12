@@ -10,7 +10,21 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.defer.Deferred;
 import org.zstack.header.AbstractService;
-import org.zstack.header.cluster.*;
+import org.zstack.header.cluster.APICreateClusterEvent;
+import org.zstack.header.cluster.APICreateClusterMsg;
+import org.zstack.header.cluster.Cluster;
+import org.zstack.header.cluster.ClusterConstant;
+import org.zstack.header.cluster.ClusterDeletionMsg;
+import org.zstack.header.cluster.ClusterEO;
+import org.zstack.header.cluster.ClusterFactory;
+import org.zstack.header.cluster.ClusterInventory;
+import org.zstack.header.cluster.ClusterMessage;
+import org.zstack.header.cluster.ClusterState;
+import org.zstack.header.cluster.ClusterType;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.CreateClusterMessage;
+import org.zstack.header.cluster.CreateClusterMsg;
+import org.zstack.header.cluster.CreateClusterReply;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -24,7 +38,11 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.data.FieldPrinter;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class ClusterManagerImpl extends AbstractService implements ClusterManager {
 	private static final CLogger logger = Utils.getLogger(ClusterManager.class);

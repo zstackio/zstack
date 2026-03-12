@@ -17,7 +17,11 @@ import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.VmCreator;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.data.SizeUnit;
 

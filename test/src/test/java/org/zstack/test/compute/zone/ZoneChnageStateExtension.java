@@ -1,6 +1,10 @@
 package org.zstack.test.compute.zone;
 
-import org.zstack.header.zone.*;
+import org.zstack.header.zone.ZoneChangeStateExtensionPoint;
+import org.zstack.header.zone.ZoneException;
+import org.zstack.header.zone.ZoneInventory;
+import org.zstack.header.zone.ZoneState;
+import org.zstack.header.zone.ZoneStateEvent;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

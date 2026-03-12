@@ -4,11 +4,13 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
-import org.zstack.header.network.l3.*;
-import org.zstack.header.vm.*;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmPreAttachL3NetworkExtensionPoint;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

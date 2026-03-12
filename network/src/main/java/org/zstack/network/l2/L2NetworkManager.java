@@ -1,7 +1,12 @@
 package org.zstack.network.l2;
 
 import org.zstack.header.host.HypervisorType;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.L2NetworkAttachClusterExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkFactory;
+import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l2.L2ProviderType;
+import org.zstack.header.network.l2.VSwitchType;
 
 public interface L2NetworkManager {
     L2NetworkFactory getL2NetworkFactory(L2NetworkType type);

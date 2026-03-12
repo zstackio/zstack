@@ -3,7 +3,12 @@ package org.zstack.header.vm;
 import org.zstack.header.configuration.PythonClass;
 import org.zstack.header.exception.CloudRuntimeException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @PythonClass
 public enum VmInstanceState {

@@ -1,6 +1,10 @@
 package org.zstack.identity;
 
-import org.zstack.header.identity.*;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountResourceRefInventory;
+import org.zstack.header.identity.CreateAccountMsg;
+import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.quota.QuotaDefinition;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.message.APIMessage;

@@ -10,7 +10,10 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmUpdateNicOnHypervisorMsg;
 
 import java.util.Map;
 

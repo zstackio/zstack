@@ -9,7 +9,11 @@ import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.config.GlobalConfigInventory;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.BeanConstructor;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 
 public class TestGlobalConfigForSessionTimeOut {
     GlobalConfigFacade gcf;

@@ -14,7 +14,11 @@ import org.zstack.kvm.hypervisor.datatype.HypervisorVersionState;
 import org.zstack.utils.data.Pair;
 
 import javax.persistence.Tuple;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 

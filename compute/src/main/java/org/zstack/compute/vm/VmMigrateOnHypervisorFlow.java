@@ -13,7 +13,9 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.MigrateVmMessage;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.longjob.LongJobUtils;
 
 import java.util.Map;

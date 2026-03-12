@@ -36,6 +36,7 @@ public class PostHostExtensionPointForNuma implements PostHostConnectExtensionPo
 
     @Override
     public Flow createPostHostConnectFlow(HostInventory host) {
+        // DEBT: NoRollbackFlow — in createPostHostConnectFlow
         return new NoRollbackFlow() {
             String __name__ = "update-host-NUMA";
 

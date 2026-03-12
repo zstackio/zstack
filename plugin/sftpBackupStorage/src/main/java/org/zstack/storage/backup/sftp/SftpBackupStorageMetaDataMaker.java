@@ -19,7 +19,20 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountConstant;
-import org.zstack.header.image.*;
+import org.zstack.header.image.AddImageExtensionPoint;
+import org.zstack.header.image.CreateTemplateExtensionPoint;
+import org.zstack.header.image.ExpungeImageExtensionPoint;
+import org.zstack.header.image.ImageBackupStorageRefInventory;
+import org.zstack.header.image.ImageBackupStorageRefVO;
+import org.zstack.header.image.ImageBackupStorageRefVO_;
+import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.ImageEO;
+import org.zstack.header.image.ImageHelper;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.image.ImageState;
+import org.zstack.header.image.ImageStatus;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.AddBackupStorageExtensionPoint;
@@ -36,7 +49,11 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -334,6 +351,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
 
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in bakeImageToMetadata
                 flow(new NoRollbackFlow() {
                     String __name__ = "check-image-metadata-file-exist";
 
@@ -377,6 +395,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                 });
 
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "create-image-metadata-file";
 
@@ -532,6 +551,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
 
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in afterExpungeImage
                 flow(new NoRollbackFlow() {
                     String __name__ = "check-image-metadata-file-exist";
 
@@ -575,6 +595,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                 });
 
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-image-info";
 

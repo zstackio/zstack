@@ -11,12 +11,21 @@ import org.zstack.core.db.Q;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.L2NetworkAttachStatus;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO;
+import org.zstack.header.network.l2.L2NetworkHostRefVO;
+import org.zstack.header.network.l2.L2NetworkHostRefVO_;
 import org.zstack.header.network.l3.L3NetworkInventory;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.zstack.utils.logging.CLogger;

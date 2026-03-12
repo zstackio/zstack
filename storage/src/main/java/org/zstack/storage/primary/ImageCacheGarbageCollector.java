@@ -13,7 +13,11 @@ import org.zstack.header.Component;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.ImageCacheInventory;
+import org.zstack.header.storage.primary.ImageCacheState;
+import org.zstack.header.storage.primary.ImageCacheVO;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageRemoveCachedImageMsg;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

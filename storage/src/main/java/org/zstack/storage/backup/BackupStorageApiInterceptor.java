@@ -10,7 +10,21 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.backup.APIAttachBackupStorageToZoneMsg;
+import org.zstack.header.storage.backup.APIDeleteBackupStorageEvent;
+import org.zstack.header.storage.backup.APIDeleteBackupStorageMsg;
+import org.zstack.header.storage.backup.APIDeleteExportedImageFromBackupStorageMsg;
+import org.zstack.header.storage.backup.APIDetachBackupStorageFromZoneMsg;
+import org.zstack.header.storage.backup.APIExportImageFromBackupStorageMsg;
+import org.zstack.header.storage.backup.APIGetBackupStorageCapacityMsg;
+import org.zstack.header.storage.backup.APIGetBackupStorageCapacityReply;
+import org.zstack.header.storage.backup.APIGetTrashOnBackupStorageMsg;
+import org.zstack.header.storage.backup.BackupStorageConstant;
+import org.zstack.header.storage.backup.BackupStorageMessage;
+import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.backup.BackupStorageVO_;
+import org.zstack.header.storage.backup.BackupStorageZoneRefVO;
+import org.zstack.header.storage.backup.BackupStorageZoneRefVO_;
 
 import java.util.List;
 

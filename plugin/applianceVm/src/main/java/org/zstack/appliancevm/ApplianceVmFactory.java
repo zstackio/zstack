@@ -6,7 +6,11 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.CreateVmInstanceMsg;
+import org.zstack.header.vm.VmInstance;
+import org.zstack.header.vm.VmInstanceFactory;
+import org.zstack.header.vm.VmInstanceType;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.utils.DebugUtils;
 
 import java.util.HashMap;

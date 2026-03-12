@@ -1,7 +1,8 @@
 package org.zstack.core.gc;
 
 import org.zstack.header.managementnode.ManagementNodeVO;
-import org.zstack.header.vo.*;
+import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ForeignKey;
 
 import javax.persistence.*;

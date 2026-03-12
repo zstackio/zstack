@@ -4,7 +4,12 @@ import org.junit.Test;
 import org.zstack.utils.hash.ApacheHash;
 import org.zstack.utils.hash.ConsistentHash;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Created with IntelliJ IDEA.

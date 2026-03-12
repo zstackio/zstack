@@ -14,7 +14,12 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.ExpungeVolumeMsg;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

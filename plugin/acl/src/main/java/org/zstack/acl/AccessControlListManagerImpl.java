@@ -18,9 +18,35 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
-import org.zstack.header.acl.*;
+import org.zstack.header.acl.APIAddAccessControlListEntryEvent;
+import org.zstack.header.acl.APIAddAccessControlListEntryMsg;
+import org.zstack.header.acl.APIAddAccessControlListRedirectRuleMsg;
+import org.zstack.header.acl.APIChangeAccessControlListRedirectRuleEvent;
+import org.zstack.header.acl.APIChangeAccessControlListRedirectRuleMsg;
+import org.zstack.header.acl.APICreateAccessControlListEvent;
+import org.zstack.header.acl.APICreateAccessControlListMsg;
+import org.zstack.header.acl.APIDeleteAccessControlListEvent;
+import org.zstack.header.acl.APIDeleteAccessControlListMsg;
+import org.zstack.header.acl.APIRemoveAccessControlListEntryEvent;
+import org.zstack.header.acl.APIRemoveAccessControlListEntryMsg;
+import org.zstack.header.acl.APIUpdateAccessControlListEvent;
+import org.zstack.header.acl.APIUpdateAccessControlListMsg;
+import org.zstack.header.acl.AccessControlListConstants;
+import org.zstack.header.acl.AccessControlListEntryInventory;
+import org.zstack.header.acl.AccessControlListEntryVO;
+import org.zstack.header.acl.AccessControlListEntryVO_;
+import org.zstack.header.acl.AccessControlListInventory;
+import org.zstack.header.acl.AccessControlListVO;
+import org.zstack.header.acl.AccessControlListVO_;
+import org.zstack.header.acl.AclEntryType;
+import org.zstack.header.acl.DeleteAccessControlListMsg;
+import org.zstack.header.acl.DeleteAccessControlListReply;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
@@ -382,6 +408,7 @@ public class AccessControlListManagerImpl extends AbstractService implements Acc
                 fchain.setName(String.format("delete-acl-%s", uuid));
 
                 if (mode == APIDeleteMessage.DeletionMode.Permissive) {
+                    // DEBT: NoRollbackFlow — in getSyncSignature
                     fchain.then(new NoRollbackFlow() {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
@@ -397,6 +424,7 @@ public class AccessControlListManagerImpl extends AbstractService implements Acc
                                 }
                             });
                         }
+                    // DEBT: NoRollbackFlow — in getSyncSignature
                     }).then(new NoRollbackFlow() {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
@@ -414,6 +442,7 @@ public class AccessControlListManagerImpl extends AbstractService implements Acc
                         }
                     });
                 } else {
+                    // DEBT: NoRollbackFlow — reason TBD
                     fchain.then(new NoRollbackFlow() {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {

@@ -1,6 +1,10 @@
 package org.zstack.test.storage.backup;
 
-import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.backup.BackupStorageChangeStateExtensionPoint;
+import org.zstack.header.storage.backup.BackupStorageException;
+import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.header.storage.backup.BackupStorageState;
+import org.zstack.header.storage.backup.BackupStorageStateEvent;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

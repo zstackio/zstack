@@ -13,18 +13,36 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.addon.primary.*;
+import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostRefVO;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostRefVO_;
+import org.zstack.header.storage.addon.primary.HeartbeatVolumeTopology;
+import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeProtocol;
-import org.zstack.kvm.*;
+import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.kvm.KVMAttachVolumeExtensionPoint;
+import org.zstack.kvm.KVMConvertVolumeExtensionPoint;
+import org.zstack.kvm.KVMDetachVolumeExtensionPoint;
+import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
+import org.zstack.kvm.KVMHostAsyncHttpCallReply;
+import org.zstack.kvm.KVMHostInventory;
+import org.zstack.kvm.KVMPreAttachIsoExtensionPoint;
+import org.zstack.kvm.KVMStartVmExtensionPoint;
+import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint;
+import org.zstack.kvm.VolumeTO;
 import org.zstack.storage.addon.primary.ExternalHostIdGetter;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.utils.DebugUtils;
@@ -86,6 +104,7 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
 
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in kvmSetupSelfFencer
                 flow(new NoRollbackFlow() {
                     final String __name__ = "deploy-client";
 
@@ -105,6 +124,7 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in kvmSetupSelfFencer
                 flow(new NoRollbackFlow() {
                     final String __name__ = "activate-cbd-heartbeat-volume";
 
@@ -125,6 +145,7 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in kvmSetupSelfFencer
                 flow(new NoRollbackFlow() {
                     final String __name__ = "setup-cbd-self-fencer-on-kvm";
 

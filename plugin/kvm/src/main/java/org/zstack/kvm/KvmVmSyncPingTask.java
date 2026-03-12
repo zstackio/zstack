@@ -4,7 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.DeleteVmGC;
 import org.zstack.compute.vm.VmTracer;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventCallback;
+import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.cloudbus.MarshalReplyMessageExtensionPoint;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
@@ -22,14 +26,30 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostAfterConnectedExtensionPoint;
+import org.zstack.header.host.HostConnectionReestablishExtensionPoint;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HypervisorType;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.SyncHttpCallHandler;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.SkipVmTracer;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceMessage;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.VmStateChangedOnHostMsg;
+import org.zstack.header.vm.VmTracerCanonicalEvents;
 import org.zstack.kvm.KVMAgentCommands.ReportVmStateCmd;
 import org.zstack.kvm.KVMAgentCommands.VmSyncCmd;
 import org.zstack.kvm.KVMAgentCommands.VmSyncResponse;
@@ -37,7 +57,13 @@ import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.zstack.core.Platform.getReflections;
@@ -394,6 +420,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        // DEBT: NoRollbackFlow — in createKvmHostConnectingFlow
         return new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {

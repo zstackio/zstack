@@ -4,7 +4,13 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.APIAddDnsToL3NetworkMsg;
+import org.zstack.header.network.l3.APIAddHostRouteToL3NetworkMsg;
+import org.zstack.header.network.l3.APIAddIpRangeByNetworkCidrMsg;
+import org.zstack.header.network.l3.APIRemoveDnsFromL3NetworkMsg;
+import org.zstack.header.network.l3.APIRemoveHostRouteFromL3NetworkMsg;
+import org.zstack.header.network.l3.APIUpdateL3NetworkMsg;
+import org.zstack.header.network.l3.L3NetworkVO;
 
 import java.util.List;
 

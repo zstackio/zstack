@@ -3,7 +3,11 @@ package org.zstack.image;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.image.*;
+import org.zstack.header.image.Image;
+import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.ImageFactory;
+import org.zstack.header.image.ImageType;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.volume.VolumeFormat;
 
 public class DefaultImageFactory implements ImageFactory {

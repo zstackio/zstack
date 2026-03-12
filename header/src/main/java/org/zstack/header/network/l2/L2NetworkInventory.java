@@ -2,7 +2,11 @@ package org.zstack.header.network.l2;
 
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.query.*;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.ExpandedQueryAlias;
+import org.zstack.header.query.ExpandedQueryAliases;
+import org.zstack.header.query.Queryable;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.TypeField;
 import org.zstack.header.zone.ZoneInventory;

@@ -6,14 +6,26 @@ import org.zstack.core.gc.EventBasedGarbageCollector;
 import org.zstack.core.gc.GC;
 import org.zstack.core.gc.GCCompletion;
 import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.ChangeVmStateMsg;
+import org.zstack.header.vm.StopVmOnHypervisorMsg;
+import org.zstack.header.vm.VmCanonicalEvents;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceStateEvent;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -46,6 +58,7 @@ public class StopVmGC extends EventBasedGarbageCollector {
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("gc-stop-vm-%s-on-host-%s", inventory.getUuid(), hostUuid));
+        // DEBT: NoRollbackFlow — in triggerNow
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -63,6 +76,7 @@ public class StopVmGC extends EventBasedGarbageCollector {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in triggerNow
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {

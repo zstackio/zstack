@@ -1,6 +1,10 @@
 package org.zstack.header.vm;
 
-import org.zstack.header.image.*;
+import org.zstack.header.image.ImageBackupStorageRefInventory;
+import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.image.ImageStatus;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 

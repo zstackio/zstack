@@ -11,10 +11,17 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.OverlayMessage;
-import org.zstack.header.network.service.*;
+import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
+import org.zstack.header.network.service.VirtualRouterHaCallbackStruct;
+import org.zstack.header.network.service.VirtualRouterHaGetCallbackExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterHaTask;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO_;
 import static org.zstack.core.Platform.operr;
 
 import java.util.List;
@@ -31,6 +38,7 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
     /* VirtualRouterHaGroupExtensionPoint should */
     @Override
     public NoRollbackFlow getAttachL3NetworkFlow() {
+        // DEBT: NoRollbackFlow — in getAttachL3NetworkFlow
         return new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {

@@ -19,7 +19,11 @@ import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.APIMessage;
@@ -29,7 +33,27 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.storage.snapshot.DeleteVolumeSnapshotMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.storage.snapshot.group.*;
+import org.zstack.header.storage.snapshot.group.APIDeleteVolumeSnapshotGroupEvent;
+import org.zstack.header.storage.snapshot.group.APIDeleteVolumeSnapshotGroupMsg;
+import org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupEvent;
+import org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupMsg;
+import org.zstack.header.storage.snapshot.group.APIUngroupVolumeSnapshotGroupEvent;
+import org.zstack.header.storage.snapshot.group.APIUngroupVolumeSnapshotGroupMsg;
+import org.zstack.header.storage.snapshot.group.APIUpdateVolumeSnapshotGroupEvent;
+import org.zstack.header.storage.snapshot.group.APIUpdateVolumeSnapshotGroupMsg;
+import org.zstack.header.storage.snapshot.group.DeleteSnapshotGroupResult;
+import org.zstack.header.storage.snapshot.group.DeleteVolumeSnapshotGroupInnerMsg;
+import org.zstack.header.storage.snapshot.group.DeleteVolumeSnapshotGroupInnerReply;
+import org.zstack.header.storage.snapshot.group.RevertSnapshotGroupResult;
+import org.zstack.header.storage.snapshot.group.RevertVmFromSnapshotGroupInnerMsg;
+import org.zstack.header.storage.snapshot.group.RevertVmFromSnapshotGroupInnerReply;
+import org.zstack.header.storage.snapshot.group.RevertVolumeFromSnapshotGroupMsg;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupAvailability;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupMessage;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupOverlayMsg;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.vm.RestoreVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
@@ -43,7 +67,11 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -276,6 +304,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                 .filter(RevertVmFromSnapShotGroupExtension::needRunExtension)
                 .forEach(v -> chain.then(v.getBeforeRevertFlow()));
 
+        // DEBT: NoRollbackFlow — in handleRevert
         chain.then(new NoRollbackFlow() {
             String __name__ = "revert-volume-snapshots";
 
@@ -301,6 +330,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in handleRevert
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {

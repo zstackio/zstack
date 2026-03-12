@@ -7,7 +7,12 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.APICreateL2NetworkMsg;
+import org.zstack.header.network.l2.L2Network;
+import org.zstack.header.network.l2.L2NetworkFactory;
+import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l2.L2NetworkVO;
 
 public class TfL2NetworkFactory implements L2NetworkFactory {
     private static final L2NetworkType type = new L2NetworkType(SugonSdnControllerConstant.L2_TF_NETWORK_TYPE);

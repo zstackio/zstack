@@ -18,14 +18,30 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l3.*;
-import org.zstack.header.vm.*;
+import org.zstack.header.network.l3.AllocateIpMsg;
+import org.zstack.header.network.l3.AllocateIpReply;
+import org.zstack.header.network.l3.L3NetworkConstant;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.NormalIpRangeVO;
+import org.zstack.header.network.l3.NormalIpRangeVO_;
+import org.zstack.header.network.l3.ReturnIpMsg;
+import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.network.IPv6Constants;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateNicForStartingVmFlow implements Flow {

@@ -1,6 +1,10 @@
 package org.zstack.compute.vm;
 
-import org.zstack.header.vm.hooks.*;
+import org.zstack.header.vm.hooks.VmInstanceCreateHook;
+import org.zstack.header.vm.hooks.VmInstanceDestroyHook;
+import org.zstack.header.vm.hooks.VmInstanceRebootHook;
+import org.zstack.header.vm.hooks.VmInstanceStartHook;
+import org.zstack.header.vm.hooks.VmInstanceStopHook;
 
 import java.util.function.Supplier;
 

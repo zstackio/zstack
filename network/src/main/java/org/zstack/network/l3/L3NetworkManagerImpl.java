@@ -9,7 +9,11 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.DbEntityLister;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -18,21 +22,78 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.header.identity.*;
+import org.zstack.header.identity.APIChangeResourceOwnerMsg;
+import org.zstack.header.identity.AccountResourceRefInventory;
+import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.ReportQuotaExtensionPoint;
+import org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.*;
-import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkFactory;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
+import org.zstack.header.network.l3.APICreateL3NetworkEvent;
+import org.zstack.header.network.l3.APICreateL3NetworkMsg;
+import org.zstack.header.network.l3.APIGetIpAddressCapacityMsg;
+import org.zstack.header.network.l3.APIGetIpAddressCapacityReply;
+import org.zstack.header.network.l3.APIGetL3NetworkMtuMsg;
+import org.zstack.header.network.l3.APIGetL3NetworkMtuReply;
+import org.zstack.header.network.l3.APIGetL3NetworkTypesMsg;
+import org.zstack.header.network.l3.APIGetL3NetworkTypesReply;
+import org.zstack.header.network.l3.APISetL3NetworkMtuEvent;
+import org.zstack.header.network.l3.APISetL3NetworkMtuMsg;
+import org.zstack.header.network.l3.AllocateIpMsg;
+import org.zstack.header.network.l3.AllocateIpReply;
+import org.zstack.header.network.l3.CheckIpAvailabilityMsg;
+import org.zstack.header.network.l3.CheckIpAvailabilityReply;
+import org.zstack.header.network.l3.IpAllocatorStrategy;
+import org.zstack.header.network.l3.IpAllocatorType;
+import org.zstack.header.network.l3.IpRangeFactory;
+import org.zstack.header.network.l3.IpRangeType;
+import org.zstack.header.network.l3.IpRangeVO;
+import org.zstack.header.network.l3.IpRangeVO_;
+import org.zstack.header.network.l3.L3Network;
+import org.zstack.header.network.l3.L3NetworkCategory;
+import org.zstack.header.network.l3.L3NetworkConstant;
+import org.zstack.header.network.l3.L3NetworkDeletionMsg;
+import org.zstack.header.network.l3.L3NetworkEO;
+import org.zstack.header.network.l3.L3NetworkFactory;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkMessage;
+import org.zstack.header.network.l3.L3NetworkQuotaConstant;
+import org.zstack.header.network.l3.L3NetworkSequenceNumberVO;
+import org.zstack.header.network.l3.L3NetworkState;
+import org.zstack.header.network.l3.L3NetworkType;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.NormalIpRangeVO;
+import org.zstack.header.network.l3.NormalIpRangeVO_;
+import org.zstack.header.network.l3.ReturnIpMsg;
+import org.zstack.header.network.l3.SdnControllerL3;
+import org.zstack.header.network.l3.SdnControllerUpdateDHCPMsg;
+import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.l3.UsedIpNotAccountMetaDataExtensionPoint;
+import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.header.network.l3.UsedIpVO_;
 import org.zstack.header.network.l3.datatypes.IpCapacityData;
 import org.zstack.header.network.service.GetSdnControllerExtensionPoint;
 import org.zstack.header.network.service.SdnControllerDhcp;
@@ -64,7 +125,14 @@ import javax.persistence.PersistenceException;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.err;
@@ -160,6 +228,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName("change-l3-network-mtu");
+        // DEBT: NoRollbackFlow — in handleApiMessage
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -521,6 +590,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
         FlowChain fchain = new SimpleFlowChain();
         fchain.setName(String.format("create-l3-network-%s", vo.getUuid()));
+        // DEBT: NoRollbackFlow — in syncManagementServiceTypeWhileCreate
         fchain.then(new NoRollbackFlow() {
             String __name__ = "add-l3-to-sdn-controller";
 
@@ -546,6 +616,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = "save-db";
 
@@ -980,6 +1051,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
                 trigger.rollback();
             }
+        // DEBT: NoRollbackFlow — in rollback
         }).then(new NoRollbackFlow() {
             String __name__ = "release-old-nic-ip";
 

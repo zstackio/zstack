@@ -7,13 +7,21 @@ import org.zstack.appliancevm.ApplianceVmFirewallRuleInventory;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
@@ -21,11 +29,40 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.l3.UsedIpVO;
-import org.zstack.header.network.service.*;
-import org.zstack.header.vm.*;
+import org.zstack.header.network.service.FirewallCanonicalEvents;
+import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
+import org.zstack.header.network.service.VirtualRouterHaCallbackStruct;
+import org.zstack.header.network.service.VirtualRouterHaGetCallbackExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterHaTask;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.service.NetworkServiceManager;
-import org.zstack.network.service.eip.*;
-import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.eip.EipBackend;
+import org.zstack.network.service.eip.EipConstant;
+import org.zstack.network.service.eip.EipGlobalConfig;
+import org.zstack.network.service.eip.EipState;
+import org.zstack.network.service.eip.EipStruct;
+import org.zstack.network.service.eip.EipVO;
+import org.zstack.network.service.eip.EipVO_;
+import org.zstack.network.service.virtualrouter.AbstractVirtualRouterBackend;
+import org.zstack.network.service.virtualrouter.VirtualRouter;
+import org.zstack.network.service.virtualrouter.VirtualRouterAsyncHttpCallMsg;
+import org.zstack.network.service.virtualrouter.VirtualRouterAsyncHttpCallReply;
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands;
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData;
+import org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory;
+import org.zstack.network.service.virtualrouter.VirtualRouterOfferingValidator;
+import org.zstack.network.service.virtualrouter.VirtualRouterRoleManager;
+import org.zstack.network.service.virtualrouter.VirtualRouterStruct;
+import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO_;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.CreateEipRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.RemoveEipRsp;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
@@ -38,7 +75,11 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
 
 import javax.persistence.Tuple;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -122,6 +163,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in rollback
         }).then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
@@ -272,6 +314,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         //TODO: add GC
         final FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("revoke-eip-%s-vr-%s", struct.getEip().getUuid(), vr.getUuid()));
+        // DEBT: NoRollbackFlow — in revokeEip
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
@@ -333,6 +376,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {

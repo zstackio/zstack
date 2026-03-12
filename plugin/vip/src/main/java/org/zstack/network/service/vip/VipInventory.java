@@ -12,7 +12,11 @@ import org.zstack.utils.network.NetworkUtils;
 import javax.persistence.Column;
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**

@@ -486,6 +486,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
 
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "verify-console-proxy-port";
                     @Override
@@ -580,6 +581,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "reconnect-console-proxy";
                     @Override

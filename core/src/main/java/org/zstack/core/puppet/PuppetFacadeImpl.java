@@ -24,7 +24,11 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class PuppetFacadeImpl extends AbstractService implements PuppetFacade {
     private static final CLogger logger = Utils.getLogger(PuppetFacadeImpl.class);

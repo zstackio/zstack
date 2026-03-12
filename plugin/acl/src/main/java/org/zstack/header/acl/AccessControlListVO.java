@@ -1,7 +1,10 @@
 package org.zstack.header.acl;
 
 import org.zstack.header.identity.OwnedByAccount;
-import org.zstack.header.vo.*;
+import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.NoView;
+import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.vo.ToInventory;
 import org.zstack.header.vo.EntityGraph;
 
 import javax.persistence.*;

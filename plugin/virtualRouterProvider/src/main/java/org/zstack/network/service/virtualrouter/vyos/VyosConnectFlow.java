@@ -3,7 +3,9 @@ package org.zstack.network.service.virtualrouter.vyos;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.appliancevm.*;
+import org.zstack.appliancevm.ApplianceVmGlobalConfig;
+import org.zstack.appliancevm.ApplianceVmInventory;
+import org.zstack.appliancevm.ApplianceVmVO;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
@@ -16,7 +18,12 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -24,7 +31,17 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
+import org.zstack.network.service.virtualrouter.VirtualRouterManager;
+import org.zstack.network.service.virtualrouter.VirtualRouterMetadataOperator;
+import org.zstack.network.service.virtualrouter.VirtualRouterMetadataStruct;
+import org.zstack.network.service.virtualrouter.VirtualRouterSoftwareVersionOperator;
+import org.zstack.network.service.virtualrouter.VirtualRouterSoftwareVersionStruct;
+import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO_;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.InitCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.InitRsp;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO;
@@ -138,6 +155,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "echo";
 
@@ -158,6 +176,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "init";
 

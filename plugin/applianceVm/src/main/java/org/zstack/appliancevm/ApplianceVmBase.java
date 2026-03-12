@@ -19,7 +19,13 @@ import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HypervisorType;
@@ -31,7 +37,18 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.InstantiateNewCreatedVmInstanceMsg;
+import org.zstack.header.vm.InstantiateNewCreatedVmInstanceReply;
+import org.zstack.header.vm.VmBootDevice;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceStateEvent;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicSpec;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.volume.VolumeFormat;
@@ -40,7 +57,11 @@ import org.zstack.utils.RangeSet;
 import org.zstack.utils.RangeSet.Range;
 import org.zstack.utils.function.Function;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
@@ -580,6 +601,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             }
         }
 
+        // DEBT: NoRollbackFlow — in rollback
         chain.then(new NoRollbackFlow() {
             String __name__ = "change-appliancevm-status-to-connected";
 
@@ -645,6 +667,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             }
         }
 
+        // DEBT: NoRollbackFlow — in rollback
         chain.then(new NoRollbackFlow() {
             String __name__ = "change-appliancevm-status-to-connected";
 
@@ -715,6 +738,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             }
         }
 
+        // DEBT: NoRollbackFlow — in rollback
         chain.then(new NoRollbackFlow() {
             String __name__ = "change-appliancevm-status-to-connected";
 
@@ -773,6 +797,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             }
         }
 
+        // DEBT: NoRollbackFlow — in rollback
         chain.then(new NoRollbackFlow() {
             String __name__ = "change-appliancevm-status-to-connected";
 
@@ -826,6 +851,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             }
         }
 
+        // DEBT: NoRollbackFlow — in provisionApplianceVmAfterCreate
         chain.then(new NoRollbackFlow() {
             String __name__ = "change-appliancevm-status-to-connected";
 
@@ -950,6 +976,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                     }
                 }
 
+                // DEBT: NoRollbackFlow — reason TBD
                 chain.then(new NoRollbackFlow() {
                     String __name__ = "change-appliancevm-status-to-connected";
 
@@ -1044,6 +1071,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
     }
     
     private Flow setApplianceStateRunningFlow() {
+        // DEBT: NoRollbackFlow — in setApplianceStateRunningFlow
         return new NoRollbackFlow() {
             String __name__ = "set applianceVm state running";
 

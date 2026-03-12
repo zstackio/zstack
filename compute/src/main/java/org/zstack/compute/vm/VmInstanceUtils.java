@@ -12,7 +12,14 @@ import org.zstack.header.configuration.InstanceOfferingVO_;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.APIChangeInstanceOfferingMsg;
+import org.zstack.header.vm.APICreateVmInstanceMsg;
+import org.zstack.header.vm.CreateVmInstanceMsg;
+import org.zstack.header.vm.NewVmInstanceMessage2;
+import org.zstack.header.vm.UpdateVmInstanceMsg;
+import org.zstack.header.vm.UpdateVmInstanceSpec;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.SystemTagUtils;
 
 import java.util.List;

@@ -3,7 +3,9 @@ package org.zstack.header.identity.login;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.identity.LoginType;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Login implementation interface.

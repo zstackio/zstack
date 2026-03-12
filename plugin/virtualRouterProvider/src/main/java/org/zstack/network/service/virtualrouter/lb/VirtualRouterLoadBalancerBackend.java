@@ -27,7 +27,13 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -38,15 +44,72 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.l3.UsedIpVO;
-import org.zstack.header.network.service.*;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
+import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
+import org.zstack.header.network.service.VirtualRouterHaCallbackStruct;
+import org.zstack.header.network.service.VirtualRouterHaGetCallbackExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterHaTask;
+import org.zstack.header.network.service.VirtualRouterLoadBalancerExtensionPoint;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.DestroyVmInstanceMsg;
+import org.zstack.header.vm.StartVmInstanceMsg;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.network.service.NetworkServiceManager;
-import org.zstack.network.service.lb.*;
-import org.zstack.network.service.vip.*;
-import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.lb.APIAddVmNicToLoadBalancerMsg;
+import org.zstack.network.service.lb.CertificateVO;
+import org.zstack.network.service.lb.LoadBalancerAclType;
+import org.zstack.network.service.lb.LoadBalancerBackend;
+import org.zstack.network.service.lb.LoadBalancerBackendServerStatus;
+import org.zstack.network.service.lb.LoadBalancerConstants;
+import org.zstack.network.service.lb.LoadBalancerFactory;
+import org.zstack.network.service.lb.LoadBalancerInventory;
+import org.zstack.network.service.lb.LoadBalancerListenerACLRefInventory;
+import org.zstack.network.service.lb.LoadBalancerListenerInventory;
+import org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefVO;
+import org.zstack.network.service.lb.LoadBalancerListenerVO;
+import org.zstack.network.service.lb.LoadBalancerManager;
+import org.zstack.network.service.lb.LoadBalancerServerGroupInventory;
+import org.zstack.network.service.lb.LoadBalancerServerGroupServerIpInventory;
+import org.zstack.network.service.lb.LoadBalancerServerGroupVO;
+import org.zstack.network.service.lb.LoadBalancerServerGroupVO_;
+import org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefInventory;
+import org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefVO;
+import org.zstack.network.service.lb.LoadBalancerStruct;
+import org.zstack.network.service.lb.LoadBalancerSystemTags;
+import org.zstack.network.service.lb.LoadBalancerType;
+import org.zstack.network.service.lb.LoadBalancerVO;
+import org.zstack.network.service.lb.LoadBalancerVmNicStatus;
+import org.zstack.network.service.vip.ModifyVipAttributesStruct;
+import org.zstack.network.service.vip.Vip;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipNetworkServicesRefVO;
+import org.zstack.network.service.vip.VipNetworkServicesRefVO_;
+import org.zstack.network.service.vip.VipPeerL3NetworkRefVO;
+import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.virtualrouter.AbstractVirtualRouterBackend;
+import org.zstack.network.service.virtualrouter.VirtualRouter;
+import org.zstack.network.service.virtualrouter.VirtualRouterAsyncHttpCallMsg;
+import org.zstack.network.service.virtualrouter.VirtualRouterAsyncHttpCallReply;
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData;
+import org.zstack.network.service.virtualrouter.VirtualRouterRoleManager;
+import org.zstack.network.service.virtualrouter.VirtualRouterStruct;
+import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmSelector;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO_;
 import org.zstack.network.service.virtualrouter.vyos.VyosGlobalConfig;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentResponse;
@@ -57,7 +120,11 @@ import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.resourceconfig.ResourceConfigVO;
 import org.zstack.resourceconfig.ResourceConfigVO_;
-import org.zstack.utils.*;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.TypeUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.VipUseForList;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -65,7 +132,17 @@ import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -1236,6 +1313,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "refresh-lb-listener-to-virtualRouter";
 
@@ -1288,6 +1366,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                                  boolean statusCheck, Completion completion) {
         FlowChain chain = new SimpleFlowChain();
         chain.setName("refresh-lb-certs-listeners");
+        // DEBT: NoRollbackFlow — in refreshCertsAndListeners
         chain.then(new NoRollbackFlow() {
             String __name__ = "refresh-lb-certs";
 
@@ -1324,6 +1403,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in refreshCertsAndListeners
         }).then(new NoRollbackFlow() {
             String __name__ = "refresh-lb-listeners";
 
@@ -1359,6 +1439,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = "after-refresh-lb-listeners";
 
@@ -1601,6 +1682,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in startVrIfNeededAndRefresh
                 flow(new NoRollbackFlow() {
                     String __name__ = "start-vr";
 
@@ -1662,6 +1744,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "refresh-lb";
 
@@ -1919,6 +2002,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     });
 
                 } else {
+                    // DEBT: NoRollbackFlow — in rollback
                     flow(new NoRollbackFlow() {
                         String __name__ = "acquire-vr";
 
@@ -2020,6 +2104,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     });
                 }
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "refresh-lb-on-vr";
 
@@ -2094,6 +2179,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in removeVmNics
                 flow(new NoRollbackFlow() {
                     String __name__ = "refresh-lb-on-vr";
 
@@ -2119,6 +2205,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "remove-l3network-from-vip";
 
@@ -2197,6 +2284,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in removeListener
                 flow(new NoRollbackFlow() {
                     String __name__ = "refresh-lb-on-vr";
 
@@ -2221,6 +2309,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in removeListener
                 flow(new NoRollbackFlow() {
                     String __name__ = "remove-l3networks-from-vip";
 
@@ -2274,6 +2363,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in destroyLoadBalancer
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-from-vr";
 
@@ -2396,6 +2486,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "lb-sync-listener-on-start";
 
@@ -2969,6 +3060,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in rollback
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {

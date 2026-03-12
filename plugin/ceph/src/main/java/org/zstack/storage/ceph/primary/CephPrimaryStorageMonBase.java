@@ -3,7 +3,12 @@ package org.zstack.storage.ceph.primary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
-import org.zstack.core.ansible.*;
+import org.zstack.core.ansible.AnsibleGlobalProperty;
+import org.zstack.core.ansible.AnsibleRunner;
+import org.zstack.core.ansible.CallBackNetworkChecker;
+import org.zstack.core.ansible.SshChronyConfigChecker;
+import org.zstack.core.ansible.SshFileMd5Checker;
+import org.zstack.core.ansible.SshYumRepoChecker;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -18,12 +23,25 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
-import org.zstack.storage.ceph.*;
+import org.zstack.storage.ceph.CephAgentUrl;
+import org.zstack.storage.ceph.CephCapacity;
+import org.zstack.storage.ceph.CephCapacityUpdater;
+import org.zstack.storage.ceph.CephConstants;
+import org.zstack.storage.ceph.CephGlobalConfig;
+import org.zstack.storage.ceph.CephGlobalProperty;
+import org.zstack.storage.ceph.CephMonAO;
+import org.zstack.storage.ceph.CephMonBase;
+import org.zstack.storage.ceph.CephMonExtensionPoint;
+import org.zstack.storage.ceph.MonStatus;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -156,6 +174,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
             @Override
             public void setup() {
                 if (!CoreGlobalProperty.UNIT_TEST_ON) {
+                    // DEBT: NoRollbackFlow — in doConnect
                     flow(new NoRollbackFlow() {
                         String __name__ = "check-tools";
 
@@ -167,6 +186,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                         }
                     });
 
+                    // DEBT: NoRollbackFlow — in doConnect
                     flow(new NoRollbackFlow() {
                         String __name__ = "deploy-agent";
 
@@ -231,6 +251,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
 
                 }
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "deploy-more-agent-to-primaryStorage";
                     @Override
@@ -239,6 +260,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
                         chain.allowEmptyFlow();
                         for(CephMonExtensionPoint ext: exts) {
+                            // DEBT: NoRollbackFlow — reason TBD
                             chain.then(new NoRollbackFlow() {
                                 @Override
                                 public void run(FlowTrigger trigger1, Map data) {
@@ -271,6 +293,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                 });
 
                 if (!CoreGlobalProperty.UNIT_TEST_ON) {
+                    // DEBT: NoRollbackFlow — reason TBD
                     flow(new NoRollbackFlow() {
                         String __name__ = "configure-iptables";
 
@@ -305,6 +328,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                     });
                 }
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "echo-agent";
 
@@ -324,6 +348,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "connect-agent";
 

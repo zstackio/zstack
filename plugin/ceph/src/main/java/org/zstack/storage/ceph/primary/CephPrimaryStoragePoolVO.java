@@ -3,7 +3,9 @@ package org.zstack.storage.ceph.primary;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageEO;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
-import org.zstack.header.vo.*;
+import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.vo.SoftDeletionCascade;
+import org.zstack.header.vo.SoftDeletionCascades;
 import org.zstack.header.vo.ForeignKey;
 
 import javax.persistence.*;

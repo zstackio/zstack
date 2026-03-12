@@ -1,6 +1,10 @@
 package org.zstack.sdnController;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class SdnControllerType {
     private static Map<String, SdnControllerType> types = Collections.synchronizedMap(new HashMap<String, SdnControllerType>());

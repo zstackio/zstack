@@ -13,7 +13,13 @@ import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.backup.APIAddBackupStorageMsg;
+import org.zstack.header.storage.backup.BackupStorage;
+import org.zstack.header.storage.backup.BackupStorageConstant;
+import org.zstack.header.storage.backup.BackupStorageFactory;
+import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.header.storage.backup.BackupStorageType;
+import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

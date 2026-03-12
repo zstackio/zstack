@@ -14,11 +14,34 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.header.storage.addon.*;
-import org.zstack.header.storage.addon.primary.*;
+import org.zstack.header.storage.addon.IscsiRemoteTarget;
+import org.zstack.header.storage.addon.NodeHealthy;
+import org.zstack.header.storage.addon.RemoteTarget;
+import org.zstack.header.storage.addon.StorageCapacity;
+import org.zstack.header.storage.addon.StorageHealthy;
+import org.zstack.header.storage.addon.primary.ActiveVolumeClient;
+import org.zstack.header.storage.addon.primary.ActiveVolumeTO;
+import org.zstack.header.storage.addon.primary.AddonInfo;
+import org.zstack.header.storage.addon.primary.AllocateSpaceSpec;
+import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
+import org.zstack.header.storage.addon.primary.CreateVolumeSnapshotSpec;
+import org.zstack.header.storage.addon.primary.CreateVolumeSpec;
+import org.zstack.header.storage.addon.primary.ExportSpec;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_;
+import org.zstack.header.storage.addon.primary.HeartbeatVolumeTopology;
+import org.zstack.header.storage.addon.primary.PingResult;
+import org.zstack.header.storage.addon.primary.PrimaryStorageControllerSvc;
+import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
+import org.zstack.header.storage.addon.primary.StorageCapabilities;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.Volume;
+import org.zstack.header.volume.VolumeConfigs;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeProtocol;
+import org.zstack.header.volume.VolumeStats;
 import org.zstack.header.xinfini.XInfiniConstants;
 import org.zstack.iscsi.IscsiUtils;
 import org.zstack.iscsi.kvm.IscsiHeartbeatVolumeTO;
@@ -36,7 +59,13 @@ import org.zstack.vhost.kvm.VhostVolumeTO;
 import org.zstack.xinfini.sdk.MetadataState;
 import org.zstack.xinfini.sdk.XInfiniClient;
 import org.zstack.xinfini.sdk.XInfiniConnectConfig;
-import org.zstack.xinfini.sdk.iscsi.*;
+import org.zstack.xinfini.sdk.iscsi.IscsiClientGroupModule;
+import org.zstack.xinfini.sdk.iscsi.IscsiClientModule;
+import org.zstack.xinfini.sdk.iscsi.IscsiGatewayClientGroupMappingModule;
+import org.zstack.xinfini.sdk.iscsi.IscsiGatewayModule;
+import org.zstack.xinfini.sdk.iscsi.IscsiNodeState;
+import org.zstack.xinfini.sdk.iscsi.VolumeClientGroupMappingModule;
+import org.zstack.xinfini.sdk.iscsi.VolumeClientMappingModule;
 import org.zstack.xinfini.sdk.node.NodeModule;
 import org.zstack.xinfini.sdk.pool.BsPolicyModule;
 import org.zstack.xinfini.sdk.pool.PoolCapacity;
@@ -48,7 +77,11 @@ import org.zstack.xinfini.sdk.volume.VolumeModule;
 import org.zstack.xinfini.sdk.volume.VolumeSnapshotModule;
 import org.zstack.xinfini.sdk.volume.XinfiniVolumeQos;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -1107,7 +1140,9 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
                 logger.warn("runnable failed, try ", e);
                 try {
                     TimeUnit.SECONDS.sleep(3);
-                } catch (InterruptedException ignore) {}
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
     }

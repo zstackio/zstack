@@ -4,7 +4,11 @@ import com.google.common.collect.Ordering;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zstack.core.cascade.*;
+import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
+import org.zstack.core.cascade.CascadeAction;
+import org.zstack.core.cascade.CascadeExtensionPoint;
+import org.zstack.core.cascade.CascadeFacade;
+import org.zstack.core.cascade.CascadeFacadeImpl;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -15,7 +19,11 @@ import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  */

@@ -2,7 +2,11 @@ package org.zstack.core.thread;
 
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import java.util.concurrent.*;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractFuture<T> implements Future<T> {

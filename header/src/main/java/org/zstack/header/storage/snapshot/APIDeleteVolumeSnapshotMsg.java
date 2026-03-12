@@ -2,7 +2,9 @@ package org.zstack.header.storage.snapshot;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIParam;
+import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 

@@ -7,7 +7,11 @@ import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostCanonicalEvents;
+import org.zstack.header.host.HostIpmiVO;
+import org.zstack.header.host.HostPowerStatus;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.Map;

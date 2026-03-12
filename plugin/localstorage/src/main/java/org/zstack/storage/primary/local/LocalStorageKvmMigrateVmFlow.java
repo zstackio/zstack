@@ -21,7 +21,13 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg;
@@ -32,7 +38,16 @@ import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.DownloadImageToPrimaryStorageCacheMsg;
+import org.zstack.header.storage.primary.DownloadImageToPrimaryStorageCacheReply;
+import org.zstack.header.storage.primary.ImageCacheShadowVO;
+import org.zstack.header.storage.primary.ImageCacheShadowVO_;
+import org.zstack.header.storage.primary.ImageCacheState;
+import org.zstack.header.storage.primary.ImageCacheVO;
+import org.zstack.header.storage.primary.ImageCacheVO_;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTree;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
@@ -53,7 +68,11 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.operr;
@@ -198,6 +217,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "get-base-image-cache-of-root-volume";
 
@@ -233,6 +253,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 });
 
                 if (downloadImage) {
+                    // DEBT: NoRollbackFlow — reason TBD
                     flow(new NoRollbackFlow() {
                         String __name__ = "download-image-to-cache";
 
@@ -307,6 +328,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         }
                     });
 
+                    // DEBT: NoRollbackFlow — in rollback
                     flow(new NoRollbackFlow() {
                         String __name__ = "get-md5-of-base-image-cache";
 
@@ -459,6 +481,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         }
                     });
 
+                    // DEBT: NoRollbackFlow — in rollback
                     flow(new NoRollbackFlow() {
                         String __name__ = "check-md5-of-base-image-cache-on-dst-host";
 
@@ -654,6 +677,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     });
                 }
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "migrate-vm";
 
@@ -678,6 +702,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "update-volumes-info-in-db-to-dst-host";
 
@@ -723,6 +748,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 });
 
                 if (!snapshotTrees.isEmpty()) {
+                    // DEBT: NoRollbackFlow — in scripts
                     flow(new NoRollbackFlow() {
                         String __name__ = "update-snapshots-info-in-db-to-dst-host";
 
@@ -767,6 +793,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         }
                     });
 
+                    // DEBT: NoRollbackFlow — in scripts
                     flow(new NoRollbackFlow() {
                         String __name__ = "delete-snapshots-on-src-host";
 
@@ -803,6 +830,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     });
                 }
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-volumes-on-src-host";
 
@@ -840,6 +868,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "return-capacity-to-src-host";
 
@@ -1042,6 +1071,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
             final Context context = new Context();
 
+            // DEBT: NoRollbackFlow — reason TBD
             flows.add(new NoRollbackFlow() {
                 String __name__ = String.format("verify-snapshot-integrity-of-volume-%s-on-src-host", p.volume.getUuid());
 
@@ -1063,6 +1093,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 }
             });
 
+            // DEBT: NoRollbackFlow — reason TBD
             flows.add(new NoRollbackFlow() {
                 String __name__ = "get-snapshot-md5";
 
@@ -1155,6 +1186,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 }
             });
 
+            // DEBT: NoRollbackFlow — in rollback
             flows.add(new NoRollbackFlow() {
                 String __name__ = "check-snapshots-md5-on-dst-host";
 
@@ -1236,6 +1268,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 }
             });
 
+            // DEBT: NoRollbackFlow — in rollback
             flows.add(new NoRollbackFlow() {
                 String __name__ = String.format("rebase-backing-files-of-snapshots-of-volume-%s-on-dst-host", p.volume.getUuid());
 
@@ -1257,6 +1290,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 }
             });
 
+            // DEBT: NoRollbackFlow — in rollback
             flows.add(new NoRollbackFlow() {
                 String __name__ = String.format("verify-backingfile-integrity-of-volume-%s-on-dst-host", p.volume.getUuid());
 

@@ -14,23 +14,54 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.ImageBackupStorageRefVO;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
-import org.zstack.header.storage.primary.*;
-import org.zstack.header.vm.*;
-import org.zstack.header.volume.*;
+import org.zstack.header.storage.primary.AllocatePrimaryStorageDryRunReply;
+import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceMsg;
+import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceReply;
+import org.zstack.header.storage.primary.PrimaryStorageAllocationPurpose;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.ReleasePrimaryStorageSpaceMsg;
+import org.zstack.header.vm.APICreateVmInstanceMsg;
+import org.zstack.header.vm.AttachDataVolumeToVmMsg;
+import org.zstack.header.vm.VmAttachOtherDiskExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.volume.CreateDataVolumeFromVolumeTemplateMsg;
+import org.zstack.header.volume.CreateDataVolumeFromVolumeTemplateReply;
+import org.zstack.header.volume.CreateVolumeMsg;
+import org.zstack.header.volume.CreateVolumeReply;
+import org.zstack.header.volume.DeleteVolumeMsg;
+import org.zstack.header.volume.InstantiateVolumeMsg;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeDeletionPolicyManager;
+import org.zstack.header.volume.VolumeFormat;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.sql.Array;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -227,6 +258,7 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = "instantiate-data-volume";
 
@@ -257,6 +289,7 @@ public class VmInstantiateOtherDiskFlow implements Flow {
             private void setupVolumeFromTemplateUuidFlows() {
                 final String[] allocatedPrimaryStorageUuid = new String[1];
 
+                // DEBT: NoRollbackFlow — in setupVolumeFromTemplateUuidFlows
                 flow(new NoRollbackFlow() {
                     String __name__ = String.format("dryrun-allocate-primary-storage-for-templateUuid-%s", diskAO.getTemplateUuid());
 
@@ -377,6 +410,7 @@ public class VmInstantiateOtherDiskFlow implements Flow {
             }
 
             private void setupAttachVolumeFlows() {
+                // DEBT: NoRollbackFlow — in setupAttachVolumeFlows
                 flow(new NoRollbackFlow() {
                     String __name__ = String.format("attach-volume-to-vm-%s", vmUuid);
 
@@ -401,6 +435,7 @@ public class VmInstantiateOtherDiskFlow implements Flow {
             }
 
             private void setupAttachOtherDiskFlows() {
+                // DEBT: NoRollbackFlow — in setupAttachOtherDiskFlows
                 flow(new NoRollbackFlow() {
                     String __name__ = String.format("attach-other-Disk-to-vm-%s", vmUuid);
 

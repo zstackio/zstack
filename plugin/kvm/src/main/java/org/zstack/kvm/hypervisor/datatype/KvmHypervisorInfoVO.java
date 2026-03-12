@@ -1,6 +1,9 @@
 package org.zstack.kvm.hypervisor.datatype;
 
-import org.zstack.header.vo.*;
+import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.vo.SoftDeletionCascade;
+import org.zstack.header.vo.SoftDeletionCascades;
+import org.zstack.header.vo.ToInventory;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.Index;
 import org.zstack.kvm.KVMConstant;

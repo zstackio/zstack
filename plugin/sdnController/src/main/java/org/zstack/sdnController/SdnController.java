@@ -1,8 +1,14 @@
 package org.zstack.sdnController;
 
 import org.zstack.header.core.Completion;
-import org.zstack.header.network.sdncontroller.*;
-import org.zstack.sdnController.header.*;
+import org.zstack.header.network.sdncontroller.SdnControllerDeletionMsg;
+import org.zstack.header.network.sdncontroller.SdnControllerHostRefVO;
+import org.zstack.header.network.sdncontroller.SdnControllerInventory;
+import org.zstack.header.network.sdncontroller.SdnControllerMessage;
+import org.zstack.header.network.sdncontroller.SdnControllerRemoveHostMsg;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
+import org.zstack.sdnController.header.APISdnControllerAddHostMsg;
+import org.zstack.sdnController.header.AddSdnControllerMsg;
 
 
 public interface SdnController {

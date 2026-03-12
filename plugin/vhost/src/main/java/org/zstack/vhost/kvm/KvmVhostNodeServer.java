@@ -16,7 +16,14 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeProtocolCapability;
-import org.zstack.kvm.*;
+import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.kvm.KVMAttachVolumeExtensionPoint;
+import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.KVMConvertVolumeExtensionPoint;
+import org.zstack.kvm.KVMDetachVolumeExtensionPoint;
+import org.zstack.kvm.KVMHostInventory;
+import org.zstack.kvm.KVMStartVmExtensionPoint;
+import org.zstack.kvm.VolumeTO;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 

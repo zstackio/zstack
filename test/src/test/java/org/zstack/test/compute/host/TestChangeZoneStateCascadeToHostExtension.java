@@ -12,7 +12,11 @@ import org.zstack.header.host.HostStateEvent;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneStateEvent;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.BeanConstructor;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 
 public class TestChangeZoneStateCascadeToHostExtension {
     Api api;

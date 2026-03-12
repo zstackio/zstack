@@ -2,7 +2,7 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.*;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.network.l2.vxlan.vxlanNetwork.*;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetwork;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
@@ -27,21 +27,67 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.WhileCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.APIAttachL2NetworkToClusterEvent;
+import org.zstack.header.network.l2.APIAttachL2NetworkToClusterMsg;
+import org.zstack.header.network.l2.APIDeleteL2NetworkEvent;
+import org.zstack.header.network.l2.APIDeleteL2NetworkMsg;
+import org.zstack.header.network.l2.APIDetachL2NetworkFromClusterEvent;
+import org.zstack.header.network.l2.APIDetachL2NetworkFromClusterMsg;
+import org.zstack.header.network.l2.CheckL2NetworkOnHostMsg;
+import org.zstack.header.network.l2.DeleteL2NetworkMsg;
+import org.zstack.header.network.l2.L2Errors;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkDeletionMsg;
+import org.zstack.header.network.l2.L2NetworkDeletionReply;
+import org.zstack.header.network.l2.L2NetworkDetachFromClusterMsg;
+import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.L2NetworkMessage;
+import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.PrepareL2NetworkOnHostMsg;
+import org.zstack.header.network.l2.PrepareL2NetworkOnHostReply;
+import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.L2NoVlanNetwork;
-import org.zstack.network.l2.vxlan.vtep.*;
+import org.zstack.network.l2.vxlan.vtep.APICreateVxlanVtepEvent;
+import org.zstack.network.l2.vxlan.vtep.APICreateVxlanVtepMsg;
+import org.zstack.network.l2.vxlan.vtep.CreateVtepMsg;
+import org.zstack.network.l2.vxlan.vtep.CreateVtepReply;
+import org.zstack.network.l2.vxlan.vtep.DeleteVtepMsg;
+import org.zstack.network.l2.vxlan.vtep.DeleteVtepReply;
+import org.zstack.network.l2.vxlan.vtep.PopulateVtepPeersMsg;
+import org.zstack.network.l2.vxlan.vtep.PopulateVtepPeersReply;
+import org.zstack.network.l2.vxlan.vtep.RemoteVtepInventory;
+import org.zstack.network.l2.vxlan.vtep.RemoteVtepVO;
+import org.zstack.network.l2.vxlan.vtep.RemoteVtepVO_;
+import org.zstack.network.l2.vxlan.vtep.Vtep;
+import org.zstack.network.l2.vxlan.vtep.VtepInventory;
+import org.zstack.network.l2.vxlan.vtep.VtepVO;
+import org.zstack.network.l2.vxlan.vtep.VtepVO_;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
 import org.zstack.tag.TagManager;
@@ -51,7 +97,15 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH;
@@ -613,6 +667,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         final String l2NetworkUuid = msg.getL2NetworkUuid();
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("prepare-l2-vxlan-gateway-%s-on-hosts", l2NetworkUuid));
+        // DEBT: NoRollbackFlow — in prepareL2NetworkVxlanRemoteVtepOnHosts
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
@@ -643,6 +698,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in prepareL2NetworkVxlanRemoteVtepOnHosts
         }).then(new NoRollbackFlow() {
             String __name__ = String.format("populate-remote-vtep-for-l2-vxlan-pool-%s", l2NetworkUuid);
             @Override
@@ -719,6 +775,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("detach-l2-vxlan-pool-%s", msg.getL2NetworkUuid()));
+        // DEBT: NoRollbackFlow — in afterDetachVxlanPoolFromCluster
         chain.then(new NoRollbackFlow() {
             String __name__ = "detach-l2-vxlan-network-in-pool";
 
@@ -758,6 +815,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = "detach-l2-vxlan-pool";
 
@@ -777,6 +835,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = "after-detach-l2-vxlan-pool";
 
@@ -1012,6 +1071,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         List<String> vtepIpChanged = new ArrayList<>();
         chain.setName(String.format("prepare-l2-%s-on-hosts", self.getUuid()));
+        // DEBT: NoRollbackFlow — in prepareL2NetworkOnHosts
         chain.then(new NoRollbackFlow() {
             String __name__ = "check-vtep-ip";
 
@@ -1053,6 +1113,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in prepareL2NetworkOnHosts
         }).then(new NoRollbackFlow() {
             String __name__ = String.format("populate-vtep-for-l2-vxlan-pool-%s", l2NetworkUuid);
             @Override
@@ -1074,6 +1135,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = "realize-l2-network";
 

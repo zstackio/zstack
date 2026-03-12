@@ -20,7 +20,12 @@ import org.zstack.header.longjob.LongJobFor;
 import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.backup.APIExportImageFromBackupStorageEvent;
+import org.zstack.header.storage.backup.APIExportImageFromBackupStorageMsg;
+import org.zstack.header.storage.backup.BackupStorageConstant;
+import org.zstack.header.storage.backup.CancelJobBackupStorageMsg;
+import org.zstack.header.storage.backup.ExportImageFromBackupStorageMsg;
+import org.zstack.header.storage.backup.ExportImageFromBackupStorageReply;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 

@@ -4,7 +4,11 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.zone.*;
+import org.zstack.header.zone.APICreateZoneMsg;
+import org.zstack.header.zone.Zone;
+import org.zstack.header.zone.ZoneFactory;
+import org.zstack.header.zone.ZoneType;
+import org.zstack.header.zone.ZoneVO;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class BaseZoneFactory implements ZoneFactory {

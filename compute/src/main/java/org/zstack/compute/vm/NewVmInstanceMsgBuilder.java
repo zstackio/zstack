@@ -8,7 +8,12 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.CreateVmInstanceMsg;
+import org.zstack.header.vm.NewVmInstanceMessage;
+import org.zstack.header.vm.NewVmInstanceMessage2;
+import org.zstack.header.vm.VmNicParam;
+import org.zstack.header.vm.VmNicSpec;
+import org.zstack.header.vm.VmNicState;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.gson.JSONObjectUtil;
 

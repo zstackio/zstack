@@ -11,12 +11,24 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.GetVirtualizerInfoMsg;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmAfterExpungeExtensionPoint;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.kvm.KVMAgentCommands.DestroyVmCmd;
 import org.zstack.kvm.KVMAgentCommands.RebootVmResponse;
 import org.zstack.kvm.KVMAgentCommands.StopVmCmd;
 import org.zstack.kvm.KVMAgentCommands.VmDevicesInfoResponse;
-import org.zstack.kvm.*;
+import org.zstack.kvm.KVMDestroyVmExtensionPoint;
+import org.zstack.kvm.KVMException;
+import org.zstack.kvm.KVMHostConnectExtensionPoint;
+import org.zstack.kvm.KVMHostConnectedContext;
+import org.zstack.kvm.KVMHostInventory;
+import org.zstack.kvm.KVMRebootVmExtensionPoint;
+import org.zstack.kvm.KVMStopVmExtensionPoint;
+import org.zstack.kvm.KVMSyncVmDeviceInfoExtensionPoint;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -99,6 +111,7 @@ public class KvmHypervisorInfoExtensions implements
         final String hostUuid = context.getInventory().getUuid();
         final boolean newAdd = context.isNewAddedHost();
 
+        // DEBT: NoRollbackFlow — in createKvmHostConnectingFlow
         return new NoRollbackFlow() {
             String __name__ = "collect-virtualizer-info-for-running-vm";
             @Override

@@ -6,7 +6,11 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -14,14 +18,31 @@ import org.zstack.header.identity.APILogInReply;
 import org.zstack.header.identity.APISessionMessage;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.identity.login.*;
+import org.zstack.header.identity.login.APIGetLoginProceduresMsg;
+import org.zstack.header.identity.login.APIGetLoginProceduresReply;
+import org.zstack.header.identity.login.APILogInMsg;
+import org.zstack.header.identity.login.AdditionalAuthFeature;
+import org.zstack.header.identity.login.LogInMsg;
+import org.zstack.header.identity.login.LogInReply;
+import org.zstack.header.identity.login.LoginAPIAdapter;
+import org.zstack.header.identity.login.LoginAuthConstant;
+import org.zstack.header.identity.login.LoginAuthExtensionPoint;
+import org.zstack.header.identity.login.LoginAuthenticationProcedureDesc;
+import org.zstack.header.identity.login.LoginBackend;
+import org.zstack.header.identity.login.LoginContext;
+import org.zstack.header.identity.login.LoginManager;
+import org.zstack.header.identity.login.LoginSessionInfo;
 import org.zstack.header.message.Message;
 import org.zstack.identity.Session;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -192,6 +213,7 @@ public class LoginManagerImpl extends AbstractService implements LoginManager {
         }
 
         chain.setName(String.format("login-%s-with-backend-%s", loginContext.getUsername(), loginContext.getLoginBackendType()));
+        // DEBT: NoRollbackFlow — in doLogIn
         chain.then(new NoRollbackFlow() {
             String __name__ = "run-before-login-extensions";
 
@@ -208,6 +230,7 @@ public class LoginManagerImpl extends AbstractService implements LoginManager {
 
                 trigger.next();
             }
+        // DEBT: NoRollbackFlow — in doLogIn
         }).then(new NoRollbackFlow() {
             String __name__ = "process-login";
 

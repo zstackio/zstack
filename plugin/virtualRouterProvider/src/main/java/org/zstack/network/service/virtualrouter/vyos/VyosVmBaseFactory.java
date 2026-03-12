@@ -1,14 +1,23 @@
 package org.zstack.network.service.virtualrouter.vyos;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.appliancevm.*;
+import org.zstack.appliancevm.ApplianceVm;
+import org.zstack.appliancevm.ApplianceVmConstant;
+import org.zstack.appliancevm.ApplianceVmGlobalConfig;
+import org.zstack.appliancevm.ApplianceVmPrepareBootstrapInfoExtensionPoint;
+import org.zstack.appliancevm.ApplianceVmVO;
+import org.zstack.appliancevm.ApplianceVmVO_;
 import org.zstack.appliancevm.ApplianceVmConstant.BootstrapParams;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.APICreateL2NetworkMsg;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkCreateExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.DatabaseFacade;

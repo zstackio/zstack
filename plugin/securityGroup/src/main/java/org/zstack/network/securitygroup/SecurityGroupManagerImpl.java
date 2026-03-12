@@ -17,7 +17,12 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.DbEntityLister;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
@@ -34,7 +39,11 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -56,13 +65,28 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.SdnControllerDeleteExtensionPoint;
 import org.zstack.header.network.l2.VSwitchType;
-import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.IpRangeInventory;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.header.network.l3.UsedIpVO_;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.AddVmNicToSecurityGroupMsg;
+import org.zstack.header.vm.AddVmNicToSecurityGroupReply;
+import org.zstack.header.vm.ValidateL3SecurityGroupExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.IpRangeHelper;
@@ -84,7 +108,16 @@ import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -1158,6 +1191,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in setVmNicSecurityGroup
                 flow(new NoRollbackFlow() {
                     String __name__ = "set-vm-nic-security-group-in-db";
 
@@ -1225,6 +1259,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-rules-on-hosts";
 
@@ -1244,6 +1279,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "update-group-members";
 
@@ -1270,6 +1306,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "update-sdn-controller";
 
@@ -1358,6 +1395,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in doChangeSecurityGroupRuleState
                 flow(new NoRollbackFlow() {
                     String __name__ = "change-security-group-rule-state-in-db";
 
@@ -1377,6 +1415,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in doChangeSecurityGroupRuleState
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-rules-on-hosts";
 
@@ -1396,6 +1435,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in doChangeSecurityGroupRuleState
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-rules-on-hosts";
 
@@ -1534,6 +1574,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in doUpdateSecurityGroupRulePriority
                 flow(new NoRollbackFlow() {
                     String __name__ = "update-security-group-rule-in-db";
 
@@ -1564,6 +1605,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in doUpdateSecurityGroupRulePriority
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-rules-on-hosts";
 
@@ -1584,6 +1626,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-rules-on-sdn-controller";
 
@@ -1708,6 +1751,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in doChangeSecurityGroupRule
                 flow(new NoRollbackFlow() {
                     String __name__ = "change-security-group-rule-in-db";
 
@@ -1761,6 +1805,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-rules-on-hosts";
 
@@ -1780,6 +1825,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-rules-on-sdn-controller";
 
@@ -2111,6 +2157,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in removeNicFromSecurityGroup
                 flow(new NoRollbackFlow() {
                     String __name__ = "remove-nic-from-security-group-in-db";
 
@@ -2140,6 +2187,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in removeNicFromSecurityGroup
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-rules-on-hosts";
 
@@ -2159,6 +2207,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "update-group-numbers";
 
@@ -2182,6 +2231,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "update-sdn-controller";
 
@@ -2290,6 +2340,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("sdn-backend-delete-security-group-%s", sgUuid));
         chain.setData(data);
+        // DEBT: NoRollbackFlow — in deleteSecurityGroupFromSdn
         chain.then(new NoRollbackFlow() {
             String __name__ = "update-security-group-db";
 
@@ -2334,6 +2385,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
                 trigger.next();
             }
+        // DEBT: NoRollbackFlow — in deleteSecurityGroupFromSdn
         }).then(new NoRollbackFlow() {
             String __name__ = "delete-from-sdn";
 
@@ -2382,6 +2434,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in deleteSecurityGroup
                 flow(new NoRollbackFlow() {
                     String __name__ = "dettach-nic-from-security-group-in-db";
 
@@ -2407,6 +2460,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                         });
                     }
                 });
+                // DEBT: NoRollbackFlow — in deleteSecurityGroup
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-all-associated-security-group-rules-in-db";
 
@@ -2449,6 +2503,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-rules-on-hosts";
 
@@ -2495,6 +2550,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-security-group-%s", msg.getUuid()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -2510,6 +2566,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — reason TBD
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -2527,6 +2584,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 }
             });
         } else {
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -2652,6 +2710,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in deleteSecurityGroupRule
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-security-group-rules-in-db";
 
@@ -2662,6 +2721,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in deleteSecurityGroupRule
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-rules-on-hosts";
 
@@ -2685,6 +2745,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in deleteSecurityGroupRule
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-rules-on-sdn-controller";
 
@@ -2827,6 +2888,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in addVmNicToSecurityGroup
                 flow(new NoRollbackFlow() {
                     String __name__ = "add-vm-nic-to-security-group-in-db";
 
@@ -2838,6 +2900,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in addVmNicToSecurityGroup
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-rules-on-hosts";
 
@@ -2857,6 +2920,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in addVmNicToSecurityGroup
                 flow(new NoRollbackFlow() {
                     String __name__ = "update-group-numbers";
 
@@ -2880,6 +2944,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-rules-on-sdn-controller";
 
@@ -3098,6 +3163,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in doAddSecurityGroupRule
                 flow(new NoRollbackFlow() {
                     String __name__ = "add-security-group-rule-in-db";
 
@@ -3165,6 +3231,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-rules-on-hosts";
 
@@ -3184,6 +3251,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "apply-rules-on-sdn-controller";
 

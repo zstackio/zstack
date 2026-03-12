@@ -3,7 +3,12 @@ package org.zstack.configuration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.configuration.*;
+import org.zstack.header.configuration.APICreateDiskOfferingMsg;
+import org.zstack.header.configuration.DiskOffering;
+import org.zstack.header.configuration.DiskOfferingFactory;
+import org.zstack.header.configuration.DiskOfferingInventory;
+import org.zstack.header.configuration.DiskOfferingType;
+import org.zstack.header.configuration.DiskOfferingVO;
 
 /**
  * Created with IntelliJ IDEA.

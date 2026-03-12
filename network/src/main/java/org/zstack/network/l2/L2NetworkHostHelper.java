@@ -9,7 +9,11 @@ import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.L2NetworkAttachStatus;
+import org.zstack.header.network.l2.L2NetworkHostRefInventory;
+import org.zstack.header.network.l2.L2NetworkHostRefVO;
+import org.zstack.header.network.l2.L2NetworkHostRefVO_;
+import org.zstack.header.network.l2.L2NetworkInventory;
 
 import java.util.ArrayList;
 import java.util.HashSet;

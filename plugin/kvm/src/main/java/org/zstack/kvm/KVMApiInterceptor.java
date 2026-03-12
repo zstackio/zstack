@@ -16,7 +16,15 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.APIAttachL2NetworkToClusterMsg;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2VlanNetworkVO;
-import org.zstack.kvm.xmlhook.*;
+import org.zstack.kvm.xmlhook.APICreateVmUserDefinedXmlHookScriptMsg;
+import org.zstack.kvm.xmlhook.APIExpungeVmUserDefinedXmlHookScriptMsg;
+import org.zstack.kvm.xmlhook.APIUpdateVmUserDefinedXmlHookScriptMsg;
+import org.zstack.kvm.xmlhook.XmlHookMessage;
+import org.zstack.kvm.xmlhook.XmlHookType;
+import org.zstack.kvm.xmlhook.XmlHookVO;
+import org.zstack.kvm.xmlhook.XmlHookVO_;
+import org.zstack.kvm.xmlhook.XmlHookVmInstanceRefVO;
+import org.zstack.kvm.xmlhook.XmlHookVmInstanceRefVO_;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.network.NetworkUtils;
 

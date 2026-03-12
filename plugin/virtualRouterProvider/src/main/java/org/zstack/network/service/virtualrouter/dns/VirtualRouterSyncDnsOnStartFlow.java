@@ -21,7 +21,13 @@ import org.zstack.header.network.l3.L3NetworkDnsVO_;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.VirtualRouterAsyncHttpCallMsg;
+import org.zstack.network.service.virtualrouter.VirtualRouterAsyncHttpCallReply;
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterManager;
+import org.zstack.network.service.virtualrouter.VirtualRouterRoleManager;
+import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.DnsInfo;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SetDnsCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SetDnsRsp;
@@ -32,7 +38,10 @@ import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)

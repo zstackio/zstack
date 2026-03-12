@@ -1,6 +1,7 @@
 package org.zstack.header.tag;
 
-import org.zstack.header.vo.*;
+import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.NoView;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.Index;

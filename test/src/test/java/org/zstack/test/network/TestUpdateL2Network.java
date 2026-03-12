@@ -7,7 +7,11 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.zone.ZoneInventory;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.BeanConstructor;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

@@ -7,7 +7,10 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.ReleaseNetworkServiceOnDetachingNicExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicInventory;
 
 import java.util.Iterator;
 import java.util.Map;

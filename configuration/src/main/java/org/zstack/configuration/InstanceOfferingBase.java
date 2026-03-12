@@ -9,10 +9,26 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.NopeCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.core.workflow.*;
-import org.zstack.header.configuration.*;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.header.configuration.APIChangeInstanceOfferingStateEvent;
+import org.zstack.header.configuration.APIChangeInstanceOfferingStateMsg;
+import org.zstack.header.configuration.APIDeleteInstanceOfferingEvent;
+import org.zstack.header.configuration.APIDeleteInstanceOfferingMsg;
+import org.zstack.header.configuration.APIUpdateInstanceOfferingEvent;
+import org.zstack.header.configuration.APIUpdateInstanceOfferingMsg;
+import org.zstack.header.configuration.InstanceOffering;
+import org.zstack.header.configuration.InstanceOfferingDeletionMsg;
+import org.zstack.header.configuration.InstanceOfferingDeletionReply;
+import org.zstack.header.configuration.InstanceOfferingInventory;
+import org.zstack.header.configuration.InstanceOfferingState;
+import org.zstack.header.configuration.InstanceOfferingStateEvent;
+import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIDeleteMessage;
@@ -134,6 +150,7 @@ public class InstanceOfferingBase implements InstanceOffering {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-instance-offering-%s", msg.getUuid()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            // DEBT: NoRollbackFlow — in updateInstanceOffering
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -149,6 +166,7 @@ public class InstanceOfferingBase implements InstanceOffering {
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — reason TBD
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -166,6 +184,7 @@ public class InstanceOfferingBase implements InstanceOffering {
                 }
             });
         } else {
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {

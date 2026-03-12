@@ -6,20 +6,40 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.host.*;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.HypervisorType;
+import org.zstack.header.network.l2.APICreateL2NetworkMsg;
+import org.zstack.header.network.l2.DetachL2NetworkFromClusterMsg;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
+import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
-import org.zstack.network.l2.vxlan.vxlanNetwork.*;
+import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetwork;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.sdnController.SdnControllerL2;
 import org.zstack.sdnController.SdnControllerManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
@@ -72,6 +92,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     public void attachL2NetworkToHosts(L2VxlanNetworkInventory vxlan, List<HostInventory> hvinvs, Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("attach-hardware-vxlan-%s-on-hosts", vxlan.getUuid()));
+        // DEBT: NoRollbackFlow — in attachL2NetworkToHosts
         chain.then(new NoRollbackFlow() {
             final String __name__ = "realize-physical-interface";
 
@@ -135,6 +156,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     public void deleteHook(Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-hardware-vxlan"));
+        // DEBT: NoRollbackFlow — in deleteHook
         chain.then(new NoRollbackFlow() {
             final String __name__ = "delete-hardware-vxlan-from-sdn";
 
@@ -152,6 +174,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in deleteHook
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -185,6 +208,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     protected void deleteL2Bridge(List<String> clusterUuids, Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("detach-hardware-vxlan"));
+        // DEBT: NoRollbackFlow — in deleteL2Bridge
         chain.then(new NoRollbackFlow() {
             final String __name__ = "detach-hardware-vxlan-from-sdn";
 
@@ -207,6 +231,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in deleteL2Bridge
         }).then(new NoRollbackFlow() {
             final String __name__ = "detach-hardware-vxlan-from-host";
 

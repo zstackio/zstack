@@ -14,16 +14,38 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
-import org.zstack.header.vm.*;
-import org.zstack.network.service.lb.*;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.network.service.lb.LoadBalancerConstants;
+import org.zstack.network.service.lb.LoadBalancerFactory;
+import org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefVO;
+import org.zstack.network.service.lb.LoadBalancerListenerVO;
+import org.zstack.network.service.lb.LoadBalancerManager;
+import org.zstack.network.service.lb.LoadBalancerServerGroupVO;
+import org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefVO;
+import org.zstack.network.service.lb.LoadBalancerState;
+import org.zstack.network.service.lb.LoadBalancerStruct;
+import org.zstack.network.service.lb.LoadBalancerSystemTags;
+import org.zstack.network.service.lb.LoadBalancerType;
+import org.zstack.network.service.lb.LoadBalancerVO;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.vip.VipVO_;
-import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterManager;
+import org.zstack.network.service.virtualrouter.VirtualRouterRoleManager;
+import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
@@ -32,7 +54,12 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.function.ListFunction;
 
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -139,6 +166,7 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "create-vip-for-lbs";
 
@@ -190,6 +218,7 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in createVip
                 flow(new NoRollbackFlow() {
                     String __name__ = "create-lbs";
 

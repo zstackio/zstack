@@ -12,12 +12,19 @@ import org.zstack.core.db.SQLBatch;
 import org.zstack.storage.ceph.CephCapacity;
 import org.zstack.storage.ceph.CephConstants;
 import org.zstack.storage.ceph.CephPoolCapacity;
-import org.zstack.storage.ceph.primary.*;
+import org.zstack.storage.ceph.primary.CephOsdGroupVO;
+import org.zstack.storage.ceph.primary.CephOsdGroupVO_;
+import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO;
+import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO_;
+import org.zstack.storage.ceph.primary.CephPrimaryStorageVO;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;

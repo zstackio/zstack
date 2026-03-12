@@ -14,7 +14,11 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.tag.TagInventory;
 import org.zstack.tag.SystemTagCreator;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.VmCreator;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 import static org.zstack.utils.CollectionDSL.e;

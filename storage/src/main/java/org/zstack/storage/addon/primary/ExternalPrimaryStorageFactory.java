@@ -6,7 +6,10 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventCallback;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -15,8 +18,19 @@ import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.core.*;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.core.workflow.NopeFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -31,12 +45,67 @@ import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.addon.IscsiRemoteTarget;
-import org.zstack.header.storage.addon.primary.*;
+import org.zstack.header.storage.addon.primary.APIAddExternalPrimaryStorageMsg;
+import org.zstack.header.storage.addon.primary.APIUpdateExternalPrimaryStorageEvent;
+import org.zstack.header.storage.addon.primary.ActiveVolumeTO;
+import org.zstack.header.storage.addon.primary.AllocateSpaceSpec;
+import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageInventory;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageSpaceVO;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageSvcBuilder;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_;
+import org.zstack.header.storage.addon.primary.NodeHealthyCheckProtocolExtensionPoint;
+import org.zstack.header.storage.addon.primary.PrimaryStorageControllerSvc;
+import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
+import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
-import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.*;
+import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent;
+import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
+import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceMsg;
+import org.zstack.header.storage.primary.ConnectPrimaryStorageMsg;
+import org.zstack.header.storage.primary.CreateTemplateFromVolumeOnPrimaryStorageReply;
+import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DeleteVolumeBitsOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.PSCapacityExtensionPoint;
+import org.zstack.header.storage.primary.PrimaryStorage;
+import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageFactory;
+import org.zstack.header.storage.primary.PrimaryStorageFeature;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.primary.PrimaryStorageType;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.RecalculatePrimaryStorageCapacityExtensionPoint;
+import org.zstack.header.storage.primary.RecalculatePrimaryStorageCapacityStruct;
+import org.zstack.header.storage.primary.TakeSnapshotMsg;
+import org.zstack.header.storage.primary.TakeSnapshotReply;
+import org.zstack.header.storage.primary.VolumeSnapshotCapability;
+import org.zstack.header.storage.snapshot.BeforeTakeLiveSnapshotsOnVolumes;
+import org.zstack.header.storage.snapshot.ConsistentType;
+import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
+import org.zstack.header.storage.snapshot.CreateVolumeSnapshotMsg;
+import org.zstack.header.storage.snapshot.CreateVolumeSnapshotReply;
+import org.zstack.header.storage.snapshot.CreateVolumesSnapshotOverlayInnerMsg;
+import org.zstack.header.storage.snapshot.CreateVolumesSnapshotsJobStruct;
+import org.zstack.header.storage.snapshot.TakeVolumesSnapshotOnKvmMsg;
+import org.zstack.header.storage.snapshot.VolumeSnapshotAfterDeleteExtensionPoint;
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotStatus;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
+import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
+import org.zstack.header.vm.VmAttachVolumeExtensionPoint;
+import org.zstack.header.vm.VmDetachVolumeExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstantiateResourceException;
+import org.zstack.header.vm.VmReleaseResourceExtensionPoint;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.volume.VolumeDeletionPolicyManager;
@@ -53,7 +122,15 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -788,6 +865,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         }
 
         List<Flow> flows = new ArrayList<>();
+        // DEBT: NoRollbackFlow — in rollback
         flows.add(new NoRollbackFlow() {
             String __name__ = "create-snapshot-before-reimage";
 
@@ -945,6 +1023,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("active-external-ps-disk-for-migrate-vm-%s", inv.getUuid()));
+        // DEBT: NoRollbackFlow — in afterMigrateVm
         chain.then(new NoRollbackFlow() {
             String __name__ = "deactivate-disk-on-source-host";
 
@@ -963,6 +1042,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in afterMigrateVm
         }).then(new NoRollbackFlow() {
             String __name__ = "active-exclusive-disk-on-dest-host";
 
@@ -1010,6 +1090,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("active-external-ps-disk-for-migrate-vm-%s", inv.getUuid()));
+        // DEBT: NoRollbackFlow — in failedToMigrateVm
         chain.then(new NoRollbackFlow() {
             String __name__ = "deactivate-disk-on-source-host";
 
@@ -1028,6 +1109,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in failedToMigrateVm
         }).then(new NoRollbackFlow() {
             String __name__ = "active-exclusive-disk-on-dest-host";
 

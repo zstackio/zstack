@@ -8,7 +8,10 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmNicSpec;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

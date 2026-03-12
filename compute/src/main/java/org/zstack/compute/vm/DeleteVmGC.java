@@ -2,10 +2,23 @@ package org.zstack.compute.vm;
 
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
-import org.zstack.core.gc.*;
-import org.zstack.header.host.*;
+import org.zstack.core.gc.EventBasedGarbageCollector;
+import org.zstack.core.gc.GC;
+import org.zstack.core.gc.GCCompletion;
+import org.zstack.core.gc.GCStatus;
+import org.zstack.core.gc.GarbageCollectorVO;
+import org.zstack.core.gc.GarbageCollectorVO_;
+import org.zstack.header.host.HostCanonicalEvents;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmDirectlyDestroyOnHypervisorMsg;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 
 import java.util.Collection;
 import java.util.HashSet;

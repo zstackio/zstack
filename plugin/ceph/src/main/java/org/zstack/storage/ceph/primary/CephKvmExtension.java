@@ -10,7 +10,12 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -129,6 +134,7 @@ public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConne
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        // DEBT: NoRollbackFlow — in createKvmHostConnectingFlow
         return new NoRollbackFlow() {
             String __name__ = "prepare-ceph-primary-storage";
 
@@ -193,6 +199,7 @@ public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConne
     private void doPrepareCephPrimaryStorage(final KVMHostConnectedContext context, Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName("do-prepare-ceph-primary-storage");
+        // DEBT: NoRollbackFlow — in doPrepareCephPrimaryStorage
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -208,6 +215,7 @@ public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConne
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in doPrepareCephPrimaryStorage
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {

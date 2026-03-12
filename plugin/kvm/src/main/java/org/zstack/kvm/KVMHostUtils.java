@@ -2,7 +2,11 @@ package org.zstack.kvm;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.zstack.core.db.Q;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.tag.TagType;

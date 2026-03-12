@@ -12,7 +12,10 @@ import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.core.thread.*;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.PeriodicTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -25,7 +28,16 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.DeleteImageCacheOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.ImageCacheShadowVO;
+import org.zstack.header.storage.primary.ImageCacheVO;
+import org.zstack.header.storage.primary.ImageCacheVO_;
+import org.zstack.header.storage.primary.PrimaryStorage;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.PrimaryStorageVO_;
+import org.zstack.header.storage.primary.SyncPrimaryStorageCapacityMsg;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.utils.Utils;
@@ -180,6 +192,7 @@ public abstract class ImageCacheCleaner {
 
         SimpleFlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("do-clean-up-image-cache-on-%s", psUuid));
+        // DEBT: NoRollbackFlow — in doCleanup
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -190,6 +203,7 @@ public abstract class ImageCacheCleaner {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in doCleanup
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -213,6 +227,7 @@ public abstract class ImageCacheCleaner {
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — in doCleanup
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {

@@ -16,7 +16,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeVO;
-import org.zstack.storage.primary.local.*;
+import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;

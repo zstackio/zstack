@@ -3,7 +3,13 @@ package org.zstack.storage.backup;
 import org.zstack.core.Platform;
 import org.zstack.core.statemachine.StateMachine;
 import org.zstack.header.image.CancelDownloadImageMsg;
-import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.backup.BackupStorage;
+import org.zstack.header.storage.backup.BackupStorageState;
+import org.zstack.header.storage.backup.BackupStorageStateEvent;
+import org.zstack.header.storage.backup.BackupStorageStatus;
+import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
+import org.zstack.header.storage.backup.DownloadImageMsg;
+import org.zstack.header.storage.backup.DownloadVolumeMsg;
 import org.zstack.utils.message.OperationChecker;
 
 public abstract class AbstractBackupStorage implements BackupStorage {

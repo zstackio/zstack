@@ -23,7 +23,11 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.NopeCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -48,7 +52,12 @@ import org.zstack.utils.VipUseForList;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -593,6 +602,7 @@ public class VipBase {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in deleteVip
                 flow(new NoRollbackFlow() {
                     String __name__ = "pre-release-services-on-vip";
 
@@ -631,6 +641,7 @@ public class VipBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in deleteVip
                 flow(new NoRollbackFlow() {
                     String __name__ = "release-services-on-vip";
 
@@ -647,6 +658,7 @@ public class VipBase {
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-vip";
 
@@ -738,6 +750,7 @@ public class VipBase {
             @Override
             public void setup() {
                 if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+                    // DEBT: NoRollbackFlow — in handleApiMessage
                     flow(new NoRollbackFlow() {
                         String __name__ = "delete-vip-permissive-check";
 
@@ -757,6 +770,7 @@ public class VipBase {
                         }
                     });
 
+                    // DEBT: NoRollbackFlow — reason TBD
                     flow(new NoRollbackFlow() {
                         String __name__ = "delete-vip-permissive-delete";
 
@@ -776,6 +790,7 @@ public class VipBase {
                         }
                     });
                 } else {
+                    // DEBT: NoRollbackFlow — reason TBD
                     flow(new NoRollbackFlow() {
                         String __name__ = "delete-vip-force-delete";
 

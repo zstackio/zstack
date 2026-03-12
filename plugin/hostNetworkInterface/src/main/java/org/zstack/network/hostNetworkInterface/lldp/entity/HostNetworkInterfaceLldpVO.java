@@ -2,7 +2,11 @@ package org.zstack.network.hostNetworkInterface.lldp.entity;
 
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.ForeignKey;
-import org.zstack.header.vo.*;
+import org.zstack.header.vo.NoView;
+import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.vo.SoftDeletionCascade;
+import org.zstack.header.vo.SoftDeletionCascades;
+import org.zstack.header.vo.ToInventory;
 import org.zstack.header.vo.Index;
 import org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO;
 

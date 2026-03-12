@@ -2,7 +2,11 @@ package org.zstack.ldap;
 
 import org.zstack.header.host.HypervisorType;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class LdapEffectiveScope {
     private static Map<String, LdapEffectiveScope> scopes = Collections.synchronizedMap(new HashMap<String, LdapEffectiveScope>());

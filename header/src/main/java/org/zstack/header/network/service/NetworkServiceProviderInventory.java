@@ -5,7 +5,11 @@ import org.zstack.header.search.Inventory;
 
 import javax.persistence.JoinColumn;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Inventory(mappingVOClass = NetworkServiceProviderVO.class)
 public class NetworkServiceProviderInventory {

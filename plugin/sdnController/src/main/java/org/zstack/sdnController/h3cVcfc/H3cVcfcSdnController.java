@@ -10,23 +10,46 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l3.*;
-import org.zstack.header.network.sdncontroller.*;
+import org.zstack.header.network.l3.SdnControllerDisableDHCPMsg;
+import org.zstack.header.network.l3.SdnControllerDisableDHCPReply;
+import org.zstack.header.network.l3.SdnControllerEnableDHCPMsg;
+import org.zstack.header.network.l3.SdnControllerEnableDHCPReply;
+import org.zstack.header.network.l3.SdnControllerUpdateDHCPMsg;
+import org.zstack.header.network.l3.SdnControllerUpdateDHCPReply;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
+import org.zstack.header.network.sdncontroller.SdnControllerDeletionMsg;
+import org.zstack.header.network.sdncontroller.SdnControllerInventory;
+import org.zstack.header.network.sdncontroller.SdnControllerMessage;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
-import org.zstack.sdnController.*;
-import org.zstack.sdnController.header.*;
+import org.zstack.sdnController.SdnController;
+import org.zstack.sdnController.SdnControllerL2;
+import org.zstack.sdnController.SdnControllerLog;
+import org.zstack.sdnController.SdnControllerPingMsg;
+import org.zstack.sdnController.SdnControllerPingReply;
+import org.zstack.sdnController.SdnControllerSystemTags;
+import org.zstack.sdnController.header.AddSdnControllerMsg;
+import org.zstack.sdnController.header.SdnVlanRange;
+import org.zstack.sdnController.header.SdnVniRange;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
@@ -165,6 +188,7 @@ public class H3cVcfcSdnController implements SdnController, SdnControllerL2 {
     private void getH3cParameters(AddSdnControllerMsg msg, Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("get-h3c-parameters-%s", self.getIp()));
+        // DEBT: NoRollbackFlow — in getH3cParameters
         chain.then(new NoRollbackFlow() {
             String __name__ = "get_h3c_vni_ranges";
 
@@ -183,6 +207,7 @@ public class H3cVcfcSdnController implements SdnController, SdnControllerL2 {
                 });
 
             }
+        // DEBT: NoRollbackFlow — in getH3cParameters
         }).then(new NoRollbackFlow() {
             String __name__ = "get_h3c_default_tenant";
 

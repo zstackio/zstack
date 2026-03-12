@@ -10,7 +10,15 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeInventory;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APIReply;
+import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.message.BeforeDeliveryMessageInterceptor;
+import org.zstack.header.message.BeforeSendMessageInterceptor;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.Iterator;

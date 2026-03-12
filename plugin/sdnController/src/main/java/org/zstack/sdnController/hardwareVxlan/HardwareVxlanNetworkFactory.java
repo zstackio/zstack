@@ -12,7 +12,13 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostInventory;
@@ -20,7 +26,18 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.APICreateL2NetworkMsg;
+import org.zstack.header.network.l2.L2Network;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkFactory;
+import org.zstack.header.network.l2.L2NetworkGetVniExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
+import org.zstack.header.network.l2.PrepareL2NetworkOnHostMsg;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
@@ -42,7 +59,10 @@ import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.sdnController.SdnControllerL2;
 import org.zstack.sdnController.SdnControllerManager;
-import org.zstack.sdnController.header.*;
+import org.zstack.sdnController.header.APICreateL2HardwareVxlanNetworkMsg;
+import org.zstack.sdnController.header.HardwareL2VxlanNetworkInventory;
+import org.zstack.sdnController.header.HardwareL2VxlanNetworkVO;
+import org.zstack.sdnController.header.HardwareVxlanHelper;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.Utils;
@@ -113,6 +133,7 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
         chain.then(new ShareFlow(){
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in createL2Network
                 flow(new NoRollbackFlow() {
                     String __name__ = String.format("pre-process-for-create-hardware-vxlan-network-%s", msg.getName());
 
@@ -212,6 +233,7 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
                         });
                     }
                 });
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = String.format("post-process-for-create-sdn-controller--%s", msg.getName());
 
@@ -232,6 +254,7 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
                         });
                     }
                 });
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = String.format("pre-process-for-attach-hardware-vxlan-on-host-%s", msg.getName());
 
@@ -322,6 +345,7 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
                         });
                     }
                 });
+                // DEBT: NoRollbackFlow — in rollback
                 flow(new NoRollbackFlow() {
                     String __name__ = String.format("post-process-for-attach-hardware-vxlan-on-host-%s", msg.getName());
 

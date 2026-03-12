@@ -8,7 +8,11 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
@@ -16,21 +20,37 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.kvm.*;
+import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.kvm.KVMCompleteNicInformationExtensionPoint;
+import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
+import org.zstack.kvm.KVMHostAsyncHttpCallReply;
+import org.zstack.kvm.KVMSystemTags;
 import org.zstack.network.l2.L2NetworkGlobalConfig;
 import org.zstack.network.l2.vxlan.vtep.CreateVtepMsg;
 import org.zstack.network.l2.vxlan.vtep.VtepVO;
 import org.zstack.network.l2.vxlan.vtep.VtepVO_;
-import org.zstack.network.l2.vxlan.vxlanNetwork.*;
+import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkFactory;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkGlobalConfig;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -72,6 +92,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("check-l2-vxlan-pool-%s-on-host-%s", l2Network.getUuid(), hostUuid));
+        // DEBT: NoRollbackFlow — in realize
         chain.then(new NoRollbackFlow() {
             String __name__ = String.format("check-vtep-ip-for-l2-vxlan-pool-%s", l2Network.getUuid());
 
@@ -120,6 +141,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                 });
             }
 
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = String.format("create-vtep-for-l2-vxlan-pool-%s", l2Network.getUuid());
 
@@ -189,6 +211,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                     }
                 });
             }
+        // DEBT: NoRollbackFlow — reason TBD
         }).then(new NoRollbackFlow() {
             String __name__ = String.format("realize-vtep-for-l2-vxlan-pool-%s", l2Network.getUuid());
 

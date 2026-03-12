@@ -12,9 +12,12 @@ import org.zstack.header.search.Parent;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
-import org.zstack.network.l2.vxlan.vxlanNetworkPool.*;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolInventory;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeInventory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 @PythonClassInventory
 @Inventory(mappingVOClass = HardwareL2VxlanNetworkPoolVO.class, collectionValueOfMethod = "valueOf2",

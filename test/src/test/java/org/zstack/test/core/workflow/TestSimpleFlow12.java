@@ -4,7 +4,12 @@ import junit.framework.Assert;
 import org.junit.Test;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.core.workflow.WorkFlowException;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowMarshaller;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 
 import java.util.Map;
 
@@ -16,6 +21,7 @@ public class TestSimpleFlow12 {
         final int[] count = {0};
 
         new SimpleFlowChain()
+                // DEBT: NoRollbackFlow — in test
                 .then(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger chain, Map data) {
@@ -31,6 +37,7 @@ public class TestSimpleFlow12 {
                 .setFlowMarshaller(new FlowMarshaller() {
                     @Override
                     public Flow marshalTheNextFlow(String previousFlowClassName, String nextFlowClassName, FlowChain chain, Map data) {
+                        // DEBT: NoRollbackFlow — in marshalTheNextFlow
                         return new NoRollbackFlow() {
                             @Override
                             public void run(FlowTrigger trigger, Map data) {

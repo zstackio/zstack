@@ -9,7 +9,11 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.backup.BackupStorageAllocationSpec;
+import org.zstack.header.storage.backup.BackupStorageState;
+import org.zstack.header.storage.backup.BackupStorageStatus;
+import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.backup.BackupStorageZoneRefVO;
 import org.zstack.header.storage.backup.BackupStorageConstant.AllocatorParams;
 
 import static org.zstack.core.Platform.operr;

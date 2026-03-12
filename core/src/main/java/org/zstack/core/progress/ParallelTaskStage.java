@@ -2,7 +2,10 @@ package org.zstack.core.progress;
 
 import org.zstack.header.core.progress.TaskProgressRange;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 

@@ -33,12 +33,37 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageConstant;
-import org.zstack.header.storage.addon.*;
-import org.zstack.header.storage.addon.primary.*;
+import org.zstack.header.storage.addon.IscsiRemoteTarget;
+import org.zstack.header.storage.addon.NodeHealthy;
+import org.zstack.header.storage.addon.NvmeRemoteTarget;
+import org.zstack.header.storage.addon.RemoteTarget;
+import org.zstack.header.storage.addon.StorageCapacity;
+import org.zstack.header.storage.addon.StorageHealthy;
+import org.zstack.header.storage.addon.primary.ActiveVolumeClient;
+import org.zstack.header.storage.addon.primary.ActiveVolumeTO;
+import org.zstack.header.storage.addon.primary.AddonInfo;
+import org.zstack.header.storage.addon.primary.AllocateSpaceSpec;
+import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
+import org.zstack.header.storage.addon.primary.CreateVolumeSnapshotSpec;
+import org.zstack.header.storage.addon.primary.CreateVolumeSpec;
+import org.zstack.header.storage.addon.primary.ExportSpec;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_;
+import org.zstack.header.storage.addon.primary.HeartbeatVolumeTopology;
+import org.zstack.header.storage.addon.primary.PingResult;
+import org.zstack.header.storage.addon.primary.PrimaryStorageControllerSvc;
+import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
+import org.zstack.header.storage.addon.primary.StorageCapabilities;
 import org.zstack.header.storage.primary.ImageCacheInventory;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.Volume;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeProtocol;
+import org.zstack.header.volume.VolumeStats;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.header.volume.block.BlockVolumeVO;
 import org.zstack.iscsi.IscsiUtils;
 import org.zstack.iscsi.kvm.IscsiHeartbeatVolumeTO;
@@ -56,7 +81,12 @@ import org.zstack.vhost.kvm.VhostVolumeTO;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -1390,7 +1420,9 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
                 logger.warn("runnable failed, try ", e);
                 try {
                     TimeUnit.SECONDS.sleep(3);
-                } catch (InterruptedException ignore) {}
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
     }

@@ -23,6 +23,7 @@ public class KVMConnectExtensionForL2Network extends AbstractKVMConnectExtension
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        // DEBT: NoRollbackFlow — in createKvmHostConnectingFlow
         return new NoRollbackFlow() {
             String __name__ = "prepare-l2-network";
 

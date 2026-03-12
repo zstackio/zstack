@@ -2,7 +2,15 @@ package org.zstack.utils;
 
 import org.apache.logging.log4j.util.Strings;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -218,7 +226,9 @@ public class RangeSet {
                     String end = range[1].trim();
                     results.closed(Long.parseLong(start), Long.parseLong(end));
                 }
-            } catch (NumberFormatException ignore) {}
+            } catch (NumberFormatException e) {
+                /* intentionally ignored: skip unparseable range segments */
+            }
         }
 
         return results;

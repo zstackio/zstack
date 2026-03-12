@@ -21,7 +21,11 @@ import org.zstack.network.service.virtualrouter.APICreateVirtualRouterOfferingMs
 import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterOfferingMsg;
 import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterOfferingReply;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSender;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.identity.IdentityCreator;
 import org.zstack.utils.data.SizeUnit;

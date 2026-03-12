@@ -109,6 +109,7 @@ public class ExternalPrimaryStorageAllocator implements MarshalVmOperationFlowEx
                 if (candidateUrls.contains(requiredUrl)) {
                     return null;
                 } else {
+                    // DEBT: NoRollbackFlow — reason TBD
                     return new NoRollbackFlow() {
                         @Override
                         public void run(FlowTrigger trigger, Map data) {

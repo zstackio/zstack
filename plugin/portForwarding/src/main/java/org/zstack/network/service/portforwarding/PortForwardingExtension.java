@@ -11,7 +11,12 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.ReleaseNetworkServiceOnDeletingNicExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicHelper;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicSpec;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
@@ -21,7 +26,12 @@ import org.zstack.network.service.vip.VipVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**

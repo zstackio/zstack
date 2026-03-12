@@ -1,6 +1,10 @@
 package org.zstack.storage.primary.local;
 
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.PrimaryStorageChangeStateExtensionPoint;
+import org.zstack.header.storage.primary.PrimaryStorageException;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.primary.PrimaryStorageState;
+import org.zstack.header.storage.primary.PrimaryStorageStateEvent;
 
 /**
  * Created by camile on 9/6/2017.

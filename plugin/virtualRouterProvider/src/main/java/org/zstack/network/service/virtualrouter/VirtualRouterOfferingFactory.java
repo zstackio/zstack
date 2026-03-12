@@ -3,7 +3,12 @@ package org.zstack.network.service.virtualrouter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatchWithReturn;
-import org.zstack.header.configuration.*;
+import org.zstack.header.configuration.APICreateInstanceOfferingMsg;
+import org.zstack.header.configuration.InstanceOffering;
+import org.zstack.header.configuration.InstanceOfferingFactory;
+import org.zstack.header.configuration.InstanceOfferingInventory;
+import org.zstack.header.configuration.InstanceOfferingType;
+import org.zstack.header.configuration.InstanceOfferingVO;
 
 public class VirtualRouterOfferingFactory implements InstanceOfferingFactory {
 	static final InstanceOfferingType type = new InstanceOfferingType(VirtualRouterConstant.VIRTUAL_ROUTER_OFFERING_TYPE);

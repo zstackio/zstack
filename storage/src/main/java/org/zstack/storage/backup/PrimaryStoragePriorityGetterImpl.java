@@ -10,7 +10,12 @@ import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
-import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.backup.BackupStorage;
+import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint;
+import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.backup.BackupStorageVO_;
+import org.zstack.header.storage.backup.PrimaryStoragePriorityGetter;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.gson.JSONObjectUtil;
 

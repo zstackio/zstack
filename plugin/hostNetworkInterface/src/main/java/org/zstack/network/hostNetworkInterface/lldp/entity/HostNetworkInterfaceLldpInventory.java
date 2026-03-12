@@ -1,7 +1,7 @@
 package org.zstack.network.hostNetworkInterface.lldp.entity;
 
 import org.zstack.header.configuration.PythonClassInventory;
-import org.zstack.header.query.*;
+import org.zstack.header.query.Queryable;
 import org.zstack.header.search.Inventory;
 
 import javax.persistence.JoinColumn;

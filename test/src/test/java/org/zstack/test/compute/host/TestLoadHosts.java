@@ -10,7 +10,11 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.BeanConstructor;
+import org.zstack.test.UnitTestUtils;
+import org.zstack.test.WebBeanConstructor;
 
 import java.util.concurrent.TimeUnit;
 

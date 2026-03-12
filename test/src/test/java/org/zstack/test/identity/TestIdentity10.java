@@ -5,8 +5,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.*;
-import org.zstack.test.*;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountVO;
+import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.identity.UserGroupInventory;
+import org.zstack.header.identity.UserInventory;
+import org.zstack.header.identity.UserVO;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.BeanConstructor;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 
 /**
  * test update identity

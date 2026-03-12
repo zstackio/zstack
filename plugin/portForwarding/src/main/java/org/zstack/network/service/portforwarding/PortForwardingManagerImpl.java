@@ -6,7 +6,12 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
@@ -17,7 +22,11 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -35,13 +44,36 @@ import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.VmIpChangedExtensionPoint;
+import org.zstack.header.vm.VmNicChangeNetworkExtensionPoint;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceManager;
-import org.zstack.network.service.vip.*;
+import org.zstack.network.service.vip.ModifyVipAttributesStruct;
+import org.zstack.network.service.vip.Vip;
+import org.zstack.network.service.vip.VipGetServiceReferencePoint;
+import org.zstack.network.service.vip.VipGetUsedPortRangeExtensionPoint;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipManager;
+import org.zstack.network.service.vip.VipPeerL3NetworkRefVO;
+import org.zstack.network.service.vip.VipPeerL3NetworkRefVO_;
+import org.zstack.network.service.vip.VipReleaseExtensionPoint;
+import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipVO_;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.*;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.RangeSet;
+import org.zstack.utils.Utils;
+import org.zstack.utils.VipUseForList;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -50,7 +82,13 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -533,6 +571,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-portforwarding-rule";
 
@@ -555,6 +594,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     String __name__ = "release-vip-if-no-rules";
 
@@ -778,6 +818,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 final PortForwardingRuleVO pvo = dbf.updateAndRefresh(vo);
                 final PortForwardingRuleInventory ruleInv = PortForwardingRuleInventory.valueOf(pvo);
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -799,6 +840,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -813,6 +855,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                     }
                 });
 
+                // DEBT: NoRollbackFlow — reason TBD
                 flow(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -1015,6 +1058,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in doAttachPortForwardingRule
                 flow(new NoRollbackFlow() {
                     String __name__ = "prepare-vip";
 
@@ -1044,6 +1088,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in doAttachPortForwardingRule
                 flow(new NoRollbackFlow() {
                     String __name__ = "attach-portfowarding-rule";
 
@@ -1129,6 +1174,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in doDetachPortForwardingRule
                 flow(new NoRollbackFlow() {
                     String __name__ = "detach-portforwarding-rule";
 
@@ -1150,6 +1196,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in doDetachPortForwardingRule
                 flow(new NoRollbackFlow() {
                     String __name__ = "remove-l3-from-vip";
 

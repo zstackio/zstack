@@ -1,14 +1,22 @@
 package org.zstack.network.securitygroup;
 
 import org.zstack.header.configuration.PythonClassInventory;
-import org.zstack.header.query.*;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.ExpandedQueryAlias;
+import org.zstack.header.query.ExpandedQueryAliases;
+import org.zstack.header.query.Queryable;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 
 import javax.persistence.Column;
 import javax.persistence.JoinColumn;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 /**
  * @inventory
  * inventory for security group

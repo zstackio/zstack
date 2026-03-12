@@ -14,7 +14,12 @@ import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.portal.apimediator.PortalSystemTags;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSender;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.BeanConstructor;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 
 import java.util.List;
 

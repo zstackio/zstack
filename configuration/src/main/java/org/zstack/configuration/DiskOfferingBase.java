@@ -9,10 +9,26 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.header.configuration.*;
+import org.zstack.header.configuration.APIChangeDiskOfferingStateEvent;
+import org.zstack.header.configuration.APIChangeDiskOfferingStateMsg;
+import org.zstack.header.configuration.APIDeleteDiskOfferingEvent;
+import org.zstack.header.configuration.APIDeleteDiskOfferingMsg;
+import org.zstack.header.configuration.APIUpdateDiskOfferingEvent;
+import org.zstack.header.configuration.APIUpdateDiskOfferingMsg;
+import org.zstack.header.configuration.DiskOffering;
+import org.zstack.header.configuration.DiskOfferingDeletionMsg;
+import org.zstack.header.configuration.DiskOfferingDeletionReply;
+import org.zstack.header.configuration.DiskOfferingInventory;
+import org.zstack.header.configuration.DiskOfferingState;
+import org.zstack.header.configuration.DiskOfferingStateEvent;
+import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIDeleteMessage;
@@ -130,6 +146,7 @@ public class DiskOfferingBase implements DiskOffering {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-disk-offering-%s", msg.getUuid()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -145,6 +162,7 @@ public class DiskOfferingBase implements DiskOffering {
                         }
                     });
                 }
+            // DEBT: NoRollbackFlow — reason TBD
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -162,6 +180,7 @@ public class DiskOfferingBase implements DiskOffering {
                 }
             });
         } else {
+            // DEBT: NoRollbackFlow — reason TBD
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {

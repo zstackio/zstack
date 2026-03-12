@@ -20,7 +20,19 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.MulitpleOverlayReply;
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.DeleteVolumeSnapshotDirection;
+import org.zstack.header.storage.snapshot.DeleteVolumeSnapshotScope;
+import org.zstack.header.storage.snapshot.VolumeSnapshotAfterDeleteExtensionPoint;
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.VolumeSnapshotDeletionMsg;
+import org.zstack.header.storage.snapshot.VolumeSnapshotDeletionStructs;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotOverlayMsg;
+import org.zstack.header.storage.snapshot.VolumeSnapshotTree;
+import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.VolumeConstant;
@@ -34,7 +46,14 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**

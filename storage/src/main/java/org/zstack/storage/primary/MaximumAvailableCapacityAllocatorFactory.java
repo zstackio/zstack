@@ -3,7 +3,13 @@ package org.zstack.storage.primary;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.AllocatePrimaryStorageMsg;
+import org.zstack.header.storage.primary.PrimaryStorageAllocatorFlowNameSetter;
+import org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategy;
+import org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyExtensionPoint;
+import org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyFactory;
+import org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyType;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
 
 import java.util.List;
 

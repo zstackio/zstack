@@ -8,9 +8,19 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.identity.PolicyStatementEffect;
-import org.zstack.header.identity.*;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.PolicyVO;
+import org.zstack.header.identity.PolicyVO_;
+import org.zstack.header.identity.UserGroupVO;
+import org.zstack.header.identity.UserGroupVO_;
+import org.zstack.header.identity.UserVO;
+import org.zstack.header.identity.UserVO_;
 import org.zstack.header.identity.PolicyStatement;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.BeanConstructor;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 
 /**
  * 1. delete an account

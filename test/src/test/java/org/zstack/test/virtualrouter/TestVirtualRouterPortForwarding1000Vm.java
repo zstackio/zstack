@@ -25,7 +25,11 @@ import org.zstack.network.service.vip.VipInventory;
 import org.zstack.simulator.SimulatorGlobalProperty;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.VmCreator;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 import java.util.ArrayList;

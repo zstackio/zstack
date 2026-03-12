@@ -2,7 +2,11 @@ package org.zstack.network.service.virtualrouter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.appliancevm.*;
+import org.zstack.appliancevm.ApplianceVm;
+import org.zstack.appliancevm.ApplianceVmSpec;
+import org.zstack.appliancevm.ApplianceVmSubTypeFactory;
+import org.zstack.appliancevm.ApplianceVmType;
+import org.zstack.appliancevm.ApplianceVmVO;
 import org.zstack.core.db.DatabaseFacade;
 
 /**

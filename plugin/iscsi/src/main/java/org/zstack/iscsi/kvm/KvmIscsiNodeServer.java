@@ -13,7 +13,11 @@ import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostConstant;
@@ -35,7 +39,18 @@ import org.zstack.header.volume.VolumeProtocolCapability;
 import org.zstack.iscsi.kvm.KvmIscsiCommands.AgentRsp;
 import org.zstack.iscsi.kvm.KvmIscsiCommands.KvmCancelSelfFencerCmd;
 import org.zstack.iscsi.kvm.KvmIscsiCommands.KvmSetupSelfFencerCmd;
-import org.zstack.kvm.*;
+import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.kvm.KVMAttachVolumeExtensionPoint;
+import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.KVMConvertVolumeExtensionPoint;
+import org.zstack.kvm.KVMDetachVolumeExtensionPoint;
+import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
+import org.zstack.kvm.KVMHostAsyncHttpCallReply;
+import org.zstack.kvm.KVMHostInventory;
+import org.zstack.kvm.KVMPreAttachIsoExtensionPoint;
+import org.zstack.kvm.KVMStartVmExtensionPoint;
+import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint;
+import org.zstack.kvm.VolumeTO;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.utils.DebugUtils;
 
@@ -209,6 +224,7 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, 
             HeartbeatVolumeTO heartbeatVol;
             @Override
             public void setup() {
+                // DEBT: NoRollbackFlow — in kvmSetupSelfFencer
                 flow(new NoRollbackFlow() {
                     final String __name__ = "activate-iscsi-heartbeat-volume";
 
@@ -230,6 +246,7 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, 
                     }
                 });
 
+                // DEBT: NoRollbackFlow — in kvmSetupSelfFencer
                 flow(new NoRollbackFlow() {
                     final String __name__ = "setup-iscsi-self-fencer-on-kvm";
 
@@ -287,6 +304,7 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, 
             @Override
             public void setup() {
 
+                // DEBT: NoRollbackFlow — in kvmCancelSelfFencer
                 flow(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {

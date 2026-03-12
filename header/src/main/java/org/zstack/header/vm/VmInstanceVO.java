@@ -6,9 +6,14 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
-import org.zstack.header.vo.*;
+import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.EO;
+import org.zstack.header.vo.NoView;
+import org.zstack.header.vo.ToInventory;
 import org.zstack.header.vo.EntityGraph;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.VolumeAO;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.zone.ZoneVO;
 
 import javax.persistence.*;

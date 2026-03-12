@@ -1,7 +1,7 @@
 package org.zstack.network.service.virtualrouter;
 
 import org.zstack.header.message.Message;
-import org.zstack.header.network.*;
+import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.service.APIAttachNetworkServiceProviderToL2NetworkMsg;
 import org.zstack.header.network.service.APIDetachNetworkServiceProviderFromL2NetworkMsg;
