@@ -65,4 +65,15 @@
         <id>1012</id>
         <description>Failed to get gateway hostname</description>
     </code>
+
+    <code>
+        <id>1013</id>
+        <description>Failed to export activation infos from ZMigrate</description>
+    </code>
+
+    <code>
+        <id>1014</id>
+        <description>Failed to import activation package to ZMigrate</description>
+    </code>
 </error>
+
