@@ -708,7 +708,10 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.GetVolumeSnapInfosCmd.class)
                 VFS vfs = vfs(cmd, spec)
                 String vfsPath = cephPathToVFSPath(cmd.volumePath)
-                vfs.Assert(vfs.exists(vfsPath), "cannot find the volume[${cmd.volumePath}]")
+                if (!vfs.exists(vfsPath)) {
+                    rsp.setSnapInfos(new ArrayList<CephPrimaryStorageBase.SnapInfo>())
+                    return rsp
+                }
                 List<VFSFile> files = getSnapshotPaths(vfs, vfsPath)
 
                 rsp.setSnapInfos(new ArrayList<CephPrimaryStorageBase.SnapInfo>())
