@@ -28,6 +28,8 @@ import org.zstack.header.vm.DiskAO;
 import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstantiateResourceException;
+import org.zstack.header.vm.additions.VmHostBackupFileVO;
+import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.additions.VmHostFileContentFormat;
 import org.zstack.header.vm.additions.VmHostFileContentVO;
 import org.zstack.header.vm.additions.VmHostFileContentVO_;
@@ -414,11 +416,15 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         public String vmUuid;
         public VmHostFileType type;
 
+        public String path;
         // whether the NvRam is on the same host as before
         private boolean sameHost = false;
-        private boolean firstReadSuccess = false;
         private boolean writeSuccess = false;
         private VmHostFileVO vmHostFile;
+        private VmHostBackupFileVO vmBackupFileVO;
+
+        // property:  VmHostFileVO (read success) > VmHostFileVO (read fail) > VmHostBackupFileVO
+        // Note: read VmHostBackupFileVO only if VmHostFileVO is not exist
     }
 
     @SuppressWarnings("rawtypes")
@@ -430,7 +436,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                VmHostFileVO vmHostFile = context.vmHostFile = Q.New(VmHostFileVO.class)
+                VmHostFileVO vmHostFile = Q.New(VmHostFileVO.class)
                         .eq(VmHostFileVO_.type, context.type)
                         .eq(VmHostFileVO_.vmInstanceUuid, context.vmUuid)
                         .orderByDesc(VmHostFileVO_.lastOpDate)
@@ -449,9 +455,9 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 syncContext.vmUuid = context.vmUuid;
 
                 if (vmHostFile.getType() == VmHostFileType.NvRam) {
-                    syncContext.nvRamPath = vmHostFile.getPath();
+                    context.path = syncContext.nvRamPath = vmHostFile.getPath();
                 } else if (vmHostFile.getType() == VmHostFileType.TpmState) {
-                    syncContext.tpmStateFolder = vmHostFile.getPath();
+                    context.path = syncContext.tpmStateFolder = vmHostFile.getPath();
                 } else {
                     throw new CloudRuntimeException("unsupported vm host file type: " + vmHostFile.getType());
                 }
@@ -459,7 +465,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 syncVmHostFilesFromHost(syncContext, new Completion(trigger) {
                     @Override
                     public void success() {
-                        context.firstReadSuccess = true;
+                        context.vmHostFile = vmHostFile;
                         trigger.next();
                     }
 
@@ -472,17 +478,46 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 });
             }
         }).then(new NoRollbackFlow() {
-            String __name__ = "write-vm-host-file-to-dest-host";
+            String __name__ = "read-vm-host-file-from-backup";
 
             @Override
             public boolean skip(Map data) {
-                return context.vmHostFile == null || (context.sameHost && context.firstReadSuccess);
+                return context.vmHostFile != null;
             }
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                context.vmBackupFileVO = Q.New(VmHostBackupFileVO.class)
+                        .eq(VmHostBackupFileVO_.type, context.type)
+                        .eq(VmHostBackupFileVO_.vmInstanceUuid, context.vmUuid)
+                        .orderByDesc(VmHostBackupFileVO_.lastOpDate)
+                        .limit(1)
+                        .find();
+                if (context.vmBackupFileVO != null) {
+                    logger.debug(String.format("use %s[type=%s] VM-host backup file for VM[uuid=%s]",
+                            context.vmBackupFileVO.getUuid(), context.type, context.vmUuid));
+                    switch (context.type) {
+                    case NvRam: context.path = buildNvramFilePath(context.vmUuid); break;
+                    case TpmState: context.path = buildTpmStateFilePath(context.vmUuid); break;
+                    }
+                }
+                trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "write-vm-host-file-to-dest-host";
+
+            @Override
+            public boolean skip(Map data) {
+                return (context.vmHostFile == null && context.vmBackupFileVO == null)
+                        || (context.sameHost && context.vmHostFile != null);
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                String contentUuid = context.vmHostFile == null ?
+                        context.vmBackupFileVO.getUuid() : context.vmHostFile.getUuid();
                 VmHostFileContentVO content = Q.New(VmHostFileContentVO.class)
-                        .eq(VmHostFileContentVO_.uuid, context.vmHostFile.getUuid())
+                        .eq(VmHostFileContentVO_.uuid, contentUuid)
                         .find();
                 if (content == null) {
                     logger.debug(String.format("skip to write vm host file for VM[vmUuid=%s]: file content is not saved in MN",
@@ -492,8 +527,8 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 }
 
                 VmHostFileTO to = new VmHostFileTO();
-                to.setPath(context.vmHostFile.getPath());
-                to.setType(context.vmHostFile.getType().toString());
+                to.setPath(context.path);
+                to.setType(context.type.toString());
                 to.setFileFormat(content.getFormat().toString());
 
                 String contentBase64 = Base64.getEncoder().encodeToString(content.getContent());
@@ -532,9 +567,9 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 syncBackContext.vmUuid = context.vmUuid;
 
                 if (context.type == VmHostFileType.NvRam) {
-                    syncBackContext.nvRamPath = context.vmHostFile.getPath();
+                    syncBackContext.nvRamPath = context.path;
                 } else if (context.type == VmHostFileType.TpmState) {
-                    syncBackContext.tpmStateFolder = context.vmHostFile.getPath();
+                    syncBackContext.tpmStateFolder = context.path;
                 }
 
                 syncVmHostFilesFromHost(syncBackContext, new Completion(trigger) {
