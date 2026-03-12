@@ -1,6 +1,7 @@
 package org.zstack.sdk;
 
 import org.zstack.sdk.GpuAllocateStatus;
+import org.zstack.sdk.DeviceScope;
 
 public class GpuDeviceInventory extends org.zstack.sdk.PciDeviceInventory {
 
@@ -58,6 +59,22 @@ public class GpuDeviceInventory extends org.zstack.sdk.PciDeviceInventory {
     }
     public GpuAllocateStatus getAllocateStatus() {
         return this.allocateStatus;
+    }
+
+    public DeviceScope scope;
+    public void setScope(DeviceScope scope) {
+        this.scope = scope;
+    }
+    public DeviceScope getScope() {
+        return this.scope;
+    }
+
+    public java.lang.String chassisUuid;
+    public void setChassisUuid(java.lang.String chassisUuid) {
+        this.chassisUuid = chassisUuid;
+    }
+    public java.lang.String getChassisUuid() {
+        return this.chassisUuid;
     }
 
 }

@@ -635,9 +635,12 @@ public class SourceClassMap {
 			put("org.zstack.pciDevice.PciDeviceState", "org.zstack.sdk.PciDeviceState");
 			put("org.zstack.pciDevice.PciDeviceStatus", "org.zstack.sdk.PciDeviceStatus");
 			put("org.zstack.pciDevice.PciDeviceType", "org.zstack.sdk.PciDeviceType");
+			put("org.zstack.pciDevice.gpu.DeviceScope", "org.zstack.sdk.DeviceScope");
 			put("org.zstack.pciDevice.gpu.GpuAllocateStatus", "org.zstack.sdk.GpuAllocateStatus");
 			put("org.zstack.pciDevice.gpu.GpuDeviceInventory", "org.zstack.sdk.GpuDeviceInventory");
 			put("org.zstack.pciDevice.gpu.GpuDeviceSpecInventory", "org.zstack.sdk.GpuDeviceSpecInventory");
+			put("org.zstack.pciDevice.gpu.GpuMetricsEntry", "org.zstack.sdk.GpuMetricsEntry");
+			put("org.zstack.pciDevice.gpu.GpuResourceTreeNode", "org.zstack.sdk.GpuResourceTreeNode");
 			put("org.zstack.pciDevice.gpu.GpuVendor", "org.zstack.sdk.GpuVendor");
 			put("org.zstack.pciDevice.specification.mdev.MdevDeviceSpecInventory", "org.zstack.sdk.MdevDeviceSpecInventory");
 			put("org.zstack.pciDevice.specification.mdev.MdevDeviceSpecState", "org.zstack.sdk.MdevDeviceSpecState");
@@ -647,11 +650,7 @@ public class SourceClassMap {
 			put("org.zstack.pciDevice.specification.pci.PciDeviceSpecState", "org.zstack.sdk.PciDeviceSpecState");
 			put("org.zstack.pciDevice.specification.pci.VmInstancePciDeviceSpecRefInventory", "org.zstack.sdk.VmInstancePciDeviceSpecRefInventory");
 			put("org.zstack.pciDevice.virtual.PciDeviceVirtStatus", "org.zstack.sdk.PciDeviceVirtStatus");
-			put("org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceChooser", "org.zstack.sdk.MdevDeviceChooser");
 			put("org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceInventory", "org.zstack.sdk.MdevDeviceInventory");
-			put("org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceState", "org.zstack.sdk.MdevDeviceState");
-			put("org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceStatus", "org.zstack.sdk.MdevDeviceStatus");
-			put("org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceType", "org.zstack.sdk.MdevDeviceType");
 			put("org.zstack.policyRoute.PolicyRouteRuleInventory", "org.zstack.sdk.PolicyRouteRuleInventory");
 			put("org.zstack.policyRoute.PolicyRouteRuleProtocol", "org.zstack.sdk.PolicyRouteRuleProtocol");
 			put("org.zstack.policyRoute.PolicyRouteRuleSetInventory", "org.zstack.sdk.PolicyRouteRuleSetInventory");
@@ -1035,6 +1034,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.DatasetInventory", "org.zstack.ai.entity.DatasetInventory");
 			put("org.zstack.sdk.DeleteSnapshotGroupResult", "org.zstack.header.storage.snapshot.group.DeleteSnapshotGroupResult");
 			put("org.zstack.sdk.DeviceAddress", "org.zstack.header.vm.devices.DeviceAddress");
+			put("org.zstack.sdk.DeviceScope", "org.zstack.pciDevice.gpu.DeviceScope");
 			put("org.zstack.sdk.DeviceTO", "org.zstack.storage.device.multipath.DeviceTO");
 			put("org.zstack.sdk.DirectoryInventory", "org.zstack.directory.DirectoryInventory");
 			put("org.zstack.sdk.DiskOfferingInventory", "org.zstack.header.configuration.DiskOfferingInventory");
@@ -1088,6 +1088,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GpuAllocateStatus", "org.zstack.pciDevice.gpu.GpuAllocateStatus");
 			put("org.zstack.sdk.GpuDeviceInventory", "org.zstack.pciDevice.gpu.GpuDeviceInventory");
 			put("org.zstack.sdk.GpuDeviceSpecInventory", "org.zstack.pciDevice.gpu.GpuDeviceSpecInventory");
+			put("org.zstack.sdk.GpuMetricsEntry", "org.zstack.pciDevice.gpu.GpuMetricsEntry");
+			put("org.zstack.sdk.GpuResourceTreeNode", "org.zstack.pciDevice.gpu.GpuResourceTreeNode");
 			put("org.zstack.sdk.GpuVendor", "org.zstack.pciDevice.gpu.GpuVendor");
 			put("org.zstack.sdk.GuestOsCharacterInventory", "org.zstack.core.config.GuestOsCharacterInventory");
 			put("org.zstack.sdk.GuestToolsInventory", "org.zstack.guesttools.GuestToolsInventory");
@@ -1214,13 +1216,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LunInventory", "org.zstack.header.storageDevice.LunInventory");
 			put("org.zstack.sdk.MaaSUsage", "org.zstack.ai.message.MaaSUsage");
 			put("org.zstack.sdk.ManagementNodeInventory", "org.zstack.header.managementnode.ManagementNodeInventory");
-			put("org.zstack.sdk.MdevDeviceChooser", "org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceChooser");
 			put("org.zstack.sdk.MdevDeviceInventory", "org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceInventory");
 			put("org.zstack.sdk.MdevDeviceSpecInventory", "org.zstack.pciDevice.specification.mdev.MdevDeviceSpecInventory");
 			put("org.zstack.sdk.MdevDeviceSpecState", "org.zstack.pciDevice.specification.mdev.MdevDeviceSpecState");
-			put("org.zstack.sdk.MdevDeviceState", "org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceState");
-			put("org.zstack.sdk.MdevDeviceStatus", "org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceStatus");
-			put("org.zstack.sdk.MdevDeviceType", "org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceType");
 			put("org.zstack.sdk.MediaInventory", "org.zstack.monitoring.media.MediaInventory");
 			put("org.zstack.sdk.MetaServerService", "org.zstack.ai.message.ModelCenterServiceInventory$MetaServerService");
 			put("org.zstack.sdk.MiniCandidateHostStruct", "org.zstack.header.bootstrap.MiniCandidateHostStruct");

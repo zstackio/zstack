@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.MdevDeviceType;
+import org.zstack.sdk.PciDeviceType;
 import org.zstack.sdk.MdevDeviceSpecState;
 
 public class MdevDeviceSpecInventory  {
@@ -37,11 +37,11 @@ public class MdevDeviceSpecInventory  {
         return this.specification;
     }
 
-    public MdevDeviceType type;
-    public void setType(MdevDeviceType type) {
+    public PciDeviceType type;
+    public void setType(PciDeviceType type) {
         this.type = type;
     }
-    public MdevDeviceType getType() {
+    public PciDeviceType getType() {
         return this.type;
     }
 

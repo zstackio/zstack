@@ -22481,6 +22481,60 @@ abstract class ApiHelper {
     }
 
 
+    def getGpuMetricsBatch(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetGpuMetricsBatchAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetGpuMetricsBatchAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getGpuResourceTree(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetGpuResourceTreeAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetGpuResourceTreeAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getGuestOsMetadata(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetGuestOsMetadataAction.class) Closure c) {
         def a = new org.zstack.sdk.GetGuestOsMetadataAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
