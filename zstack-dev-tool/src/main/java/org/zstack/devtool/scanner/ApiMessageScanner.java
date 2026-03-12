@@ -19,8 +19,11 @@ import java.util.*;
 public class ApiMessageScanner {
 
     private final JavaParser parser = new JavaParser();
-    // className -> source path, for inheritance resolution
+    // className -> source path, for inheritance resolution (keyed by simple name)
+    // When duplicates exist, last-write wins, but we also keep a FQCN index
     private final Map<String, Path> classIndex = new HashMap<>();
+    // FQCN (package.ClassName) -> source path, for precise lookup
+    private final Map<String, Path> fqcnIndex = new HashMap<>();
     // className -> parsed CompilationUnit cache
     private final Map<String, CompilationUnit> cuCache = new HashMap<>();
 
@@ -56,6 +59,14 @@ public class ApiMessageScanner {
                 String fileName = path.getFileName().toString();
                 if (fileName.endsWith(".java")) {
                     String className = fileName.substring(0, fileName.length() - 5);
+                    // Derive FQCN from path: dir is a source root like .../src/main/java
+                    // so relativize path to get package structure
+                    String relativePath = dir.relativize(path).toString();
+                    String fqcn = relativePath.replace('/', '.').replace('\\', '.');
+                    if (fqcn.endsWith(".java")) {
+                        fqcn = fqcn.substring(0, fqcn.length() - 5);
+                    }
+                    fqcnIndex.put(fqcn, path);
                     classIndex.put(className, path);
                 }
                 return FileVisitResult.CONTINUE;
@@ -277,7 +288,9 @@ public class ApiMessageScanner {
             return;
         }
 
-        Path parentPath = classIndex.get(className);
+        // Try FQCN first, then fall back to simple name
+        Path parentPath = fqcnIndex.get(className);
+        if (parentPath == null) parentPath = classIndex.get(className);
         if (parentPath == null) return;
 
         CompilationUnit parentCu = parseCached(parentPath);

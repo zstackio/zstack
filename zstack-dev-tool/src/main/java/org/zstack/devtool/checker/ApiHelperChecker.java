@@ -21,8 +21,7 @@ public class ApiHelperChecker {
         public int totalMethods;
 
         public boolean passed() {
-            // ApiHelper check is advisory - same exclusions as SDK
-            return true;
+            return missingMethods.isEmpty();
         }
 
         public void print() {
@@ -32,7 +31,7 @@ public class ApiHelperChecker {
                 return;
             }
 
-            System.out.println("[ApiHelper] MISSING " + missingMethods.size() + " method(s):");
+            System.out.println("[ApiHelper] FAIL - MISSING " + missingMethods.size() + " method(s):");
             for (String msg : missingMethods) {
                 System.out.println("  - " + msg);
             }

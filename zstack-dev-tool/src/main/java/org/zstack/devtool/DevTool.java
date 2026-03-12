@@ -243,31 +243,28 @@ public class DevTool {
     private List<Path> getSourceDirs() {
         List<Path> dirs = new ArrayList<>();
 
-        String[] mainDirs = {
-                "header/src/main/java",
-                "core/src/main/java",
-                "compute/src/main/java",
-                "storage/src/main/java",
-                "network/src/main/java",
-                "image/src/main/java",
-                "identity/src/main/java",
-                "search/src/main/java",
-                "configuration/src/main/java",
-                "rest/src/main/java",
-                "console/src/main/java",
-                "tag/src/main/java",
-                "longjob/src/main/java",
-                "externalservice/src/main/java",
-                "resourceconfig/src/main/java",
-        };
-
-        for (String dir : mainDirs) {
-            Path p = projectRoot.resolve(dir);
-            if (Files.isDirectory(p)) dirs.add(p);
+        // Auto-discover top-level modules with src/main/java
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(projectRoot)) {
+            for (Path child : stream) {
+                if (!Files.isDirectory(child)) continue;
+                String name = child.getFileName().toString();
+                // skip non-module dirs
+                if (name.startsWith(".") || "premium".equals(name) || "plugin".equals(name)
+                        || "sdk".equals(name) || "test".equals(name) || "testlib".equals(name)
+                        || "zstack-dev-tool".equals(name) || "build".equals(name)
+                        || "doc".equals(name) || "conf".equals(name) || "tools".equals(name)) {
+                    continue;
+                }
+                Path src = child.resolve("src/main/java");
+                if (Files.isDirectory(src)) dirs.add(src);
+            }
+        } catch (IOException e) {
+            System.err.println("WARN: Failed to scan project root: " + e.getMessage());
         }
 
         addPluginDirs(dirs, projectRoot.resolve("plugin"));
 
+        // premium modules
         Path premiumHeader = projectRoot.resolve("premium/premium-header/src/main/java");
         if (Files.isDirectory(premiumHeader)) dirs.add(premiumHeader);
 
@@ -278,8 +275,7 @@ public class DevTool {
 
     private void addPluginDirs(List<Path> dirs, Path pluginRoot) {
         if (!Files.isDirectory(pluginRoot)) return;
-        try {
-            DirectoryStream<Path> stream = Files.newDirectoryStream(pluginRoot);
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(pluginRoot)) {
             for (Path child : stream) {
                 if (Files.isDirectory(child)) {
                     Path src = child.resolve("src/main/java");
@@ -288,7 +284,6 @@ public class DevTool {
                     }
                 }
             }
-            stream.close();
         } catch (IOException e) {
             System.err.println("WARN: Failed to scan plugin dirs in " + pluginRoot);
         }

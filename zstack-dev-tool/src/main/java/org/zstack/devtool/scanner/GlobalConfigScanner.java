@@ -239,7 +239,7 @@ public class GlobalConfigScanner {
                 case "Boolean": return "java.lang.Boolean";
                 case "Float":   return "java.lang.Float";
                 case "Double":  return "java.lang.Double";
-                default:        return "java.lang." + simpleName;
+                default:        return simpleName;
             }
         }
         return "java.lang.String";

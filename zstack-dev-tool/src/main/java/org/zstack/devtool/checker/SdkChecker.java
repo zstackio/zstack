@@ -19,15 +19,13 @@ public class SdkChecker {
         public int totalSdkFiles;
 
         public boolean passed() {
-            // SDK check is advisory - existing codebase may have staleness
-            // GlobalConfig check is the hard gate
-            return true;
+            return fieldMismatches.isEmpty();
         }
 
         public void print() {
             if (!missingActions.isEmpty()) {
-                System.out.println("[SDK] WARN - " + missingActions.size() +
-                        " API message(s) have no SDK action file (may be excluded):");
+                System.out.println("[SDK] INFO - " + missingActions.size() +
+                        " API message(s) have no SDK action file (may be excluded by @NoSDK):");
                 for (String msg : missingActions) {
                     System.out.println("  - " + msg);
                 }
@@ -46,7 +44,7 @@ public class SdkChecker {
                 System.out.println("[SDK] OK - " + totalMessages + " API messages, " +
                         totalSdkFiles + " SDK action files" +
                         (missingActions.isEmpty() ? ", all in sync" :
-                                ", " + missingActions.size() + " excluded"));
+                                ", " + missingActions.size() + " without action file (advisory)"));
             }
         }
     }
