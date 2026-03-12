@@ -310,6 +310,7 @@
     <bean id="KvmSecureBootManager" class="org.zstack.kvm.efi.KvmSecureBootManager">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.Service" />
         </zstack:plugin>
     </bean>
 
@@ -319,4 +320,6 @@
             <zstack:extension interface="org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="DummyTpmEncryptedResourceKeyBackend" class="org.zstack.kvm.tpm.DummyTpmEncryptedResourceKeyBackend"/>
 </beans>
