@@ -68,7 +68,7 @@ public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nServic
                 }
             }
         } catch (Exception e) {
-            logger.warn(String.format("failed to scan i18n folder: %s", e.getMessage()));
+            logger.warn(String.format("failed to scan i18n folder: %s", e.getMessage()), e);
         }
 
         logger.info(String.format("GlobalErrorCodeI18nService loaded %d locales: %s",
