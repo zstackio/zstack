@@ -264,6 +264,10 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                         content.setLastOpDate(now);
                         databaseFacade.persist(content);
                     }
+
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(String.format("persist/update VmHostFileContentVO [uuid=%s]", file.getUuid()));
+                    }
                 }
 
                 if (errors.isEmpty()) {
