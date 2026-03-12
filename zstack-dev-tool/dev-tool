@@ -1,0 +1,17 @@
+#!/bin/bash
+# ZStack Dev Tool - static code generation checker
+# Usage: ./dev-tool check|generate|scan [globalconfig|all]
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+JAR="$SCRIPT_DIR/target/dev-tool.jar"
+
+if [ ! -f "$JAR" ]; then
+    echo "Building dev-tool..."
+    cd "$SCRIPT_DIR" && mvn package -DskipTests -q
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Build failed"
+        exit 1
+    fi
+fi
+
+cd "$SCRIPT_DIR/.." && java -jar "$JAR" "$@"
