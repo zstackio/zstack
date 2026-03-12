@@ -26,6 +26,8 @@ import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.DiskAO;
 import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
+import org.zstack.header.vm.VmInstanceDestroyExtensionPoint;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstantiateResourceException;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
@@ -76,7 +78,8 @@ import static org.zstack.utils.CollectionUtils.findOneOrNull;
 import static org.zstack.utils.CollectionUtils.transform;
 
 public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
-        PreVmInstantiateResourceExtensionPoint {
+        PreVmInstantiateResourceExtensionPoint,
+        VmInstanceDestroyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmSecureBootExtensions.class);
 
     @Autowired
@@ -749,5 +752,31 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                         .withCause(reply.getError()));
             }
         });
+    }
+
+    @Override
+    public String preDestroyVm(VmInstanceInventory inv) {
+        return null;
+    }
+
+    @Override
+    public void beforeDestroyVm(VmInstanceInventory inv) {
+        // do-nothing
+    }
+
+    @Override
+    public void afterDestroyVm(VmInstanceInventory inv) {
+        String vmUuid = inv.getUuid();
+        SQL.New(VmHostFileVO.class)
+                .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
+                .delete();
+        SQL.New(VmHostBackupFileVO.class)
+                .eq(VmHostBackupFileVO_.vmInstanceUuid, vmUuid)
+                .delete();
+    }
+
+    @Override
+    public void failedToDestroyVm(VmInstanceInventory inv, ErrorCode reason) {
+        // do-nothing
     }
 }
