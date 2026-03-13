@@ -1,5 +1,7 @@
 package org.zstack.header.longjob;
 
+import org.zstack.header.core.progress.LongJobProgressDetail;
+import org.zstack.header.core.progress.LongJobProgressDetailBuilder;
 import org.zstack.header.core.progress.TaskProgressInventory;
 import org.zstack.header.core.progress.TaskProgressVO;
 
@@ -23,6 +25,8 @@ public class LongJobProgressNotificationMessage implements Serializable {
     private Integer progress;
     /** Full progress detail; optional, BFF current version only needs {@link #getProgress()}. */
     private TaskProgressInventory taskProgress;
+    /** Standardized progress detail parsed from opaque; null when opaque is absent. */
+    private LongJobProgressDetail progressDetail;
     private EventType eventType;
     private Long timestamp;
 
@@ -68,6 +72,14 @@ public class LongJobProgressNotificationMessage implements Serializable {
         this.timestamp = timestamp;
     }
 
+    public LongJobProgressDetail getProgressDetail() {
+        return progressDetail;
+    }
+
+    public void setProgressDetail(LongJobProgressDetail progressDetail) {
+        this.progressDetail = progressDetail;
+    }
+
     public static LongJobProgressNotificationMessage stateChanged(LongJobVO vo) {
         LongJobProgressNotificationMessage msg = new LongJobProgressNotificationMessage();
         msg.longJob = LongJobInventory.valueOf(vo);
@@ -85,7 +97,9 @@ public class LongJobProgressNotificationMessage implements Serializable {
         if (progressVO.getContent() != null) {
             inv.setContent(progressVO.getContent());
         }
+        inv.setProgressDetail(LongJobProgressDetailBuilder.fromTaskProgressVO(progressVO));
         msg.taskProgress = inv;
+        msg.progressDetail = inv.getProgressDetail();
         msg.eventType = EventType.PROGRESS_UPDATED;
         msg.timestamp = System.currentTimeMillis();
         return msg;

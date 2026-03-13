@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.LongJobProgressDetail;
 
 public class TaskProgressInventory  {
 
@@ -74,6 +74,14 @@ public class TaskProgressInventory  {
     }
     public java.lang.String getArguments() {
         return this.arguments;
+    }
+
+    public LongJobProgressDetail progressDetail;
+    public void setProgressDetail(LongJobProgressDetail progressDetail) {
+        this.progressDetail = progressDetail;
+    }
+    public LongJobProgressDetail getProgressDetail() {
+        return this.progressDetail;
     }
 
 }

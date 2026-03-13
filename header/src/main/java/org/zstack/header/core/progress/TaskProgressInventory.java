@@ -18,6 +18,8 @@ public class TaskProgressInventory {
     private Long time;
     private List<TaskProgressInventory> subTasks;
     private String arguments;
+    /** Typed progress detail parsed from opaque. Null when opaque is absent or parsing fails. */
+    private LongJobProgressDetail progressDetail;
 
     public TaskProgressInventory() {
     }
@@ -104,5 +106,13 @@ public class TaskProgressInventory {
 
     public void setTime(Long time) {
         this.time = time;
+    }
+
+    public LongJobProgressDetail getProgressDetail() {
+        return progressDetail;
+    }
+
+    public void setProgressDetail(LongJobProgressDetail progressDetail) {
+        this.progressDetail = progressDetail;
     }
 }

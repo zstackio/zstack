@@ -6,6 +6,7 @@ import org.zstack.header.rest.RestResponse;
 import java.util.List;
 import static java.util.Arrays.asList;
 
+
 /**
  * Created by xing5 on 2017/3/21.
  */
@@ -29,6 +30,17 @@ public class APIGetTaskProgressReply extends APIReply {
         inv.setTaskUuid("931102503f64436ea649939ff3957406");
         inv.setTime(DocUtils.date);
         inv.setType("Task");
+
+        LongJobProgressDetail detail = new LongJobProgressDetail();
+        detail.setPercent(42);
+        detail.setStage("downloading");
+        detail.setState("running");
+        detail.setProcessedBytes(440401920L);
+        detail.setTotalBytes(1073741824L);
+        detail.setSpeedBytesPerSecond(10485760L);
+        detail.setEstimatedRemainingSeconds(60L);
+        inv.setProgressDetail(detail);
+
         msg.setInventories(asList(inv));
         return msg;
     }
