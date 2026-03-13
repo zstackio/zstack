@@ -115,6 +115,9 @@ public class L3NetworkVO extends L3NetworkAO implements OwnedByAccount {
         }
 
         if (!getType().equals(L3NetworkConstant.L3_BASIC_NETWORK_TYPE)) {
+            if (L3NetworkType.hasType(getType())) {
+                return L3NetworkType.valueOf(getType()).isIpAddressAllocationEnabled();
+            }
             return true;
         }
 

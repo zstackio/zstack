@@ -236,7 +236,7 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
         to.setBridgeName(makeBridgeName(l2Network.getUuid()));
         to.setPhysicalInterface(l2Network.getPhysicalInterface());
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
-        if (l2Network.getvSwitchType().equals(L2NetworkConstant.VSWITCH_TYPE_OVN_DPDK)) {
+        if (L2NetworkConstant.ACCEL_TYPE_VHOST_USER_SPACE.equals(nic.getType())) {
             to.setSrcPath(L2NetworkConstant.OVN_DPDK_VNIC_SRC_PATH + nic.getInternalName());
         }
 

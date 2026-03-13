@@ -22,6 +22,8 @@ public interface L2NetworkConstant {
     public static final String HARDWARE_VXLAN_NETWORK_TYPE = "HardwareVxlanNetwork";
     public static final String L2_TF_NETWORK_TYPE = "TfL2Network";
     @PythonClass
+    public static final String L2_GENEVE_NETWORK_TYPE = "L2GeneveNetwork";
+    @PythonClass
     public static final String VXLAN_NETWORK_TYPE = "VxlanNetwork";
     @PythonClass
     public static final String VXLAN_NETWORK_POOL_TYPE = "VxlanNetworkPool";
@@ -37,7 +39,11 @@ public interface L2NetworkConstant {
 
     @PythonClass
     public static final String VSWITCH_TYPE_OVN_DPDK = "OvnDpdk";
+    @PythonClass
+    public static final String VSWITCH_TYPE_ZNS = "ZNS";
     public static final String OVN_DPDK_VNIC_SRC_PATH = "/var/run/openvswitch/";
+    public static final String ACCEL_TYPE_VDPA = "vDPA";
+    public static final String ACCEL_TYPE_VHOST_USER_SPACE = "dpdkvhostuserclient";
 
     public static final String DETACH_L2NETWORK_CODE = "l2Network.detach";
 

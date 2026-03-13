@@ -1,0 +1,449 @@
+= 对接ZNS SDN控制器
+
+== 总体描述
+
+在考虑对接 ZNS SDN 控制器时，首先需要考虑如何做好 Cloud 资源对象和 ZNS 资源映射。
+
+* ZNS segments → L2Network + L3Network + IpRange
+* ZNS segments port → VmNic + UsedIp
+* ZNS segments + transport zone → L2NetworkClusterRefVO
+
+=== CMS
+Cloud L2 和 ZNS segment 之间的资源如何一一对应？
+引入一个 CMS 数据结构。
+
+[source,go]
+----
+ type Cms struct {
+  CmsUuid string 
+	Type    string  ### cloud/zsv/zaku/zns
+	IP      string  ### cloud mn vip
+  Role  string    ###owner, user
+    CmsResourceUuid string   ###owner, user
+}
+
+type Segment {
+  ...
+  CmsMetaDatas []Cms `json:"cms"`
+}
+----
+* Cms::Type 定义 cms 类型：Cloud、ZSV、ZAKU、ZNS
+* Cms::IP 定义 cms 的 IP 地址，该字段主要为了让维护人员更友好地识别资源，cms 的唯一标识仍是 CmsUuid
+* Cms::CmsUuid 定义 cmsUuid。该值是 ZNS 上创建的 Computer Manager UUID，Cloud 在创建 SdnController 时会把这个 UUID 记录到 SdnController 的 systemTag 中
+* Cms::Role 定义 cms 是这个资源的 owner 还是 user。owner 表示该 cms 创建了资源，user 表示该 cms 使用了资源。一个资源可以在多个 cms 之间共享，比如一个 segment 可以被多个 Cloud 使用。资源删除有两种策略：
+** 只有当所有 cms 都不使用该资源时，才可以删除（以 CmsMetaDatas 作为资源引用基数）；
+** 只要 owner 删除了该资源，就删除该资源。必须等待 user 删除后，owner 才能删除
+* Cms::CmsResourceUuid 定义该 cms 系统对应的资源 UUID，在数据同步过程中用于映射 Cms 资源和 ZNS 资源。
+
+=== ZNS API
+
+ZNS API 定义需要包含 Cms 数据：
+
+* 创建 API：cms 根据自己的资源创建 cms 数据，ZNS 存入数据库
+* 删除 API：cms 根据资源 UUID 删除对应的 cms 数据，ZNS 根据结果执行删除操作
+* 查询 API：需要支持根据 cmsUuid 过滤资源
+* 修改操作者 API：ZNS 可以提供 API 添加/删除资源 user
+
+[NOTE]
+不是所有 API 都需要以上全部操作。
+
+=== ZNS 数据库对象
+
+不是所有资源对象都需要保持 cms 信息，但是由 cms 创建的资源，或者需要按 cms 查询的资源，都需要保存 cms 信息。
+一个资源可能有多个 cms 信息，表示资源可在多个 cms 之间共享。
+
+
+== ZNS SDN控制器
+
+ZStack 已经定义 `SdnControllerVO`，目前已有 `H3cVcfcSdnController`、`SugonSdnController`、`OvnController`、`HuaweiIMasterSdnController` 等实现。
+
+新定义 `ZnsControllerVO`，继承 `SdnControllerVO`，不添加新的字段：
+
+* vendorType：ZNS
+* vendorVersion：1.0
+
+[NOTE]
+必须先在 ZNS 完成添加 Computer Manager 的操作，然后在 Cloud 侧创建对应的 SdnController。
+ZNS SDN Controller 保持 SystemTags：`computerManagerUuid::xxxx`，这里的 xxxx 是 ZNS 创建的 Computer Manager UUID。
+后续 Cloud 调用 ZNS API 创建 segment、segment port 时，Cloud 会根据 computerManagerUuid 组装 cms 信息。
+
+=== 创建SDN控制器
+
+* 根据 `GET /zns/api/v1/fabric/discovered-nodes` 获取 discovered node 列表（`HostData`），过滤条件：`clusterId` 属于当前 Computer Manager 管理的 cluster，且 `managementIp != null`：
+** `HostData.managementIp`：匹配 Cloud `HostVO.managementIp`，找到对应 `HostVO.uuid`
+** `HostData.clusterId`：即 Cloud `ClusterVO.uuid`（ZNS 侧直接使用 Cloud 的 cluster UUID，无需 name 匹配）
+** `HostData.transportNodeProfileId`：用于后续推导 vSwitchType 和建立 transport zone → cluster 的反向映射
+
+[NOTE]
+ZNS 侧需保证同一个 cluster 内所有 node 的 `transportNodeProfileId` 相同。
+
+* 根据 `HostData.transportNodeProfileId` 调用 `GET /zns/api/v1/fabric/transport-node-profiles/{uuid}` 获取 `TransportNodeProfileData`，取 `hostSwitchProfiles[0]` 调用 `GET /zns/api/v1/fabric/host-switch-profiles/{uuid}` 获取 `HostSwitchProfileData`：
+** `HostSwitchProfileData.type`：枚举值 `dpdk` 或 `kernel`，用于推导 `SdnControllerHostRefVO.vSwitchType`
+** `HostSwitchProfileData.transportZoneIds`：关联的 transport zone UUID 列表，建立反向缓存 `transportZoneUuid → Set<clusterUuid>`
+
+* 调用 `GET /zns/api/v1/fabric/transport-zones` 获取 transport zone 列表，并缓存到当前 `ZnsSdnControllerVO` 关联的数据中。建议新增 `ZnsTransportZone` 数据表，主要字段如下：
++
+[cols="2,3,2"]
+|===
+|字段 |来源 |说明
+
+|`isDefault`
+|transport zone 返回字段
+|是否为默认 transport zone
+
+|`description`
+|transport zone 返回字段
+|描述信息
+
+|`name`
+|transport zone 返回字段
+|transport zone 名称
+
+|`physicalNetwork`
+|transport zone 返回字段
+|物理网络标识
+
+|`status`
+|transport zone 返回字段
+|当前状态
+
+|`tags`
+|transport zone 返回字段
+|标签信息
+
+|`type`
+|transport zone 返回字段
+|类型，典型值为 `vlan` 或 `overlay`
+
+|`znsSdnControllerUuid`
+|当前 `ZnsSdnControllerVO.uuid`
+|外键，关联到所属 ZNS SDN Controller
+
+|===
+
+[NOTE]
+这里的缓存不只是 `transportZoneUuid → Set<clusterUuid>` 反向索引，还包括 transport zone 自身的元数据。
+前者用于根据 host/profile 关系反查 cluster，后者用于后续创建 Cloud L2Network 时选择默认 transport zone，并为 `segment.transport_zone_uuid` 的解释提供基础数据。
+
+[NOTE]
+OpenAPI 中 `HostSwitchProfileData` 同时有 `type`（枚举：`dpdk | kernel`）和 `switchType`（字符串描述，如 `"OVS"`）两个字段。
+推导 `vSwitchType` 使用的是 `type` 枚举字段。
+
+* 根据 `HostSwitchProfileData.type` 和 Cloud `HostVO.uuid` 创建 `SdnControllerHostRefVO`，`type` 与 `vSwitchType` 的映射规则：
++
+[cols="2,2"]
+|===
+|ZNS HostSwitchProfileData.type |Cloud SdnControllerHostRefVO.vSwitchType
+
+|`dpdk`
+|`OvsDpdk`
+
+|`kernel`
+|`OvsKernel`
+
+|其它未知值，或者 profile 查询失败
+|`ZNS`
+
+|===
+* 以上步骤完成后，Cloud 侧就完成了 SdnControllerHostRefVO 的初始化，同时持有两类 transport zone 缓存：
+** transport zone 元数据缓存：保存到建议新增的 `ZnsTransportZone`
+** `transportZoneUuid → Set<clusterUuid>` 反向缓存：用于 segment 和 cluster 的关联
+* 根据 computerManagerUuid 从 ZNS 获取 segments 列表。
+** 根据 segment 信息创建 L2Network、L3Network
+** 根据 segment.ipam 信息创建 IpRange
+
+ZNS `segment.transport_type` 和 ZStack L2/L3 的映射关系如下：
+
+[cols="1,2,2,2"]
+|===
+|ZNS字段 |条件 |Cloud L2Network.type |Cloud L3Network.type
+
+|`transport_type`
+|`overlay`
+|`L2GeneveNetwork`
+|`L3ZnsNetwork`
+
+|`transport_type`
+|`vlan` 且 `virtual_network_id > 0`
+|`L2VlanNetwork`
+|`L3ZnsNetwork`
+
+|`transport_type`
+|`vlan` 且 `virtual_network_id == 0`
+|`L2NoVlanNetwork`
+|`L3ZnsNetwork`
+
+|===
+
+补充说明：
+
+* `L2Network.vSwitchType` 固定写入 `ZNS`
+* `L2Network.virtualNetworkId` 取 `segment.virtual_network_id`（Geneve/VLAN）
+* `L3Network.category` 当前初始化逻辑固定为 `Private`
+
+5. 根据 `segment.transport_zone_uuid` 查询前面缓存的 `transportZoneUuid → Set<clusterUuid>` 映射，为每个关联的 cluster 创建一条 `L2NetworkClusterRefVO`，建立 ZNS segment 和 Cloud cluster 的映射关系。
+
+`L2NetworkClusterRefVO` 的映射关系如下：
+
+[cols="2,3,2"]
+|===
+|字段 |来源 |说明
+
+|`l2NetworkUuid`
+|当前 segment 创建出的 `L2NetworkVO.uuid`
+|当前 L2 网络 UUID
+
+|`clusterUuid`
+|`HostData.clusterId`（经 transport zone 反向缓存查找）
+|`segment.transport_zone_uuid` → 缓存 → `Set<clusterUuid>`
+
+|`l2ProviderType`
+|常量 `ZNS`
+|固定值
+
+|===
+
+=== 重连SDN控制器
+
+重连（`APIReconnectSdnControllerMsg`）与创建的核心区别：
+
+* **创建**：ZNS 是数据源，Cloud 单向从 ZNS 读取资源，并在 Cloud 侧新建 L2Network / L3Network / IpRange / `SdnControllerHostRefVO` / `L2NetworkClusterRefVO` 等对象。
+* **重连**：Cloud 数据库是基准，*不新建* Cloud 资源；仅对 `SdnControllerHostRefVO` 做 upsert，并将 ZNS 侧的 segment / segment port 状态对齐到 Cloud 侧。
+
+==== 1. 刷新 SdnControllerHostRefVO（upsert）
+
+重连仍需重新扫描 host，以处理新加入的主机或 vSwitchType 发生变化的主机。
+映射关系与创建时完全相同（`HostData.managementIp` → `HostVO`，`HostSwitchProfileData.type` → `vSwitchType`），
+区别仅在于写库操作改为 upsert：
+
+[cols="3,2"]
+|===
+|情况 |操作
+
+|`SdnControllerHostRefVO` 不存在（新主机）
+|INSERT 新记录
+
+|已存在但 `vSwitchType` 或 `vtepIp` 发生变化
+|UPDATE
+
+|已存在且字段未变
+|跳过
+
+|===
+
+[NOTE]
+创建时只做 INSERT；重连时使用 upsert，可处理主机上下线及 vSwitchType 变更的情况。
+
+==== 2. Segment 协调（以 Cloud 为基准）
+
+重连以 Cloud 数据库中所有 `vSwitchType = ZNS` 的 `L2NetworkVO` 为基准，与 ZNS 侧属于本 Computer Manager 的 segment 做三路对比。
+ZNS 侧 segment 通过 cms 元数据中的 `ExternalIds.l2Uuid` 与 Cloud L2 关联。
+
+[cols="2,2,3"]
+|===
+|Cloud 侧 L2NetworkVO |ZNS 侧 segment |操作
+
+|不存在（`l2Uuid` 指向已删除 L2，或 segment 无 `l2Uuid`）
+|存在
+|调用 `DELETE /zns/api/v1/segments` 删除孤儿 segment
+
+|存在
+|不存在
+|调用 `POST /zns/api/v1/segments` 在 ZNS 新建 segment，参数来自 Cloud L2/L3 信息
+
+|存在
+|存在但参数不一致（如 CIDR）
+|调用 `PATCH /zns/api/v1/segments/{uuid}` 更新
+
+|存在
+|存在且参数一致
+|无操作
+
+|===
+
+[NOTE]
+重连 *不会* 根据 ZNS segment 在 Cloud 侧创建新的 L2Network / L3Network / IpRange / `L2NetworkClusterRefVO`。
+如果 ZNS 存在但 Cloud 不存在，视为孤儿 segment 并删除（与创建阶段的单向导入方向相反）。
+
+==== 3. Segment Port 协调
+
+完成 segment 协调后，对每个已与 Cloud L2 匹配的 segment，逐一协调其 port。
+Port 通过 cms 元数据中的 `ExternalIds.vmNicUuid` 与 Cloud `VmNicVO` 关联。
+
+[cols="2,2,3"]
+|===
+|Cloud 侧 VmNicVO |ZNS 侧 segment port |操作
+
+|存在
+|不存在
+|调用 `POST /zns/api/v1/segments/{uuid}/ports` 补建 port
+
+|不存在
+|存在
+|调用 `DELETE /zns/api/v1/segments/{uuid}/ports` 删除孤儿 port
+
+|两侧均存在
+|（当前实现不做参数比对更新）
+|无操作
+
+|===
+
+=== 删除SDN控制器
+删除 ZNS SDN Controller 时，会级联删除 ZNS 侧的 Computer Manager 和 Segment、Segment Port 等资源。Cloud 侧的 L2Network、L3Network、VmNic 等也会一起删除。
+
+== L2Network
+
+=== 基础信息
+
+`L2NetworkVO` 的重要字段：
+
+* `type`：L2NetworkType.types，有：L2NoVlanNetwork、L2VlanNetwork、VxlanNetworkPool、VxlanNetwork、TfL2Network、HardwareVxlanNetworkPool、HardwareVxlanNetwork
+* `vSwitchType`：VSwitchType.types，有：LinuxBridge、TfL2Network、MacVlan、OvnDpdk、OvsDpdk、OvsKernel、ZNS
+* `virtualNetworkId`：vlanId 或 vxlanID
+* `physicalInterface`：物理网卡名称
+
+ZNS L2Network 的类型定义：
+
+[cols="1,2"]
+|===
+|属性 |值
+
+|type
+|L2NoVlanNetwork、L2VlanNetwork、L2GeneveNetwork（新增类型，类似于L2VlanNetwork）
+
+|vSwitchType
+|ZNS（固定值，不区分 kernel 和 dpdk）
+
+|physicalInterface
+|null
+
+|virtualNetworkId
+|Vlan Id 或 Geneve Id
+
+|===
+
+=== 创建 L2Network
+
+处理逻辑类似 OVN Controller，但调用 ZNS API 创建 segment。
+
+创建 ZNS 二层网络时，Cloud 需要先根据 L2 类型从已缓存的 transport zone 中选择默认 transport zone：
+
+[cols="2,2,3"]
+|===
+|Cloud L2 类型 |默认 transport zone.type |说明
+
+|`L2VlanNetwork`
+|`vlan`
+|LAN 网络默认使用 vlan 类型的 transport zone
+
+|`L2NoVlanNetwork`
+|`vlan`
+|NoVlan 网络默认使用 vlan 类型的 transport zone
+
+|`L2GeneveNetwork`
+|`overlay`
+|Geneve 网络默认使用 overlay 类型的 transport zone
+
+|===
+
+[NOTE]
+ZNS 基于 OVN 实现，OVN 不能提供类似 Cloud 的 cluster 能力。
+因此 Cloud 创建的 L2Network 在 OVN 侧默认可在该 transport zone 覆盖的全部物理机上使用，而不是由 OVN 提供 cluster 级隔离。
+
+[NOTE]
+Cloud 侧会额外施加一层调度约束：只有二层网络实际加载了某个 cluster 后，该 cluster 中的物理机才允许用于创建虚拟机。
+也就是说，transport zone 决定的是底层网络可达范围，`L2NetworkClusterRefVO` 决定的是 Cloud 侧可调度范围。
+
+==== APIAttachL2NetworkToClusterMsg / APIDetachL2NetworkFromClusterMsg
+
+处理逻辑类似 OVN Controller，根据 ZNS Host 和 transport zone 的关系，把 ZNS segment 关联到 transport zone。
+
+==== APIChangeL2NetworkVlanIdMsg
+
+* L2GeneveNetwork 类型不支持修改 VlanId，需要在 `L2NetworkApiInterceptor` 中拦截：如果 L2Network 的 type 为 L2GeneveNetwork，抛出 `ApiMessageInterceptionException`
+* L2VlanNetwork、L2NoVlanNetwork 类型支持
+* 仅需要修改 L2NetworkVO 数据库，不需要下发到物理机，需要调用修改 ZNS segment API
+
+== L3Network
+
+=== 基础信息
+
+`L3NetworkVO` 的重要字段：
+
+* `type`：L3BasicNetwork、L3VpcNetwork
+* `category`：Public、Private、System
+
+ZNS L3 的定义：
+
+[cols="1,2"]
+|===
+|属性 |值/规则
+
+|type
+|L3ZnsNetwork
+
+|category（L2GeneveNetwork 类型）
+|只能是 Private
+
+|category（L2NoVlanNetwork、L2VlanNetwork 类型）
+|可以是 Public 或 Private
+
+|===
+
+ZNS L3Network 不添加网络服务。
+
+=== SetVmStaticIp / ChangeVmIp 操作
+
+由于 ZNS 网络的 IP 由 ZNS 管理，`APISetVmStaticIpMsg` 和 `APIChangeVmIpMsg` 需要特殊处理：
+
+在 `VmInstanceApiInterceptor` 中增加校验：如果目标 L3Network 关联的 L2Network 的 vSwitchType 为 ZNS，需要将用户指定的 IP 传给 ZNS segment port API 进行更新，而非走 Cloud 侧的 IP 分配流程。
+
+== VmNic
+
+VmNicType 的值有：VNIC、VF、`dpdkvhostuserclient`。ZNS 可能是 dpdk 模式，也可能是 kernel 模式。在 UI 选择 ZNS 网络后，用户可以选择网卡类型：VNIC 或 `dpdkvhostuserclient`。
+
+=== 虚拟机的物理机分配
+
+创建虚拟机选择了 ZNS 网络时：
+
+* 默认网卡类型是 VNIC，需要选择到部署了 OvnKernel 的物理机
+* 如果选择了 `dpdkvhostuserclient`，需要选择到部署了 OvnDpdk 的物理机
+
+=== 网卡创建过程
+
+创建虚拟机或给虚拟机添加网卡时，会调用 `VmAllocateNicFlow` 创建网卡。
+
+ZNS 网络创建过程：
+
+1. 和现在逻辑一样分配网卡 mac、internalId、internalName、driverType
+2. 调用 ZNS 创建 segment port API，返回 ip/掩码/网关、ip6/前缀/网关
+3. ZNS L3 网络走 `enableIpAddressAllocation()` 为 false 的流程，Cloud 直接把 ZNS 返回的 IP 地址保存到 `UsedIpVO`，不走 Cloud 侧的 IP 分配流程
+4. 根据获取的参数创建 `VmNicVO`、`UsedIpVO`
+
+=== 网卡删除过程
+
+* `VmReturnReleaseNicFlow`：在 `destroyVmWorkFlowElements` 中被调用，用于虚拟机销毁时释放网卡资源
+* `VmDetachNicFlow`：在云主机删除网卡时调用
+
+两个 Flow 中都需要：
+
+1. 调用 ZNS 删除 segment port API
+2. 删除 `VmNicVO`、`UsedIpVO`
+
+=== DPDK 网卡的特殊处理
+
+由于 libvirt 不能自动创建 `dpdkvhostuserclient` 类型的网卡，Cloud 需要在虚拟机启动前，在物理机上预先创建对应的 `dpdkvhostuserclient` 网卡。
+这个逻辑与 OVN DPDK 虚拟网卡一致。
+
+=== ChangeVmNicNetwork（换网操作）
+
+`APIChangeVmNicNetworkMsg` 涉及 detach 旧网络 + attach 新网络：
+
+* 不支持从 ZNS 变换成非 ZNS 网络，或从非 ZNS 变换成 ZNS 网络
+* 从 ZNS 网络变换成 ZNS 网络的场景，需要调用 ZNS API 删除旧的 segment port，调用 API 创建新的 segment port，并更新 `VmNicVO`/`UsedIpVO` 等相关数据对象
+
+=== FilterAttachableL3NetworkExtensionPoint
+
+* `APIGetVmAttachableL3NetworkMsg` 必须能获取到 ZNS L3 网络。
+
+

@@ -608,6 +608,7 @@ public class SourceClassMap {
 			put("org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory", "org.zstack.sdk.VirtualRouterOfferingInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterSoftwareVersionInventory", "org.zstack.sdk.VirtualRouterSoftwareVersionInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterVmInventory", "org.zstack.sdk.VirtualRouterVmInventory");
+			put("org.zstack.network.zns.L2GeneveNetworkInventory", "org.zstack.sdk.L2GeneveNetworkInventory");
 			put("org.zstack.observabilityServer.ObservabilityServerOfferingInventory", "org.zstack.sdk.ObservabilityServerOfferingInventory");
 			put("org.zstack.observabilityServer.ObservabilityServerVmInventory", "org.zstack.sdk.ObservabilityServerVmInventory");
 			put("org.zstack.observabilityServer.service.ObservabilityServerServiceDataInventory", "org.zstack.sdk.ObservabilityServerServiceDataInventory");
@@ -1185,6 +1186,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.KvmCephIsoTO", "org.zstack.storage.ceph.primary.KvmCephIsoTO");
 			put("org.zstack.sdk.KvmHostHypervisorMetadataInventory", "org.zstack.kvm.hypervisor.datatype.KvmHostHypervisorMetadataInventory");
 			put("org.zstack.sdk.KvmHypervisorInfoInventory", "org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoInventory");
+			put("org.zstack.sdk.L2GeneveNetworkInventory", "org.zstack.network.zns.L2GeneveNetworkInventory");
 			put("org.zstack.sdk.L2NetworkData", "org.zstack.header.network.l2.L2NetworkData");
 			put("org.zstack.sdk.L2NetworkInventory", "org.zstack.header.network.l2.L2NetworkInventory");
 			put("org.zstack.sdk.L2PortGroupNetworkInventory", "org.zstack.network.l2.virtualSwitch.header.L2PortGroupNetworkInventory");
