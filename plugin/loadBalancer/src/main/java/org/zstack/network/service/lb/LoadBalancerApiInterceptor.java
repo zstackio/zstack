@@ -865,6 +865,14 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 statusCode = LoadBalancerSystemTags.STATUS_CODE.getTokenByTag(tag,
                         LoadBalancerSystemTags.STATUS_CODE_TOKEN);
             }
+            if (LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS.isMatch(tag)) {
+                String compressAlgos = LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS.getTokenByTag(tag,
+                        LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS_TOKEN);
+                if (DisableLbSupportHttpCompressAlgos.equals(compressAlgos)) {
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10172,
+                            "could not create the loadbalancer listener with systemTag httpCompressAlgos::disable, please remove this tag"));
+                }
+            }
         }
 
         if ((redirectPort != null || statusCode != null) && (httpRedirectHttps == null || HttpRedirectHttps.disable.toString().equals(httpRedirectHttps))) {
