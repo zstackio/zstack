@@ -231,17 +231,15 @@ class ChangeSecurityGroupRuleCase extends SubCase {
         assert sg3 != null
         SecurityGroupRuleInventory rule_1 = sg3.rules.find { it.type == "Ingress" && it.priority == 1 && it.ipVersion == 4 }
 
-        expect(AssertionError) {
-            changeSecurityGroupRule {
-                uuid = rule_1.uuid
-                priority = 6
-            }
+        changeSecurityGroupRule {
+            uuid = rule_1.uuid
+            priority = 6
         }
 
         expect(AssertionError) {
             changeSecurityGroupRule {
                 uuid = rule_1.uuid
-                priority = 7
+                priority = 101
             }
         }
     }
@@ -307,11 +305,9 @@ class ChangeSecurityGroupRuleCase extends SubCase {
             }
         }
 
-        expect(AssertionError) {
-            changeSecurityGroupRule {
-                uuid = rule1.uuid
-                priority = 3
-            }
+        changeSecurityGroupRule {
+            uuid = rule1.uuid
+            priority = 3
         }
 
         expect(AssertionError) {
