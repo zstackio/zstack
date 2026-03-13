@@ -540,8 +540,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 IpRangeVO.class.getSimpleName(),
                 PrimaryStorageVO.class.getSimpleName(),
                 L2NetworkVO.class.getSimpleName(),
-                InstanceOfferingVO.class.getSimpleName(),
-                AccountVO.class.getSimpleName());
+                InstanceOfferingVO.class.getSimpleName());
     }
 
     @Override

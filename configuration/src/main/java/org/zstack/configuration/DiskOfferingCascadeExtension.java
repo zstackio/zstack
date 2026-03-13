@@ -102,7 +102,7 @@ public class DiskOfferingCascadeExtension extends AbstractAsyncCascadeExtension 
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(AccountVO.class.getSimpleName());
+        return Arrays.asList();
     }
 
     @Override

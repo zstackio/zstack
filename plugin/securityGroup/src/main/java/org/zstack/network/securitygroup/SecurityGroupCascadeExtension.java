@@ -159,7 +159,7 @@ public class SecurityGroupCascadeExtension extends AbstractAsyncCascadeExtension
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(VmInstanceVO.class.getSimpleName(), AccountVO.class.getSimpleName());
+        return Arrays.asList(VmInstanceVO.class.getSimpleName());
     }
 
     @Override

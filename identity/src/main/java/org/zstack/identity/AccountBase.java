@@ -201,6 +201,18 @@ public class AccountBase implements Account {
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "cleanup-account-resource-refs";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        // Delete all AccountResourceRefVO records after cascade deletion
+                        // This cleans up all relationships between the account and resources
+                        deleteAllAccountResourceRefRecords();
+                        trigger.next();
+                    }
+                });
+
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
@@ -246,6 +258,13 @@ public class AccountBase implements Account {
                 bus.publish(evt);
             }
         });
+    }
+
+    private void deleteAllAccountResourceRefRecords() {
+        SQL.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.accountUuid, self.getUuid())
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                .delete();
     }
 
     private void deleteRelatedResources() {

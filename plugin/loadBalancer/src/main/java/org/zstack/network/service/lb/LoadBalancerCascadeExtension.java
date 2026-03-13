@@ -203,7 +203,6 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
     @Override
     public List<String> getEdgeNames() {
         List<String> ret = new ArrayList<>();
-        ret.add(AccountVO.class.getSimpleName());
         ret.add(VipVO.class.getSimpleName());
         ret.add(AccessControlListVO.class.getSimpleName());
         return ret;

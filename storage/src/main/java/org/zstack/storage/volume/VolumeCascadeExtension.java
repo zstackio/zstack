@@ -257,7 +257,7 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
     @Override
     public List<String> getEdgeNames() {
         return Arrays.asList(PrimaryStorageVO.class.getSimpleName(),
-                DiskOfferingVO.class.getSimpleName(), AccountVO.class.getSimpleName());
+                DiskOfferingVO.class.getSimpleName());
     }
 
     @Override

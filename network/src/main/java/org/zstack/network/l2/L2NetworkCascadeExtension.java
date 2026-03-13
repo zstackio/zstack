@@ -214,7 +214,7 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(ZoneVO.class.getSimpleName(), AccountVO.class.getSimpleName());
+        return Arrays.asList(ZoneVO.class.getSimpleName());
     }
 
     @Override

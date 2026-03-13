@@ -105,7 +105,7 @@ public class ImageCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(BackupStorageVO.class.getSimpleName(), AccountVO.class.getSimpleName());
+        return Arrays.asList(BackupStorageVO.class.getSimpleName());
     }
 
     @Override

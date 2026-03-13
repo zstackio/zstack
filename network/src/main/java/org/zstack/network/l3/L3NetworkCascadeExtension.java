@@ -132,7 +132,7 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(L2NetworkVO.class.getSimpleName(), AccountVO.class.getSimpleName());
+        return Arrays.asList(L2NetworkVO.class.getSimpleName());
     }
 
     @Override
