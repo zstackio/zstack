@@ -92,13 +92,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     ReconnectMonLock reconnectMonLock = new ReconnectMonLock();
 
-    private static final Set<String> ALLOWED_URL_SCHEMES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList("http", "https", "ftp", "sftp")));
-
-    // SSH username: only alphanumeric, dots, hyphens, underscores, optional trailing $
-    private static final java.util.regex.Pattern SSH_USERNAME_PATTERN =
-            java.util.regex.Pattern.compile("^[a-zA-Z0-9._-]+\\$?$");
-
     @Autowired
     protected RESTFacade restf;
     @Autowired
@@ -753,6 +746,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         public String upgradePackagePath;
         public String upgradePackageTargetPath;
         public String upgradeScriptPath;
+        public String softwareType;
         public int targetHostSshPort;
         public String targetHostSshUsername;
         @NoLogging
@@ -2207,27 +2201,13 @@ public class CephBackupStorageBase extends BackupStorageBase {
         cmd.taskUuid = msg.getTaskUuid();
         cmd.sendCommandUrl = restf.getSendCommandUrl();
 
-        String scheme;
-        try {
-            URI uri = new URI(msg.getUrl());
-            scheme = uri.getScheme();
-        } catch (URISyntaxException e) {
-            reply.setError(operr("failed to parse upload URL [%s]: %s", msg.getUrl(), e.getMessage()));
+        String[] urlResult = RemotePathValidator.validateAndExtractUrlScheme(msg.getUrl());
+        if (urlResult[0] != null) {
+            reply.setError(operr(urlResult[0]));
             bus.reply(msg, reply);
             return;
         }
-        if (scheme == null || scheme.isEmpty()) {
-            reply.setError(operr("upload URL [%s] is missing a protocol prefix", msg.getUrl()));
-            bus.reply(msg, reply);
-            return;
-        }
-        if (!ALLOWED_URL_SCHEMES.contains(scheme.toLowerCase())) {
-            reply.setError(operr("upload URL [%s] uses unsupported protocol [%s], only %s are allowed",
-                    msg.getUrl(), scheme, ALLOWED_URL_SCHEMES));
-            bus.reply(msg, reply);
-            return;
-        }
-        cmd.urlScheme = scheme;
+        cmd.urlScheme = urlResult[1];
 
         httpCall(FILE_DOWNLOAD_PATH, cmd, DownloadFileResponse.class, new ReturnValueCompletion<DownloadFileResponse>(msg) {
             @Override
@@ -2303,13 +2283,11 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
 
         // Validate each file path to prevent path traversal and injection attacks.
-        for (String filePath : msg.getFilePaths()) {
-            String pathErr = RemotePathValidator.validateRemotePath(filePath, "filePath");
-            if (pathErr != null) {
-                reply.setError(operr(pathErr));
-                bus.reply(msg, reply);
-                return;
-            }
+        String filePathErr = RemotePathValidator.validateFilePaths(msg.getFilePaths());
+        if (filePathErr != null) {
+            reply.setError(operr(filePathErr));
+            bus.reply(msg, reply);
+            return;
         }
 
         CephBackupStorageMonVO mon;
@@ -2414,9 +2392,9 @@ public class CephBackupStorageBase extends BackupStorageBase {
             return;
         }
 
-        if (msg.getTargetHostSshUsername() == null || !SSH_USERNAME_PATTERN.matcher(msg.getTargetHostSshUsername()).matches()) {
-            reply.setError(operr("targetHostSshUsername [%s] is invalid, only alphanumeric characters, dots, hyphens, underscores and trailing dollar sign are allowed",
-                    msg.getTargetHostSshUsername()));
+        String usernameErr = RemotePathValidator.validateSshUsername(msg.getTargetHostSshUsername());
+        if (usernameErr != null) {
+            reply.setError(operr(usernameErr));
             bus.reply(msg, reply);
             return;
         }
@@ -2457,6 +2435,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         SoftwareUpgradePackageCmd cmd = new SoftwareUpgradePackageCmd();
         cmd.upgradePackagePath = msg.getUpgradePackagePath();
         cmd.upgradePackageTargetPath = msg.getUpgradePackageTargetPath();
+        cmd.softwareType = msg.getSoftwareType();
         cmd.upgradeScriptPath = msg.getUpgradeScriptPath();
         cmd.targetHostSshPort = msg.getTargetHostSshPort();
         cmd.targetHostSshUsername = msg.getTargetHostSshUsername();

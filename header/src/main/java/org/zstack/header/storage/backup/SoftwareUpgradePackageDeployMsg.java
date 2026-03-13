@@ -14,6 +14,7 @@ public class SoftwareUpgradePackageDeployMsg extends NeedReplyMessage implements
     private String targetHostSshPassword;
     private String targetHostIp;
     private String upgradeScriptPath;
+    private String softwareType;
 
     @Override
     public String getBackupStorageUuid() {
@@ -86,5 +87,13 @@ public class SoftwareUpgradePackageDeployMsg extends NeedReplyMessage implements
 
     public void setUpgradeScriptPath(String upgradeScriptPath) {
         this.upgradeScriptPath = upgradeScriptPath;
+    }
+
+    public String getSoftwareType() {
+        return softwareType;
+    }
+
+    public void setSoftwareType(String softwareType) {
+        this.softwareType = softwareType;
     }
 }
