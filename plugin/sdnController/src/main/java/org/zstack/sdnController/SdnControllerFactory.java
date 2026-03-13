@@ -10,8 +10,6 @@ import org.zstack.header.network.sdncontroller.SdnControllerVO;
 public interface SdnControllerFactory {
     SdnControllerType getVendorType();
 
-    SdnControllerVO persistSdnController(SdnControllerVO vo);
-
     SdnController getSdnController(SdnControllerVO vo);
 
     default SdnController getSdnController(String l2NetworkUuid) {return null;};

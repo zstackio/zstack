@@ -6,10 +6,13 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkConstant;
@@ -34,6 +37,10 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
     protected CloudBus bus;
     @Autowired
     protected VmInstanceDeletionPolicyManager deletionPolicyMgr;
+    @Autowired
+    protected VmInstanceManager vmMgr;
+    @Autowired
+    protected PluginRegistry pluginRgty;
 
     @Override
     public void run(FlowTrigger chain, Map data) {
@@ -43,6 +50,11 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
             return;
         }
 
+        returnIpsAndReleaseNics(spec, data, chain);
+    }
+
+
+    private void returnIpsAndReleaseNics(VmInstanceSpec spec, Map data, FlowTrigger chain) {
         List<ReturnIpMsg> msgs = new ArrayList<>(spec.getVmInventory().getVmNics().size());
         for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
             for (UsedIpInventory ip : nic.getUsedIps()) {
@@ -66,12 +78,14 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
         })).run(new WhileDoneCompletion(chain) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
+                List<VmNicInventory> releasedNics = new ArrayList<>();
+                List<VmNicVO> nicsToDelete = new ArrayList<>();
                 for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
                     VmNicVO vo = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
                     if (VmInstanceConstant.USER_VM_TYPE.equals(spec.getVmInventory().getType())) {
                         VmInstanceDeletionPolicy deletionPolicy = getDeletionPolicy(spec, data);
                         if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
-                            dbf.remove(vo);
+                            nicsToDelete.add(vo);
                         } else {
                             vo.setUsedIpUuid(null);
                             vo.setIp(null);
@@ -80,10 +94,53 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
                             dbf.update(vo);
                         }
                     } else {
-                        dbf.remove(vo);
+                        nicsToDelete.add(vo);
                     }
+                    releasedNics.add(nic);
                 }
-                chain.next();
+
+                callReleaseSdnNics(releasedNics, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        nicsToDelete.forEach(dbf::remove);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.warn(String.format("releaseSdnNics failed: %s, continue anyway", errorCode));
+                        nicsToDelete.forEach(dbf::remove);
+                        chain.next();
+                    }
+                });
+            }
+        });
+    }
+
+    private void callReleaseSdnNics(List<VmNicInventory> nics, Completion completion) {
+        List<AfterAllocateSdnNicExtensionPoint> exts = pluginRgty.getExtensionList(AfterAllocateSdnNicExtensionPoint.class);
+        if (exts.isEmpty() || nics.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        new While<>(exts).each((ext, wcomp) -> {
+            ext.releaseSdnNics(nics, new Completion(wcomp) {
+                @Override
+                public void success() {
+                    wcomp.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    logger.warn(String.format("releaseSdnNics extension failed: %s, continue", errorCode));
+                    wcomp.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.success();
             }
         });
     }

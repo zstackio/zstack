@@ -51,6 +51,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
     private List<CleanUpAfterVmChangeImageExtensionPoint> cleanUpAfterVmChangeImageExtensionPoints;
     private List<VmNicChangeStateExtensionPoint> vmNicChangeStateExtensionPoints;
     private List<SshKeyPairAssociateExtensionPoint> sshKeyPairAssociateExtensionPoints;
+    private List<AfterUpdateVmNicMacExtensionPoint> afterUpdateVmNicMacExtensionPoints;
 
     public List<ErrorCode> handleSystemTag(String vmUuid, List<String> tags){
         List<ErrorCode> errorCodes = new ArrayList<>();
@@ -581,6 +582,10 @@ public class VmInstanceExtensionPointEmitter implements Component {
         CollectionUtils.safeForEach(vmNicChangeStateExtensionPoints, arg -> arg.afterChangeVmNicState(vmNic, state));
     }
 
+    public void afterUpdateVmNicMac(final VmNicInventory nic, final String oldMac, final String newMac) {
+        CollectionUtils.safeForEach(afterUpdateVmNicMacExtensionPoints, arg -> arg.afterUpdateVmNicMac(nic, oldMac, newMac));
+    }
+
     public List<ErrorCode> associateSshKeyPair(String vmUuid, List<String> sshKeyUuids) {
         List<ErrorCode> errorCodes = new ArrayList<>();
         CollectionUtils.safeForEach(sshKeyPairAssociateExtensionPoints, extension -> {
@@ -626,6 +631,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
         cleanUpAfterVmChangeImageExtensionPoints = pluginRgty.getExtensionList(CleanUpAfterVmChangeImageExtensionPoint.class);
         vmNicChangeStateExtensionPoints = pluginRgty.getExtensionList(VmNicChangeStateExtensionPoint.class);
         sshKeyPairAssociateExtensionPoints = pluginRgty.getExtensionList(SshKeyPairAssociateExtensionPoint.class);
+        afterUpdateVmNicMacExtensionPoints = pluginRgty.getExtensionList(AfterUpdateVmNicMacExtensionPoint.class);
     }
 
     @Override
