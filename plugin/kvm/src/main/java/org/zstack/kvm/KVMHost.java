@@ -5817,6 +5817,16 @@ public class KVMHost extends HostBase implements Host {
                         deployArguments.setSkipPackages(info.getSkipPackages());
                         deployArguments.setUpdatePackages(String.valueOf(CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT));
 
+                        // Build TLS cert IP list: management IP + extra IPs (migration network etc.)
+                        String managementIp = getSelf().getManagementIp();
+                        String extraIps = HostSystemTags.EXTRA_IPS.getTokenByResourceUuid(
+                                self.getUuid(), HostSystemTags.EXTRA_IPS_TOKEN);
+                        if (extraIps != null && !extraIps.isEmpty()) {
+                            deployArguments.setTlsCertIps(managementIp + "," + extraIps);
+                        } else {
+                            deployArguments.setTlsCertIps(managementIp);
+                        }
+
                         if (deployArguments.isForceRun()) {
                             runner.setForceRun(true);
                         }
