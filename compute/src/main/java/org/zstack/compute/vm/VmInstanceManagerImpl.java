@@ -1228,16 +1228,22 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
                 flow(new Flow() {
                     String __name__ = "call-after-persist-vm-extensions";
+                    List<VmInstanceCreateExtensionPoint> done = new ArrayList<>();
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        pluginRgty.getExtensionList(VmInstanceCreateExtensionPoint.class).forEach(
-                                extensionPoint -> extensionPoint.afterPersistVmInstanceVO(finalVo, msg));
+                        for (VmInstanceCreateExtensionPoint extension : pluginRgty.getExtensionList(VmInstanceCreateExtensionPoint.class)) {
+                            done.add(extension);
+                            extension.afterPersistVmInstanceVO(finalVo, msg);
+                        }
                         trigger.next();
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        // do nothing
+                        Collections.reverse(done);
+                        CollectionUtils.safeForEach(done,
+                                extension -> extension.afterRollbackPersistVmInstanceVO(finalVo, msg));
                         trigger.rollback();
                     }
                 });
@@ -1381,7 +1387,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         }
                         DestroyVmInstanceMsg dmsg = new DestroyVmInstanceMsg();
                         dmsg.setVmInstanceUuid(finalVo.getUuid());
-                        dmsg.setDeletionPolicy(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct);
+                        dmsg.setDeletionPolicy(VmInstanceDeletionPolicy.Direct);
                         bus.makeTargetServiceIdByResourceUuid(dmsg, VmInstanceConstant.SERVICE_ID, finalVo.getUuid());
                         bus.send(dmsg, new CloudBusCallBack(null) {
                             @Override

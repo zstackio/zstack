@@ -38,6 +38,10 @@ public class VmTpmManager {
         return tpm;
     }
 
+    public void deleteTpmVO(String tpmUuid) {
+        databaseFacade.removeByPrimaryKey(tpmUuid, TpmVO.class);
+    }
+
     /**
      * @param bootMode boot mode, null is Legacy
      */

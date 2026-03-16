@@ -262,7 +262,6 @@
             <zstack:extension interface="org.zstack.header.cluster.ClusterUpdateOSExtensionPoint"/>
         </zstack:plugin>
     </bean>
-
     <bean id="KvmTpmManager" class="org.zstack.kvm.tpm.KvmTpmManager">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
@@ -291,6 +290,4 @@
             <zstack:extension interface="org.zstack.header.vm.VmInstanceDestroyExtensionPoint" />
         </zstack:plugin>
     </bean>
-
-    <bean id="DummyTpmEncryptedResourceKeyBackend" class="org.zstack.kvm.tpm.DummyTpmEncryptedResourceKeyBackend"/>
 </beans>
