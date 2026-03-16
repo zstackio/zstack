@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`EncryptedResourceKeyRefVO` (
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
     PRIMARY KEY (`id`),
-    INDEX `idxEncryptedResourceKeyRefVOResource` (`resourceUuid`, `resourceType`),
+    INDEX `idxEncryptedResourceKeyRefVOResource` (`resourceType`, `resourceUuid`),
     INDEX `idxEncryptedResourceKeyRefVOProviderUuid` (`providerUuid`),
     INDEX `idxEncryptedResourceKeyRefVOProviderName` (`providerName`),
     CONSTRAINT `fkEncryptedResourceKeyRefVOProviderUuid` FOREIGN KEY (`providerUuid`) REFERENCES `KeyProviderVO` (`uuid`) ON DELETE SET NULL
