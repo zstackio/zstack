@@ -94,13 +94,8 @@ elif [ $tool = 'zstack-ctl' ]; then
 elif [ $tool = 'zstack-sys' ]; then
     SYS_VIRENV_PATH=/var/lib/zstack/virtualenv/zstacksys
     ensure_python3_venv "$SYS_VIRENV_PATH"
-    RE_INSTALL=false
-    . $SYS_VIRENV_PATH/bin/activate
-    if ! ansible --version | grep -q 'core 2.16.14'; then
-        deactivate
-        RE_INSTALL=true
-    fi
-    if $RE_INSTALL; then
+    # RE_INSTALL
+    if [ ! -x "$SYS_VIRENV_PATH/bin/ansible" ] || ! "$SYS_VIRENV_PATH/bin/ansible" --version 2>/dev/null | grep -q 'core 2.16.14'; then
         rm -rf $SYS_VIRENV_PATH && python3.11 -m venv $SYS_VIRENV_PATH || exit 1
         . $SYS_VIRENV_PATH/bin/activate
         cd $cwd
