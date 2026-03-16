@@ -1,7 +1,7 @@
 package org.zstack.header.vm.additions;
 
-import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.SoftDeletionCascade;
 import org.zstack.header.vo.SoftDeletionCascades;
 
@@ -19,17 +19,12 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @SoftDeletionCascades({
-        @SoftDeletionCascade(parent = VmHostFileVO.class, joinColumn = "uuid"),
+        @SoftDeletionCascade(parent = ResourceVO.class, joinColumn = "uuid"),
 })
-@EntityGraph(
-        friends = {
-                @EntityGraph.Neighbour(type = VmHostFileVO.class, myField = "uuid", targetField = "uuid"),
-        }
-)
 public class VmHostFileContentVO {
     @Id
     @Column
-    @ForeignKey(parentEntityClass = VmHostFileVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
+    @ForeignKey(parentEntityClass = ResourceVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String uuid;
     @Column
     private byte[] content;
