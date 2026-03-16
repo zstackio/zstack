@@ -272,6 +272,4 @@
             <zstack:extension interface="org.zstack.header.vm.VmInstanceDestroyExtensionPoint" />
         </zstack:plugin>
     </bean>
-
-    <bean id="DummyTpmEncryptedResourceKeyBackend" class="org.zstack.kvm.tpm.DummyTpmEncryptedResourceKeyBackend"/>
 </beans>

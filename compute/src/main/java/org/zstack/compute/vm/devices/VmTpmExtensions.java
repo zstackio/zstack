@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.BuildVmSpecExtensionPoint;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.header.tpm.entity.TpmSpec;
 import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.tpm.entity.TpmVO_;
@@ -25,6 +26,8 @@ public class VmTpmExtensions implements VmInstanceCreateExtensionPoint,
     private VmTpmManager vmTpmManager;
     @Autowired
     private ResourceConfigFacade resourceConfigFacade;
+    @Autowired
+    private TpmEncryptedResourceKeyBackend resourceKeyBackend;
 
     @Override
     public void preCreateVmInstance(CreateVmInstanceMsg msg) {
@@ -38,17 +41,49 @@ public class VmTpmExtensions implements VmInstanceCreateExtensionPoint,
             return;
         }
 
-        vmTpmManager.persistTpmVO(null, vo.getUuid());
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                final TpmVO tpm = vmTpmManager.persistTpmVO(null, vo.getUuid());
+                final String keyProviderUuid = spec.getTpm().getKeyProviderUuid();
+                if (keyProviderUuid != null) {
+                    resourceKeyBackend.attachKeyProviderToTpm(tpm.getUuid(), keyProviderUuid);
+                }
+            }
+        }.execute();
+    }
+
+    @Override
+    public void afterRollbackPersistVmInstanceVO(VmInstanceVO vo, CreateVmInstanceMsg msg) {
+        String tpmUuid = Q.New(TpmVO.class)
+                .eq(TpmVO_.vmInstanceUuid, vo.getUuid())
+                .select(TpmVO_.uuid)
+                .findValue();
+        if (tpmUuid == null) {
+            return;
+        }
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                try {
+                    resourceKeyBackend.detachKeyProviderFromTpm(tpmUuid);
+                } finally {
+                    vmTpmManager.deleteTpmVO(tpmUuid);
+                }
+            }
+        }.execute();
     }
 
     @Override
     public void afterBuildVmSpec(VmInstanceSpec spec) {
         String vmUuid = spec.getVmInventory().getUuid();
 
-        boolean tpmExists = Q.New(TpmVO.class)
+        String tpmUuid = Q.New(TpmVO.class)
                 .eq(TpmVO_.vmInstanceUuid, vmUuid)
-                .isExists();
-        boolean needRegisterNvRam = tpmExists;
+                .select(TpmVO_.uuid)
+                .findValue();
+        boolean needRegisterNvRam = tpmUuid != null;
         if (!needRegisterNvRam) {
             String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(vmUuid, VmSystemTags.BOOT_MODE_TOKEN);
             if (vmTpmManager.isUefiBootMode(bootMode)) {
@@ -64,12 +99,13 @@ public class VmTpmExtensions implements VmInstanceCreateExtensionPoint,
             spec.setNvRamSpec(nvRamSpec);
         }
 
-        if (tpmExists && (spec.getDevicesSpec() == null || spec.getDevicesSpec().getTpm() == null)) {
+        if (tpmUuid != null && (spec.getDevicesSpec() == null || spec.getDevicesSpec().getTpm() == null)) {
             VmDevicesSpec devicesSpec = spec.getDevicesSpec() == null ? new VmDevicesSpec() : spec.getDevicesSpec();
             spec.setDevicesSpec(devicesSpec);
 
             devicesSpec.setTpm(new TpmSpec());
             devicesSpec.getTpm().setEnable(true);
+            devicesSpec.getTpm().setKeyProviderUuid(resourceKeyBackend.findKeyProviderUuidByTpm(tpmUuid));
         }
     }
 }
