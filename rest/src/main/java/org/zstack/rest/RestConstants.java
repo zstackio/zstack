@@ -16,6 +16,10 @@ public interface RestConstants {
     String HEADER_JOB_SUCCESS = "X-Job-Success";
     String HEADER_JOB_BATCH = "X-Job-Batch";
 
+    String HEADER_TENANT_SOURCE = "X-Tenant-Source";
+    String HEADER_TENANT_ID     = "X-Tenant-Id";
+    String HEADER_TENANT_USER   = "X-Tenant-User";
+
     enum Batch {
         SUCCESS,
         FAIL,

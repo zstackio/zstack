@@ -111,5 +111,21 @@
     <bean id = "RoleUtils" class="org.zstack.identity.rbac.RoleUtils"/>
 
     <bean id="AccountQuotaUpdateChecker" class="org.zstack.identity.AccountQuotaUpdateChecker"/>
+
+    <bean id="ExternalTenantResourceTracker" class="org.zstack.identity.ExternalTenantResourceTracker">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.core.db.HardDeleteEntityExtensionPoint"/>
+            <zstack:extension interface="org.zstack.core.db.SoftDeleteEntityByEOExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.aspect.OwnedByAccountAspectHelper$ResourceOwnershipCreationNotifier"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="ExternalTenantZQLExtension" class="org.zstack.identity.ExternalTenantZQLExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.zql.RestrictByExprExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
 </beans>
 

@@ -78,7 +78,38 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
             }
         }
 
-        msg.setSession(Session.renewSession(msg.getSession().getUuid(), null));
+        // Preserve runtime-only externalTenantContext across session renewal.
+        // renewSession() re-creates SessionInventory from the DB (SessionVO),
+        // which does not store externalTenantContext — it's a transient field
+        // set by RestServer from HTTP headers on each request.
+        //
+        // IMPORTANT: Always set externalTenantContext on the renewed session
+        // (even to null). renewSession() may return a cached SessionInventory
+        // object that was mutated by a previous request sharing the same session
+        // UUID — if we only set when non-null, stale tenant context from the
+        // previous request leaks into this request.
+        ExternalTenantContext tenantCtx = msg.getSession().getExternalTenantContext();
+
+        SessionInventory renewedSession = Session.renewSession(msg.getSession().getUuid(), null);
+
+        // Defensive copy: renewSession() returns a cached, shared SessionInventory
+        // object from Session.sessions map. Multiple concurrent requests using the
+        // same session UUID would share the same object reference, causing a race
+        // condition when setExternalTenantContext() is called — the last writer wins
+        // and other requests see the wrong tenant. By creating a per-request copy,
+        // each API message gets its own SessionInventory instance.
+        SessionInventory sessionCopy = new SessionInventory();
+        sessionCopy.setUuid(renewedSession.getUuid());
+        sessionCopy.setAccountUuid(renewedSession.getAccountUuid());
+        sessionCopy.setUserUuid(renewedSession.getUserUuid());
+        sessionCopy.setUserType(renewedSession.getUserType());
+        sessionCopy.setExpiredDate(renewedSession.getExpiredDate());
+        sessionCopy.setCreateDate(renewedSession.getCreateDate());
+        sessionCopy.setNoSessionEvaluation(renewedSession.isNoSessionEvaluation());
+        sessionCopy.setExternalTenantContext(tenantCtx);
+
+        msg.setSession(sessionCopy);
+
         return msg.getSession();
     }
 
