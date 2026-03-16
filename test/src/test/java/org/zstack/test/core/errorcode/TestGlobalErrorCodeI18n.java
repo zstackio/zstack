@@ -128,8 +128,27 @@ public class TestGlobalErrorCodeI18n {
     @Test
     public void testNoGlobalErrorCode() {
         ErrorCode error = new ErrorCode("SYS.1000", "test error");
-        // no globalErrorCode set
+        // no globalErrorCode set — message should fall back to description
         i18nService.localizeErrorCode(error, "zh_CN");
-        Assert.assertNull("message should remain null", error.getMessage());
+        Assert.assertEquals("message should fall back to description",
+                "test error", error.getMessage());
+    }
+
+    @Test
+    public void testMessageGuaranteeFallbackToDetails() {
+        ErrorCode error = new ErrorCode("SYS.1000", "System Error", "disk full on /dev/sda1");
+        i18nService.localizeErrorCode(error, "en_US");
+        Assert.assertEquals("message should fall back to details",
+                "disk full on /dev/sda1", error.getMessage());
+    }
+
+    @Test
+    public void testMessageNeverNull() {
+        ErrorCode error = new ErrorCode("SYS.1000", "System Error");
+        error.setDetails(null);
+        i18nService.localizeErrorCode(error, "en_US");
+        Assert.assertNotNull("message must never be null after localizeErrorCode",
+                error.getMessage());
+        Assert.assertEquals("System Error", error.getMessage());
     }
 }

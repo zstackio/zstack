@@ -1,7 +1,9 @@
 package org.zstack.test.integration.core
 
+import org.zstack.core.errorcode.GlobalErrorCodeI18nServiceImpl
 import org.zstack.core.errorcode.LocaleUtils
 import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.errorcode.ErrorCodeList
 import org.zstack.testlib.SubCase
 
 class ErrorCodeI18nCase extends SubCase {
@@ -24,8 +26,12 @@ class ErrorCodeI18nCase extends SubCase {
         testLocaleUtilsNoMatch()
         testLocaleUtilsCaseInsensitive()
         testLocaleUtilsMalformedHeader()
+        testLocaleUtilsComplexBrowserHeader()
         testErrorCodeCopyConstructor()
         testErrorCodeCopyConstructorWithNulls()
+        testMessageGuaranteeFallbackToDetails()
+        testMessageGuaranteeFallbackToDescription()
+        testMessageGuaranteeOnCauseChain()
     }
 
     @Override
@@ -78,6 +84,14 @@ class ErrorCodeI18nCase extends SubCase {
         assert LocaleUtils.resolveLocale(";;;,,,", available) == "en_US"
     }
 
+    void testLocaleUtilsComplexBrowserHeader() {
+        def available = ["zh_CN", "en_US"] as Set
+        // real Chrome header: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6
+        assert LocaleUtils.resolveLocale("zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6", available) == "zh_CN"
+        // q=0 means "not acceptable" — should be skipped
+        assert LocaleUtils.resolveLocale("zh-CN;q=0,en-US;q=1.0", available) == "en_US"
+    }
+
     // ---- ErrorCode copy constructor ----
 
     void testErrorCodeCopyConstructor() {
@@ -125,6 +139,44 @@ class ErrorCodeI18nCase extends SubCase {
         assert copy.message == null
         assert copy.globalErrorCode == null
         assert copy.formatArgs == null
+    }
+
+    // ---- message guarantee (localizeErrorCode always populates message) ----
+
+    void testMessageGuaranteeFallbackToDetails() {
+        def i18n = new GlobalErrorCodeI18nServiceImpl()
+        // no i18n JSON loaded, so getLocalizedMessage returns null
+        // localizeErrorCode should fall back to details
+        def error = new ErrorCode("SYS.1000", "System Error", "disk full on /dev/sda1")
+        assert error.getMessage() == null
+
+        i18n.localizeErrorCode(error, "en_US")
+
+        assert error.getMessage() == "disk full on /dev/sda1"
+    }
+
+    void testMessageGuaranteeFallbackToDescription() {
+        def i18n = new GlobalErrorCodeI18nServiceImpl()
+        // no details, should fall back to description
+        def error = new ErrorCode("SYS.1000", "System Error")
+        assert error.getMessage() == null
+
+        i18n.localizeErrorCode(error, "en_US")
+
+        assert error.getMessage() == "System Error"
+    }
+
+    void testMessageGuaranteeOnCauseChain() {
+        def i18n = new GlobalErrorCodeI18nServiceImpl()
+        def root = new ErrorCode("INTERNAL.1001", "Internal Error", "root cause detail")
+        def mid = new ErrorCode("SYS.1000", "System Error")
+        mid.setCause(root)
+
+        i18n.localizeErrorCode(mid, "en_US")
+
+        // both should have message populated
+        assert mid.getMessage() == "System Error"
+        assert root.getMessage() == "root cause detail"
     }
 
 }

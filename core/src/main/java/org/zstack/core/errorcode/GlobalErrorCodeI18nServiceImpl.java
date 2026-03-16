@@ -56,7 +56,7 @@ public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nServic
                     String content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
                     @SuppressWarnings("unchecked")
                     Map<String, String> messages = JSONObjectUtil.toObject(content, LinkedHashMap.class);
-                    localeMessages.put(locale, messages);
+                    localeMessages.put(locale, Collections.unmodifiableMap(messages));
                     logger.info(String.format("loaded %d i18n error messages for locale [%s]",
                             messages.size(), locale));
                 } catch (Exception e) {
@@ -125,26 +125,33 @@ public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nServic
 
     @Override
     public void localizeErrorCode(ErrorCode error, String locale) {
-        if (error == null || locale == null) {
+        if (error == null) {
             return;
         }
 
+        String resolvedLocale = locale != null ? locale : LocaleUtils.DEFAULT_LOCALE;
+
         if (error.getGlobalErrorCode() != null) {
-            String message = getLocalizedMessage(error.getGlobalErrorCode(), locale, error.getFormatArgs());
+            String message = getLocalizedMessage(error.getGlobalErrorCode(), resolvedLocale, error.getFormatArgs());
             if (message != null) {
                 error.setMessage(message);
             }
         }
 
+        // guarantee: message is never null
+        if (error.getMessage() == null) {
+            error.setMessage(error.getDetails() != null ? error.getDetails() : error.getDescription());
+        }
+
         if (error.getCause() != null) {
-            localizeErrorCode(error.getCause(), locale);
+            localizeErrorCode(error.getCause(), resolvedLocale);
         }
 
         if (error instanceof ErrorCodeList) {
             List<ErrorCode> causes = ((ErrorCodeList) error).getCauses();
             if (causes != null) {
                 for (ErrorCode cause : causes) {
-                    localizeErrorCode(cause, locale);
+                    localizeErrorCode(cause, resolvedLocale);
                 }
             }
         }
