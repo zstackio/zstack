@@ -90,7 +90,7 @@ public class VipCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(L3NetworkVO.class.getSimpleName(), IpRangeVO.class.getSimpleName(), AccountVO.class.getSimpleName());
+        return Arrays.asList(L3NetworkVO.class.getSimpleName(), IpRangeVO.class.getSimpleName());
     }
 
     @Override

@@ -642,8 +642,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
     @Override
     public List<String> getEdgeNames() {
         return Arrays.asList(HostVO.class.getSimpleName(), L3NetworkVO.class.getSimpleName(),
-                IpRangeVO.class.getSimpleName(), PrimaryStorageVO.class.getSimpleName(), L2NetworkVO.class.getSimpleName(),
-                AccountVO.class.getSimpleName());
+                IpRangeVO.class.getSimpleName(), PrimaryStorageVO.class.getSimpleName(), L2NetworkVO.class.getSimpleName());
     }
 
     @Override
