@@ -35,9 +35,10 @@ public class APIGetTaskProgressReply extends APIReply {
         detail.setPercent(42);
         detail.setStage("downloading");
         detail.setState("running");
-        detail.setProcessedBytes(440401920L);
-        detail.setTotalBytes(1073741824L);
-        detail.setSpeedBytesPerSecond(10485760L);
+        detail.setProcessed(440401920L);
+        detail.setTotal(1073741824L);
+        detail.setUnit("bytes");
+        detail.setSpeed(10485760L);
         detail.setEstimatedRemainingSeconds(60L);
         inv.setProgressDetail(detail);
 
