@@ -1,4 +1,4 @@
-package org.zstack.kvm.tpm;
+package org.zstack.compute.vm.devices;
 
 import org.zstack.header.core.Completion;
 
@@ -7,6 +7,24 @@ import org.zstack.header.core.Completion;
  * and other tasks in VM TPM cloning scenarios.
  */
 public interface TpmEncryptedResourceKeyBackend {
+
+    /**
+     * Build relationship from {@link org.zstack.header.tpm.entity.TpmVO} to EncryptedResourceKeyRefVO
+     * Non-async call.
+     */
+    void attachKeyProviderToTpm(String tpmUuid, String keyProviderUuid);
+
+    /**
+     * Clean relationship from {@link org.zstack.header.tpm.entity.TpmVO} to EncryptedResourceKeyRefVO
+     * Non-async call.
+     */
+    void detachKeyProviderFromTpm(String tpmUuid);
+
+    /**
+     * maybe null (when crypto module is not installed)
+     */
+    String findKeyProviderUuidByTpm(String tpmUuid);
+
     static class CloneEncryptedResourceKeyContext {
         public String srcTpmUuid;
         public String dstTpmUuid;

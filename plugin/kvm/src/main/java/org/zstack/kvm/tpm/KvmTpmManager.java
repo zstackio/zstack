@@ -1,6 +1,7 @@
 package org.zstack.kvm.tpm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend;
 import org.zstack.compute.vm.devices.VmTpmManager;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
