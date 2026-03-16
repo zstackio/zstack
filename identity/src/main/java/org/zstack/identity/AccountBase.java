@@ -27,6 +27,7 @@ import org.zstack.header.identity.role.RoleVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import static org.zstack.core.Platform.argerr;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -297,9 +298,40 @@ public class AccountBase implements Account {
             handle((APIDeleteAccountMsg) msg);
         } else if (msg instanceof APIGetAccountQuotaUsageMsg) {
             handle((APIGetAccountQuotaUsageMsg) msg);
+        } else if (msg instanceof APIChangeAccountTypeMsg) {
+            handle((APIChangeAccountTypeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIChangeAccountTypeMsg msg) {
+        APIChangeAccountTypeEvent evt = new APIChangeAccountTypeEvent(msg.getId());
+        String accountUuid = msg.getUuid();
+        AccountVO account = dbf.findByUuid(accountUuid, AccountVO.class);
+        if (account == null) {
+            evt.setError(argerr("Cannot find account[uuid:%s]", accountUuid));
+            bus.publish(evt);
+            return;
+        }
+        AccountType originalAccountType = account.getType();
+        AccountType targetAccountType = AccountType.valueOf(msg.getType());
+        List<AccountTypeChangedExtensionPoint> extensions = pluginRgty.getExtensionList(AccountTypeChangedExtensionPoint.class);
+        for (AccountTypeChangedExtensionPoint extension : extensions) {
+            ErrorCode errorCode = extension.preAccountTypeChange(accountUuid, originalAccountType, targetAccountType);
+            if (errorCode != null) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+                return;
+            }
+        }
+        CollectionUtils.forEach(extensions, ext -> ext.beforeAccountTypeChange(accountUuid, originalAccountType, targetAccountType));
+
+        account.setType(targetAccountType);
+        account = dbf.updateAndRefresh(account);
+        CollectionUtils.forEach(extensions, ext -> ext.afterAccountTypeChange(accountUuid, targetAccountType));
+        evt.setInventory(AccountInventory.valueOf(account));
+        bus.publish(evt);
     }
 
     private void handle(APIGetAccountQuotaUsageMsg msg) {

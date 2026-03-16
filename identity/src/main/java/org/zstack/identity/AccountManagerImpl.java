@@ -971,11 +971,46 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             validate((APIGetAccountQuotaUsageMsg) msg);
         } else if (msg instanceof APIUpdateQuotaMsg) {
             validate((APIUpdateQuotaMsg) msg);
+        } else if (msg instanceof APIChangeAccountTypeMsg) {
+            validate((APIChangeAccountTypeMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APIChangeAccountTypeMsg msg) {
+        if (!AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(msg.getSession().getAccountUuid())) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "Only builtin admin account can change account type."
+            ));
+        }
+
+        AccountVO account = dbf.findByUuid(msg.getUuid(), AccountVO.class);
+        if (account == null) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "Cannot find account[uuid:%s]", msg.getUuid()
+            ));
+        }
+
+        if (AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(msg.getUuid())) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "Cannot change type of builtin admin account."
+            ));
+        }
+
+        if (account.getType().toString().equals(msg.getType())) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "Account[uuid:%s] is already %s.", msg.getUuid(), msg.getType()
+            ));
+        }
+
+        if (!AccountType.SystemAdmin.toString().equals(msg.getType())) {
+            throw new ApiMessageInterceptionException(argerr(
+                "Only promoting to SystemAdmin is currently supported, got type[%s].", msg.getType()
+            ));
+        }
     }
 
     private void validate(APIGetAccountQuotaUsageMsg msg) {
