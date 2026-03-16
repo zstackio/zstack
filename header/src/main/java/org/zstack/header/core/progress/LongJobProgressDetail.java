@@ -21,11 +21,11 @@ public class LongJobProgressDetail {
     /** Human-readable reason for current state. */
     private String stateReason;
 
-    /** Bytes already processed. */
-    private Long processedBytes;
+    /** Amount already processed (unit described by the {@code unit} field). */
+    private Long processed;
 
-    /** Total bytes to process. */
-    private Long totalBytes;
+    /** Total amount to process (unit described by the {@code unit} field). */
+    private Long total;
 
     /** Items already processed (e.g. files, chunks). */
     private Long processedItems;
@@ -33,8 +33,11 @@ public class LongJobProgressDetail {
     /** Total items to process. */
     private Long totalItems;
 
-    /** Transfer speed in bytes/s. */
-    private Long speedBytesPerSecond;
+    /** Processing speed per second (unit described by the {@code unit} field). */
+    private Long speed;
+
+    /** Unit for processed/total/speed, e.g. "bytes", "items", "steps". */
+    private String unit;
 
     /** Estimated remaining time in seconds. */
     private Long estimatedRemainingSeconds;
@@ -77,20 +80,20 @@ public class LongJobProgressDetail {
         this.stateReason = stateReason;
     }
 
-    public Long getProcessedBytes() {
-        return processedBytes;
+    public Long getProcessed() {
+        return processed;
     }
 
-    public void setProcessedBytes(Long processedBytes) {
-        this.processedBytes = processedBytes;
+    public void setProcessed(Long processed) {
+        this.processed = processed;
     }
 
-    public Long getTotalBytes() {
-        return totalBytes;
+    public Long getTotal() {
+        return total;
     }
 
-    public void setTotalBytes(Long totalBytes) {
-        this.totalBytes = totalBytes;
+    public void setTotal(Long total) {
+        this.total = total;
     }
 
     public Long getProcessedItems() {
@@ -109,12 +112,20 @@ public class LongJobProgressDetail {
         this.totalItems = totalItems;
     }
 
-    public Long getSpeedBytesPerSecond() {
-        return speedBytesPerSecond;
+    public Long getSpeed() {
+        return speed;
     }
 
-    public void setSpeedBytesPerSecond(Long speedBytesPerSecond) {
-        this.speedBytesPerSecond = speedBytesPerSecond;
+    public void setSpeed(Long speed) {
+        this.speed = speed;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
     }
 
     public Long getEstimatedRemainingSeconds() {

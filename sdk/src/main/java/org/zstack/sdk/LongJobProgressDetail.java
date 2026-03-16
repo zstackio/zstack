@@ -36,20 +36,20 @@ public class LongJobProgressDetail  {
         return this.stateReason;
     }
 
-    public java.lang.Long processedBytes;
-    public void setProcessedBytes(java.lang.Long processedBytes) {
-        this.processedBytes = processedBytes;
+    public java.lang.Long processed;
+    public void setProcessed(java.lang.Long processed) {
+        this.processed = processed;
     }
-    public java.lang.Long getProcessedBytes() {
-        return this.processedBytes;
+    public java.lang.Long getProcessed() {
+        return this.processed;
     }
 
-    public java.lang.Long totalBytes;
-    public void setTotalBytes(java.lang.Long totalBytes) {
-        this.totalBytes = totalBytes;
+    public java.lang.Long total;
+    public void setTotal(java.lang.Long total) {
+        this.total = total;
     }
-    public java.lang.Long getTotalBytes() {
-        return this.totalBytes;
+    public java.lang.Long getTotal() {
+        return this.total;
     }
 
     public java.lang.Long processedItems;
@@ -68,12 +68,20 @@ public class LongJobProgressDetail  {
         return this.totalItems;
     }
 
-    public java.lang.Long speedBytesPerSecond;
-    public void setSpeedBytesPerSecond(java.lang.Long speedBytesPerSecond) {
-        this.speedBytesPerSecond = speedBytesPerSecond;
+    public java.lang.Long speed;
+    public void setSpeed(java.lang.Long speed) {
+        this.speed = speed;
     }
-    public java.lang.Long getSpeedBytesPerSecond() {
-        return this.speedBytesPerSecond;
+    public java.lang.Long getSpeed() {
+        return this.speed;
+    }
+
+    public java.lang.String unit;
+    public void setUnit(java.lang.String unit) {
+        this.unit = unit;
+    }
+    public java.lang.String getUnit() {
+        return this.unit;
     }
 
     public java.lang.Long estimatedRemainingSeconds;
