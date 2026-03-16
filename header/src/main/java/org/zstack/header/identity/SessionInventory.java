@@ -18,6 +18,8 @@ public class SessionInventory implements Serializable {
     private Timestamp createDate;
     @APINoSee
     private boolean noSessionEvaluation;
+    @APINoSee
+    private ExternalTenantContext externalTenantContext;
 
     public static SessionInventory valueOf(SessionVO vo) {
         SessionInventory inv = new SessionInventory();
@@ -91,5 +93,17 @@ public class SessionInventory implements Serializable {
 
     public void setUserType(String userType) {
         this.userType = userType;
+    }
+
+    public ExternalTenantContext getExternalTenantContext() {
+        return externalTenantContext;
+    }
+
+    public void setExternalTenantContext(ExternalTenantContext externalTenantContext) {
+        this.externalTenantContext = externalTenantContext;
+    }
+
+    public boolean hasExternalTenant() {
+        return externalTenantContext != null && externalTenantContext.getTenantId() != null;
     }
 }

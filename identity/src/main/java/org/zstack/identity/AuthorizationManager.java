@@ -78,7 +78,21 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
             }
         }
 
+        // Preserve runtime-only externalTenantContext across session renewal.
+        // renewSession() re-creates SessionInventory from the DB (SessionVO),
+        // which does not store externalTenantContext — it's a transient field
+        // set by RestServer from HTTP headers on each request.
+        //
+        // IMPORTANT: Always set externalTenantContext on the renewed session
+        // (even to null). renewSession() may return a cached SessionInventory
+        // object that was mutated by a previous request sharing the same session
+        // UUID — if we only set when non-null, stale tenant context from the
+        // previous request leaks into this request.
+        ExternalTenantContext tenantCtx = msg.getSession().getExternalTenantContext();
+
         msg.setSession(Session.renewSession(msg.getSession().getUuid(), null));
+
+        msg.getSession().setExternalTenantContext(tenantCtx);
         return msg.getSession();
     }
 

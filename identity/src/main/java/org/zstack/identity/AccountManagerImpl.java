@@ -29,6 +29,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.quota.QuotaDefinition;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
