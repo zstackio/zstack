@@ -84,11 +84,11 @@ public class GetVmSchedulingRulesExecuteStateAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
+        info.httpMethod = "GET";
         info.path = "/get/vmSchedulingRules/conflict/state";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

@@ -87,11 +87,11 @@ public class GetVmsSchedulingStateFromSchedulingRuleAction extends AbstractActio
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
+        info.httpMethod = "GET";
         info.path = "/get/vms/schedulingState/from/SchedulingRule";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
