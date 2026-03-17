@@ -1439,8 +1439,13 @@ public class RestServer implements Component, CloudBusEventListener {
         ApiResponse response = new ApiResponse();
 
         if (!reply.isSuccess()) {
+            String locale = resolveLocale();
+            i18nService.localizeErrorCode(reply.getError(), locale);
             response.setError(reply.getError());
-            sendResponse(HttpStatus.SERVICE_UNAVAILABLE.value(), response, rsp);
+            // use JSONObjectUtil (which disables HTML escaping) to keep the same
+            // serialization behavior as before; CloudBusGson.httpGson escapes '\'' to
+            // '\u0027' which breaks SDK-side string assertions (ZSTAC-71075 etc.)
+            sendResponse(HttpStatus.SERVICE_UNAVAILABLE.value(), JSONObjectUtil.toJsonString(response), rsp);
             return;
         }
 
