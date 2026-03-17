@@ -20,10 +20,8 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
-import org.zstack.header.storage.addon.primary.HeartbeatVolumeTO;
-import org.zstack.header.storage.addon.primary.HeartbeatVolumeTopology;
-import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
+import org.zstack.header.storage.addon.primary.*;
+import org.zstack.storage.addon.primary.ExternalHostIdGetter;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -38,6 +36,8 @@ import org.zstack.iscsi.kvm.KvmIscsiCommands.KvmSetupSelfFencerCmd;
 import org.zstack.kvm.*;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,6 +49,8 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, VmInstanceMigrateExtensionPoint,
         KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint,
         KVMPreAttachIsoExtensionPoint, KvmSetupSelfFencerExtensionPoint {
+    private static final CLogger logger = Utils.getLogger(KvmIscsiNodeServer.class);
+
     @Autowired
     private ExternalPrimaryStorageFactory extPsFactory;
 
@@ -235,13 +237,24 @@ public class KvmIscsiNodeServer implements Component, KVMStartVmExtensionPoint, 
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        ExternalPrimaryStorageHostRefVO ref = Q.New(ExternalPrimaryStorageHostRefVO.class)
+                                .eq(ExternalPrimaryStorageHostRefVO_.hostUuid, param.getHostUuid())
+                                .eq(ExternalPrimaryStorageHostRefVO_.primaryStorageUuid, param.getPrimaryStorage().getUuid())
+                                .find();
+                        if (ref == null || ref.getHostId() == 0) {
+                            logger.warn(String.format("not found hostId for hostUuid[%s] and primaryStorageUuid[%s]",
+                                    param.getHostUuid(), param.getPrimaryStorage().getUuid()));
+                            ref = new ExternalHostIdGetter(999).getOrAllocateHostIdRef(
+                                    param.getHostUuid(), param.getPrimaryStorage().getUuid());
+                        }
+
                         KvmSetupSelfFencerCmd cmd = new KvmSetupSelfFencerCmd();
                         cmd.interval = param.getInterval();
                         cmd.maxAttempts = param.getMaxAttempts();
                         cmd.coveringPaths = heartbeatVol.getCoveringPaths();
                         cmd.heartbeatUrl = heartbeatVol.getInstallPath();
                         cmd.storageCheckerTimeout = param.getStorageCheckerTimeout();
-                        cmd.hostId = heartbeatVol.getHostId();
+                        cmd.hostId = ref.getHostId();
                         cmd.heartbeatRequiredSpace = heartbeatVol.getHeartbeatRequiredSpace();
                         cmd.hostUuid = param.getHostUuid();
                         cmd.strategy = param.getStrategy();
