@@ -94,6 +94,7 @@ public class AttachL2NetworkCase extends SubCase{
     @Override
     public void test() {
         env.create {
+            testCreateL2NetworkWithoutPhysicalInterface()
             testAttachL2NoVlanNetwork()
             testAttachL2ValnNetwork()
             testAttachL2NoVlanNetworkSynchronously()
@@ -101,6 +102,36 @@ public class AttachL2NetworkCase extends SubCase{
             testAddHost()
         }
 
+    }
+
+    void testCreateL2NetworkWithoutPhysicalInterface() {
+        ZoneInventory zone = env.inventoryByName("zone")
+
+        // creating L2 NoVlan network without physicalInterface should fail when vSwitchType is LinuxBridge
+        expect(AssertionError.class) {
+            createL2NoVlanNetwork {
+                name = "test-no-physical-interface"
+                zoneUuid = zone.uuid
+            }
+        }
+
+        // creating L2 NoVlan network with empty physicalInterface should also fail
+        expect(AssertionError.class) {
+            createL2NoVlanNetwork {
+                name = "test-empty-physical-interface"
+                zoneUuid = zone.uuid
+                physicalInterface = ""
+            }
+        }
+
+        // creating L2 Vlan network without physicalInterface should fail when vSwitchType is LinuxBridge
+        expect(AssertionError.class) {
+            createL2VlanNetwork {
+                name = "test-vlan-no-physical-interface"
+                zoneUuid = zone.uuid
+                vlan = 100
+            }
+        }
     }
 
     void testAttachL2NoVlanNetwork(){
