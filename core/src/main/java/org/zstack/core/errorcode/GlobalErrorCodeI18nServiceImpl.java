@@ -140,7 +140,8 @@ public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nServic
 
         // guarantee: message is never null
         if (error.getMessage() == null) {
-            error.setMessage(error.getDetails() != null ? error.getDetails() : error.getDescription());
+            String fallback = error.getDetails() != null ? error.getDetails() : error.getDescription();
+            error.setMessage(fallback != null ? fallback : (error.getCode() != null ? error.getCode() : ""));
         }
 
         if (error.getCause() != null) {

@@ -992,15 +992,18 @@ public class Platform {
         // populate message at creation time with default locale;
         // RestServer will override with client's Accept-Language if different
         try {
-            GlobalErrorCodeI18nService i18nService = getComponentLoader().getComponent(GlobalErrorCodeI18nService.class);
-            if (i18nService != null) {
-                i18nService.localizeErrorCode(result, org.zstack.core.errorcode.LocaleUtils.DEFAULT_LOCALE);
+            ComponentLoader currentLoader = loader;
+            if (currentLoader != null) {
+                GlobalErrorCodeI18nService i18nService = currentLoader.getComponent(GlobalErrorCodeI18nService.class);
+                if (i18nService != null) {
+                    i18nService.localizeErrorCode(result, org.zstack.core.errorcode.LocaleUtils.DEFAULT_LOCALE);
+                }
             }
         } catch (Exception e) {
-            // i18n service not initialized during early startup, use details as fallback
-            if (result.getMessage() == null) {
-                result.setMessage(details);
-            }
+            // i18n service not initialized during early startup
+        }
+        if (result.getMessage() == null) {
+            result.setMessage(details != null ? details : result.getDescription());
         }
 
         return result;
