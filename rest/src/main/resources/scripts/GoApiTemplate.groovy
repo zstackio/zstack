@@ -431,8 +431,12 @@ class GoApiTemplate implements SdkTemplate {
                 
                 // First check HTTP method from annotation, then fall back to actionType-based logic
                 if (httpMethod == "POST") {
-                    // POST operations (Create/Add)
-                    builder.append(generateCreateMethod(apiPath, viewStructName, false, responseStructName, goInventoryFieldName))
+                    // POST operations: Delete-via-POST needs special handling
+                    if (actionType == "Delete") {
+                        builder.append(generateDeleteViaPostMethod(apiPath, responseStructName))
+                    } else {
+                        builder.append(generateCreateMethod(apiPath, viewStructName, false, responseStructName, goInventoryFieldName))
+                    }
                 } else if (httpMethod == "GET") {
                     // GET operations (Get/Query)
                     builder.append(generateGetMethod(apiPath, viewStructName, unwrapForGet, responseStructName, goInventoryFieldName))
@@ -677,13 +681,17 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 """
             }
         } else {
+            // Not unwrapping: use responseStructName when it differs from viewStructName
+            // This handles cases like GetSSOClient where response is {"inventories": [...]}
+            // and the response wrapper (GetSSOClientView) must be used instead of the element type (SSOClientInventoryView)
+            String actualViewStruct = (viewStructName != responseStructName) ? responseStructName : viewStructName
             if (!useSpec) {
                 // Check if there are any placeholders
                 if (placeholders.size() == 0) {
                     // No placeholder: no uuid parameter needed
                     // Use GetWithRespKey with empty responseKey to parse whole response
-                    return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
-\tvar resp view.${viewStructName}
+                    return """func (cli *ZSClient) ${clzName}() (*view.${actualViewStruct}, error) {
+\tvar resp view.${actualViewStruct}
 \tif err := cli.GetWithRespKey("${cleanPath}", "", "", nil, &resp); err != nil {
 \t\treturn nil, err
 \t}
@@ -692,8 +700,8 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 """
                 } else {
                     // Single placeholder: use GetWithRespKey with uuid
-                    return """func (cli *ZSClient) ${clzName}(uuid string) (*view.${viewStructName}, error) {
-\tvar resp view.${viewStructName}
+                    return """func (cli *ZSClient) ${clzName}(uuid string) (*view.${actualViewStruct}, error) {
+\tvar resp view.${actualViewStruct}
 \tif err := cli.GetWithRespKey("${cleanPath}", uuid, "", nil, &resp); err != nil {
 \t\treturn nil, err
 \t}
@@ -709,8 +717,8 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                 String params = placeholders.collect { "${toSafeGoParamName(it)} string" }.join(", ")
                 String spec = buildSpecPath(remainingPlaceholders)
 
-                return """func (cli *ZSClient) ${clzName}(${params}) (*view.${viewStructName}, error) {
-\tvar resp view.${viewStructName}
+                return """func (cli *ZSClient) ${clzName}(${params}) (*view.${actualViewStruct}, error) {
+\tvar resp view.${actualViewStruct}
 \terr := cli.GetWithSpec("${cleanPath}", ${firstParam}, ${spec}, "", nil, &resp)
 \tif err != nil {
 \t\treturn nil, err
@@ -936,6 +944,69 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 """
             }
         }
+    }
+
+    /**
+     * Generate Delete-via-POST method.
+     * Some Delete APIs use POST instead of DELETE (e.g. APIDeleteSSOClientMsg).
+     * These return an Event with {"success": true} and no "inventory" key,
+     * so we must use PostWithRespKey with empty responseKey to avoid "key not found".
+     *
+     * Handles URL placeholders (e.g. /cdp-task/{uuid}/data) by extracting them
+     * as function parameters and building the full path with fmt.Sprintf.
+     */
+    private String generateDeleteViaPostMethod(String apiPath, String responseStructName) {
+        boolean hasParams = hasApiParams()
+        def placeholders = extractUrlPlaceholders(apiPath)
+        String cleanPath = removePlaceholders(apiPath)
+
+        if (placeholders.size() >= 1) {
+            // Path has URL placeholders (e.g. /cdp-task/{uuid}/data)
+            // Build full URL with fmt.Sprintf and add placeholders as function parameters
+            String fullPath = buildFullPath(placeholders)
+            String placeholderParams = placeholders.collect { "${toSafeGoParamName(it)} string" }.join(", ")
+
+            if (!hasParams) {
+                return """func (cli *ZSClient) ${clzName}(${placeholderParams}) (*view.${responseStructName}, error) {
+\tresp := view.${responseStructName}{}
+\tif err := cli.PostWithRespKey(${fullPath}, "", map[string]interface{}{}, &resp); err != nil {
+\t\treturn nil, err
+\t}
+\treturn &resp, nil
+}
+"""
+            }
+
+            return """func (cli *ZSClient) ${clzName}(${placeholderParams}, params param.${clzName}Param) (*view.${responseStructName}, error) {
+\tresp := view.${responseStructName}{}
+\tif err := cli.PostWithRespKey(${fullPath}, "", params, &resp); err != nil {
+\t\treturn nil, err
+\t}
+\treturn &resp, nil
+}
+"""
+        }
+
+        // No placeholders (e.g. /delete/sso/client)
+        if (!hasParams) {
+            return """func (cli *ZSClient) ${clzName}() (*view.${responseStructName}, error) {
+\tresp := view.${responseStructName}{}
+\tif err := cli.PostWithRespKey("${cleanPath}", "", map[string]interface{}{}, &resp); err != nil {
+\t\treturn nil, err
+\t}
+\treturn &resp, nil
+}
+"""
+        }
+
+        return """func (cli *ZSClient) ${clzName}(params param.${clzName}Param) (*view.${responseStructName}, error) {
+\tresp := view.${responseStructName}{}
+\tif err := cli.PostWithRespKey("${cleanPath}", "", params, &resp); err != nil {
+\t\treturn nil, err
+\t}
+\treturn &resp, nil
+}
+"""
     }
 
     private String generateDeleteMethod(String apiPath) {
