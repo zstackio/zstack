@@ -869,7 +869,17 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
             @Override
             public Void call() {
+                logger.debug(String.format("heartbeat thread[%s] for management node[uuid:%s] started",
+                        Thread.currentThread().getName(), node().getUuid()));
                 while (true) {
+                    if (Thread.currentThread().isInterrupted()) {
+                        // the heartbeat task may be cancelled by the heartbeat interval change,
+                        // just return, don't break, otherwise it stops the management node
+                        logger.debug(String.format("heartbeat thread[%s] for management node[uuid:%s] is interrupted, exit heartbeat loop",
+                                Thread.currentThread().getName(), node().getUuid()));
+                        return null;
+                    }
+
                     try {
                         if (!amIalive()) {
                             logger.warn(String.format("cannot find my[uuid:%s] heartbeat in database, quit process", node().getUuid()));
@@ -892,23 +902,19 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     }
 
                     sleepAHeartbeatInterval();
-
-                    if (heartBeatTask.isCancelled()) {
-                        // the heartbeat task may be cancelled by the heartbeat interval change,
-                        // just return, don't break, otherwise it stops the management node
-                        return null;
-                    }
                 }
 
                 stop();
                 return null;
             }
 
-            private void sleepAHeartbeatInterval() {
+            private boolean sleepAHeartbeatInterval() {
                 try {
                     TimeUnit.SECONDS.sleep(ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Long.class));
+                    return true;
                 } catch (InterruptedException ignored) {
                     Thread.currentThread().interrupt();
+                    return false;
                 }
             }
 
@@ -927,6 +933,10 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 int heartbeatFailureTimes = 0;
 
                 while (true) {
+                    if (Thread.currentThread().isInterrupted()) {
+                        return false;
+                    }
+
                     if (heartbeatFailureTimes > PortalGlobalProperty.MAX_HEARTBEAT_FAILURE) {
                         logger.warn(String.format("the heartbeat has failed %s times that is greater than the max allowed value[%s]," +
                                 " quit process", heartbeatFailureTimes, PortalGlobalProperty.MAX_HEARTBEAT_FAILURE), t);

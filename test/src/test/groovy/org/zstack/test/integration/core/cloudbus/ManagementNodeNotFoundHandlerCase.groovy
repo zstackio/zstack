@@ -4,10 +4,9 @@ import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.CloudBusGlobalConfig
 import org.zstack.core.cloudbus.DeadMessageManagerImpl
-import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.AbstractService
-import org.zstack.header.managementnode.ManagementNodeCanonicalEvent
+import org.zstack.header.core.FutureCompletion
 import org.zstack.header.managementnode.ManagementNodeInventory
 import org.zstack.header.managementnode.ManagementNodeState
 import org.zstack.header.managementnode.ManagementNodeVO
@@ -22,6 +21,8 @@ import org.zstack.testlib.SubCase
 import java.util.concurrent.TimeUnit
 
 class ManagementNodeNotFoundHandlerCase extends SubCase {
+    DeadMessageManagerImpl mgr
+
     @Override
     void clean() {
     }
@@ -33,7 +34,7 @@ class ManagementNodeNotFoundHandlerCase extends SubCase {
 
     @Override
     void environment() {
-        DeadMessageManagerImpl mgr = bean(DeadMessageManagerImpl.class)
+        mgr = bean(DeadMessageManagerImpl.class)
         mgr.managementNodeNotFoundHandlers.invalidateAll()
         mgr.managementNodeNotFoundHandlers.cleanUp()
 
@@ -46,7 +47,7 @@ class ManagementNodeNotFoundHandlerCase extends SubCase {
         ManagementNodeVO vo = new ManagementNodeVO(
                 hostName: "127.0.0.10",
                 // mock a future heartbeat
-                heartBeat: new Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1)).toTimestamp(),
+                heartBeat: new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5)).toTimestamp(),
                 uuid: mgmtUuid,
                 port: 8989,
                 state: ManagementNodeState.RUNNING
@@ -74,6 +75,7 @@ class ManagementNodeNotFoundHandlerCase extends SubCase {
         def secondNodeService = new AbstractService() {
             @Override
             void handleMessage(Message msg) {
+                logger.debug("received message[${msg.id}] on service[${getId()}]")
                 message = msg
             }
 
@@ -95,17 +97,18 @@ class ManagementNodeNotFoundHandlerCase extends SubCase {
 
         StartVmInstanceReply reply = new StartVmInstanceReply()
         bus.makeServiceIdByManagementNodeId(reply, secondServiceName, secondNodeUuid)
-        bus.send(reply)
+        FutureCompletion c = bus.send(reply)
 
         assert message == null
 
         bus.registerService(secondNodeService)
 
+        c.await()
+        assert !mgr.managementNodeNotFoundHandlers.asMap().values().message.contains(reply)
         Closure cleanup = mockAManagementNode(secondNodeUuid)
 
-        retryInSecs {
-            assert message == null
-        }
+        sleep(1000)
+        assert message == null
 
         cleanup()
         bus.unregisterService(secondNodeService)
@@ -120,6 +123,7 @@ class ManagementNodeNotFoundHandlerCase extends SubCase {
         def secondNodeService = new AbstractService() {
             @Override
             void handleMessage(Message msg) {
+                logger.debug("received message[${msg.id}] on service[${getId()}]")
                 message = msg
             }
 
@@ -141,17 +145,17 @@ class ManagementNodeNotFoundHandlerCase extends SubCase {
 
         StartVmInstanceMsg msg = new StartVmInstanceMsg()
         bus.makeServiceIdByManagementNodeId(msg, secondServiceName, secondNodeUuid)
-        bus.send(msg)
+        FutureCompletion c = bus.send(msg)
 
         assert message == null
 
         bus.registerService(secondNodeService)
-
+        c.await()
+        assert !mgr.managementNodeNotFoundHandlers.asMap().values().message.contains(msg)
         Closure cleanup = mockAManagementNode(secondNodeUuid)
 
-        retryInSecs {
-            assert message == null
-        }
+        sleep(1000)
+        assert message == null
 
         cleanup()
         bus.unregisterService(secondNodeService)
@@ -166,6 +170,7 @@ class ManagementNodeNotFoundHandlerCase extends SubCase {
         def secondNodeService = new AbstractService() {
             @Override
             void handleMessage(Message msg) {
+                logger.debug("received message[${msg.id}] on service[${getId()}]")
                 message = msg
             }
 
@@ -190,12 +195,15 @@ class ManagementNodeNotFoundHandlerCase extends SubCase {
 
         StartVmInstanceReply reply = new StartVmInstanceReply()
         bus.makeServiceIdByManagementNodeId(reply, secondServiceName, secondNodeUuid)
-        bus.send(reply)
+        FutureCompletion c = bus.send(reply)
 
         assert message == null
 
         bus.registerService(secondNodeService)
 
+        // send is a async operation, so we need to wait a bit
+        c.await()
+        assert mgr.managementNodeNotFoundHandlers.asMap().values().message.contains(reply)
         Closure cleanup = mockAManagementNode(secondNodeUuid)
 
         retryInSecs {
