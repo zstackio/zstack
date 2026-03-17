@@ -295,4 +295,6 @@
             <zstack:extension interface="org.zstack.header.keyprovider.KeyProviderRekeyAssociationExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="DummyTpmEncryptedResourceKeyBackend" class="org.zstack.compute.vm.devices.DummyTpmEncryptedResourceKeyBackend"/>
 </beans>
