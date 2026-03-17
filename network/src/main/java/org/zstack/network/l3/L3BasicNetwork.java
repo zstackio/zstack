@@ -319,6 +319,7 @@ public class L3BasicNetwork implements L3Network {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        SQL.New(UsedIpVO.class).eq(UsedIpVO_.ipRangeUuid, iprvo.getUuid()).delete();
                         dbf.remove(iprvo);
                         IpRangeHelper.updateL3NetworkIpversion(iprvo);
 
@@ -555,6 +556,8 @@ public class L3BasicNetwork implements L3Network {
                     return;
                 }
 
+                ip = overrideUsedIpIfNeeded(msg, ip);
+
                 logger.debug(String.format("Ip allocator strategy[%s] successfully allocates an ip[%s]", strategyType, ip.getIp()));
                 reply.setIpInventory(ip);
                 bus.reply(msg, reply);
@@ -566,6 +569,53 @@ public class L3BasicNetwork implements L3Network {
                 return "allocate-ip-of-l3-" + msg.getL3NetworkUuid();
             }
         });
+    }
+
+    private UsedIpInventory overrideUsedIpIfNeeded(AllocateIpMsg msg, UsedIpInventory ip) {
+        String overrideNetmask = null;
+        String overrideGateway = null;
+        Integer prefixLength = null;
+
+        if (ip.getIpVersion() != null && ip.getIpVersion() == IPv6Constants.IPv4) {
+            if (msg.getNetmask() != null) {
+                overrideNetmask = msg.getNetmask();
+            }
+            if (msg.getGateway() != null) {
+                overrideGateway = msg.getGateway();
+            }
+        } else if (ip.getIpVersion() != null && ip.getIpVersion() == IPv6Constants.IPv6) {
+            if (msg.getIpv6Prefix() != null) {
+                try {
+                    prefixLength = Integer.parseInt(msg.getIpv6Prefix());
+                    overrideNetmask = IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(ip.getIp() + "/" + msg.getIpv6Prefix());
+                } catch (NumberFormatException e) {
+                    logger.warn(String.format("failed to parse prefix length[%s], ignore it and use the default prefix length of the ip range",
+                            msg.getIpv6Prefix()));
+                }
+            }
+            if (msg.getIpv6Gateway() != null) {
+                overrideGateway = msg.getIpv6Gateway().isEmpty() ? "" : IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIpv6Gateway());
+            }
+        }
+
+        if (overrideNetmask != null || overrideGateway != null) {
+            UsedIpVO vo = dbf.findByUuid(ip.getUuid(), UsedIpVO.class);
+            if (vo != null) {
+                if (overrideNetmask != null) {
+                    vo.setNetmask(overrideNetmask);
+                }
+                if (overrideGateway != null) {
+                    vo.setGateway(overrideGateway);
+                }
+                if (prefixLength != null) {
+                    vo.setPrefixLen(prefixLength);
+                }
+                vo = dbf.updateAndRefresh(vo);
+                ip = UsedIpInventory.valueOf(vo);
+            }
+        }
+
+        return ip;
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -767,10 +817,7 @@ public class L3BasicNetwork implements L3Network {
     @Override
     public CheckIpAvailabilityReply checkIpAvailability(CheckIpAvailabilityMsg msg) {
         CheckIpAvailabilityReply reply = new CheckIpAvailabilityReply();
-        int ipversion = IPv6Constants.IPv4;
-        if (IPv6NetworkUtils.isIpv6Address(msg.getIp())) {
-            ipversion = IPv6Constants.IPv6;
-        }
+        final int ipversion = IPv6NetworkUtils.isIpv6Address(msg.getIp()) ? IPv6Constants.IPv6 : IPv6Constants.IPv4;
         SimpleQuery<IpRangeVO> rq = dbf.createQuery(IpRangeVO.class);
         rq.select(IpRangeVO_.startIp, IpRangeVO_.endIp, IpRangeVO_.gateway);
         rq.add(IpRangeVO_.l3NetworkUuid, Op.EQ, self.getUuid());

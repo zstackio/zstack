@@ -43,6 +43,7 @@ import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.identity.Account;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.PatternedSystemTag;
@@ -635,6 +636,14 @@ public class LoadBalancerBase {
             ipVersion = groupVO.getIpVersion();
         }
         List<VmNicVO> nicVOS = f.getAttachableVmNicsForServerGroup(self, groupVO, ipVersion);
+
+        // Filter out NICs whose primary IP is outside L3 CIDR
+        nicVOS = nicVOS.stream().filter(nic -> {
+            String nicIp = nic.getIp();
+            String nicL3 = nic.getL3NetworkUuid();
+            return nicIp == null || IpRangeHelper.isIpInL3NetworkCidr(nicIp, nicL3);
+        }).collect(Collectors.toList());
+
         reply.setInventories(VmNicInventory.valueOf(nicVOS));
         bus.reply(msg, reply);
     }
@@ -1045,6 +1054,13 @@ public class LoadBalancerBase {
                 nics = nics.stream()
                         .filter(nic -> !listenerVO.getAttachedVmNics().contains(nic.getUuid()))
                         .collect(Collectors.toList());
+
+                // Filter out NICs whose primary IP is outside L3 CIDR
+                nics = nics.stream().filter(nic -> {
+                    String nicIp = nic.getIp();
+                    String nicL3 = nic.getL3NetworkUuid();
+                    return nicIp == null || IpRangeHelper.isIpInL3NetworkCidr(nicIp, nicL3);
+                }).collect(Collectors.toList());
 
                 reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, VmNicInventory.valueOf(nics)));
             }

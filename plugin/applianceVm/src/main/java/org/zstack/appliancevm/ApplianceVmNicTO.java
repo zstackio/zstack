@@ -35,9 +35,20 @@ public class ApplianceVmNicTO {
             } else {
                 ip6 = uip.getIp();
                 gateway6 = uip.getGateway();
-                NormalIpRangeVO ipRangeVO = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, uip.getIpRangeUuid()).find();
-                prefixLength = ipRangeVO.getPrefixLen();
-                addressMode = ipRangeVO.getAddressMode();
+                // First try to use prefixLen from UsedIpInventory (for IP outside range)
+                if (uip.getPrefixLen() != null) {
+                    prefixLength = uip.getPrefixLen();
+                    addressMode = IPv6Constants.SLAAC;
+                }
+                if (uip.getIpRangeUuid() != null) {
+                    NormalIpRangeVO ipRangeVO = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, uip.getIpRangeUuid()).find();
+                    if (ipRangeVO != null) {
+                        if (prefixLength == null) {
+                            prefixLength = ipRangeVO.getPrefixLen();
+                        }
+                        addressMode = ipRangeVO.getAddressMode();
+                    }
+                }
             }
         }
         /* for virtual router, gateway ip is in the usedIpVO */

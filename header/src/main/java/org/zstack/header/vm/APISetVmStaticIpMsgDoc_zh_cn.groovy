@@ -114,6 +114,15 @@ doc {
 					optional true
 					since "0.6"
 				}
+				column {
+					name "dnsAddresses"
+					enclosedIn "setVmStaticIp"
+					desc "DNS服务器地址列表"
+					location "body"
+					type "List"
+					optional true
+					since "5.5.6"
+				}
 			}
         }
 

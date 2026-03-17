@@ -2,6 +2,8 @@ package org.zstack.header.vm;
 
 import org.zstack.header.message.NeedReplyMessage;
 
+import java.util.List;
+
 /**
  * Created by LiangHanYu on 2022/6/22 17:12
  */
@@ -14,6 +16,7 @@ public class SetVmStaticIpMsg extends NeedReplyMessage implements VmInstanceMess
     private String gateway;
     private String ipv6Gateway;
     private String ipv6Prefix;
+    private List<String> dnsAddresses;
 
     @Override
     public String getVmInstanceUuid() {
@@ -78,5 +81,13 @@ public class SetVmStaticIpMsg extends NeedReplyMessage implements VmInstanceMess
 
     public void setIpv6Prefix(String ipv6Prefix) {
         this.ipv6Prefix = ipv6Prefix;
+    }
+
+    public List<String> getDnsAddresses() {
+        return dnsAddresses;
+    }
+
+    public void setDnsAddresses(List<String> dnsAddresses) {
+        this.dnsAddresses = dnsAddresses;
     }
 }

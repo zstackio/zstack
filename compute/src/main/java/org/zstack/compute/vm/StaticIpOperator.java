@@ -80,11 +80,8 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
             if(VmSystemTags.STATIC_IP.isMatch(sysTag)) {
                 Map<String, String> token = TagUtils.parse(VmSystemTags.STATIC_IP.getTagFormat(), sysTag);
                 String l3Uuid = token.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
-                NicIpAddressInfo nicIpAddressInfo = ret.get(l3Uuid);
-                if (nicIpAddressInfo == null) {
-                    ret.put(l3Uuid, new NicIpAddressInfo("", "", "",
-                            "", "", ""));
-                }
+                ret.computeIfAbsent(l3Uuid, k -> new NicIpAddressInfo("", "", "",
+                        "", "", ""));
                 String ip = token.get(VmSystemTags.STATIC_IP_TOKEN);
                 ip = IPv6NetworkUtils.ipv6TagValueToAddress(ip);
                 if (NetworkUtils.isIpv4Address(ip)) {
@@ -109,30 +106,42 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                     continue;
                 }
                 ret.get(l3Uuid).ipv4Gateway = token.get(VmSystemTags.IPV4_GATEWAY_TOKEN);
-            }
-            if(VmSystemTags.IPV4_NETMASK.isMatch(sysTag)) {
+            } else if(VmSystemTags.IPV4_NETMASK.isMatch(sysTag)) {
                 Map<String, String> token = TagUtils.parse(VmSystemTags.IPV4_NETMASK.getTagFormat(), sysTag);
                 String l3Uuid = token.get(VmSystemTags.IPV4_NETMASK_L3_UUID_TOKEN);
                 if (ret.get(l3Uuid) == null) {
                     continue;
                 }
                 ret.get(l3Uuid).ipv4Netmask = token.get(VmSystemTags.IPV4_NETMASK_TOKEN);
-            }
-            if(VmSystemTags.IPV6_GATEWAY.isMatch(sysTag)) {
+            } else if(VmSystemTags.IPV6_GATEWAY.isMatch(sysTag)) {
                 Map<String, String> token = TagUtils.parse(VmSystemTags.IPV6_GATEWAY.getTagFormat(), sysTag);
                 String l3Uuid = token.get(VmSystemTags.IPV6_GATEWAY_L3_UUID_TOKEN);
                 if (ret.get(l3Uuid) == null) {
                     continue;
                 }
                 ret.get(l3Uuid).ipv6Gateway = IPv6NetworkUtils.ipv6TagValueToAddress(token.get(VmSystemTags.IPV6_GATEWAY_TOKEN));
-            }
-            if(VmSystemTags.IPV6_PREFIX.isMatch(sysTag)) {
+            } else if(VmSystemTags.IPV6_PREFIX.isMatch(sysTag)) {
                 Map<String, String> token = TagUtils.parse(VmSystemTags.IPV6_PREFIX.getTagFormat(), sysTag);
                 String l3Uuid = token.get(VmSystemTags.IPV6_PREFIX_L3_UUID_TOKEN);
                 if (ret.get(l3Uuid) == null) {
                     continue;
                 }
                 ret.get(l3Uuid).ipv6Prefix = token.get(VmSystemTags.IPV6_PREFIX_TOKEN);
+            } else if(VmSystemTags.STATIC_DNS.isMatch(sysTag)) {
+                Map<String, String> token = TagUtils.parse(VmSystemTags.STATIC_DNS.getTagFormat(), sysTag);
+                String l3Uuid = token.get(VmSystemTags.STATIC_DNS_L3_UUID_TOKEN);
+                if (ret.get(l3Uuid) == null) {
+                    continue;
+                }
+                String dnsStr = token.get(VmSystemTags.STATIC_DNS_TOKEN);
+                if (dnsStr != null && !dnsStr.isEmpty()) {
+                    // Convert back from tag value: replace '--' with '::' for IPv6 addresses
+                    List<String> dnsList = new ArrayList<>();
+                    for (String dns : dnsStr.split(",")) {
+                        dnsList.add(IPv6NetworkUtils.ipv6TagValueToAddress(dns));
+                    }
+                    ret.get(l3Uuid).dnsAddresses = dnsList;
+                }
             }
         }
 
@@ -222,6 +231,49 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
         )));
     }
 
+    public void setStaticDns(String vmUuid, String l3Uuid, List<String> dnsAddresses) {
+        if (dnsAddresses == null || dnsAddresses.isEmpty()) {
+            deleteStaticDnsByVmUuidAndL3Uuid(vmUuid, l3Uuid);
+            return;
+        }
+
+        // Convert IPv6 addresses: replace '::' with '--' to avoid conflict with system tag delimiter
+        List<String> tagSafeDns = new ArrayList<>();
+        for (String dns : dnsAddresses) {
+            tagSafeDns.add(IPv6NetworkUtils.ipv6AddessToTagValue(dns));
+        }
+        String dnsStr = String.join(",", tagSafeDns);
+
+        SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
+        q.select(SystemTagVO_.uuid);
+        q.add(SystemTagVO_.resourceType, Op.EQ, VmInstanceVO.class.getSimpleName());
+        q.add(SystemTagVO_.resourceUuid, Op.EQ, vmUuid);
+        q.add(SystemTagVO_.tag, Op.LIKE, TagUtils.tagPatternToSqlPattern(VmSystemTags.STATIC_DNS.instantiateTag(
+                map(e(VmSystemTags.STATIC_DNS_L3_UUID_TOKEN, l3Uuid))
+        )));
+        String tagUuid = q.findValue();
+
+        if (tagUuid == null) {
+            SystemTagCreator creator = VmSystemTags.STATIC_DNS.newSystemTagCreator(vmUuid);
+            creator.setTagByTokens(map(
+                    e(VmSystemTags.STATIC_DNS_L3_UUID_TOKEN, l3Uuid),
+                    e(VmSystemTags.STATIC_DNS_TOKEN, dnsStr)
+            ));
+            creator.create();
+        } else {
+            VmSystemTags.STATIC_DNS.updateByTagUuid(tagUuid, VmSystemTags.STATIC_DNS.instantiateTag(map(
+                    e(VmSystemTags.STATIC_DNS_L3_UUID_TOKEN, l3Uuid),
+                    e(VmSystemTags.STATIC_DNS_TOKEN, dnsStr)
+            )));
+        }
+    }
+
+    public void deleteStaticDnsByVmUuidAndL3Uuid(String vmUuid, String l3Uuid) {
+        VmSystemTags.STATIC_DNS.delete(vmUuid, TagUtils.tagPatternToSqlPattern(VmSystemTags.STATIC_DNS.instantiateTag(
+                map(e(VmSystemTags.STATIC_DNS_L3_UUID_TOKEN, l3Uuid))
+        )));
+    }
+
     public Map<Integer, String> getNicStaticIpMap(List<String> nicStaticIpList) {
         Map<Integer, String> nicStaticIpMap = new HashMap<>();
         if (nicStaticIpList != null) {
@@ -263,14 +315,14 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
         return false;
     }
 
-    public Boolean checkIpRangeConflict(VmNicVO nicVO){
+    public Boolean isNicIpInL3IpRanges(VmNicVO nicVO){
         if (Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, nicVO.getL3NetworkUuid()).list().isEmpty()) {
-            return Boolean.FALSE;
-        }
-        if (getIpRangeUuid(nicVO.getL3NetworkUuid(), nicVO.getIp()) == null) {
             return Boolean.TRUE;
         }
-        return Boolean.FALSE;
+        if (getIpRangeUuid(nicVO.getL3NetworkUuid(), nicVO.getIp()) == null) {
+            return Boolean.FALSE;
+        }
+        return Boolean.TRUE;
     }
 
     public String getIpRangeUuid(String l3Uuid, String ip) {
@@ -297,10 +349,19 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
         return null;
     }
 
+    public NormalIpRangeVO findMatchedNormalIpRange(String l3Uuid, String ip) {
+        String rangeUuid = getIpRangeUuid(l3Uuid, ip);
+        if (rangeUuid == null) {
+            return null;
+        }
+        return dbf.findByUuid(rangeUuid, NormalIpRangeVO.class);
+    }
+
     public void checkIpAvailability(String l3Uuid, String ip) {
         CheckIpAvailabilityMsg cmsg = new CheckIpAvailabilityMsg();
         cmsg.setIp(ip);
         cmsg.setL3NetworkUuid(l3Uuid);
+        cmsg.setIpRangeCheck(false);
         bus.makeLocalServiceId(cmsg, L3NetworkConstant.SERVICE_ID);
         MessageReply r = bus.call(cmsg);
         if (!r.isSuccess()) {
@@ -334,10 +395,7 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
             }
 
             if (!StringUtils.isEmpty(nicIp.ipv4Address)) {
-                NormalIpRangeVO ipRangeVO = Q.New(NormalIpRangeVO.class)
-                        .eq(NormalIpRangeVO_.l3NetworkUuid, l3Uuid)
-                        .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4)
-                        .limit(1).find();
+                NormalIpRangeVO ipRangeVO = findMatchedNormalIpRange(l3Uuid, nicIp.ipv4Address);
                 if (ipRangeVO == null) {
                     if (StringUtils.isEmpty(nicIp.ipv4Netmask)) {
                         throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10310, "netmask must be set"));
@@ -349,8 +407,10 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                                         e(VmSystemTags.IPV4_NETMASK_TOKEN, ipRangeVO.getNetmask()))
                         ));
                     } else if (!nicIp.ipv4Netmask.equals(ipRangeVO.getNetmask())) {
-                        throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10311, "netmask error, expect: %s, got: %s",
-                                ipRangeVO.getNetmask(), nicIp.ipv4Netmask));
+                        newSystags.add(VmSystemTags.IPV4_NETMASK.instantiateTag(
+                                map(e(VmSystemTags.IPV4_NETMASK_L3_UUID_TOKEN, l3Uuid),
+                                        e(VmSystemTags.IPV4_NETMASK_TOKEN, nicIp.ipv4Netmask))
+                        ));
                     }
 
                     if (StringUtils.isEmpty(nicIp.ipv4Gateway)) {
@@ -359,17 +419,16 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                                         e(VmSystemTags.IPV4_GATEWAY_TOKEN, ipRangeVO.getGateway()))
                         ));
                     } else if (!nicIp.ipv4Gateway.equals(ipRangeVO.getGateway())) {
-                        throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10312, "gateway error, expect: %s, got: %s",
-                                ipRangeVO.getGateway(), nicIp.ipv4Gateway));
+                        newSystags.add(VmSystemTags.IPV4_GATEWAY.instantiateTag(
+                                map(e(VmSystemTags.IPV4_GATEWAY_L3_UUID_TOKEN, l3Uuid),
+                                        e(VmSystemTags.IPV4_GATEWAY_TOKEN, nicIp.ipv4Gateway))
+                        ));
                     }
                 }
             }
 
             if (!StringUtils.isEmpty(nicIp.ipv6Address)) {
-                NormalIpRangeVO ipRangeVO = Q.New(NormalIpRangeVO.class)
-                        .eq(NormalIpRangeVO_.l3NetworkUuid, l3Uuid)
-                        .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6)
-                        .limit(1).find();
+                NormalIpRangeVO ipRangeVO = findMatchedNormalIpRange(l3Uuid, nicIp.ipv6Address);
                 if (ipRangeVO == null) {
                     if (StringUtils.isEmpty(nicIp.ipv6Prefix)) {
                         throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10313, "ipv6 prefix length must be set"));
@@ -381,8 +440,10 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                                         e(VmSystemTags.IPV6_PREFIX_TOKEN, ipRangeVO.getPrefixLen()))
                         ));
                     } else if (!nicIp.ipv6Prefix.equals(ipRangeVO.getPrefixLen().toString())) {
-                        throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10314, "ipv6 prefix length error, expect: %s, got: %s",
-                                ipRangeVO.getPrefixLen(), nicIp.ipv6Prefix));
+                        newSystags.add(VmSystemTags.IPV6_PREFIX.instantiateTag(
+                                map(e(VmSystemTags.IPV6_PREFIX_L3_UUID_TOKEN, l3Uuid),
+                                        e(VmSystemTags.IPV6_PREFIX_TOKEN, nicIp.ipv6Prefix))
+                        ));
                     }
 
                     if (StringUtils.isEmpty(nicIp.ipv6Gateway)) {
@@ -392,8 +453,11 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                                                 IPv6NetworkUtils.ipv6AddressToTagValue(ipRangeVO.getGateway())))
                         ));
                     } else if (!nicIp.ipv6Gateway.equals(ipRangeVO.getGateway())) {
-                        throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10315, "gateway error, expect: %s, got: %s",
-                                ipRangeVO.getGateway(), nicIp.ipv6Gateway));
+                        newSystags.add(VmSystemTags.IPV6_GATEWAY.instantiateTag(
+                                map(e(VmSystemTags.IPV6_GATEWAY_L3_UUID_TOKEN, l3Uuid),
+                                        e(VmSystemTags.IPV6_GATEWAY_TOKEN,
+                                                IPv6NetworkUtils.ipv6AddressToTagValue(nicIp.ipv6Gateway)))
+                        ));
                     }
                 }
             }

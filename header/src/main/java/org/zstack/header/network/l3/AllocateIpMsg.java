@@ -12,6 +12,10 @@ public class AllocateIpMsg extends NeedReplyMessage implements L3NetworkMessage,
     private String ipRangeUuid;
     private String ipRangeType;
     private int ipVersion = IPv6Constants.IPv4;
+    private String netmask;
+    private String gateway;
+    private String ipv6Gateway;
+    private String ipv6Prefix;
 
     public String getRequiredIp() {
         return requiredIp;
@@ -73,5 +77,41 @@ public class AllocateIpMsg extends NeedReplyMessage implements L3NetworkMessage,
 
     public void setIpVersion(int ipVersion) {
         this.ipVersion = ipVersion;
+    }
+
+    @Override
+    public String getNetmask() {
+        return netmask;
+    }
+
+    public void setNetmask(String netmask) {
+        this.netmask = netmask;
+    }
+
+    @Override
+    public String getGateway() {
+        return gateway;
+    }
+
+    public void setGateway(String gateway) {
+        this.gateway = gateway;
+    }
+
+    @Override
+    public String getIpv6Gateway() {
+        return ipv6Gateway;
+    }
+
+    public void setIpv6Gateway(String ipv6Gateway) {
+        this.ipv6Gateway = ipv6Gateway;
+    }
+
+    @Override
+    public String getIpv6Prefix() {
+        return ipv6Prefix;
+    }
+
+    public void setIpv6Prefix(String ipv6Prefix) {
+        this.ipv6Prefix = ipv6Prefix;
     }
 }

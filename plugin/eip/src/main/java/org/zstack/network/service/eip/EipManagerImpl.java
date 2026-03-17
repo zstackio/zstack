@@ -34,6 +34,7 @@ import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
@@ -416,6 +417,15 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         } else {
             ret = l3Mgr.filterVmNicByIpVersion(VmNicInventory.valueOf(nics), IPv6Constants.IPv4);
         }
+
+        // Filter out NICs whose primary IP is outside L3 CIDR
+        final int targetIpVersion = NetworkUtils.isIpv4Address(vip.getIp()) ? IPv6Constants.IPv4 : IPv6Constants.IPv6;
+        ret = ret.stream().filter(nic -> {
+            return nic.getUsedIps().stream()
+                    .filter(ip -> ip.getIpVersion() == targetIpVersion)
+                    .anyMatch(ip -> IpRangeHelper.isIpInL3NetworkCidr(ip.getIp(), ip.getL3NetworkUuid()));
+        }).collect(Collectors.toList());
+
         return ret;
     }
 

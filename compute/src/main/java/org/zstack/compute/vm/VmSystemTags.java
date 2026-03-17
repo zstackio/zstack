@@ -311,6 +311,11 @@ public class VmSystemTags {
         }
     }
 
+    // DNS servers for VM NIC, format: staticDns::{l3NetworkUuid}::{dns1,dns2,dns3}
+    public static String STATIC_DNS_L3_UUID_TOKEN = "l3NetworkUuid";
+    public static String STATIC_DNS_TOKEN = "staticDns";
+    public static PatternedSystemTag STATIC_DNS = new PatternedSystemTag(String.format("staticDns::{%s}::{%s}", STATIC_DNS_L3_UUID_TOKEN, STATIC_DNS_TOKEN), VmInstanceVO.class);
+
     public static PatternedSystemTag VM_STATE_PAUSED_AFTER_MIGRATE = new PatternedSystemTag(("vmPausedAfterMigrate"), VmInstanceVO.class);
 
     public static PatternedSystemTag VM_MEMORY_ACCESS_MODE_SHARED = new PatternedSystemTag(("vmMemoryAccessModeShared"), VmInstanceVO.class);

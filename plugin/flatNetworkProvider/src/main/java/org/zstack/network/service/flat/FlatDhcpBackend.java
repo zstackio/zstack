@@ -1991,7 +1991,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                 List<String> dns = new ArrayList<>();
                 List<String> dns6 = new ArrayList<>();
-                for (String dnsIp : nwServiceMgr.getL3NetworkDns(arg.getL3Network().getUuid())) {
+                for (String dnsIp : nwServiceMgr.getVmNicDns(arg.getVmUuid(), arg.getL3Network().getUuid())) {
                     if (NetworkUtils.isIpv4Address(dnsIp)) {
                         dns.add(dnsIp);
                     } else {

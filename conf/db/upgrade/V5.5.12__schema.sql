@@ -125,3 +125,56 @@ ALTER TABLE `zstack`.`BareMetal2InstanceVO`
 
 -- ZSTAC-68709: Add targetQueueKey for evaluation task queuing per service endpoint
 CALL ADD_COLUMN('ModelEvaluationTaskVO', 'targetQueueKey', 'TEXT', 1, NULL);
+
+-- Add prefixLen column to UsedIpVO for IPv6 addresses outside IP range
+CALL ADD_COLUMN('UsedIpVO', 'prefixLen', 'INT', 1, NULL);
+
+-- Backfill prefixLen from IpRangeVO for existing IPv6 UsedIpVO records
+UPDATE `zstack`.`UsedIpVO` `u`
+INNER JOIN `zstack`.`IpRangeVO` `r` ON `u`.`ipRangeUuid` = `r`.`uuid`
+SET `u`.`prefixLen` = `r`.`prefixLen`
+WHERE `u`.`ipVersion` = 6
+  AND `u`.`ipRangeUuid` IS NOT NULL
+  AND `u`.`prefixLen` IS NULL;
+
+-- Modify ipRangeUuid foreign key constraint to SET NULL on delete (instead of CASCADE)
+DROP PROCEDURE IF EXISTS ModifyUsedIpVOForeignKey;
+DELIMITER $$
+
+CREATE PROCEDURE ModifyUsedIpVOForeignKey()
+BEGIN
+    DECLARE constraint_exists INT;
+
+    -- Check if the constraint exists before dropping it
+    SELECT COUNT(*)
+    INTO constraint_exists
+    FROM `INFORMATION_SCHEMA`.`TABLE_CONSTRAINTS`
+    WHERE `TABLE_SCHEMA` = 'zstack'
+      AND `TABLE_NAME` = 'UsedIpVO'
+      AND `CONSTRAINT_NAME` = 'fkUsedIpVOIpRangeEO'
+      AND `CONSTRAINT_TYPE` = 'FOREIGN KEY';
+
+    IF constraint_exists > 0 THEN
+        ALTER TABLE `zstack`.`UsedIpVO` DROP FOREIGN KEY `fkUsedIpVOIpRangeEO`;
+    END IF;
+
+    -- Re-check before adding so the migration stays idempotent
+    SELECT COUNT(*)
+    INTO constraint_exists
+    FROM `INFORMATION_SCHEMA`.`TABLE_CONSTRAINTS`
+    WHERE `TABLE_SCHEMA` = 'zstack'
+      AND `TABLE_NAME` = 'UsedIpVO'
+      AND `CONSTRAINT_NAME` = 'fkUsedIpVOIpRangeEO'
+      AND `CONSTRAINT_TYPE` = 'FOREIGN KEY';
+
+    IF constraint_exists = 0 THEN
+        ALTER TABLE `zstack`.`UsedIpVO`
+        ADD CONSTRAINT `fkUsedIpVOIpRangeEO`
+        FOREIGN KEY (`ipRangeUuid`) REFERENCES `zstack`.`IpRangeEO`(`uuid`) ON DELETE SET NULL;
+    END IF;
+END $$
+
+DELIMITER ;
+
+CALL ModifyUsedIpVOForeignKey();
+DROP PROCEDURE IF EXISTS ModifyUsedIpVOForeignKey;

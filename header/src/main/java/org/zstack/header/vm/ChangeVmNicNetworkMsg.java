@@ -14,6 +14,7 @@ public class ChangeVmNicNetworkMsg extends NeedReplyMessage implements VmInstanc
     private String vmInstanceUuid;
     private Map<String, List<String>> requiredIpMap;
     private String staticIp;
+    private List<String> dnsAddresses;
 
     public String getVmNicUuid() {
         return vmNicUuid;
@@ -54,5 +55,14 @@ public class ChangeVmNicNetworkMsg extends NeedReplyMessage implements VmInstanc
 
     public void setStaticIp(String staticIp) {
         this.staticIp = staticIp;
+    }
+
+
+    public List<String> getDnsAddresses() {
+        return dnsAddresses;
+    }
+
+    public void setDnsAddresses(List<String> dnsAddresses) {
+        this.dnsAddresses = dnsAddresses;
     }
 }

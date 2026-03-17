@@ -2092,6 +2092,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             vo = dbf.findByUuid(vo.getUuid(), ApplianceVmVO.class);
             for (VmNicVO nic : vo.getVmNics()) {
                 for (UsedIpVO ip : nic.getUsedIps()) {
+                    if (ip.getIpRangeUuid() == null) {
+                        continue;
+                    }
                     if (ip.getIpVersion() == IPv6Constants.IPv4 && ipv4RangeUuids.contains(ip.getIpRangeUuid())) {
                         ReturnIpMsg rmsg = new ReturnIpMsg();
                         rmsg.setL3NetworkUuid(ip.getL3NetworkUuid());
@@ -2139,7 +2142,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         for (ApplianceVmVO vo : applianceVmVOS) {
             for (VmNicVO nic : vo.getVmNics()) {
                 for (UsedIpVO ip : nic.getUsedIps()) {
-                    if (!iprUuids.contains(ip.getIpRangeUuid())) {
+                    if (ip.getIpRangeUuid() == null || !iprUuids.contains(ip.getIpRangeUuid())) {
                         continue;
                     }
 
@@ -2172,7 +2175,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 }
 
                 /* if any ip of the nic is deleted, delete the appliance vm */
-                if (nic.getUsedIps().stream().anyMatch(ip -> iprUuids.contains(ip.getIpRangeUuid()))) {
+                if (nic.getUsedIps().stream().anyMatch(ip -> ip.getIpRangeUuid() != null && iprUuids.contains(ip.getIpRangeUuid()))) {
                     toDeleted.add(vos);
                     break;
                 }

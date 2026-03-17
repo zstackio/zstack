@@ -13,6 +13,7 @@ public interface VmInstanceConstant {
 
     // System limit
     int MAXIMUM_CDROM_NUMBER = 3;
+    int MAXIMUM_NIC_DNS_NUMBER = 3;
 
     String KVM_HYPERVISOR_TYPE = "KVM";
 
