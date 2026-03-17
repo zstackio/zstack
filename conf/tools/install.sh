@@ -39,7 +39,9 @@ ensure_python3_venv() {
     if [ -d "$venv_path" ] && [ -x "$venv_path/bin/python3.11" ]; then
         return 0
     fi
-    rm -rf "$venv_path" && python3.11 -m venv "$venv_path" || exit 1
+    # retry once: rm -rf may fail if zstack_service_exporter is regenerating .pyc concurrently
+    rm -rf "$venv_path" || rm -rf "$venv_path" || exit 1
+    python3.11 -m venv "$venv_path" || exit 1
 }
 
 
