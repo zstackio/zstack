@@ -99,13 +99,22 @@ public class VmTpmExtensions implements VmInstanceCreateExtensionPoint,
             spec.setNvRamSpec(nvRamSpec);
         }
 
-        if (tpmUuid != null && (spec.getDevicesSpec() == null || spec.getDevicesSpec().getTpm() == null)) {
-            VmDevicesSpec devicesSpec = spec.getDevicesSpec() == null ? new VmDevicesSpec() : spec.getDevicesSpec();
-            spec.setDevicesSpec(devicesSpec);
+        if (tpmUuid != null) {
+            VmDevicesSpec devicesSpec = spec.getDevicesSpec();
+            if (devicesSpec == null) {
+                devicesSpec = new VmDevicesSpec();
+                spec.setDevicesSpec(devicesSpec);
+            }
 
-            devicesSpec.setTpm(new TpmSpec());
-            devicesSpec.getTpm().setEnable(true);
-            devicesSpec.getTpm().setKeyProviderUuid(resourceKeyBackend.findKeyProviderUuidByTpm(tpmUuid));
+            TpmSpec tpmSpec = devicesSpec.getTpm();
+            if (tpmSpec == null) {
+                tpmSpec = new TpmSpec();
+                devicesSpec.setTpm(tpmSpec);
+            }
+
+            tpmSpec.setEnable(true);
+            tpmSpec.setTpmUuid(tpmUuid);
+            tpmSpec.setKeyProviderUuid(resourceKeyBackend.findKeyProviderUuidByTpm(tpmUuid));
         }
     }
 }
