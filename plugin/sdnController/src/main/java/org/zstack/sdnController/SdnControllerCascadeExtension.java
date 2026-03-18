@@ -24,7 +24,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -97,7 +97,7 @@ public class SdnControllerCascadeExtension extends AbstractAsyncCascadeExtension
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(AccountVO.class.getSimpleName());
+        return Collections.emptyList();
     }
 
     @Override

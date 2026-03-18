@@ -201,6 +201,16 @@ public class AccountBase implements Account {
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "transfer-account-resource-to-admin";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        transferAllOwnedResourcesToAdmin();
+                        trigger.next();
+                    }
+                });
+
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
@@ -247,6 +257,15 @@ public class AccountBase implements Account {
             }
         });
     }
+
+    private void transferAllOwnedResourcesToAdmin() {
+        SQL.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.accountUuid, self.getUuid())
+                .eq(AccountResourceRefVO_.type, AccessLevel.Own)
+                .set(AccountResourceRefVO_.accountUuid, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
+                .update();
+    }
+
 
     private void deleteRelatedResources() {
         new SQLBatch() {
