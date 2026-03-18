@@ -3163,6 +3163,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setDestHostIp(dstHostMigrateIp);
                         cmd.setSrcHostIp(srcHostMigrateIp);
                         cmd.setDestHostManagementIp(dstHostMnIp);
+                        cmd.setSrcHostManagementIp(srcHostMnIp);
                         cmd.setMigrateFromDestination(migrateFromDestination);
                         cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
                         cmd.setVmUuid(vmUuid);
@@ -3174,6 +3175,8 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setDownTime(s.downTime);
                         cmd.setBandwidth(s.bandwidth);
                         cmd.setNics(nicTos);
+                        cmd.setUseTls(KVMGlobalConfig.LIBVIRT_TLS_ENABLED.value(Boolean.class)
+                                && rcf.getResourceConfigValue(KVMGlobalConfig.RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE, self.getUuid(), Boolean.class));
 
                         if (s.diskMigrationMap != null) {
                             Map<String, VolumeTO> diskMigrationMap = new HashMap<>();
@@ -5814,6 +5817,16 @@ public class KVMHost extends HostBase implements Host {
                         deployArguments.setHostname(String.format("%s.zstack.org", self.getManagementIp().replaceAll("\\.", "-")));
                         deployArguments.setSkipPackages(info.getSkipPackages());
                         deployArguments.setUpdatePackages(String.valueOf(CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT));
+
+                        // Build TLS cert IP list: management IP + extra IPs (migration network etc.)
+                        String managementIp = getSelf().getManagementIp();
+                        String extraIps = HostSystemTags.EXTRA_IPS.getTokenByResourceUuid(
+                                self.getUuid(), HostSystemTags.EXTRA_IPS_TOKEN);
+                        if (extraIps != null && !extraIps.isEmpty()) {
+                            deployArguments.setTlsCertIps(managementIp + "," + extraIps);
+                        } else {
+                            deployArguments.setTlsCertIps(managementIp);
+                        }
 
                         if (deployArguments.isForceRun()) {
                             runner.setForceRun(true);
