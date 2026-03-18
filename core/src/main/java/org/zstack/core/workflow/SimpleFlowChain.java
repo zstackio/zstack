@@ -8,6 +8,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.core.AsyncBackup;
 import org.zstack.header.core.progress.ProgressFlowChainProcessorFactory;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -23,6 +24,7 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static org.zstack.core.Platform.inerr;
@@ -62,6 +64,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private List<List<Runnable>> afterDone = new ArrayList<>();
     private List<List<Runnable>> afterError = new ArrayList<>();
     private List<List<Runnable>> afterFinal = new ArrayList<>();
+    private List<AsyncBackup> asyncBackups = new ArrayList<>();
 
     @Autowired(required = false)
     ProgressFlowChainProcessorFactory progressFactory;
@@ -131,9 +134,18 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         id = "FCID_" + Platform.getUuid().substring(0, 8);
     }
 
+    public SimpleFlowChain(String chainName) {
+        this();
+        this.name = chainName;
+    }
+
     public SimpleFlowChain(Map<String, Object> data) {
         id = "FCID_" + Platform.getUuid().substring(0, 8);
         this.data.putAll(data);
+    }
+
+    public static SimpleFlowChain of(String chainName) {
+        return new SimpleFlowChain(chainName);
     }
 
     @Override
@@ -228,6 +240,12 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         return this;
     }
 
+    public SimpleFlowChain then(String flowName, Consumer<FlowTrigger> consumer) {
+        return then(Flow.of(flowName)
+                .handle(consumer)
+                .build());
+    }
+
     public SimpleFlowChain ctxHandler(FlowContextHandler handler) {
         DebugUtils.Assert(contextHandler==null, "there has been an FlowContextHandler installed");
         contextHandler = handler;
@@ -238,6 +256,21 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         DebugUtils.Assert(errorHandler==null, "there has been an FlowErrorHandler installed");
         errorHandler = handler;
         return this;
+    }
+
+    @SuppressWarnings("rawtypes")
+    public SimpleFlowChain error(Consumer<ErrorCode> handler) {
+        AsyncBackup firstAsyncBackup = this.asyncBackups.isEmpty() ? null : this.asyncBackups.get(0);
+        AsyncBackup[] otherAsyncBackups = this.asyncBackups.isEmpty() ? new AsyncBackup[0] :
+                this.asyncBackups.subList(1, this.asyncBackups.size()).toArray(new AsyncBackup[0]);
+
+        DebugUtils.Assert(handler != null, "handler of errorHandler should not be null");
+        return error(new FlowErrorHandler(firstAsyncBackup, otherAsyncBackups) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                handler.accept(errCode);
+            }
+        });
     }
 
     @Override
@@ -285,11 +318,37 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         return this.data;
     }
 
+    public SimpleFlowChain propagateExceptionTo(AsyncBackup... backups) {
+        DebugUtils.Assert(backups != null, "backups in methods propagateExceptionTo() must be not null");
+        DebugUtils.Assert(Arrays.stream(backups).noneMatch(Objects::isNull),
+                "backups in propagateExceptionTo() should not contain null elements");
+        DebugUtils.Assert(doneHandler == null, "propagateExceptionTo() must be called before SimpleFlowChain.done()");
+        DebugUtils.Assert(errorHandler == null, "propagateExceptionTo() must be called before SimpleFlowChain.error()");
+        DebugUtils.Assert(finallyHandler == null, "propagateExceptionTo() must be called before SimpleFlowChain.Finally()");
+        this.asyncBackups.addAll(Arrays.asList(backups));
+        return this;
+    }
+
     @Override
     public SimpleFlowChain done(FlowDoneHandler handler) {
         DebugUtils.Assert(doneHandler==null, "there has been a FlowDoneHandler installed");
         doneHandler = handler;
         return this;
+    }
+
+    @SuppressWarnings("rawtypes")
+    public SimpleFlowChain done(Runnable runnable) {
+        AsyncBackup firstAsyncBackup = this.asyncBackups.isEmpty() ? null : this.asyncBackups.get(0);
+        AsyncBackup[] otherAsyncBackups = this.asyncBackups.isEmpty() ? new AsyncBackup[0] :
+                this.asyncBackups.subList(1, this.asyncBackups.size()).toArray(new AsyncBackup[0]);
+
+        DebugUtils.Assert(runnable != null, "runnable of doneHandler should not be null");
+        return done(new FlowDoneHandler(firstAsyncBackup, otherAsyncBackups) {
+            @Override
+            public void handle(Map data) {
+                runnable.run();
+            }
+        });
     }
 
     private void collectAfterRunnable(Flow flow) {
