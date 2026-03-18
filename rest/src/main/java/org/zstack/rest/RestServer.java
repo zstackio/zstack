@@ -408,8 +408,11 @@ public class RestServer implements Component, CloudBusEventListener {
 
             writeResponse(response, w, ret.getResult());
         } else {
+            // localize with webhook caller's locale (message already populated by Platform.err)
             String locale = resolveLocale();
-            i18nService.localizeErrorCode(evt.getError(), locale);
+            if (!LocaleUtils.DEFAULT_LOCALE.equals(locale)) {
+                i18nService.localizeErrorCode(evt.getError(), locale);
+            }
             response.setError(evt.getError());
         }
 
@@ -917,14 +920,18 @@ public class RestServer implements Component, CloudBusEventListener {
             writeResponse(response, w, ret.getResult());
             sendResponse(HttpStatus.OK.value(), response, rsp);
         } else {
-            String locale = resolveLocaleFromRequest(req);
-            i18nService.localizeErrorCode(evt.getError(), locale);
             response.setError(evt.getError());
             sendResponse(HttpStatus.SERVICE_UNAVAILABLE.value(), response, rsp);
         }
     }
 
     private void sendResponse(int statusCode, ApiResponse response, HttpServletResponse rsp) throws IOException {
+        // centralized localization: override message with client's preferred locale
+        if (response.getError() != null) {
+            String locale = resolveLocale();
+            i18nService.localizeErrorCode(response.getError(), locale);
+        }
+
         RequestInfo info = requestInfo.get();
         if (requestLogger.isTraceEnabled() && needLog(info)) {
             String body = CloudBusGson.toJson(response);
@@ -1428,11 +1435,6 @@ public class RestServer implements Component, CloudBusEventListener {
         return LocaleUtils.resolveLocale(acceptLanguage, i18nService.getAvailableLocales());
     }
 
-    private String resolveLocaleFromRequest(HttpServletRequest req) {
-        String acceptLanguage = req.getHeader("Accept-Language");
-        return LocaleUtils.resolveLocale(acceptLanguage, i18nService.getAvailableLocales());
-    }
-
     private void sendReplyResponse(MessageReply reply, Api api, HttpServletResponse rsp) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         ApiResponse response = new ApiResponse();
 
@@ -1440,6 +1442,9 @@ public class RestServer implements Component, CloudBusEventListener {
             String locale = resolveLocale();
             i18nService.localizeErrorCode(reply.getError(), locale);
             response.setError(reply.getError());
+            // use JSONObjectUtil (which disables HTML escaping) to keep the same
+            // serialization behavior as before; CloudBusGson.httpGson escapes '\'' to
+            // '\u0027' which breaks SDK-side string assertions (ZSTAC-71075 etc.)
             sendResponse(HttpStatus.SERVICE_UNAVAILABLE.value(), JSONObjectUtil.toJsonString(response), rsp);
             return;
         }

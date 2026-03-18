@@ -30,6 +30,9 @@ public class LocaleUtils {
      * Parse Accept-Language header and return the best matching locale key
      * from the set of available locales.
      *
+     * Uses {@link Locale.LanguageRange#parse(String)} for RFC 7231 compliant
+     * parsing with proper q-value priority sorting.
+     *
      * @param acceptLanguage the Accept-Language header value
      * @param availableLocales the set of locale keys loaded from JSON files
      * @return the best matching locale key, or en_US as fallback
@@ -39,18 +42,27 @@ public class LocaleUtils {
             return DEFAULT_LOCALE;
         }
 
-        List<LocaleEntry> entries = parseAcceptLanguage(acceptLanguage);
-        for (LocaleEntry entry : entries) {
-            if (entry.quality <= 0) {
+        List<Locale.LanguageRange> ranges;
+        try {
+            ranges = Locale.LanguageRange.parse(acceptLanguage);
+        } catch (IllegalArgumentException e) {
+            logger.debug(String.format("failed to parse Accept-Language [%s]: %s", acceptLanguage, e.getMessage()));
+            return DEFAULT_LOCALE;
+        }
+
+        // ranges are already sorted by q-value descending
+        for (Locale.LanguageRange range : ranges) {
+            if (range.getWeight() <= 0) {
                 continue;
             }
 
-            String normalized = normalizeTag(entry.tag);
+            String tag = range.getRange();
+            String normalized = normalizeTag(tag);
             if (availableLocales.contains(normalized)) {
                 return normalized;
             }
 
-            String lang = entry.tag.split("[-_]")[0].toLowerCase();
+            String lang = tag.split("[-_]")[0].toLowerCase();
             String mapped = LANGUAGE_TO_LOCALE.get(lang);
             if (mapped != null && availableLocales.contains(mapped)) {
                 return mapped;
@@ -77,49 +89,5 @@ public class LocaleUtils {
             return lang + "-" + region;
         }
         return tag;
-    }
-
-    private static List<LocaleEntry> parseAcceptLanguage(String header) {
-        List<LocaleEntry> entries = new ArrayList<>();
-        String[] parts = header.split(",");
-        for (String part : parts) {
-            part = part.trim();
-            if (part.isEmpty()) {
-                continue;
-            }
-            String[] tagAndParams = part.split(";");
-            if (tagAndParams.length == 0) {
-                continue;
-            }
-            String tag = tagAndParams[0].trim();
-            if (tag.isEmpty()) {
-                continue;
-            }
-            double quality = 1.0;
-            for (int i = 1; i < tagAndParams.length; i++) {
-                String param = tagAndParams[i].trim();
-                if (param.startsWith("q=")) {
-                    try {
-                        quality = Double.parseDouble(param.substring(2).trim());
-                    } catch (NumberFormatException e) {
-                        logger.debug(String.format("failed to parse quality value [%s]: %s", param, e.getMessage()));
-                        quality = 0;
-                    }
-                }
-            }
-            entries.add(new LocaleEntry(tag, quality));
-        }
-        entries.sort((a, b) -> Double.compare(b.quality, a.quality));
-        return entries;
-    }
-
-    private static class LocaleEntry {
-        final String tag;
-        final double quality;
-
-        LocaleEntry(String tag, double quality) {
-            this.tag = tag;
-            this.quality = quality;
-        }
     }
 }
