@@ -3,6 +3,7 @@ package org.zstack.kvm.efi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.legacy.ComputeLegacyGlobalProperty;
 import org.zstack.compute.vm.VmGlobalConfig;
+import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.compute.vm.devices.VmTpmManager;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -24,12 +25,16 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.tpm.entity.TpmVO;
+import org.zstack.header.tpm.entity.TpmVO_;
 import org.zstack.header.vm.DiskAO;
 import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
 import org.zstack.header.vm.VmInstanceDestroyExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstantiateResourceException;
+import org.zstack.header.vm.VmMigrationType;
+import org.zstack.header.vm.VmPreMigrationExtensionPoint;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.additions.VmHostFileContentFormat;
@@ -72,14 +77,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.zstack.compute.vm.VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.header.vm.VmMigrationType.HostMigration;
 import static org.zstack.kvm.KVMConstant.*;
+import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.findOneOrNull;
 import static org.zstack.utils.CollectionUtils.transform;
 
 public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         PreVmInstantiateResourceExtensionPoint,
-        VmInstanceDestroyExtensionPoint {
+        VmInstanceDestroyExtensionPoint,
+        VmPreMigrationExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmSecureBootExtensions.class);
 
     @Autowired
@@ -158,6 +167,61 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                         .update();
             }
         }
+    }
+
+    @Override
+    public void preVmMigration(VmInstanceInventory vm, VmMigrationType type, String dstHostUuid, Completion completion) {
+        if (HostMigration != type) {
+            completion.success();
+            return;
+        }
+
+        String tpmUuid = Q.New(TpmVO.class)
+                .eq(TpmVO_.vmInstanceUuid, vm.getUuid())
+                .select(TpmVO_.uuid)
+                .findValue();
+        boolean needRegisterNvRam = tpmUuid != null;
+        if (!needRegisterNvRam) {
+            String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.BOOT_MODE_TOKEN);
+            if (isUefiBootMode(bootMode)) {
+                ResourceConfig resourceConfig = resourceConfigFacade.getResourceConfig(ENABLE_UEFI_SECURE_BOOT.getIdentity());
+                needRegisterNvRam = resourceConfig.getResourceConfigValue(vm.getUuid(), Boolean.class) == Boolean.TRUE;
+            }
+
+            if (!needRegisterNvRam) {
+                completion.success();
+                return;
+            }
+        }
+
+        SimpleFlowChain.of("prepare-nvram-before-vm-" + vm.getUuid() + "-migrate")
+                .then("prepare-nvram-folder-on-dest-host", trigger -> {
+                    VmHostFileTO to = new VmHostFileTO();
+                    to.setPath(buildNvramFilePath(vm.getUuid()));
+                    to.setType(VmHostFileType.NvRam.toString());
+                    to.setFileFormat(VmHostFileTO.FORMAT_PREPARE_ONLY);
+
+                    RewriteVmHostFilesContext context = new RewriteVmHostFilesContext();
+                    context.hostUuid = dstHostUuid;
+                    context.hostFiles = list(to);
+
+                    rewriteVmHostFiles(context, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                })
+                // TpmState folder is not needed to prepare
+                .propagateExceptionTo(completion)
+                .done(completion::success)
+                .error(completion::fail)
+                .start();
     }
 
     public static class SyncVmHostFilesFromHostContext {
