@@ -123,6 +123,12 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         } catch (Exception e) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10012, "unsupported vSwitch type[%s]", msg.getvSwitchType()));
         }
+
+        if (L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE.equals(msg.getvSwitchType())
+                && (msg.getPhysicalInterface() == null || msg.getPhysicalInterface().trim().isEmpty())) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10021,
+                    "physicalInterface is required when vSwitchType is [%s]", msg.getvSwitchType()));
+        }
     }
 
     private void validate(APIChangeL2NetworkVlanIdMsg msg) {
