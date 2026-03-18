@@ -1,0 +1,202 @@
+= 三层网络IPAM
+
+ZStack IPAM 负责管理三层网络（L3）的 IP 地址分配与回收，支持以下三种方式：
+
+. 自动分配：ZStack 云平台根据 L3 网络配置的 IP range 自动分配。
+. 手动分配：用户在创建云主机时手动指定 IP 地址。
+. QGA 获取：通过 QEMU Guest Agent（QGA）从云主机内部读取并上报 IP 地址。
+
+== 自动分配
+
+自动分配需要满足以下两个条件：
+
+. L3 网络已配置 IP range。
+. L3 网络已启用 DHCP 服务。
++
+这是历史遗留行为：扁平网络使用 DHCP 服务作为自动分配功能的开关，其他网络类型不受影响。
+
+系统根据用户输入的 L3 网络 UUID 以及可选的 IP 地址，按照分配算法分配一个可用地址。返回的地址信息包括：IP 地址、掩码（或前缀长度）、网关。
+
+=== 自动分配算法
+
+* 随机分配：从可用地址池中随机选择一个 IP 地址。
+* 顺序分配：从可用地址池中按顺序选择一个 IP 地址。
+* 循环分配：从可用地址池中按顺序分配，分配到最后一个 IP 后回到第一个 IP 继续分配。
+
+=== 当前状况
+
+Cloud 5.5 版本中：
+
+. 扁平网络有三种情况：无 IP range、有 IP range 且未启用 DHCP、有 IP range 且已启用 DHCP。
+. 公有网络与 VPC 网络有两种情况：有 IP range 且未启用 DHCP、有 IP range 且已启用 DHCP。
+. 管理网络与流量网络仅有一种情况：有 IP range 且未启用 DHCP。
+
+=== 工作时机
+
+以下操作会触发自动分配：
+
+. 创建云主机（`APICreateVmInstanceMsg`）
+. 云主机添加网卡（`APIAttachL3NetworkToVmMsg`, `APICreateVmNicMsg`）
+. 修改云主机 IP（`APISetVmStaticIpMsg`, `APIChangeVmNicNetworkMsg`）
+. 创建 appliance VM（`APICreateVpcVRouterMsg`, `APICreateSlbInstanceMsg`, `APICreateNfvInstMsg`）
+. 创建 VIP（`APICreateVipMsg`）
+
+== 手动分配
+
+手动指定仅对云主机生效，对 appliance VM 不生效。
+
+在前述场景 1、2、3 中，用户可以指定 IP 地址，分为两种情况：
+
+. 指定 IP 在 IP range 之内：后端仍执行自动分配流程。
+. 指定 IP 不在 IP range 之内：按手动分配流程处理。
+.. 如果指定 IP 不在 L3 CIDR 内，必须指定掩码，网关可选。
+.. 如果指定 IP 在 L3 CIDR 内，可不指定掩码和网关；如指定，必须与 L3 CIDR 一致。
+
+=== 工作时机
+
+. 5.5.12 之前：扁平网络在“无 IP range”或“有 IP range 但未启用 DHCP”两种情况下，允许指定不在 IP range 内的地址。
+. 5.5.12 及以后：任意网络都可通过修改云主机 IP（`APISetVmStaticIpMsg`, `APIChangeVmNicNetworkMsg`）设置不在 IP range 内的地址。
+
+如果指定 IP 在 IP range 之外、但在 L3 CIDR 之内，则掩码和网关可不指定，系统会自动从 L3 CIDR 推导。
+
+如果指定 IP 在 L3 CIDR 之外，用户必须同时提供 IP 与掩码（或前缀长度）；若为默认网卡，还必须指定网关，且网关必须位于 L3 CIDR 内。
+
+== QGA 获取
+
+该方式需要开启全局配置 `VmGlobalConfig.ENABLE_VM_INTERNAL_IP_OVERWRITE`（默认值为 `false`）。
+
+ZStack KVM Agent 会定期通过 QGA 从云主机内部读取 IP 地址。仅在扁平网络且无 IP range 时，会将读取到的 IP 分配给云主机；其他网络类型不受影响。
+
+在其他情况下，如果 QGA 读取到的 IP 与云主机当前 IP 冲突，系统会产生告警。
+
+== 配置虚拟机 Guest OS 的 IP 地址
+
+配置虚拟机 Guest OS 的 IP 地址有三种方式：
+
+. DHCP：通过 DHCP 服务器动态分配 IP 地址。
+. Cloud-init：在云主机创建时通过 Cloud-init 预配置 IP 地址。
+. QGA：通过 QEMU Guest Agent 配置云主机内部网络参数。
+
+=== DHCP
+
+ZStack 会在每个物理机启动分布式 DHCP Server。云主机启动后通过 `dhclient` 获取 IP 地址、DNS 等参数。
+
+=== Cloud-init
+
+ZStack 会在每个物理机启动分布式 Userdata Server。云主机启动后通过 Cloud-init 获取 IP 地址、DNS 等参数。
+
+=== QGA
+
+云主机安装 ZStack Guest Agent 后，系统在检测到 Guest Agent 首次启动时，会通过 QGA 配置云主机的 IP、DNS 等参数。
+
+当用户在 UI 手动修改 IP（`APISetVmStaticIpMsg`, `APIChangeVmNicNetworkMsg`）后，后端 API 会触发一次 Guest OS 网络参数下发流程。
+
+QGA 下发的参数包括：
+
+* IP 地址
+* 掩码或前缀长度
+* 网关
+* DNS 服务器地址
+* MTU
+* Hostname
+
+用户可通过全局配置 `GuestToolsGlobalProperty.GUESTTOOLS_VM_PORT_CONFIGFIELDS` 限制下发字段。
+
+== 网络服务
+
+当网卡地址不在 L3 IP range 内时，可分为“在 L3 CIDR 内”和“在 L3 CIDR 外”两种情况。
+
+=== 在 L3 CIDR 内
+
+该情况与“IP 在 L3 IP range 内”一致，网络服务不受影响。
+
+=== 在 L3 CIDR 外
+
+==== 安全组
+
+安全组规则本身不依赖网卡 IP 是否位于 L3 CIDR 内，但需要用户谨慎设计规则，避免不符合预期。
+
+==== DHCP
+
+如果网卡所属网络无 IP range，则不提供 DHCP 服务。
+
+如果网卡所属网络有 IP range，ZStack 会启动 DHCP 服务，且 `dnsmasq` 配置要求指定一个 IP CIDR。
+
+当网卡 IP 不在 DHCP 服务对应的 IP CIDR 内时，DHCP 模块下发配置时会过滤掉 CIDR 外地址。
+
+==== EIP
+
+对于扁平网络，EIP 功能不受影响，可继续创建。
+
+对于 VPC 网络，若 EIP 绑定的私网地址不在 L3 CIDR 内，VPC 路由器无法路由，网络不通。
+
+为保证一致性，EIP 不能绑定 IP 不在 L3 CIDR 内的网卡；`APIGetEipAttachableVmNicsMsg` 也不会返回该类网卡。
+
+==== Port Forwarding
+
+Port Forwarding 仅用于 VPC 网络。与 EIP 类似，若网卡 IP 不在 L3 CIDR 内，VPC 路由器无法路由，网络不通。
+
+Port Forwarding 不能绑定 IP 不在 L3 CIDR 内的网卡；`APIGetPortForwardingAttachableVmNicsMsg` 也不会返回该类网卡。
+
+==== Load Balancer
+
+与 EIP 类似，若网卡 IP 不在 L3 CIDR 内，网络不通。
+
+`APIAddVmNicToLoadBalancerMsg`、`APIAddBackendServerToServerGroupMsg` 不能绑定 IP 不在 L3 CIDR 内的网卡。
+
+`APIGetCandidateVmNicsForLoadBalancerServerGroupMsg`、`APIGetCandidateVmNicsForLoadBalancerMsg` 也不会返回该类网卡。
+
+== 代码细节
+
+=== APISetVmStaticIpMsg
+
+该 API 通过成员字段配置云主机 IP、掩码、网关等参数，并进行完整性校验：
+
+* 用户输入掩码与网关：以用户输入为准。
+* 用户仅输入网关：若 IP 与网关均在 L3 CIDR 内，使用 L3 CIDR 掩码；否则报错。
+* 用户仅输入掩码：若与 L3 CIDR 掩码一致，使用 L3 CIDR 网关；否则若网卡为默认网卡或唯一网卡，报错；否则使用输入掩码，网关置空。
+* 用户未输入掩码和网关，且 IP 在 L3 CIDR 内：使用 L3 CIDR 的掩码与网关。
+* 用户未输入掩码和网关，且 IP 在 L3 CIDR 外：报错。
+* IPv6 与 IPv4 的逻辑一致。
+* 对 DNS 参数：若 UI 传递 `NULL`，后端保持旧 DNS 参数不变。
+* 对 DNS 参数：若 UI 传递 `""` 或 `[]`，后端删除旧 DNS。
+* 其他情况仅允许传递合法 DNS 列表，后端会先删除旧 DNS，再配置新 DNS。
+
+=== APIChangeVmNicNetworkMsg
+
+该 API 通过 System Tags 配置云主机 IP、掩码、网关等参数，并进行完整性校验：
+
+* 用户输入掩码与网关：以用户输入为准。
+* 用户仅输入网关：若 IP 与网关均在 L3 CIDR 内，使用 L3 CIDR 掩码；否则报错。
+* 用户仅输入掩码：若与 L3 CIDR 掩码一致，使用 L3 CIDR 网关；否则若网卡为默认网卡或唯一网卡，报错；否则使用输入掩码，网关置空。
+* 用户未输入掩码和网关：若网卡存在相同 IP 版本地址，且输入 IP 在旧 IP 的掩码与网关组成 CIDR 内，则复用旧掩码与网关；否则若 IP 在 L3 CIDR 内，使用 L3 CIDR 掩码与网关；否则报错。
+* IPv6 与 IPv4 的逻辑一致。
+* 对 DNS 参数：若 UI 传递 `NULL`，后端保持旧 DNS 参数不变。
+* 对 DNS 参数：若 UI 传递 `""` 或 `[]`，后端删除旧 DNS。
+* 其他情况仅允许传递合法 DNS 列表，后端会先删除旧 DNS，再配置新 DNS。
+
+=== APICreateVmInstanceMsg
+
+逻辑与 `APIChangeVmNicNetworkMsg` 相同。
+
+=== APIGetL3NetworkIpStatisticMsg
+
+不统计位于 IP range 之外的 IP 地址。
+
+=== APIAddIpRangeMsg
+
+系统允许给云主机设置不在 IP range 内的 IP，因此添加 IP range 时可能覆盖已分配 IP。此时会将这些已分配地址归属到新加入的 IP range。
+
+=== APIAddReservedIpRangeMsg
+
+该 API 不仅会添加 `ReservedIpRangeVO`，还会将 `ReservedIpRangeVO` 与 IP range 重叠的地址写入 `UsedIpVO`。
+
+[source,java]
+----
+vo.setUsedFor(IpAllocatedReason.Reserved.toString());
+----
+
+=== APICheckIpAvailabilityMsg
+
+在 5.5.12 之前，该 API 在扁平网络未启用 DHCP 的情况下会跳过 IP range 检查；该行为保持不变。
+
