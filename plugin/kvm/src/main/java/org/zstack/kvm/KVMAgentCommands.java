@@ -3208,6 +3208,8 @@ public class KVMAgentCommands {
     }
 
     public static class VmHostFileTO {
+        public static final String FORMAT_PREPARE_ONLY = "PrepareOnly";
+
         private String path;
         /**
          * maybe "NvRam" or "TpmState" ...
@@ -3216,9 +3218,13 @@ public class KVMAgentCommands {
         private String type;
         /**
          * maybe "Simple" or "TarballGzip"
+         * if prepare only, use {@link #FORMAT_PREPARE_ONLY}
          * @see VmHostFileContentFormat
          */
         private String fileFormat;
+        /**
+         * null if fileFormat is {@link #FORMAT_PREPARE_ONLY}
+         */
         @NoLogging
         private String contentBase64;
         private String error;
