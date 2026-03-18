@@ -38,7 +38,7 @@ public class SetVmDGpuStrategyAction extends AbstractAction {
     public java.lang.String chooser;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean autoDetachOnStop = true;
+    public java.lang.Boolean autoDetachOnStop;
 
     @Param(required = false)
     public java.util.List systemTags;

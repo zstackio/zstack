@@ -12,8 +12,23 @@ public interface ResourceMetricBindingExtensionPoint {
         private String sourceLabel;
         private boolean requireUniqueSourceKey;
 
+        private static <T> T requireValue(String fieldName, T value) {
+            if (value == null) {
+                throw new IllegalStateException(String.format("ResourceMetricBinding.%s must not be null", fieldName));
+            }
+            return value;
+        }
+
+        private static String requireText(String fieldName, String value) {
+            requireValue(fieldName, value);
+            if (value.trim().isEmpty()) {
+                throw new IllegalStateException(String.format("ResourceMetricBinding.%s must not be empty", fieldName));
+            }
+            return value;
+        }
+
         public Class<?> getResourceType() {
-            return resourceType;
+            return requireValue("resourceType", resourceType);
         }
 
         public void setResourceType(Class<?> resourceType) {
@@ -21,7 +36,7 @@ public interface ResourceMetricBindingExtensionPoint {
         }
 
         public String getLogicalMetricName() {
-            return logicalMetricName;
+            return requireText("logicalMetricName", logicalMetricName);
         }
 
         public void setLogicalMetricName(String logicalMetricName) {
@@ -29,7 +44,7 @@ public interface ResourceMetricBindingExtensionPoint {
         }
 
         public String getSourceNamespace() {
-            return sourceNamespace;
+            return requireText("sourceNamespace", sourceNamespace);
         }
 
         public void setSourceNamespace(String sourceNamespace) {
@@ -37,7 +52,7 @@ public interface ResourceMetricBindingExtensionPoint {
         }
 
         public String getSourceMetricName() {
-            return sourceMetricName;
+            return requireText("sourceMetricName", sourceMetricName);
         }
 
         public void setSourceMetricName(String sourceMetricName) {
@@ -45,7 +60,7 @@ public interface ResourceMetricBindingExtensionPoint {
         }
 
         public String getResourceField() {
-            return resourceField;
+            return requireText("resourceField", resourceField);
         }
 
         public void setResourceField(String resourceField) {
@@ -53,7 +68,7 @@ public interface ResourceMetricBindingExtensionPoint {
         }
 
         public String getSourceLabel() {
-            return sourceLabel;
+            return requireText("sourceLabel", sourceLabel);
         }
 
         public void setSourceLabel(String sourceLabel) {
