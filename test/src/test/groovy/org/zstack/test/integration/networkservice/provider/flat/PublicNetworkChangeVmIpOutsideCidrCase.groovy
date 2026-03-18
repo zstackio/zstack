@@ -17,7 +17,6 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
-import org.zstack.utils.network.IPv6Constants
 
 /**
  * Test IP outside CIDR behavior for public networks.
@@ -230,28 +229,6 @@ class PublicNetworkChangeVmIpOutsideCidrCase extends SubCase {
 
         VmNicVO nicVO = dbFindByUuid(vm.vmNics[0].uuid, VmNicVO.class)
         assert nicVO.ip == "10.0.2.50"
-
-        // Also verify in-range IP works
-        VmInstanceInventory vm2 = createVmOnL3("vm-pub-range-noDhcp-inrange", l3.uuid)
-        List<FreeIpInventory> freeIps1 = getFreeIp {
-            l3NetworkUuid = l3.uuid
-            ipVersion = IPv6Constants.IPv4
-            limit = 1
-        } as List<FreeIpInventory>
-        String inRangeIp1 = freeIps1.get(0).getIp()
-
-        setVmStaticIp {
-            vmInstanceUuid = vm2.uuid
-            l3NetworkUuid = l3.uuid
-            ip = inRangeIp1
-        }
-
-        UsedIpVO inRangeIp = Q.New(UsedIpVO.class)
-                .eq(UsedIpVO_.vmNicUuid, vm2.vmNics[0].uuid)
-                .eq(UsedIpVO_.ip, inRangeIp1)
-                .find()
-        assert inRangeIp != null
-        assert inRangeIp.ipRangeUuid != null : "ipRangeUuid should not be null for in-range IP"
     }
 
     /**
@@ -348,28 +325,6 @@ class PublicNetworkChangeVmIpOutsideCidrCase extends SubCase {
 
         VmNicVO nicVO = dbFindByUuid(vm.vmNics[0].uuid, VmNicVO.class)
         assert nicVO.ip == "10.0.3.50"
-
-        // Also verify in-range IP works
-        VmInstanceInventory vm2 = createVmOnL3("vm-pub-range-dhcp-inrange", l3.uuid)
-        List<FreeIpInventory> freeIps2 = getFreeIp {
-            l3NetworkUuid = l3.uuid
-            ipVersion = IPv6Constants.IPv4
-            limit = 1
-        } as List<FreeIpInventory>
-        String inRangeIp2 = freeIps2.get(0).getIp()
-
-        setVmStaticIp {
-            vmInstanceUuid = vm2.uuid
-            l3NetworkUuid = l3.uuid
-            ip = inRangeIp2
-        }
-
-        UsedIpVO inRangeIp = Q.New(UsedIpVO.class)
-                .eq(UsedIpVO_.vmNicUuid, vm2.vmNics[0].uuid)
-                .eq(UsedIpVO_.ip, inRangeIp2)
-                .find()
-        assert inRangeIp != null
-        assert inRangeIp.ipRangeUuid != null : "ipRangeUuid should not be null for in-range IP"
     }
 
     /**

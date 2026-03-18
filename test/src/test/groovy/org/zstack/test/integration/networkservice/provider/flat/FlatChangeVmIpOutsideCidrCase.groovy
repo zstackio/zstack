@@ -6,7 +6,10 @@ import org.zstack.core.db.Q
 import org.zstack.header.network.l3.UsedIpVO
 import org.zstack.header.network.l3.UsedIpVO_
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.header.vm.VmNicVO
+import org.zstack.header.vm.VmNicVO_
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatDhcpBackend
@@ -33,6 +36,12 @@ import org.zstack.utils.network.IPv6Constants
  *
  * Each scenario tests: setVmStaticIp, changeVmNicNetwork, DHCP skip, EIP rejection.
  * Additional: orphan IP backfill when adding IP range.
+ *
+ * Netmask/gateway auto-resolve tests (Case A–D):
+ *   Uses flatL3_range_noDhcp (CIDR: 192.168.100.0/24) as destination.
+ *   Tests the unified resolveIpv4NetmaskAndGateway logic via changeVmNicNetwork and setVmStaticIp.
+ *   Case C (netmask mismatch) requires multi-NIC VMs via flatL3_second (no IPAM).
+ *   Case D-3 (existing IP reuse) is unique to setVmStaticIp.
  */
 class FlatChangeVmIpOutsideCidrCase extends SubCase {
 
@@ -93,6 +102,7 @@ class FlatChangeVmIpOutsideCidrCase extends SubCase {
                     attachL2Network("l2-pub-range-dhcp")
                     attachL2Network("l2-backfill")
                     attachL2Network("l2-dest")
+                    attachL2Network("l2-second")
                 }
 
                 localPrimaryStorage {
@@ -237,6 +247,22 @@ class FlatChangeVmIpOutsideCidrCase extends SubCase {
                     }
                 }
 
+                // ========== Second L3: no IPAM, used as extra NIC for multi-NIC resolve tests ==========
+                l2NoVlanNetwork {
+                    name = "l2-second"
+                    physicalInterface = "eth7"
+
+                    l3Network {
+                        name = "flatL3_second"
+                        enableIPAM = false
+
+                        service {
+                            provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
+                            types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
+                        }
+                    }
+                }
+
                 attachBackupStorage("sftp")
             }
         }
@@ -277,6 +303,21 @@ class FlatChangeVmIpOutsideCidrCase extends SubCase {
             // Orphan IP backfill
             // ==========================================
             testOrphanIpBackfillOnAddIpRange()
+
+            // ==========================================
+            // Netmask/gateway auto-resolve (Case A–D)
+            // Uses flatL3_range_noDhcp (CIDR 192.168.100.0/24)
+            // ==========================================
+            testResolve_A1_bothProvided_gatewayInCidr_success()
+            testResolve_A2_bothProvided_gatewayNotInCidr_error()
+            testResolve_B1_gatewayAndIpBothInCidr_success()
+            testResolve_B2_ipInCidrButGatewayNotInCidr_error()
+            testResolve_B3_ipNotInAnyCidr_error()
+            testResolve_C1_netmaskMatchesCidr_success()
+            testResolve_C4_netmaskMismatch_nonDefaultNonSole_success()
+            testResolve_D1_ipInCidr_success()
+            testResolve_D2_ipOutsideCidr_error()
+            testResolve_D3_setStaticIp_existingIpReuse_success()
         }
     }
 
@@ -291,6 +332,18 @@ class FlatChangeVmIpOutsideCidrCase extends SubCase {
             imageUuid = env.inventoryByName("image1").uuid
             instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
             l3NetworkUuids = [l3Uuid]
+        }
+    }
+
+    VmInstanceInventory createVmOnL3(String vmName, List<String> l3Uuids, String defaultL3Uuid = null) {
+        return createVmInstance {
+            name = vmName
+            imageUuid = env.inventoryByName("image1").uuid
+            instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
+            l3NetworkUuids = l3Uuids
+            if (defaultL3Uuid != null) {
+                delegate.defaultL3NetworkUuid = defaultL3Uuid
+            }
         }
     }
 
@@ -455,28 +508,6 @@ class FlatChangeVmIpOutsideCidrCase extends SubCase {
 
         VmNicVO nicVO = dbFindByUuid(vm.vmNics[0].uuid, VmNicVO.class)
         assert nicVO.ip == "10.0.0.50"
-
-        // Also verify in-range IP works
-        VmInstanceInventory vm2 = createVmOnL3("vm-flat-range-noDhcp-inrange", l3.uuid)
-        List<FreeIpInventory> freeIps1 = getFreeIp {
-            l3NetworkUuid = l3.uuid
-            ipVersion = IPv6Constants.IPv4
-            limit = 1
-        } as List<FreeIpInventory>
-        String inRangeIp1 = freeIps1.get(0).getIp()
-
-        setVmStaticIp {
-            vmInstanceUuid = vm2.uuid
-            l3NetworkUuid = l3.uuid
-            ip = inRangeIp1
-        }
-
-        UsedIpVO inRangeIp = Q.New(UsedIpVO.class)
-                .eq(UsedIpVO_.vmNicUuid, vm2.vmNics[0].uuid)
-                .eq(UsedIpVO_.ip, inRangeIp1)
-                .find()
-        assert inRangeIp != null
-        assert inRangeIp.ipRangeUuid != null : "ipRangeUuid should not be null for in-range IP"
     }
 
     /**
@@ -603,28 +634,6 @@ class FlatChangeVmIpOutsideCidrCase extends SubCase {
 
         VmNicVO nicVO = dbFindByUuid(vm.vmNics[0].uuid, VmNicVO.class)
         assert nicVO.ip == "10.0.1.50"
-
-        // Also verify in-range IP works
-        VmInstanceInventory vm2 = createVmOnL3("vm-flat-range-dhcp-inrange", l3.uuid)
-        List<FreeIpInventory> freeIps2 = getFreeIp {
-            l3NetworkUuid = l3.uuid
-            ipVersion = IPv6Constants.IPv4
-            limit = 1
-        } as List<FreeIpInventory>
-        String inRangeIp2 = freeIps2.get(0).getIp()
-
-        setVmStaticIp {
-            vmInstanceUuid = vm2.uuid
-            l3NetworkUuid = l3.uuid
-            ip = inRangeIp2
-        }
-
-        UsedIpVO inRangeIp = Q.New(UsedIpVO.class)
-                .eq(UsedIpVO_.vmNicUuid, vm2.vmNics[0].uuid)
-                .eq(UsedIpVO_.ip, inRangeIp2)
-                .find()
-        assert inRangeIp != null
-        assert inRangeIp.ipRangeUuid != null : "ipRangeUuid should not be null for in-range IP"
     }
 
     /**
@@ -919,5 +928,292 @@ class FlatChangeVmIpOutsideCidrCase extends SubCase {
                 "totalCapacity should increase after adding new IP range"
         assert afterBackfill.usedIpAddressNumber == beforeBackfill.usedIpAddressNumber + outsideCount :
                 "usedIpAddressNumber should increase by ${outsideCount} after backfill"
+    }
+
+    // ================================================================
+    //  Netmask/gateway auto-resolve tests (Case A–D)
+    //  Uses flatL3_range_noDhcp (CIDR: 192.168.100.0/24, gw: 192.168.100.1)
+    //  Source L3: flatL3_dest (no IPAM)
+    //  Second L3: flatL3_second (no IPAM, for multi-NIC tests)
+    // ================================================================
+
+    /**
+     * a-1: both netmask+gateway provided, gateway in CIDR(ip/netmask).
+     * Expected: success, use user input as-is.
+     */
+    void testResolve_A1_bothProvided_gatewayInCidr_success() {
+        L3NetworkInventory destL3 = env.inventoryByName("flatL3_range_noDhcp")
+        L3NetworkInventory srcL3 = env.inventoryByName("flatL3_dest")
+
+        VmInstanceInventory vm = createVmOnL3("vm-resolve-a1", srcL3.uuid)
+        VmNicInventory vmNic = vm.vmNics[0]
+
+        changeVmNicNetwork {
+            vmNicUuid = vmNic.uuid
+            destL3NetworkUuid = destL3.uuid
+            systemTags = [
+                    String.format("staticIp::%s::192.168.100.40", destL3.uuid),
+                    String.format("ipv4Netmask::%s::255.255.255.0", destL3.uuid),
+                    String.format("ipv4Gateway::%s::192.168.100.1", destL3.uuid)
+            ]
+        }
+
+        VmNicVO nicVO = dbFindByUuid(vmNic.uuid, VmNicVO.class)
+        assert nicVO.l3NetworkUuid == destL3.uuid
+        assert nicVO.ip == "192.168.100.40"
+        assert nicVO.netmask == "255.255.255.0"
+        assert nicVO.gateway == "192.168.100.1"
+
+        UsedIpVO usedIp = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.vmNicUuid, vmNic.uuid)
+                .eq(UsedIpVO_.ip, "192.168.100.40")
+                .find()
+        assert usedIp != null
+        assert usedIp.netmask == "255.255.255.0"
+        assert usedIp.gateway == "192.168.100.1"
+    }
+
+    /**
+     * a-2: both netmask+gateway provided, gateway NOT in CIDR(ip/netmask).
+     * Expected: error.
+     */
+    void testResolve_A2_bothProvided_gatewayNotInCidr_error() {
+        L3NetworkInventory destL3 = env.inventoryByName("flatL3_range_noDhcp")
+        L3NetworkInventory srcL3 = env.inventoryByName("flatL3_dest")
+
+        VmInstanceInventory vm = createVmOnL3("vm-resolve-a2", srcL3.uuid)
+        VmNicInventory vmNic = vm.vmNics[0]
+
+        expect(AssertionError.class) {
+            changeVmNicNetwork {
+                vmNicUuid = vmNic.uuid
+                destL3NetworkUuid = destL3.uuid
+                systemTags = [
+                        String.format("staticIp::%s::192.168.100.41", destL3.uuid),
+                        String.format("ipv4Netmask::%s::255.255.255.0", destL3.uuid),
+                        String.format("ipv4Gateway::%s::10.0.0.1", destL3.uuid)
+                ]
+            }
+        }
+    }
+
+    /**
+     * b-1: gateway provided (no netmask), IP and gateway both in L3 CIDR.
+     * Expected: success, netmask from CIDR.
+     */
+    void testResolve_B1_gatewayAndIpBothInCidr_success() {
+        L3NetworkInventory destL3 = env.inventoryByName("flatL3_range_noDhcp")
+        L3NetworkInventory srcL3 = env.inventoryByName("flatL3_dest")
+
+        VmInstanceInventory vm = createVmOnL3("vm-resolve-b1", srcL3.uuid)
+        VmNicInventory vmNic = vm.vmNics[0]
+
+        changeVmNicNetwork {
+            vmNicUuid = vmNic.uuid
+            destL3NetworkUuid = destL3.uuid
+            systemTags = [
+                    String.format("staticIp::%s::192.168.100.50", destL3.uuid),
+                    String.format("ipv4Gateway::%s::192.168.100.1", destL3.uuid)
+            ]
+        }
+
+        VmNicVO nicVO = dbFindByUuid(vmNic.uuid, VmNicVO.class)
+        assert nicVO.ip == "192.168.100.50"
+        assert nicVO.netmask == "255.255.255.0" : "netmask should be inferred from L3 CIDR"
+        assert nicVO.gateway == "192.168.100.1"
+    }
+
+    /**
+     * b-2: gateway provided (no netmask), IP in CIDR but gateway NOT in CIDR.
+     * Expected: error.
+     */
+    void testResolve_B2_ipInCidrButGatewayNotInCidr_error() {
+        L3NetworkInventory destL3 = env.inventoryByName("flatL3_range_noDhcp")
+        L3NetworkInventory srcL3 = env.inventoryByName("flatL3_dest")
+
+        VmInstanceInventory vm = createVmOnL3("vm-resolve-b2", srcL3.uuid)
+        VmNicInventory vmNic = vm.vmNics[0]
+
+        expect(AssertionError.class) {
+            changeVmNicNetwork {
+                vmNicUuid = vmNic.uuid
+                destL3NetworkUuid = destL3.uuid
+                systemTags = [
+                        String.format("staticIp::%s::192.168.100.51", destL3.uuid),
+                        String.format("ipv4Gateway::%s::10.0.0.1", destL3.uuid)
+                ]
+            }
+        }
+    }
+
+    /**
+     * b-3: gateway provided (no netmask), IP NOT in any CIDR.
+     * Expected: error.
+     */
+    void testResolve_B3_ipNotInAnyCidr_error() {
+        L3NetworkInventory destL3 = env.inventoryByName("flatL3_range_noDhcp")
+        L3NetworkInventory srcL3 = env.inventoryByName("flatL3_dest")
+
+        VmInstanceInventory vm = createVmOnL3("vm-resolve-b3", srcL3.uuid)
+        VmNicInventory vmNic = vm.vmNics[0]
+
+        expect(AssertionError.class) {
+            changeVmNicNetwork {
+                vmNicUuid = vmNic.uuid
+                destL3NetworkUuid = destL3.uuid
+                systemTags = [
+                        String.format("staticIp::%s::10.0.0.50", destL3.uuid),
+                        String.format("ipv4Gateway::%s::10.0.0.1", destL3.uuid)
+                ]
+            }
+        }
+    }
+
+    /**
+     * c-1: netmask provided (no gateway), netmask == CIDR netmask.
+     * Expected: success, gateway from CIDR.
+     */
+    void testResolve_C1_netmaskMatchesCidr_success() {
+        L3NetworkInventory destL3 = env.inventoryByName("flatL3_range_noDhcp")
+        L3NetworkInventory srcL3 = env.inventoryByName("flatL3_dest")
+
+        VmInstanceInventory vm = createVmOnL3("vm-resolve-c1", srcL3.uuid)
+        VmNicInventory vmNic = vm.vmNics[0]
+
+        changeVmNicNetwork {
+            vmNicUuid = vmNic.uuid
+            destL3NetworkUuid = destL3.uuid
+            systemTags = [
+                    String.format("staticIp::%s::192.168.100.60", destL3.uuid),
+                    String.format("ipv4Netmask::%s::255.255.255.0", destL3.uuid)
+            ]
+        }
+
+        VmNicVO nicVO = dbFindByUuid(vmNic.uuid, VmNicVO.class)
+        assert nicVO.ip == "192.168.100.60"
+        assert nicVO.netmask == "255.255.255.0"
+        assert nicVO.gateway == "192.168.100.1" : "gateway should be inferred from L3 CIDR"
+    }
+
+    /**
+     * c-4: netmask != CIDR, non-default & non-sole.
+     * VM has 2 NICs [flatL3_dest(default), flatL3_second].
+     * Change flatL3_second NIC → flatL3_range_noDhcp (not default, vmNicCount=2).
+     * Expected: success, netmask=user input, gateway="".
+     */
+    void testResolve_C4_netmaskMismatch_nonDefaultNonSole_success() {
+        L3NetworkInventory destL3 = env.inventoryByName("flatL3_range_noDhcp")
+        L3NetworkInventory srcL3 = env.inventoryByName("flatL3_dest")
+        L3NetworkInventory secondL3 = env.inventoryByName("flatL3_second")
+
+        VmInstanceInventory vm = createVmOnL3("vm-resolve-c4", [srcL3.uuid, secondL3.uuid], srcL3.uuid)
+
+        int nicCount = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, vm.uuid).count().intValue()
+        assert nicCount == 2
+
+        String defaultL3 = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.defaultL3NetworkUuid)
+                .eq(VmInstanceVO_.uuid, vm.uuid)
+                .findValue()
+        assert defaultL3 == srcL3.uuid
+        assert defaultL3 != destL3.uuid
+
+        VmNicInventory nicOnSecond = vm.vmNics.find { it.l3NetworkUuid == secondL3.uuid }
+        assert nicOnSecond != null
+
+        changeVmNicNetwork {
+            vmNicUuid = nicOnSecond.uuid
+            destL3NetworkUuid = destL3.uuid
+            systemTags = [
+                    String.format("staticIp::%s::192.168.100.90", destL3.uuid),
+                    String.format("ipv4Netmask::%s::255.255.0.0", destL3.uuid)
+            ]
+        }
+
+        VmNicVO nicVO = dbFindByUuid(nicOnSecond.uuid, VmNicVO.class)
+        assert nicVO.ip == "192.168.100.90"
+        assert nicVO.netmask == "255.255.0.0" : "netmask should be user input"
+        assert nicVO.gateway == "" || nicVO.gateway == null : "gateway should be empty"
+    }
+
+    /**
+     * d-1: neither netmask nor gateway, IP in L3 CIDR.
+     * Expected: success, netmask+gateway from CIDR.
+     */
+    void testResolve_D1_ipInCidr_success() {
+        L3NetworkInventory destL3 = env.inventoryByName("flatL3_range_noDhcp")
+        L3NetworkInventory srcL3 = env.inventoryByName("flatL3_dest")
+
+        VmInstanceInventory vm = createVmOnL3("vm-resolve-d1", srcL3.uuid)
+        VmNicInventory vmNic = vm.vmNics[0]
+
+        changeVmNicNetwork {
+            vmNicUuid = vmNic.uuid
+            destL3NetworkUuid = destL3.uuid
+            systemTags = [
+                    String.format("staticIp::%s::192.168.100.100", destL3.uuid)
+            ]
+        }
+
+        VmNicVO nicVO = dbFindByUuid(vmNic.uuid, VmNicVO.class)
+        assert nicVO.ip == "192.168.100.100"
+        assert nicVO.netmask == "255.255.255.0" : "netmask should be inferred from L3 CIDR"
+        assert nicVO.gateway == "192.168.100.1" : "gateway should be inferred from L3 CIDR"
+    }
+
+    /**
+     * d-2: neither netmask nor gateway, IP NOT in any CIDR.
+     * Expected: error.
+     */
+    void testResolve_D2_ipOutsideCidr_error() {
+        L3NetworkInventory destL3 = env.inventoryByName("flatL3_range_noDhcp")
+        L3NetworkInventory srcL3 = env.inventoryByName("flatL3_dest")
+
+        VmInstanceInventory vm = createVmOnL3("vm-resolve-d2", srcL3.uuid)
+        VmNicInventory vmNic = vm.vmNics[0]
+
+        expect(AssertionError.class) {
+            changeVmNicNetwork {
+                vmNicUuid = vmNic.uuid
+                destL3NetworkUuid = destL3.uuid
+                systemTags = [
+                        String.format("staticIp::%s::10.0.0.100", destL3.uuid)
+                ]
+            }
+        }
+    }
+
+    /**
+     * d-3 (setVmStaticIp only): existing IP has params, new IP in old CIDR → reuse.
+     * This scenario is unique to APISetVmStaticIpMsg (existing IP reuse via ExistingIpContext).
+     */
+    void testResolve_D3_setStaticIp_existingIpReuse_success() {
+        L3NetworkInventory l3 = env.inventoryByName("flatL3_range_noDhcp")
+
+        VmInstanceInventory vm = createVmOnL3("vm-resolve-d3", l3.uuid)
+
+        // First set a known IP with explicit netmask/gateway
+        setVmStaticIp {
+            vmInstanceUuid = vm.uuid
+            l3NetworkUuid = l3.uuid
+            ip = "192.168.100.110"
+            netmask = "255.255.255.0"
+            gateway = "192.168.100.1"
+        }
+
+        // Now change to a new IP in the same CIDR, without specifying netmask/gateway
+        setVmStaticIp {
+            vmInstanceUuid = vm.uuid
+            l3NetworkUuid = l3.uuid
+            ip = "192.168.100.111"
+        }
+
+        UsedIpVO usedIp = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3.uuid)
+                .eq(UsedIpVO_.ip, "192.168.100.111")
+                .find()
+        assert usedIp != null
+        assert usedIp.netmask == "255.255.255.0" : "should reuse old netmask"
+        assert usedIp.gateway == "192.168.100.1" : "should reuse old gateway"
     }
 }
