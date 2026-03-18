@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`KmsVO` (
     `kmipVersion` varchar(32) DEFAULT NULL,
     `username` varchar(255) DEFAULT NULL,
     `password` varchar(255) DEFAULT NULL,
-    `trusted` boolean NOT NULL DEFAULT FALSE,
+    `trustState` varchar(32) NOT NULL DEFAULT 'MUTUAL_UNTRUSTED',
     `activeIdentityUuid` varchar(32) DEFAULT NULL,
     `serverCertExpiredDate` timestamp NULL DEFAULT NULL,
     `serverCertPem` text DEFAULT NULL,
