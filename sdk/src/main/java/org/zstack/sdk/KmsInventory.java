@@ -37,12 +37,12 @@ public class KmsInventory extends org.zstack.sdk.KeyProviderInventory {
         return this.username;
     }
 
-    public boolean trusted;
-    public void setTrusted(boolean trusted) {
-        this.trusted = trusted;
+    public java.lang.String trustState;
+    public void setTrustState(java.lang.String trustState) {
+        this.trustState = trustState;
     }
-    public boolean getTrusted() {
-        return this.trusted;
+    public java.lang.String getTrustState() {
+        return this.trustState;
     }
 
     public java.lang.String activeIdentityUuid;
