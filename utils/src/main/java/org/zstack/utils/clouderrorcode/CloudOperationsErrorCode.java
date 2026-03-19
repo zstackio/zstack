@@ -364,6 +364,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_ZWATCH_10004 = "ORG_ZSTACK_ZWATCH_10004";
 
+    public static final String ORG_ZSTACK_ZWATCH_10005 = "ORG_ZSTACK_ZWATCH_10005";
+
     public static final String ORG_ZSTACK_SSO_SAML2_SERVICE_10000 = "ORG_ZSTACK_SSO_SAML2_SERVICE_10000";
 
     public static final String ORG_ZSTACK_SSO_SAML2_SERVICE_10001 = "ORG_ZSTACK_SSO_SAML2_SERVICE_10001";
@@ -14816,6 +14818,12 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_AI_10134 = "ORG_ZSTACK_AI_10134";
 
+    public static final String ORG_ZSTACK_AI_10135 = "ORG_ZSTACK_AI_10135";
+
+    public static final String ORG_ZSTACK_AI_10136 = "ORG_ZSTACK_AI_10136";
+
+    public static final String ORG_ZSTACK_AI_10137 = "ORG_ZSTACK_AI_10137";
+
     public static final String ORG_ZSTACK_CORE_CLOUDBUS_10000 = "ORG_ZSTACK_CORE_CLOUDBUS_10000";
 
     public static final String ORG_ZSTACK_CORE_CLOUDBUS_10001 = "ORG_ZSTACK_CORE_CLOUDBUS_10001";
@@ -15885,4 +15893,22 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_CRYPTO_SECURITYMACHINE_THIRDPARTY_PLUGIN_10005 = "ORG_ZSTACK_CRYPTO_SECURITYMACHINE_THIRDPARTY_PLUGIN_10005";
 
     public static final String ORG_ZSTACK_CRYPTO_SECURITYMACHINE_THIRDPARTY_PLUGIN_10006 = "ORG_ZSTACK_CRYPTO_SECURITYMACHINE_THIRDPARTY_PLUGIN_10006";
+
+    public static final String ORG_ZSTACK_DGPU_10001 = "ORG_ZSTACK_DGPU_10001";
+
+    public static final String ORG_ZSTACK_DGPU_10002 = "ORG_ZSTACK_DGPU_10002";
+
+    public static final String ORG_ZSTACK_DGPU_10003 = "ORG_ZSTACK_DGPU_10003";
+
+    public static final String ORG_ZSTACK_DGPU_10004 = "ORG_ZSTACK_DGPU_10004";
+
+    public static final String ORG_ZSTACK_DGPU_10005 = "ORG_ZSTACK_DGPU_10005";
+
+    public static final String ORG_ZSTACK_DGPU_10006 = "ORG_ZSTACK_DGPU_10006";
+
+    public static final String ORG_ZSTACK_DGPU_10007 = "ORG_ZSTACK_DGPU_10007";
+
+    public static final String ORG_ZSTACK_DGPU_10008 = "ORG_ZSTACK_DGPU_10008";
+
+    public static final String ORG_ZSTACK_DGPU_10009 = "ORG_ZSTACK_DGPU_10009";
 }
