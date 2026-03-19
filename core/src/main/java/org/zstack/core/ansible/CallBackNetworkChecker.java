@@ -70,6 +70,8 @@ public class CallBackNetworkChecker implements AnsibleChecker {
             return useNcatAndNmapToTestConnection(ssh);
         } catch (SshException e) {
             return operr(e.getMessage());
+        } finally {
+            ssh.close();
         }
     }
 
