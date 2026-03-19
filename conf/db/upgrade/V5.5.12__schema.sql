@@ -186,3 +186,6 @@ INSERT IGNORE INTO `ActiveAlarmTemplateVO` (`uuid`,`alarmName`,`comparisonOperat
 
 -- ZSTAC-74908: Add resourceType to TagPatternVO to scope AI model tags away from VM pages
 CALL ADD_COLUMN('TagPatternVO', 'resourceType', 'VARCHAR(128)', 1, NULL);
+
+-- ZSTAC-70478: Add deleted field to ModelServiceVO for soft delete support
+CALL ADD_COLUMN('ModelServiceVO', 'deleted', 'TINYINT(1)', 0, 0);
