@@ -72,6 +72,8 @@ public class CallBackNetworkChecker implements AnsibleChecker {
             return useNcatAndNmapToTestConnection(ssh);
         } catch (SshException e) {
             return operr(ORG_ZSTACK_CORE_ANSIBLE_10004, e.getMessage());
+        } finally {
+            ssh.close();
         }
     }
 
