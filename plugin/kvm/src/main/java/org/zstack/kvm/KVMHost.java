@@ -5573,10 +5573,10 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        Ssh ssh = new Ssh().setUsername(getSelf().getUsername())
+                                .setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
+                                .setHostname(getSelf().getManagementIp());
                         try {
-                            Ssh ssh = new Ssh().setUsername(getSelf().getUsername())
-                                    .setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
-                                    .setHostname(getSelf().getManagementIp());
                             ssh.command(String.format("grep -i ^uuid %s | sed 's/uuid://g'", hostTakeOverFlagPath));
                             SshResult hostRet = ssh.run();
                             if (hostRet.isSshFailure() || hostRet.getReturnCode() != 0) {
@@ -5625,6 +5625,8 @@ public class KVMHost extends HostBase implements Host {
                             logger.warn(e.getMessage(), e);
                             trigger.next();
                             return;
+                        } finally {
+                            ssh.close();
                         }
                     }
                 });
