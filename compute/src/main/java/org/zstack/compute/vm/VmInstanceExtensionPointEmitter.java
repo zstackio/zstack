@@ -6,6 +6,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
+import org.zstack.header.allocator.AllocateHostMsg;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -51,6 +52,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
     private List<CleanUpAfterVmChangeImageExtensionPoint> cleanUpAfterVmChangeImageExtensionPoints;
     private List<VmNicChangeStateExtensionPoint> vmNicChangeStateExtensionPoints;
     private List<SshKeyPairAssociateExtensionPoint> sshKeyPairAssociateExtensionPoints;
+    private List<BeforeVmAllocateHostExtensionPoint> beforeVmAllocateHostExtensions;
 
     public List<ErrorCode> handleSystemTag(String vmUuid, List<String> tags){
         List<ErrorCode> errorCodes = new ArrayList<>();
@@ -609,6 +611,10 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
 
+    public void beforeVmAllocateHost(AllocateHostMsg msg, VmInstanceSpec spec) {
+        CollectionUtils.safeForEach(beforeVmAllocateHostExtensions, ext -> ext.beforeVmAllocateHost(msg, spec));
+    }
+
     private void populateExtensions() {
         VmInstanceBeforeStartExtensions = pluginRgty.getExtensionList(VmInstanceBeforeStartExtensionPoint.class);
         VmInstanceResumeExtensionPoints = pluginRgty.getExtensionList(VmInstanceResumeExtensionPoint.class);
@@ -626,6 +632,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
         cleanUpAfterVmChangeImageExtensionPoints = pluginRgty.getExtensionList(CleanUpAfterVmChangeImageExtensionPoint.class);
         vmNicChangeStateExtensionPoints = pluginRgty.getExtensionList(VmNicChangeStateExtensionPoint.class);
         sshKeyPairAssociateExtensionPoints = pluginRgty.getExtensionList(SshKeyPairAssociateExtensionPoint.class);
+        beforeVmAllocateHostExtensions = pluginRgty.getExtensionList(BeforeVmAllocateHostExtensionPoint.class);
     }
 
     @Override

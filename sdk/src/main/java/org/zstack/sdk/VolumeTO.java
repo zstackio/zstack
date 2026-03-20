@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.CacheTO;
 
 public class VolumeTO extends org.zstack.sdk.BaseVirtualDeviceTO {
 
@@ -10,6 +10,14 @@ public class VolumeTO extends org.zstack.sdk.BaseVirtualDeviceTO {
     }
     public java.lang.String getInstallPath() {
         return this.installPath;
+    }
+
+    public java.lang.Long size;
+    public void setSize(java.lang.Long size) {
+        this.size = size;
+    }
+    public java.lang.Long getSize() {
+        return this.size;
     }
 
     public int deviceId;
@@ -154,6 +162,14 @@ public class VolumeTO extends org.zstack.sdk.BaseVirtualDeviceTO {
     }
     public int getControllerIndex() {
         return this.controllerIndex;
+    }
+
+    public CacheTO cache;
+    public void setCache(CacheTO cache) {
+        this.cache = cache;
+    }
+    public CacheTO getCache() {
+        return this.cache;
     }
 
 }

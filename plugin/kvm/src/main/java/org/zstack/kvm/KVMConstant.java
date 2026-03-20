@@ -89,6 +89,7 @@ public interface KVMConstant {
     String GET_VIRTUALIZER_INFO_PATH = "/vm/getvirtualizerinfo";
     String KVM_SCAN_VM_PORT_STATUS = "/host/vm/scanport";
     String GET_DEV_CAPACITY = "/host/dev/capacity";
+    String KVM_GET_BLOCK_DEVICES_PATH = "/host/blockdevices";
     String KVM_CONFIG_PRIMARY_VM_PATH = "/primary/vm/config";
     String KVM_CONFIG_SECONDARY_VM_PATH = "/secondary/vm/config";
     String KVM_START_COLO_SYNC_PATH = "/start/colo/sync";

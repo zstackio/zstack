@@ -62,6 +62,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.host.APIGetBlockDevicesMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.host.APICreateHostNetworkServiceTypeMsg</name>
     </message>
 

@@ -31,6 +31,7 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private long oldMemoryCapacity = 0;
     private AllocationScene allocationScene;
     private String architecture;
+    private LinkedHashMap opaque;
 
     public List<Set<String>> getOptionalPrimaryStorageUuids() {
         return optionalPrimaryStorageUuids;
@@ -211,4 +212,9 @@ public class AllocateHostMsg extends NeedReplyMessage {
     public void setArchitecture(String architecture) {
         this.architecture = architecture;
     }
+
+    public LinkedHashMap getOpaque() { return opaque; }
+
+    public void setOpaque(LinkedHashMap opaque) { this.opaque = opaque; }
+
 }

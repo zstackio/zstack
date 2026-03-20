@@ -636,10 +636,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         }
 
         for (CreateDataVolumeExtensionPoint ext : exts) {
-            ext.afterCreateVolume(vo);
+            ext.afterCreateVolume(vo, msg);
         }
         vo = dbf.reload(vo);
-
         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vo));
 
         VolumeInventory inv = VolumeInventory.valueOf(vo);
@@ -1067,7 +1066,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         }
 
         for (CreateDataVolumeExtensionPoint ext : exts) {
-            ext.afterCreateVolume(vo);
+            ext.afterCreateVolume(vo, msg);
         }
         dbf.reload(vo);
 
