@@ -178,3 +178,8 @@ DELIMITER ;
 
 CALL ModifyUsedIpVOForeignKey();
 DROP PROCEDURE IF EXISTS ModifyUsedIpVOForeignKey;
+
+-- Add ActiveAlarmTemplate rows for OVN (SDN) VM instance metric alarms
+INSERT IGNORE INTO `ActiveAlarmTemplateVO` (`uuid`,`alarmName`,`comparisonOperator`,`period`,`repeatInterval`,`namespace`,`metricName`,`threshold`,`lastOpDate`,`createDate`,`repeatCount`,`enableRecovery`,`emergencyLevel`,`labels`) VALUES ('f1a6c2d85e7b8c9d3e4f5a6b7c8d9e0f','OvnVmInstance-DiskAllUsedCapacityInPercent','GreaterThanOrEqualTo',300,1800,'ZStack/OvnVmInstance','DiskAllUsedCapacityInPercent',80,CURRENT_TIMESTAMP(),CURRENT_TIMESTAMP(),-1,0,'Important',NULL);
+INSERT IGNORE INTO `ActiveAlarmTemplateVO` (`uuid`,`alarmName`,`comparisonOperator`,`period`,`repeatInterval`,`namespace`,`metricName`,`threshold`,`lastOpDate`,`createDate`,`repeatCount`,`enableRecovery`,`emergencyLevel`,`labels`) VALUES ('b3c8e4f07a9d0e1f5a6b7c8d9e0f1a2b','OvnVmInstance-MemoryUsedInPercent','GreaterThanOrEqualTo',300,1800,'ZStack/OvnVmInstance','MemoryUsedInPercent',80,CURRENT_TIMESTAMP(),CURRENT_TIMESTAMP(),-1,0,'Important',NULL);
+INSERT IGNORE INTO `ActiveAlarmTemplateVO` (`uuid`,`alarmName`,`comparisonOperator`,`period`,`repeatInterval`,`namespace`,`metricName`,`threshold`,`lastOpDate`,`createDate`,`repeatCount`,`enableRecovery`,`emergencyLevel`,`labels`) VALUES ('d5e0a6b29c1f2a3b7c8d9e0f1a2b3c4d','OvnVmInstance-CPUAverageUsedUtilization','GreaterThanOrEqualTo',300,1800,'ZStack/OvnVmInstance','CPUAverageUsedUtilization',80,CURRENT_TIMESTAMP(),CURRENT_TIMESTAMP(),-1,0,'Important',NULL);
