@@ -127,4 +127,12 @@ public class MdevDeviceInventory  {
         return this.vendor;
     }
 
+    public java.lang.String shareType;
+    public void setShareType(java.lang.String shareType) {
+        this.shareType = shareType;
+    }
+    public java.lang.String getShareType() {
+        return this.shareType;
+    }
+
 }
