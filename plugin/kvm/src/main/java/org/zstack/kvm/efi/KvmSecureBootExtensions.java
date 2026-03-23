@@ -29,6 +29,7 @@ import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.tpm.entity.TpmVO_;
 import org.zstack.header.vm.DiskAO;
 import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceDestroyExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -37,7 +38,6 @@ import org.zstack.header.vm.VmMigrationType;
 import org.zstack.header.vm.VmPreMigrationExtensionPoint;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostBackupFileVO_;
-import org.zstack.header.vm.additions.VmHostFileContentFormat;
 import org.zstack.header.vm.additions.VmHostFileContentVO;
 import org.zstack.header.vm.additions.VmHostFileContentVO_;
 import org.zstack.header.vm.additions.VmHostFileType;
@@ -70,7 +70,6 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -82,8 +81,6 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.header.vm.VmMigrationType.HostMigration;
 import static org.zstack.kvm.KVMConstant.*;
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionUtils.findOneOrNull;
-import static org.zstack.utils.CollectionUtils.transform;
 
 public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         PreVmInstantiateResourceExtensionPoint,
@@ -222,135 +219,6 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 .done(completion::success)
                 .error(completion::fail)
                 .start();
-    }
-
-    public static class SyncVmHostFilesFromHostContext {
-        public String hostUuid;
-        public String vmUuid;
-
-        public String nvRamPath;
-        public String tpmStateFolder;
-    }
-
-    public void syncVmHostFilesFromHost(SyncVmHostFilesFromHostContext context, Completion completion) {
-        KvmCommandSender sender = new KvmCommandSender(context.hostUuid);
-
-        ReadVmHostFileContentCmd cmd = new ReadVmHostFileContentCmd();
-        cmd.setHostFiles(new ArrayList<>());
-        if (context.tpmStateFolder != null) {
-            VmHostFileTO to = new VmHostFileTO();
-            to.setPath(context.tpmStateFolder);
-            to.setType(VmHostFileType.TpmState.toString());
-            cmd.getHostFiles().add(to);
-        }
-        if (context.nvRamPath != null) {
-            VmHostFileTO to = new VmHostFileTO();
-            to.setPath(context.nvRamPath);
-            to.setType(VmHostFileType.NvRam.toString());
-            cmd.getHostFiles().add(to);
-        }
-
-        sender.send(cmd, READ_VM_HOST_FILE_PATH, wrapper -> {
-            ReadVmHostFileContentResponse readRsp = wrapper.getResponse(ReadVmHostFileContentResponse.class);
-            return readRsp.isSuccess() ? null :
-                    operr("failed to read file content response").causedBy(readRsp.getError());
-        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
-            @Override
-            public void success(KvmResponseWrapper wrapper) {
-                ReadVmHostFileContentResponse readRsp = wrapper.getResponse(ReadVmHostFileContentResponse.class);
-                if (!readRsp.isSuccess()) {
-                    completion.fail(operr("failed to read file content response").causedBy(readRsp.getError()));
-                    return;
-                }
-
-                final List<VmHostFileVO> existsFiles = Q.New(VmHostFileVO.class)
-                        .eq(VmHostFileVO_.vmInstanceUuid, context.vmUuid)
-                        .eq(VmHostFileVO_.hostUuid, context.hostUuid)
-                        .in(VmHostFileVO_.path, cmd.getPaths())
-                        .list();
-                final List<String> existsContentUuid;
-                if (!existsFiles.isEmpty()) {
-                    existsContentUuid = Q.New(VmHostFileContentVO.class)
-                            .in(VmHostFileContentVO_.uuid, transform(existsFiles, VmHostFileVO::getUuid))
-                            .select(VmHostFileContentVO_.uuid)
-                            .listValues();
-                } else {
-                    existsContentUuid = Collections.emptyList();
-                }
-
-                List<ErrorCode> errors = new ArrayList<>();
-                for (String path : cmd.getPaths()) {
-                    VmHostFileTO to = findOneOrNull(readRsp.getHostFiles(), item -> item.getPath().equals(path));
-                    if (to == null) {
-                        continue;
-                    }
-                    if (to.getError() != null) {
-                        errors.add(operr("failed to read file %s", path)
-                                .withOpaque("path", path)
-                                .causedBy(to.getError()));
-                        continue;
-                    }
-
-                    VmHostFileType type = Objects.equals(path, context.nvRamPath) ?
-                            VmHostFileType.NvRam : VmHostFileType.TpmState;
-
-                    VmHostFileVO file = findOneOrNull(existsFiles, item -> item.getPath().equals(path));
-                    boolean fileExists = file != null;
-
-                    Timestamp now = Timestamp.from(Instant.now());
-                    if (fileExists) {
-                        SQL.New(VmHostFileVO.class)
-                                .eq(VmHostFileVO_.uuid, file.getUuid())
-                                .set(VmHostFileVO_.lastOpDate, now)
-                                .update();
-                    } else {
-                        file = new VmHostFileVO();
-                        file.setUuid(Platform.getUuid());
-                        file.setHostUuid(context.hostUuid);
-                        file.setVmInstanceUuid(context.vmUuid);
-                        file.setPath(path);
-                        file.setType(type);
-                        file.setCreateDate(now);
-                        file.setLastOpDate(now);
-                        file.setResourceName(String.format("%s file for %s", type, context.vmUuid));
-                        databaseFacade.persist(file);
-                    }
-
-                    byte[] bytes = Base64.getDecoder().decode(to.getContentBase64());
-                    if (existsContentUuid.contains(file.getUuid())) {
-                        SQL.New(VmHostFileContentVO.class)
-                                .eq(VmHostFileContentVO_.uuid, file.getUuid())
-                                .set(VmHostFileContentVO_.content, bytes)
-                                .set(VmHostFileContentVO_.format, VmHostFileContentFormat.valueOf(to.getFileFormat()))
-                                .set(VmHostFileContentVO_.lastOpDate, now)
-                                .update();
-                    } else {
-                        VmHostFileContentVO content = new VmHostFileContentVO();
-                        content.setUuid(file.getUuid());
-                        content.setContent(bytes);
-                        content.setFormat(VmHostFileContentFormat.valueOf(to.getFileFormat()));
-                        content.setCreateDate(now);
-                        content.setLastOpDate(now);
-                        databaseFacade.persist(content);
-                    }
-
-                    if (logger.isTraceEnabled()) {
-                        logger.trace(String.format("persist/update VmHostFileContentVO [uuid=%s]", file.getUuid()));
-                    }
-                }
-
-                if (errors.isEmpty()) {
-                    completion.success();
-                } else {
-                    completion.fail(operr("failed to read file content from host[uuid=%s]", context.hostUuid).withCause(errors));
-                }
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
-            }
-        });
     }
 
     public static class RewriteVmHostFilesContext {
@@ -517,29 +385,30 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 }
 
                 context.sameHost = vmHostFile.getHostUuid().equals(context.hostUuid);
-                SyncVmHostFilesFromHostContext syncContext = new SyncVmHostFilesFromHostContext();
-                syncContext.hostUuid = vmHostFile.getHostUuid();
-                syncContext.vmUuid = context.vmUuid;
+                SyncVmHostFilesFromHostMsg syncMsg = new SyncVmHostFilesFromHostMsg();
+                syncMsg.setHostUuid(vmHostFile.getHostUuid());
+                syncMsg.setVmUuid(context.vmUuid);
 
                 if (vmHostFile.getType() == VmHostFileType.NvRam) {
-                    context.path = syncContext.nvRamPath = vmHostFile.getPath();
+                    context.path = vmHostFile.getPath();
+                    syncMsg.setNvRamPath(context.path);
                 } else if (vmHostFile.getType() == VmHostFileType.TpmState) {
-                    context.path = syncContext.tpmStateFolder = vmHostFile.getPath();
+                    context.path = vmHostFile.getPath();
+                    syncMsg.setTpmStateFolder(context.path);
                 } else {
                     throw new CloudRuntimeException("unsupported vm host file type: " + vmHostFile.getType());
                 }
 
-                syncVmHostFilesFromHost(syncContext, new Completion(trigger) {
+                bus.makeLocalServiceId(syncMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
+                bus.send(syncMsg, new CloudBusCallBack(trigger) {
                     @Override
-                    public void success() {
-                        context.vmHostFile = vmHostFile;
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        logger.warn(String.format("failed to read vm host file for VM[vmUuid=%s] but still continue: %s",
-                                context.vmUuid, errorCode.getReadableDetails()));
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            context.vmHostFile = vmHostFile;
+                        } else {
+                            logger.warn(String.format("failed to read vm host file for VM[vmUuid=%s] but still continue: %s",
+                                    context.vmUuid, reply.getError().getReadableDetails()));
+                        }
                         trigger.next();
                     }
                 });
@@ -628,26 +497,25 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                KvmSecureBootExtensions.SyncVmHostFilesFromHostContext syncBackContext =
-                        new KvmSecureBootExtensions.SyncVmHostFilesFromHostContext();
-                syncBackContext.hostUuid = context.hostUuid;
-                syncBackContext.vmUuid = context.vmUuid;
+                SyncVmHostFilesFromHostMsg syncMsg = new SyncVmHostFilesFromHostMsg();
+                syncMsg.setHostUuid(context.hostUuid);
+                syncMsg.setVmUuid(context.vmUuid);
 
                 if (context.type == VmHostFileType.NvRam) {
-                    syncBackContext.nvRamPath = context.path;
+                    syncMsg.setNvRamPath(context.path);
                 } else if (context.type == VmHostFileType.TpmState) {
-                    syncBackContext.tpmStateFolder = context.path;
+                    syncMsg.setTpmStateFolder(context.path);
                 }
 
-                syncVmHostFilesFromHost(syncBackContext, new Completion(trigger) {
+                bus.makeLocalServiceId(syncMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
+                bus.send(syncMsg, new CloudBusCallBack(trigger) {
                     @Override
-                    public void success() {
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            trigger.next();
+                        } else {
+                            trigger.fail(reply.getError());
+                        }
                     }
                 });
             }
