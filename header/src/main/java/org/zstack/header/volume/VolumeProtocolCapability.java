@@ -65,4 +65,12 @@ public class VolumeProtocolCapability {
     public void setSupportReadonly(boolean supportReadonly) {
         this.supportReadonly = supportReadonly;
     }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
+    }
 }

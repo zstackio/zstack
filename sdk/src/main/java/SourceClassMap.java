@@ -66,6 +66,7 @@ public class SourceClassMap {
 			put("org.zstack.baremetal2.chassis.BareMetal2ChassisInventory", "org.zstack.sdk.BareMetal2ChassisInventory");
 			put("org.zstack.baremetal2.chassis.BareMetal2ChassisNicInventory", "org.zstack.sdk.BareMetal2ChassisNicInventory");
 			put("org.zstack.baremetal2.chassis.BareMetal2ChassisPciDeviceInventory", "org.zstack.sdk.BareMetal2ChassisPciDeviceInventory");
+			put("org.zstack.baremetal2.chassis.dpu.BareMetal2DpuChassisConfig", "org.zstack.sdk.BareMetal2DpuChassisConfig");
 			put("org.zstack.baremetal2.chassis.dpu.BareMetal2DpuChassisInventory", "org.zstack.sdk.BareMetal2DpuChassisInventory");
 			put("org.zstack.baremetal2.chassis.ipmi.BareMetal2IpmiChassisInventory", "org.zstack.sdk.BareMetal2IpmiChassisInventory");
 			put("org.zstack.baremetal2.configuration.BareMetal2ChassisOfferingInventory", "org.zstack.sdk.BareMetal2ChassisOfferingInventory");
@@ -960,6 +961,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BareMetal2ChassisNicInventory", "org.zstack.baremetal2.chassis.BareMetal2ChassisNicInventory");
 			put("org.zstack.sdk.BareMetal2ChassisOfferingInventory", "org.zstack.baremetal2.configuration.BareMetal2ChassisOfferingInventory");
 			put("org.zstack.sdk.BareMetal2ChassisPciDeviceInventory", "org.zstack.baremetal2.chassis.BareMetal2ChassisPciDeviceInventory");
+			put("org.zstack.sdk.BareMetal2DpuChassisConfig", "org.zstack.baremetal2.chassis.dpu.BareMetal2DpuChassisConfig");
 			put("org.zstack.sdk.BareMetal2DpuChassisInventory", "org.zstack.baremetal2.chassis.dpu.BareMetal2DpuChassisInventory");
 			put("org.zstack.sdk.BareMetal2DpuHostInventory", "org.zstack.baremetal2.dpu.BareMetal2DpuHostInventory");
 			put("org.zstack.sdk.BareMetal2GatewayInventory", "org.zstack.baremetal2.gateway.BareMetal2GatewayInventory");
