@@ -37,6 +37,9 @@ public class GetGpuDeviceSpecCandidatesAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List vmInstanceUuids;
 
+    @Param(required = false, validValues = {"PCI","DGPU"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String mode;
+
     @Param(required = false)
     public java.util.List systemTags;
 
