@@ -7,6 +7,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacadeImpl;
+import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.workflow.SimpleFlowChain;
@@ -143,9 +144,12 @@ public class KvmSecureBootManager extends AbstractService {
     }
 
     @Override
+    @MessageSafe
     public void handleMessage(Message msg) {
         if (msg instanceof CloneVmHostFileMsg) {
             handle((CloneVmHostFileMsg) msg);
+        } else if (msg instanceof BackupVmHostFileMsg) {
+            handle((BackupVmHostFileMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -287,7 +291,7 @@ public class KvmSecureBootManager extends AbstractService {
                 }
 
                 context.backupFiles.addAll(Q.New(VmHostBackupFileVO.class)
-                        .eq(VmHostBackupFileVO_.vmInstanceUuid, msg.getSrcVmUuid())
+                        .eq(VmHostBackupFileVO_.resourceUuid, msg.getSrcVmUuid())
                         .in(VmHostFileVO_.type, missingTypes)
                         .list());
                 trigger.next();
@@ -306,65 +310,7 @@ public class KvmSecureBootManager extends AbstractService {
                 List<VmHostFileVO> filesAfterSyncing = Q.New(VmHostFileVO.class)
                         .in(VmHostFileVO_.uuid, uuidList)
                         .list();
-                uuidList.addAll(transform(context.backupFiles, VmHostBackupFileVO::getUuid));
-                List<VmHostFileContentVO> contents = Q.New(VmHostFileContentVO.class)
-                        .in(VmHostFileContentVO_.uuid, uuidList)
-                        .list();
-
-                List<VmHostBackupFileVO> filesNeedPersists = new ArrayList<>();
-                List<VmHostFileContentVO> contentsNeedPersists = new ArrayList<>();
-
-                Timestamp now = Timestamp.from(Instant.now());
-                for (String vmUuid : msg.getDstVmUuidList()) {
-                    for (String uuid : uuidList) {
-                        VmHostFileContentVO srcContent = findOneOrNull(contents,
-                                item -> item.getUuid().equals(uuid));
-                        if (srcContent == null) {
-                            continue;
-                        }
-
-                        VmHostFileVO vmHostFile = findOneOrNull(filesAfterSyncing,
-                                item -> item.getUuid().equals(uuid));
-                        VmHostBackupFileVO vmHostBackupFile = vmHostFile == null ?
-                                findOneOrNull(context.backupFiles, item -> item.getUuid().equals(uuid)) : null;
-                        DebugUtils.Assert(vmHostFile != null || vmHostBackupFile != null,
-                                "vmHostFile or vmHostBackupFile cannot be null");
-
-                        VmHostBackupFileVO file = new VmHostBackupFileVO();
-                        file.setUuid(Platform.getUuid());
-                        file.setVmInstanceUuid(vmUuid);
-                        file.setType(vmHostFile == null ? vmHostBackupFile.getType() : vmHostFile.getType());
-                        file.setCreateDate(now);
-                        file.setLastOpDate(now);
-                        filesNeedPersists.add(file);
-
-                        VmHostFileContentVO content = new VmHostFileContentVO();
-                        content.setUuid(file.getUuid());
-                        content.setContent(srcContent.getContent());
-                        content.setFormat(srcContent.getFormat());
-                        content.setCreateDate(now);
-                        content.setLastOpDate(now);
-                        contentsNeedPersists.add(content);
-                    }
-                }
-
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("persist VmHostFileContentVO [uuid=%s]",
-                            transform(contentsNeedPersists, VmHostFileContentVO::getUuid)));
-                }
-
-                new SQLBatch() {
-                    @Override
-                    protected void scripts() {
-                        if (!filesNeedPersists.isEmpty()) {
-                            databaseFacade.persistCollection(filesNeedPersists);
-                        }
-                        if (!contentsNeedPersists.isEmpty()) {
-                            databaseFacade.persistCollection(contentsNeedPersists);
-                        }
-                    }
-                }.execute();
-
+                backupVmHostFile(filesAfterSyncing, context.backupFiles, msg.getDstVmUuidList());
                 trigger.next();
             }
         }).done(new FlowDoneHandler(msg) {
@@ -379,5 +325,96 @@ public class KvmSecureBootManager extends AbstractService {
                 bus.reply(msg, reply);
             }
         }).start();
+    }
+
+    private void handle(BackupVmHostFileMsg msg) {
+        BackupVmHostFileReply reply = new BackupVmHostFileReply();
+        List<VmHostBackupFileVO> filesNeedPersists = backupVmHostFile(
+                msg.getVmUuid(), msg.getHostUuid(), msg.getToResourceUuidList());
+        reply.setBackupFileUuidList(transform(filesNeedPersists, VmHostBackupFileVO::getUuid));
+        bus.reply(msg, reply);
+    }
+
+    private List<VmHostBackupFileVO> backupVmHostFile(String fromVmUuid, String hostUuid, List<String> toResourceList) {
+        List<VmHostFileVO> hostFiles = Q.New(VmHostFileVO.class)
+                .eq(VmHostFileVO_.vmInstanceUuid, fromVmUuid)
+                .eq(VmHostFileVO_.hostUuid, hostUuid)
+                .list();
+
+        if (hostFiles.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return backupVmHostFile(hostFiles, new ArrayList<>(), toResourceList);
+    }
+
+    private List<VmHostBackupFileVO> backupVmHostFile(List<VmHostFileVO> fileList, List<VmHostBackupFileVO> backupFiles, List<String> toResourceList) {
+        List<String> uuidList = transform(fileList, VmHostFileVO::getUuid);
+        uuidList.addAll(transform(backupFiles, VmHostBackupFileVO::getUuid));
+        List<VmHostFileContentVO> contents = Q.New(VmHostFileContentVO.class)
+                .in(VmHostFileContentVO_.uuid, uuidList)
+                .list();
+
+        List<VmHostBackupFileVO> filesNeedPersists = new ArrayList<>();
+        List<VmHostFileContentVO> contentsNeedPersists = new ArrayList<>();
+
+        Timestamp now = Timestamp.from(Instant.now());
+        for (String resourceUuid : toResourceList) {
+            for (String uuid : uuidList) {
+                VmHostFileContentVO srcContent = findOneOrNull(contents,
+                        item -> item.getUuid().equals(uuid));
+                if (srcContent == null) {
+                    continue;
+                }
+
+                VmHostFileVO vmHostFile = findOneOrNull(fileList,
+                        item -> item.getUuid().equals(uuid));
+                VmHostBackupFileVO vmHostBackupFile = vmHostFile == null ?
+                        findOneOrNull(backupFiles, item -> item.getUuid().equals(uuid)) : null;
+                DebugUtils.Assert(vmHostFile != null || vmHostBackupFile != null,
+                        "vmHostFile or vmHostBackupFile cannot be null");
+
+                VmHostBackupFileVO file = new VmHostBackupFileVO();
+                file.setUuid(Platform.getUuid());
+                file.setResourceUuid(resourceUuid);
+                file.setType(vmHostFile == null ? vmHostBackupFile.getType() : vmHostFile.getType());
+                file.setCreateDate(now);
+                file.setLastOpDate(now);
+                filesNeedPersists.add(file);
+
+                VmHostFileContentVO content = new VmHostFileContentVO();
+                content.setUuid(file.getUuid());
+                content.setContent(srcContent.getContent());
+                content.setFormat(srcContent.getFormat());
+                content.setCreateDate(now);
+                content.setLastOpDate(now);
+                contentsNeedPersists.add(content);
+            }
+        }
+
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("persist VmHostFileContentVO [uuid=%s]",
+                    transform(contentsNeedPersists, VmHostFileContentVO::getUuid)));
+        }
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                for (VmHostBackupFileVO backupFile : filesNeedPersists) {
+                    // resourceUuid + type must be unique in DB
+                    sql(VmHostBackupFileVO.class)
+                            .eq(VmHostBackupFileVO_.resourceUuid, backupFile.getResourceUuid())
+                            .eq(VmHostBackupFileVO_.type, backupFile.getType())
+                            .delete();
+                }
+
+                if (!filesNeedPersists.isEmpty()) {
+                    databaseFacade.persistCollection(filesNeedPersists);
+                }
+                if (!contentsNeedPersists.isEmpty()) {
+                    databaseFacade.persistCollection(contentsNeedPersists);
+                }
+            }
+        }.execute();
+        return filesNeedPersists;
     }
 }

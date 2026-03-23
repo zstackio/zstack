@@ -287,7 +287,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                     if (to.getError() != null) {
                         errors.add(operr("failed to read file %s", path)
                                 .withOpaque("path", path)
-                                .withException(to.getError()));
+                                .causedBy(to.getError()));
                         continue;
                     }
 
@@ -556,7 +556,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
             public void run(FlowTrigger trigger, Map data) {
                 context.vmBackupFileVO = Q.New(VmHostBackupFileVO.class)
                         .eq(VmHostBackupFileVO_.type, context.type)
-                        .eq(VmHostBackupFileVO_.vmInstanceUuid, context.vmUuid)
+                        .eq(VmHostBackupFileVO_.resourceUuid, context.vmUuid)
                         .orderByDesc(VmHostBackupFileVO_.lastOpDate)
                         .limit(1)
                         .find();
@@ -835,7 +835,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
                 .delete();
         SQL.New(VmHostBackupFileVO.class)
-                .eq(VmHostBackupFileVO_.vmInstanceUuid, vmUuid)
+                .eq(VmHostBackupFileVO_.resourceUuid, vmUuid)
                 .delete();
     }
 

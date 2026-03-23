@@ -1,6 +1,5 @@
 package org.zstack.header.vm.additions;
 
-import org.zstack.header.vm.VmInstanceEO;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ResourceVO;
@@ -21,13 +20,12 @@ import java.sql.Timestamp;
 @Table
 @EntityGraph(
         friends = {
-                @EntityGraph.Neighbour(type = VmInstanceEO.class, myField = "vmInstanceUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = ResourceVO.class, myField = "resourceUuid", targetField = "uuid"),
         }
 )
 public class VmHostBackupFileVO extends ResourceVO {
     @Column
-    @ForeignKey(parentEntityClass = VmInstanceEO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
-    private String vmInstanceUuid;
+    private String resourceUuid;
     @Column
     @Enumerated(EnumType.STRING)
     private VmHostFileType type;
@@ -36,12 +34,12 @@ public class VmHostBackupFileVO extends ResourceVO {
     @Column
     private Timestamp lastOpDate;
 
-    public String getVmInstanceUuid() {
-        return vmInstanceUuid;
+    public String getResourceUuid() {
+        return resourceUuid;
     }
 
-    public void setVmInstanceUuid(String vmInstanceUuid) {
-        this.vmInstanceUuid = vmInstanceUuid;
+    public void setResourceUuid(String resourceUuid) {
+        this.resourceUuid = resourceUuid;
     }
 
     public VmHostFileType getType() {
@@ -71,7 +69,7 @@ public class VmHostBackupFileVO extends ResourceVO {
     @Override
     public String toString() {
         return "VmHostBackupFileVO{" +
-        "vmInstanceUuid='" + vmInstanceUuid + '\'' +
+        "resourceUuid='" + resourceUuid + '\'' +
         ", type=" + type +
         ", createDate=" + createDate +
         ", lastOpDate=" + lastOpDate +
