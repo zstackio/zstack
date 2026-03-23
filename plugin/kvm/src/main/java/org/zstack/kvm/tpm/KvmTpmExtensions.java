@@ -1,11 +1,13 @@
 package org.zstack.kvm.tpm;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.SimpleFlowChain;
@@ -17,7 +19,12 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.keyprovider.EncryptedResourceKeyManager;
+import org.zstack.header.keyprovider.EncryptedResourceKeyManager.GetOrCreateResourceKeyContext;
+import org.zstack.header.keyprovider.EncryptedResourceKeyManager.ResourceKeyResult;
 import org.zstack.header.secret.SecretHostDefineMsg;
+import org.zstack.header.tpm.entity.TpmSpec;
+import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.secret.SecretHostDefineReply;
 import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -39,6 +46,7 @@ import java.time.Instant;
 import java.util.Map;
 
 import static org.zstack.kvm.KVMConstant.*;
+import static org.zstack.core.Platform.operr;
 
 public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         PreVmInstantiateResourceExtensionPoint {
@@ -51,6 +59,8 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
     @Autowired
     private TpmEncryptedResourceKeyBackend resourceKeyBackend;
     @Autowired
+    private EncryptedResourceKeyManager resourceKeyManager;
+    @Autowired
     private CloudBus bus;
 
     private final Object hostFileLock = new Object();
@@ -62,8 +72,13 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
             return;
         }
 
+        String keyProviderUuid = devicesSpec.getTpm().getKeyProviderUuid();
+        if (StringUtils.isBlank(keyProviderUuid)) {
+            keyProviderUuid = resourceKeyBackend.findKeyProviderUuidByTpm(devicesSpec.getTpm().getTpmUuid());
+        }
+
         TpmTO tpm = new TpmTO();
-        tpm.setKeyProviderUuid(devicesSpec.getTpm().getKeyProviderUuid());
+        tpm.setKeyProviderUuid(keyProviderUuid);
         tpm.setSecretUuid(devicesSpec.getTpm().getSecretUuid());
         tpm.setInstallPath(buildTpmStateFilePath(cmd.getVmInstanceUuid()));
         cmd.setTpm(tpm);
@@ -96,25 +111,17 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
 
     @Override
     public void startVmOnKvmSuccess(KVMHostInventory host, VmInstanceSpec spec) {
-        // do-nothing
+        clearRollbackInfo(spec);
     }
 
     @Override
     public void startVmOnKvmFailed(KVMHostInventory host, VmInstanceSpec spec, ErrorCode err) {
-        // do-nothing
+        clearRollbackInfo(spec);
     }
 
     @Override
     public void preBeforeInstantiateVmResource(VmInstanceSpec spec) throws VmInstantiateResourceException {
         // do-nothing
-    }
-
-    static class PreInstantiateVmResourceContext {
-        String hostUuid;
-        String vmUuid;
-        String tpmUuid;
-        String providerName;
-        String dekBase64; // secret key
     }
 
     @Override
@@ -126,10 +133,11 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
             return;
         }
 
-        PreInstantiateVmResourceContext context = new PreInstantiateVmResourceContext();
-        context.hostUuid = spec.getDestHost().getUuid();
-        context.vmUuid = spec.getVmInventory().getUuid();
-        context.tpmUuid = spec.getDevicesSpec().getTpm().getTpmUuid();
+        TpmSpec tpmSpec = devicesSpec.getTpm();
+        clearRollbackInfo(spec);
+        final PrepareTpmResourceContext context = new PrepareTpmResourceContext();
+        context.tpmUuid = tpmSpec.getTpmUuid();
+        context.providerUuid = resourceKeyBackend.findKeyProviderUuidByTpm(context.tpmUuid);
         context.providerName = resourceKeyBackend.findKeyProviderNameByTpm(context.tpmUuid);
 
         final SimpleFlowChain chain = new SimpleFlowChain();
@@ -140,8 +148,8 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 PrepareHostFileContext innerContext = new PrepareHostFileContext();
-                innerContext.hostUuid = context.hostUuid;
-                innerContext.vmUuid = context.vmUuid;
+                innerContext.hostUuid = spec.getDestHost().getUuid();
+                innerContext.vmUuid = spec.getVmInventory().getUuid();
                 innerContext.type = VmHostFileType.TpmState;
                 secureBootExtensions.prepareHostFileOnHost(innerContext, new Completion(trigger) {
                     @Override
@@ -160,33 +168,60 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
 
             @Override
             public boolean skip(Map data) {
-                return context.providerName == null;
+                return false;
             }
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                // TODO create DEK
-                context.dekBase64 = Platform.getUuid();
-                trigger.next();
+                if (StringUtils.isBlank(context.providerUuid) || StringUtils.isBlank(context.providerName)) {
+                    trigger.fail(operr("missing TPM resource key binding for tpm[uuid:%s], attachKeyProviderToTpm must run before create-dek", context.tpmUuid));
+                    return;
+                }
+
+                GetOrCreateResourceKeyContext keyCtx = new GetOrCreateResourceKeyContext();
+                keyCtx.setResourceUuid(context.tpmUuid);
+                keyCtx.setResourceType(TpmVO.class.getSimpleName());
+                keyCtx.setKeyProviderUuid(context.providerUuid);
+                keyCtx.setPurpose("vtpm");
+
+                resourceKeyManager.getOrCreateKey(keyCtx, new ReturnValueCompletion<ResourceKeyResult>(trigger) {
+                    @Override
+                    public void success(ResourceKeyResult result) {
+                        tpmSpec.setResourceKeyCreatedNew(result.isCreatedNewKey());
+                        tpmSpec.setResourceKeyProviderUuid(result.getKeyProviderUuid());
+                        context.providerName = result.getKeyProviderName();
+                        context.dekBase64 = result.getDekBase64();
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
             }
         }).then(new NoRollbackFlow() {
             String __name__ = "define-secret-on-host";
 
             @Override
             public boolean skip(Map data) {
-                logger.warn("This is for test only, and coming soon"); // TODO
-                return true;
+                return context.dekBase64 == null;
             }
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                if (StringUtils.isBlank(context.providerName)) {
+                    trigger.fail(operr("missing effective key provider name for tpm[uuid:%s] before define-secret-on-host", context.tpmUuid));
+                    return;
+                }
+
                 SecretHostDefineMsg innerMsg = new SecretHostDefineMsg();
-                innerMsg.setHostUuid(context.hostUuid);
-                innerMsg.setVmUuid(context.vmUuid);
+                innerMsg.setHostUuid(spec.getDestHost().getUuid());
+                innerMsg.setVmUuid(spec.getVmInventory().getUuid());
                 innerMsg.setDekBase64(context.dekBase64);
                 innerMsg.setPurpose("vtpm");
                 innerMsg.setProviderName(context.providerName);
-                innerMsg.setDescription("Define secret for VM " + context.vmUuid);
+                innerMsg.setDescription("Define secret for VM " + spec.getVmInventory().getUuid());
                 bus.makeTargetServiceIdByResourceUuid(innerMsg, HostConstant.SERVICE_ID, innerMsg.getHostUuid());
                 bus.send(innerMsg, new CloudBusCallBack(trigger) {
                     @Override
@@ -194,8 +229,10 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                         if (reply.isSuccess()) {
                             SecretHostDefineReply r = reply.castReply();
                             spec.getDevicesSpec().getTpm().setSecretUuid(r.getSecretUuid());
+                            context.clearSensitiveData();
                             trigger.next();
                         } else {
+                            context.clearSensitiveData();
                             trigger.fail(reply.getError());
                         }
                     }
@@ -204,11 +241,13 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
+                context.clearSensitiveData();
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
+                context.clearSensitiveData();
                 completion.fail(errCode);
             }
         }).start();
@@ -223,8 +262,55 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         VmHostFileVO tpmStateFile;
     }
 
+    static class PrepareTpmResourceContext {
+        String tpmUuid;
+        String providerUuid;
+        String providerName;
+        String dekBase64;
+
+        void clearSensitiveData() {
+            dekBase64 = null;
+        }
+    }
+
     @Override
     public void preReleaseVmResource(VmInstanceSpec spec, Completion completion) {
-        completion.success();
+        TpmSpec tpmSpec = spec.getDevicesSpec() == null ? null : spec.getDevicesSpec().getTpm();
+        if (tpmSpec == null || !tpmSpec.isResourceKeyCreatedNew()) {
+            completion.success();
+            return;
+        }
+
+        ResourceKeyResult result = new ResourceKeyResult();
+        result.setResourceUuid(tpmSpec.getTpmUuid());
+        result.setResourceType(TpmVO.class.getSimpleName());
+        result.setKeyProviderUuid(tpmSpec.getResourceKeyProviderUuid());
+        result.setCreatedNewKey(true);
+        // TPM resource key creation requires attachKeyProviderToTpm to create a placeholder ref first.
+        result.setRefExistedBeforeCreate(true);
+
+        resourceKeyManager.rollbackCreatedKey(result, new Completion(completion) {
+            @Override
+            public void success() {
+                clearRollbackInfo(spec);
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("failed to rollback TPM resource key for tpm[uuid:%s]: %s",
+                        tpmSpec.getTpmUuid(), errorCode != null ? errorCode.getDetails() : ""));
+                clearRollbackInfo(spec);
+                completion.success();
+            }
+        });
+    }
+
+    private void clearRollbackInfo(VmInstanceSpec spec) {
+        if (spec.getDevicesSpec() == null || spec.getDevicesSpec().getTpm() == null) {
+            return;
+        }
+        spec.getDevicesSpec().getTpm().setResourceKeyCreatedNew(false);
+        spec.getDevicesSpec().getTpm().setResourceKeyProviderUuid(null);
     }
 }
