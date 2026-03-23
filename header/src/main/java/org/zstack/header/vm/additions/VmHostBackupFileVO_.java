@@ -8,7 +8,7 @@ import java.sql.Timestamp;
 
 @StaticMetamodel(VmHostBackupFileVO.class)
 public class VmHostBackupFileVO_ extends ResourceVO_ {
-    public static volatile SingularAttribute<VmHostBackupFileVO, String> vmInstanceUuid;
+    public static volatile SingularAttribute<VmHostBackupFileVO, String> resourceUuid;
     public static volatile SingularAttribute<VmHostBackupFileVO, VmHostFileType> type;
     public static volatile SingularAttribute<VmHostBackupFileVO, Timestamp> createDate;
     public static volatile SingularAttribute<VmHostBackupFileVO, Timestamp> lastOpDate;
