@@ -2,11 +2,10 @@ package org.zstack.test.integration.configuration.systemTag
 
 import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
-import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
+import org.zstack.header.identity.AccountConstant
 import org.zstack.header.tag.TagPatternType
 import org.zstack.header.tag.TagPatternVO
-import org.zstack.header.tag.TagPatternVO_
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 
@@ -57,6 +56,7 @@ class TagPatternResourceTypeCase extends SubCase {
         universal.setColor("red")
         universal.setType(TagPatternType.simple)
         universal.setResourceType(null)  // null = universal
+        universal.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
         dbf.persist(universal)
 
         // Verify it can be found without any resourceType filter
@@ -66,11 +66,11 @@ class TagPatternResourceTypeCase extends SubCase {
 
         // Verify it appears in queries for any resource type
         // Simulating the filter: resourceType IS NULL OR resourceType = 'ZoneVO'
-        long count = Q.New(TagPatternVO.class)
-                .eq(TagPatternVO_.uuid, universal.getUuid())
-                .isNull(TagPatternVO_.resourceType)
-                .count()
-        assert count == 1
+        List<TagPatternVO> results = SQL.New(
+                "select tp from TagPatternVO tp where tp.uuid = :uuid and tp.resourceType is null",
+                TagPatternVO.class
+        ).param("uuid", universal.getUuid()).list()
+        assert results.size() == 1
 
         // Clean up
         dbf.removeByPrimaryKey(universal.getUuid(), TagPatternVO.class)
@@ -89,6 +89,7 @@ class TagPatternResourceTypeCase extends SubCase {
         aiTag.setColor("blue")
         aiTag.setType(TagPatternType.simple)
         aiTag.setResourceType("ModelVO")
+        aiTag.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
         dbf.persist(aiTag)
 
         TagPatternVO found = dbf.findByUuid(aiTag.getUuid(), TagPatternVO.class)
@@ -96,18 +97,18 @@ class TagPatternResourceTypeCase extends SubCase {
         assert found.getResourceType() == "ModelVO"
 
         // Should be found when filtering for ModelVO
-        long modelCount = Q.New(TagPatternVO.class)
-                .eq(TagPatternVO_.uuid, aiTag.getUuid())
-                .eq(TagPatternVO_.resourceType, "ModelVO")
-                .count()
-        assert modelCount == 1
+        List<TagPatternVO> modelResults = SQL.New(
+                "select tp from TagPatternVO tp where tp.uuid = :uuid and tp.resourceType = :resType",
+                TagPatternVO.class
+        ).param("uuid", aiTag.getUuid()).param("resType", "ModelVO").list()
+        assert modelResults.size() == 1
 
         // Should NOT be found when filtering for VmInstanceVO
-        long vmCount = Q.New(TagPatternVO.class)
-                .eq(TagPatternVO_.uuid, aiTag.getUuid())
-                .eq(TagPatternVO_.resourceType, "VmInstanceVO")
-                .count()
-        assert vmCount == 0
+        List<TagPatternVO> vmResults = SQL.New(
+                "select tp from TagPatternVO tp where tp.uuid = :uuid and tp.resourceType = :resType",
+                TagPatternVO.class
+        ).param("uuid", aiTag.getUuid()).param("resType", "VmInstanceVO").list()
+        assert vmResults.size() == 0
 
         // Clean up
         dbf.removeByPrimaryKey(aiTag.getUuid(), TagPatternVO.class)
@@ -131,6 +132,7 @@ class TagPatternResourceTypeCase extends SubCase {
         universal.setColor("green")
         universal.setType(TagPatternType.simple)
         universal.setResourceType(null)
+        universal.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
         dbf.persist(universal)
 
         // Create an AI-scoped tag
@@ -141,6 +143,7 @@ class TagPatternResourceTypeCase extends SubCase {
         aiTag.setColor("purple")
         aiTag.setType(TagPatternType.simple)
         aiTag.setResourceType("ModelVO")
+        aiTag.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
         dbf.persist(aiTag)
 
         // Create a VM-scoped tag
@@ -151,6 +154,7 @@ class TagPatternResourceTypeCase extends SubCase {
         vmTag.setColor("orange")
         vmTag.setType(TagPatternType.simple)
         vmTag.setResourceType("VmInstanceVO")
+        vmTag.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
         dbf.persist(vmTag)
 
         // Query for VmInstanceVO page: should see universal + VM tag, NOT AI tag
