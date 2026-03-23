@@ -15911,4 +15911,10 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_DGPU_10008 = "ORG_ZSTACK_DGPU_10008";
 
     public static final String ORG_ZSTACK_DGPU_10009 = "ORG_ZSTACK_DGPU_10009";
+
+    public static final String ORG_ZSTACK_DGPU_10010 = "ORG_ZSTACK_DGPU_10010";
+
+    public static final String ORG_ZSTACK_DGPU_10011 = "ORG_ZSTACK_DGPU_10011";
+
+    public static final String ORG_ZSTACK_DGPU_10012 = "ORG_ZSTACK_DGPU_10012";
 }
