@@ -297,4 +297,5 @@
     </bean>
 
     <bean id="DummyTpmEncryptedResourceKeyBackend" class="org.zstack.compute.vm.devices.DummyTpmEncryptedResourceKeyBackend"/>
+    <bean id="DummyEncryptedResourceKeyManager" class="org.zstack.compute.vm.devices.DummyEncryptedResourceKeyManager"/>
 </beans>

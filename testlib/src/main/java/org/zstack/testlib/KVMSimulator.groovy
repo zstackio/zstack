@@ -1,6 +1,7 @@
 package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.Platform
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.core.db.SQLBatch
@@ -38,6 +39,8 @@ import static org.zstack.kvm.KVMAgentCommands.*
  */
 class KVMSimulator implements Simulator {
     static ConcurrentHashMap<String, KVMAgentCommands.ConnectCmd> connectCmdConcurrentHashMap = new ConcurrentHashMap<>()
+    static ConcurrentHashMap<String, String> ensureSecretUuidCache = new ConcurrentHashMap<>()
+    static final String MOCK_ENVELOPE_PUBLIC_KEY_BASE64 = "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA="
     private static Map<String, VFSPrimaryStorageTakeSnapshotBackend> takeSnapshotBackends = [:]
 
     static {
@@ -319,6 +322,40 @@ class KVMSimulator implements Simulator {
             rsp.success = true
             rsp.libvirtVersion = "1.0.0"
             rsp.qemuVersion = "1.3.0"
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_CREATE_ENVELOPE_KEY_PATH) {
+            def rsp = new CreatePublicKeyResponse()
+            rsp.success = true
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_GET_ENVELOPE_KEY_PATH) {
+            def rsp = new GetPublicKeyResponse()
+            rsp.success = true
+            rsp.publicKey = MOCK_ENVELOPE_PUBLIC_KEY_BASE64
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_VERIFY_ENVELOPE_KEY_PATH) {
+            def rsp = new VerifyPublicKeyResponse()
+            rsp.success = true
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_ROTATE_ENVELOPE_KEY_PATH) {
+            def rsp = new RotatePublicKeyResponse()
+            rsp.success = true
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_ENSURE_SECRET_PATH) { HttpEntity<String> e ->
+            String hostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+            SecretHostDefineCmd cmd = JSONObjectUtil.toObject(e.body, SecretHostDefineCmd.class)
+            String cacheKey = String.format("%s::%s", hostUuid ?: "", cmd?.vmUuid ?: "")
+            def rsp = new SecretHostDefineResponse()
+            rsp.secretUuid = ensureSecretUuidCache.computeIfAbsent(cacheKey) { Platform.uuid }
             return rsp
         }
 
