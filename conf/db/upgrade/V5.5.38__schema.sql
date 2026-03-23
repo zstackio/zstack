@@ -25,13 +25,12 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmHostFileVO` (
 
 CREATE TABLE IF NOT EXISTS `zstack`.`VmHostBackupFileVO` (
     `uuid` char(32) NOT NULL UNIQUE,
-    `vmInstanceUuid` char(32) NOT NULL,
+    `resourceUuid` char(32) NOT NULL,
     `type` varchar(64) NOT NULL COMMENT 'NvRam, TpmState',
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
     PRIMARY KEY (`uuid`),
-    INDEX `idxVmHostBackupFileVOVmInstanceUuid` (`vmInstanceUuid`),
-    UNIQUE KEY `ukVmHostBackupFileVO` (`vmInstanceUuid`, `type`)
+    UNIQUE KEY `ukVmHostBackupFileVO` (`resourceUuid`, `type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`VmHostFileContentVO` (
