@@ -924,7 +924,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
         flowChain.setName(String.format("create-nic-on-l3-network-%s", msg.getL3NetworkUuid()));
         flowChain.then(new NoRollbackFlow() {
-            String __name__ = "create-nic-and-presist-to-db";
+            String __name__ = "create-nic-and-persist-to-db";
 
             @Override
             public void run(FlowTrigger trigger, Map data) {

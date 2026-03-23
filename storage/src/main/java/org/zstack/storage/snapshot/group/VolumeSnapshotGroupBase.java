@@ -32,6 +32,8 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.RestoreVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.additions.VmHostBackupFileVO;
+import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.VolumeType;
@@ -147,6 +149,9 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
             public void run(SyncTaskChain chain) {
                 APIUngroupVolumeSnapshotGroupEvent evt = new APIUngroupVolumeSnapshotGroupEvent(msg.getId());
                 dbf.remove(self);
+                SQL.New(VmHostBackupFileVO.class)
+                        .eq(VmHostBackupFileVO_.resourceUuid, msg.getUuid())
+                        .delete();
                 bus.publish(evt);
                 chain.next();
             }
@@ -214,28 +219,43 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
             logger.debug(String.format("skip snapshots not belong to origin vm[uuid:%s]", self.getVmInstanceUuid()));
         }
 
-        new While<>(snapshots).all((snapshot, compl) -> {
-            DeleteVolumeSnapshotMsg rmsg = new DeleteVolumeSnapshotMsg();
-            rmsg.setSnapshotUuid(snapshot.getUuid());
-            rmsg.setVolumeUuid(snapshot.getVolumeUuid());
-            rmsg.setTreeUuid(snapshot.getTreeUuid());
-            rmsg.setDeletionMode(msg.getDeletionMode());
-            rmsg.setScope(msg.getScope());
-            rmsg.setDirection(msg.getDirection());
-            bus.makeTargetServiceIdByResourceUuid(rmsg, VolumeSnapshotConstant.SERVICE_ID, getResourceIdToRouteMsg(snapshot));
-            bus.send(rmsg, new CloudBusCallBack(compl) {
-                @Override
-                public void run(MessageReply r) {
-                    reply.addResult(new DeleteSnapshotGroupResult(rmsg.getSnapshotUuid(), rmsg.getVolumeUuid(), r.getError()));
-                    compl.done();
-                }
-            });
-        }).run(new WhileDoneCompletion(msg) {
-            @Override
-            public void done(ErrorCodeList errorCodeList) {
+        SimpleFlowChain.of("delete-volume-snapshot-group")
+            .then("delete-volume-snapshots", (trigger) ->
+                new While<>(snapshots).step((snapshot, compl) -> {
+                    DeleteVolumeSnapshotMsg rmsg = new DeleteVolumeSnapshotMsg();
+                    rmsg.setSnapshotUuid(snapshot.getUuid());
+                    rmsg.setVolumeUuid(snapshot.getVolumeUuid());
+                    rmsg.setTreeUuid(snapshot.getTreeUuid());
+                    rmsg.setDeletionMode(msg.getDeletionMode());
+                    rmsg.setScope(msg.getScope());
+                    rmsg.setDirection(msg.getDirection());
+                    bus.makeTargetServiceIdByResourceUuid(rmsg, VolumeSnapshotConstant.SERVICE_ID, getResourceIdToRouteMsg(snapshot));
+                    bus.send(rmsg, new CloudBusCallBack(compl) {
+                        @Override
+                        public void run(MessageReply r) {
+                            reply.addResult(new DeleteSnapshotGroupResult(rmsg.getSnapshotUuid(), rmsg.getVolumeUuid(), r.getError()));
+                            compl.done();
+                        }
+                    });
+                }, 5).run(new WhileDoneCompletion(msg) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        trigger.next();
+                    }
+                }))
+            .then("delete-vm-host-backup-files", trigger -> {
+                SQL.New(VmHostBackupFileVO.class)
+                        .eq(VmHostBackupFileVO_.resourceUuid, self.getUuid())
+                        .delete();
+                trigger.next();
+            })
+            .propagateExceptionTo(msg)
+            .done(() -> bus.reply(msg, reply))
+            .error(errorCode -> {
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
-            }
-        });
+            })
+            .start();
     }
 
     private void handle(APIRevertVmFromSnapshotGroupMsg msg) {
