@@ -9,6 +9,10 @@ public class TpmSpec {
     private String keyProviderUuid;
     @APINoSee
     private String secretUuid;
+    @APINoSee
+    private boolean resourceKeyCreatedNew;
+    @APINoSee
+    private String resourceKeyProviderUuid;
 
     public boolean isEnable() {
         return enable;
@@ -40,6 +44,22 @@ public class TpmSpec {
 
     public void setSecretUuid(String secretUuid) {
         this.secretUuid = secretUuid;
+    }
+
+    public boolean isResourceKeyCreatedNew() {
+        return resourceKeyCreatedNew;
+    }
+
+    public void setResourceKeyCreatedNew(boolean resourceKeyCreatedNew) {
+        this.resourceKeyCreatedNew = resourceKeyCreatedNew;
+    }
+
+    public String getResourceKeyProviderUuid() {
+        return resourceKeyProviderUuid;
+    }
+
+    public void setResourceKeyProviderUuid(String resourceKeyProviderUuid) {
+        this.resourceKeyProviderUuid = resourceKeyProviderUuid;
     }
 
     public static TpmSpec __example__() {
