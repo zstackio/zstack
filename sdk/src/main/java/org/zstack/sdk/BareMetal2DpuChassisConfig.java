@@ -4,6 +4,14 @@ package org.zstack.sdk;
 
 public class BareMetal2DpuChassisConfig  {
 
+    public java.lang.String vendorType;
+    public void setVendorType(java.lang.String vendorType) {
+        this.vendorType = vendorType;
+    }
+    public java.lang.String getVendorType() {
+        return this.vendorType;
+    }
+
     public java.lang.String ipmiAddress;
     public void setIpmiAddress(java.lang.String ipmiAddress) {
         this.ipmiAddress = ipmiAddress;
