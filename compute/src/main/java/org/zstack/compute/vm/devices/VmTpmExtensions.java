@@ -114,7 +114,6 @@ public class VmTpmExtensions implements VmInstanceCreateExtensionPoint,
 
             tpmSpec.setEnable(true);
             tpmSpec.setTpmUuid(tpmUuid);
-            tpmSpec.setKeyProviderUuid(resourceKeyBackend.findKeyProviderUuidByTpm(tpmUuid));
         }
     }
 }
