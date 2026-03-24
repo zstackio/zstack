@@ -296,6 +296,7 @@
             <zstack:extension interface="org.zstack.header.vm.VmInstanceDestroyExtensionPoint" />
             <zstack:extension interface="org.zstack.header.vm.VmPreMigrationExtensionPoint" />
             <zstack:extension interface="org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmReleaseResourceExtensionPoint" />
         </zstack:plugin>
     </bean>
 </beans>
