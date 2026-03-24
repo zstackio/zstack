@@ -60,4 +60,12 @@ public class GpuDeviceInventory extends org.zstack.sdk.PciDeviceInventory {
         return this.allocateStatus;
     }
 
+    public java.lang.String mode;
+    public void setMode(java.lang.String mode) {
+        this.mode = mode;
+    }
+    public java.lang.String getMode() {
+        return this.mode;
+    }
+
 }

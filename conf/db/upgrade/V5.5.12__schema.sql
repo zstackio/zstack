@@ -32,6 +32,95 @@ WHERE `opaque` IS NOT NULL
   AND Json_getKeyValue(`opaque`, 'end_time') IS NOT NULL
   AND Json_getKeyValue(`opaque`, 'end_time') != '';
 
+-- PCI virtualization capability metadata
+
+CREATE TABLE IF NOT EXISTS `zstack`.`PciDeviceVirtCapabilityVO` (
+    `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `pciDeviceUuid` VARCHAR(32)     NOT NULL,
+    `capability`    VARCHAR(32)     NOT NULL,
+    `createDate`    TIMESTAMP       NOT NULL,
+    `lastOpDate`    TIMESTAMP       NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_pci_device_virt_capability` (`pciDeviceUuid`, `capability`),
+    KEY `idx_pci_device_virt_capability_pci` (`pciDeviceUuid`),
+    CONSTRAINT `fk_pci_device_virt_capability_pci`
+        FOREIGN KEY (`pciDeviceUuid`) REFERENCES `zstack`.`PciDeviceVO`(`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL ADD_COLUMN('PciDeviceVO', 'virtState', 'varchar(32)', 1, NULL);
+
+UPDATE `zstack`.`PciDeviceVO`
+SET `virtState` =
+    CASE
+        WHEN `virtStatus` IN ('SRIOV_VIRTUALIZABLE', 'VFIO_MDEV_VIRTUALIZABLE', 'TENSORFUSION_VIRTUALIZABLE') THEN 'VIRTUALIZABLE'
+        WHEN `virtStatus` IN ('SRIOV_VIRTUALIZED', 'VFIO_MDEV_VIRTUALIZED', 'VIRTUALIZED_BYPASS_ZSTACK',
+                              'HAMI_VIRTUALIZED', 'TENSORFUSION_VIRTUALIZED') THEN 'VIRTUALIZED'
+        WHEN `virtStatus` = 'SRIOV_VIRTUAL' THEN 'VIRTUAL'
+        ELSE 'UNVIRTUALIZABLE'
+    END
+WHERE `virtState` IS NULL;
+
+INSERT IGNORE INTO `zstack`.`PciDeviceVirtCapabilityVO`
+    (`pciDeviceUuid`, `capability`, `createDate`, `lastOpDate`)
+SELECT `uuid`, 'SRIOV', NOW(), NOW()
+FROM `zstack`.`PciDeviceVO`
+WHERE `virtStatus` IN ('SRIOV_VIRTUALIZABLE', 'SRIOV_VIRTUALIZED');
+
+INSERT IGNORE INTO `zstack`.`PciDeviceVirtCapabilityVO`
+    (`pciDeviceUuid`, `capability`, `createDate`, `lastOpDate`)
+SELECT `uuid`, 'VFIO_MDEV', NOW(), NOW()
+FROM `zstack`.`PciDeviceVO`
+WHERE `virtStatus` IN ('VFIO_MDEV_VIRTUALIZABLE', 'VFIO_MDEV_VIRTUALIZED', 'VIRTUALIZED_BYPASS_ZSTACK');
+
+INSERT IGNORE INTO `zstack`.`PciDeviceVirtCapabilityVO`
+    (`pciDeviceUuid`, `capability`, `createDate`, `lastOpDate`)
+SELECT `uuid`, 'TENSORFUSION', NOW(), NOW()
+FROM `zstack`.`PciDeviceVO`
+WHERE `virtStatus` IN ('TENSORFUSION_VIRTUALIZABLE', 'TENSORFUSION_VIRTUALIZED');
+
+INSERT IGNORE INTO `zstack`.`PciDeviceVirtCapabilityVO`
+    (`pciDeviceUuid`, `capability`, `createDate`, `lastOpDate`)
+SELECT `uuid`, 'HAMI', NOW(), NOW()
+FROM `zstack`.`PciDeviceVO`
+WHERE `virtStatus` = 'HAMI_VIRTUALIZED';
+
+CALL ADD_COLUMN('PciDeviceVO', 'virtMode', 'varchar(32)', 1, NULL);
+
+UPDATE `zstack`.`PciDeviceVO`
+SET `virtMode` =
+    CASE
+        WHEN `virtStatus` IN ('SRIOV_VIRTUALIZED') THEN 'SRIOV'
+        WHEN `virtStatus` = 'SRIOV_VIRTUAL' THEN 'SRIOV'
+        WHEN `virtStatus` IN ('VFIO_MDEV_VIRTUALIZED', 'VIRTUALIZED_BYPASS_ZSTACK') THEN 'VFIO_MDEV'
+        WHEN `virtStatus` = 'TENSORFUSION_VIRTUALIZED' THEN 'TENSORFUSION'
+        WHEN `virtStatus` = 'HAMI_VIRTUALIZED' THEN 'HAMI'
+        ELSE `virtMode`
+    END
+WHERE `virtStatus` IN (
+    'SRIOV_VIRTUALIZED', 'SRIOV_VIRTUAL',
+    'VFIO_MDEV_VIRTUALIZED', 'VIRTUALIZED_BYPASS_ZSTACK',
+    'TENSORFUSION_VIRTUALIZED', 'HAMI_VIRTUALIZED'
+);
+
+CALL ADD_COLUMN('GpuDeviceVO', 'mode', 'varchar(32)', 1, NULL);
+CALL CREATE_INDEX('GpuDeviceVO', 'idx_gpu_device_mode', 'mode');
+
+UPDATE `zstack`.`GpuDeviceVO` g
+INNER JOIN `zstack`.`PciDeviceVO` p ON g.`uuid` = p.`uuid`
+SET g.`mode` = CASE
+    WHEN p.`virtState` = 'VIRTUALIZED' AND p.`virtMode` = 'TENSORFUSION' THEN 'DGPU'
+    WHEN p.`virtState` = 'VIRTUALIZED' AND p.`virtMode` IN ('VFIO_MDEV', 'SRIOV') THEN 'VGPU'
+    ELSE 'PCI'
+END;
+
+UPDATE `zstack`.`GpuDeviceVO` g
+INNER JOIN `zstack`.`PciDeviceVO` p ON g.`uuid` = p.`uuid`
+SET g.`allocateStatus` = CASE
+    WHEN p.`vmInstanceUuid` IS NOT NULL THEN 'Allocated'
+    WHEN p.`virtState` = 'VIRTUALIZED' AND p.`virtMode` IS NOT NULL THEN 'Unallocatable'
+    ELSE 'Unallocated'
+END;
+
 -- dGPU (TensorFusion) support tables
 
 CREATE TABLE IF NOT EXISTS `zstack`.`DGpuProfileVO` (

@@ -651,6 +651,8 @@ public class SourceClassMap {
 			put("org.zstack.pciDevice.specification.pci.PciDeviceSpecInventory", "org.zstack.sdk.PciDeviceSpecInventory");
 			put("org.zstack.pciDevice.specification.pci.PciDeviceSpecState", "org.zstack.sdk.PciDeviceSpecState");
 			put("org.zstack.pciDevice.specification.pci.VmInstancePciDeviceSpecRefInventory", "org.zstack.sdk.VmInstancePciDeviceSpecRefInventory");
+			put("org.zstack.pciDevice.virtual.PciDeviceVirtMode", "org.zstack.sdk.PciDeviceVirtMode");
+			put("org.zstack.pciDevice.virtual.PciDeviceVirtState", "org.zstack.sdk.PciDeviceVirtState");
 			put("org.zstack.pciDevice.virtual.PciDeviceVirtStatus", "org.zstack.sdk.PciDeviceVirtStatus");
 			put("org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceChooser", "org.zstack.sdk.MdevDeviceChooser");
 			put("org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceInventory", "org.zstack.sdk.MdevDeviceInventory");
@@ -1339,6 +1341,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PciDeviceState", "org.zstack.pciDevice.PciDeviceState");
 			put("org.zstack.sdk.PciDeviceStatus", "org.zstack.pciDevice.PciDeviceStatus");
 			put("org.zstack.sdk.PciDeviceType", "org.zstack.pciDevice.PciDeviceType");
+			put("org.zstack.sdk.PciDeviceVirtMode", "org.zstack.pciDevice.virtual.PciDeviceVirtMode");
+			put("org.zstack.sdk.PciDeviceVirtState", "org.zstack.pciDevice.virtual.PciDeviceVirtState");
 			put("org.zstack.sdk.PciDeviceVirtStatus", "org.zstack.pciDevice.virtual.PciDeviceVirtStatus");
 			put("org.zstack.sdk.PendingTaskInfo", "org.zstack.header.core.progress.PendingTaskInfo");
 			put("org.zstack.sdk.PhysicalDriveSmartSelfTestHistoryInventory", "org.zstack.storage.device.localRaid.PhysicalDriveSmartSelfTestHistoryInventory");
