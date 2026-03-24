@@ -11,6 +11,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.zstack.core.Platform.operr;
@@ -93,7 +94,7 @@ public class ZbsStorageFactory implements ExternalPrimaryStorageSvcBuilder, Back
 
     @Override
     public List<String> getPreferBackupStorageTypes() {
-        return preferBackupStorageTypes;
+        return new ArrayList<>(preferBackupStorageTypes);
     }
 
     @Override

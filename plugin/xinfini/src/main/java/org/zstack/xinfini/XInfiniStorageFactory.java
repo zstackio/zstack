@@ -11,6 +11,7 @@ import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.xinfini.XInfiniConstants;
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -55,7 +56,7 @@ public class XInfiniStorageFactory implements ExternalPrimaryStorageSvcBuilder, 
 
     @Override
     public List<String> getPreferBackupStorageTypes() {
-        return preferBackupStorageTypes;
+        return new ArrayList<>(preferBackupStorageTypes);
     }
 
     public void setPreferBackupStorageTypes(List<String> preferBackupStorageTypes) {
