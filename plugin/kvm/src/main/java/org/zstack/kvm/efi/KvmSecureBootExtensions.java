@@ -37,6 +37,7 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstantiateResourceException;
 import org.zstack.header.vm.VmMigrationType;
 import org.zstack.header.vm.VmPreMigrationExtensionPoint;
+import org.zstack.header.vm.VmReleaseResourceExtensionPoint;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.additions.VmHostFileContentVO;
@@ -88,7 +89,8 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         PreVmInstantiateResourceExtensionPoint,
         VmInstanceDestroyExtensionPoint,
         VmPreMigrationExtensionPoint,
-        AfterReimageVmInstanceExtensionPoint {
+        AfterReimageVmInstanceExtensionPoint,
+        VmReleaseResourceExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmSecureBootExtensions.class);
 
     @Autowired
@@ -732,5 +734,52 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
 
         logger.debug(String.format("reset TPM state for VM[uuid:%s] after reimage: " +
                 "deleted all VmHostFileVO and VmHostBackupFileVO records", vmUuid));
+    }
+
+    @Override
+    public void releaseVmResource(VmInstanceSpec spec, Completion completion) {
+        if (spec.getDestHost() == null) {
+            completion.success();
+            return;
+        }
+
+        String hostUuid = spec.getDestHost().getUuid();
+        String vmUuid = spec.getVmInventory().getUuid();
+        List<VmHostFileVO> vmHostFiles = Q.New(VmHostFileVO.class)
+                .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
+                .eq(VmHostFileVO_.hostUuid, hostUuid)
+                .list();
+        if (vmHostFiles.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        logger.info(String.format("try to sync VM host file[vmUuid=%s] from host[uuid=%s]", vmUuid, hostUuid));
+        SyncVmHostFilesFromHostMsg syncMsg = new SyncVmHostFilesFromHostMsg();
+        syncMsg.setHostUuid(hostUuid);
+        syncMsg.setVmUuid(vmUuid);
+
+        for (VmHostFileVO file : vmHostFiles) {
+            if (file.getType() == VmHostFileType.NvRam) {
+                syncMsg.setNvRamPath(file.getPath());
+            } else if (file.getType() == VmHostFileType.TpmState) {
+                syncMsg.setTpmStateFolder(file.getPath());
+            } else {
+                logger.warn(String.format("unsupported vm host file type: %s, skip syncing for VM[uuid:%s] from host[uuid:%s]",
+                        file.getType(), vmUuid, hostUuid));
+            }
+        }
+
+        bus.makeLocalServiceId(syncMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
+        bus.send(syncMsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("failed to sync VM host file[vmUuid=%s] from host[uuid=%s] but still continue: %s",
+                            vmUuid, hostUuid, reply.getError().getReadableDetails()));
+                }
+                completion.success();
+            }
+        });
     }
 }
