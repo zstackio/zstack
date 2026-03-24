@@ -5,9 +5,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImagePlatform;
-import org.zstack.header.localVolumeCache.VmLocalVolumeCacheInventory;
-import org.zstack.header.localVolumeCache.VmLocalVolumeCacheVO;
-import org.zstack.header.localVolumeCache.VmLocalVolumeCacheVO_;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.vm.VmInstanceVO;
@@ -109,6 +106,10 @@ public class VolumeTO extends BaseVirtualDeviceTO {
         return valueOf(vol, host, platform, false);
     }
 
+    public static VolumeTO valueOf(VolumeInventory vol, HostInventory host, String platform) {
+        return valueOf(vol, host, platform, true);
+    }
+
     public static VolumeTO valueOf(VolumeInventory vol, HostInventory host, String platform, boolean withExtension) {
         KVMHostInventory kvmHostInventory = new KVMHostInventory();
         BeanUtils.copyProperties(host, kvmHostInventory);
@@ -158,16 +159,7 @@ public class VolumeTO extends BaseVirtualDeviceTO {
         for (KVMConvertVolumeExtensionPoint ext : exts) {
             to = ext.convertVolumeIfNeed(host, vol, to);
         }
-        VmLocalVolumeCacheVO cacheVO = Q.New(VmLocalVolumeCacheVO.class)
-                .eq(VmLocalVolumeCacheVO_.volumeUuid, vol.getUuid())
-                .find();
-        if (cacheVO == null) {
-            return to;
-        }
-        VmLocalVolumeCacheInventory cacheInv = VmLocalVolumeCacheInventory.valueOf(cacheVO);
-        CacheTO cacheTO = CacheTO.valueOf(cacheInv);
-        to.setCache(cacheTO);
-        return  to;
+        return to;
     }
 
     private synchronized static void prepareExts() {
