@@ -27,6 +27,8 @@ public class TagPatternInventory {
 
     private TagPatternType type;
 
+    private String resourceType;
+
     private Timestamp createDate;
 
     private Timestamp lastOpDate;
@@ -39,6 +41,7 @@ public class TagPatternInventory {
         inv.value = vo.getValue();
         inv.color = vo.getColor();
         inv.type = vo.getType();
+        inv.resourceType = vo.getResourceType();
         inv.createDate = vo.getCreateDate();
         inv.lastOpDate = vo.getLastOpDate();
         return inv;
@@ -110,5 +113,13 @@ public class TagPatternInventory {
 
     public void setType(TagPatternType type) {
         this.type = type;
+    }
+
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
     }
 }

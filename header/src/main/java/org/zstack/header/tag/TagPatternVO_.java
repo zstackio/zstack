@@ -13,6 +13,7 @@ public class TagPatternVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<TagPatternVO, String> description;
     public static volatile SingularAttribute<TagPatternVO, String> color;
     public static volatile SingularAttribute<TagPatternVO, TagPatternType> type;
+    public static volatile SingularAttribute<TagPatternVO, String> resourceType;
     public static volatile SingularAttribute<TagPatternVO, Timestamp> createDate;
     public static volatile SingularAttribute<TagPatternVO, Timestamp> lastOpDate;
 }

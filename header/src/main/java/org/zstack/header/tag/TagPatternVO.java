@@ -30,6 +30,20 @@ public class TagPatternVO extends ResourceVO implements OwnedByAccount {
     @Transient
     private String accountUuid;
 
+    /**
+     * Limits this tag pattern to a specific resource type (e.g. "ModelVO").
+     * <p>
+     * NULL means the tag pattern is universal — available for all resource types.
+     * This ensures backward compatibility: tag patterns created before this field
+     * was introduced (upgraded from older versions) have resourceType=NULL and
+     * remain visible everywhere.
+     * <p>
+     * When filtering tag patterns for a specific resource page, use:
+     * {@code WHERE resourceType IS NULL OR resourceType = :targetResourceType}
+     */
+    @Column
+    private String resourceType;
+
     @Column
     private Timestamp createDate;
 
@@ -105,5 +119,13 @@ public class TagPatternVO extends ResourceVO implements OwnedByAccount {
 
     public void setType(TagPatternType type) {
         this.type = type;
+    }
+
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
     }
 }
