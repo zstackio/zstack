@@ -229,6 +229,3 @@ SET g.`allocateStatus` = 'Unallocatable'
 WHERE p.`virtStatus` IN ('VFIO_MDEV_VIRTUALIZED', 'SRIOV_VIRTUALIZED')
   AND p.`vmInstanceUuid` IS NULL
   AND g.`allocateStatus` != 'Unallocatable';
-
--- ZSTAC-74908: Add resourceType to TagPatternVO to scope AI model tags away from VM pages
-CALL ADD_COLUMN('TagPatternVO', 'resourceType', 'VARCHAR(128)', 1, NULL);
