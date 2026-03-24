@@ -8,6 +8,7 @@ import org.zstack.header.volume.VolumeAfterExpungeExtensionPoint;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeProtocol;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,7 @@ public class ExponStorageFactory implements ExternalPrimaryStorageSvcBuilder, Ba
 
     @Override
     public List<String> getPreferBackupStorageTypes() {
-        return preferBackupStorageTypes;
+        return new ArrayList<>(preferBackupStorageTypes);
     }
 
     public void setPreferBackupStorageTypes(List<String> preferBackupStorageTypes) {
