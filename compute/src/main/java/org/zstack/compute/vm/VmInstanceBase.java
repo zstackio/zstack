@@ -45,6 +45,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.tpm.TpmConstants;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
@@ -56,6 +57,7 @@ import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPo
 import org.zstack.header.vm.VmInstanceSpec.CdRomSpec;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
+import org.zstack.header.vm.additions.ResetVmTpmMsg;
 import org.zstack.header.vm.cdrom.*;
 import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
 import org.zstack.header.vo.ResourceVO;
@@ -3555,6 +3557,40 @@ public class VmInstanceBase extends AbstractVmInstance {
                                     return;
                                 }
                                 dbf.remove(cache);
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "reset-vm-tpm";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        boolean resetTpm;
+                        if (msg.getResetTpm() == null) {
+                            resetTpm = rcf.getResourceConfigValue(
+                                    VmGlobalConfig.RESET_TPM_AFTER_VM_CLONE,
+                                    msg.getVmInstanceUuid(), Boolean.class);
+                        } else {
+                            resetTpm = msg.getResetTpm();
+                        }
+                        return !resetTpm;
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map map) {
+                        ResetVmTpmMsg rmsg = new ResetVmTpmMsg();
+                        rmsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+                        bus.makeLocalServiceId(rmsg, TpmConstants.SERVICE_ID);
+                        bus.send(rmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
                                 trigger.next();
                             }
                         });
