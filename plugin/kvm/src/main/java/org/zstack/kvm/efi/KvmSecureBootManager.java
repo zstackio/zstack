@@ -65,17 +65,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 
 import static org.zstack.compute.vm.VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT;
 import static org.zstack.compute.vm.VmGlobalConfig.RESET_TPM_AFTER_VM_CLONE;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.kvm.KVMAgentCommands.*;
-import static org.zstack.kvm.KVMConstant.READ_VM_HOST_FILE_PATH;
-import static org.zstack.kvm.KVMConstant.WRITE_VM_HOST_FILE_PATH;
-import static org.zstack.kvm.KVMConstant.buildNvramFilePath;
-import static org.zstack.kvm.KVMConstant.buildTpmStateFilePath;
+import static org.zstack.kvm.KVMConstant.*;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.findOneOrNull;
+import static org.zstack.utils.CollectionUtils.toMap;
 import static org.zstack.utils.CollectionUtils.transform;
 
 public class KvmSecureBootManager extends AbstractService {
@@ -619,6 +618,16 @@ public class KvmSecureBootManager extends AbstractService {
             return;
         }
 
+        // Batch query all backup file content before loop
+        List<String> backupUuids = transform(backupFiles, VmHostBackupFileVO::getUuid);
+        Map<String, VmHostFileContentVO> backupContentMap = new HashMap<>();
+        if (!backupUuids.isEmpty()) {
+            List<VmHostFileContentVO> backupContents = Q.New(VmHostFileContentVO.class)
+                    .in(VmHostFileContentVO_.uuid, backupUuids)
+                    .list();
+            backupContentMap.putAll(toMap(backupContents, VmHostFileContentVO::getUuid, Function.identity()));
+        }
+
         List<VmHostFileTO> fileList = new ArrayList<>();
         for (VmHostFileType type : allTypes) {
             VmHostFileTO to = new VmHostFileTO();
@@ -630,21 +639,14 @@ public class KvmSecureBootManager extends AbstractService {
             if (hasBackupFile) {
                 // Write operation
                 VmHostBackupFileVO backupFile = backupFilesByType.get(type);
-                VmHostFileContentVO content = Q.New(VmHostFileContentVO.class)
-                        .eq(VmHostFileContentVO_.uuid, backupFile.getUuid())
-                        .find();
+                VmHostFileContentVO content = backupContentMap.get(backupFile.getUuid());
                 if (content == null) {
                     logger.warn(String.format("backup file content [uuid:%s] not found for type %s",
                             backupFile.getUuid(), type));
                     continue;
                 }
 
-                if (type == VmHostFileType.NvRam) {
-                    to.setPath(buildNvramFilePath(msg.getVmInstanceUuid()));
-                } else if (type == VmHostFileType.TpmState) {
-                    to.setPath(buildTpmStateFilePath(msg.getVmInstanceUuid()));
-                }
-
+                to.setPath(buildPathForVmHostFileType(type, msg.getVmInstanceUuid()));
                 to.setFileFormat(content.getFormat().toString());
                 to.setOperation(VmHostFileOperation.Write.toString());
                 String contentBase64 = Base64.getEncoder().encodeToString(content.getContent());
@@ -678,18 +680,12 @@ public class KvmSecureBootManager extends AbstractService {
                         KVMAgentCommands.WriteVmHostFileContentResponse writeRsp = wrapper.getResponse(KVMAgentCommands.WriteVmHostFileContentResponse.class);
                         return writeRsp.isSuccess() ? null :
                                 operr("failed to write/delete host file response").causedBy(writeRsp.getError());
-                    }, new ReturnValueCompletion<KvmResponseWrapper>(msg) {
+                    }, new ReturnValueCompletion<KvmResponseWrapper>(trigger) {
                         @Override
                         public void success(KvmResponseWrapper wrapper) {
-                            KVMAgentCommands.WriteVmHostFileContentResponse writeRsp = wrapper.getResponse(KVMAgentCommands.WriteVmHostFileContentResponse.class);
-                            if (writeRsp.isSuccess()) {
-                                logger.info(String.format("success to restore host files for VM[uuid:%s] from snapshot group[uuid:%s]",
-                                        msg.getVmInstanceUuid(), msg.getSnapshotGroupUuid()));
-                                trigger.next();
-                                return;
-                            }
-                            trigger.fail(operr("failed to write/delete host file")
-                                    .causedBy(writeRsp.getError()));
+                            logger.info(String.format("success to restore host files for VM[uuid:%s] from snapshot group[uuid:%s]",
+                                    msg.getVmInstanceUuid(), msg.getSnapshotGroupUuid()));
+                            trigger.next();
                         }
 
                         @Override
@@ -704,15 +700,25 @@ public class KvmSecureBootManager extends AbstractService {
                 .handle(trigger -> {
                     Timestamp now = Timestamp.from(Instant.now());
 
+                    List<String> allUuids = new ArrayList<>();
+                    allUuids.addAll(transform(backupFilesByType.values(), VmHostBackupFileVO::getUuid));
+                    allUuids.addAll(transform(currentFilesByType.values(), VmHostFileVO::getUuid));
+
+                    Map<String, VmHostFileContentVO> contentMap = new HashMap<>();
+                    if (!allUuids.isEmpty()) {
+                        List<VmHostFileContentVO> contents = Q.New(VmHostFileContentVO.class)
+                                .in(VmHostFileContentVO_.uuid, allUuids)
+                                .list();
+                        contentMap.putAll(toMap(contents, VmHostFileContentVO::getUuid, Function.identity()));
+                    }
+
                     for (VmHostFileType type : allTypes) {
                         boolean hasCurrentFile = currentFilesByType.containsKey(type);
                         boolean hasBackupFile = backupFilesByType.containsKey(type);
 
                         if (hasBackupFile) {
                             VmHostBackupFileVO backupFile = backupFilesByType.get(type);
-                            VmHostFileContentVO backupContent = Q.New(VmHostFileContentVO.class)
-                                    .eq(VmHostFileContentVO_.uuid, backupFile.getUuid())
-                                    .find();
+                            VmHostFileContentVO backupContent = contentMap.get(backupFile.getUuid());
                             if (backupContent == null) {
                                 continue;
                             }
@@ -725,9 +731,7 @@ public class KvmSecureBootManager extends AbstractService {
                                         .set(VmHostFileVO_.lastOpDate, now)
                                         .update();
 
-                                VmHostFileContentVO existingContent = Q.New(VmHostFileContentVO.class)
-                                        .eq(VmHostFileContentVO_.uuid, currentFile.getUuid())
-                                        .find();
+                                VmHostFileContentVO existingContent = contentMap.get(currentFile.getUuid());
                                 if (existingContent != null) {
                                     SQL.New(VmHostFileContentVO.class)
                                             .eq(VmHostFileContentVO_.uuid, currentFile.getUuid())
@@ -746,19 +750,13 @@ public class KvmSecureBootManager extends AbstractService {
                                 }
                             } else {
                                 // create new VmHostFileVO and VmHostFileContentVO
-                                String path;
-                                if (type == VmHostFileType.NvRam) {
-                                    path = buildNvramFilePath(msg.getVmInstanceUuid());
-                                } else {
-                                    path = buildTpmStateFilePath(msg.getVmInstanceUuid());
-                                }
-
                                 VmHostFileVO newFile = new VmHostFileVO();
                                 newFile.setUuid(Platform.getUuid());
+                                newFile.setResourceName(String.format("%s file for %s", type, msg.getVmInstanceUuid()));
                                 newFile.setVmInstanceUuid(msg.getVmInstanceUuid());
                                 newFile.setHostUuid(finalHostUuid);
                                 newFile.setType(type);
-                                newFile.setPath(path);
+                                newFile.setPath(buildPathForVmHostFileType(type, msg.getVmInstanceUuid()));
                                 newFile.setCreateDate(now);
                                 newFile.setLastOpDate(now);
                                 databaseFacade.persist(newFile);
