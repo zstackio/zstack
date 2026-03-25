@@ -13,6 +13,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowDoneHandler;
@@ -33,6 +34,7 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
 import org.zstack.header.vm.VmInstanceDestroyExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstantiateResourceException;
 import org.zstack.header.vm.VmMigrationType;
@@ -90,7 +92,8 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         VmInstanceDestroyExtensionPoint,
         VmPreMigrationExtensionPoint,
         AfterReimageVmInstanceExtensionPoint,
-        VmReleaseResourceExtensionPoint {
+        VmReleaseResourceExtensionPoint,
+        VmInstanceMigrateExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmSecureBootExtensions.class);
 
     @Autowired
@@ -779,6 +782,70 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                             vmUuid, hostUuid, reply.getError().getReadableDetails()));
                 }
                 completion.success();
+            }
+        });
+    }
+
+    @Override
+    public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid, NoErrorCompletion completion) {
+        String destHostUuid = inv.getHostUuid();
+        String vmUuid = inv.getUuid();
+
+        List<VmHostFileVO> vmHostFiles = Q.New(VmHostFileVO.class)
+                .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
+                .eq(VmHostFileVO_.hostUuid, srcHostUuid)
+                .list();
+        if (vmHostFiles.isEmpty()) {
+            completion.done();
+            return;
+        }
+
+        // clean up stale VmHostFileVO/VmHostFileContentVO on dest host
+        // before sync creates new records
+        List<VmHostFileVO> staleFiles = Q.New(VmHostFileVO.class)
+                .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
+                .eq(VmHostFileVO_.hostUuid, destHostUuid)
+                .list();
+        if (!staleFiles.isEmpty()) {
+            List<String> staleUuids = staleFiles.stream()
+                    .map(VmHostFileVO::getUuid)
+                    .collect(java.util.stream.Collectors.toList());
+            SQL.New(VmHostFileContentVO.class)
+                    .in(VmHostFileContentVO_.uuid, staleUuids)
+                    .delete();
+            SQL.New(VmHostFileVO.class)
+                    .in(VmHostFileVO_.uuid, staleUuids)
+                    .delete();
+            logger.debug(String.format("cleaned up %d stale VmHostFileVO/Content on dest host[uuid=%s] for VM[uuid=%s]",
+                    staleFiles.size(), destHostUuid, vmUuid));
+        }
+
+        logger.info(String.format("sync VM host file[vmUuid=%s] from dest host[uuid=%s] after migration",
+                vmUuid, destHostUuid));
+        SyncVmHostFilesFromHostMsg syncMsg = new SyncVmHostFilesFromHostMsg();
+        syncMsg.setHostUuid(destHostUuid);
+        syncMsg.setVmUuid(vmUuid);
+
+        for (VmHostFileVO file : vmHostFiles) {
+            if (file.getType() == VmHostFileType.NvRam) {
+                syncMsg.setNvRamPath(file.getPath());
+            } else if (file.getType() == VmHostFileType.TpmState) {
+                syncMsg.setTpmStateFolder(file.getPath());
+            } else {
+                logger.warn(String.format("unsupported vm host file type: %s, skip syncing for VM[uuid:%s]",
+                        file.getType(), vmUuid));
+            }
+        }
+
+        bus.makeLocalServiceId(syncMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
+        bus.send(syncMsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("failed to sync VM host file[vmUuid=%s] from host[uuid=%s] after migration, but tolerated: %s",
+                            vmUuid, destHostUuid, reply.getError().getReadableDetails()));
+                }
+                completion.done();
             }
         });
     }
