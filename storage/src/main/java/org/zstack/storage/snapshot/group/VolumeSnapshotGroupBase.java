@@ -410,7 +410,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                     RestoreVmHostFileMsg restoreMsg = new RestoreVmHostFileMsg();
                     restoreMsg.setVmInstanceUuid(vmUuid);
                     restoreMsg.setSnapshotGroupUuid(self.getUuid());
-                    bus.makeTargetServiceIdByResourceUuid(restoreMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID, vmUuid);
+                    bus.makeLocalServiceId(restoreMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
                     bus.send(restoreMsg, new CloudBusCallBack(trigger) {
                         @Override
                         public void run(MessageReply reply) {

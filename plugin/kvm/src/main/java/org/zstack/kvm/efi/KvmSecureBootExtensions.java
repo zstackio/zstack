@@ -440,10 +440,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 if (context.vmBackupFileVO != null) {
                     logger.debug(String.format("use %s[type=%s] VM-host backup file for VM[uuid=%s]",
                             context.vmBackupFileVO.getUuid(), context.type, context.vmUuid));
-                    switch (context.type) {
-                    case NvRam: context.path = buildNvramFilePath(context.vmUuid); break;
-                    case TpmState: context.path = buildTpmStateFilePath(context.vmUuid); break;
-                    }
+                    context.path = buildPathForVmHostFileType(context.type, context.vmUuid);
                 }
                 trigger.next();
             }
