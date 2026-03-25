@@ -40,6 +40,7 @@ import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.additions.VmHostFileContentVO;
 import org.zstack.header.vm.additions.VmHostFileContentVO_;
+import org.zstack.header.vm.additions.VmHostFileOperation;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
 import org.zstack.header.vm.additions.VmHostFileVO_;
@@ -196,7 +197,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                     VmHostFileTO to = new VmHostFileTO();
                     to.setPath(buildNvramFilePath(vm.getUuid()));
                     to.setType(VmHostFileType.NvRam.toString());
-                    to.setFileFormat(VmHostFileTO.FORMAT_PREPARE_ONLY);
+                    to.setOperation(VmHostFileOperation.Prepare.toString());
 
                     RewriteVmHostFilesContext context = new RewriteVmHostFilesContext();
                     context.hostUuid = dstHostUuid;
@@ -466,6 +467,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 to.setPath(context.path);
                 to.setType(context.type.toString());
                 to.setFileFormat(content.getFormat().toString());
+                to.setOperation(VmHostFileOperation.Write.toString());
 
                 String contentBase64 = Base64.getEncoder().encodeToString(content.getContent());
                 to.setContentBase64(contentBase64);
