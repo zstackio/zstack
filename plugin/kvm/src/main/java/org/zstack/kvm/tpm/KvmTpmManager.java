@@ -44,6 +44,10 @@ import org.zstack.header.tpm.message.RemoveTpmMsg;
 import org.zstack.header.tpm.message.RemoveTpmReply;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.additions.ResetVmTpmMsg;
+import org.zstack.header.vm.additions.ResetVmTpmReply;
+import org.zstack.header.vm.additions.VmHostBackupFileVO;
+import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.additions.VmHostFileInventory;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
@@ -120,6 +124,8 @@ public class KvmTpmManager extends AbstractService {
             handle((RemoveTpmMsg) msg);
         } else if (msg instanceof CloneVmTpmMsg) {
             handle((CloneVmTpmMsg) msg);
+        } else if (msg instanceof ResetVmTpmMsg) {
+            handle((ResetVmTpmMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -418,6 +424,22 @@ public class KvmTpmManager extends AbstractService {
                 bus.reply(msg, reply);
             }
         }).start();
+    }
+
+    private void handle(ResetVmTpmMsg msg) {
+        ResetVmTpmReply reply = new ResetVmTpmReply();
+
+        String vmUuid = msg.getVmInstanceUuid();
+        SQL.New(VmHostFileVO.class)
+                .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
+                .eq(VmHostFileVO_.type, VmHostFileType.TpmState)
+                .delete();
+        SQL.New(VmHostBackupFileVO.class)
+                .eq(VmHostBackupFileVO_.resourceUuid, vmUuid)
+                .eq(VmHostBackupFileVO_.type, VmHostFileType.TpmState)
+                .delete();
+
+        bus.reply(msg, reply);
     }
 
     private void handle(APIGetTpmCapabilityMsg msg) {
