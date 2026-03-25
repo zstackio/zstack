@@ -194,7 +194,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     return;
                 }
 
-                L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(l3Vo);
+                L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class));
                 new While<>(exts).each((ext, wcompl) -> {
                     ext.afterSetL3NetworkMtu(l3Inv, msg.getMtu(), new Completion(wcompl) {
                         @Override
