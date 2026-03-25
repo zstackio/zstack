@@ -11,7 +11,6 @@ import org.zstack.header.host.Sensor;
 import org.zstack.header.host.VmNicRedirectConfig;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.additions.VmHostFileContentFormat;
 import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.kvm.tpm.TpmTO;
@@ -2824,8 +2823,6 @@ public class KVMAgentCommands {
     }
 
     public static class VmHostFileTO {
-        public static final String FORMAT_PREPARE_ONLY = "PrepareOnly";
-
         private String path;
         /**
          * maybe "NvRam" or "TpmState" ...
@@ -2833,13 +2830,18 @@ public class KVMAgentCommands {
          */
         private String type;
         /**
-         * maybe "Simple" or "TarballGzip"
-         * if prepare only, use {@link #FORMAT_PREPARE_ONLY}
-         * @see VmHostFileContentFormat
+         * file format: Raw or TarballGzip
+         * @see org.zstack.header.vm.additions.VmHostFileContentFormat
          */
         private String fileFormat;
         /**
-         * null if fileFormat is {@link #FORMAT_PREPARE_ONLY}
+         * operation: Write, Prepare, or Delete
+         * only use in WriteVmHostFileContentCmd
+         * @see org.zstack.header.vm.additions.VmHostFileOperation
+         */
+        private String operation;
+        /**
+         * null if operation is Prepare or Delete
          */
         @NoLogging
         private String contentBase64;
@@ -2867,6 +2869,14 @@ public class KVMAgentCommands {
 
         public void setFileFormat(String fileFormat) {
             this.fileFormat = fileFormat;
+        }
+
+        public String getOperation() {
+            return operation;
+        }
+
+        public void setOperation(String operation) {
+            this.operation = operation;
         }
 
         public String getContentBase64() {
