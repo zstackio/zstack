@@ -1,7 +1,9 @@
 package org.zstack.kvm;
 
 import org.zstack.header.configuration.PythonClass;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.additions.VmHostFileType;
 
 @PythonClass
 public interface KVMConstant {
@@ -232,6 +234,14 @@ public interface KVMConstant {
     public static String buildTpmStateFilePath(String vmUuid) {
         String vmUuidWithHyphen = vmUuid.replaceFirst("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5");
         return String.format(TPM_STATE_FILE_PATH_FORMAT, vmUuidWithHyphen);
+    }
+
+    public static String buildPathForVmHostFileType(VmHostFileType type, String vmUuid) {
+        switch (type) {
+            case NvRam: return buildNvramFilePath(vmUuid);
+            case TpmState: return buildTpmStateFilePath(vmUuid);
+            default: throw new CloudRuntimeException("unsupported VmHostFileType: " + type);
+        }
     }
 
     public static final String DHCP_BIN_FILE_PATH = "/usr/local/zstack/dnsmasq";
