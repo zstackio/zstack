@@ -17,6 +17,7 @@ import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -32,11 +33,14 @@ import org.zstack.header.vm.VmCanonicalEvents;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.additions.RestoreVmHostFileMsg;
+import org.zstack.header.vm.additions.RestoreVmHostFileReply;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.additions.VmHostFileContentFormat;
 import org.zstack.header.vm.additions.VmHostFileContentVO;
 import org.zstack.header.vm.additions.VmHostFileContentVO_;
+import org.zstack.header.vm.additions.VmHostFileOperation;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
 import org.zstack.header.vm.additions.VmHostFileVO_;
@@ -56,14 +60,20 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import static org.zstack.compute.vm.VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT;
 import static org.zstack.compute.vm.VmGlobalConfig.RESET_TPM_AFTER_VM_CLONE;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.kvm.KVMAgentCommands.*;
 import static org.zstack.kvm.KVMConstant.READ_VM_HOST_FILE_PATH;
+import static org.zstack.kvm.KVMConstant.WRITE_VM_HOST_FILE_PATH;
+import static org.zstack.kvm.KVMConstant.buildNvramFilePath;
+import static org.zstack.kvm.KVMConstant.buildTpmStateFilePath;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.findOneOrNull;
 import static org.zstack.utils.CollectionUtils.transform;
@@ -165,6 +175,8 @@ public class KvmSecureBootManager extends AbstractService {
             handle((CloneVmHostFileMsg) msg);
         } else if (msg instanceof BackupVmHostFileMsg) {
             handle((BackupVmHostFileMsg) msg);
+        } else if (msg instanceof RestoreVmHostFileMsg) {
+            handle((RestoreVmHostFileMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -554,5 +566,232 @@ public class KvmSecureBootManager extends AbstractService {
             }
         }.execute();
         return filesNeedPersists;
+    }
+
+    private void handle(RestoreVmHostFileMsg msg) {
+        RestoreVmHostFileReply reply = new RestoreVmHostFileReply();
+
+        List<VmHostBackupFileVO> backupFiles = Q.New(VmHostBackupFileVO.class)
+                .eq(VmHostBackupFileVO_.resourceUuid, msg.getSnapshotGroupUuid())
+                .list();
+
+        Tuple tuple = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.hostUuid, VmInstanceVO_.lastHostUuid)
+                .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
+                .findTuple();
+        if (tuple == null) {
+            reply.setError(operr("VM instance [uuid:%s] not found", msg.getVmInstanceUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        String hostUuid = tuple.get(0, String.class);
+        if (hostUuid == null) {
+            hostUuid = tuple.get(1, String.class);
+        }
+        if (hostUuid == null) {
+            reply.setError(operr("VM instance [uuid:%s] has no host", msg.getVmInstanceUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        List<VmHostFileVO> currentHostFiles = Q.New(VmHostFileVO.class)
+                .eq(VmHostFileVO_.vmInstanceUuid, msg.getVmInstanceUuid())
+                .eq(VmHostFileVO_.hostUuid, hostUuid)
+                .list();
+
+        Map<VmHostFileType, VmHostFileVO> currentFilesByType = new HashMap<>();
+        for (VmHostFileVO file : currentHostFiles) {
+            currentFilesByType.put(file.getType(), file);
+        }
+
+        Map<VmHostFileType, VmHostBackupFileVO> backupFilesByType = new HashMap<>();
+        for (VmHostBackupFileVO file : backupFiles) {
+            backupFilesByType.put(file.getType(), file);
+        }
+
+        Set<VmHostFileType> allTypes = new HashSet<>();
+        allTypes.addAll(currentFilesByType.keySet());
+        allTypes.addAll(backupFilesByType.keySet());
+
+        if (allTypes.isEmpty()) {
+            bus.reply(msg, reply);
+            return;
+        }
+
+        List<VmHostFileTO> fileList = new ArrayList<>();
+        for (VmHostFileType type : allTypes) {
+            VmHostFileTO to = new VmHostFileTO();
+            to.setType(type.toString());
+
+            boolean hasCurrentFile = currentFilesByType.containsKey(type);
+            boolean hasBackupFile = backupFilesByType.containsKey(type);
+
+            if (hasBackupFile) {
+                // Write operation
+                VmHostBackupFileVO backupFile = backupFilesByType.get(type);
+                VmHostFileContentVO content = Q.New(VmHostFileContentVO.class)
+                        .eq(VmHostFileContentVO_.uuid, backupFile.getUuid())
+                        .find();
+                if (content == null) {
+                    logger.warn(String.format("backup file content [uuid:%s] not found for type %s",
+                            backupFile.getUuid(), type));
+                    continue;
+                }
+
+                if (type == VmHostFileType.NvRam) {
+                    to.setPath(buildNvramFilePath(msg.getVmInstanceUuid()));
+                } else if (type == VmHostFileType.TpmState) {
+                    to.setPath(buildTpmStateFilePath(msg.getVmInstanceUuid()));
+                }
+
+                to.setFileFormat(content.getFormat().toString());
+                to.setOperation(VmHostFileOperation.Write.toString());
+                String contentBase64 = Base64.getEncoder().encodeToString(content.getContent());
+                to.setContentBase64(contentBase64);
+
+                fileList.add(to);
+            } else if (hasCurrentFile) {
+                // Delete operation
+                VmHostFileVO currentFile = currentFilesByType.get(type);
+                to.setPath(currentFile.getPath());
+                to.setOperation(VmHostFileOperation.Delete.toString());
+
+                fileList.add(to);
+            }
+        }
+
+        if (fileList.isEmpty()) {
+            bus.reply(msg, reply);
+            return;
+        }
+
+        final String finalHostUuid = hostUuid;
+        SimpleFlowChain.of("restore-vm-host-file")
+            .then(Flow.of("send-cmd")
+                .handle(trigger -> {
+                    KVMAgentCommands.WriteVmHostFileContentCmd cmd = new KVMAgentCommands.WriteVmHostFileContentCmd();
+                    cmd.setHostFiles(fileList);
+
+                    KvmCommandSender sender = new KvmCommandSender(finalHostUuid);
+                    sender.send(cmd, WRITE_VM_HOST_FILE_PATH, wrapper -> {
+                        KVMAgentCommands.WriteVmHostFileContentResponse writeRsp = wrapper.getResponse(KVMAgentCommands.WriteVmHostFileContentResponse.class);
+                        return writeRsp.isSuccess() ? null :
+                                operr("failed to write/delete host file response").causedBy(writeRsp.getError());
+                    }, new ReturnValueCompletion<KvmResponseWrapper>(msg) {
+                        @Override
+                        public void success(KvmResponseWrapper wrapper) {
+                            KVMAgentCommands.WriteVmHostFileContentResponse writeRsp = wrapper.getResponse(KVMAgentCommands.WriteVmHostFileContentResponse.class);
+                            if (writeRsp.isSuccess()) {
+                                logger.info(String.format("success to restore host files for VM[uuid:%s] from snapshot group[uuid:%s]",
+                                        msg.getVmInstanceUuid(), msg.getSnapshotGroupUuid()));
+                                trigger.next();
+                                return;
+                            }
+                            trigger.fail(operr("failed to write/delete host file")
+                                    .causedBy(writeRsp.getError()));
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(operr("failed to restore host files for VM[uuid:%s]", msg.getVmInstanceUuid())
+                                    .causedBy(errorCode));
+                        }
+                    });
+                })
+                .build())
+            .then(Flow.of("persist-content-in-db")
+                .handle(trigger -> {
+                    Timestamp now = Timestamp.from(Instant.now());
+
+                    for (VmHostFileType type : allTypes) {
+                        boolean hasCurrentFile = currentFilesByType.containsKey(type);
+                        boolean hasBackupFile = backupFilesByType.containsKey(type);
+
+                        if (hasBackupFile) {
+                            VmHostBackupFileVO backupFile = backupFilesByType.get(type);
+                            VmHostFileContentVO backupContent = Q.New(VmHostFileContentVO.class)
+                                    .eq(VmHostFileContentVO_.uuid, backupFile.getUuid())
+                                    .find();
+                            if (backupContent == null) {
+                                continue;
+                            }
+
+                            if (hasCurrentFile) {
+                                // update existing VmHostFileVO and VmHostFileContentVO
+                                VmHostFileVO currentFile = currentFilesByType.get(type);
+                                SQL.New(VmHostFileVO.class)
+                                        .eq(VmHostFileVO_.uuid, currentFile.getUuid())
+                                        .set(VmHostFileVO_.lastOpDate, now)
+                                        .update();
+
+                                VmHostFileContentVO existingContent = Q.New(VmHostFileContentVO.class)
+                                        .eq(VmHostFileContentVO_.uuid, currentFile.getUuid())
+                                        .find();
+                                if (existingContent != null) {
+                                    SQL.New(VmHostFileContentVO.class)
+                                            .eq(VmHostFileContentVO_.uuid, currentFile.getUuid())
+                                            .set(VmHostFileContentVO_.content, backupContent.getContent())
+                                            .set(VmHostFileContentVO_.format, backupContent.getFormat())
+                                            .set(VmHostFileContentVO_.lastOpDate, now)
+                                            .update();
+                                } else {
+                                    VmHostFileContentVO newContent = new VmHostFileContentVO();
+                                    newContent.setUuid(currentFile.getUuid());
+                                    newContent.setContent(backupContent.getContent());
+                                    newContent.setFormat(backupContent.getFormat());
+                                    newContent.setCreateDate(now);
+                                    newContent.setLastOpDate(now);
+                                    databaseFacade.persist(newContent);
+                                }
+                            } else {
+                                // create new VmHostFileVO and VmHostFileContentVO
+                                String path;
+                                if (type == VmHostFileType.NvRam) {
+                                    path = buildNvramFilePath(msg.getVmInstanceUuid());
+                                } else {
+                                    path = buildTpmStateFilePath(msg.getVmInstanceUuid());
+                                }
+
+                                VmHostFileVO newFile = new VmHostFileVO();
+                                newFile.setUuid(Platform.getUuid());
+                                newFile.setVmInstanceUuid(msg.getVmInstanceUuid());
+                                newFile.setHostUuid(finalHostUuid);
+                                newFile.setType(type);
+                                newFile.setPath(path);
+                                newFile.setCreateDate(now);
+                                newFile.setLastOpDate(now);
+                                databaseFacade.persist(newFile);
+
+                                VmHostFileContentVO newContent = new VmHostFileContentVO();
+                                newContent.setUuid(newFile.getUuid());
+                                newContent.setContent(backupContent.getContent());
+                                newContent.setFormat(backupContent.getFormat());
+                                newContent.setCreateDate(now);
+                                newContent.setLastOpDate(now);
+                                databaseFacade.persist(newContent);
+                            }
+                        } else if (hasCurrentFile) {
+                            // delete VmHostFileVO and VmHostFileContentVO
+                            VmHostFileVO currentFile = currentFilesByType.get(type);
+                            SQL.New(VmHostFileContentVO.class)
+                                    .eq(VmHostFileContentVO_.uuid, currentFile.getUuid())
+                                    .delete();
+                            SQL.New(VmHostFileVO.class)
+                                    .eq(VmHostFileVO_.uuid, currentFile.getUuid())
+                                    .delete();
+                        }
+                    }
+
+                    trigger.next();
+                })
+                .build())
+            .propagateExceptionTo(msg)
+            .done(() -> bus.reply(msg, reply))
+            .error(errorCode -> {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            })
+            .start();
     }
 }
