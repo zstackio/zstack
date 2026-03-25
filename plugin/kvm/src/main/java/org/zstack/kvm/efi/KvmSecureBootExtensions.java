@@ -30,6 +30,7 @@ import org.zstack.header.tpm.entity.TpmVO_;
 import org.zstack.header.vm.APICreateVmInstanceMsg.DiskAO;
 import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
 import org.zstack.header.vm.VmInstanceDestroyExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -85,7 +86,8 @@ import static org.zstack.utils.CollectionDSL.list;
 public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         PreVmInstantiateResourceExtensionPoint,
         VmInstanceDestroyExtensionPoint,
-        VmPreMigrationExtensionPoint {
+        VmPreMigrationExtensionPoint,
+        AfterReimageVmInstanceExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmSecureBootExtensions.class);
 
     @Autowired
@@ -710,5 +712,23 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
     @Override
     public void failedToDestroyVm(VmInstanceInventory inv, ErrorCode reason) {
         // do-nothing
+    }
+
+    @Override
+    public void afterReimageVmInstance(VolumeInventory inventory) {
+        String vmUuid = inventory.getVmInstanceUuid();
+        if (vmUuid == null) {
+            return;
+        }
+
+        SQL.New(VmHostFileVO.class)
+                .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
+                .delete();
+        SQL.New(VmHostBackupFileVO.class)
+                .eq(VmHostBackupFileVO_.resourceUuid, vmUuid)
+                .delete();
+
+        logger.debug(String.format("reset TPM state for VM[uuid:%s] after reimage: " +
+                "deleted all VmHostFileVO and VmHostBackupFileVO records", vmUuid));
     }
 }
