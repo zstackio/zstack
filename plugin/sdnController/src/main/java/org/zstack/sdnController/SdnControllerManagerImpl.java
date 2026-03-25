@@ -50,7 +50,8 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         L2NetworkCreateExtensionPoint, L2NetworkDeleteExtensionPoint, InstantiateResourceOnAttachingNicExtensionPoint,
         PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
         ReleaseNetworkServiceOnDetachingNicExtensionPoint, SecurityGroupGetSdnBackendExtensionPoint,
-        AfterAddIpRangeExtensionPoint, IpRangeDeletionExtensionPoint, GetSdnControllerExtensionPoint {
+        AfterAddIpRangeExtensionPoint, IpRangeDeletionExtensionPoint, GetSdnControllerExtensionPoint,
+        BeforeAllocateVmNicExtensionPoint, AfterReleaseVmNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SdnControllerManagerImpl.class);
     private static final Logger log = LoggerFactory.getLogger(SdnControllerManagerImpl.class);
 
@@ -486,8 +487,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
                 continue;
             }
 
-            VSwitchType vSwitchType = VSwitchType.valueOf(l2VO.getvSwitchType());
-            if (vSwitchType.getSdnControllerType() == null) {
+            if (shouldSkipSdnForNic(l2VO)) {
                 continue;
             }
 
@@ -512,8 +512,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     @Override
     public void instantiateResourceOnAttachingNic(VmInstanceSpec spec, L3NetworkInventory l3, Completion completion) {
         L2NetworkVO l2NetworkVO = dbf.findByUuid(l3.getL2NetworkUuid(), L2NetworkVO.class);
-        VSwitchType vSwitchType = VSwitchType.valueOf(l2NetworkVO.getvSwitchType());
-        if (vSwitchType.getSdnControllerType() == null) {
+        if (shouldSkipSdnForNic(l2NetworkVO)) {
             completion.success();
             return;
         }
@@ -535,8 +534,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     @Override
     public void releaseResourceOnAttachingNic(VmInstanceSpec spec, L3NetworkInventory l3, NoErrorCompletion completion) {
         L2NetworkVO l2NetworkVO = dbf.findByUuid(l3.getL2NetworkUuid(), L2NetworkVO.class);
-        VSwitchType vSwitchType = VSwitchType.valueOf(l2NetworkVO.getvSwitchType());
-        if (vSwitchType.getSdnControllerType() == null) {
+        if (shouldSkipSdnForNic(l2NetworkVO)) {
             completion.done();
             return;
         }
@@ -573,8 +571,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     public void releaseResourceOnDetachingNic(VmInstanceSpec spec, VmNicInventory nic, NoErrorCompletion completion) {
         L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
         L2NetworkVO l2NetworkVO = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
-        VSwitchType vSwitchType = VSwitchType.valueOf(l2NetworkVO.getvSwitchType());
-        if (vSwitchType.getSdnControllerType() == null) {
+        if (shouldSkipSdnForNic(l2NetworkVO)) {
             completion.done();
             return;
         }
@@ -638,8 +635,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
                 continue;
             }
 
-            VSwitchType vSwitchType = VSwitchType.valueOf(l2VO.getvSwitchType());
-            if (vSwitchType.getSdnControllerType() ==null) {
+            if (shouldSkipSdnForNic(l2VO)) {
                 continue;
             }
 
@@ -694,8 +690,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
                 continue;
             }
 
-            VSwitchType vSwitchType = VSwitchType.valueOf(l2VO.getvSwitchType());
-            if (vSwitchType.getSdnControllerType() ==null) {
+            if (shouldSkipSdnForNic(l2VO)) {
                 continue;
             }
 
@@ -715,6 +710,15 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         }
 
         removeLogicalPort(nicMaps, completion);
+    }
+
+    /**
+     * Returns true if the L2 network should be skipped for SDN port management:
+     * it has no SDN controller type configured on its VSwitchType.
+     */
+    private boolean shouldSkipSdnForNic(L2NetworkVO l2VO) {
+        VSwitchType vSwitchType = VSwitchType.valueOf(l2VO.getvSwitchType());
+        return vSwitchType.getSdnControllerType() == null;
     }
 
     @Override
@@ -898,5 +902,57 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             return null;
         }
         return dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
+    }
+
+    @Override
+    public void beforeAllocateVmNic(VmNicInventory nic, VmInstanceSpec spec, Completion completion) {
+        L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
+        if (l3Vo == null) {
+            completion.success();
+            return;
+        }
+
+        L2NetworkVO l2VO = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
+        if (l2VO == null || shouldSkipSdnForNic(l2VO)) {
+            completion.success();
+            return;
+        }
+
+        String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
+                l2VO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
+        if (controllerUuid == null) {
+            completion.success();
+            return;
+        }
+
+        Map<String, List<VmNicInventory>> nicMaps = new HashMap<>();
+        nicMaps.computeIfAbsent(controllerUuid, k -> new ArrayList<>()).add(nic);
+        sdnAddVmNics(nicMaps, completion);
+    }
+
+    @Override
+    public void afterReleaseVmNic(VmNicInventory nic, Completion completion) {
+        L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
+        if (l3Vo == null) {
+            completion.success();
+            return;
+        }
+
+        L2NetworkVO l2VO = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
+        if (l2VO == null || shouldSkipSdnForNic(l2VO)) {
+            completion.success();
+            return;
+        }
+
+        String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
+                l2VO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
+        if (controllerUuid == null) {
+            completion.success();
+            return;
+        }
+
+        Map<String, List<VmNicInventory>> nicMaps = new HashMap<>();
+        nicMaps.computeIfAbsent(controllerUuid, k -> new ArrayList<>()).add(nic);
+        removeLogicalPort(nicMaps, completion);
     }
 }

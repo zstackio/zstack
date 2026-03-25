@@ -295,10 +295,17 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
         logger.debug(String.format("create %s on l3 network[uuid:%s] inside VmAllocateNicFlow",
                 enableSriov ? "vf nic" : "vnic", l3nw.getUuid()));
         boolean enableVhostUser = NetworkServiceGlobalConfig.ENABLE_VHOSTUSER.value(Boolean.class);
+
+        boolean enableDpdkVhostuser = Q.New(SystemTagVO.class)
+                .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
+                .eq(SystemTagVO_.resourceUuid, vmUuid)
+                .eq(SystemTagVO_.tag, String.format("enableDpdkVhostuser::%s", l3nw.getUuid()))
+                .isExists();
+
         VmNicType.VmNicSubType subType = VmNicType.VmNicSubType.NONE;
         if (enableSriov) {
             subType = VmNicType.VmNicSubType.SRIOV;
-        } else if (enableVhostUser) {
+        } else if (enableVhostUser || enableDpdkVhostuser) {
             subType = VmNicType.VmNicSubType.VHOSTUSER;
         }
         L2NetworkVO l2nw =  dbf.findByUuid(l3nw.getL2NetworkUuid(), L2NetworkVO.class);

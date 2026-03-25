@@ -1,5 +1,6 @@
 package org.zstack.testlib
 
+import org.springframework.http.HttpEntity
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.zstack.sdk.SdnControllerInventory
@@ -15,7 +16,6 @@ import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.GetH3cTenantsRsp
 import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.H3cTenantStruct
 import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.GetH3cTeamLederIpReply
 import org.zstack.sdnController.h3cVcfc.H3cVcfcV2Commands
-import org.springframework.http.HttpEntity
 import org.zstack.sugonSdnController.controller.SugonSdnControllerConstant
 import org.zstack.sugonSdnController.controller.api.ApiSerializer
 import org.zstack.sugonSdnController.controller.api.TfCommands

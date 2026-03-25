@@ -6,10 +6,13 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkConstant;
@@ -34,6 +37,10 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
     protected CloudBus bus;
     @Autowired
     protected VmInstanceDeletionPolicyManager deletionPolicyMgr;
+    @Autowired
+    protected VmInstanceManager vmMgr;
+    @Autowired
+    protected PluginRegistry pluginRgty;
 
     @Override
     public void run(FlowTrigger chain, Map data) {
@@ -43,6 +50,11 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
             return;
         }
 
+        returnIpsAndReleaseNics(spec, data, chain);
+    }
+
+
+    private void returnIpsAndReleaseNics(VmInstanceSpec spec, Map data, FlowTrigger chain) {
         List<ReturnIpMsg> msgs = new ArrayList<>(spec.getVmInventory().getVmNics().size());
         for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
             for (UsedIpInventory ip : nic.getUsedIps()) {
@@ -66,6 +78,7 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
         })).run(new WhileDoneCompletion(chain) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
+                List<VmNicInventory> releasedNics = new ArrayList<>();
                 for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
                     VmNicVO vo = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
                     if (VmInstanceConstant.USER_VM_TYPE.equals(spec.getVmInventory().getType())) {
@@ -82,8 +95,57 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
                     } else {
                         dbf.remove(vo);
                     }
+                    releasedNics.add(nic);
                 }
-                chain.next();
+
+                callAfterReleaseVmNicExtensions(releasedNics, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.warn(String.format("afterReleaseVmNic extensions failed: %s, continue anyway", errorCode));
+                        chain.next();
+                    }
+                });
+            }
+        });
+    }
+
+    private void callAfterReleaseVmNicExtensions(List<VmNicInventory> nics, Completion completion) {
+        List<AfterReleaseVmNicExtensionPoint> exts = pluginRgty.getExtensionList(AfterReleaseVmNicExtensionPoint.class);
+        if (exts.isEmpty() || nics.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        new While<>(nics).each((nic, wcomp) -> {
+            new While<>(exts).each((ext, wcomp2) -> {
+                ext.afterReleaseVmNic(nic, new Completion(wcomp2) {
+                    @Override
+                    public void success() {
+                        wcomp2.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.warn(String.format("afterReleaseVmNic extension failed for nic[uuid:%s]: %s, continue",
+                                nic.getUuid(), errorCode));
+                        wcomp2.done();
+                    }
+                });
+            }).run(new WhileDoneCompletion(wcomp) {
+                @Override
+                public void done(ErrorCodeList errorCodeList) {
+                    wcomp.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.success();
             }
         });
     }

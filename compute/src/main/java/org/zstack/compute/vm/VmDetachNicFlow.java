@@ -6,11 +6,14 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.UpdateQuery;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkConstant;
@@ -20,6 +23,10 @@ import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
+
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,12 +34,17 @@ import java.util.Map;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmDetachNicFlow extends NoRollbackFlow {
+    private static final CLogger logger = Utils.getLogger(VmDetachNicFlow.class);
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
     @Autowired
     private VmInstanceDeviceManager vidm;
+    @Autowired
+    private VmInstanceManager vmMgr;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -68,6 +80,10 @@ public class VmDetachNicFlow extends NoRollbackFlow {
             return;
         }
 
+        returnIpsAndDeleteNic(nic, trigger);
+    }
+
+    private void returnIpsAndDeleteNic(VmNicInventory nic, FlowTrigger trigger) {
         new While<>(nic.getUsedIps()).all((ip, comp) -> {
             ReturnIpMsg msg = new ReturnIpMsg();
             msg.setUsedIpUuid(ip.getUuid());
@@ -83,8 +99,51 @@ public class VmDetachNicFlow extends NoRollbackFlow {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
-                trigger.next();
+
+                callAfterReleaseVmNicExtensions(nic, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.warn(String.format("afterReleaseVmNic extensions failed for nic[uuid:%s]: %s, continue",
+                                nic.getUuid(), errorCode));
+                        trigger.next();
+                    }
+                });
             }
         });
     }
+
+    private void callAfterReleaseVmNicExtensions(VmNicInventory nic, Completion completion) {
+        List<AfterReleaseVmNicExtensionPoint> exts = pluginRgty.getExtensionList(AfterReleaseVmNicExtensionPoint.class);
+        if (exts.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        new While<>(exts).each((ext, wcomp) -> {
+            ext.afterReleaseVmNic(nic, new Completion(wcomp) {
+                @Override
+                public void success() {
+                    wcomp.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    logger.warn(String.format("afterReleaseVmNic extension failed for nic[uuid:%s]: %s, continue",
+                            nic.getUuid(), errorCode));
+                    wcomp.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.success();
+            }
+        });
+    }
+
 }
