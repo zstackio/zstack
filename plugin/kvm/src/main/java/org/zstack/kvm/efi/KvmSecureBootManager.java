@@ -70,6 +70,9 @@ import java.util.function.Function;
 import static org.zstack.compute.vm.VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT;
 import static org.zstack.compute.vm.VmGlobalConfig.RESET_TPM_AFTER_VM_CLONE;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.header.vm.additions.VmHostFileSyncReason.PostClone;
+import static org.zstack.header.vm.additions.VmHostFileSyncReason.Restore;
+import static org.zstack.header.vm.additions.VmHostFileSyncReason.VmShutdown;
 import static org.zstack.kvm.KVMAgentCommands.*;
 import static org.zstack.kvm.KVMConstant.*;
 import static org.zstack.utils.CollectionDSL.list;
@@ -143,6 +146,7 @@ public class KvmSecureBootManager extends AbstractService {
                 innerMessage.setVmUuid(vmUuid);
                 innerMessage.setNvRamPath(nvRamFile == null ? null : nvRamFile.getPath());
                 innerMessage.setTpmStateFolder(tpmStateFile == null ? null : tpmStateFile.getPath());
+                innerMessage.setSyncReason(VmShutdown.reason());
                 bus.makeLocalServiceId(innerMessage, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
                 bus.send(innerMessage, new CloudBusCallBack(null) {
                     @Override
@@ -260,6 +264,7 @@ public class KvmSecureBootManager extends AbstractService {
                         SQL.New(VmHostFileVO.class)
                                 .eq(VmHostFileVO_.uuid, file.getUuid())
                                 .set(VmHostFileVO_.lastOpDate, now)
+                                .set(VmHostFileVO_.lastSyncReason, msg.getSyncReason())
                                 .update();
                     } else {
                         file = new VmHostFileVO();
@@ -268,6 +273,7 @@ public class KvmSecureBootManager extends AbstractService {
                         file.setVmInstanceUuid(msg.getVmUuid());
                         file.setPath(path);
                         file.setType(type);
+                        file.setLastSyncReason(msg.getSyncReason());
                         file.setCreateDate(now);
                         file.setLastOpDate(now);
                         file.setResourceName(String.format("%s file for %s", type, msg.getVmUuid()));
@@ -376,6 +382,7 @@ public class KvmSecureBootManager extends AbstractService {
                         SyncVmHostFilesFromHostMsg syncContext = new SyncVmHostFilesFromHostMsg();
                         syncContext.setHostUuid(hostUuid);
                         syncContext.setVmUuid(msg.getSrcVmUuid());
+                        syncContext.setSyncReason(PostClone.reason());
                         return syncContext;
                     });
                 }
@@ -728,6 +735,7 @@ public class KvmSecureBootManager extends AbstractService {
                                 VmHostFileVO currentFile = currentFilesByType.get(type);
                                 SQL.New(VmHostFileVO.class)
                                         .eq(VmHostFileVO_.uuid, currentFile.getUuid())
+                                        .set(VmHostFileVO_.lastSyncReason, Restore.reason(msg.getSyncReason()))
                                         .set(VmHostFileVO_.lastOpDate, now)
                                         .update();
 
@@ -757,6 +765,7 @@ public class KvmSecureBootManager extends AbstractService {
                                 newFile.setHostUuid(finalHostUuid);
                                 newFile.setType(type);
                                 newFile.setPath(buildPathForVmHostFileType(type, msg.getVmInstanceUuid()));
+                                newFile.setLastSyncReason(Restore.reason(msg.getSyncReason()));
                                 newFile.setCreateDate(now);
                                 newFile.setLastOpDate(now);
                                 databaseFacade.persist(newFile);
