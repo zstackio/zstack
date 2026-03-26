@@ -97,6 +97,11 @@ public interface KVMConstant {
     String CLEAN_FIRMWARE_FLASH = "/clean/firmware/flash";
     String FSTRIM_VM_PATH = "/vm/fstrim";
 
+    // ZSTAC-83157: virtiofs model mount paths
+    String KVM_VIRTIOFS_ATTACH_PATH = "/virtiofs/attach";
+    String KVM_VIRTIOFS_DETACH_PATH = "/virtiofs/detach";
+    String KVM_MODEL_CENTER_MOUNT_PATH = "/modelcenter/mount";
+
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";
     String ANSIBLE_MODULE_PATH = "ansible/kvm";

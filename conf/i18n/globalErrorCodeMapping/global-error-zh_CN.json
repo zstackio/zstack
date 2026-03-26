@@ -4720,5 +4720,17 @@
   "ORG_ZSTACK_VPCFIREWALL_10035": "无法添加防火墙规则[%d]因为%s",
   "ORG_ZSTACK_DGPU_10010": "未找到可用的 dGPU AddOn License，请为 dGPU 产品申请并上传对应授权。",
   "ORG_ZSTACK_DGPU_10011": "dGPU 产品的 AddOn License 已过期，请及时续期。",
-  "ORG_ZSTACK_DGPU_10012": "dGPU 授权 GPU 数量不足。License 允许 %d 个 GPU，当前已使用 %d 个，其他节点共享使用 %d 个，本次还需要 %d 个。"
+  "ORG_ZSTACK_DGPU_10012": "dGPU 授权 GPU 数量不足。License 允许 %d 个 GPU，当前已使用 %d 个，其他节点共享使用 %d 个，本次还需要 %d 个。",
+  "ORG_ZSTACK_AI_10138": "虚拟机[uuid:%s]未找到",
+  "ORG_ZSTACK_AI_10139": "模型[uuid:%s]未找到",
+  "ORG_ZSTACK_AI_10140": "虚拟机[uuid:%s]必须处于运行状态才能挂载模型，当前状态: %s",
+  "ORG_ZSTACK_AI_10141": "虚拟机[uuid:%s]未运行在任何主机上",
+  "ORG_ZSTACK_AI_10142": "模型[uuid:%s]属于账户[%s]但虚拟机[uuid:%s]属于账户[%s]，无法跨账户挂载模型",
+  "ORG_ZSTACK_AI_10143": "模型中心[uuid:%s]未找到",
+  "ORG_ZSTACK_AI_10144": "挂载路径[%s]已被虚拟机[uuid:%s]上的另一个挂载[uuid:%s]使用",
+  "ORG_ZSTACK_AI_10145": "挂载路径[%s]不允许，不能挂载到系统目录",
+  "ORG_ZSTACK_AI_10146": "模型安装路径[%s]无效，预期格式: file:///root/bentoml/models/<path>",
+  "ORG_ZSTACK_AI_10147": "挂载记录[uuid:%s]未找到",
+  "ORG_ZSTACK_AI_10148": "挂载记录[uuid:%s]未处于已挂载状态，当前状态: %s",
+  "ORG_ZSTACK_AI_10149": "挂载模型到虚拟机失败: %s"
 }

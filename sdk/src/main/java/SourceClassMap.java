@@ -25,6 +25,8 @@ public class SourceClassMap {
 			put("org.zstack.ai.entity.ModelServiceRefInventory", "org.zstack.sdk.ModelServiceRefInventory");
 			put("org.zstack.ai.entity.ModelServiceTemplateInventory", "org.zstack.sdk.ModelServiceTemplateInventory");
 			put("org.zstack.ai.entity.TrainedModelRecordInventory", "org.zstack.sdk.TrainedModelRecordInventory");
+			put("org.zstack.ai.entity.VmModelMountInventory", "org.zstack.sdk.VmModelMountInventory");
+			put("org.zstack.ai.entity.VmModelMountStatus", "org.zstack.sdk.VmModelMountStatus");
 			put("org.zstack.ai.message.ArchitectureImageMapping", "org.zstack.sdk.ArchitectureImageMapping");
 			put("org.zstack.ai.message.MaaSUsage", "org.zstack.sdk.MaaSUsage");
 			put("org.zstack.ai.message.ModelCenterServiceInventory", "org.zstack.sdk.ModelCenterServiceInventory");
@@ -1565,6 +1567,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmInstancePciDeviceSpecRefInventory", "org.zstack.pciDevice.specification.pci.VmInstancePciDeviceSpecRefInventory");
 			put("org.zstack.sdk.VmMemoryBillingInventory", "org.zstack.billing.generator.vm.memory.VmMemoryBillingInventory");
 			put("org.zstack.sdk.VmMemorySpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmMemorySpendingDetails");
+			put("org.zstack.sdk.VmModelMountInventory", "org.zstack.ai.entity.VmModelMountInventory");
+			put("org.zstack.sdk.VmModelMountStatus", "org.zstack.ai.entity.VmModelMountStatus");
 			put("org.zstack.sdk.VmNicBandwidthSpendingDetails", "org.zstack.billing.spendingcalculator.vmnic.VmNicBandwidthSpendingDetails");
 			put("org.zstack.sdk.VmNicInventory", "org.zstack.header.vm.VmNicInventory");
 			put("org.zstack.sdk.VmNicSecurityGroupRefInventory", "org.zstack.network.securitygroup.VmNicSecurityGroupRefInventory");
