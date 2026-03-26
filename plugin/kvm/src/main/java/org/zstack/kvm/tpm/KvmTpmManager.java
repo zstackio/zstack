@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -430,14 +431,19 @@ public class KvmTpmManager extends AbstractService {
         ResetVmTpmReply reply = new ResetVmTpmReply();
 
         String vmUuid = msg.getVmInstanceUuid();
-        SQL.New(VmHostFileVO.class)
-                .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
-                .eq(VmHostFileVO_.type, VmHostFileType.TpmState)
-                .delete();
-        SQL.New(VmHostBackupFileVO.class)
-                .eq(VmHostBackupFileVO_.resourceUuid, vmUuid)
-                .eq(VmHostBackupFileVO_.type, VmHostFileType.TpmState)
-                .delete();
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                sql(VmHostFileVO.class)
+                        .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
+                        .eq(VmHostFileVO_.type, VmHostFileType.TpmState)
+                        .delete();
+                sql(VmHostBackupFileVO.class)
+                        .eq(VmHostBackupFileVO_.resourceUuid, vmUuid)
+                        .eq(VmHostBackupFileVO_.type, VmHostFileType.TpmState)
+                        .delete();
+            }
+        }.execute();
 
         bus.reply(msg, reply);
     }
