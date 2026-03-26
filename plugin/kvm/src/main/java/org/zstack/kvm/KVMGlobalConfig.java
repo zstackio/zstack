@@ -166,4 +166,14 @@ public class KVMGlobalConfig {
             description = "Specify the EDK version to be used for the next VM startup. None indicates the use of the system's default EDK version")
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_EDK_VERSION_CONFIG = new GlobalConfig(CATEGORY, "vm.edk.version");
+
+    @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = 86400)
+    @GlobalConfigDef(defaultValue = "1800", type = Long.class,
+            description = "Interval in seconds for syncing VM host files (NvRam, TpmState) from KVM hosts")
+    public static GlobalConfig VM_HOST_FILE_SYNC_INTERVAL = new GlobalConfig(CATEGORY, "vm.host.file.sync.interval");
+
+    @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = 30)
+    @GlobalConfigDef(defaultValue = "5", type = Integer.class,
+            description = "The concurrency level for syncing VM host files from KVM hosts")
+    public static GlobalConfig VM_HOST_FILE_SYNC_CONCURRENCY = new GlobalConfig(CATEGORY, "vm.host.file.sync.concurrency");
 }
