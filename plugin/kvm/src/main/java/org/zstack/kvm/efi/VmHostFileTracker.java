@@ -6,6 +6,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.Q;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
@@ -20,6 +21,7 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
 import org.zstack.header.vm.additions.VmHostFileVO_;
+import org.zstack.kvm.KVMGlobalConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -32,9 +34,6 @@ import java.util.stream.Collectors;
 
 public class VmHostFileTracker implements Component {
     private static final CLogger logger = Utils.getLogger(VmHostFileTracker.class);
-
-    private static final long SYNC_INTERVAL_SECONDS = TimeUnit.MINUTES.toSeconds(30);
-    private static final int SYNC_CONCURRENCY = 5;
 
     @Autowired
     private ThreadFacade threadFacade;
@@ -52,6 +51,34 @@ public class VmHostFileTracker implements Component {
             return true;
         }
 
+        submitTrackerTask();
+
+        GlobalConfigUpdateExtensionPoint listener = (oldConfig, newConfig) -> {
+            logger.debug(String.format("%s changed from %s to %s, restarting vm-host-file-tracker",
+                    newConfig.getCanonicalName(), oldConfig.value(), newConfig.value()));
+            submitTrackerTask();
+        };
+
+        KVMGlobalConfig.VM_HOST_FILE_SYNC_INTERVAL.installUpdateExtension(listener);
+        KVMGlobalConfig.VM_HOST_FILE_SYNC_CONCURRENCY.installUpdateExtension(listener);
+
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        if (trackerThread != null) {
+            trackerThread.cancel(true);
+        }
+        return true;
+    }
+
+    private synchronized void submitTrackerTask() {
+        if (trackerThread != null) {
+            trackerThread.cancel(true);
+        }
+
+        long interval = KVMGlobalConfig.VM_HOST_FILE_SYNC_INTERVAL.value(Long.class);
         trackerThread = threadFacade.submitPeriodicTask(new PeriodicTask() {
             @Override
             public TimeUnit getTimeUnit() {
@@ -60,7 +87,7 @@ public class VmHostFileTracker implements Component {
 
             @Override
             public long getInterval() {
-                return SYNC_INTERVAL_SECONDS;
+                return interval;
             }
 
             @Override
@@ -74,16 +101,6 @@ public class VmHostFileTracker implements Component {
                 syncVmHostFiles();
             }
         });
-
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        if (trackerThread != null) {
-            trackerThread.cancel(true);
-        }
-        return true;
     }
 
     private void syncVmHostFiles() {
@@ -103,6 +120,8 @@ public class VmHostFileTracker implements Component {
         Map<String, List<VmHostFileVO>> grouped = hostFiles.stream()
                 .collect(Collectors.groupingBy(f -> f.getVmInstanceUuid() + "::" + f.getHostUuid()));
         List<List<VmHostFileVO>> groups = new ArrayList<>(grouped.values());
+
+        int concurrency = KVMGlobalConfig.VM_HOST_FILE_SYNC_CONCURRENCY.value(Integer.class);
 
         new While<>(groups).step((group, whileCompletion) -> {
             VmHostFileVO first = group.get(0);
@@ -137,7 +156,7 @@ public class VmHostFileTracker implements Component {
                     whileCompletion.done();
                 }
             });
-        }, SYNC_CONCURRENCY).run(new WhileDoneCompletion(null) {
+        }, concurrency).run(new WhileDoneCompletion(null) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 // periodic sync round finished, empty callback
