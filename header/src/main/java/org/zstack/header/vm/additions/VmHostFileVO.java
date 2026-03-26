@@ -40,6 +40,8 @@ public class VmHostFileVO extends ResourceVO {
     @Column
     private String path;
     @Column
+    private String lastSyncReason;
+    @Column
     private Timestamp createDate;
     @Column
     private Timestamp lastOpDate;
@@ -76,6 +78,14 @@ public class VmHostFileVO extends ResourceVO {
         this.path = path;
     }
 
+    public String getLastSyncReason() {
+        return lastSyncReason;
+    }
+
+    public void setLastSyncReason(String lastSyncReason) {
+        this.lastSyncReason = lastSyncReason;
+    }
+
     public Timestamp getCreateDate() {
         return createDate;
     }
@@ -100,6 +110,7 @@ public class VmHostFileVO extends ResourceVO {
         ", hostUuid='" + hostUuid + '\'' +
         ", type=" + type +
         ", path='" + path + '\'' +
+        ", lastSyncReason='" + lastSyncReason + '\'' +
         ", createDate=" + createDate +
         ", lastOpDate=" + lastOpDate +
         '}';
