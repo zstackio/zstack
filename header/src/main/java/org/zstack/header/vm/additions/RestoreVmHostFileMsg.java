@@ -6,6 +6,7 @@ import org.zstack.header.vm.VmInstanceMessage;
 public class RestoreVmHostFileMsg extends NeedReplyMessage implements VmInstanceMessage {
     private String vmInstanceUuid;
     private String snapshotGroupUuid;
+    private String syncReason;
 
     @Override
     public String getVmInstanceUuid() {
@@ -22,5 +23,13 @@ public class RestoreVmHostFileMsg extends NeedReplyMessage implements VmInstance
 
     public void setSnapshotGroupUuid(String snapshotGroupUuid) {
         this.snapshotGroupUuid = snapshotGroupUuid;
+    }
+
+    public String getSyncReason() {
+        return syncReason;
+    }
+
+    public void setSyncReason(String syncReason) {
+        this.syncReason = syncReason;
     }
 }
