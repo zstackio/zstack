@@ -2287,6 +2287,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         flowChain.then(new VmAllocateNicFlow());
         flowChain.then(new VmAllocateNicIpFlow());
+        flowChain.then(new VmAllocateSdnNicFlow());
         flowChain.then(new VmSetDefaultL3NetworkOnAttachingFlow());
         setAdditionalFlow(flowChain, spec);
         if (self.getState() == VmInstanceState.Running) {

@@ -98,7 +98,7 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
                     releasedNics.add(nic);
                 }
 
-                callAfterReleaseVmNicExtensions(releasedNics, new Completion(chain) {
+                callReleaseSdnNics(releasedNics, new Completion(chain) {
                     @Override
                     public void success() {
                         chain.next();
@@ -106,7 +106,7 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        logger.warn(String.format("afterReleaseVmNic extensions failed: %s, continue anyway", errorCode));
+                        logger.warn(String.format("releaseSdnNics failed: %s, continue anyway", errorCode));
                         chain.next();
                     }
                 });
@@ -114,31 +114,23 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
         });
     }
 
-    private void callAfterReleaseVmNicExtensions(List<VmNicInventory> nics, Completion completion) {
-        List<AfterReleaseVmNicExtensionPoint> exts = pluginRgty.getExtensionList(AfterReleaseVmNicExtensionPoint.class);
+    private void callReleaseSdnNics(List<VmNicInventory> nics, Completion completion) {
+        List<AfterAllocateSdnNicExtensionPoint> exts = pluginRgty.getExtensionList(AfterAllocateSdnNicExtensionPoint.class);
         if (exts.isEmpty() || nics.isEmpty()) {
             completion.success();
             return;
         }
 
-        new While<>(nics).each((nic, wcomp) -> {
-            new While<>(exts).each((ext, wcomp2) -> {
-                ext.afterReleaseVmNic(nic, new Completion(wcomp2) {
-                    @Override
-                    public void success() {
-                        wcomp2.done();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        logger.warn(String.format("afterReleaseVmNic extension failed for nic[uuid:%s]: %s, continue",
-                                nic.getUuid(), errorCode));
-                        wcomp2.done();
-                    }
-                });
-            }).run(new WhileDoneCompletion(wcomp) {
+        new While<>(exts).each((ext, wcomp) -> {
+            ext.releaseSdnNics(nics, new Completion(wcomp) {
                 @Override
-                public void done(ErrorCodeList errorCodeList) {
+                public void success() {
+                    wcomp.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    logger.warn(String.format("releaseSdnNics extension failed: %s, continue", errorCode));
                     wcomp.done();
                 }
             });

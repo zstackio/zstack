@@ -300,41 +300,6 @@ public class VmAllocateNicFlow implements Flow {
         });
     }
 
-    private void callAfterReleaseVmNicExtensions(List<VmNicInventory> nics, Completion completion) {
-        List<AfterReleaseVmNicExtensionPoint> exts = pluginRgty.getExtensionList(AfterReleaseVmNicExtensionPoint.class);
-        if (exts.isEmpty() || nics.isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        new While<>(nics).each((nic, wcomp) -> {
-            new While<>(exts).each((ext, wcomp2) -> {
-                ext.afterReleaseVmNic(nic, new Completion(wcomp2) {
-                    @Override
-                    public void success() {
-                        wcomp2.done();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        logger.warn(String.format("failed to call afterReleaseVmNic for nic[uuid:%s], %s", nic.getUuid(), errorCode));
-                        wcomp2.done();
-                    }
-                });
-            }).run(new WhileDoneCompletion(wcomp) {
-                @Override
-                public void done(ErrorCodeList errorCodeList) {
-                    wcomp.done();
-                }
-            });
-        }).run(new WhileDoneCompletion(completion) {
-            @Override
-            public void done(ErrorCodeList errorCodeList) {
-                completion.success();
-            }
-        });
-    }
-
     @Override
     public void rollback(final FlowRollback chain, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
@@ -355,18 +320,6 @@ public class VmAllocateNicFlow implements Flow {
         }
         dbf.removeByPrimaryKeys(destNics.stream().map(VmNicInventory::getUuid).collect(Collectors.toList()), VmNicVO.class);
 
-        callAfterReleaseVmNicExtensions(destNics, new Completion(chain) {
-            @Override
-            public void success() {
-                chain.rollback();
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                // best-effort: log and continue rollback even if SDN cleanup fails
-                logger.warn(String.format("afterReleaseVmNic extensions failed during rollback: %s", errorCode));
-                chain.rollback();
-            }
-        });
+        chain.rollback();
     }
 }

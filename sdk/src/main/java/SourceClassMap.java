@@ -609,6 +609,8 @@ public class SourceClassMap {
 			put("org.zstack.network.service.virtualrouter.VirtualRouterSoftwareVersionInventory", "org.zstack.sdk.VirtualRouterSoftwareVersionInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterVmInventory", "org.zstack.sdk.VirtualRouterVmInventory");
 			put("org.zstack.network.zns.L2GeneveNetworkInventory", "org.zstack.sdk.L2GeneveNetworkInventory");
+			put("org.zstack.network.zns.ZnsControllerInventory", "org.zstack.sdk.ZnsControllerInventory");
+			put("org.zstack.network.zns.ZnsTransportZoneInventory", "org.zstack.sdk.ZnsTransportZoneInventory");
 			put("org.zstack.observabilityServer.ObservabilityServerOfferingInventory", "org.zstack.sdk.ObservabilityServerOfferingInventory");
 			put("org.zstack.observabilityServer.ObservabilityServerVmInventory", "org.zstack.sdk.ObservabilityServerVmInventory");
 			put("org.zstack.observabilityServer.service.ObservabilityServerServiceDataInventory", "org.zstack.sdk.ObservabilityServerServiceDataInventory");
@@ -1625,6 +1627,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ZdfsInventory", "org.zstack.header.zdfs.ZdfsInventory");
 			put("org.zstack.sdk.ZdfsService", "org.zstack.ai.message.ModelCenterServiceInventory$ZdfsService");
 			put("org.zstack.sdk.ZdfsStorageInventory", "org.zstack.header.zdfs.ZdfsStorageInventory");
+			put("org.zstack.sdk.ZnsControllerInventory", "org.zstack.network.zns.ZnsControllerInventory");
+			put("org.zstack.sdk.ZnsTransportZoneInventory", "org.zstack.network.zns.ZnsTransportZoneInventory");
 			put("org.zstack.sdk.ZoneInventory", "org.zstack.header.zone.ZoneInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupInventory", "org.zstack.header.storage.database.backup.DatabaseBackupInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory", "org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory");

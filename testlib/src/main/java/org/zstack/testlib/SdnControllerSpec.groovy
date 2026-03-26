@@ -4,6 +4,7 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.zstack.sdk.SdnControllerInventory
+import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands
 import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.LoginReply
 import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.LoginRsp
@@ -58,9 +59,9 @@ class SdnControllerSpec extends Spec implements HasSession {
         }
 
         postCreate {
-            inventory = querySdnController {
+            inventory = JSONObjectUtil.rehashObject(querySdnController {
                 conditions=["uuid=${inventory.uuid}".toString()]
-            }[0]
+            }[0], SdnControllerInventory.class)
         }
 
         return id(name, inventory.uuid)

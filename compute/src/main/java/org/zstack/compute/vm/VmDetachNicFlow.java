@@ -100,7 +100,7 @@ public class VmDetachNicFlow extends NoRollbackFlow {
             public void done(ErrorCodeList errorCodeList) {
                 dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
 
-                callAfterReleaseVmNicExtensions(nic, new Completion(trigger) {
+                callReleaseSdnNics(java.util.Collections.singletonList(nic), new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -108,7 +108,7 @@ public class VmDetachNicFlow extends NoRollbackFlow {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        logger.warn(String.format("afterReleaseVmNic extensions failed for nic[uuid:%s]: %s, continue",
+                        logger.warn(String.format("releaseSdnNics failed for nic[uuid:%s]: %s, continue",
                                 nic.getUuid(), errorCode));
                         trigger.next();
                     }
@@ -117,15 +117,15 @@ public class VmDetachNicFlow extends NoRollbackFlow {
         });
     }
 
-    private void callAfterReleaseVmNicExtensions(VmNicInventory nic, Completion completion) {
-        List<AfterReleaseVmNicExtensionPoint> exts = pluginRgty.getExtensionList(AfterReleaseVmNicExtensionPoint.class);
+    private void callReleaseSdnNics(List<VmNicInventory> nics, Completion completion) {
+        List<AfterAllocateSdnNicExtensionPoint> exts = pluginRgty.getExtensionList(AfterAllocateSdnNicExtensionPoint.class);
         if (exts.isEmpty()) {
             completion.success();
             return;
         }
 
         new While<>(exts).each((ext, wcomp) -> {
-            ext.afterReleaseVmNic(nic, new Completion(wcomp) {
+            ext.releaseSdnNics(nics, new Completion(wcomp) {
                 @Override
                 public void success() {
                     wcomp.done();
@@ -133,8 +133,7 @@ public class VmDetachNicFlow extends NoRollbackFlow {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    logger.warn(String.format("afterReleaseVmNic extension failed for nic[uuid:%s]: %s, continue",
-                            nic.getUuid(), errorCode));
+                    logger.warn(String.format("releaseSdnNics extension failed: %s, continue", errorCode));
                     wcomp.done();
                 }
             });

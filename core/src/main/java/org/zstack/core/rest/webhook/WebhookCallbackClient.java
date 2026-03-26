@@ -132,10 +132,27 @@ public class WebhookCallbackClient<T> {
     }
 
     /**
+     * Override the callback URL. Use this when the callback is handled by a
+     * dedicated HTTP endpoint (e.g. a Spring Controller) rather than the
+     * sendCommand channel.
+     */
+    public void setCallbackUrl(String callbackUrl) {
+        this.callbackUrl = callbackUrl;
+    }
+
+    /**
      * @return the protocol adapter
      */
     public WebhookProtocol<T> getProtocol() {
         return protocol;
+    }
+
+    /**
+     * Deliver a callback that was received outside the sendCommand channel
+     * (e.g. from a dedicated Spring Controller endpoint for external systems).
+     */
+    public void deliverCallback(T cmd) {
+        onCallback(cmd);
     }
 
     /**
