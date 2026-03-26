@@ -9,6 +9,7 @@ public class TpmSpec {
     private String keyProviderUuid;
     @APINoSee
     private String secretUuid;
+    private String backupFileUuid;
     @APINoSee
     private boolean resourceKeyCreatedNew;
     @APINoSee
@@ -36,6 +37,14 @@ public class TpmSpec {
 
     public void setKeyProviderUuid(String keyProviderUuid) {
         this.keyProviderUuid = keyProviderUuid;
+    }
+
+    public String getBackupFileUuid() {
+        return backupFileUuid;
+    }
+
+    public void setBackupFileUuid(String backupFileUuid) {
+        this.backupFileUuid = backupFileUuid;
     }
 
     public String getSecretUuid() {
