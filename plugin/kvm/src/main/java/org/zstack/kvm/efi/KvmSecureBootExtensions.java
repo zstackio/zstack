@@ -84,6 +84,10 @@ import java.util.Objects;
 import static org.zstack.compute.vm.VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.header.vm.VmMigrationType.HostMigration;
+import static org.zstack.header.vm.additions.VmHostFileSyncReason.PostMigration;
+import static org.zstack.header.vm.additions.VmHostFileSyncReason.PrepareReRead;
+import static org.zstack.header.vm.additions.VmHostFileSyncReason.PrepareRead;
+import static org.zstack.header.vm.additions.VmHostFileSyncReason.ResourceRelease;
 import static org.zstack.kvm.KVMConstant.*;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -358,6 +362,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         public String hostUuid;
         public String vmUuid;
         public VmHostFileType type;
+        public String syncReason;
 
         public String path;
         // whether the NvRam is on the same host as before
@@ -396,6 +401,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 SyncVmHostFilesFromHostMsg syncMsg = new SyncVmHostFilesFromHostMsg();
                 syncMsg.setHostUuid(vmHostFile.getHostUuid());
                 syncMsg.setVmUuid(context.vmUuid);
+                syncMsg.setSyncReason(PrepareRead.reason(context.syncReason));
 
                 if (vmHostFile.getType() == VmHostFileType.NvRam) {
                     context.path = vmHostFile.getPath();
@@ -506,6 +512,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 SyncVmHostFilesFromHostMsg syncMsg = new SyncVmHostFilesFromHostMsg();
                 syncMsg.setHostUuid(context.hostUuid);
                 syncMsg.setVmUuid(context.vmUuid);
+                syncMsg.setSyncReason(PrepareReRead.reason(context.syncReason));
 
                 if (context.type == VmHostFileType.NvRam) {
                     syncMsg.setNvRamPath(context.path);
@@ -549,6 +556,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         context.hostUuid = spec.getDestHost().getUuid();
         context.vmUuid = spec.getVmInventory().getUuid();
         context.type = VmHostFileType.NvRam;
+        context.syncReason = "pre-instantiate VM resource";
         prepareHostFileOnHost(context, completion);
     }
 
@@ -758,6 +766,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         SyncVmHostFilesFromHostMsg syncMsg = new SyncVmHostFilesFromHostMsg();
         syncMsg.setHostUuid(hostUuid);
         syncMsg.setVmUuid(vmUuid);
+        syncMsg.setSyncReason(ResourceRelease.reason());
 
         for (VmHostFileVO file : vmHostFiles) {
             if (file.getType() == VmHostFileType.NvRam) {
@@ -822,6 +831,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         SyncVmHostFilesFromHostMsg syncMsg = new SyncVmHostFilesFromHostMsg();
         syncMsg.setHostUuid(destHostUuid);
         syncMsg.setVmUuid(vmUuid);
+        syncMsg.setSyncReason(PostMigration.reason());
 
         for (VmHostFileVO file : vmHostFiles) {
             if (file.getType() == VmHostFileType.NvRam) {

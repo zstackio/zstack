@@ -151,6 +151,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                 innerContext.hostUuid = spec.getDestHost().getUuid();
                 innerContext.vmUuid = spec.getVmInventory().getUuid();
                 innerContext.type = VmHostFileType.TpmState;
+                innerContext.syncReason = "pre-instantiate VM resource";
                 secureBootExtensions.prepareHostFileOnHost(innerContext, new Completion(trigger) {
                     @Override
                     public void success() {
