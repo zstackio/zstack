@@ -81,7 +81,16 @@
     <message>
         <name>org.zstack.header.storage.primary.APICleanUpStorageTrashOnPrimaryStorageMsg</name>
     </message>
+
     <message>
         <name>org.zstack.header.storage.primary.APIAddStorageProtocolMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APICheckPrimaryStorageConsistencyMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APITakeoverPrimaryStorageMsg</name>
     </message>
 </service>

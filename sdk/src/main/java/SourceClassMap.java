@@ -249,9 +249,11 @@ public class SourceClassMap {
 			put("org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory", "org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory");
 			put("org.zstack.header.storage.database.backup.DatabaseBackupStruct", "org.zstack.sdk.databasebackup.DatabaseBackupStruct");
 			put("org.zstack.header.storage.database.backup.DatabaseType", "org.zstack.sdk.databasebackup.DatabaseType");
+			put("org.zstack.header.storage.primary.ConsistencyCheckStatus", "org.zstack.sdk.ConsistencyCheckStatus");
 			put("org.zstack.header.storage.primary.ImageCacheInventory", "org.zstack.sdk.ImageCacheInventory");
 			put("org.zstack.header.storage.primary.PrimaryStorageHostStatus", "org.zstack.sdk.PrimaryStorageHostStatus");
 			put("org.zstack.header.storage.primary.PrimaryStorageInventory", "org.zstack.sdk.PrimaryStorageInventory");
+			put("org.zstack.header.storage.primary.ReconnectResult", "org.zstack.sdk.ReconnectResult");
 			put("org.zstack.header.storage.primary.UsageReport", "org.zstack.sdk.UsageReport");
 			put("org.zstack.header.storage.snapshot.BatchDeleteVolumeSnapshotStruct", "org.zstack.sdk.BatchDeleteVolumeSnapshotStruct");
 			put("org.zstack.header.storage.snapshot.ShrinkResult", "org.zstack.sdk.ShrinkResult");
@@ -564,6 +566,7 @@ public class SourceClassMap {
 			put("org.zstack.storage.primary.sharedblock.SharedBlockGroupPrimaryStorageHostRefInventory", "org.zstack.sdk.SharedBlockGroupPrimaryStorageHostRefInventory");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockGroupPrimaryStorageInventory", "org.zstack.sdk.SharedBlockGroupPrimaryStorageInventory");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockGroupType", "org.zstack.sdk.SharedBlockGroupType");
+			put("org.zstack.storage.primary.sharedblock.SharedBlockGroupVgInfo", "org.zstack.sdk.SharedBlockGroupVgInfo");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockInventory", "org.zstack.sdk.SharedBlockInventory");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockState", "org.zstack.sdk.SharedBlockState");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockStatus", "org.zstack.sdk.SharedBlockStatus");
@@ -775,6 +778,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CloudFormationStackEventInventory", "org.zstack.header.cloudformation.CloudFormationStackEventInventory");
 			put("org.zstack.sdk.ClusterDRSInventory", "org.zstack.drs.entity.ClusterDRSInventory");
 			put("org.zstack.sdk.ClusterInventory", "org.zstack.header.cluster.ClusterInventory");
+			put("org.zstack.sdk.ConsistencyCheckStatus", "org.zstack.header.storage.primary.ConsistencyCheckStatus");
 			put("org.zstack.sdk.ConsoleInventory", "org.zstack.header.console.ConsoleInventory");
 			put("org.zstack.sdk.ConsoleProxyAgentInventory", "org.zstack.header.console.ConsoleProxyAgentInventory");
 			put("org.zstack.sdk.ControlStrategy", "org.zstack.loginControl.entity.ControlStrategy");
@@ -1040,6 +1044,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.QuotaUsage", "org.zstack.header.identity.Quota$QuotaUsage");
 			put("org.zstack.sdk.RaidControllerInventory", "org.zstack.storage.device.localRaid.RaidControllerInventory");
 			put("org.zstack.sdk.RaidPhysicalDriveInventory", "org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory");
+			put("org.zstack.sdk.ReconnectResult", "org.zstack.header.storage.primary.ReconnectResult");
 			put("org.zstack.sdk.RedirectUrlTemplate", "org.zstack.sso.header.RedirectUrlTemplate");
 			put("org.zstack.sdk.RemoteVtepInventory", "org.zstack.network.l2.vxlan.vtep.RemoteVtepInventory");
 			put("org.zstack.sdk.RemovalInstanceRuleInventory", "org.zstack.autoscaling.group.rule.RemovalInstanceRuleInventory");
@@ -1093,6 +1098,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SharedBlockGroupPrimaryStorageHostRefInventory", "org.zstack.storage.primary.sharedblock.SharedBlockGroupPrimaryStorageHostRefInventory");
 			put("org.zstack.sdk.SharedBlockGroupPrimaryStorageInventory", "org.zstack.storage.primary.sharedblock.SharedBlockGroupPrimaryStorageInventory");
 			put("org.zstack.sdk.SharedBlockGroupType", "org.zstack.storage.primary.sharedblock.SharedBlockGroupType");
+			put("org.zstack.sdk.SharedBlockGroupVgInfo", "org.zstack.storage.primary.sharedblock.SharedBlockGroupVgInfo");
 			put("org.zstack.sdk.SharedBlockInventory", "org.zstack.storage.primary.sharedblock.SharedBlockInventory");
 			put("org.zstack.sdk.SharedBlockState", "org.zstack.storage.primary.sharedblock.SharedBlockState");
 			put("org.zstack.sdk.SharedBlockStatus", "org.zstack.storage.primary.sharedblock.SharedBlockStatus");
