@@ -60,8 +60,10 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.zstack.compute.vm.VmGlobalConfig.RESET_TPM_AFTER_VM_CLONE;
 import static org.zstack.core.Platform.err;
@@ -189,6 +191,10 @@ public class KvmTpmManager extends AbstractService {
         String vmInstanceUuid;
         String tpmUuid;
 
+        boolean tpmCreated;
+        boolean keyProviderAttached;
+        String createdTpmUuid;
+
         static AddTpmToVmContext valueOf(AddTpmMsg msg) {
             AddTpmToVmContext context = new AddTpmToVmContext();
             context.keyProviderUuid = msg.getKeyProviderUuid();
@@ -198,46 +204,55 @@ public class KvmTpmManager extends AbstractService {
         }
     }
 
-    @SuppressWarnings("rawtypes")
     private void addTpmToVm(AddTpmToVmContext context, Completion completion) {
-        SimpleFlowChain chain = new SimpleFlowChain();
-        chain.setName("add-tpm-to-vm-" + context.vmInstanceUuid);
-        chain.then(new NoRollbackFlow() {
-            String __name__ = "check-vm-status";
+        SimpleFlowChain.of("add-tpm-to-vm-" + context.vmInstanceUuid)
+            .then(Flow.of("check-vm-status")
+                .handle(trigger -> {
+                    VmInstanceVO vm = Q.New(VmInstanceVO.class)
+                            .eq(VmInstanceVO_.uuid, context.vmInstanceUuid)
+                            .find();
 
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                VmInstanceVO vm = Q.New(VmInstanceVO.class)
-                        .eq(VmInstanceVO_.uuid, context.vmInstanceUuid)
-                        .find();
-
-                if (!SUPPORT_VM_STATES_FOR_TPM_OPERATION.contains(vm.getState())) {
-                    trigger.fail(err(VM_STATE_ERROR,
-                            "The current VM state does not support adding TPM operations")
-                            .withOpaque("support.vm.state", SUPPORT_VM_STATES_FOR_TPM_OPERATION));
-                    return;
-                }
-                trigger.next();
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "create-tpm-db-records";
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                vmTpmManager.persistTpmVO(context.tpmUuid, context.vmInstanceUuid);
-                trigger.next();
-            }
-        }).done(new FlowDoneHandler(completion) {
-            @Override
-            public void handle(Map data) {
-                completion.success();
-            }
-        }).error(new FlowErrorHandler(completion) {
-            @Override
-            public void handle(ErrorCode errorCode, Map data) {
-                completion.fail(errorCode);
-            }
-        }).start();
+                    if (!SUPPORT_VM_STATES_FOR_TPM_OPERATION.contains(vm.getState())) {
+                        trigger.fail(err(VM_STATE_ERROR,
+                                "The current VM state does not support adding TPM operations")
+                                .withOpaque("support.vm.state", SUPPORT_VM_STATES_FOR_TPM_OPERATION));
+                        return;
+                    }
+                    trigger.next();
+                })
+                .build())
+            .then(Flow.of("create-tpm-db-records")
+                .handle(trigger -> {
+                    try {
+                        TpmVO tpm = vmTpmManager.persistTpmVO(context.tpmUuid, context.vmInstanceUuid);
+                        context.createdTpmUuid = tpm.getUuid();
+                        context.tpmCreated = true;
+                        if (context.keyProviderUuid != null) {
+                            tpmKeyBackend.attachKeyProviderToTpm(context.createdTpmUuid, context.keyProviderUuid);
+                            context.keyProviderAttached = true;
+                        }
+                        trigger.next();
+                    } catch (Exception e) {
+                        trigger.fail(operr("failed to add TPM to vm[uuid:%s]: %s", context.vmInstanceUuid, e.getMessage()));
+                    }
+                })
+                .rollback(trigger -> {
+                    try {
+                        if (context.keyProviderAttached && context.createdTpmUuid != null) {
+                            tpmKeyBackend.detachKeyProviderFromTpm(context.createdTpmUuid);
+                        }
+                    } finally {
+                        if (context.tpmCreated && context.createdTpmUuid != null) {
+                            vmTpmManager.deleteTpmVO(context.createdTpmUuid);
+                        }
+                    }
+                    trigger.rollback();
+                })
+                .build())
+            .propagateExceptionTo(completion)
+            .done(completion::success)
+            .error(completion::fail)
+            .start();
     }
 
     private void handle(RemoveTpmMsg msg) {
@@ -286,48 +301,63 @@ public class KvmTpmManager extends AbstractService {
         }
     }
 
-    @SuppressWarnings("rawtypes")
     private void removeTpmFromVm(RemoveTpmFromVmContext context, Completion completion) {
-        SimpleFlowChain chain = new SimpleFlowChain();
-        chain.setName("remove-tpm-from-vm-" + context.vmInstanceUuid);
-        chain.then(new NoRollbackFlow() {
-            String __name__ = "check-vm-status";
+        SimpleFlowChain.of("remove-tpm-from-vm-" + context.vmInstanceUuid)
+            .then(Flow.of("check-vm-status")
+                .handle(trigger -> {
+                    VmInstanceVO vm = Q.New(VmInstanceVO.class)
+                            .eq(VmInstanceVO_.uuid, context.vmInstanceUuid)
+                            .find();
 
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                VmInstanceVO vm = Q.New(VmInstanceVO.class)
-                        .eq(VmInstanceVO_.uuid, context.vmInstanceUuid)
-                        .find();
+                    if (!SUPPORT_VM_STATES_FOR_TPM_OPERATION.contains(vm.getState())) {
+                        trigger.fail(err(VM_STATE_ERROR,
+                                "The current VM state does not support removing TPM operations")
+                                .withOpaque("support.vm.state", SUPPORT_VM_STATES_FOR_TPM_OPERATION));
+                        return;
+                    }
+                    trigger.next();
+                })
+                .build())
+            .then(Flow.of("detach-resource-key")
+                .handle(trigger -> {
+                    tpmKeyBackend.detachKeyProviderFromTpm(context.tpmUuid);
+                    trigger.next();
+                })
+                .build())
+            .then(Flow.of("remove-tpm-db-records")
+                .handle(trigger -> {
+                    new SQLBatch() {
+                        @Override
+                        protected void scripts() {
+                            Set<VmHostFileType> types = new HashSet<>();
+                            types.add(VmHostFileType.TpmState);
 
-                if (!SUPPORT_VM_STATES_FOR_TPM_OPERATION.contains(vm.getState())) {
-                    trigger.fail(err(VM_STATE_ERROR,
-                            "The current VM state does not support removing TPM operations")
-                            .withOpaque("support.vm.state", SUPPORT_VM_STATES_FOR_TPM_OPERATION));
-                    return;
-                }
-                trigger.next();
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "remove-tpm-db-records";
+                            sql(TpmVO.class)
+                                    .eq(TpmVO_.uuid, context.tpmUuid)
+                                    .delete();
 
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                SQL.New(TpmVO.class)
-                        .eq(TpmVO_.uuid, context.tpmUuid)
-                        .delete();
-                trigger.next();
-            }
-        }).done(new FlowDoneHandler(completion) {
-            @Override
-            public void handle(Map data) {
-                completion.success();
-            }
-        }).error(new FlowErrorHandler(completion) {
-            @Override
-            public void handle(ErrorCode errorCode, Map data) {
-                completion.fail(errorCode);
-            }
-        }).start();
+                            boolean needRegisterNvRam = vmTpmManager.needRegisterNvRam(context.vmInstanceUuid);
+                            if (!needRegisterNvRam) {
+                                types.add(VmHostFileType.NvRam);
+                            }
+
+                            sql(VmHostFileVO.class)
+                                    .eq(VmHostFileVO_.vmInstanceUuid, context.vmInstanceUuid)
+                                    .in(VmHostFileVO_.type, types)
+                                    .delete();
+                            sql(VmHostBackupFileVO.class)
+                                    .eq(VmHostBackupFileVO_.resourceUuid, context.vmInstanceUuid)
+                                    .in(VmHostBackupFileVO_.type, types)
+                                    .delete();
+                        }
+                    }.execute();
+                    trigger.next();
+                })
+                .build())
+            .propagateExceptionTo(completion)
+            .done(completion::success)
+            .error(completion::fail)
+            .start();
     }
 
     @SuppressWarnings("rawtypes")
