@@ -921,7 +921,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
                 l2VO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
         if (controllerUuid == null) {
-            completion.success();
+            completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10006, "sdn l2 network[uuid:%s] is not attached controller", l2VO.getUuid()));
             return;
         }
 
@@ -947,7 +947,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
                 l2VO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
         if (controllerUuid == null) {
-            completion.success();
+            completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10006, "sdn l2 network[uuid:%s] is not attached controller", l2VO.getUuid()));
             return;
         }
 
