@@ -16,6 +16,7 @@ public class VmHostFileInventory {
     private String hostUuid;
     private String type;
     private String path;
+    private String lastSyncReason;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -29,6 +30,7 @@ public class VmHostFileInventory {
         inv.setHostUuid(vo.getHostUuid());
         inv.setType(vo.getType().toString());
         inv.setPath(vo.getPath());
+        inv.setLastSyncReason(vo.getLastSyncReason());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
@@ -78,6 +80,14 @@ public class VmHostFileInventory {
         this.path = path;
     }
 
+    public String getLastSyncReason() {
+        return lastSyncReason;
+    }
+
+    public void setLastSyncReason(String lastSyncReason) {
+        this.lastSyncReason = lastSyncReason;
+    }
+
     public Timestamp getCreateDate() {
         return createDate;
     }
@@ -101,6 +111,7 @@ public class VmHostFileInventory {
         ref.setHostUuid(DocUtils.createFixedUuid(HostVO.class));
         ref.setType(VmHostFileType.TpmState.toString());
         ref.setPath("/var/lib/libvirt/swtpm/" + ref.getHostUuid() + "/");
+        ref.setLastSyncReason("on libvirt shutdown event");
         ref.setCreateDate(DocUtils.timestamp());
         ref.setLastOpDate(DocUtils.timestamp());
         return ref;

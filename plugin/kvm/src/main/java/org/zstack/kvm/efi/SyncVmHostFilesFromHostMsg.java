@@ -7,6 +7,7 @@ public class SyncVmHostFilesFromHostMsg extends NeedReplyMessage {
     private String vmUuid;
     private String nvRamPath;
     private String tpmStateFolder;
+    private String syncReason;
 
     public String getHostUuid() {
         return hostUuid;
@@ -38,5 +39,13 @@ public class SyncVmHostFilesFromHostMsg extends NeedReplyMessage {
 
     public void setTpmStateFolder(String tpmStateFolder) {
         this.tpmStateFolder = tpmStateFolder;
+    }
+
+    public String getSyncReason() {
+        return syncReason;
+    }
+
+    public void setSyncReason(String syncReason) {
+        this.syncReason = syncReason;
     }
 }
