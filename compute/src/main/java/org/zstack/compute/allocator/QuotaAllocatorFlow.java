@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.vm.VmQuotaOperator;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.identity.Account;
 import org.zstack.identity.QuotaUtil;
@@ -51,6 +53,12 @@ public class QuotaAllocatorFlow extends AbstractHostAllocatorFlow {
         }
 
         throwExceptionIfIAmTheFirstFlow();
+        // skip checkquota if the operator is admin
+        String currentAccountUuid = spec.getAccountUuid();
+        if (currentAccountUuid != null && AccountConstant.isAdminPermission(currentAccountUuid)) {
+            next(candidates);
+            return;
+        }
 
         final String vmInstanceUuid = spec.getVmInstance().getUuid();
         final String accountUuid = Account.getAccountUuidOfResource(vmInstanceUuid);
@@ -60,21 +68,27 @@ public class QuotaAllocatorFlow extends AbstractHostAllocatorFlow {
         }
 
         if (!spec.isFullAllocate()) {
-            new VmQuotaOperator().checkVmCupAndMemoryCapacity(accountUuid,
+            ErrorCode error = new VmQuotaOperator().checkVmCupAndMemoryCapacityWithResult(accountUuid,
                     accountUuid,
                     spec.getCpuCapacity(),
                     spec.getMemoryCapacity(),
                     new QuotaUtil().makeQuotaPairs(accountUuid));
+            if (error != null) {
+                throw new OperationFailureException(error);
+            }
 
             next(candidates);
             return;
         }
 
-        new VmQuotaOperator().checkVmInstanceQuota(
+        ErrorCode error = new VmQuotaOperator().checkVmInstanceQuotaWithResult(
                 accountUuid,
                 accountUuid,
                 vmInstanceUuid,
                 new QuotaUtil().makeQuotaPairs(accountUuid));
+        if (error != null) {
+            throw new OperationFailureException(error);
+        }
         next(candidates);
     }
 }
