@@ -9,6 +9,7 @@ public class TpmSpec {
     private String keyProviderUuid;
     @APINoSee
     private String secretUuid;
+    @APINoSee
     private String backupFileUuid;
     @APINoSee
     private boolean resourceKeyCreatedNew;
