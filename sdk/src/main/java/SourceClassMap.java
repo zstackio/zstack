@@ -70,6 +70,7 @@ public class SourceClassMap {
 			put("org.zstack.core.jsonlabel.JsonLabelInventory", "org.zstack.sdk.JsonLabelInventory");
 			put("org.zstack.crypto.ccs.CCSCertificateAccountRefInventory", "org.zstack.sdk.CCSCertificateAccountRefInventory");
 			put("org.zstack.crypto.ccs.CCSCertificateInventory", "org.zstack.sdk.CCSCertificateInventory");
+			put("org.zstack.crypto.keyprovider.api.RekeySkippedResource", "org.zstack.sdk.keyprovider.api.RekeySkippedResource");
 			put("org.zstack.crypto.securitymachine.thirdparty.aisino.AiSiNoSecretResourcePoolInventory", "org.zstack.sdk.AiSiNoSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecretResourcePoolInventory", "org.zstack.sdk.FlkSecSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecurityMachineInventory", "org.zstack.sdk.FlkSecSecurityMachineInventory");
@@ -1264,6 +1265,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.identity.ldap.entity.LdapServerInventory", "org.zstack.ldap.entity.LdapServerInventory");
 			put("org.zstack.sdk.identity.role.RoleAccountRefInventory", "org.zstack.header.identity.role.RoleAccountRefInventory");
 			put("org.zstack.sdk.identity.role.RoleInventory", "org.zstack.header.identity.role.RoleInventory");
+			put("org.zstack.sdk.keyprovider.api.RekeySkippedResource", "org.zstack.crypto.keyprovider.api.RekeySkippedResource");
 			put("org.zstack.sdk.license.entity.LicenseHistoryInventory", "org.zstack.license.entity.LicenseHistoryInventory");
 			put("org.zstack.sdk.license.entity.LicenseUsageView", "org.zstack.license.entity.LicenseUsageView");
 			put("org.zstack.sdk.license.entity.UpdateLicenseView", "org.zstack.license.entity.UpdateLicenseView");
