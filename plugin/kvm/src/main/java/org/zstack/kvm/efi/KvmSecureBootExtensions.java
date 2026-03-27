@@ -27,6 +27,8 @@ import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.tpm.entity.TpmVO_;
 import org.zstack.header.vm.DiskAO;
 import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -45,6 +47,12 @@ import org.zstack.header.vm.additions.VmHostFileOperation;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
 import org.zstack.header.vm.additions.VmHostFileVO_;
+import org.zstack.header.storage.snapshot.ConsistentType;
+import org.zstack.header.storage.snapshot.CreateVolumesSnapshotOverlayInnerMsg;
+import org.zstack.header.storage.snapshot.TakeVolumesSnapshotOnKvmReply;
+import org.zstack.header.storage.snapshot.VolumeSnapshotCreationExtensionPoint;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMAgentCommands.*;
@@ -83,7 +91,8 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         VmPreMigrationExtensionPoint,
         AfterReimageVmInstanceExtensionPoint,
         VmReleaseResourceExtensionPoint,
-        VmInstanceMigrateExtensionPoint {
+        VmInstanceMigrateExtensionPoint,
+        VolumeSnapshotCreationExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmSecureBootExtensions.class);
 
     @Autowired
@@ -633,5 +642,87 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 completion.done();
             }
         });
+    }
+
+    @Override
+    public void afterVolumeLiveSnapshotGroupCreatedOnBackend(CreateVolumesSnapshotOverlayInnerMsg msg,
+                                                             TakeVolumesSnapshotOnKvmReply treply,
+                                                             Completion completion) {
+        if (treply == null || !treply.isSuccess()) {
+            completion.success();
+            return;
+        }
+
+        if (!msg.isBackupHostFileIfNeeded()) {
+            completion.success();
+            return;
+        }
+
+        String vmUuid = msg.getLockedVmInstanceUuids().get(0);
+        String hostUuid = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.hostUuid)
+                .eq(VmInstanceVO_.uuid, vmUuid)
+                .findValue();
+
+        List<VmHostFileVO> hostFiles = Q.New(VmHostFileVO.class)
+                .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
+                .eq(VmHostFileVO_.hostUuid, hostUuid)
+                .list();
+
+        if (hostFiles.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        String tempResourceUuid = Platform.getUuid();
+
+        SyncVmHostFilesFromHostMsg syncMsg = new SyncVmHostFilesFromHostMsg();
+        syncMsg.setVmUuid(vmUuid);
+        syncMsg.setHostUuid(hostUuid);
+
+        for (VmHostFileVO file : hostFiles) {
+            if (file.getType() == VmHostFileType.NvRam) {
+                syncMsg.setNvRamPath(buildNvramSnapshotBackupFilePath(vmUuid));
+            } else if (file.getType() == VmHostFileType.TpmState) {
+                syncMsg.setTpmStateFolder(buildTpmStateSnapshotBackupFilePath(vmUuid));
+            }
+        }
+
+        syncMsg.setSyncReason("snapshot-group-online-backup");
+        syncMsg.setSyncToBackup(true);
+        syncMsg.setBackupResourceUuid(tempResourceUuid);
+        bus.makeLocalServiceId(syncMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
+        bus.send(syncMsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    treply.setHostBackupTempResourceUuid(tempResourceUuid);
+                    logger.debug(String.format("synced backup host files for vm[uuid:%s] to VmHostBackupFileVO[resourceUuid:%s]",
+                            vmUuid, tempResourceUuid));
+                } else {
+                    logger.warn(String.format("failed to sync backup host files for vm[uuid:%s] during online snapshot, " +
+                            "but tolerated: %s", vmUuid, reply.getError().getReadableDetails()));
+                }
+                completion.success();
+            }
+        });
+    }
+
+    @Override
+    public void afterVolumeLiveSnapshotGroupCreationFailsOnBackend(CreateVolumesSnapshotOverlayInnerMsg msg,
+                                                                    TakeVolumesSnapshotOnKvmReply treply) {
+        // No cleanup needed — backup files on agent side are ephemeral
+    }
+
+    @Override
+    public void afterVolumeSnapshotGroupCreated(VolumeSnapshotGroupInventory snapshotGroup,
+                                                 ConsistentType consistentType,
+                                                 Completion completion) {
+        completion.success();
+    }
+
+    @Override
+    public void afterVolumeSnapshotCreated(VolumeSnapshotInventory snapshot, Completion completion) {
+        completion.success();
     }
 }

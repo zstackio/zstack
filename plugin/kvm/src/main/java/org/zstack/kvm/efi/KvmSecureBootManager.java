@@ -44,6 +44,7 @@ import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
 import org.zstack.header.vm.additions.VmHostFileVO_;
 import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KvmCommandSender;
 import org.zstack.kvm.KvmResponseWrapper;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -222,87 +223,15 @@ public class KvmSecureBootManager extends AbstractService {
                     return;
                 }
 
-                final List<VmHostFileVO> existsFiles = Q.New(VmHostFileVO.class)
-                        .eq(VmHostFileVO_.vmInstanceUuid, msg.getVmUuid())
-                        .eq(VmHostFileVO_.hostUuid, msg.getHostUuid())
-                        .in(VmHostFileVO_.path, cmd.getPaths())
-                        .list();
-                final List<String> existsContentUuid;
-                if (!existsFiles.isEmpty()) {
-                    existsContentUuid = Q.New(VmHostFileContentVO.class)
-                            .in(VmHostFileContentVO_.uuid, transform(existsFiles, VmHostFileVO::getUuid))
-                            .select(VmHostFileContentVO_.uuid)
-                            .listValues();
+                ErrorCode error;
+                if (msg.isSyncToBackup()) {
+                    error = syncToBackupFiles(msg, readRsp);
                 } else {
-                    existsContentUuid = Collections.emptyList();
+                    error = syncToHostFiles(msg, cmd, readRsp);
                 }
 
-                List<ErrorCode> errors = new ArrayList<>();
-                for (String path : cmd.getPaths()) {
-                    KVMAgentCommands.VmHostFileTO to = findOneOrNull(readRsp.getHostFiles(), item -> item.getPath().equals(path));
-                    if (to == null) {
-                        continue;
-                    }
-                    if (to.getError() != null) {
-                        errors.add(operr("failed to read file %s", path)
-                                .withOpaque("path", path)
-                                .withException(to.getError()));
-                        continue;
-                    }
-
-                    VmHostFileType type = Objects.equals(path, msg.getNvRamPath()) ?
-                            VmHostFileType.NvRam : VmHostFileType.TpmState;
-
-                    VmHostFileVO file = findOneOrNull(existsFiles, item -> item.getPath().equals(path));
-                    boolean fileExists = file != null;
-
-                    Timestamp now = Timestamp.from(Instant.now());
-                    if (fileExists) {
-                        SQL.New(VmHostFileVO.class)
-                                .eq(VmHostFileVO_.uuid, file.getUuid())
-                                .set(VmHostFileVO_.lastOpDate, now)
-                                .set(VmHostFileVO_.lastSyncReason, msg.getSyncReason())
-                                .update();
-                    } else {
-                        file = new VmHostFileVO();
-                        file.setUuid(Platform.getUuid());
-                        file.setHostUuid(msg.getHostUuid());
-                        file.setVmInstanceUuid(msg.getVmUuid());
-                        file.setPath(path);
-                        file.setType(type);
-                        file.setLastSyncReason(msg.getSyncReason());
-                        file.setCreateDate(now);
-                        file.setLastOpDate(now);
-                        file.setResourceName(String.format("%s file for %s", type, msg.getVmUuid()));
-                        databaseFacade.persist(file);
-                    }
-
-                    byte[] bytes = Base64.getDecoder().decode(to.getContentBase64());
-                    if (existsContentUuid.contains(file.getUuid())) {
-                        SQL.New(VmHostFileContentVO.class)
-                                .eq(VmHostFileContentVO_.uuid, file.getUuid())
-                                .set(VmHostFileContentVO_.content, bytes)
-                                .set(VmHostFileContentVO_.format, VmHostFileContentFormat.valueOf(to.getFileFormat()))
-                                .set(VmHostFileContentVO_.lastOpDate, now)
-                                .update();
-                    } else {
-                        VmHostFileContentVO content = new VmHostFileContentVO();
-                        content.setUuid(file.getUuid());
-                        content.setContent(bytes);
-                        content.setFormat(VmHostFileContentFormat.valueOf(to.getFileFormat()));
-                        content.setCreateDate(now);
-                        content.setLastOpDate(now);
-                        databaseFacade.persist(content);
-                    }
-
-                    if (logger.isTraceEnabled()) {
-                        logger.trace(String.format("persist/update VmHostFileContentVO [uuid=%s]", file.getUuid()));
-                    }
-                }
-
-                if (!errors.isEmpty()) {
-                    reply.setError(operr("failed to read file content from host[uuid=%s]", msg.getHostUuid())
-                            .withCause(errors));
+                if (error != null) {
+                    reply.setError(error);
                 }
                 bus.reply(msg, reply);
             }
@@ -315,6 +244,199 @@ public class KvmSecureBootManager extends AbstractService {
         });
     }
 
+    private ErrorCode syncToHostFiles(SyncVmHostFilesFromHostMsg msg,
+                                      KVMAgentCommands.ReadVmHostFileContentCmd cmd,
+                                      KVMAgentCommands.ReadVmHostFileContentResponse readRsp) {
+        final List<VmHostFileVO> existsFiles = Q.New(VmHostFileVO.class)
+                .eq(VmHostFileVO_.vmInstanceUuid, msg.getVmUuid())
+                .eq(VmHostFileVO_.hostUuid, msg.getHostUuid())
+                .in(VmHostFileVO_.path, cmd.getPaths())
+                .list();
+        final List<String> existsContentUuid;
+        if (!existsFiles.isEmpty()) {
+            existsContentUuid = Q.New(VmHostFileContentVO.class)
+                    .in(VmHostFileContentVO_.uuid, transform(existsFiles, VmHostFileVO::getUuid))
+                    .select(VmHostFileContentVO_.uuid)
+                    .listValues();
+        } else {
+            existsContentUuid = Collections.emptyList();
+        }
+
+        List<ErrorCode> errors = new ArrayList<>();
+        for (String path : cmd.getPaths()) {
+            KVMAgentCommands.VmHostFileTO to = findOneOrNull(readRsp.getHostFiles(), item -> item.getPath().equals(path));
+            if (to == null) {
+                continue;
+            }
+            if (to.getError() != null) {
+                errors.add(operr("failed to read file %s", path)
+                        .withOpaque("path", path)
+                        .withException(to.getError()));
+                continue;
+            }
+
+            VmHostFileType type = Objects.equals(path, msg.getNvRamPath()) ?
+                    VmHostFileType.NvRam : VmHostFileType.TpmState;
+
+            VmHostFileVO file = findOneOrNull(existsFiles, item -> item.getPath().equals(path));
+            boolean fileExists = file != null;
+
+            Timestamp now = Timestamp.from(Instant.now());
+            if (fileExists) {
+                SQL.New(VmHostFileVO.class)
+                        .eq(VmHostFileVO_.uuid, file.getUuid())
+                        .set(VmHostFileVO_.lastOpDate, now)
+                        .set(VmHostFileVO_.lastSyncReason, msg.getSyncReason())
+                        .update();
+            } else {
+                file = new VmHostFileVO();
+                file.setUuid(Platform.getUuid());
+                file.setHostUuid(msg.getHostUuid());
+                file.setVmInstanceUuid(msg.getVmUuid());
+                file.setPath(path);
+                file.setType(type);
+                file.setLastSyncReason(msg.getSyncReason());
+                file.setCreateDate(now);
+                file.setLastOpDate(now);
+                file.setResourceName(String.format("%s file for %s", type, msg.getVmUuid()));
+                databaseFacade.persist(file);
+            }
+
+            byte[] bytes = Base64.getDecoder().decode(to.getContentBase64());
+            if (existsContentUuid.contains(file.getUuid())) {
+                SQL.New(VmHostFileContentVO.class)
+                        .eq(VmHostFileContentVO_.uuid, file.getUuid())
+                        .set(VmHostFileContentVO_.content, bytes)
+                        .set(VmHostFileContentVO_.format, VmHostFileContentFormat.valueOf(to.getFileFormat()))
+                        .set(VmHostFileContentVO_.lastOpDate, now)
+                        .update();
+            } else {
+                VmHostFileContentVO content = new VmHostFileContentVO();
+                content.setUuid(file.getUuid());
+                content.setContent(bytes);
+                content.setFormat(VmHostFileContentFormat.valueOf(to.getFileFormat()));
+                content.setCreateDate(now);
+                content.setLastOpDate(now);
+                databaseFacade.persist(content);
+            }
+
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("persist/update VmHostFileContentVO [uuid=%s]", file.getUuid()));
+            }
+        }
+
+        if (errors.isEmpty()) {
+            return null;
+        }
+
+        return operr("failed to read file content from host[uuid=%s]", msg.getHostUuid())
+                .withCause(errors);
+    }
+
+    private ErrorCode syncToBackupFiles(SyncVmHostFilesFromHostMsg msg,
+                                        KVMAgentCommands.ReadVmHostFileContentResponse readRsp) {
+        if (msg.getBackupResourceUuid() == null || msg.getBackupResourceUuid().isEmpty()) {
+            return operr("backupResourceUuid is required when syncToBackup is true");
+        }
+
+        // Query the source VmHostFileVO records for afterBackup callback
+        final List<VmHostFileVO> sourceHostFiles = Q.New(VmHostFileVO.class)
+                .eq(VmHostFileVO_.vmInstanceUuid, msg.getVmUuid())
+                .eq(VmHostFileVO_.hostUuid, msg.getHostUuid())
+                .list();
+
+        List<VmHostBackupFileVO> backupFilesToPersist = new ArrayList<>();
+        List<VmHostFileContentVO> contentsToPersist = new ArrayList<>();
+        Map<VmHostBackupFileVO, VmHostFileVO> backupFromMap = new HashMap<>();
+
+        List<ErrorCode> errors = new ArrayList<>();
+        Timestamp now = Timestamp.from(Instant.now());
+
+        for (KVMAgentCommands.VmHostFileTO to : readRsp.getHostFiles()) {
+            if (to == null) {
+                continue;
+            }
+            if (to.getError() != null) {
+                errors.add(operr("failed to read backup file %s", to.getPath())
+                        .withOpaque("path", to.getPath())
+                        .withException(to.getError()));
+                continue;
+            }
+            if (to.getContentBase64() == null) {
+                errors.add(operr("backup file %s returns empty content", to.getPath())
+                        .withOpaque("path", to.getPath()));
+                continue;
+            }
+
+            VmHostFileType type = VmHostFileType.valueOf(to.getType());
+            String expectPath = KVMConstant.buildSnapshotBackupPathForVmHostFileType(type, msg.getVmUuid());
+            if (!(Objects.equals(to.getPath(), expectPath))) {
+                errors.add(operr("unexpected path %s for backup file type %s", to.getPath(), to.getType())
+                        .withOpaque("path", to.getPath())
+                        .withOpaque("type", to.getType()));
+                continue;
+            }
+
+            VmHostBackupFileVO backupFile = new VmHostBackupFileVO();
+            backupFile.setUuid(Platform.getUuid());
+            backupFile.setResourceUuid(msg.getBackupResourceUuid());
+            backupFile.setType(type);
+            backupFile.setCreateDate(now);
+            backupFile.setLastOpDate(now);
+            backupFilesToPersist.add(backupFile);
+
+            VmHostFileContentVO content = new VmHostFileContentVO();
+            content.setUuid(backupFile.getUuid());
+            content.setContent(Base64.getDecoder().decode(to.getContentBase64()));
+            content.setFormat(VmHostFileContentFormat.valueOf(to.getFileFormat()));
+            content.setCreateDate(now);
+            content.setLastOpDate(now);
+            contentsToPersist.add(content);
+
+            VmHostFileVO sourceFile = findOneOrNull(sourceHostFiles, item -> item.getType() == type);
+            if (sourceFile != null) {
+                backupFromMap.put(backupFile, sourceFile);
+            }
+        }
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                for (VmHostBackupFileVO bf : backupFilesToPersist) {
+                    sql(VmHostBackupFileVO.class)
+                            .eq(VmHostBackupFileVO_.resourceUuid, bf.getResourceUuid())
+                            .eq(VmHostBackupFileVO_.type, bf.getType())
+                            .delete();
+                }
+
+                if (!backupFilesToPersist.isEmpty()) {
+                    databaseFacade.persistCollection(backupFilesToPersist);
+                }
+                if (!contentsToPersist.isEmpty()) {
+                    databaseFacade.persistCollection(contentsToPersist);
+                }
+            }
+        }.execute();
+
+        for (VmHostBackupFileVO backup : backupFilesToPersist) {
+            VmHostFileVO source = backupFromMap.get(backup);
+            if (source != null) {
+                try {
+                    vmHostFileFactory.createBackupBase(backup).afterBackup(source);
+                } catch (Exception e) {
+                    logger.warn(String.format("failed to execute afterBackup hook for VmHostBackupFileVO[uuid:%s, type:%s]: %s",
+                            backup.getUuid(), backup.getType(), e.getMessage()), e);
+                }
+            }
+        }
+
+        if (errors.isEmpty()) {
+            return null;
+        }
+
+        return operr("failed to read backup file content from host[uuid=%s]", msg.getHostUuid())
+                .withCause(errors);
+    }
 
     @SuppressWarnings("rawtypes")
     private void handle(CloneVmHostFileMsg msg) {

@@ -8,6 +8,8 @@ public class SyncVmHostFilesFromHostMsg extends NeedReplyMessage {
     private String nvRamPath;
     private String tpmStateFolder;
     private String syncReason;
+    private boolean syncToBackup;
+    private String backupResourceUuid;
 
     public String getHostUuid() {
         return hostUuid;
@@ -47,5 +49,21 @@ public class SyncVmHostFilesFromHostMsg extends NeedReplyMessage {
 
     public void setSyncReason(String syncReason) {
         this.syncReason = syncReason;
+    }
+
+    public boolean isSyncToBackup() {
+        return syncToBackup;
+    }
+
+    public void setSyncToBackup(boolean syncToBackup) {
+        this.syncToBackup = syncToBackup;
+    }
+
+    public String getBackupResourceUuid() {
+        return backupResourceUuid;
+    }
+
+    public void setBackupResourceUuid(String backupResourceUuid) {
+        this.backupResourceUuid = backupResourceUuid;
     }
 }
