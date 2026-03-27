@@ -5,5 +5,4 @@ public enum VolumeType {
     Data,
     Memory,
     Cache,
-    NvRam,
 }

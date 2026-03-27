@@ -63,8 +63,7 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
         List<String> volumeTypes = Arrays.asList(
                 VolumeType.Root.toString(),
                 VolumeType.Memory.toString(),
-                VolumeType.Cache.toString(),
-                VolumeType.NvRam.toString()
+                VolumeType.Cache.toString()
         );
         List<VolumeDeletionStruct> ctx = CollectionUtils.transformToList(spec.getVmInventory().getAllVolumes(), new Function<VolumeDeletionStruct, VolumeInventory>() {
             @Override
