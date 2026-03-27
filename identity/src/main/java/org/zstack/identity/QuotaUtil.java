@@ -71,7 +71,7 @@ public class QuotaUtil {
     }
 
     @Transactional(readOnly = true)
-    public void CheckQuota(QuotaCompareInfo quotaCompareInfo) {
+    public ErrorCode checkQuotaAndReturn(QuotaCompareInfo quotaCompareInfo) {
         logger.trace(String.format("dump quota QuotaCompareInfo: \n %s",
                 JSONObjectUtil.toJsonString(quotaCompareInfo)));
         String accountName = Q.New(AccountVO.class)
@@ -79,14 +79,23 @@ public class QuotaUtil {
                 .eq(AccountVO_.uuid, quotaCompareInfo.resourceTargetOwnerAccountUuid)
                 .findValue();
         if (quotaCompareInfo.currentUsed + quotaCompareInfo.request > quotaCompareInfo.quotaValue) {
-            throw new ApiMessageInterceptionException(err(IdentityErrors.QUOTA_EXCEEDING,
+            return err(IdentityErrors.QUOTA_EXCEEDING,
                     "quota exceeding." +
                             "The resource owner(or target resource owner) account[uuid: %s name: %s] exceeds a quota[name: %s, value: %s], " +
                             "Current used:%s, Request:%s. Please contact the administrator.",
                     quotaCompareInfo.resourceTargetOwnerAccountUuid, StringUtils.trimToEmpty(accountName),
                     quotaCompareInfo.quotaName, quotaCompareInfo.quotaValue,
                     quotaCompareInfo.currentUsed, quotaCompareInfo.request
-            ));
+            );
+        }
+
+        return null;
+    }
+
+    public void CheckQuota(QuotaCompareInfo quotaCompareInfo) {
+        ErrorCode error = checkQuotaAndReturn(quotaCompareInfo);
+        if (error != null) {
+            throw new ApiMessageInterceptionException(error);
         }
     }
 
