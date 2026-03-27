@@ -107,11 +107,24 @@ class GoInventory implements SdkTemplate {
     }
 
     /**
-     * Reset all static state for clean re-generation.
+     * Reset all static and instance state for clean re-generation.
+     * Must be called before each generate() to avoid stale caches
+     * causing skipped or duplicate output across repeated runs.
      */
-    static void reset() {
+    void reset() {
         longJobMappings.clear()
-        logger.warn("[GoSDK] Reset GoInventory static state")
+        allApiTemplates.clear()
+        inventories.clear()
+        markedInventories.clear()
+        additionalClasses.clear()
+        generatedViewStructs.clear()
+        generatedViewFiles.clear()
+        paramNestedTypes.clear()
+        generatedParamStructs.clear()
+        generatedClientMethods.clear()
+        generatingForParam = false
+        currentGeneratingClass = null
+        logger.warn("[GoSDK] Reset GoInventory state (static + instance)")
     }
 
     /**
