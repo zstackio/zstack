@@ -6,6 +6,7 @@ import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTag;
@@ -75,4 +76,8 @@ public class KVMSystemTags {
     public static final String SWTPM_VERSION_TOKEN = "version";
     public static PatternedSystemTag SWTPM_VERSION =
             new PatternedSystemTag(String.format("swtpm::{%s}", SWTPM_VERSION_TOKEN), HostVO.class);
+
+    public static final String TPM_KEY_PROVIDER_NAME_TOKEN = "keyProviderName";
+    public static PatternedSystemTag TPM_KEY_PROVIDER_NAME =
+            new PatternedSystemTag(String.format("tpm::keyProvider::{%s}", TPM_KEY_PROVIDER_NAME_TOKEN), VmHostBackupFileVO.class);
 }
