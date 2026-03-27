@@ -65,8 +65,7 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
         List<String> volumeTypes = Arrays.asList(
                 VolumeType.Root.toString(),
                 VolumeType.Memory.toString(),
-                VolumeType.Cache.toString(),
-                VolumeType.NvRam.toString()
+                VolumeType.Cache.toString()
         );
         List<VolumeDeletionStruct> ctx = transformAndRemoveNull(spec.getVmInventory().getAllVolumes(), arg -> {
             if (VolumeType.Data.toString().equals(arg.getType()) && !deleteDataDisk && !templated) {

@@ -2595,7 +2595,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                             sql(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, self.getUuid()).hardDelete();
                             sql(VolumeVO.class).eq(VolumeVO_.vmInstanceUuid, self.getUuid())
-                                    .in(VolumeVO_.type, list(VolumeType.Root, VolumeType.NvRam))
+                                    .eq(VolumeVO_.type, VolumeType.Root)
                                     .hardDelete();
                             sql(VmCdRomVO.class).eq(VmCdRomVO_.vmInstanceUuid, self.getUuid()).hardDelete();
                             sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, self.getUuid()).hardDelete();

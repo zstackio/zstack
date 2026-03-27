@@ -974,9 +974,6 @@ public class KvmBackend extends HypervisorBackend {
             cmd.installPath = makeRootVolumeInstallUrl(volume);
         } else if (VolumeType.Data.toString().equals(volume.getType())) {
             cmd.installPath = makeDataVolumeInstallUrl(volume.getUuid());
-        } else if (VolumeType.NvRam.toString().equals(volume.getType())) {
-            cmd.installPath = makeNvRamVolumeInstallUrl(volume.getUuid());
-            cmd.volumeFormat = VolumeConstant.VOLUME_FORMAT_RAW;
         } else {
             DebugUtils.Assert(false, "Should not be here");
         }
