@@ -90,6 +90,8 @@ public class KvmSecureBootManager extends AbstractService {
     private EventFacadeImpl eventFacade;
     @Autowired
     private ResourceConfigFacade resourceConfigFacade;
+    @Autowired
+    private KvmVmHostFileFactory vmHostFileFactory;
 
     @Override
     public boolean start() {
@@ -507,6 +509,8 @@ public class KvmSecureBootManager extends AbstractService {
 
         List<VmHostBackupFileVO> filesNeedPersists = new ArrayList<>();
         List<VmHostFileContentVO> contentsNeedPersists = new ArrayList<>();
+        // value is VmHostBackupFileVO or VmHostFileVO
+        Map<VmHostBackupFileVO, Object> backupFromMap = new HashMap<>();
 
         Timestamp now = Timestamp.from(Instant.now());
         for (String resourceUuid : toResourceList) {
@@ -531,6 +535,7 @@ public class KvmSecureBootManager extends AbstractService {
                 file.setCreateDate(now);
                 file.setLastOpDate(now);
                 filesNeedPersists.add(file);
+                backupFromMap.put(file, vmHostFile == null ? vmHostBackupFile : vmHostFile);
 
                 VmHostFileContentVO content = new VmHostFileContentVO();
                 content.setUuid(file.getUuid());
@@ -566,6 +571,21 @@ public class KvmSecureBootManager extends AbstractService {
                 }
             }
         }.execute();
+
+        for (VmHostBackupFileVO backup : filesNeedPersists) {
+            final Object backupFrom = backupFromMap.get(backup);
+            try {
+                if (backupFrom instanceof VmHostBackupFileVO) {
+                    vmHostFileFactory.createBackupBase(backup).afterBackup((VmHostBackupFileVO) backupFrom);
+                } else if (backupFrom instanceof VmHostFileVO) {
+                    vmHostFileFactory.createBackupBase(backup).afterBackup((VmHostFileVO) backupFrom);
+                }
+            } catch (Exception e) {
+                logger.warn(String.format("failed to execute afterBackup hook for VmHostBackupFileVO[uuid:%s, type:%s]: %s",
+                        backup.getUuid(), backup.getType(), e.getMessage()), e);
+            }
+        }
+
         return filesNeedPersists;
     }
 

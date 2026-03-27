@@ -306,4 +306,7 @@
             <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="KvmVmHostFileFactory" class="org.zstack.kvm.efi.KvmVmHostFileFactory">
+    </bean>
 </beans>
