@@ -1,7 +1,6 @@
 package org.zstack.kvm.efi;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.compute.legacy.ComputeLegacyGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -108,10 +107,6 @@ public class KvmSecureBootManager extends AbstractService {
         eventFacade.on(VmCanonicalEvents.VM_LIBVIRT_REPORT_SHUTDOWN, new EventCallback<Object>() {
             @Override
             protected void run(Map tokens, Object data) {
-                if (ComputeLegacyGlobalProperty.enableNvRamTypeVolume) {
-                    return;
-                }
-
                 String vmUuid = (String) data;
                 Tuple tuple = Q.New(VmInstanceVO.class)
                         .select(VmInstanceVO_.hostUuid, VmInstanceVO_.lastHostUuid)
