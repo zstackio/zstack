@@ -28,7 +28,17 @@ public interface TpmEncryptedResourceKeyBackend {
     /**
      * maybe null (when crypto module is not installed)
      */
+    String findKeyProviderUuidByName(String providerName);
+
+    /**
+     * maybe null (when crypto module is not installed)
+     */
     String findKeyProviderNameByTpm(String tpmUuid);
+
+    /**
+     * maybe null (when crypto module is not installed)
+     */
+    String defaultKeyProviderUuid();
 
     static class CloneEncryptedResourceKeyContext {
         public String srcTpmUuid;
