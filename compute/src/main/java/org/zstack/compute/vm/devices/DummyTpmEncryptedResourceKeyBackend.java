@@ -24,7 +24,17 @@ public class DummyTpmEncryptedResourceKeyBackend implements TpmEncryptedResource
     }
 
     @Override
+    public String findKeyProviderUuidByName(String providerName) {
+        return null;
+    }
+
+    @Override
     public String findKeyProviderNameByTpm(String tpmUuid) {
+        return null;
+    }
+
+    @Override
+    public String defaultKeyProviderUuid() {
         return null;
     }
 

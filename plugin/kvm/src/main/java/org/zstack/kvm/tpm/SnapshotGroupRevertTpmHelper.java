@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.vm.VmGlobalConfig;
+import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend;
 import org.zstack.core.db.Q;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
@@ -15,6 +16,7 @@ import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.devices.NvRamSpec;
 import org.zstack.header.vm.devices.VmDevicesSpec;
+import org.zstack.kvm.KVMSystemTags;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -26,7 +28,9 @@ public class SnapshotGroupRevertTpmHelper {
     private static final CLogger logger = Utils.getLogger(SnapshotGroupRevertTpmHelper.class);
 
     @Autowired
-    ResourceConfigFacade resourceConfigFacade;
+    private ResourceConfigFacade resourceConfigFacade;
+    @Autowired
+    private TpmEncryptedResourceKeyBackend tpmKeyBackend;
 
     public void setupFromApi(APICreateVmInstanceFromVolumeSnapshotGroupMsg apiMsg, CreateVmInstanceMsg cmsg) {
         String snapshotGroupUuid = apiMsg.getVolumeSnapshotGroupUuid();
@@ -87,17 +91,31 @@ public class SnapshotGroupRevertTpmHelper {
             tpmSpec.setEnable(true);
 
             if (resetTpm) {
-                // resetTpm=true: reset secretUuid, generate a new one during VM creation
+                // resetTpm=true: reset generate a new one during VM creation
                 logger.debug(String.format("resetTpm is true for volume snapshot group[uuid:%s], " +
-                        "will reset secretUuid, tpmBackupFileUuid:%s", snapshotGroupUuid, tpmBackupFile.getUuid()));
+                        "will reset tpmBackupFileUuid:%s", snapshotGroupUuid, tpmBackupFile.getUuid()));
             } else {
                 tpmSpec.setBackupFileUuid(tpmBackupFile.getUuid());
-                // resetTpm=false: should reuse secretUuid + keyProviderUuid recorded in VolumeSnapshotGroup,
-                // but the recording step is not yet implemented, leave them empty for now
-                // TODO: retrieve secretUuid and keyProviderUuid from VolumeSnapshotGroup and set them here
-                logger.warn(String.format("resetTpm is false for volume snapshot group[uuid:%s], " +
-                        "should restore secretUuid and keyProviderUuid but they are not yet recorded in snapshot group, " +
-                        "leaving empty. tpmBackupFileUuid:%s", snapshotGroupUuid, tpmBackupFile.getUuid()));
+            }
+
+            String keyProviderName = KVMSystemTags.TPM_KEY_PROVIDER_NAME
+                    .getTokenByResourceUuid(tpmBackupFile.getUuid(), KVMSystemTags.TPM_KEY_PROVIDER_NAME_TOKEN);
+            if (keyProviderName == null) {
+                logger.warn(String.format(
+                        "failed to find keyProvider from snapshotGroup[uuid:%s] by tpmBackupFile[uuid:%s]",
+                        snapshotGroupUuid, tpmBackupFile.getUuid()));
+                if (tpmSpec.getKeyProviderUuid() == null) {
+                    tpmSpec.setKeyProviderUuid(tpmKeyBackend.defaultKeyProviderUuid()); // maybe null
+                }
+            } else {
+                String keyProviderUuid = tpmKeyBackend.findKeyProviderUuidByName(keyProviderName);
+                if (keyProviderUuid == null) {
+                    logger.warn(String.format(
+                            "failed to resolve keyProvider[name:%s] from snapshotGroup[uuid:%s] by tpmBackupFile[uuid:%s], keep keyProviderUuid unset",
+                            keyProviderName, snapshotGroupUuid, tpmBackupFile.getUuid()));
+                } else {
+                    tpmSpec.setKeyProviderUuid(keyProviderUuid);
+                }
             }
         }
 

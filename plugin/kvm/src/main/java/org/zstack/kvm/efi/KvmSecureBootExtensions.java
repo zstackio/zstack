@@ -1,5 +1,6 @@
 package org.zstack.kvm.efi;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.VmSystemTags;
@@ -272,6 +273,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         public String hostUuid;
         public String vmUuid;
         public VmHostFileType type;
+        public String backupUuid;
         public String syncReason;
 
         public String path;
@@ -281,8 +283,10 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         private VmHostFileVO vmHostFile;
         private VmHostBackupFileVO vmBackupFileVO;
 
-        // property:  VmHostFileVO (read success) > VmHostFileVO (read fail) > VmHostBackupFileVO
-        // Note: read VmHostBackupFileVO only if VmHostFileVO is not exist
+        // property: VmHostBackupFileVO (when "backupUuid" is set)
+        //             > VmHostFileVO (read success)
+        //             > VmHostFileVO (read fail)
+        //             > VmHostBackupFileVO (vmInstanceUuid matched)  <-  read this only if VmHostFileVO is not exist
     }
 
     @SuppressWarnings("rawtypes")
@@ -291,6 +295,11 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         chain.setName("prepare-vm-host-file");
         chain.then(new NoRollbackFlow() {
             String __name__ = "read-vm-host-file-from-origin-host";
+
+            @Override
+            public boolean skip(Map data) {
+                return StringUtils.isNotBlank(context.backupUuid);
+            }
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -347,12 +356,23 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                context.vmBackupFileVO = Q.New(VmHostBackupFileVO.class)
-                        .eq(VmHostBackupFileVO_.type, context.type)
-                        .eq(VmHostBackupFileVO_.resourceUuid, context.vmUuid)
-                        .orderByDesc(VmHostBackupFileVO_.lastOpDate)
-                        .limit(1)
-                        .find();
+                if (context.backupUuid == null) {
+                    context.vmBackupFileVO = Q.New(VmHostBackupFileVO.class)
+                            .eq(VmHostBackupFileVO_.type, context.type)
+                            .eq(VmHostBackupFileVO_.resourceUuid, context.vmUuid)
+                            .orderByDesc(VmHostBackupFileVO_.lastOpDate)
+                            .limit(1)
+                            .find();
+                } else {
+                    context.vmBackupFileVO = Q.New(VmHostBackupFileVO.class)
+                            .eq(VmHostBackupFileVO_.uuid, context.backupUuid)
+                            .find();
+                    if (context.vmBackupFileVO == null) {
+                        trigger.fail(operr("cannot find matched vm-host backup file[backupUuid:%s]",
+                                context.backupUuid));
+                        return;
+                    }
+                }
                 if (context.vmBackupFileVO != null) {
                     logger.debug(String.format("use %s[type=%s] VM-host backup file for VM[uuid=%s]",
                             context.vmBackupFileVO.getUuid(), context.type, context.vmUuid));
