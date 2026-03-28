@@ -219,6 +219,25 @@ public interface KVMConstant {
         }
     }
 
+    public static final String NV_RAM_SNAPSHOT_BACKUP_FILE_PATH_FORMAT = "/var/lib/libvirt/qemu/nvram/%s-host-files/%s.fd.snapshot-backup";
+    public static String buildNvramSnapshotBackupFilePath(String vmUuid) {
+        return String.format(NV_RAM_SNAPSHOT_BACKUP_FILE_PATH_FORMAT, vmUuid, vmUuid);
+    }
+
+    public static final String TPM_STATE_SNAPSHOT_BACKUP_FILE_PATH_FORMAT = "/var/lib/libvirt/swtpm/%s.snapshot-backup/";
+    public static String buildTpmStateSnapshotBackupFilePath(String vmUuid) {
+        String vmUuidWithHyphen = vmUuid.replaceFirst("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5");
+        return String.format(TPM_STATE_SNAPSHOT_BACKUP_FILE_PATH_FORMAT, vmUuidWithHyphen);
+    }
+
+    public static String buildSnapshotBackupPathForVmHostFileType(VmHostFileType type, String vmUuid) {
+        switch (type) {
+            case NvRam: return buildNvramSnapshotBackupFilePath(vmUuid);
+            case TpmState: return buildTpmStateSnapshotBackupFilePath(vmUuid);
+            default: throw new CloudRuntimeException("unsupported VmHostFileType: " + type);
+        }
+    }
+
     public static final String DHCP_BIN_FILE_PATH = "/usr/local/zstack/dnsmasq";
 
     enum KvmVmState {
