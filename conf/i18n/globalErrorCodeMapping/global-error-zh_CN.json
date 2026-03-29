@@ -4732,5 +4732,6 @@
   "ORG_ZSTACK_AI_10146": "模型安装路径[%s]无效，预期格式: file:///root/bentoml/models/<path>",
   "ORG_ZSTACK_AI_10147": "挂载记录[uuid:%s]未找到",
   "ORG_ZSTACK_AI_10148": "挂载记录[uuid:%s]未处于已挂载状态，当前状态: %s",
-  "ORG_ZSTACK_AI_10149": "挂载模型到虚拟机失败: %s"
+  "ORG_ZSTACK_AI_10149": "挂载模型到虚拟机失败: %s",
+  "ORG_ZSTACK_AI_10150": "模型[uuid:%s, 名称:%s]已挂载到虚拟机[uuid:%s]，挂载路径[%s]。每个模型在每个虚拟机上只能挂载一次"
 }
