@@ -52,6 +52,7 @@
         <property name="testConnectionOnCheckout" value="${DbFacadeDataSource.testConnectionOnCheckout:true}"/>
         <property name="connectionTesterClassName" value="${DbFacadeDataSource.connectionTesterClassName:org.zstack.core.db.C3p0ConnectionTester}"/>
         <property name="maxIdleTime" value="${ExtraDataSource.maxIdleTime:3600}"/>
+        <property name="checkoutTimeout" value="${ExtraDataSource.checkoutTimeout:5000}"/>
     </bean>
 
     <bean id="entityManagerFactory"
