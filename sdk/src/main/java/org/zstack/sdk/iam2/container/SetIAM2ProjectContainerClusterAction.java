@@ -34,6 +34,9 @@ public class SetIAM2ProjectContainerClusterAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Long clusterId;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean force;
+
     @Param(required = false)
     public java.util.List systemTags;
 
