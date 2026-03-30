@@ -178,6 +178,8 @@ public class KvmSecureBootManager extends AbstractService {
             handle((BackupVmHostFileMsg) msg);
         } else if (msg instanceof RestoreVmHostFileMsg) {
             handle((RestoreVmHostFileMsg) msg);
+        } else if (msg instanceof BackupVmHostFileOnHypervisorMsg) {
+            handle((BackupVmHostFileOnHypervisorMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -937,5 +939,32 @@ public class KvmSecureBootManager extends AbstractService {
                 bus.reply(msg, reply);
             })
             .start();
+    }
+
+    private void handle(BackupVmHostFileOnHypervisorMsg msg) {
+        KvmCommandSender sender = new KvmCommandSender(msg.getHostUuid());
+
+        KVMAgentCommands.BackupVmHostFileCmd cmd = new KVMAgentCommands.BackupVmHostFileCmd();
+        cmd.setVmHostFileBackupJobs(msg.getVmHostFileBackupJobs());
+
+        BackupVmHostFileOnHypervisorReply reply = new BackupVmHostFileOnHypervisorReply();
+        sender.send(cmd, BACKUP_VM_HOST_FILE_PATH, wrapper -> {
+            KVMAgentCommands.BackupVmHostFileResponse rsp = wrapper.getResponse(KVMAgentCommands.BackupVmHostFileResponse.class);
+            return rsp.isSuccess() ? null :
+                    operr("failed to backup vm host file on hypervisor[hostUuid=%s]", msg.getHostUuid())
+                            .withOpaque("host.uuid", msg.getHostUuid())
+                            .withException(rsp.getError());
+        }, new ReturnValueCompletion<KvmResponseWrapper>(msg) {
+            @Override
+            public void success(KvmResponseWrapper wrapper) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 }
