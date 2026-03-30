@@ -115,6 +115,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmModelMountVO` (
     `lastOpDate`      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`),
     UNIQUE KEY `uk_vm_mountpath` (`vmInstanceUuid`, `mountPath`(255)),
+    UNIQUE KEY `uk_vm_model` (`vmInstanceUuid`, `modelUuid`),
     CONSTRAINT `fk_vm_model_mount_vm`
         FOREIGN KEY (`vmInstanceUuid`) REFERENCES `zstack`.`VmInstanceEO`(`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fk_vm_model_mount_model`
