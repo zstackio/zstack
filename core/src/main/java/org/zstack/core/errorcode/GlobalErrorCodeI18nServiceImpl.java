@@ -13,9 +13,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nService, Component {
     private static final CLogger logger = Utils.getLogger(GlobalErrorCodeI18nServiceImpl.class);
+    private static final Pattern FORMAT_SPECIFIER = Pattern.compile("%(\\d+\\$)?([-#+ 0,(<]*)?(\\d+)?(\\.\\d+)?([tT])?([a-zA-Z%])");
 
     private static final String I18N_FOLDER = "i18n" + File.separator + "globalErrorCodeMapping";
     private static final String FILE_PREFIX = "global-error-";
@@ -116,10 +119,81 @@ public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nServic
         }
 
         try {
-            return String.format(template, (Object[]) formatArgs);
+            return String.format(template, convertFormatArgs(template, formatArgs));
         } catch (Exception e) {
             logger.debug(String.format("failed to format i18n template [%s]: %s", template, e.getMessage()));
             return template;
+        }
+    }
+
+    private Object[] convertFormatArgs(String template, String[] formatArgs) {
+        Object[] convertedArgs = new Object[formatArgs.length];
+        int nextImplicitArgPosition = 1;
+        int lastArgPosition = -1;
+
+        Matcher matcher = FORMAT_SPECIFIER.matcher(template);
+        while (matcher.find()) {
+            char conversion = matcher.group(6).charAt(0);
+            if (conversion == '%' || conversion == 'n') {
+                continue;
+            }
+
+            Integer argPosition = getArgPosition(matcher.group(1), matcher.group(2), nextImplicitArgPosition, lastArgPosition);
+            if (argPosition == null || argPosition < 1 || argPosition > formatArgs.length) {
+                continue;
+            }
+
+            int argIndex = argPosition - 1;
+            if (convertedArgs[argIndex] == null) {
+                convertedArgs[argIndex] = convertArg(formatArgs[argIndex], matcher.group(5), conversion);
+            }
+
+            if (!matcher.group(2).contains("<")) {
+                nextImplicitArgPosition = argPosition + 1;
+            }
+            lastArgPosition = argPosition;
+        }
+
+        for (int i = 0; i < formatArgs.length; i++) {
+            if (convertedArgs[i] == null) {
+                convertedArgs[i] = formatArgs[i];
+            }
+        }
+
+        return convertedArgs;
+    }
+
+    private Integer getArgPosition(String explicitIndex, String flags, int nextImplicitArgPosition, int lastArgPosition) {
+        if (explicitIndex != null) {
+            return Integer.parseInt(explicitIndex.substring(0, explicitIndex.length() - 1));
+        }
+
+        if (flags != null && flags.contains("<")) {
+            return lastArgPosition == -1 ? null : lastArgPosition;
+        }
+
+        return nextImplicitArgPosition;
+    }
+
+    private Object convertArg(String rawArg, String dateTimePrefix, char conversion) {
+        if (rawArg == null || dateTimePrefix != null) {
+            return rawArg;
+        }
+
+        switch (Character.toLowerCase(conversion)) {
+            case 'd':
+            case 'o':
+            case 'x':
+                return Long.valueOf(rawArg);
+            case 'e':
+            case 'f':
+            case 'g':
+            case 'a':
+                return Double.valueOf(rawArg);
+            case 'c':
+                return rawArg.length() == 1 ? rawArg.charAt(0) : (char) Integer.parseInt(rawArg);
+            default:
+                return rawArg;
         }
     }
 
