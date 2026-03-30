@@ -13,6 +13,7 @@ import org.zstack.header.host.HostNUMANode;
 import org.zstack.header.host.VmNicRedirectConfig;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.additions.VmHostFileBackupJob;
 import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.kvm.tpm.TpmTO;
@@ -3412,6 +3413,21 @@ public class KVMAgentCommands {
     }
 
     public static class WriteVmHostFileContentResponse extends AgentResponse {
+    }
+
+    public static class BackupVmHostFileCmd extends AgentCommand {
+        private List<VmHostFileBackupJob> vmHostFileBackupJobs;
+
+        public List<VmHostFileBackupJob> getVmHostFileBackupJobs() {
+            return vmHostFileBackupJobs;
+        }
+
+        public void setVmHostFileBackupJobs(List<VmHostFileBackupJob> vmHostFileBackupJobs) {
+            this.vmHostFileBackupJobs = vmHostFileBackupJobs;
+        }
+    }
+
+    public static class BackupVmHostFileResponse extends AgentResponse {
     }
 
     public static class VmNicInfo {

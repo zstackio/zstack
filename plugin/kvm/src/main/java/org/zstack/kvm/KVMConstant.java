@@ -103,6 +103,7 @@ public interface KVMConstant {
     String FSTRIM_VM_PATH = "/vm/fstrim";
     String READ_VM_HOST_FILE_PATH = "/vm/hostfile/read";
     String WRITE_VM_HOST_FILE_PATH = "/vm/hostfile/write";
+    String BACKUP_VM_HOST_FILE_PATH = "/vm/hostfile/backup";
 
     // ZSTAC-83157: virtiofs model mount paths
     String KVM_VIRTIOFS_ATTACH_PATH = "/virtiofs/attach";

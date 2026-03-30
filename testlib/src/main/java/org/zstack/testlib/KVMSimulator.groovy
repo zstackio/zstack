@@ -761,5 +761,9 @@ class KVMSimulator implements Simulator {
         spec.simulator(KVMConstant.WRITE_VM_HOST_FILE_PATH) { HttpEntity<String> e ->
             return new WriteVmHostFileContentResponse()
         }
+
+        spec.simulator(KVMConstant.BACKUP_VM_HOST_FILE_PATH) { HttpEntity<String> e ->
+            return new BackupVmHostFileResponse()
+        }
     }
 }
