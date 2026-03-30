@@ -4573,6 +4573,14 @@ public class KVMHost extends HostBase implements Host {
             cmd.setCreatePaused(true);
         }
         cmd.setAcpi(true);
+        // aarch64: disable PMU by default to avoid kernel panic on new Kunpeng-920 (7270Z/5230Z)
+        // where PMMIR_EL1 register is not supported by KVM. See ZSTAC-76375
+        // GlobalConfig vm.pmu defaults to false; users can re-enable via ResourceConfig.
+        if ("aarch64".equals(architecture)) {
+            Boolean pmuEnabled = rcf.getResourceConfigValue(
+                    VmGlobalConfig.VM_PMU, spec.getVmInventory().getUuid(), Boolean.class);
+            cmd.setPmu(Boolean.TRUE.equals(pmuEnabled));
+        }
 
         GuestOsCharacter.Config config = GuestOsHelper.getInstance().getGuestOsCharacter(
                 spec.getVmInventory().getArchitecture(),
