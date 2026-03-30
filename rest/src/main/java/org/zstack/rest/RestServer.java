@@ -39,6 +39,8 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityByPassCheck;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SuppressCredentialCheck;
+import org.zstack.header.identity.ExternalTenantContext;
+import org.zstack.header.identity.ExternalTenantProvider;
 import org.zstack.header.log.MaskSensitiveInfo;
 import org.zstack.header.message.*;
 import org.zstack.header.message.APIEvent;
@@ -143,6 +145,10 @@ public class RestServer implements Component, CloudBusEventListener {
     RateLimiter rateLimiter = new RateLimiter(RestGlobalProperty.REST_RATE_LIMITS);
 
     private Map<RestAuthenticationType, RestAuthenticationBackend> restAuthBackends = new HashMap<RestAuthenticationType, RestAuthenticationBackend>();
+    private Map<String, ExternalTenantProvider> externalTenantProviders = new HashMap<>();
+
+    private static final Pattern TENANT_HEADER_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]+$");
+    private static final Pattern TENANT_USER_PATTERN = Pattern.compile("^[a-zA-Z0-9_.@-]{1,128}$");
 
     private List<RestServletRequestInterceptor> interceptors = new ArrayList<>();
 
@@ -962,6 +968,46 @@ public class RestServer implements Component, CloudBusEventListener {
             session = bkd.doAuth(params);
         }
 
+        // Parse external tenant headers (both AK and OAuth paths supported)
+        if (session != null) {
+            String tenantSource = req.getHeader(RestConstants.HEADER_TENANT_SOURCE);
+            String tenantId = req.getHeader(RestConstants.HEADER_TENANT_ID);
+            String tenantUser = req.getHeader(RestConstants.HEADER_TENANT_USER);
+
+            if (tenantSource != null && tenantId != null) {
+                tenantSource = tenantSource.trim();
+                tenantId = tenantId.trim();
+
+                // Framework-level charset whitelist — defense-in-depth before Provider validation.
+                // Prevents SQL injection in downstream ZQL extensions regardless of Provider implementation.
+                if (!TENANT_HEADER_PATTERN.matcher(tenantSource).matches() || !TENANT_HEADER_PATTERN.matcher(tenantId).matches()) {
+                    throw new RestException(HttpStatus.BAD_REQUEST.value(),
+                        "tenant header values must match [a-zA-Z0-9_-]");
+                }
+
+                ExternalTenantProvider provider = externalTenantProviders.get(tenantSource);
+                if (provider == null) {
+                    throw new RestException(HttpStatus.BAD_REQUEST.value(),
+                        String.format("unknown tenant source: %s", tenantSource));
+                }
+
+                ExternalTenantContext ctx = new ExternalTenantContext();
+                ctx.setSource(tenantSource);
+                ctx.setTenantId(tenantId);
+                if (tenantUser != null) {
+                    tenantUser = tenantUser.trim();
+                    if (!TENANT_USER_PATTERN.matcher(tenantUser).matches()) {
+                        throw new RestException(HttpStatus.BAD_REQUEST.value(),
+                            "tenant user header value must match [a-zA-Z0-9_.@-] and be at most 128 characters");
+                    }
+                    ctx.setUserId(tenantUser);
+                }
+
+                provider.validateTenant(ctx);
+                session.setExternalTenantContext(ctx);
+            }
+        }
+
         if (APIQueryMessage.class.isAssignableFrom(api.apiClass)) {
             handleQueryApi(api, session, req, rsp);
             return;
@@ -1352,6 +1398,10 @@ public class RestServer implements Component, CloudBusEventListener {
                         bkd.getClass().getName(), old.getClass().getName(), bkd.getAuthenticationType()));
             }
             restAuthBackends.put(bkd.getAuthenticationType(), bkd);
+        }
+
+        for (ExternalTenantProvider p : pluginRgty.getExtensionList(ExternalTenantProvider.class)) {
+            externalTenantProviders.put(p.getSource(), p);
         }
 
         extensions.addAll(pluginRgty.getExtensionList(RestAPIExtensionPoint.class));
