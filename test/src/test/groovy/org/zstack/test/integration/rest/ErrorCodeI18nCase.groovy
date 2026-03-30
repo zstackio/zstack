@@ -36,11 +36,13 @@ class ErrorCodeI18nCase extends SubCase {
             testServiceLocalizesEnUS()
             testServiceFallbackToEnUS()
             testServiceFormatsArgs()
+            testServiceFormatsNumericArgs()
             testServiceRecursiveCauseChain()
             testServiceErrorCodeList()
             testRestServerSyncApiWithAcceptLanguage()
             testRestServerAsyncApiWithAcceptLanguage()
             testNoAcceptLanguageHeaderFallsBackToEnUS()
+            testRestResponsePreservesFormatArgs()
         }
     }
 
@@ -80,6 +82,13 @@ class ErrorCodeI18nCase extends SubCase {
                 "ORG_ZSTACK_STORAGE_PRIMARY_10039", "zh_CN", null)
         assert msg != null
         assert msg.contains("%s")  // template not formatted
+    }
+
+    void testServiceFormatsNumericArgs() {
+        GlobalErrorCodeI18nService i18nService = bean(GlobalErrorCodeI18nService.class)
+        String msg = i18nService.getLocalizedMessage(
+                "ORG_ZSTACK_DGPU_10012", "zh_CN", ["5", "5", "0", "1"] as String[])
+        assert msg == "dGPU 授权 GPU 数量不足。License 允许 5 个 GPU，当前已使用 5 个，其他节点共享使用 0 个，本次还需要 1 个。"
     }
 
     void testServiceRecursiveCauseChain() {
@@ -260,6 +269,44 @@ class ErrorCodeI18nCase extends SubCase {
                 }
             } finally {
                 postConn.disconnect()
+            }
+        } finally {
+            env.cleanMessageHandlers()
+        }
+    }
+
+    void testRestResponsePreservesFormatArgs() {
+        ErrorCode mockError = new ErrorCode()
+        mockError.setCode(SysErrors.INTERNAL.toString())
+        mockError.setDetails("Insufficient dGPU GPU number licensed. Your license permits 5 GPU, there are 5 GPU used, shared: 0, need: 1.")
+        mockError.setGlobalErrorCode("ORG_ZSTACK_DGPU_10012")
+        mockError.setFormatArgs(["5", "5", "0", "1"] as String[])
+
+        env.message(APIQueryZoneMsg.class) { APIQueryZoneMsg msg, bus ->
+            bus.replyErrorByMessageType(msg, mockError)
+        }
+
+        try {
+            String sessionId = adminSession()
+            String url = "http://127.0.0.1:${WebBeanConstructor.port}/v1/zones"
+            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection()
+            try {
+                conn.setRequestMethod("GET")
+                conn.setRequestProperty("Authorization", "OAuth ${sessionId}")
+                conn.setRequestProperty("Accept-Language", "zh-CN")
+
+                int responseCode = conn.getResponseCode()
+                String responseBody = conn.getErrorStream()?.text ?: ""
+
+                assert responseCode == 503
+                Map response = JSONObjectUtil.toObject(responseBody, LinkedHashMap.class)
+                Map error = response.get("error") as Map
+                assert error != null
+                assert error.get("globalErrorCode") == "ORG_ZSTACK_DGPU_10012"
+                assert error.get("message") == "dGPU 授权 GPU 数量不足。License 允许 5 个 GPU，当前已使用 5 个，其他节点共享使用 0 个，本次还需要 1 个。"
+                assert error.get("formatArgs") == ["5", "5", "0", "1"]
+            } finally {
+                conn.disconnect()
             }
         } finally {
             env.cleanMessageHandlers()
