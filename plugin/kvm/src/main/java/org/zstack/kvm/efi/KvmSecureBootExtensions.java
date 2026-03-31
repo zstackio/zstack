@@ -62,6 +62,7 @@ import org.zstack.kvm.KVMStartVmExtensionPoint;
 import org.zstack.kvm.KvmCommandSender;
 import org.zstack.kvm.KvmResponseWrapper;
 import org.zstack.kvm.VolumeTO;
+import org.zstack.kvm.vmfiles.message.SyncVmHostFilesFromHostMsg;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;

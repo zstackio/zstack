@@ -1,4 +1,4 @@
-package org.zstack.kvm.tpm;
+package org.zstack.kvm.tpm.message;
 
 import org.zstack.header.message.NeedReplyMessage;
 

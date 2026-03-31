@@ -2,7 +2,7 @@ package org.zstack.kvm.tpm;
 
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
-import org.zstack.kvm.efi.AbstractVmHostFileBase;
+import org.zstack.kvm.vmfiles.AbstractVmHostFileBase;
 
 public class TpmStateVmHostFileBase extends AbstractVmHostFileBase {
     public TpmStateVmHostFileBase(VmHostFileVO self) {

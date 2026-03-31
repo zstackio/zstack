@@ -53,6 +53,8 @@ import org.zstack.header.vm.additions.VmHostFileInventory;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
 import org.zstack.header.vm.additions.VmHostFileVO_;
+import org.zstack.kvm.tpm.message.CloneVmTpmMsg;
+import org.zstack.kvm.tpm.message.CloneVmTpmReply;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.CollectionUtils;
