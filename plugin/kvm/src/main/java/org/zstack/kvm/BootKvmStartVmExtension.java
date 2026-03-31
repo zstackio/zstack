@@ -1,5 +1,6 @@
 package org.zstack.kvm;
 
+import org.apache.commons.lang.StringUtils;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -47,7 +48,7 @@ public class BootKvmStartVmExtension implements KVMStartVmExtensionPoint, KVMSyn
 
     @SuppressWarnings("unchecked")
     private void saveVmEdkStatesFromCommand(String vmUuid, KVMAgentCommands.VmDevicesInfoResponse rsp) {
-        if (rsp.getEdkRpm() == null) {
+        if (StringUtils.isEmpty(rsp.getEdkRpm())) {
             VM_EDK.deleteInherentTag(vmUuid);
             return;
         }
