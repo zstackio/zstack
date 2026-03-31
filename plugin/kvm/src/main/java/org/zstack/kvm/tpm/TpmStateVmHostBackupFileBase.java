@@ -9,7 +9,7 @@ import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
 import org.zstack.kvm.KVMSystemTags;
-import org.zstack.kvm.efi.AbstractVmHostBackupFileBase;
+import org.zstack.kvm.vmfiles.AbstractVmHostBackupFileBase;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;

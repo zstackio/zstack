@@ -4,6 +4,8 @@ import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostFileVO;
 import org.zstack.kvm.tpm.TpmStateVmHostBackupFileBase;
 import org.zstack.kvm.tpm.TpmStateVmHostFileBase;
+import org.zstack.kvm.vmfiles.AbstractVmHostBackupFileBase;
+import org.zstack.kvm.vmfiles.AbstractVmHostFileBase;
 
 import static org.zstack.core.Platform.operr;
 

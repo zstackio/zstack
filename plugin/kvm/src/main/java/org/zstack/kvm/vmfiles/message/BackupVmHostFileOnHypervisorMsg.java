@@ -1,4 +1,4 @@
-package org.zstack.kvm.efi;
+package org.zstack.kvm.vmfiles.message;
 
 import org.zstack.header.host.HostMessage;
 import org.zstack.header.message.NeedReplyMessage;

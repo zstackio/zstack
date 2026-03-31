@@ -296,7 +296,7 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="VmHostFileTracker" class="org.zstack.kvm.efi.VmHostFileTracker">
+    <bean id="VmHostFileTracker" class="org.zstack.kvm.vmfiles.VmHostFileTracker">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
