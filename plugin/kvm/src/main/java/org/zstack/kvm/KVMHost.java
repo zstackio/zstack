@@ -116,9 +116,6 @@ import org.zstack.utils.tester.ZTester;
 import javax.persistence.TypedQuery;
 import java.io.IOException;
 import java.net.URI;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -4708,9 +4705,14 @@ public class KVMHost extends HostBase implements Host {
             cmd.setChassisAssetTag(NetworkGlobalProperty.CHASSIS_ASSET_TAG);
         }
 
-        String machineType = VmSystemTags.MACHINE_TYPE.getTokenByResourceUuid(cmd.getVmInstanceUuid(),
-                VmInstanceVO.class, VmSystemTags.MACHINE_TYPE_TOKEN);
-        cmd.setMachineType(StringUtils.isNotEmpty(machineType) ? machineType : "pc");
+        if (spec.getOsSpec().getMachineType() == null) {
+            String machineType = VmSystemTags.MACHINE_TYPE.getTokenByResourceUuid(cmd.getVmInstanceUuid(),
+                    VmInstanceVO.class, VmSystemTags.MACHINE_TYPE_TOKEN);
+            cmd.setMachineType(StringUtils.isNotEmpty(machineType) ? machineType : "pc");
+        } else {
+            cmd.setMachineType(spec.getOsSpec().getMachineType());
+        }
+        String machineType = cmd.getMachineType();
 
         if (KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.hasTag(spec.getVmInventory().getUuid())) {
             cmd.setPredefinedPciBridgeNum(Integer.valueOf(KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.getTokenByResourceUuid(spec.getVmInventory().getUuid(), KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN)));
