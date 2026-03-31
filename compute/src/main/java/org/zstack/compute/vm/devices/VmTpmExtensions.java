@@ -13,15 +13,20 @@ import org.zstack.header.vm.DiskAO;
 import org.zstack.header.vm.VmInstanceCreateExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmMachineType;
 import org.zstack.header.vm.devices.VmDevicesSpec;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.compute.vm.VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT;
 import static org.zstack.header.vm.VmInstanceConstant.NV_RAM_DEFAULT_SIZE;
 
 public class VmTpmExtensions implements VmInstanceCreateExtensionPoint,
         BuildVmSpecExtensionPoint {
+    private static final CLogger logger = Utils.getLogger(VmTpmExtensions.class);
+
     @Autowired
     private VmTpmManager vmTpmManager;
     @Autowired
@@ -114,6 +119,12 @@ public class VmTpmExtensions implements VmInstanceCreateExtensionPoint,
 
             tpmSpec.setEnable(true);
             tpmSpec.setTpmUuid(tpmUuid);
+        }
+
+        if (needRegisterNvRam && spec.getOsSpec().getMachineType() == null) {
+            spec.getOsSpec().setMachineType(VmMachineType.q35.toString());
+            logger.debug(String.format(
+                    "auto-set machineType to q35 for VM[uuid:%s] because NvRam/TPM registration is needed", vmUuid));
         }
     }
 }

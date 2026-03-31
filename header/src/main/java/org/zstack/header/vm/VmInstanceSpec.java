@@ -406,6 +406,7 @@ public class VmInstanceSpec implements Serializable {
     private VmCustomSpecificationStruct vmCustomSpecification;
     private VmDevicesSpec devicesSpec;
     private DiskAO nvRamSpec;
+    private OperatingSystemBootingSpec osSpec = new OperatingSystemBootingSpec();
 
     public DiskAO getRootDisk() {
         return rootDisk;
@@ -453,6 +454,14 @@ public class VmInstanceSpec implements Serializable {
 
     public void setNvRamSpec(DiskAO nvRamSpec) {
         this.nvRamSpec = nvRamSpec;
+    }
+
+    public OperatingSystemBootingSpec getOsSpec() {
+        return osSpec;
+    }
+
+    public void setOsSpec(OperatingSystemBootingSpec osSpec) {
+        this.osSpec = osSpec;
     }
 
     public boolean isSkipIpAllocation() {
@@ -922,6 +931,21 @@ public class VmInstanceSpec implements Serializable {
             return imageFormat.getOutputFormat(getDestHost().getHypervisorType());
         } else {
             return ImageConstant.QCOW2_FORMAT_STRING;
+        }
+    }
+
+    public static class OperatingSystemBootingSpec implements Serializable {
+        /**
+         * @see VmMachineType
+         */
+        private String machineType;
+
+        public String getMachineType() {
+            return machineType;
+        }
+
+        public void setMachineType(String machineType) {
+            this.machineType = machineType;
         }
     }
 }
