@@ -275,13 +275,15 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
 
     @Transactional
     protected boolean saveHostOsCategoryList(List<HostOsCategoryVO> categoryVOS) {
+        if (CollectionUtils.isEmpty(categoryVOS)) {
+            logger.warn("no hypervisor metadata collected from DVD, skip refresh to preserve existing metadata");
+            return false;
+        }
+
         // refresh all metadata with current management node
         SQL.New(KvmHostHypervisorMetadataVO.class)
                 .eq(KvmHostHypervisorMetadataVO_.managementNodeUuid, Platform.getManagementServerId())
                 .delete();
-        if (CollectionUtils.isEmpty(categoryVOS)) {
-            return false;
-        }
 
         Set<String> requestArchitectures = categoryVOS.stream()
                 .map(HostOsCategoryVO::getArchitecture)
