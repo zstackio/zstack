@@ -49,7 +49,7 @@
     <bean id="InstantiateVolumeForNewCreatedVmExtension"
           class="org.zstack.storage.volume.InstantiateVolumeForNewCreatedVmExtension">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint" order="100"/>
         </zstack:plugin>
     </bean>
 

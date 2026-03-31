@@ -344,3 +344,24 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmInstanceDGpuStrategyVO` (
         FOREIGN KEY (`gpuDeviceUuid`) REFERENCES `zstack`.`PciDeviceVO`(`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- ZSTAC-83157: VM model mount table (virtiofs model mount to user VMs)
+CREATE TABLE IF NOT EXISTS `zstack`.`VmModelMountVO` (
+    `uuid`            VARCHAR(32)   NOT NULL,
+    `vmInstanceUuid`  VARCHAR(32)   NOT NULL,
+    `modelUuid`       VARCHAR(32)   NOT NULL,
+    `modelName`       VARCHAR(256)  DEFAULT NULL,
+    `mountPath`       VARCHAR(512)  NOT NULL,
+    `sourcePath`      VARCHAR(1024) NOT NULL,
+    `status`          VARCHAR(32)   NOT NULL,
+    `accountUuid`     VARCHAR(32)   DEFAULT NULL,
+    `createDate`      TIMESTAMP     NOT NULL DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate`      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`uuid`),
+    UNIQUE KEY `uk_vm_mountpath` (`vmInstanceUuid`, `mountPath`(255)),
+    UNIQUE KEY `uk_vm_model` (`vmInstanceUuid`, `modelUuid`),
+    CONSTRAINT `fk_vm_model_mount_vm`
+        FOREIGN KEY (`vmInstanceUuid`) REFERENCES `zstack`.`VmInstanceEO`(`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fk_vm_model_mount_model`
+        FOREIGN KEY (`modelUuid`) REFERENCES `zstack`.`ModelVO`(`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

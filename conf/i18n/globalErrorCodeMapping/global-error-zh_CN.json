@@ -4723,15 +4723,15 @@
   "ORG_ZSTACK_DGPU_10012": "dGPU 授权 GPU 数量不足。License 允许 %d 个 GPU，当前已使用 %d 个，其他节点共享使用 %d 个，本次还需要 %d 个。",
   "ORG_ZSTACK_AI_10138": "虚拟机[uuid:%s]未找到",
   "ORG_ZSTACK_AI_10139": "模型[uuid:%s]未找到",
-  "ORG_ZSTACK_AI_10140": "虚拟机[uuid:%s]必须处于运行状态才能挂载模型，当前状态: %s",
-  "ORG_ZSTACK_AI_10141": "虚拟机[uuid:%s]未运行在任何主机上",
-  "ORG_ZSTACK_AI_10142": "模型[uuid:%s]属于账户[%s]但虚拟机[uuid:%s]属于账户[%s]，无法跨账户挂载模型",
-  "ORG_ZSTACK_AI_10143": "模型中心[uuid:%s]未找到",
-  "ORG_ZSTACK_AI_10144": "挂载路径[%s]已被虚拟机[uuid:%s]上的另一个挂载[uuid:%s]使用",
+  "ORG_ZSTACK_AI_10140": "虚拟机「%s」(UUID: %s) 必须处于运行状态才能挂载模型，当前状态: %s",
+  "ORG_ZSTACK_AI_10141": "虚拟机「%s」(UUID: %s) 未运行在任何主机上",
+  "ORG_ZSTACK_AI_10142": "模型「%s」(账户: %s) 与虚拟机「%s」(账户: %s) 属于不同账户，无法挂载。\n请确保模型和虚拟机属于同一账户。",
+  "ORG_ZSTACK_AI_10143": "模型「%s」(UUID: %s) 关联的模型中心(UUID: %s) 未找到。\n请检查模型中心是否已被删除。",
+  "ORG_ZSTACK_AI_10144": "挂载失败：路径 %s 已被该虚拟机上的另一个挂载占用。\n冲突挂载模型：%s\n冲突挂载UUID：%s\n所属虚拟机：%s\n所属虚拟机UUID：%s\n请先卸载该路径上的已有挂载，或使用其他挂载路径。",
   "ORG_ZSTACK_AI_10145": "挂载路径[%s]不允许，不能挂载到系统目录",
   "ORG_ZSTACK_AI_10146": "模型安装路径[%s]无效，预期格式: file:///root/bentoml/models/<path>",
   "ORG_ZSTACK_AI_10147": "挂载记录[uuid:%s]未找到",
-  "ORG_ZSTACK_AI_10148": "挂载记录[uuid:%s]未处于已挂载状态，当前状态: %s",
+  "ORG_ZSTACK_AI_10148": "挂载记录「%s」(UUID: %s) 未处于已挂载状态，当前状态: %s",
   "ORG_ZSTACK_AI_10149": "挂载模型到虚拟机失败: %s",
-  "ORG_ZSTACK_AI_10150": "模型[uuid:%s, 名称:%s]已挂载到虚拟机[uuid:%s]，挂载路径[%s]。每个模型在每个虚拟机上只能挂载一次"
+  "ORG_ZSTACK_AI_10150": "模型「%s」(UUID: %s) 已挂载到虚拟机「%s」(UUID: %s)，路径: %s。\n每个模型在每个虚拟机上只能挂载一次。"
 }
