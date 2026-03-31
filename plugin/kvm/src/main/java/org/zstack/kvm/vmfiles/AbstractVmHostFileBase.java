@@ -1,26 +1,19 @@
-package org.zstack.kvm.efi;
+package org.zstack.kvm.vmfiles;
 
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
 
 import java.util.Objects;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public abstract class AbstractVmHostBackupFileBase {
-    protected VmHostBackupFileVO self;
+public abstract class AbstractVmHostFileBase {
+    protected VmHostFileVO self;
 
-    protected AbstractVmHostBackupFileBase(VmHostBackupFileVO self) {
+    protected AbstractVmHostFileBase(VmHostFileVO self) {
         this.self = Objects.requireNonNull(self);
     }
 
     public abstract VmHostFileType type();
-
-    public void afterBackup(VmHostBackupFileVO from) {
-    }
-
-    public void afterBackup(VmHostFileVO from) {
-    }
 }

@@ -1,4 +1,4 @@
-package org.zstack.kvm.efi;
+package org.zstack.kvm.vmfiles;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
@@ -22,6 +22,7 @@ import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
 import org.zstack.header.vm.additions.VmHostFileVO_;
 import org.zstack.kvm.KVMGlobalConfig;
+import org.zstack.kvm.vmfiles.message.SyncVmHostFilesFromHostMsg;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
