@@ -29,6 +29,17 @@ public class BootKvmStartVmExtension implements KVMStartVmExtensionPoint, KVMSyn
             VmSystemTags.BOOT_ORDER.delete(spec.getVmInventory().getUuid());
             VmSystemTags.CDROM_BOOT_ONCE.delete(spec.getVmInventory().getUuid());
         }
+
+        final String machineType = spec.getOsSpec().getMachineType();
+        if (StringUtils.isEmpty(machineType)) {
+            VmSystemTags.MACHINE_TYPE.delete(spec.getVmInventory().getUuid());
+        } else {
+            SystemTagCreator creator = VmSystemTags.MACHINE_TYPE.newSystemTagCreator(spec.getVmInventory().getUuid());
+            creator.setTagByTokens(map(e(VmSystemTags.MACHINE_TYPE_TOKEN, machineType)));
+            creator.inherent = false;
+            creator.recreate = true;
+            creator.create();
+        }
     }
 
     @Override
