@@ -137,6 +137,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         clearRollbackInfo(spec);
         final PrepareTpmResourceContext context = new PrepareTpmResourceContext();
         context.tpmUuid = tpmSpec.getTpmUuid();
+        context.backupFileUuid = tpmSpec.getBackupFileUuid(); // maybe null
         context.providerUuid = resourceKeyBackend.findKeyProviderUuidByTpm(context.tpmUuid);
         context.providerName = resourceKeyBackend.findKeyProviderNameByTpm(context.tpmUuid);
 
@@ -151,6 +152,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                 innerContext.hostUuid = spec.getDestHost().getUuid();
                 innerContext.vmUuid = spec.getVmInventory().getUuid();
                 innerContext.type = VmHostFileType.TpmState;
+                innerContext.backupUuid = context.backupFileUuid;
                 innerContext.syncReason = "pre-instantiate VM resource";
                 secureBootExtensions.prepareHostFileOnHost(innerContext, new Completion(trigger) {
                     @Override
@@ -265,6 +267,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
 
     static class PrepareTpmResourceContext {
         String tpmUuid;
+        String backupFileUuid;
         String providerUuid;
         String providerName;
         String dekBase64;
