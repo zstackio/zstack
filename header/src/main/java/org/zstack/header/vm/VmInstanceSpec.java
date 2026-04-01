@@ -406,8 +406,7 @@ public class VmInstanceSpec implements Serializable {
 
     private List<String> disableL3Networks;
     private List<APICreateVmInstanceMsg.DiskAO> diskAOs;
-    private VmDevicesSpec devicesSpec;
-    private DiskAO nvRamSpec;
+    private VmDevicesSpec devicesSpec = new VmDevicesSpec();
     private OperatingSystemBootingSpec osSpec = new OperatingSystemBootingSpec();
 
     public List<APICreateVmInstanceMsg.DiskAO> getDiskAOs() {
@@ -424,14 +423,6 @@ public class VmInstanceSpec implements Serializable {
 
     public void setDevicesSpec(VmDevicesSpec devicesSpec) {
         this.devicesSpec = devicesSpec;
-    }
-
-    public DiskAO getNvRamSpec() {
-        return nvRamSpec;
-    }
-
-    public void setNvRamSpec(DiskAO nvRamSpec) {
-        this.nvRamSpec = nvRamSpec;
     }
 
     public OperatingSystemBootingSpec getOsSpec() {

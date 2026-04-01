@@ -53,6 +53,7 @@ import org.zstack.header.storage.snapshot.TakeVolumesSnapshotOnKvmReply;
 import org.zstack.header.storage.snapshot.VolumeSnapshotCreationExtensionPoint;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
+import org.zstack.header.vm.devices.NvRamSpec;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMAgentCommands.*;
@@ -119,12 +120,13 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
             }
         }
 
-        if (spec.getNvRamSpec() != null) {
-            prepareNvRamToStartVmCmd(cmd, spec.getNvRamSpec(), host);
+        final NvRamSpec nvRam = spec.getDevicesSpec().getNvRam();
+        if (nvRam != null && nvRam.isNeedRegister()) {
+            prepareNvRamToStartVmCmd(cmd, nvRam, host);
         }
     }
 
-    private void prepareNvRamToStartVmCmd(KVMAgentCommands.StartVmCmd cmd, DiskAO nvRamSpec, KVMHostInventory host) {
+    private void prepareNvRamToStartVmCmd(KVMAgentCommands.StartVmCmd cmd, NvRamSpec nvRam, KVMHostInventory host) {
         VolumeTO volume = new VolumeTO();
         volume.setDeviceType(VolumeTO.FILE);
         volume.setInstallPath(buildNvramFilePath(cmd.getVmInstanceUuid()));
@@ -132,6 +134,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         cmd.setNvRam(volume);
 
         synchronized (hostFileLock) {
+            final Timestamp now = Timestamp.from(Instant.now());
             VmHostFileVO nvRamFile = Q.New(VmHostFileVO.class)
                     .eq(VmHostFileVO_.vmInstanceUuid, cmd.getVmInstanceUuid())
                     .eq(VmHostFileVO_.type, VmHostFileType.NvRam)
@@ -144,14 +147,14 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 nvRamFile.setVmInstanceUuid(cmd.getVmInstanceUuid());
                 nvRamFile.setType(VmHostFileType.NvRam);
                 nvRamFile.setPath(volume.getInstallPath());
-                nvRamFile.setCreateDate(Timestamp.from(Instant.now()));
+                nvRamFile.setCreateDate(now);
                 nvRamFile.setResourceName("NvRam file for " + cmd.getVmInstanceUuid());
                 databaseFacade.persist(nvRamFile);
             } else {
                 SQL.New(VmHostFileVO.class)
                         .eq(VmHostFileVO_.uuid, nvRamFile.getUuid())
                         .set(VmHostFileVO_.path, volume.getInstallPath())
-                        .set(VmHostFileVO_.lastOpDate, Timestamp.from(Instant.now()))
+                        .set(VmHostFileVO_.lastOpDate, now)
                         .update();
             }
         }
@@ -265,7 +268,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
 
     @Override
     public void preInstantiateVmResource(VmInstanceSpec spec, Completion completion) {
-        final DiskAO nvRamSpec = spec.getNvRamSpec();
+        final NvRamSpec nvRamSpec = spec.getDevicesSpec() == null ? null : spec.getDevicesSpec().getNvRam();
         if (nvRamSpec == null) {
             completion.success();
             return;
@@ -275,6 +278,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         context.hostUuid = spec.getDestHost().getUuid();
         context.vmUuid = spec.getVmInventory().getUuid();
         context.type = VmHostFileType.NvRam;
+        context.backupUuid = nvRamSpec.getBackupFileUuid();
         context.syncReason = "pre-instantiate VM resource";
         prepareHostFileOnHost(context, completion);
     }
