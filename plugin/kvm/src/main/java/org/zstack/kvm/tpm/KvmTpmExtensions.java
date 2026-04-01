@@ -2,6 +2,7 @@ package org.zstack.kvm.tpm;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -171,7 +172,12 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
 
             @Override
             public boolean skip(Map data) {
-                return false;
+                boolean shouldSkip = VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class) &&
+                        (StringUtils.isBlank(context.providerUuid) || StringUtils.isBlank(context.providerName));
+                if (shouldSkip) {
+                    logger.info("skip create-dek: allowed.tpm.vm.without.kms is enabled and no KMS provider bound");
+                }
+                return shouldSkip;
             }
 
             @Override

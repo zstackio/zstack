@@ -147,4 +147,8 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig RESET_TPM_AFTER_VM_CLONE = new GlobalConfig(CATEGORY, "reset.tpm.after.vm.clone");
+
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "allowed TPM VM start without KMS")
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig ALLOWED_TPM_VM_WITHOUT_KMS = new GlobalConfig(CATEGORY, "allowed.tpm.vm.without.kms");
 }
