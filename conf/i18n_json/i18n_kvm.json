@@ -290,9 +290,9 @@
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
-    "raw": "failed to migrate VM",
-    "en_US": "failed to migrate VM",
-    "zh_CN": "迁移虚拟机失败",
+    "raw": "failed to migrate VM, because %s",
+    "en_US": "failed to migrate VM, because {0}",
+    "zh_CN": "迁移虚拟机失败，因为：{0}",
     "arguments": [],
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
