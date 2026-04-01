@@ -2283,6 +2283,8 @@ public class KVMAgentCommands {
         private boolean isApplianceVm;
         @GrayVersion(value = "5.0.0")
         private String systemSerialNumber;
+        @GrayVersion(value = "5.5.12")
+        private String guestOsType;
         @GrayVersion(value = "5.0.0")
         private String bootMode;
         // used when bootMode == 'UEFI'
@@ -2472,6 +2474,14 @@ public class KVMAgentCommands {
 
         public void setSystemSerialNumber(String systemSerialNumber) {
             this.systemSerialNumber = systemSerialNumber;
+        }
+
+        public String getGuestOsType() {
+            return guestOsType;
+        }
+
+        public void setGuestOsType(String guestOsType) {
+            this.guestOsType = guestOsType;
         }
 
         public String getVmCpuModel() {
