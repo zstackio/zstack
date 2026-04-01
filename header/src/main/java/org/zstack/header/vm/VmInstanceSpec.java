@@ -404,8 +404,7 @@ public class VmInstanceSpec implements Serializable {
     private List<DiskAO> dataDisks;
     private List<DiskAO> deprecatedDisksSpecs = new ArrayList<>();
     private VmCustomSpecificationStruct vmCustomSpecification;
-    private VmDevicesSpec devicesSpec;
-    private DiskAO nvRamSpec;
+    private VmDevicesSpec devicesSpec = new VmDevicesSpec();
     private OperatingSystemBootingSpec osSpec = new OperatingSystemBootingSpec();
 
     public DiskAO getRootDisk() {
@@ -446,14 +445,6 @@ public class VmInstanceSpec implements Serializable {
 
     public void setDevicesSpec(VmDevicesSpec devicesSpec) {
         this.devicesSpec = devicesSpec;
-    }
-
-    public DiskAO getNvRamSpec() {
-        return nvRamSpec;
-    }
-
-    public void setNvRamSpec(DiskAO nvRamSpec) {
-        this.nvRamSpec = nvRamSpec;
     }
 
     public OperatingSystemBootingSpec getOsSpec() {

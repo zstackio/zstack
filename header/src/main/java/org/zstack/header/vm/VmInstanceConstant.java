@@ -27,8 +27,6 @@ public interface VmInstanceConstant {
     String SHUTDOWN_DETAIL_BY_GUEST = "by guest";
     String SHUTDOWN_DETAIL_FINISHED = "finished";
 
-    long NV_RAM_DEFAULT_SIZE = SizeUnit.MEGABYTE.toByte(1);
-
     enum Params {
         VmInstanceSpec,
         AttachingVolumeInventory,
