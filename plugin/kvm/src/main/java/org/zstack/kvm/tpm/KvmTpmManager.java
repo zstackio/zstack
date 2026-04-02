@@ -53,6 +53,12 @@ import org.zstack.header.vm.additions.VmHostFileInventory;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
 import org.zstack.header.vm.additions.VmHostFileVO_;
+import org.zstack.header.vm.additions.VmHostFileOperation;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.kvm.KvmCommandSender;
+import org.zstack.kvm.KvmResponseWrapper;
 import org.zstack.kvm.tpm.message.CloneVmTpmMsg;
 import org.zstack.kvm.tpm.message.CloneVmTpmReply;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -62,10 +68,9 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.zstack.compute.vm.VmGlobalConfig.RESET_TPM_AFTER_VM_CLONE;
 import static org.zstack.core.Platform.err;
@@ -294,6 +299,7 @@ public class KvmTpmManager extends AbstractService {
     static class RemoveTpmFromVmContext {
         String vmInstanceUuid;
         String tpmUuid;
+        List<VmHostFileVO> hostFiles;
 
         static RemoveTpmFromVmContext valueOf(RemoveTpmMsg msg) {
             RemoveTpmFromVmContext context = new RemoveTpmFromVmContext();
@@ -320,36 +326,85 @@ public class KvmTpmManager extends AbstractService {
                     trigger.next();
                 })
                 .build())
+            .then(Flow.of("collect-vm-host-files")
+                .handle(trigger -> {
+                    // DO NOT delete NvRam type VmHostFile: Maybe secure boot or other component related.
+                    context.hostFiles = Q.New(VmHostFileVO.class)
+                            .eq(VmHostFileVO_.vmInstanceUuid, context.vmInstanceUuid)
+                            .eq(VmHostFileVO_.type, VmHostFileType.TpmState)
+                            .list();
+                    trigger.next();
+                })
+                .build())
+            .then(Flow.of("send-delete-commands-to-hosts")
+                .skipIf(data -> context.hostFiles.isEmpty())
+                .handle(trigger -> {
+                    Map<String, List<VmHostFileVO>> filesByHost = new HashMap<>();
+                    for (VmHostFileVO file : context.hostFiles) {
+                        filesByHost.computeIfAbsent(file.getHostUuid(), k -> new ArrayList<>()).add(file);
+                    }
+
+                    new While<>(filesByHost.entrySet()).each((entry, whileCompletion) -> {
+                        String hostUuid = entry.getKey();
+                        List<VmHostFileVO> files = entry.getValue();
+
+                        KVMAgentCommands.WriteVmHostFileContentCmd cmd = new KVMAgentCommands.WriteVmHostFileContentCmd();
+                        List<KVMAgentCommands.VmHostFileTO> fileTOs = new ArrayList<>();
+                        for (VmHostFileVO file : files) {
+                            KVMAgentCommands.VmHostFileTO to = new KVMAgentCommands.VmHostFileTO();
+                            to.setPath(file.getPath());
+                            to.setType(file.getType().toString());
+                            to.setOperation(VmHostFileOperation.Delete.toString());
+                            fileTOs.add(to);
+                        }
+                        cmd.setHostFiles(fileTOs);
+
+                        new KvmCommandSender(hostUuid).send(cmd, KVMConstant.WRITE_VM_HOST_FILE_PATH, wrapper -> {
+                            KVMAgentCommands.WriteVmHostFileContentResponse rsp =
+                                    wrapper.getResponse(KVMAgentCommands.WriteVmHostFileContentResponse.class);
+                            return rsp.isSuccess() ? null : operr("failed to delete host files on host[uuid=%s]", hostUuid);
+                        }, new ReturnValueCompletion<KvmResponseWrapper>(whileCompletion) {
+                            @Override
+                            public void success(KvmResponseWrapper wrapper) {
+                                whileCompletion.done();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.warn(String.format("failed to delete host files on host[uuid=%s], but continuing with DB cleanup: %s",
+                                        hostUuid, errorCode.getDetails()));
+                                whileCompletion.done();
+                            }
+                        });
+                    }).run(new WhileDoneCompletion(trigger) {
+                        @Override
+                        public void done(ErrorCodeList errorCodeList) {
+                            trigger.next();
+                        }
+                    });
+                })
+                .build())
             .then(Flow.of("detach-resource-key")
                 .handle(trigger -> {
                     tpmKeyBackend.detachKeyProviderFromTpm(context.tpmUuid);
                     trigger.next();
                 })
                 .build())
-            .then(Flow.of("remove-tpm-db-records")
+            .then(Flow.of("remove-db-records")
                 .handle(trigger -> {
                     new SQLBatch() {
                         @Override
                         protected void scripts() {
-                            Set<VmHostFileType> types = new HashSet<>();
-                            types.add(VmHostFileType.TpmState);
-
                             sql(TpmVO.class)
                                     .eq(TpmVO_.uuid, context.tpmUuid)
                                     .delete();
-
-                            boolean needRegisterNvRam = vmTpmManager.needRegisterNvRam(context.vmInstanceUuid);
-                            if (!needRegisterNvRam) {
-                                types.add(VmHostFileType.NvRam);
-                            }
-
                             sql(VmHostFileVO.class)
                                     .eq(VmHostFileVO_.vmInstanceUuid, context.vmInstanceUuid)
-                                    .in(VmHostFileVO_.type, types)
+                                    .eq(VmHostFileVO_.type, VmHostFileType.TpmState)
                                     .delete();
                             sql(VmHostBackupFileVO.class)
                                     .eq(VmHostBackupFileVO_.resourceUuid, context.vmInstanceUuid)
-                                    .in(VmHostBackupFileVO_.type, types)
+                                    .eq(VmHostBackupFileVO_.type, VmHostFileType.TpmState)
                                     .delete();
                         }
                     }.execute();
