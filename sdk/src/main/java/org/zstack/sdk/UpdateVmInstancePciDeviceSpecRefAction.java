@@ -97,10 +97,10 @@ public class UpdateVmInstancePciDeviceSpecRefAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/pci-device-specs/{pciSpecUuid}/vm-instances/{vmInstanceUuid}";
+        info.path = "/pci-device-specs/{pciSpecUuid}/vm-instances/{vmInstanceUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updateVmInstancePciDeviceSpecRef";
         return info;
     }
 
