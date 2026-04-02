@@ -42,7 +42,7 @@ import static org.zstack.utils.CollectionDSL.list;
         method = HttpMethod.DELETE,
         responseClass = APIDestroyVmInstanceEvent.class
 )
-@MetadataImpact(value = MetadataImpact.Impact.STORAGE, resolver = "VmUuidDirectResolver", field = "uuid", updateOnFailure = true)
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "VmUuidDirectResolver", field = "uuid")
 public class APIDestroyVmInstanceMsg extends APIDeleteMessage implements VmInstanceMessage {
     /**
      * @desc vm uuid

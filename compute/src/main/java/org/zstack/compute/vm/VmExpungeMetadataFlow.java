@@ -35,6 +35,11 @@ public class VmExpungeMetadataFlow extends NoRollbackFlow {
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
+        if (!VmGlobalConfig.VM_METADATA_ENABLED.value(Boolean.class)) {
+            trigger.next();
+            return;
+        }
+
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         if (spec == null || spec.getVmInventory() == null) {
             logger.warn("[MetadataExpunge] missing VmInstanceSpec or VmInventory, skip metadata cleanup");

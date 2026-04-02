@@ -139,6 +139,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmMetadataDirtyVO` (
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
     PRIMARY KEY (`vmInstanceUuid`),
+    INDEX `idx_VmMetadataDirtyVO_unclaimed` (`managementNodeUuid`, `nextRetryTime`, `lastOpDate`),
     CONSTRAINT `fkVmMetadataDirtyVOVmInstanceEO` FOREIGN KEY (`vmInstanceUuid`)  REFERENCES `VmInstanceEO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkVmMetadataDirtyVOManagementNodeVO` FOREIGN KEY (`managementNodeUuid`) REFERENCES `ManagementNodeVO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

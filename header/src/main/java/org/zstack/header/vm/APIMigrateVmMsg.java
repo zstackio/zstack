@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 )
 @SkipVmTracer(replyClass = APIMigrateVmEvent.class)
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 1)
-@MetadataImpact(value = MetadataImpact.Impact.STORAGE, resolver = "VmUuidDirectResolver", field = "vmInstanceUuid")
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "VmUuidDirectResolver", field = "vmInstanceUuid")
 public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, MigrateVmMessage, CheckAttachedVolumesMessage {
     /**
      * @desc vm uuid
