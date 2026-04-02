@@ -8,6 +8,7 @@ import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 import org.zstack.header.volume.VolumeVO;
 
 import java.util.concurrent.TimeUnit;
@@ -46,6 +47,7 @@ import java.util.concurrent.TimeUnit;
         responseClass = APIRevertVolumeFromSnapshotEvent.class
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 24)
+@MetadataImpact(value = MetadataImpact.Impact.STORAGE, resolver = "SnapshotUuidToVmUuidResolver", field = "uuid", updateOnFailure = true)
 public class APIRevertVolumeFromSnapshotMsg extends APIMessage implements RevertVolumeSnapshotMessage, APIAuditor {
     /**
      * @desc volume snapshot uuid

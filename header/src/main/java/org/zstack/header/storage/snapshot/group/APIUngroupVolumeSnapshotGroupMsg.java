@@ -5,6 +5,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.snapshot.SnapshotBackendOperation;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 /**
  * Created by MaJin on 2019/7/9.
@@ -14,6 +15,7 @@ import org.zstack.header.storage.snapshot.SnapshotBackendOperation;
         method = HttpMethod.DELETE,
         responseClass = APIUngroupVolumeSnapshotGroupEvent.class
 )
+@MetadataImpact(value = MetadataImpact.Impact.STORAGE, resolver = "SnapshotGroupUuidToVmUuidResolver", field = "uuid")
 public class APIUngroupVolumeSnapshotGroupMsg extends APIMessage implements VolumeSnapshotGroupMessage {
     @APIParam(resourceType = VolumeSnapshotGroupVO.class, successIfResourceNotExisting = true)
     private String uuid;

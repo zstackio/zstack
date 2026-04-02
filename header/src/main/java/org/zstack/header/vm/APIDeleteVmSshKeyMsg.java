@@ -3,6 +3,7 @@ package org.zstack.header.vm;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 /**
  * Created by luchukun on 8/4/16.
@@ -12,6 +13,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.DELETE,
         responseClass = APIDeleteVmSshKeyEvent.class
 )
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "VmUuidDirectResolver", field = "uuid")
 public class APIDeleteVmSshKeyMsg extends APIMessage implements VmInstanceMessage {
     private String uuid;
 

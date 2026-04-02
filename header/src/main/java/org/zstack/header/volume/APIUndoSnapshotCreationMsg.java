@@ -5,6 +5,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 /**
  * @ Author : yh.w
@@ -16,6 +17,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
         method = HttpMethod.PUT,
         responseClass = APIUndoSnapshotCreationEvent.class
 )
+@MetadataImpact(value = MetadataImpact.Impact.STORAGE, resolver = "VolumeUuidToVmUuidResolver", field = "uuid", updateOnFailure = true)
 public class APIUndoSnapshotCreationMsg extends APIMessage implements VolumeMessage {
 
     @APIParam(resourceType = VolumeVO.class)

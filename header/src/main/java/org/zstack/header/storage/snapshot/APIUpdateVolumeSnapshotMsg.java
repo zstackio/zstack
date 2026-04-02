@@ -5,6 +5,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 /**
  * Created by frank on 6/14/2015.
@@ -15,6 +16,7 @@ import org.zstack.header.rest.RestRequest;
         isAction = true,
         responseClass = APIUpdateVolumeSnapshotEvent.class
 )
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "SnapshotUuidToVmUuidResolver", field = "uuid")
 public class APIUpdateVolumeSnapshotMsg extends APIMessage implements VolumeSnapshotMessage {
     @APIParam(resourceType = VolumeSnapshotVO.class)
     private String uuid;

@@ -6,6 +6,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 import java.util.concurrent.TimeUnit;
 
@@ -44,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 )
 @SkipVmTracer(replyClass = APIMigrateVmEvent.class)
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 1)
+@MetadataImpact(value = MetadataImpact.Impact.STORAGE, resolver = "VmUuidDirectResolver", field = "vmInstanceUuid")
 public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, MigrateVmMessage, CheckAttachedVolumesMessage {
     /**
      * @desc vm uuid

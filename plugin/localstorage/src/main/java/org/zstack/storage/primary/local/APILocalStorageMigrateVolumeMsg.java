@@ -10,6 +10,7 @@ import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
+import org.zstack.header.vm.metadata.MetadataImpact;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.volume.VolumeVO;
 
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
         isAction = true
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 24)
+@MetadataImpact(value = MetadataImpact.Impact.STORAGE, resolver = "VolumeUuidToVmUuidResolver", field = "volumeUuid", updateOnFailure = true)
 public class APILocalStorageMigrateVolumeMsg extends APIMessage implements PrimaryStorageMessage, APIAuditor {
     @APIParam(resourceType = VolumeVO.class)
     private String volumeUuid;

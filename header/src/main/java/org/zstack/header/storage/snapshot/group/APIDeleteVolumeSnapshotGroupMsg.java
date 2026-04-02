@@ -7,6 +7,7 @@ import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.snapshot.SnapshotBackendOperation;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 import java.util.concurrent.TimeUnit;
 
@@ -19,6 +20,7 @@ import java.util.concurrent.TimeUnit;
         responseClass = APIDeleteVolumeSnapshotGroupEvent.class
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
+@MetadataImpact(value = MetadataImpact.Impact.STORAGE, resolver = "SnapshotGroupUuidToVmUuidResolver", field = "uuid", updateOnFailure = true)
 public class APIDeleteVolumeSnapshotGroupMsg extends APIDeleteMessage implements VolumeSnapshotGroupMessage {
     @APIParam(resourceType = VolumeSnapshotGroupVO.class, successIfResourceNotExisting = true)
     private String uuid;
