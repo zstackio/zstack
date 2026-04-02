@@ -307,4 +307,8 @@ public class VmSystemTags {
     }
 
     public static PatternedSystemTag VM_STATE_PAUSED_AFTER_MIGRATE = new PatternedSystemTag(("vmPausedAfterMigrate"), VmInstanceVO.class);
+
+    public static String VM_METADATA_REGISTERING_MN_UUID_TOKEN = "registeringMnUuid";
+    public static PatternedSystemTag VM_METADATA_REGISTERING_MN_UUID = new PatternedSystemTag(
+            String.format("vmMetadata::registeringMnUuid::{%s}", VM_METADATA_REGISTERING_MN_UUID_TOKEN), VmInstanceVO.class);
 }

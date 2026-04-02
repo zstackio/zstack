@@ -143,4 +143,52 @@ public class VmGlobalConfig {
     @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "allowed TPM VM start without KMS")
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig ALLOWED_TPM_VM_WITHOUT_KMS = new GlobalConfig(CATEGORY, "allowed.tpm.vm.without.kms");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig VM_METADATA_ENABLED = new GlobalConfig(CATEGORY, "vm.metadata.enabled");
+
+    @GlobalConfigValidation()
+    public static GlobalConfig VM_METADATA_LAST_REFRESH_VERSION = new GlobalConfig(CATEGORY, "vm.metadata.lastRefreshVersion");
+
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 100)
+    public static GlobalConfig VM_METADATA_FLUSH_CONCURRENCY = new GlobalConfig(CATEGORY, "vm.metadata.flush.concurrency");
+
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 300)
+    public static GlobalConfig VM_METADATA_FLUSH_POLL_INTERVAL = new GlobalConfig(CATEGORY, "vm.metadata.flush.pollInterval");
+
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 1000)
+    public static GlobalConfig VM_METADATA_FLUSH_BATCH_SIZE = new GlobalConfig(CATEGORY, "vm.metadata.flush.batchSize");
+
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 168)
+    public static GlobalConfig VM_METADATA_CLEANUP_GC_INTERVAL = new GlobalConfig(CATEGORY, "vm.metadata.cleanup.gc.interval");
+
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 10)
+    public static GlobalConfig VM_METADATA_FLUSH_MAX_RETRY = new GlobalConfig(CATEGORY, "vm.metadata.flush.maxRetry");
+
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 120)
+    public static GlobalConfig VM_METADATA_FLUSH_ZOMBIE_CLAIM_THRESHOLD = new GlobalConfig(CATEGORY, "vm.metadata.flush.zombieClaimThreshold");
+
+    @GlobalConfigValidation(numberGreaterThan = 21599, numberLessThan = 172801)
+    public static GlobalConfig VM_METADATA_MAINTENANCE_CONTENT_DRIFT_INTERVAL = new GlobalConfig(CATEGORY, "vm.metadata.maintenance.contentDriftInterval");
+
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 86400)
+    public static GlobalConfig VM_METADATA_MAINTENANCE_STALE_RECOVERY_INTERVAL = new GlobalConfig(CATEGORY, "vm.metadata.maintenance.staleRecoveryInterval");
+
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 1000)
+    public static GlobalConfig VM_METADATA_MAINTENANCE_STALE_RECOVERY_MAX_CYCLES = new GlobalConfig(CATEGORY, "vm.metadata.maintenance.staleRecoveryMaxCycles");
+
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig VM_METADATA_PAYLOAD_REJECT_THRESHOLD = new GlobalConfig(CATEGORY, "vm.metadata.payload.rejectThreshold");
+
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 86400)
+    public static GlobalConfig VM_METADATA_MAINTENANCE_ORPHAN_CHECK_INTERVAL = new GlobalConfig(CATEGORY, "vm.metadata.maintenance.orphanCheckInterval");
+
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 20)
+    public static GlobalConfig VM_METADATA_MAINTENANCE_STALE_RECOVERY_BATCH_SIZE = new GlobalConfig(CATEGORY, "vm.metadata.maintenance.staleRecoveryBatchSize");
+
+    @GlobalConfigValidation(numberGreaterThan = 9, numberLessThan = 201)
+    public static GlobalConfig VM_METADATA_MAINTENANCE_CONTENT_DRIFT_BATCH_SIZE = new GlobalConfig(CATEGORY, "vm.metadata.maintenance.contentDriftBatchSize");
+
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 31)
+    public static GlobalConfig VM_METADATA_MAINTENANCE_CONTENT_DRIFT_BATCH_SLEEP_SEC = new GlobalConfig(CATEGORY, "vm.metadata.maintenance.contentDriftBatchSleepSec");
 }
