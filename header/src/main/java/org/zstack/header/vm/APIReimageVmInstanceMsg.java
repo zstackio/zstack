@@ -4,6 +4,7 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 /**
  * Created by miao on 11/3/16.
@@ -15,6 +16,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIReimageVmInstanceEvent.class,
         category = "vmInstance"
 )
+@MetadataImpact(value = MetadataImpact.Impact.STORAGE, resolver = "VmUuidDirectResolver", field = "vmInstanceUuid")
 public class APIReimageVmInstanceMsg extends APIMessage implements VmInstanceMessage {
     public String getVmInstanceUuid() {
         return vmInstanceUuid;

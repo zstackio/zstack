@@ -4,6 +4,7 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.metadata.MetadataImpact;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -36,6 +37,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.DELETE,
         responseClass = APIDetachDataVolumeFromVmEvent.class
 )
+@MetadataImpact(value = MetadataImpact.Impact.STORAGE, resolver = "VolumeUuidToVmUuidResolver", field = "uuid")
 public class APIDetachDataVolumeFromVmMsg extends APIMessage implements VolumeMessage {
     /**
      * @desc data volume uuid. See :ref:`VolumeInventory`

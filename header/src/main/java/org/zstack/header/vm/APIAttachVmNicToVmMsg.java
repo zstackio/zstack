@@ -4,6 +4,7 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 @RestRequest(
         path = "/vm-instances/{vmInstanceUuid}/nices/{vmNicUuid}",
@@ -11,6 +12,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIAttachVmNicToVmEvent.class,
         parameterName = "params"
 )
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "VmUuidDirectResolver", field = "vmInstanceUuid")
 public class APIAttachVmNicToVmMsg extends APIMessage implements VmInstanceMessage {
 
     @APIParam(resourceType = VmNicVO.class)

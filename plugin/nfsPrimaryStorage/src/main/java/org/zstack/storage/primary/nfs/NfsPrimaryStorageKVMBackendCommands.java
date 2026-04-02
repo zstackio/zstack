@@ -3,6 +3,7 @@ package org.zstack.storage.primary.nfs;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.storage.primary.VmMetadataScanEntry;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMAgentCommands.AgentCommand;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
@@ -955,5 +956,52 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public void setHashValue(String hashValue) {
             this.hashValue = hashValue;
         }
+    }
+
+    public static class WriteVmMetadataCmd extends NfsPrimaryStorageAgentCommand {
+        public String metadata;
+        public String metadataPath;
+        public String vmUuid;
+        public String vmName;
+        public String vmCategory;
+        public String architecture;
+        public String schemaVersion;
+    }
+
+    public static class WriteVmMetadataRsp extends NfsPrimaryStorageAgentResponse {
+    }
+
+
+    public static class GetVmInstanceMetadataCmd extends NfsPrimaryStorageAgentCommand {
+        public String metadataPath;
+    }
+
+    public static class GetVmInstanceMetadataRsp extends NfsPrimaryStorageAgentResponse {
+        public String metadata;
+    }
+
+    public static class ScanVmMetadataCmd extends NfsPrimaryStorageAgentCommand {
+        public String metadataDir;
+    }
+
+    public static class ScanVmMetadataRsp extends NfsPrimaryStorageAgentResponse {
+        public List<VmMetadataScanEntry> metadataEntries = new ArrayList<>();
+    }
+
+    public static class CleanupVmMetadataCmd extends NfsPrimaryStorageAgentCommand {
+        public String metadataPath;
+    }
+
+    public static class CleanupVmMetadataRsp extends NfsPrimaryStorageAgentResponse {
+    }
+
+    public static class PrefixRebaseBackingFilesCmd extends NfsPrimaryStorageAgentCommand {
+        public List<String> filePaths;
+        public String oldPrefix;
+        public String newPrefix;
+    }
+
+    public static class PrefixRebaseBackingFilesRsp extends NfsPrimaryStorageAgentResponse {
+        public int rebasedCount;
     }
 }

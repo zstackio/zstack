@@ -43,11 +43,15 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.metadata.UpdateVmInstanceMetadataOnPrimaryStorageMsg;
+import org.zstack.header.vm.metadata.UpdateVmInstanceMetadataOnPrimaryStorageReply;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
@@ -68,9 +72,7 @@ import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.inerr;
-import static org.zstack.core.Platform.multiErr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
@@ -913,6 +915,52 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
+    public static class WriteVmMetadataCmd extends AgentCommand {
+        public String metadata;
+        public String metadataPath;
+        public String vmUuid;
+        public String vmName;
+        public String vmCategory;
+        public String architecture;
+        public String schemaVersion;
+    }
+
+    public static class WriteVmMetadataRsp extends AgentResponse {
+    }
+
+    public static class GetVmInstanceMetadataCmd extends AgentCommand {
+        public String metadataPath;
+    }
+
+    public static class GetVmInstanceMetadataRsp extends AgentResponse {
+        public String metadata;
+    }
+
+    public static class ScanVmMetadataCmd extends AgentCommand {
+        public String metadataDir;
+    }
+
+    public static class ScanVmMetadataRsp extends AgentResponse {
+        public List<VmMetadataScanEntry> metadataEntries = new ArrayList<>();
+    }
+
+    public static class CleanupVmMetadataCmd extends AgentCommand {
+        public String metadataPath;
+    }
+
+    public static class CleanupVmMetadataRsp extends AgentResponse {
+    }
+
+    public static class PrefixRebaseBackingFilesCmd extends LocalStorageKvmBackend.AgentCommand {
+        public List<String> filePaths;
+        public String oldPrefix;
+        public String newPrefix;
+    }
+
+    public static class PrefixRebaseBackingFilesRsp extends LocalStorageKvmBackend.AgentResponse {
+        public int rebasedCount;
+    }
+
     public static final String INIT_PATH = "/localstorage/init";
     public static final String GET_PHYSICAL_CAPACITY_PATH = "/localstorage/getphysicalcapacity";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/localstorage/volume/createempty";
@@ -945,6 +993,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/localstorage/kvmhost/download/cancel";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/localstorage/kvmhost/download/progress";
     public static final String GET_QCOW2_HASH_VALUE_PATH = "/localstorage/getqcow2hash";
+    public static final String WRITE_VM_METADATA_PATH = "/localstorage/vm/metadata/write";
+    public static final String GET_VM_INSTANCE_METADATA_PATH = "/localstorage/vm/metadata/get";
+    public static final String SCAN_VM_METADATA_PATH = "/localstorage/vm/metadata/scan";
+    public static final String CLEANUP_VM_METADATA_PATH = "/localstorage/vm/metadata/cleanup";
+    public static final String PREFIX_REBASE_BACKING_FILES_PATH = "/localstorage/snapshot/prefixrebasebackingfiles";
 
     public LocalStorageKvmBackend() {
     }
@@ -3806,6 +3859,119 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void success(OfflineMergeSnapshotRsp rsp) {
                 reply.setSize(rsp.getActualSize());
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(UpdateVmInstanceMetadataOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<UpdateVmInstanceMetadataOnPrimaryStorageReply> completion) {
+        WriteVmMetadataCmd cmd = new WriteVmMetadataCmd();
+        cmd.metadata = msg.getMetadata();
+        cmd.metadataPath = msg.getMetadataPath();
+        cmd.vmUuid = msg.getVmInstanceUuid();
+        cmd.vmName = msg.getVmInstanceName();
+        cmd.vmCategory = msg.getVmCategory();
+        cmd.architecture = msg.getArchitecture();
+        cmd.schemaVersion = msg.getSchemaVersion();
+
+        httpCall(WRITE_VM_METADATA_PATH, hostUuid, cmd, WriteVmMetadataRsp.class, new ReturnValueCompletion<WriteVmMetadataRsp>(completion) {
+            @Override
+            public void success(WriteVmMetadataRsp rsp) {
+                completion.success(new UpdateVmInstanceMetadataOnPrimaryStorageReply());
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(GetVmInstanceMetadataFromPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<GetVmInstanceMetadataFromPrimaryStorageReply> completion) {
+        GetVmInstanceMetadataCmd cmd = new GetVmInstanceMetadataCmd();
+        cmd.metadataPath = msg.getMetadataPath();
+
+        httpCall(GET_VM_INSTANCE_METADATA_PATH, hostUuid, cmd, GetVmInstanceMetadataRsp.class, new ReturnValueCompletion<GetVmInstanceMetadataRsp>(completion) {
+            @Override
+            public void success(GetVmInstanceMetadataRsp rsp) {
+                GetVmInstanceMetadataFromPrimaryStorageReply reply = new GetVmInstanceMetadataFromPrimaryStorageReply();
+                reply.setMetadata(rsp.metadata);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(ScanVmInstanceMetadataFromPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<ScanVmInstanceMetadataFromPrimaryStorageReply> completion) {
+        ScanVmMetadataCmd cmd = new ScanVmMetadataCmd();
+        cmd.metadataDir = msg.getMetadataDir();
+
+        httpCall(SCAN_VM_METADATA_PATH, hostUuid, cmd, ScanVmMetadataRsp.class, new ReturnValueCompletion<ScanVmMetadataRsp>(completion) {
+            @Override
+            public void success(ScanVmMetadataRsp rsp) {
+                ScanVmInstanceMetadataFromPrimaryStorageReply reply = new ScanVmInstanceMetadataFromPrimaryStorageReply();
+                if (rsp.metadataEntries != null) {
+                    List<VmMetadataScanEntry> entries = rsp.metadataEntries.stream()
+                            .filter(Objects::nonNull)
+                            .peek(entry -> entry.setHostUuid(hostUuid))
+                            .collect(Collectors.toList());
+                    reply.setVmInstanceMetadata(entries);
+                } else {
+                    reply.setVmInstanceMetadata(Collections.emptyList());
+                }
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(CleanupVmInstanceMetadataOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<CleanupVmInstanceMetadataOnPrimaryStorageReply> completion) {
+        CleanupVmMetadataCmd cmd = new CleanupVmMetadataCmd();
+        cmd.metadataPath = msg.getMetadataPath();
+
+        httpCall(CLEANUP_VM_METADATA_PATH, hostUuid, cmd, CleanupVmMetadataRsp.class, new ReturnValueCompletion<CleanupVmMetadataRsp>(completion) {
+            @Override
+            public void success(CleanupVmMetadataRsp rsp) {
+                CleanupVmInstanceMetadataOnPrimaryStorageReply reply = new CleanupVmInstanceMetadataOnPrimaryStorageReply();
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(RebaseVolumeBackingFileOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<RebaseVolumeBackingFileOnPrimaryStorageReply> completion) {
+        PrefixRebaseBackingFilesCmd cmd = new PrefixRebaseBackingFilesCmd();
+        cmd.filePaths = msg.getInstallPaths();
+        cmd.oldPrefix = msg.getOldPrefix();
+        cmd.newPrefix = msg.getNewPrefix();
+
+        httpCall(PREFIX_REBASE_BACKING_FILES_PATH, hostUuid, cmd, PrefixRebaseBackingFilesRsp.class, new ReturnValueCompletion<PrefixRebaseBackingFilesRsp>(completion) {
+            @Override
+            public void success(PrefixRebaseBackingFilesRsp rsp) {
+                RebaseVolumeBackingFileOnPrimaryStorageReply reply = new RebaseVolumeBackingFileOnPrimaryStorageReply();
+                reply.setRebasedCount(rsp.rebasedCount);
                 completion.success(reply);
             }
 

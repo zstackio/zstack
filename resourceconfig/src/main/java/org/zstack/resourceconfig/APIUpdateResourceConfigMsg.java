@@ -5,12 +5,14 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 import org.zstack.header.vo.ResourceVO;
 
 @RestRequest(path = "/resource-configurations/{category}/{name}/{resourceUuid}/actions",
         method = HttpMethod.PUT,
         isAction = true,
         responseClass = APIUpdateResourceConfigEvent.class)
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "ResourceUuidToVmUuidResolver", field = "resourceUuid")
 public class APIUpdateResourceConfigMsg extends APIMessage implements ResourceConfigMessage {
     @APIParam
     private String category;

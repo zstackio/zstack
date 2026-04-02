@@ -5,6 +5,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 /**
  * @api api event for message :ref:`APIAttachVolumeToVmEvent`
@@ -39,6 +40,7 @@ import org.zstack.header.vm.VmInstanceVO;
         parameterName = "params",
         responseClass = APIAttachDataVolumeToVmEvent.class
 )
+@MetadataImpact(value = MetadataImpact.Impact.STORAGE, resolver = "VmUuidDirectResolver", field = "vmInstanceUuid")
 public class APIAttachDataVolumeToVmMsg extends APIMessage implements VolumeMessage {
     /**
      * @desc vm uuid. see :ref:`VmInstanceInventory`

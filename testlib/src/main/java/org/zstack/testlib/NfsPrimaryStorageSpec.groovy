@@ -522,6 +522,26 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
+            simulator(NfsPrimaryStorageKVMBackend.WRITE_VM_METADATA_PATH) {
+                return new NfsPrimaryStorageKVMBackendCommands.WriteVmMetadataRsp()
+            }
+
+            simulator(NfsPrimaryStorageKVMBackend.GET_VM_INSTANCE_METADATA_PATH) {
+                return new NfsPrimaryStorageKVMBackendCommands.GetVmInstanceMetadataRsp()
+            }
+
+            simulator(NfsPrimaryStorageKVMBackend.SCAN_VM_METADATA_PATH) {
+                return new NfsPrimaryStorageKVMBackendCommands.ScanVmMetadataRsp()
+            }
+
+            simulator(NfsPrimaryStorageKVMBackend.CLEANUP_VM_METADATA_PATH) {
+                return new NfsPrimaryStorageKVMBackendCommands.CleanupVmMetadataRsp()
+            }
+
+            simulator(NfsPrimaryStorageKVMBackend.NFS_PREFIX_REBASE_BACKING_FILES_PATH) {
+                return new NfsPrimaryStorageKVMBackendCommands.PrefixRebaseBackingFilesRsp()
+            }
+
             VFS.vfsHook(NfsPrimaryStorageKVMBackend.NFS_REBASE_VOLUME_BACKING_FILE_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.NfsRebaseVolumeBackingFileCmd.class)
 

@@ -334,6 +334,54 @@ public class LocalStorageSimulator {
         return null;
     }
 
+    @RequestMapping(value=LocalStorageKvmBackend.WRITE_VM_METADATA_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String writeVmMetadata(HttpEntity<String> entity) {
+        WriteVmMetadataCmd cmd = JSONObjectUtil.toObject(entity.getBody(), WriteVmMetadataCmd.class);
+        config.writeVmMetadataCmds.add(cmd);
+        reply(entity, new WriteVmMetadataRsp());
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmBackend.GET_VM_INSTANCE_METADATA_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String getVmInstanceMetadata(HttpEntity<String> entity) {
+        GetVmInstanceMetadataCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVmInstanceMetadataCmd.class);
+        config.getVmInstanceMetadataCmds.add(cmd);
+        GetVmInstanceMetadataRsp rsp = new GetVmInstanceMetadataRsp();
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmBackend.SCAN_VM_METADATA_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String scanVmMetadata(HttpEntity<String> entity) {
+        ScanVmMetadataCmd cmd = JSONObjectUtil.toObject(entity.getBody(), ScanVmMetadataCmd.class);
+        config.scanVmMetadataCmds.add(cmd);
+        ScanVmMetadataRsp rsp = new ScanVmMetadataRsp();
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmBackend.CLEANUP_VM_METADATA_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String cleanupVmMetadata(HttpEntity<String> entity) {
+        CleanupVmMetadataCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CleanupVmMetadataCmd.class);
+        config.cleanupVmMetadataCmds.add(cmd);
+        reply(entity, new CleanupVmMetadataRsp());
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmBackend.PREFIX_REBASE_BACKING_FILES_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String prefixRebaseBackingFiles(HttpEntity<String> entity) {
+        PrefixRebaseBackingFilesCmd cmd = JSONObjectUtil.toObject(entity.getBody(), PrefixRebaseBackingFilesCmd.class);
+        PrefixRebaseBackingFilesRsp rsp = new PrefixRebaseBackingFilesRsp();
+        rsp.rebasedCount = cmd.filePaths == null ? 0 : cmd.filePaths.size();
+        reply(entity, rsp);
+        return null;
+    }
+
     @ExceptionHandler(Exception.class)
     public ModelAndView handleAllException(Exception ex) {
         logger.warn(ex.getMessage(), ex);

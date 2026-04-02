@@ -6,6 +6,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ import java.util.Map;
         method = HttpMethod.POST,
         responseClass = APIChangeVmNicNetworkEvent.class
 )
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "NicUuidToVmUuidResolver", field = "vmNicUuid")
 public class APIChangeVmNicNetworkMsg extends APIMessage implements VmInstanceMessage{
     @APIParam(resourceType = VmNicVO.class)
     private String vmNicUuid;

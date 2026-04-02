@@ -256,6 +256,7 @@ public class SourceClassMap {
 			put("org.zstack.header.storage.primary.PrimaryStorageHostStatus", "org.zstack.sdk.PrimaryStorageHostStatus");
 			put("org.zstack.header.storage.primary.PrimaryStorageInventory", "org.zstack.sdk.PrimaryStorageInventory");
 			put("org.zstack.header.storage.primary.UsageReport", "org.zstack.sdk.UsageReport");
+			put("org.zstack.header.storage.primary.VmMetadataScanEntry", "org.zstack.sdk.VmMetadataScanEntry");
 			put("org.zstack.header.storage.snapshot.BatchDeleteVolumeSnapshotStruct", "org.zstack.sdk.BatchDeleteVolumeSnapshotStruct");
 			put("org.zstack.header.storage.snapshot.ShrinkResult", "org.zstack.sdk.ShrinkResult");
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotBackupStorageRefInventory", "org.zstack.sdk.VolumeSnapshotBackupStorageRefInventory");
@@ -1181,6 +1182,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmInstanceResourceMetadataGroupInventory", "org.zstack.header.vm.devices.VmInstanceResourceMetadataGroupInventory");
 			put("org.zstack.sdk.VmMemoryBillingInventory", "org.zstack.billing.generator.vm.memory.VmMemoryBillingInventory");
 			put("org.zstack.sdk.VmMemorySpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmMemorySpendingDetails");
+			put("org.zstack.sdk.VmMetadataScanEntry", "org.zstack.header.storage.primary.VmMetadataScanEntry");
 			put("org.zstack.sdk.VmNicBandwidthSpendingDetails", "org.zstack.billing.spendingcalculator.vmnic.VmNicBandwidthSpendingDetails");
 			put("org.zstack.sdk.VmNicConflictEntry", "org.zstack.header.storage.snapshot.group.VmNicConflictEntry");
 			put("org.zstack.sdk.VmNicInventory", "org.zstack.header.vm.VmNicInventory");

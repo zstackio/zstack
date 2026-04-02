@@ -59,4 +59,9 @@ public class LocalStorageSimulatorConfig {
 
     public List<GetQCOW2ReferenceCmd> getQCOW2ReferenceCmds = new ArrayList<>();
     public List<String> getQCOW2ReferenceCmdReference = new ArrayList<>();
+
+    public List<WriteVmMetadataCmd> writeVmMetadataCmds = new ArrayList<>();
+    public List<GetVmInstanceMetadataCmd> getVmInstanceMetadataCmds = new ArrayList<>();
+    public List<ScanVmMetadataCmd> scanVmMetadataCmds = new ArrayList<>();
+    public List<CleanupVmMetadataCmd> cleanupVmMetadataCmds = new ArrayList<>();
 }
