@@ -4,7 +4,7 @@ import sys
 try:
     import urllib3
 except ImportError:
-    print 'urlib3 is not installed, run "pip install urlib3"'
+    print('urllib3 is not installed, run "pip install urllib3"')
     sys.exit(1)
 
 import string
@@ -16,10 +16,14 @@ import functools
 import traceback
 import base64
 import hmac
-import sha
 from hashlib import sha1
 import datetime
 import time
+
+try:
+    int_types = (int, long)
+except NameError:
+    int_types = (int,)
 
 CONFIG_HOSTNAME = 'hostname'
 CONFIG_PORT = 'port'
@@ -55,7 +59,7 @@ def _exception_safe(func):
         try:
             func(*args, **kwargs)
         except:
-            print traceback.format_exc()
+            print(traceback.format_exc())
 
     return wrap
 
@@ -189,7 +193,7 @@ class AbstractAction(object):
             if value is not None and isinstance(value, str) and annotation.empty_string is False and len(value) == 0:
                 raise SdkError('invalid parameter[%s], it cannot be an empty string' % param_name)
 
-            if value is not None and (isinstance(value, int) or isinstance(value, long)) \
+            if value is not None and isinstance(value, int_types) \
                     and annotation.number_range is not None and len(annotation.number_range) == 2:
                 low = annotation.number_range[0]
                 high = annotation.number_range[1]
@@ -253,10 +257,14 @@ class AbstractAction(object):
         path = elements[2].split("/", 2)
         path = path[2].split("?")
 
-        h = hmac.new(self.accessKeySecret, self.HTTP_METHOD + "\n"
-            + date + "\n"
-            + "/" + path[0], sha1)
-        Signature = base64.b64encode(h.digest())
+        msg = self.HTTP_METHOD + "\n" + date + "\n" + "/" + path[0]
+        if isinstance(msg, str):
+            msg = msg.encode('utf-8')
+        secret = self.accessKeySecret
+        if isinstance(secret, str):
+            secret = secret.encode('utf-8')
+        h = hmac.new(secret, msg, sha1)
+        Signature = base64.b64encode(h.digest()).decode('utf-8')
         return "ZStack %s:%s" % (self.accessKeyId, Signature)
 
     def call(self, cb=None):
@@ -482,13 +490,13 @@ def _json_http(
     if body is not None and not isinstance(body, str):
         body = json.dumps(body).encode('utf-8')
 
-    print '[Request]: %s url=%s, headers=%s, body=%s' % (method, uri, headers, body)
+    print('[Request]: %s url=%s, headers=%s, body=%s' % (method, uri, headers, body))
     if body:
         headers['Content-Length'] = len(body)
         rsp = pool.request(method, uri, body=body, headers=headers)
     else:
         rsp = pool.request(method, uri, headers=headers)
 
-    print '[Response to %s %s]: status: %s, body: %s' % (method, uri, rsp.status, rsp.data)
+    print('[Response to %s %s]: status: %s, body: %s' % (method, uri, rsp.status, rsp.data))
     return rsp
 
