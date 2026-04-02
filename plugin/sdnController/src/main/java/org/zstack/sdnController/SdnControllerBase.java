@@ -903,7 +903,7 @@ public class SdnControllerBase {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 sdnPingTracker.untrack(msg.getSdnControllerUuid());
-                dbf.removeByPrimaryKey(msg.getSdnControllerUuid(), SdnControllerVO.class);
+                controller.deleteSdnControllerDb(self);
                 trigger.next();
             }
         }).done(new FlowDoneHandler(completion) {

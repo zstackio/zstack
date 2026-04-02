@@ -4179,6 +4179,16 @@ public class KVMHost extends HostBase implements Host {
         KVMCompleteNicInformationExtensionPoint extp = factory.getCompleteNicInfoExtension(L2NetworkType.valueOf(l2inv.getType()));
         NicTO to = extp.completeNicInformation(l2inv, l3Inv, nic);
 
+        if (L2NetworkConstant.VSWITCH_TYPE_ZNS.equals(l2inv.getvSwitchType())) {
+            to.setBridgeName("br-int");
+            to.setBridgePortType("openvswitch");
+            String ifaceId = VmSystemTags.IFACE_ID.getTokenByResourceUuid(
+                    nic.getUuid(), VmSystemTags.IFACE_ID_TOKEN);
+            if (ifaceId != null) {
+                to.setInterfaceId(ifaceId);
+            }
+        }
+
         if (to.getUseVirtio() == null) {
             to.setUseVirtio(VmSystemTags.VIRTIO.hasTag(nic.getVmInstanceUuid()));
             to.setIps(getCleanTrafficIp(nic));

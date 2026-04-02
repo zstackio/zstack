@@ -1242,6 +1242,14 @@ public class KVMAgentCommands {
 
         private Boolean isolated;
 
+        // bridge sub-type: null for Linux bridge, "openvswitch" for OVS bridge
+        // generates <virtualport type='openvswitch'/> in libvirt XML
+        private String bridgePortType;
+
+        // OVS external_ids:iface-id, used by SDN controller to identify the port
+        // generates <virtualport><parameters interfaceid='...'/></virtualport>
+        private String interfaceId;
+
         public List<String> getIps() {
             return ips;
         }
@@ -1432,6 +1440,22 @@ public class KVMAgentCommands {
 
         public void setL2NetworkUuid(String l2NetworkUuid) {
             this.l2NetworkUuid = l2NetworkUuid;
+        }
+
+        public String getBridgePortType() {
+            return bridgePortType;
+        }
+
+        public void setBridgePortType(String bridgePortType) {
+            this.bridgePortType = bridgePortType;
+        }
+
+        public String getInterfaceId() {
+            return interfaceId;
+        }
+
+        public void setInterfaceId(String interfaceId) {
+            this.interfaceId = interfaceId;
         }
 
         public static NicTO fromVmNicInventory(VmNicInventory nic) {
