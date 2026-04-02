@@ -80,6 +80,7 @@ import java.util.Objects;
 import static org.zstack.compute.vm.VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.header.vm.VmMigrationType.HostMigration;
+import static org.zstack.header.vm.VmMigrationType.PrimaryStorageMigration;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.PostMigration;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.PrepareReRead;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.PrepareRead;
@@ -162,7 +163,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
 
     @Override
     public void preVmMigration(VmInstanceInventory vm, VmMigrationType type, String dstHostUuid, Completion completion) {
-        if (HostMigration != type) {
+        if (HostMigration != type && PrimaryStorageMigration != type) {
             completion.success();
             return;
         }
