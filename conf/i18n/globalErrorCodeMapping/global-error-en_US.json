@@ -4717,5 +4717,8 @@
   "ORG_ZSTACK_ZWATCH_FUNCTION_10013": "Unknown arguments detected. Please ensure that all command-line parameters are valid and refer to the documentation for a list of accepted arguments.",
   "ORG_ZSTACK_VPCFIREWALL_10034": "could not add firewall rule[%d] as only TCP protocol supports TCP flags in this environment",
   "ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_VYOS_10007": "unable to stop DHCP server on virtual router instance [uuid:%s] because %s",
-  "ORG_ZSTACK_VPCFIREWALL_10035": "could not add firewall rule[%d] because of a %s error"
+  "ORG_ZSTACK_VPCFIREWALL_10035": "could not add firewall rule[%d] because of a %s error",
+  "ORG_ZSTACK_DGPU_10010": "Available License not found, please apply addon license for product dGPU.",
+  "ORG_ZSTACK_DGPU_10011": "Addon license for product dGPU has expired, please renew it.",
+  "ORG_ZSTACK_DGPU_10012": "Insufficient dGPU GPU number licensed. Your license permits %d GPU, there are %d GPU used, shared: %d, need: %d."
 }

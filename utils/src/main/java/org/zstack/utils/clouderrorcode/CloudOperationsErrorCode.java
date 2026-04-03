@@ -364,6 +364,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_ZWATCH_10004 = "ORG_ZSTACK_ZWATCH_10004";
 
+    public static final String ORG_ZSTACK_ZWATCH_10005 = "ORG_ZSTACK_ZWATCH_10005";
+
     public static final String ORG_ZSTACK_SSO_SAML2_SERVICE_10000 = "ORG_ZSTACK_SSO_SAML2_SERVICE_10000";
 
     public static final String ORG_ZSTACK_SSO_SAML2_SERVICE_10001 = "ORG_ZSTACK_SSO_SAML2_SERVICE_10001";
@@ -6877,6 +6879,12 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10033 = "ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10033";
 
     public static final String ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10034 = "ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10034";
+
+    public static final String ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10035 = "ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10035";
+
+    public static final String ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10036 = "ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10036";
+
+    public static final String ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10037 = "ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10037";
 
     public static final String ORG_ZSTACK_XDRAGON_10000 = "ORG_ZSTACK_XDRAGON_10000";
 
@@ -14892,7 +14900,6 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_AI_10142 = "ORG_ZSTACK_AI_10142";
 
     public static final String ORG_ZSTACK_AI_10143 = "ORG_ZSTACK_AI_10143";
-
     public static final String ORG_ZSTACK_CORE_CLOUDBUS_10000 = "ORG_ZSTACK_CORE_CLOUDBUS_10000";
 
     public static final String ORG_ZSTACK_CORE_CLOUDBUS_10001 = "ORG_ZSTACK_CORE_CLOUDBUS_10001";
@@ -15964,4 +15971,28 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_CRYPTO_SECURITYMACHINE_THIRDPARTY_PLUGIN_10005 = "ORG_ZSTACK_CRYPTO_SECURITYMACHINE_THIRDPARTY_PLUGIN_10005";
 
     public static final String ORG_ZSTACK_CRYPTO_SECURITYMACHINE_THIRDPARTY_PLUGIN_10006 = "ORG_ZSTACK_CRYPTO_SECURITYMACHINE_THIRDPARTY_PLUGIN_10006";
+
+    public static final String ORG_ZSTACK_DGPU_10001 = "ORG_ZSTACK_DGPU_10001";
+
+    public static final String ORG_ZSTACK_DGPU_10002 = "ORG_ZSTACK_DGPU_10002";
+
+    public static final String ORG_ZSTACK_DGPU_10003 = "ORG_ZSTACK_DGPU_10003";
+
+    public static final String ORG_ZSTACK_DGPU_10004 = "ORG_ZSTACK_DGPU_10004";
+
+    public static final String ORG_ZSTACK_DGPU_10005 = "ORG_ZSTACK_DGPU_10005";
+
+    public static final String ORG_ZSTACK_DGPU_10006 = "ORG_ZSTACK_DGPU_10006";
+
+    public static final String ORG_ZSTACK_DGPU_10007 = "ORG_ZSTACK_DGPU_10007";
+
+    public static final String ORG_ZSTACK_DGPU_10008 = "ORG_ZSTACK_DGPU_10008";
+
+    public static final String ORG_ZSTACK_DGPU_10009 = "ORG_ZSTACK_DGPU_10009";
+
+    public static final String ORG_ZSTACK_DGPU_10010 = "ORG_ZSTACK_DGPU_10010";
+
+    public static final String ORG_ZSTACK_DGPU_10011 = "ORG_ZSTACK_DGPU_10011";
+
+    public static final String ORG_ZSTACK_DGPU_10012 = "ORG_ZSTACK_DGPU_10012";
 }
