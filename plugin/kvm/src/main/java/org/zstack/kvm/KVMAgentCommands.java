@@ -3228,7 +3228,7 @@ public class KVMAgentCommands {
         /**
          * null if operation is Prepare or Delete
          */
-        @NoLogging
+        @NoLogging(type = NoLogging.Type.LongText)
         private String contentBase64;
         private String error;
 
@@ -5285,6 +5285,7 @@ public class KVMAgentCommands {
 
     public static class TakeVmConsoleScreenshotRsp extends AgentResponse {
         @GrayVersion(value = "5.0.0")
+        @NoLogging(type = NoLogging.Type.LongText)
         private String imageData;
 
         public String getImageData() {
