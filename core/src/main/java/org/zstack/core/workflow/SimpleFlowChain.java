@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.inerr;
 
@@ -260,9 +261,11 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     @SuppressWarnings("rawtypes")
     public SimpleFlowChain error(Consumer<ErrorCode> handler) {
-        AsyncBackup firstAsyncBackup = this.asyncBackups.isEmpty() ? null : this.asyncBackups.get(0);
-        AsyncBackup[] otherAsyncBackups = this.asyncBackups.isEmpty() ? new AsyncBackup[0] :
-                this.asyncBackups.subList(1, this.asyncBackups.size()).toArray(new AsyncBackup[0]);
+        DebugUtils.Assert(!asyncBackups.isEmpty(),
+                "propagateExceptionTo() must be called before error(Consumer<ErrorCode>)."
+                        + " Call .propagateExceptionTo(completion) or .propagateExceptionTo((AsyncBackup) null) if you don't need async backup");
+        AsyncBackup firstAsyncBackup = this.asyncBackups.get(0);
+        AsyncBackup[] otherAsyncBackups = this.asyncBackups.subList(1, this.asyncBackups.size()).toArray(new AsyncBackup[0]);
 
         DebugUtils.Assert(handler != null, "handler of errorHandler should not be null");
         return error(new FlowErrorHandler(firstAsyncBackup, otherAsyncBackups) {
@@ -320,12 +323,16 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     public SimpleFlowChain propagateExceptionTo(AsyncBackup... backups) {
         DebugUtils.Assert(backups != null, "backups in methods propagateExceptionTo() must be not null");
-        DebugUtils.Assert(Arrays.stream(backups).noneMatch(Objects::isNull),
-                "backups in propagateExceptionTo() should not contain null elements");
         DebugUtils.Assert(doneHandler == null, "propagateExceptionTo() must be called before SimpleFlowChain.done()");
         DebugUtils.Assert(errorHandler == null, "propagateExceptionTo() must be called before SimpleFlowChain.error()");
         DebugUtils.Assert(finallyHandler == null, "propagateExceptionTo() must be called before SimpleFlowChain.Finally()");
+
         this.asyncBackups.addAll(Arrays.asList(backups));
+        this.asyncBackups.removeIf(Objects::isNull);
+
+        if (this.asyncBackups.isEmpty()) {
+            this.asyncBackups.add(null);
+        }
         return this;
     }
 
@@ -338,9 +345,11 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     @SuppressWarnings("rawtypes")
     public SimpleFlowChain done(Runnable runnable) {
-        AsyncBackup firstAsyncBackup = this.asyncBackups.isEmpty() ? null : this.asyncBackups.get(0);
-        AsyncBackup[] otherAsyncBackups = this.asyncBackups.isEmpty() ? new AsyncBackup[0] :
-                this.asyncBackups.subList(1, this.asyncBackups.size()).toArray(new AsyncBackup[0]);
+        DebugUtils.Assert(!asyncBackups.isEmpty(),
+                "propagateExceptionTo() must be called before done(Runnable)."
+                        + " Call .propagateExceptionTo(completion) or .propagateExceptionTo((AsyncBackup) null) if you don't need async backup");
+        AsyncBackup firstAsyncBackup = this.asyncBackups.get(0);
+        AsyncBackup[] otherAsyncBackups = this.asyncBackups.subList(1, this.asyncBackups.size()).toArray(new AsyncBackup[0]);
 
         DebugUtils.Assert(runnable != null, "runnable of doneHandler should not be null");
         return done(new FlowDoneHandler(firstAsyncBackup, otherAsyncBackups) {
