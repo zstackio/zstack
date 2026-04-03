@@ -462,6 +462,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         ret.put(ApplianceVmConstant.BootstrapParams.publicKey.toString(), publicKey);
         ret.put(BootstrapParams.uuid.toString(), spec.getVmInventory().getUuid());
         ret.put(BootstrapParams.managementNodeIp.toString(), Platform.getManagementServerIp());
+        ret.put(BootstrapParams.managementNodeVip.toString(), Platform.getManagementServerVip());
         ret.put(BootstrapParams.managementNodeCidr.toString(), Platform.getManagementServerCidr());
         /* this is only used by ApplianceVmPrepareBootstrapInfoExtensionPoint extension point, will be deleted after extension point */
         ret.put(BootstrapParams.additionalL3Uuids.toString(), additionalNics.stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()));
