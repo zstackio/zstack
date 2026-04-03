@@ -4714,5 +4714,8 @@
   "ORG_ZSTACK_ZWATCH_FUNCTION_10013": "未知参数",
   "ORG_ZSTACK_VPCFIREWALL_10034": "无法添加防火墙规则[%d]，因为只有TCP协议可以使用TCP标志",
   "ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_VYOS_10007": "无法停止虚拟路由器VM[uuid:%s]上的DHCP服务器，因为%s",
-  "ORG_ZSTACK_VPCFIREWALL_10035": "无法添加防火墙规则[%d]因为%s"
+  "ORG_ZSTACK_VPCFIREWALL_10035": "无法添加防火墙规则[%d]因为%s",
+  "ORG_ZSTACK_DGPU_10010": "未找到可用的 dGPU AddOn License，请为 dGPU 产品申请并上传对应授权。",
+  "ORG_ZSTACK_DGPU_10011": "dGPU 产品的 AddOn License 已过期，请及时续期。",
+  "ORG_ZSTACK_DGPU_10012": "dGPU 授权 GPU 数量不足。License 允许 %d 个 GPU，当前已使用 %d 个，其他节点共享使用 %d 个，本次还需要 %d 个。"
 }

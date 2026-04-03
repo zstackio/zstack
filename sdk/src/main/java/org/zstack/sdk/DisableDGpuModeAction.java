@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetGpuDeviceSpecCandidatesAction extends AbstractAction {
+public class DisableDGpuModeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetGpuDeviceSpecCandidatesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetGpuDeviceSpecCandidatesResult value;
+        public org.zstack.sdk.DisableDGpuModeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,20 +25,8 @@ public class GetGpuDeviceSpecCandidatesAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List clusterUuids;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hostUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List vmInstanceUuids;
-
-    @Param(required = false, validValues = {"PCI","DGPU"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String mode;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String gpuDeviceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -58,6 +46,12 @@ public class GetGpuDeviceSpecCandidatesAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -66,8 +60,8 @@ public class GetGpuDeviceSpecCandidatesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetGpuDeviceSpecCandidatesResult value = res.getResult(org.zstack.sdk.GetGpuDeviceSpecCandidatesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetGpuDeviceSpecCandidatesResult() : value; 
+        org.zstack.sdk.DisableDGpuModeResult value = res.getResult(org.zstack.sdk.DisableDGpuModeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DisableDGpuModeResult() : value; 
 
         return ret;
     }
@@ -96,11 +90,11 @@ public class GetGpuDeviceSpecCandidatesAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/gpu-device-specs/candidates";
+        info.httpMethod = "PUT";
+        info.path = "/gpu-device/gpu-devices/{gpuDeviceUuid}/actions";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "disableDGpuMode";
         return info;
     }
 
