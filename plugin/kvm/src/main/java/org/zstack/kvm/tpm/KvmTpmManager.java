@@ -59,6 +59,7 @@ import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KvmCommandSender;
 import org.zstack.kvm.KvmResponseWrapper;
+import org.zstack.kvm.efi.KvmSecureBootExtensions;
 import org.zstack.kvm.tpm.message.CloneVmTpmMsg;
 import org.zstack.kvm.tpm.message.CloneVmTpmReply;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -98,6 +99,8 @@ public class KvmTpmManager extends AbstractService {
     private VmTpmManager vmTpmManager;
     @Autowired
     private TpmEncryptedResourceKeyBackend tpmKeyBackend;
+    @Autowired
+    private KvmSecureBootExtensions secureBootExtensions;
 
     @Override
     public boolean start() {
@@ -514,25 +517,193 @@ public class KvmTpmManager extends AbstractService {
         }).start();
     }
 
+    static class ResetVmTpmContext {
+        String vmInstanceUuid;
+
+        List<VmHostFileVO> hostFiles;
+        VmHostFileVO hostFileToDeleteLast;
+        List<String> hostFileUuidListDeleteSuccessfully = new ArrayList<>();
+        ErrorCodeList errorsOnSendCmd = new ErrorCodeList();
+
+        static ResetVmTpmContext valueOf(ResetVmTpmMsg msg) {
+            ResetVmTpmContext context = new ResetVmTpmContext();
+            context.vmInstanceUuid = msg.getVmInstanceUuid();
+            return context;
+        }
+    }
+
     private void handle(ResetVmTpmMsg msg) {
         ResetVmTpmReply reply = new ResetVmTpmReply();
-
-        String vmUuid = msg.getVmInstanceUuid();
-        new SQLBatch() {
+        threadFacade.chainSubmit(new ChainTask(msg) {
             @Override
-            protected void scripts() {
-                sql(VmHostFileVO.class)
-                        .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
-                        .eq(VmHostFileVO_.type, VmHostFileType.TpmState)
-                        .delete();
-                sql(VmHostBackupFileVO.class)
-                        .eq(VmHostBackupFileVO_.resourceUuid, vmUuid)
-                        .eq(VmHostBackupFileVO_.type, VmHostFileType.TpmState)
-                        .delete();
-            }
-        }.execute();
+            public void run(SyncTaskChain chain) {
+                ResetVmTpmContext context = ResetVmTpmContext.valueOf(msg);
+                resetVmTpm(context, new Completion(chain, msg) {
+                    @Override
+                    public void success() {
+                        chain.next();
+                        bus.reply(msg, reply);
+                    }
 
-        bus.reply(msg, reply);
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        chain.next();
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return tpmQueueSyncSignature(msg.getVmInstanceUuid());
+            }
+
+            @Override
+            public String getName() {
+                return "queue-of-reset-tpm-from-vm-" + msg.getVmInstanceUuid();
+            }
+        });
+    }
+
+    private void resetVmTpm(ResetVmTpmContext context, Completion completion) {
+        String vmUuid = context.vmInstanceUuid;
+
+        SimpleFlowChain.of("reset-vm-tpm-" + vmUuid)
+            .then(Flow.of("collect-vm-host-files")
+                .handle(trigger -> {
+                    context.hostFiles = Q.New(VmHostFileVO.class)
+                            .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
+                            .eq(VmHostFileVO_.type, VmHostFileType.TpmState)
+                            .orderByAsc(VmHostFileVO_.lastOpDate)
+                            .list();
+                    if (!context.hostFiles.isEmpty()) {
+                        // We should delete it in last turn:
+                        context.hostFileToDeleteLast = context.hostFiles.get(context.hostFiles.size() - 1);
+                        context.hostFiles.remove(context.hostFiles.size() - 1);
+                    }
+                    trigger.next();
+                })
+                .build())
+            .then(Flow.of("send-delete-commands-to-hosts-exclude-last-modified")
+                .skipIf(data -> context.hostFiles.isEmpty())
+                .handle(trigger -> {
+                    Map<String, List<VmHostFileVO>> filesByHost = new HashMap<>();
+                    for (VmHostFileVO file : context.hostFiles) {
+                        filesByHost.computeIfAbsent(file.getHostUuid(), k -> new ArrayList<>()).add(file);
+                    }
+
+                    new While<>(filesByHost.entrySet()).each((entry, whileCompletion) -> {
+                        List<KVMAgentCommands.VmHostFileTO> fileTOs = new ArrayList<>();
+                        for (VmHostFileVO file : entry.getValue()) {
+                            KVMAgentCommands.VmHostFileTO to = new KVMAgentCommands.VmHostFileTO();
+                            to.setPath(file.getPath());
+                            to.setType(file.getType().toString());
+                            to.setOperation(VmHostFileOperation.Delete.toString());
+                            fileTOs.add(to);
+                        }
+
+                        KvmSecureBootExtensions.RewriteVmHostFilesContext ctx =
+                                new KvmSecureBootExtensions.RewriteVmHostFilesContext();
+                        ctx.hostUuid = entry.getKey();
+                        ctx.hostFiles = fileTOs;
+
+                        secureBootExtensions.rewriteVmHostFiles(ctx, new Completion(whileCompletion) {
+                            @Override
+                            public void success() {
+                                context.hostFileUuidListDeleteSuccessfully.addAll(
+                                        transform(entry.getValue(), VmHostFileVO::getUuid));
+                                whileCompletion.done();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                context.errorsOnSendCmd.add(errorCode.withOpaque("host.uuid", entry.getKey()));
+                                whileCompletion.done();
+                            }
+                        });
+                    }).run(new WhileDoneCompletion(trigger) {
+                        @Override
+                        public void done(ErrorCodeList errorCodeList) {
+                            trigger.next();
+                        }
+                    });
+                })
+                .build())
+            .then(Flow.of("remove-db-records")
+                .skipIf(data -> context.hostFileUuidListDeleteSuccessfully.isEmpty())
+                .handle(trigger -> {
+                    SQL.New(VmHostFileVO.class)
+                            .in(VmHostFileVO_.uuid, context.hostFileUuidListDeleteSuccessfully)
+                            .delete();
+                    trigger.next();
+                })
+                .build())
+            .then(Flow.of("check-if-any-error-in-command-sending")
+                .handle(trigger -> {
+                    // If any host failed to delete, abort the chain to preserve
+                    // the last-modified TPM record as a recovery point.
+                    if (context.errorsOnSendCmd.hasError()) {
+                        if (context.errorsOnSendCmd.size() == 1) {
+                            trigger.fail(context.errorsOnSendCmd.getCauses().get(0));
+                        } else {
+                            trigger.fail(operr("failed to delete TPM files on multiple hosts")
+                                    .withOpaque("vm.uuid", vmUuid)
+                                    .withCause(context.errorsOnSendCmd.getCauses()));
+                        }
+                        return;
+                    }
+                    trigger.next();
+                })
+                .build())
+            .then(Flow.of("send-delete-commands-to-hosts-for-last-modified")
+                .skipIf(data -> context.hostFileToDeleteLast == null)
+                .handle(trigger -> {
+                    KVMAgentCommands.VmHostFileTO to = new KVMAgentCommands.VmHostFileTO();
+                    to.setPath(context.hostFileToDeleteLast.getPath());
+                    to.setType(context.hostFileToDeleteLast.getType().toString());
+                    to.setOperation(VmHostFileOperation.Delete.toString());
+
+                    KvmSecureBootExtensions.RewriteVmHostFilesContext ctx =
+                            new KvmSecureBootExtensions.RewriteVmHostFilesContext();
+                    ctx.hostUuid = context.hostFileToDeleteLast.getHostUuid();
+                    ctx.hostFiles = list(to);
+
+                    secureBootExtensions.rewriteVmHostFiles(ctx, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode.withOpaque("host.uuid", ctx.hostUuid));
+                        }
+                    });
+                })
+                .build())
+            .then(Flow.of("remove-db-records-for-remains")
+                .skipIf(data -> context.hostFileToDeleteLast == null)
+                .handle(trigger -> {
+                    new SQLBatch() {
+                        @Override
+                        protected void scripts() {
+                            sql(VmHostFileVO.class)
+                                    .eq(VmHostFileVO_.uuid, context.hostFileToDeleteLast.getUuid())
+                                    .delete();
+                            sql(VmHostBackupFileVO.class)
+                                    .eq(VmHostBackupFileVO_.resourceUuid, vmUuid)
+                                    .eq(VmHostBackupFileVO_.type, VmHostFileType.TpmState)
+                                    .delete();
+                        }
+                    }.execute();
+                    trigger.next();
+                })
+                .build())
+            .propagateExceptionTo(completion)
+            .done(completion::success)
+            .error(completion::fail)
+            .start();
     }
 
     private void handle(APIGetTpmCapabilityMsg msg) {
