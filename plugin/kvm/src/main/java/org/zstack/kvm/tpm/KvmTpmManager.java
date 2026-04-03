@@ -1,6 +1,7 @@
 package org.zstack.kvm.tpm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend;
 import org.zstack.compute.vm.devices.VmTpmManager;
 import org.zstack.core.asyncbatch.While;
@@ -233,28 +234,30 @@ public class KvmTpmManager extends AbstractService {
                 .build())
             .then(Flow.of("create-tpm-db-records")
                 .handle(trigger -> {
-                    try {
-                        TpmVO tpm = vmTpmManager.persistTpmVO(context.tpmUuid, context.vmInstanceUuid);
-                        context.createdTpmUuid = tpm.getUuid();
-                        context.tpmCreated = true;
-                        if (context.keyProviderUuid != null) {
-                            tpmKeyBackend.attachKeyProviderToTpm(context.createdTpmUuid, context.keyProviderUuid);
-                            context.keyProviderAttached = true;
-                        }
-                        trigger.next();
-                    } catch (Exception e) {
-                        trigger.fail(operr("failed to add TPM to vm[uuid:%s]: %s", context.vmInstanceUuid, e.getMessage()));
-                    }
+                    TpmVO tpm = vmTpmManager.persistTpmVO(context.tpmUuid, context.vmInstanceUuid);
+                    context.createdTpmUuid = tpm.getUuid();
+                    context.tpmCreated = true;
+                    trigger.next();
                 })
                 .rollback(trigger -> {
-                    try {
-                        if (context.keyProviderAttached && context.createdTpmUuid != null) {
-                            tpmKeyBackend.detachKeyProviderFromTpm(context.createdTpmUuid);
-                        }
-                    } finally {
-                        if (context.tpmCreated && context.createdTpmUuid != null) {
-                            vmTpmManager.deleteTpmVO(context.createdTpmUuid);
-                        }
+                    if (context.tpmCreated && context.createdTpmUuid != null) {
+                        vmTpmManager.deleteTpmVO(context.createdTpmUuid);
+                    }
+                    trigger.rollback();
+                })
+                .build())
+            .then(Flow.of("attach-key-provider-to-tpm")
+                .skipIf(data -> VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class))
+                .handle(trigger -> {
+                    if (context.keyProviderUuid != null) {
+                        tpmKeyBackend.attachKeyProviderToTpm(context.createdTpmUuid, context.keyProviderUuid);
+                        context.keyProviderAttached = true;
+                    }
+                    trigger.next();
+                })
+                .rollback(trigger -> {
+                    if (context.keyProviderAttached && context.createdTpmUuid != null) {
+                        tpmKeyBackend.detachKeyProviderFromTpm(context.createdTpmUuid);
                     }
                     trigger.rollback();
                 })
