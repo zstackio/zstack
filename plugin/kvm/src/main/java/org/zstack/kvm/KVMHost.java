@@ -4436,6 +4436,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setAdditionalQmp(VmGlobalConfig.ADDITIONAL_QMP.value(Boolean.class));
         cmd.setApplianceVm(spec.getVmInventory().getType().equals("ApplianceVm"));
         cmd.setSystemSerialNumber(makeAndSaveVmSystemSerialNumber(spec.getVmInventory().getUuid()));
+        cmd.setGuestOsType(spec.getVmInventory().getGuestOsType());
         if (!NetworkGlobalProperty.CHASSIS_ASSET_TAG.isEmpty()) {
             cmd.setChassisAssetTag(NetworkGlobalProperty.CHASSIS_ASSET_TAG);
         }
