@@ -2312,6 +2312,8 @@ public class KVMAgentCommands {
         private boolean consoleLogToFile;
         @GrayVersion(value = "5.0.0")
         private boolean acpi;
+        @GrayVersion(value = "5.5.12")
+        private boolean pmu = true;
         @GrayVersion(value = "5.0.0")
         private boolean x2apic = true;
         // cpuid hypervisor feature
@@ -2833,6 +2835,14 @@ public class KVMAgentCommands {
 
         public void setAcpi(boolean acpi) {
             this.acpi = acpi;
+        }
+
+        public boolean isPmu() {
+            return pmu;
+        }
+
+        public void setPmu(boolean pmu) {
+            this.pmu = pmu;
         }
 
         public boolean getX2apic() {
