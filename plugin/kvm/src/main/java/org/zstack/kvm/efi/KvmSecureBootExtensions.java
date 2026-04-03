@@ -168,6 +168,11 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
             return;
         }
 
+        if (dstHostUuid == null) {
+            completion.success();
+            return;
+        }
+
         String tpmUuid = Q.New(TpmVO.class)
                 .eq(TpmVO_.vmInstanceUuid, vm.getUuid())
                 .select(TpmVO_.uuid)
