@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
@@ -9,6 +10,7 @@ import org.zstack.header.rest.RestResponse;
  */
 @RestResponse(fieldsTo = {"imageData"})
 public class APITakeVmConsoleScreenshotEvent extends APIEvent {
+    @NoLogging(type = NoLogging.Type.LongText)
     private String imageData;
 
     public APITakeVmConsoleScreenshotEvent() {

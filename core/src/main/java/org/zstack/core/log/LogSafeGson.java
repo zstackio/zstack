@@ -99,6 +99,10 @@ public class LogSafeGson {
                 return "*****";
             } else if (annotation.type().tag()) {
                 return tagInfoHider.call(raw);
+            } else if (annotation.type().longText()) {
+                if (raw == null)
+                    return null;
+                return (raw.length() < 20) ? raw : raw.substring(0, 10) + "..." + raw.substring(raw.length() - 10);
             } else {
                 return Utils.getLogMaskWords().getOrDefault(raw, uriPattern.matcher(raw).replaceFirst(":*****@"));
             }

@@ -26,7 +26,9 @@ public @interface NoLogging {
     enum Type {
         Simple,
         Tag,
-        Uri;
+        Uri,
+        LongText,
+        ;
 
         public boolean simple() {
             return this == Simple;
@@ -38,6 +40,10 @@ public @interface NoLogging {
 
         public boolean uri() {
             return this == Uri;
+        }
+
+        public boolean longText() {
+            return this == LongText;
         }
     }
 
