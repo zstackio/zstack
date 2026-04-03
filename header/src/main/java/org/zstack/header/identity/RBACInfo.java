@@ -12,6 +12,7 @@ public class RBACInfo implements RBACDescription {
                 .name("identity")
                 .adminOnlyAPIs(
                         APICreateAccountMsg.class,
+                        APIQueryAccountMsg.class,
                         APIShareResourceMsg.class,
                         APIRevokeResourceSharingMsg.class,
                         APIUpdateQuotaMsg.class,
