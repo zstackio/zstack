@@ -85,6 +85,7 @@ import static org.zstack.header.vm.additions.VmHostFileSyncReason.PostMigration;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.PrepareReRead;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.PrepareRead;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.ResourceRelease;
+import static org.zstack.header.vm.additions.VmHostFileSyncReason.SnapshotGroupOnlineBackup;
 import static org.zstack.kvm.KVMConstant.*;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -699,7 +700,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
             }
         }
 
-        syncMsg.setSyncReason("snapshot-group-online-backup");
+        syncMsg.setSyncReason(SnapshotGroupOnlineBackup.reason());
         syncMsg.setSyncToBackup(true);
         syncMsg.setBackupResourceUuid(tempResourceUuid);
         bus.makeLocalServiceId(syncMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
