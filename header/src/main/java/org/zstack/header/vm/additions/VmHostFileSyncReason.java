@@ -8,6 +8,9 @@ public enum VmHostFileSyncReason {
     VmShutdown("on libvirt shutdown event"),
     PostClone("on post-clone (from dest host)"),
     Restore("restore"),
+    SnapshotGroupOnlineBackup("snapshot group online backup"),
+    RevertSnapshot("revert snapshot"),
+    VolumeBackup("volume backup"),
     ;
 
     public final String detail;

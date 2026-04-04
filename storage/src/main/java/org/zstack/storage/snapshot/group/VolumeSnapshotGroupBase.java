@@ -35,6 +35,7 @@ import org.zstack.header.vm.RestoreVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostBackupFileVO_;
+import org.zstack.header.vm.additions.VmHostFileSyncReason;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.VolumeType;
@@ -410,7 +411,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                     RestoreVmHostFileMsg restoreMsg = new RestoreVmHostFileMsg();
                     restoreMsg.setVmInstanceUuid(vmUuid);
                     restoreMsg.setSnapshotGroupUuid(self.getUuid());
-                    restoreMsg.setSyncReason("revert snapshot");
+                    restoreMsg.setSyncReason(VmHostFileSyncReason.RevertSnapshot.reason());
                     bus.makeLocalServiceId(restoreMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
                     bus.send(restoreMsg, new CloudBusCallBack(trigger) {
                         @Override
