@@ -7,6 +7,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 import java.util.concurrent.TimeUnit;
 
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit;
         method = HttpMethod.PUT,
         responseClass = APIFlattenVolumeEvent.class
 )
+@MetadataImpact(value = MetadataImpact.Impact.STORAGE, resolver = "VolumeUuidToVmUuidResolver", field = "uuid", updateOnFailure = true)
 public class APIFlattenVolumeMsg extends APIMessage implements VolumeMessage, APIAuditor {
     @APIParam(resourceType = VolumeVO.class)
     private String uuid;

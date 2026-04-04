@@ -21,7 +21,9 @@ import org.zstack.core.step.StepRunCondition;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.header.core.*;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -39,6 +41,8 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.metadata.UpdateVmInstanceMetadataOnPrimaryStorageMsg;
+import org.zstack.header.vm.metadata.UpdateVmInstanceMetadataOnPrimaryStorageReply;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
@@ -129,7 +133,12 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/nfsprimarystorage/kvmhost/download/progress";
     public static final String CREATE_VOLUME_FROM_TEMPLATE_PATH = "/nfsprimarystorage/sftp/createvolumefromtemplate";
     public static final String GET_QCOW2_HASH_VALUE_PATH = "/nfsprimarystorage/getqcow2hash";
+    public static final String WRITE_VM_METADATA_PATH = "/nfsprimarystorage/vm/metadata/write";
 
+    public static final String GET_VM_INSTANCE_METADATA_PATH = "/nfsprimarystorage/vm/metadata/get";
+    public static final String SCAN_VM_METADATA_PATH = "/nfsprimarystorage/vm/metadata/scan";
+    public static final String CLEANUP_VM_METADATA_PATH = "/nfsprimarystorage/vm/metadata/cleanup";
+    public static final String NFS_PREFIX_REBASE_BACKING_FILES_PATH = "/nfsprimarystorage/snapshot/prefixrebasebackingfiles";
 
     //////////////// For unit test //////////////////////////
     private boolean syncGetCapacity = false;
@@ -2048,6 +2057,176 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 CommitVolumeSnapshotOnPrimaryStorageReply reply = new CommitVolumeSnapshotOnPrimaryStorageReply();
                 reply.setSize(rsp.getActualSize());
                 completion.success(reply);
+            }
+        });
+    }
+
+    @Override
+    public void handle(UpdateVmInstanceMetadataOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<UpdateVmInstanceMetadataOnPrimaryStorageReply> completion) {
+        WriteVmMetadataCmd cmd = new WriteVmMetadataCmd();
+        cmd.setUuid(msg.getPrimaryStorageUuid());
+        cmd.metadata = msg.getMetadata();
+        cmd.metadataPath = msg.getMetadataPath();
+        cmd.vmUuid = msg.getVmInstanceUuid();
+        cmd.vmName = msg.getVmInstanceName();
+        cmd.vmCategory = msg.getVmCategory();
+        cmd.architecture = msg.getArchitecture();
+        cmd.schemaVersion = msg.getSchemaVersion();
+
+        KVMHostAsyncHttpCallMsg hmsg = new KVMHostAsyncHttpCallMsg();
+        hmsg.setCommand(cmd);
+        hmsg.setPath(WRITE_VM_METADATA_PATH);
+        hmsg.setHostUuid(hostUuid);
+        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(hmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                WriteVmMetadataRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(WriteVmMetadataRsp.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(operr("failed to write vm metadata on nfs via host[uuid:%s]: %s", hostUuid, rsp.getError()));
+                    return;
+                }
+
+                completion.success(new UpdateVmInstanceMetadataOnPrimaryStorageReply());
+            }
+        });
+    }
+
+    @Override
+    public void handle(GetVmInstanceMetadataFromPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<GetVmInstanceMetadataFromPrimaryStorageReply> completion) {
+        NfsPrimaryStorageKVMBackendCommands.GetVmInstanceMetadataCmd cmd = new NfsPrimaryStorageKVMBackendCommands.GetVmInstanceMetadataCmd();
+        cmd.setUuid(msg.getPrimaryStorageUuid());
+        cmd.metadataPath = msg.getMetadataPath();
+
+        KVMHostAsyncHttpCallMsg hmsg = new KVMHostAsyncHttpCallMsg();
+        hmsg.setCommand(cmd);
+        hmsg.setPath(GET_VM_INSTANCE_METADATA_PATH);
+        hmsg.setHostUuid(hostUuid);
+        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(hmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                GetVmInstanceMetadataRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(GetVmInstanceMetadataRsp.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(operr("failed to get vm instance metadata on nfs via host[uuid:%s]: %s", hostUuid, rsp.getError()));
+                    return;
+                }
+
+                GetVmInstanceMetadataFromPrimaryStorageReply r = new GetVmInstanceMetadataFromPrimaryStorageReply();
+                r.setMetadata(rsp.metadata);
+                completion.success(r);
+            }
+        });
+    }
+
+    @Override
+    public void handle(ScanVmInstanceMetadataFromPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<ScanVmInstanceMetadataFromPrimaryStorageReply> completion) {
+        NfsPrimaryStorageKVMBackendCommands.ScanVmMetadataCmd cmd = new NfsPrimaryStorageKVMBackendCommands.ScanVmMetadataCmd();
+        cmd.setUuid(msg.getPrimaryStorageUuid());
+        cmd.metadataDir = msg.getMetadataDir();
+
+        KVMHostAsyncHttpCallMsg hmsg = new KVMHostAsyncHttpCallMsg();
+        hmsg.setCommand(cmd);
+        hmsg.setPath(SCAN_VM_METADATA_PATH);
+        hmsg.setHostUuid(hostUuid);
+        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(hmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                NfsPrimaryStorageKVMBackendCommands.ScanVmMetadataRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(NfsPrimaryStorageKVMBackendCommands.ScanVmMetadataRsp.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(operr("failed to scan vm instance metadata on nfs via host[uuid:%s]: %s", hostUuid, rsp.getError()));
+                    return;
+                }
+
+                ScanVmInstanceMetadataFromPrimaryStorageReply r = new ScanVmInstanceMetadataFromPrimaryStorageReply();
+                if (rsp.metadataEntries != null) {
+                    r.setVmInstanceMetadata(rsp.metadataEntries.stream().filter(Objects::nonNull).collect(Collectors.toList()));
+                } else {
+                    r.setVmInstanceMetadata(Collections.emptyList());
+                }
+                completion.success(r);
+            }
+        });
+    }
+
+    @Override
+    public void handle(CleanupVmInstanceMetadataOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<CleanupVmInstanceMetadataOnPrimaryStorageReply> completion) {
+        CleanupVmMetadataCmd cmd = new CleanupVmMetadataCmd();
+        cmd.setUuid(msg.getPrimaryStorageUuid());
+        cmd.metadataPath = msg.getMetadataPath();
+
+        KVMHostAsyncHttpCallMsg hmsg = new KVMHostAsyncHttpCallMsg();
+        hmsg.setCommand(cmd);
+        hmsg.setPath(CLEANUP_VM_METADATA_PATH);
+        hmsg.setHostUuid(hostUuid);
+        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(hmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                CleanupVmMetadataRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(CleanupVmMetadataRsp.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(operr("failed to cleanup vm metadata on nfs via host[uuid:%s]: %s", hostUuid, rsp.getError()));
+                    return;
+                }
+
+                CleanupVmInstanceMetadataOnPrimaryStorageReply r = new CleanupVmInstanceMetadataOnPrimaryStorageReply();
+                completion.success(r);
+            }
+        });
+    }
+
+    @Override
+    public void handle(RebaseVolumeBackingFileOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<RebaseVolumeBackingFileOnPrimaryStorageReply> completion) {
+        NfsPrimaryStorageKVMBackendCommands.PrefixRebaseBackingFilesCmd cmd = new NfsPrimaryStorageKVMBackendCommands.PrefixRebaseBackingFilesCmd();
+        cmd.filePaths = msg.getInstallPaths();
+        cmd.oldPrefix = msg.getOldPrefix();
+        cmd.newPrefix = msg.getNewPrefix();
+        cmd.setUuid(msg.getPrimaryStorageUuid());
+
+        KVMHostAsyncHttpCallMsg hmsg = new KVMHostAsyncHttpCallMsg();
+        hmsg.setCommand(cmd);
+        hmsg.setPath(NFS_PREFIX_REBASE_BACKING_FILES_PATH);
+        hmsg.setHostUuid(hostUuid);
+        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(hmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                NfsPrimaryStorageKVMBackendCommands.PrefixRebaseBackingFilesRsp rsp =
+                        ((KVMHostAsyncHttpCallReply) reply).toResponse(NfsPrimaryStorageKVMBackendCommands.PrefixRebaseBackingFilesRsp.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(operr("failed to prefix rebase backing files on nfs via host[uuid:%s]: %s", hostUuid, rsp.getError()));
+                    return;
+                }
+
+                RebaseVolumeBackingFileOnPrimaryStorageReply r = new RebaseVolumeBackingFileOnPrimaryStorageReply();
+                r.setRebasedCount(rsp.rebasedCount);
+                completion.success(r);
             }
         });
     }

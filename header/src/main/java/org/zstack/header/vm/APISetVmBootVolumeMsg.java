@@ -4,6 +4,7 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 import org.zstack.header.volume.VolumeVO;
 
 /**
@@ -16,6 +17,7 @@ import org.zstack.header.volume.VolumeVO;
         method = HttpMethod.PUT,
         responseClass = APISetVmBootVolumeEvent.class
 )
+@MetadataImpact(value = MetadataImpact.Impact.STORAGE, resolver = "VmUuidDirectResolver", field = "vmInstanceUuid")
 public class APISetVmBootVolumeMsg extends APIMessage implements VmInstanceMessage {
     @APIParam(resourceType = VmInstanceVO.class)
     private String vmInstanceUuid;

@@ -9,6 +9,7 @@ import org.zstack.header.other.APIAuditor;
 import org.zstack.header.other.APIMultiAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,7 @@ import java.util.List;
         responseClass = APIChangeVmNicStateEvent.class,
         isAction = true
 )
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "NicUuidToVmUuidResolver", field = "vmNicUuid")
 public class APIChangeVmNicStateMsg extends APIMessage implements VmInstanceMessage, APIMultiAuditor {
     @APIParam(resourceType = VmNicVO.class)
     private String vmNicUuid;

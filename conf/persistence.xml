@@ -221,5 +221,7 @@
         <class>org.zstack.header.resourceattribute.entity.ResourceAttributeKeyResourceTypeVO</class>
         <class>org.zstack.header.resourceattribute.entity.ResourceAttributeConstraintVO</class>
         <class>org.zstack.softwarePackage.header.SoftwarePackageVO</class>
+        <class>org.zstack.header.vm.metadata.VmMetadataDirtyVO</class>
+        <class>org.zstack.header.vm.metadata.VmMetadataFlushStateVO</class>
     </persistence-unit>
 </persistence>

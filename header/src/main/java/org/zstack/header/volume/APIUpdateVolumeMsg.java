@@ -4,6 +4,7 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 /**
  * Created by frank on 6/14/2015.
@@ -14,6 +15,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIUpdateVolumeEvent.class,
         isAction = true
 )
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "VolumeUuidToVmUuidResolver", field = "uuid")
 public class APIUpdateVolumeMsg extends APIMessage implements VolumeMessage {
     @APIParam(resourceType = VolumeVO.class)
     private String uuid;

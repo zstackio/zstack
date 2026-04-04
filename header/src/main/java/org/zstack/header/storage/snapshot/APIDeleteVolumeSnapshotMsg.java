@@ -4,6 +4,7 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +45,7 @@ import static org.zstack.utils.CollectionDSL.list;
         responseClass = APIDeleteVolumeSnapshotEvent.class
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 6)
+@MetadataImpact(value = MetadataImpact.Impact.STORAGE, resolver = "SnapshotUuidToVmUuidResolver", field = "uuid", updateOnFailure = true)
 public class APIDeleteVolumeSnapshotMsg extends APIDeleteMessage implements DeleteVolumeSnapshotMessage {
     /**
      * @desc volume snapshot uuid

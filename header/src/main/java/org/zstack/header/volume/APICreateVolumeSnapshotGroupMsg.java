@@ -13,6 +13,7 @@ import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefInventory;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeUnit;
         responseClass = APICreateVolumeSnapshotGroupEvent.class,
         parameterName = "params"
 )
+@MetadataImpact(value = MetadataImpact.Impact.STORAGE, resolver = "VolumeUuidToVmUuidResolver", field = "rootVolumeUuid", updateOnFailure = true)
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements VolumeMessage, CreateVolumeSnapshotGroupMessage, APIMultiAuditor {
     /**

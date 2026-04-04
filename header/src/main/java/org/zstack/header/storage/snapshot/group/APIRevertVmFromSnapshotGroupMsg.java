@@ -14,6 +14,7 @@ import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.snapshot.SnapshotBackendOperation;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 import java.util.concurrent.TimeUnit;
 
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 )
 
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 24)
+@MetadataImpact(value = MetadataImpact.Impact.STORAGE, resolver = "SnapshotGroupUuidToVmUuidResolver", field = "uuid", updateOnFailure = true)
 public class APIRevertVmFromSnapshotGroupMsg extends APIMessage implements VolumeSnapshotGroupMessage, APIAuditor {
     @APIParam(resourceType = VolumeSnapshotGroupVO.class)
     private String uuid;

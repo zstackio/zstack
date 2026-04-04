@@ -23,14 +23,22 @@ import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.cdrom.*;
+import org.zstack.header.vm.APIRegisterVmInstanceFromMetadataMsg;
 import org.zstack.header.vm.devices.VmInstanceResourceMetadataGroupVO;
 import org.zstack.header.vm.devices.VmInstanceResourceMetadataGroupVO_;
+import org.zstack.header.vm.metadata.VmMetadataPathBuildExtensionPoint;
 import org.zstack.header.volume.*;
 import org.zstack.network.l2.L2NetworkHostUtils;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -166,6 +174,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIConvertTemplatedVmInstanceToVmInstanceMsg) msg);
         } else if (msg instanceof APIDeleteTemplatedVmInstanceMsg) {
             validate((APIDeleteTemplatedVmInstanceMsg) msg);
+        } else if (msg instanceof APIRegisterVmInstanceFromMetadataMsg) {
+            validate((APIRegisterVmInstanceFromMetadataMsg) msg);
         }
 
         if (msg instanceof NewVmInstanceMessage2) {
@@ -1318,5 +1328,66 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     "vm[uuid:%s] can only fstrim when state is Running, current state is %s", msg.getUuid(), state));
         }
         msg.setHostUuid(t.get(1, String.class));
+    }
+
+    private void validate(APIRegisterVmInstanceFromMetadataMsg msg) {
+        String path = msg.getMetadataPath();
+        if (StringUtils.isEmpty(path)) {
+            throw new ApiMessageInterceptionException(argerr("metadataPath cannot be empty or null"));
+        }
+
+        // Delegate path validation to the storage-type-specific extension
+        String psUuid = msg.getPrimaryStorageUuid();
+        String psType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type).eq(PrimaryStorageVO_.uuid, psUuid).findValue();
+        if (psType == null) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "primary storage[uuid:%s] not found", psUuid));
+        }
+
+        VmMetadataPathBuildExtensionPoint ext = pluginRgty.getExtensionFromMap(psType, VmMetadataPathBuildExtensionPoint.class);
+        if (ext == null) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "primary storage[uuid:%s, type:%s] does not support vm metadata", psUuid, psType));
+        }
+
+        String error = ext.validateMetadataPath(psUuid, path);
+        if (error != null) {
+            throw new ApiMessageInterceptionException(argerr("%s", error));
+        }
+
+        boolean psAttachedToCluster = Q.New(PrimaryStorageClusterRefVO.class)
+                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, psUuid)
+                .eq(PrimaryStorageClusterRefVO_.clusterUuid, msg.getClusterUuid())
+                .isExists();
+        if (!psAttachedToCluster) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "primary storage[uuid:%s] is not attached to cluster[uuid:%s]",
+                    psUuid, msg.getClusterUuid()));
+        }
+
+        if (msg.getHostUuid() != null) {
+            boolean hostAvailable = Q.New(HostVO.class)
+                    .eq(HostVO_.uuid, msg.getHostUuid())
+                    .eq(HostVO_.clusterUuid, msg.getClusterUuid())
+                    .eq(HostVO_.state, HostState.Enabled)
+                    .eq(HostVO_.status, HostStatus.Connected)
+                    .isExists();
+            if (!hostAvailable) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "host[uuid:%s] is not in cluster[uuid:%s] or not Enabled/Connected", msg.getHostUuid(), msg.getClusterUuid()));
+            }
+        } else {
+            boolean hasHost = Q.New(HostVO.class)
+                    .eq(HostVO_.clusterUuid, msg.getClusterUuid())
+                    .eq(HostVO_.state, HostState.Enabled)
+                    .eq(HostVO_.status, HostStatus.Connected)
+                    .isExists();
+            if (!hasHost) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "no available host found in cluster[uuid:%s], " +
+                                "please specify hostUuid or ensure there is at least one connected host in the cluster",
+                        msg.getClusterUuid()));
+            }
+        }
     }
 }

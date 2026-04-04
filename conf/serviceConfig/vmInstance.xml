@@ -264,4 +264,16 @@
     <message>
         <name>org.zstack.header.vm.APIDeleteTemplatedVmInstanceMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APICleanupVmInstanceMetadataMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIRegisterVmInstanceFromMetadataMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIUpdateVmInstanceMetadataMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIGetVmInstanceMetadataFromPrimaryStorageMsg</name>
+    </message>
 </service>
