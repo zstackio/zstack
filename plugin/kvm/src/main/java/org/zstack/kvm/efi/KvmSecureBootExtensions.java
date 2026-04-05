@@ -163,12 +163,21 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
     }
 
     @Override
+    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid, Completion completion) {
+        completion.success(); // use preVmMigration instead of preMigrateVm to prevent from handle twice
+    }
+
+    @Override
     public void preVmMigration(VmInstanceInventory vm, VmMigrationType type, String dstHostUuid, Completion completion) {
         if (HostMigration != type && PrimaryStorageMigration != type) {
             completion.success();
             return;
         }
 
+        prepareNvRamBeforeMigration(vm, dstHostUuid, completion);
+    }
+
+    private void prepareNvRamBeforeMigration(VmInstanceInventory vm, String dstHostUuid, Completion completion) {
         if (dstHostUuid == null) {
             completion.success();
             return;
