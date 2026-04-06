@@ -11,6 +11,7 @@ public enum VmHostFileSyncReason {
     SnapshotGroupOnlineBackup("snapshot group online backup"),
     RevertSnapshot("revert snapshot"),
     VolumeBackup("volume backup"),
+    BeforeHaStart("on before HA start (from last host)"),
     ;
 
     public final String detail;
