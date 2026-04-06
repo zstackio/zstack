@@ -31,6 +31,7 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
+import org.zstack.header.vm.BeforeHaStartVmInstanceExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -69,6 +70,7 @@ import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Base64;
@@ -82,6 +84,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.header.vm.VmMigrationType.HostMigration;
 import static org.zstack.header.vm.VmMigrationType.PrimaryStorageMigration;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.PostMigration;
+import static org.zstack.header.vm.additions.VmHostFileSyncReason.BeforeHaStart;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.PrepareReRead;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.PrepareRead;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.ResourceRelease;
@@ -96,7 +99,8 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         AfterReimageVmInstanceExtensionPoint,
         VmReleaseResourceExtensionPoint,
         VmInstanceMigrateExtensionPoint,
-        VolumeSnapshotCreationExtensionPoint {
+        VolumeSnapshotCreationExtensionPoint,
+        BeforeHaStartVmInstanceExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmSecureBootExtensions.class);
 
     @Autowired
@@ -594,6 +598,66 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 if (!reply.isSuccess()) {
                     logger.warn(String.format("failed to sync VM host file[vmUuid=%s] from host[uuid=%s] but still continue: %s",
                             vmUuid, hostUuid, reply.getError().getReadableDetails()));
+                }
+                completion.success();
+            }
+        });
+    }
+
+    @Override
+    public void beforeHaStartVmInstance(String vmUuid, String judgerClassName, List<String> softAvoidHostUuids, Completion completion) {
+        Tuple hostUuidTuple = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.hostUuid, VmInstanceVO_.lastHostUuid)
+                .eq(VmInstanceVO_.uuid, vmUuid)
+                .findTuple();
+        if (hostUuidTuple == null) {
+            completion.success();
+            return;
+        }
+
+        String hostUuid = hostUuidTuple.get(0, String.class);
+        final String finalHostUuid = (hostUuid == null) ? hostUuidTuple.get(1, String.class) : hostUuid;
+        if (finalHostUuid == null) {
+            logger.debug("skip HA file sync: VM has no host/lastHost record");
+            completion.success();
+            return;
+        }
+
+        List<VmHostFileVO> vmHostFiles = Q.New(VmHostFileVO.class)
+                .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
+                .eq(VmHostFileVO_.hostUuid, finalHostUuid)
+                .list();
+        if (vmHostFiles.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        logger.info(String.format("try to sync VM host file[vmUuid=%s] from last host[uuid=%s] before HA start",
+                vmUuid, finalHostUuid));
+        SyncVmHostFilesFromHostMsg syncMsg = new SyncVmHostFilesFromHostMsg();
+        syncMsg.setHostUuid(finalHostUuid);
+        syncMsg.setVmUuid(vmUuid);
+        syncMsg.setSyncReason(BeforeHaStart.reason());
+
+        for (VmHostFileVO file : vmHostFiles) {
+            if (file.getType() == VmHostFileType.NvRam) {
+                syncMsg.setNvRamPath(file.getPath());
+            } else if (file.getType() == VmHostFileType.TpmState) {
+                syncMsg.setTpmStateFolder(file.getPath());
+            } else {
+                logger.warn(String.format(
+                        "unsupported vm host file type: %s, skip syncing for VM[uuid:%s] from host[uuid:%s]",
+                        file.getType(), vmUuid, finalHostUuid));
+            }
+        }
+
+        bus.makeLocalServiceId(syncMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
+        bus.send(syncMsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("failed to sync VM host file[vmUuid=%s] from last host[uuid=%s] before HA start, but tolerated: %s",
+                            vmUuid, finalHostUuid, reply.getError().getReadableDetails()));
                 }
                 completion.success();
             }
