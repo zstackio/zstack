@@ -353,9 +353,23 @@ class KVMSimulator implements Simulator {
         spec.simulator(KVMConstant.KVM_ENSURE_SECRET_PATH) { HttpEntity<String> e ->
             String hostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
             SecretHostDefineCmd cmd = JSONObjectUtil.toObject(e.body, SecretHostDefineCmd.class)
-            String cacheKey = String.format("%s::%s", hostUuid ?: "", cmd?.vmUuid ?: "")
+            String cacheKey = buildHostSecretCacheKey(hostUuid, cmd?.vmUuid, cmd?.purpose, cmd?.keyVersion)
             def rsp = new SecretHostDefineResponse()
             rsp.secretUuid = ensureSecretUuidCache.computeIfAbsent(cacheKey) { Platform.uuid }
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_GET_SECRET_PATH) { HttpEntity<String> e ->
+            String hostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+            SecretHostGetCmd cmd = JSONObjectUtil.toObject(e.body, SecretHostGetCmd.class)
+            String cacheKey = buildHostSecretCacheKey(hostUuid, cmd?.vmUuid, cmd?.purpose, cmd?.keyVersion)
+            def rsp = new SecretHostGetResponse()
+            String secretUuid = ensureSecretUuidCache.get(cacheKey)
+            if (secretUuid == null) {
+                rsp.setError("KEY_AGENT_SECRET_NOT_FOUND")
+            } else {
+                rsp.secretUuid = secretUuid
+            }
             return rsp
         }
 
@@ -742,5 +756,13 @@ class KVMSimulator implements Simulator {
         spec.simulator(KVMConstant.BACKUP_VM_HOST_FILE_PATH) { HttpEntity<String> e ->
             return new BackupVmHostFileResponse()
         }
+    }
+
+    private static String buildHostSecretCacheKey(String hostUuid, String vmUuid, String purpose, Integer keyVersion) {
+        return String.format("%s::%s::%s::%s",
+                hostUuid ?: "",
+                vmUuid ?: "",
+                purpose ?: "",
+                keyVersion == null ? "" : String.valueOf(keyVersion))
     }
 }

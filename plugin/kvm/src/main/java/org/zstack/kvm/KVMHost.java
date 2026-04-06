@@ -57,6 +57,8 @@ import org.zstack.header.host.*;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
 import org.zstack.header.secret.SecretHostDefineMsg;
 import org.zstack.header.secret.SecretHostDefineReply;
+import org.zstack.header.secret.SecretHostGetMsg;
+import org.zstack.header.secret.SecretHostGetReply;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -750,6 +752,8 @@ public class KVMHost extends HostBase implements Host {
             handle((GetFileDownloadProgressMsg) msg);
         } else if (msg instanceof RestartKvmAgentMsg) {
             handle((RestartKvmAgentMsg) msg);
+        } else if (msg instanceof SecretHostGetMsg) {
+            handle((SecretHostGetMsg) msg);
         } else if (msg instanceof SecretHostDefineMsg) {
             handle((SecretHostDefineMsg) msg);
         } else {
@@ -5310,6 +5314,43 @@ public class KVMHost extends HostBase implements Host {
         }).start();
     }
 
+    private void handle(SecretHostGetMsg msg) {
+        SecretHostGetReply reply = new SecretHostGetReply();
+        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) || msg.getKeyVersion() == null) {
+            reply.setError(operr("vmUuid, purpose and keyVersion are required for get secret"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        String url = buildUrl(KVMConstant.KVM_GET_SECRET_PATH);
+        KVMAgentCommands.SecretHostGetCmd cmd = new KVMAgentCommands.SecretHostGetCmd();
+        cmd.setVmUuid(msg.getVmUuid());
+        cmd.setPurpose(msg.getPurpose());
+        cmd.setKeyVersion(msg.getKeyVersion());
+        restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<KVMAgentCommands.SecretHostGetResponse>(msg, reply) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err != null ? err : operr("get secret on agent failed"));
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(KVMAgentCommands.SecretHostGetResponse rsp) {
+                if (rsp != null && rsp.isSuccess()) {
+                    reply.setSecretUuid(rsp.getSecretUuid());
+                } else {
+                    reply.setError(buildSecretAgentError(rsp, "get secret failed"));
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<KVMAgentCommands.SecretHostGetResponse> getReturnClass() {
+                return KVMAgentCommands.SecretHostGetResponse.class;
+            }
+        }, TimeUnit.SECONDS, KVMConstant.ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
+    }
+
     private void handle(SecretHostDefineMsg msg) {
         SecretHostDefineReply reply = new SecretHostDefineReply();
         if (org.apache.commons.lang.StringUtils.isBlank(msg.getDekBase64())) {
@@ -5317,8 +5358,8 @@ public class KVMHost extends HostBase implements Host {
             bus.reply(msg, reply);
             return;
         }
-        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) || StringUtils.isBlank(msg.getProviderName())) {
-            reply.setError(operr("vmUuid, purpose and providerName are required for ensure secret"));
+        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) || msg.getKeyVersion() == null) {
+            reply.setError(operr("vmUuid, purpose and keyVersion are required for ensure secret"));
             bus.reply(msg, reply);
             return;
         }
@@ -5396,7 +5437,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setEncryptedDek(envelopeDekBase64);
         cmd.setVmUuid(msg.getVmUuid());
         cmd.setPurpose(msg.getPurpose());
-        cmd.setProviderName(msg.getProviderName());
+        cmd.setKeyVersion(msg.getKeyVersion());
         cmd.setDescription(msg.getDescription() != null ? msg.getDescription() : "");
         restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<KVMAgentCommands.SecretHostDefineResponse>(msg, reply) {
             @Override
@@ -5412,14 +5453,7 @@ public class KVMHost extends HostBase implements Host {
                         reply.setSecretUuid(rsp.getSecretUuid());
                     }
                 } else {
-                    if (rsp != null && rsp.getError() != null) {
-                        ErrorCode err = new ErrorCode();
-                        err.setCode(rsp.getError());
-                        err.setDetails(rsp.getError());
-                        reply.setError(err);
-                    } else {
-                        reply.setError(operr(rsp != null ? rsp.getError() : "ensure secret failed"));
-                    }
+                    reply.setError(buildSecretAgentError(rsp, "ensure secret failed"));
                 }
                 bus.reply(msg, reply);
             }
@@ -5429,6 +5463,16 @@ public class KVMHost extends HostBase implements Host {
                 return KVMAgentCommands.SecretHostDefineResponse.class;
             }
         }, TimeUnit.SECONDS, KVMConstant.ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
+    }
+
+    private ErrorCode buildSecretAgentError(KVMAgentCommands.AgentResponse rsp, String defaultMessage) {
+        if (rsp != null && rsp.getError() != null) {
+            ErrorCode err = new ErrorCode();
+            err.setCode(rsp.getError());
+            err.setDetails(rsp.getError());
+            return err;
+        }
+        return operr(defaultMessage);
     }
 
     @Override
