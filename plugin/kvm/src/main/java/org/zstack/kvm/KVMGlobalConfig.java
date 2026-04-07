@@ -174,8 +174,8 @@ public class KVMGlobalConfig {
     public static GlobalConfig VM_EDK_VERSION_CONFIG = new GlobalConfig(CATEGORY, "vm.edk.version");
 
     @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = 86400)
-    @GlobalConfigDef(defaultValue = "1800", type = Long.class,
-            description = "Interval in seconds for syncing VM host files (NvRam, TpmState) from KVM hosts")
+    @GlobalConfigDef(defaultValue = "15", type = Long.class,
+            description = "Interval in seconds for checking VM host files (NvRam, TpmState) on KVM hosts")
     public static GlobalConfig VM_HOST_FILE_SYNC_INTERVAL = new GlobalConfig(CATEGORY, "vm.host.file.sync.interval");
 
     @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = 30)
