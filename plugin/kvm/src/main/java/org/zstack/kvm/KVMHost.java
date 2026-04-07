@@ -33,6 +33,7 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.timeout.TimeHelper;
@@ -195,6 +196,7 @@ public class KVMHost extends HostBase implements Host {
     private String checkSnapshotPath;
     private String mergeSnapshotPath;
     private String hostFactPath;
+    private String updateTlsCertPath;
     private String hostCheckFilePath;
     private String attachIsoPath;
     private String detachIsoPath;
@@ -327,6 +329,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_HOST_FACT_PATH);
         hostFactPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_UPDATE_TLS_CERT_PATH);
+        updateTlsCertPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_HOST_CHECK_FILE_PATH);
@@ -6024,6 +6030,71 @@ public class KVMHost extends HostBase implements Host {
                 });
 
                 flow(createCollectHostFactsFlow(info));
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "update-tls-certs-if-needed";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return CoreGlobalProperty.UNIT_TEST_ON
+                                || !KVMGlobalConfig.LIBVIRT_TLS_ENABLED.value(Boolean.class)
+                                || !KVMGlobalConfig.RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE.value(Boolean.class);
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        String managementIp = getSelf().getManagementIp();
+                        String extraIps = HostSystemTags.EXTRA_IPS.getTokenByResourceUuid(
+                                self.getUuid(), HostSystemTags.EXTRA_IPS_TOKEN);
+
+                        List<String> allIps = new ArrayList<>();
+                        allIps.add(managementIp);
+                        if (extraIps != null && !extraIps.isEmpty()) {
+                            for (String ip : extraIps.split(",")) {
+                                String trimmed = ip.trim();
+                                if (!trimmed.isEmpty() && !allIps.contains(trimmed)) {
+                                    allIps.add(trimmed);
+                                }
+                            }
+                        }
+
+                        String certIps = String.join(",", allIps);
+
+                        String caCert = new JsonLabel().get("libvirtTLSCA", String.class);
+                        String caKey = new JsonLabel().get("libvirtTLSPrivateKey", String.class);
+                        if (caCert == null || caKey == null) {
+                            logger.warn("TLS CA cert/key not found in database, skipping cert update");
+                            trigger.next();
+                            return;
+                        }
+
+                        UpdateTlsCertCmd cmd = new UpdateTlsCertCmd();
+                        cmd.setCaCert(caCert);
+                        cmd.setCaKey(caKey);
+                        cmd.setCertIps(certIps);
+
+                        new Http<>(updateTlsCertPath, cmd, UpdateTlsCertResponse.class)
+                                .call(new ReturnValueCompletion<UpdateTlsCertResponse>(trigger) {
+                                    @Override
+                                    public void success(UpdateTlsCertResponse ret) {
+                                        if (!ret.isSuccess()) {
+                                            logger.warn(String.format("Failed to update TLS certs on host[uuid:%s]: %s",
+                                                    self.getUuid(), ret.getError()));
+                                        }
+                                        // cert update failure should not block reconnect
+                                        trigger.next();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        logger.warn(String.format("Failed to update TLS certs on host[uuid:%s]: %s",
+                                                self.getUuid(), errorCode));
+                                        // cert update failure should not block reconnect
+                                        trigger.next();
+                                    }
+                                });
+                    }
+                });
 
                 if (info.isNewAdded()) {
                     flow(new NoRollbackFlow() {
