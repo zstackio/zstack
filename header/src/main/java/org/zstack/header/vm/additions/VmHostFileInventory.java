@@ -17,6 +17,8 @@ public class VmHostFileInventory {
     private String type;
     private String path;
     private String lastSyncReason;
+    private Timestamp changeDate;
+    private Timestamp lastSyncDate;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -31,6 +33,8 @@ public class VmHostFileInventory {
         inv.setType(vo.getType().toString());
         inv.setPath(vo.getPath());
         inv.setLastSyncReason(vo.getLastSyncReason());
+        inv.setChangeDate(vo.getChangeDate());
+        inv.setLastSyncDate(vo.getLastSyncDate());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
@@ -86,6 +90,22 @@ public class VmHostFileInventory {
 
     public void setLastSyncReason(String lastSyncReason) {
         this.lastSyncReason = lastSyncReason;
+    }
+
+    public Timestamp getChangeDate() {
+        return changeDate;
+    }
+
+    public void setChangeDate(Timestamp changeDate) {
+        this.changeDate = changeDate;
+    }
+
+    public Timestamp getLastSyncDate() {
+        return lastSyncDate;
+    }
+
+    public void setLastSyncDate(Timestamp lastSyncDate) {
+        this.lastSyncDate = lastSyncDate;
     }
 
     public Timestamp getCreateDate() {

@@ -12,6 +12,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
+import org.zstack.core.timeout.TimeHelper;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -101,6 +102,8 @@ public class KvmSecureBootManager extends AbstractService {
     private ResourceConfigFacade resourceConfigFacade;
     @Autowired
     private KvmVmHostFileFactory vmHostFileFactory;
+    @Autowired
+    private TimeHelper timeHelper;
 
     @Override
     public boolean start() {
@@ -217,6 +220,7 @@ public class KvmSecureBootManager extends AbstractService {
             to.setType(VmHostFileType.NvRam.toString());
             cmd.getHostFiles().add(to);
         }
+        long now = timeHelper.getCurrentTimeMillis();
 
         SyncVmHostFilesFromHostReply reply = new SyncVmHostFilesFromHostReply();
         sender.send(cmd, READ_VM_HOST_FILE_PATH, wrapper -> {
@@ -237,7 +241,7 @@ public class KvmSecureBootManager extends AbstractService {
                 if (msg.isSyncToBackup()) {
                     error = syncToBackupFiles(msg, readRsp);
                 } else {
-                    error = syncToHostFiles(msg, cmd, readRsp);
+                    error = syncToHostFiles(msg, cmd, readRsp, now);
                 }
 
                 if (error != null) {
@@ -256,7 +260,8 @@ public class KvmSecureBootManager extends AbstractService {
 
     private ErrorCode syncToHostFiles(SyncVmHostFilesFromHostMsg msg,
                                       KVMAgentCommands.ReadVmHostFileContentCmd cmd,
-                                      KVMAgentCommands.ReadVmHostFileContentResponse readRsp) {
+                                      KVMAgentCommands.ReadVmHostFileContentResponse readRsp,
+                                      long timeBeforeSync) {
         final List<VmHostFileVO> existsFiles = Q.New(VmHostFileVO.class)
                 .eq(VmHostFileVO_.vmInstanceUuid, msg.getVmUuid())
                 .eq(VmHostFileVO_.hostUuid, msg.getHostUuid())
@@ -272,6 +277,7 @@ public class KvmSecureBootManager extends AbstractService {
             existsContentUuid = Collections.emptyList();
         }
 
+        Timestamp syncTime = new Timestamp(timeBeforeSync);
         List<ErrorCode> errors = new ArrayList<>();
         for (String path : cmd.getPaths()) {
             KVMAgentCommands.VmHostFileTO to = findOneOrNull(readRsp.getHostFiles(), item -> item.getPath().equals(path));
@@ -291,13 +297,25 @@ public class KvmSecureBootManager extends AbstractService {
             VmHostFileVO file = findOneOrNull(existsFiles, item -> item.getPath().equals(path));
             boolean fileExists = file != null;
 
-            Timestamp now = Timestamp.from(Instant.now());
             if (fileExists) {
-                SQL.New(VmHostFileVO.class)
-                        .eq(VmHostFileVO_.uuid, file.getUuid())
-                        .set(VmHostFileVO_.lastOpDate, now)
-                        .set(VmHostFileVO_.lastSyncReason, msg.getSyncReason())
-                        .update();
+                String fileUuid = file.getUuid();
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        sql(VmHostFileVO.class)
+                                .eq(VmHostFileVO_.uuid, fileUuid)
+                                .set(VmHostFileVO_.lastSyncReason, msg.getSyncReason())
+                                .set(VmHostFileVO_.lastSyncDate, syncTime)
+                                .set(VmHostFileVO_.lastOpDate, syncTime)
+                                .update();
+                        sql(VmHostFileVO.class)
+                                .eq(VmHostFileVO_.uuid, fileUuid)
+                                .lt(VmHostFileVO_.changeDate, syncTime)
+                                .set(VmHostFileVO_.changeDate, null) // CAS update
+                                .update();
+                    }
+                }.execute();
+
             } else {
                 file = new VmHostFileVO();
                 file.setUuid(Platform.getUuid());
@@ -306,8 +324,10 @@ public class KvmSecureBootManager extends AbstractService {
                 file.setPath(path);
                 file.setType(type);
                 file.setLastSyncReason(msg.getSyncReason());
-                file.setCreateDate(now);
-                file.setLastOpDate(now);
+                file.setLastSyncDate(syncTime);
+                file.setChangeDate(null);
+                file.setLastOpDate(syncTime);
+                file.setCreateDate(syncTime);
                 file.setResourceName(String.format("%s file for %s", type, msg.getVmUuid()));
                 databaseFacade.persist(file);
             }
@@ -318,15 +338,15 @@ public class KvmSecureBootManager extends AbstractService {
                         .eq(VmHostFileContentVO_.uuid, file.getUuid())
                         .set(VmHostFileContentVO_.content, bytes)
                         .set(VmHostFileContentVO_.format, VmHostFileContentFormat.valueOf(to.getFileFormat()))
-                        .set(VmHostFileContentVO_.lastOpDate, now)
+                        .set(VmHostFileContentVO_.lastOpDate, syncTime)
                         .update();
             } else {
                 VmHostFileContentVO content = new VmHostFileContentVO();
                 content.setUuid(file.getUuid());
                 content.setContent(bytes);
                 content.setFormat(VmHostFileContentFormat.valueOf(to.getFileFormat()));
-                content.setCreateDate(now);
-                content.setLastOpDate(now);
+                content.setCreateDate(syncTime);
+                content.setLastOpDate(syncTime);
                 databaseFacade.persist(content);
             }
 
@@ -489,7 +509,7 @@ public class KvmSecureBootManager extends AbstractService {
                     VmHostFileVO file = Q.New(VmHostFileVO.class)
                             .eq(VmHostFileVO_.vmInstanceUuid, msg.getSrcVmUuid())
                             .eq(VmHostFileVO_.type, type)
-                            .orderByDesc(VmHostFileVO_.lastOpDate)
+                            .orderByDesc(VmHostFileVO_.lastSyncDate)
                             .limit(1)
                             .find();
                     if (file == null) {
@@ -884,6 +904,7 @@ public class KvmSecureBootManager extends AbstractService {
                                         .eq(VmHostFileVO_.uuid, currentFile.getUuid())
                                         .set(VmHostFileVO_.lastSyncReason, Restore.reason(msg.getSyncReason()))
                                         .set(VmHostFileVO_.lastOpDate, now)
+                                        .set(VmHostFileVO_.lastSyncDate, now)
                                         .update();
 
                                 VmHostFileContentVO existingContent = contentMap.get(currentFile.getUuid());
@@ -913,6 +934,7 @@ public class KvmSecureBootManager extends AbstractService {
                                 newFile.setType(type);
                                 newFile.setPath(buildPathForVmHostFileType(type, msg.getVmInstanceUuid()));
                                 newFile.setLastSyncReason(Restore.reason(msg.getSyncReason()));
+                                newFile.setLastSyncDate(now);
                                 newFile.setCreateDate(now);
                                 newFile.setLastOpDate(now);
                                 databaseFacade.persist(newFile);
