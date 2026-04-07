@@ -52,6 +52,22 @@ public class VmHostFileInventory  {
         return this.lastSyncReason;
     }
 
+    public java.sql.Timestamp changeDate;
+    public void setChangeDate(java.sql.Timestamp changeDate) {
+        this.changeDate = changeDate;
+    }
+    public java.sql.Timestamp getChangeDate() {
+        return this.changeDate;
+    }
+
+    public java.sql.Timestamp lastSyncDate;
+    public void setLastSyncDate(java.sql.Timestamp lastSyncDate) {
+        this.lastSyncDate = lastSyncDate;
+    }
+    public java.sql.Timestamp getLastSyncDate() {
+        return this.lastSyncDate;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

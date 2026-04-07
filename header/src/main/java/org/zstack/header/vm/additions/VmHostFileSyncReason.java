@@ -12,6 +12,8 @@ public enum VmHostFileSyncReason {
     RevertSnapshot("revert snapshot"),
     VolumeBackup("volume backup"),
     BeforeHaStart("on before HA start (from last host)"),
+    PeriodicDirtyCheck("on periodic dirty check"),
+    PeriodicForceSync("on periodic force sync"),
     ;
 
     public final String detail;
