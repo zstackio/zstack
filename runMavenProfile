@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Auto-detect isolated .m2 in worktree
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+if [ -d "$SCRIPT_DIR/.m2/repository" ]; then
+  MVN_LOCAL="-Dmaven.repo.local=$SCRIPT_DIR/.m2/repository"
+  echo "[runMavenProfile] Using isolated .m2: $SCRIPT_DIR/.m2/repository"
+else
+  MVN_LOCAL=""
+fi
+
 usage() {
   echo "Command line tool of zstack project
 
@@ -65,7 +74,7 @@ Options:
 "
 }
 
-MVNTest="mvn test -Djacoco.skip=true"
+MVNTest="mvn test -Djacoco.skip=true $MVN_LOCAL"
 
 py() {
   if [ -d premium/test-premium ]; then
@@ -111,7 +120,7 @@ openapi() {
   fi
 
   cd tool/doclet
-  mvn -Dmaven.test.skip=true package
+  mvn -Dmaven.test.skip=true package $MVN_LOCAL
   cd -
 
   javadoc -private -doclet org.zstack.tool.doclet.JsonDocLet -docletpath tool/doclet/target/doclet-*-jar-with-dependencies.jar $(find -name *.java)
@@ -172,7 +181,7 @@ mdpremium() {
 
 errorcode() {
   cd test
-  mvn test -Dtest=TestGenerateErrorCodeDoc
+  mvn test -Dtest=TestGenerateErrorCodeDoc $MVN_LOCAL
   cd - >/dev/null
 }
 
@@ -205,7 +214,7 @@ triggerexpression() {
   fi
 
   cd premium/mevoco
-  mvn -P trigger-expression generate-sources
+  mvn -P trigger-expression generate-sources $MVN_LOCAL
   mkdir -p src/main/java/org/zstack/monitoring/trigger/expression/antlr4
   yes | cp target/generated-sources/antlr4/TriggerExpression* src/main/java/org/zstack/monitoring/trigger/expression/antlr4
   rm -f target/generated-sources/antlr4/TriggerExpression*
@@ -214,14 +223,14 @@ triggerexpression() {
 
 zql() {
   cd search
-  mvn -P zql generate-sources
+  mvn -P zql generate-sources $MVN_LOCAL
   if [ $? -ne 0 ]; then
     exit 1
   fi
   mkdir -p src/main/java/org/zstack/zql/antlr4/
   yes | cp target/generated-sources/antlr4/* src/main/java/org/zstack/zql/antlr4/
   rm -f target/generated-sources/antlr4/*
-  mvn -Dmaven.test.skip=true clean install
+  mvn -Dmaven.test.skip=true clean install $MVN_LOCAL
   cd - >/dev/null
 }
 
@@ -232,7 +241,7 @@ cloudwatchfunction() {
   fi
 
   cd premium/zwatch
-  mvn -P function generate-sources
+  mvn -P function generate-sources $MVN_LOCAL
   mkdir -p src/main/java/org/zstack/zwatch/api/antlr4/
   yes | cp target/generated-sources/antlr4/MetricFunction* src/main/java/org/zstack/zwatch/api/antlr4/
   rm -f target/generated-sources/antlr4/MetricFunction*
@@ -246,7 +255,7 @@ zwatchzql() {
   fi
 
   cd premium/zwatch
-  mvn -P function generate-sources
+  mvn -P function generate-sources $MVN_LOCAL
   mkdir -p src/main/java/org/zstack/zwatch/returnwith/antlr4/
   yes | cp target/generated-sources/antlr4/ReturnWith* src/main/java/org/zstack/zwatch/returnwith/antlr4/
   rm -f target/generated-sources/antlr4/ReturnWith*
@@ -499,7 +508,7 @@ clear_git_config() {
 
 run_profile() {
   if test x$1 = x'premium'; then
-    mvn -Dmaven.test.skip=true -P premium clean install
+    mvn -Dmaven.test.skip=true -P premium clean install $MVN_LOCAL
   elif test x$1 = x'md'; then
     md
   elif test x$1 = x'sdk'; then
@@ -549,7 +558,7 @@ run_profile() {
   elif test x$1 = x'gosdk'; then
     gosdk
   else
-    mvn -pl build -P $1 exec:exec -D$1
+    mvn -pl build -P $1 exec:exec -D$1 $MVN_LOCAL
   fi
 }
 
