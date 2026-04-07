@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetGpuDeviceSpecCandidatesAction extends AbstractAction {
+public class QueryDGpuProfileAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetGpuDeviceSpecCandidatesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetGpuDeviceSpecCandidatesResult value;
+        public org.zstack.sdk.QueryDGpuProfileResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,6 @@ public class GetGpuDeviceSpecCandidatesAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List clusterUuids;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hostUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List vmInstanceUuids;
-
-    @Param(required = false, validValues = {"PCI","DGPU"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String mode;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
 
 
     private Result makeResult(ApiResult res) {
@@ -66,8 +34,8 @@ public class GetGpuDeviceSpecCandidatesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetGpuDeviceSpecCandidatesResult value = res.getResult(org.zstack.sdk.GetGpuDeviceSpecCandidatesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetGpuDeviceSpecCandidatesResult() : value; 
+        org.zstack.sdk.QueryDGpuProfileResult value = res.getResult(org.zstack.sdk.QueryDGpuProfileResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryDGpuProfileResult() : value; 
 
         return ret;
     }
@@ -97,7 +65,7 @@ public class GetGpuDeviceSpecCandidatesAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/gpu-device-specs/candidates";
+        info.path = "/gpu-device/dgpu-profiles";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

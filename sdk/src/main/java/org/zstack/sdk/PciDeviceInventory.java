@@ -4,6 +4,8 @@ import org.zstack.sdk.PciDeviceType;
 import org.zstack.sdk.PciDeviceState;
 import org.zstack.sdk.PciDeviceStatus;
 import org.zstack.sdk.PciDeviceVirtStatus;
+import org.zstack.sdk.PciDeviceVirtState;
+import org.zstack.sdk.PciDeviceVirtMode;
 import org.zstack.sdk.PciDeviceChooser;
 import org.zstack.sdk.PciDeviceMetaData;
 
@@ -95,6 +97,30 @@ public class PciDeviceInventory  {
     }
     public PciDeviceVirtStatus getVirtStatus() {
         return this.virtStatus;
+    }
+
+    public PciDeviceVirtState virtState;
+    public void setVirtState(PciDeviceVirtState virtState) {
+        this.virtState = virtState;
+    }
+    public PciDeviceVirtState getVirtState() {
+        return this.virtState;
+    }
+
+    public java.util.List virtCapabilities;
+    public void setVirtCapabilities(java.util.List virtCapabilities) {
+        this.virtCapabilities = virtCapabilities;
+    }
+    public java.util.List getVirtCapabilities() {
+        return this.virtCapabilities;
+    }
+
+    public PciDeviceVirtMode virtMode;
+    public void setVirtMode(PciDeviceVirtMode virtMode) {
+        this.virtMode = virtMode;
+    }
+    public PciDeviceVirtMode getVirtMode() {
+        return this.virtMode;
     }
 
     public PciDeviceChooser chooser;

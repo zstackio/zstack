@@ -364,6 +364,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_ZWATCH_10004 = "ORG_ZSTACK_ZWATCH_10004";
 
+    public static final String ORG_ZSTACK_ZWATCH_10005 = "ORG_ZSTACK_ZWATCH_10005";
+
     public static final String ORG_ZSTACK_SSO_SAML2_SERVICE_10000 = "ORG_ZSTACK_SSO_SAML2_SERVICE_10000";
 
     public static final String ORG_ZSTACK_SSO_SAML2_SERVICE_10001 = "ORG_ZSTACK_SSO_SAML2_SERVICE_10001";
@@ -1653,6 +1655,10 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_LDAP_10018 = "ORG_ZSTACK_LDAP_10018";
 
     public static final String ORG_ZSTACK_LDAP_10019 = "ORG_ZSTACK_LDAP_10019";
+
+    public static final String ORG_ZSTACK_LDAP_10020 = "ORG_ZSTACK_LDAP_10020";
+
+    public static final String ORG_ZSTACK_LDAP_10021 = "ORG_ZSTACK_LDAP_10021";
 
     public static final String ORG_ZSTACK_IMAGE_10000 = "ORG_ZSTACK_IMAGE_10000";
 
@@ -6274,6 +6280,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_STORAGE_BACKUP_10133 = "ORG_ZSTACK_STORAGE_BACKUP_10133";
 
+    public static final String ORG_ZSTACK_STORAGE_BACKUP_CANCEL_TIMEOUT = "ORG_ZSTACK_STORAGE_BACKUP_CANCEL_TIMEOUT";
+
     public static final String ORG_ZSTACK_COMPUTE_10000 = "ORG_ZSTACK_COMPUTE_10000";
 
     public static final String ORG_ZSTACK_COMPUTE_10001 = "ORG_ZSTACK_COMPUTE_10001";
@@ -6499,6 +6507,8 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10013 = "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10013";
 
     public static final String ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10014 = "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10014";
+
+    public static final String ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10015 = "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10015";
 
     public static final String ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10040 = "ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10040";
 
@@ -6849,6 +6859,12 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10033 = "ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10033";
 
     public static final String ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10034 = "ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10034";
+
+    public static final String ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10035 = "ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10035";
+
+    public static final String ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10036 = "ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10036";
+
+    public static final String ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10037 = "ORG_ZSTACK_PCIDEVICE_SPECIFICATION_10037";
 
     public static final String ORG_ZSTACK_XDRAGON_10000 = "ORG_ZSTACK_XDRAGON_10000";
 
@@ -10652,6 +10668,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_PROMETHEUS_10013 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_PROMETHEUS_10013";
 
+    public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_PROMETHEUS_10014 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_PROMETHEUS_10014";
+
     public static final String ORG_ZSTACK_AI_CONTAINER_10000 = "ORG_ZSTACK_AI_CONTAINER_10000";
 
     public static final String ORG_ZSTACK_AI_CONTAINER_10001 = "ORG_ZSTACK_AI_CONTAINER_10001";
@@ -11585,6 +11603,8 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_PCIDEVICE_10075 = "ORG_ZSTACK_PCIDEVICE_10075";
 
     public static final String ORG_ZSTACK_PCIDEVICE_10076 = "ORG_ZSTACK_PCIDEVICE_10076";
+
+    public static final String ORG_ZSTACK_PCIDEVICE_10077 = "ORG_ZSTACK_PCIDEVICE_10077";
 
     public static final String ORG_ZSTACK_CAS_DRIVER_DONGHAI_10000 = "ORG_ZSTACK_CAS_DRIVER_DONGHAI_10000";
 
@@ -14802,6 +14822,14 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_AI_10133 = "ORG_ZSTACK_AI_10133";
 
+    public static final String ORG_ZSTACK_AI_10134 = "ORG_ZSTACK_AI_10134";
+
+    public static final String ORG_ZSTACK_AI_10135 = "ORG_ZSTACK_AI_10135";
+
+    public static final String ORG_ZSTACK_AI_10136 = "ORG_ZSTACK_AI_10136";
+
+    public static final String ORG_ZSTACK_AI_10137 = "ORG_ZSTACK_AI_10137";
+
     public static final String ORG_ZSTACK_CORE_CLOUDBUS_10000 = "ORG_ZSTACK_CORE_CLOUDBUS_10000";
 
     public static final String ORG_ZSTACK_CORE_CLOUDBUS_10001 = "ORG_ZSTACK_CORE_CLOUDBUS_10001";
@@ -15871,4 +15899,28 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_CRYPTO_SECURITYMACHINE_THIRDPARTY_PLUGIN_10005 = "ORG_ZSTACK_CRYPTO_SECURITYMACHINE_THIRDPARTY_PLUGIN_10005";
 
     public static final String ORG_ZSTACK_CRYPTO_SECURITYMACHINE_THIRDPARTY_PLUGIN_10006 = "ORG_ZSTACK_CRYPTO_SECURITYMACHINE_THIRDPARTY_PLUGIN_10006";
+
+    public static final String ORG_ZSTACK_DGPU_10001 = "ORG_ZSTACK_DGPU_10001";
+
+    public static final String ORG_ZSTACK_DGPU_10002 = "ORG_ZSTACK_DGPU_10002";
+
+    public static final String ORG_ZSTACK_DGPU_10003 = "ORG_ZSTACK_DGPU_10003";
+
+    public static final String ORG_ZSTACK_DGPU_10004 = "ORG_ZSTACK_DGPU_10004";
+
+    public static final String ORG_ZSTACK_DGPU_10005 = "ORG_ZSTACK_DGPU_10005";
+
+    public static final String ORG_ZSTACK_DGPU_10006 = "ORG_ZSTACK_DGPU_10006";
+
+    public static final String ORG_ZSTACK_DGPU_10007 = "ORG_ZSTACK_DGPU_10007";
+
+    public static final String ORG_ZSTACK_DGPU_10008 = "ORG_ZSTACK_DGPU_10008";
+
+    public static final String ORG_ZSTACK_DGPU_10009 = "ORG_ZSTACK_DGPU_10009";
+
+    public static final String ORG_ZSTACK_DGPU_10010 = "ORG_ZSTACK_DGPU_10010";
+
+    public static final String ORG_ZSTACK_DGPU_10011 = "ORG_ZSTACK_DGPU_10011";
+
+    public static final String ORG_ZSTACK_DGPU_10012 = "ORG_ZSTACK_DGPU_10012";
 }
