@@ -252,6 +252,8 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="KvmTpmEncryptedResourceKeyRefJdbcRepair" class="org.zstack.kvm.tpm.KvmTpmEncryptedResourceKeyRefJdbcRepair"/>
+
     <bean id="KvmTpmExtensions" class="org.zstack.kvm.tpm.KvmTpmExtensions">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint" />

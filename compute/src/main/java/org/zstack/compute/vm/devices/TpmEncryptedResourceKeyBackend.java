@@ -5,6 +5,8 @@ import org.zstack.header.core.Completion;
 /**
  * Responsible for handling the replication or reset of encryption resource keys
  * and other tasks in VM TPM cloning scenarios.
+ * Avoid inserting a second EncryptedResourceKeyRef row when wrapped material already exists
+ * ({@link #attachKeyProviderToTpm}); see KVM TPM extensions for orphan-ref cleanup on VM paths.
  */
 public interface TpmEncryptedResourceKeyBackend {
 
