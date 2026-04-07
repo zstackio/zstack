@@ -305,6 +305,10 @@ public class KvmTpmManager extends AbstractService {
     static class RemoveTpmFromVmContext {
         String vmInstanceUuid;
         String tpmUuid;
+
+        // enable when TPM delete/VM delete ...
+        boolean force;
+
         List<VmHostFileVO> hostFiles;
 
         static RemoveTpmFromVmContext valueOf(RemoveTpmMsg msg) {
@@ -318,6 +322,7 @@ public class KvmTpmManager extends AbstractService {
     private void removeTpmFromVm(RemoveTpmFromVmContext context, Completion completion) {
         SimpleFlowChain.of("remove-tpm-from-vm-" + context.vmInstanceUuid)
             .then(Flow.of("check-vm-status")
+                .skipIf(data -> context.force)
                 .handle(trigger -> {
                     VmInstanceVO vm = Q.New(VmInstanceVO.class)
                             .eq(VmInstanceVO_.uuid, context.vmInstanceUuid)
@@ -457,10 +462,31 @@ public class KvmTpmManager extends AbstractService {
                     trigger.rollback();
                     return;
                 }
-                SQL.New(TpmVO.class)
-                        .in(TpmVO_.uuid, transform(reply.getInventories(), TpmInventory::getUuid))
-                        .delete();
-                trigger.rollback();
+
+                new While<>(reply.getInventories()).each((tpm, whileCompletion) -> {
+                    RemoveTpmFromVmContext removeContext = new RemoveTpmFromVmContext();
+                    removeContext.vmInstanceUuid = tpm.getVmInstanceUuid();
+                    removeContext.tpmUuid = tpm.getUuid();
+                    removeContext.force = true;
+                    removeTpmFromVm(removeContext, new Completion(whileCompletion) {
+                        @Override
+                        public void success() {
+                            whileCompletion.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            logger.warn(String.format("failed to delete tpm for VM[%s] but still continue: %s",
+                                    tpm.getVmInstanceUuid(), errorCode.getReadableDetails()));
+                            whileCompletion.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        trigger.rollback();
+                    }
+                });
             }
         }).then(new NoRollbackFlow() {
             String __name__ = "clone-encrypted-resource-key-if-needed";
