@@ -42,6 +42,13 @@ public class VmTpmManager {
         databaseFacade.removeByPrimaryKey(tpmUuid, TpmVO.class);
     }
 
+    public static String findTpmUuidForVmOrNull(String vmInstanceUuid) {
+        return Q.New(TpmVO.class)
+                .eq(TpmVO_.vmInstanceUuid, vmInstanceUuid)
+                .select(TpmVO_.uuid)
+                .findValue();
+    }
+
     /**
      * @param bootMode boot mode, null is Legacy
      */
