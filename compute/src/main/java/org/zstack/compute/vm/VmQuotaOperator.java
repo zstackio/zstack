@@ -9,6 +9,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.APIChangeResourceOwnerMsg;
 import org.zstack.header.identity.AccountType;
 import org.zstack.header.identity.Quota;
@@ -151,12 +152,27 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
                                    String vmInstanceUuid,
                                    long totalVmNumQuota,
                                    long totalVmNum) {
+        ErrorCode error = checkTotalVMQuotaWithResult(currentAccountUuid,
+                resourceTargetOwnerAccountUuid,
+                vmInstanceUuid,
+                totalVmNumQuota,
+                totalVmNum);
+        if (error != null) {
+            throw new ApiMessageInterceptionException(error);
+        }
+    }
+
+    private ErrorCode checkTotalVMQuotaWithResult(String currentAccountUuid,
+                                                   String resourceTargetOwnerAccountUuid,
+                                                   String vmInstanceUuid,
+                                                   long totalVmNumQuota,
+                                                   long totalVmNum) {
         if (Q.New(VmInstanceVO.class)
                 .eq(VmInstanceVO_.uuid, vmInstanceUuid)
                 .notNull(VmInstanceVO_.lastHostUuid)
                 .isExists()) {
             // Dirty hack - VM with last host UUID means existing VM.
-            return;
+            return null;
         }
 
         QuotaUtil.QuotaCompareInfo quotaCompareInfo;
@@ -167,18 +183,17 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
         quotaCompareInfo.quotaValue = totalVmNumQuota;
         quotaCompareInfo.currentUsed = totalVmNum;
         quotaCompareInfo.request = 1;
-        new QuotaUtil().CheckQuota(quotaCompareInfo);
+        return new QuotaUtil().checkQuotaAndReturn(quotaCompareInfo);
     }
 
     @Transactional(readOnly = true)
-    public void checkVmInstanceQuota(String currentAccountUuid,
-                                      String resourceTargetOwnerAccountUuid,
-                                      String vmInstanceUuid,
-                                      Map<String, Quota.QuotaPair> pairs) {
+    public ErrorCode checkVmInstanceQuotaWithResult(String currentAccountUuid,
+                                                     String resourceTargetOwnerAccountUuid,
+                                                     String vmInstanceUuid,
+                                                     Map<String, Quota.QuotaPair> pairs) {
         long vmNumQuota = pairs.get(VmQuotaConstant.VM_RUNNING_NUM).getValue();
 
         VmQuotaUtil.VmQuota vmQuotaUsed = new VmQuotaUtil().getUsedVmCpuMemory(resourceTargetOwnerAccountUuid, null);
-        //
         {
             QuotaUtil.QuotaCompareInfo quotaCompareInfo;
             quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
@@ -188,22 +203,38 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
             quotaCompareInfo.quotaValue = vmNumQuota;
             quotaCompareInfo.currentUsed = vmQuotaUsed.runningVmNum;
             quotaCompareInfo.request = 1;
-            new QuotaUtil().CheckQuota(quotaCompareInfo);
+            ErrorCode error = new QuotaUtil().checkQuotaAndReturn(quotaCompareInfo);
+            if (error != null) {
+                return error;
+            }
         }
-        //
-        checkTotalVMQuota(currentAccountUuid,
+
+        ErrorCode error = checkTotalVMQuotaWithResult(currentAccountUuid,
                 resourceTargetOwnerAccountUuid,
                 vmInstanceUuid,
                 pairs.get(VmQuotaConstant.VM_TOTAL_NUM).getValue(),
                 vmQuotaUsed.totalVmNum);
-        //
+        if (error != null) {
+            return error;
+        }
+
         VmInstanceVO vm = dbf.getEntityManager().find(VmInstanceVO.class, vmInstanceUuid);
 
-        checkVmCupAndMemoryCapacity(currentAccountUuid, resourceTargetOwnerAccountUuid, vm.getCpuNum(), vm.getMemorySize(), pairs);
+        return checkVmCupAndMemoryCapacityWithResult(currentAccountUuid, resourceTargetOwnerAccountUuid, vm.getCpuNum(), vm.getMemorySize(), pairs);
+    }
+
+    public void checkVmInstanceQuota(String currentAccountUuid,
+                                      String resourceTargetOwnerAccountUuid,
+                                      String vmInstanceUuid,
+                                      Map<String, Quota.QuotaPair> pairs) {
+        ErrorCode error = checkVmInstanceQuotaWithResult(currentAccountUuid, resourceTargetOwnerAccountUuid, vmInstanceUuid, pairs);
+        if (error != null) {
+            throw new ApiMessageInterceptionException(error);
+        }
     }
 
     @Transactional(readOnly = true)
-    public void checkVmCupAndMemoryCapacity(String currentAccountUuid, String resourceTargetOwnerAccountUuid, long cpu, long memory, Map<String, Quota.QuotaPair> pairs) {
+    public ErrorCode checkVmCupAndMemoryCapacityWithResult(String currentAccountUuid, String resourceTargetOwnerAccountUuid, long cpu, long memory, Map<String, Quota.QuotaPair> pairs) {
         VmQuotaUtil.VmQuota vmQuotaUsed = new VmQuotaUtil().getUsedVmCpuMemory(resourceTargetOwnerAccountUuid);
         long cpuNumQuota = pairs.get(VmQuotaConstant.VM_RUNNING_CPU_NUM).getValue();
         long memoryQuota = pairs.get(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE).getValue();
@@ -217,7 +248,10 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
             quotaCompareInfo.quotaValue = cpuNumQuota;
             quotaCompareInfo.currentUsed = vmQuotaUsed.runningVmCpuNum;
             quotaCompareInfo.request = cpu;
-            new QuotaUtil().CheckQuota(quotaCompareInfo);
+            ErrorCode error = new QuotaUtil().checkQuotaAndReturn(quotaCompareInfo);
+            if (error != null) {
+                return error;
+            }
         }
         {
             QuotaUtil.QuotaCompareInfo quotaCompareInfo;
@@ -228,7 +262,14 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
             quotaCompareInfo.quotaValue = memoryQuota;
             quotaCompareInfo.currentUsed = vmQuotaUsed.runningVmMemorySize;
             quotaCompareInfo.request = memory;
-            new QuotaUtil().CheckQuota(quotaCompareInfo);
+            return new QuotaUtil().checkQuotaAndReturn(quotaCompareInfo);
+        }
+    }
+
+    public void checkVmCupAndMemoryCapacity(String currentAccountUuid, String resourceTargetOwnerAccountUuid, long cpu, long memory, Map<String, Quota.QuotaPair> pairs) {
+        ErrorCode error = checkVmCupAndMemoryCapacityWithResult(currentAccountUuid, resourceTargetOwnerAccountUuid, cpu, memory, pairs);
+        if (error != null) {
+            throw new ApiMessageInterceptionException(error);
         }
     }
 
