@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmHostFileVO` (
     `type` varchar(64) NOT NULL COMMENT 'NvRam, TpmState',
     `path` varchar(1024) NOT NULL COMMENT 'Absolute path of the file on the host',
     `lastSyncReason` varchar(255) DEFAULT NULL COMMENT 'The reason for the last sync operation',
+    `changeDate` timestamp NULL DEFAULT NULL COMMENT 'Timestamp when file was reported changed, null after sync',
+    `lastSyncDate` timestamp NULL DEFAULT NULL COMMENT 'Timestamp of the last successful sync',
     `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
     PRIMARY KEY (`uuid`),

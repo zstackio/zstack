@@ -5,10 +5,13 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventCallback;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
@@ -21,6 +24,7 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
+import org.zstack.header.vm.VmCanonicalEvents;
 import org.zstack.header.vm.VmInstanceAO_;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceEO;
@@ -70,6 +74,8 @@ public class VmHostFileTracker implements Component {
     private DatabaseFacade dbf;
     @Autowired
     private TimeHelper timeHelper;
+    @Autowired
+    private EventFacade eventFacade;
 
     private Future<Void> trackerThread;
     private Future<Void> cleanupThread;
@@ -83,6 +89,7 @@ public class VmHostFileTracker implements Component {
 
         submitTrackerTask();
         submitCleanupTask();
+        setupCanonicalEvents();
 
         GlobalConfigUpdateExtensionPoint listener = (oldConfig, newConfig) -> {
             logger.debug(String.format("%s changed from %s to %s, restarting vm-host-file-tracker",
@@ -105,6 +112,52 @@ public class VmHostFileTracker implements Component {
             cleanupThread.cancel(true);
         }
         return true;
+    }
+
+    private void setupCanonicalEvents() {
+        eventFacade.on(VmCanonicalEvents.VM_HOST_FILE_CHANGED_PATH, new EventCallback<Object>() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                if (!(data instanceof VmCanonicalEvents.VmHostFileChangedData)) {
+                    return;
+                }
+
+                VmCanonicalEvents.VmHostFileChangedData d = (VmCanonicalEvents.VmHostFileChangedData) data;
+                String hostUuid = d.getHostUuid();
+                String vmUuid = d.getVmUuid();
+                List<String> types = d.getTypes();
+
+                if (hostUuid == null || vmUuid == null || types == null || types.isEmpty()) {
+                    logger.warn(String.format("received VM_HOST_FILE_CHANGED event with incomplete data: hostUuid=%s, vmUuid=%s", hostUuid, vmUuid));
+                    return;
+                }
+
+                Timestamp now = new Timestamp(timeHelper.getCurrentTimeMillis());
+                for (String type : types) {
+                    VmHostFileType fileType;
+                    try {
+                        fileType = VmHostFileType.valueOf(type);
+                    } catch (Exception e) {
+                        logger.warn(String.format("ignore invalid vm host file type in event: vmUuid=%s, hostUuid=%s, type=%s",
+                                vmUuid, hostUuid, type), e);
+                        continue;
+                    }
+
+                    long updated = SQL.New(VmHostFileVO.class)
+                            .eq(VmHostFileVO_.hostUuid, hostUuid)
+                            .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
+                            .eq(VmHostFileVO_.type, fileType)
+                            .set(VmHostFileVO_.changeDate, now)
+                            .update();
+
+                    if (updated > 0) {
+                        logger.debug(String.format("marked VmHostFile changed: vmUuid=%s, hostUuid=%s, type=%s", vmUuid, hostUuid, type));
+                    } else {
+                        logger.warn(String.format("no VmHostFileVO found for vmUuid=%s, hostUuid=%s, type=%s", vmUuid, hostUuid, type));
+                    }
+                }
+            }
+        });
     }
 
     private synchronized void submitTrackerTask() {
@@ -131,7 +184,7 @@ public class VmHostFileTracker implements Component {
 
             @Override
             public void run() {
-                logger.info("VmHostFileTracker: starting periodic sync of VM host files");
+                logger.info("VmHostFileTracker: starting periodic check of VM host files");
                 syncVmHostFiles();
             }
         });
@@ -193,6 +246,9 @@ public class VmHostFileTracker implements Component {
                 .collect(Collectors.groupingBy(f -> f.getVmInstanceUuid() + "::" + f.getHostUuid()));
         List<List<VmHostFileVO>> groups = new ArrayList<>(grouped.values());
 
+        long now = timeHelper.getCurrentTimeMillis();
+        long checkIntervalMs = KVMGlobalConfig.VM_HOST_FILE_SYNC_INTERVAL.value(Long.class) * 1000;
+        long forceSyncThresholdMs = checkIntervalMs * 100;
         int concurrency = KVMGlobalConfig.VM_HOST_FILE_SYNC_CONCURRENCY.value(Integer.class);
 
         new While<>(groups).step((group, whileCompletion) -> {
@@ -205,9 +261,28 @@ public class VmHostFileTracker implements Component {
                 return;
             }
 
+            boolean hasChanged = group.stream().anyMatch(f -> f.getChangeDate() != null);
+            String syncReason;
+            if (hasChanged) {
+                syncReason = VmHostFileSyncReason.PeriodicDirtyCheck.reason();
+            } else {
+                // check if force sync is needed based on lastSyncDate
+                Timestamp oldestLastSync = group.stream()
+                        .map(VmHostFileVO::getLastSyncDate)
+                        .min(Comparator.nullsFirst(Comparator.naturalOrder()))
+                        .orElse(null);
+
+                if (oldestLastSync != null && (now - oldestLastSync.getTime()) < forceSyncThresholdMs) {
+                    whileCompletion.done();
+                    return;
+                }
+                syncReason = VmHostFileSyncReason.PeriodicForceSync.reason();
+            }
+
             SyncVmHostFilesFromHostMsg syncMsg = new SyncVmHostFilesFromHostMsg();
             syncMsg.setHostUuid(hostUuid);
             syncMsg.setVmUuid(vmUuid);
+            syncMsg.setSyncReason(syncReason);
 
             for (VmHostFileVO file : group) {
                 if (file.getType() == VmHostFileType.NvRam) {
@@ -231,7 +306,7 @@ public class VmHostFileTracker implements Component {
         }, concurrency).run(new WhileDoneCompletion(null) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                // periodic sync round finished, empty callback
+                // periodic check round finished, empty callback
             }
         });
     }
