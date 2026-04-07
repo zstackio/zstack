@@ -38,6 +38,7 @@ public interface EncryptedResourceKeyManager {
         private String resourceUuid;
         private String resourceType;
         private String keyProviderUuid;
+        private String keyProviderName;
         private String purpose;
 
         public String getResourceUuid() {
@@ -62,6 +63,14 @@ public interface EncryptedResourceKeyManager {
 
         public void setKeyProviderUuid(String keyProviderUuid) {
             this.keyProviderUuid = keyProviderUuid;
+        }
+
+        public String getKeyProviderName() {
+            return keyProviderName;
+        }
+
+        public void setKeyProviderName(String keyProviderName) {
+            this.keyProviderName = keyProviderName;
         }
 
         public String getPurpose() {
