@@ -3,6 +3,7 @@ package org.zstack.header.vm;
 import org.zstack.header.message.NeedJsonSchema;
 import org.zstack.header.errorcode.ErrorCode;
 import java.util.Date;
+import java.util.List;
 import java.time.LocalDateTime;
 
 /**
@@ -19,6 +20,8 @@ public class VmCanonicalEvents {
     public static final String VM_NIC_INFO_CHANGED_PATH = "/vm/nicinfo/change";
     public static final String VM_NIC_INFO_DUPLICATE_PATH = "/vm/nicinfo/duplicate";
     public static final String VM_NIC_INFO_IPRANGE_CONFLICT_PATH = "/vm/nicinfo/iprangeConflict";
+    public static final String VM_HOST_FILE_CHANGED_PATH = "/vm/hostfile/changed";
+    public static final String KVM_REPORT_VM_HOST_FILE_CHANGED = "/kvm/reportvmhostfilechanged";
 
     @NeedJsonSchema
     public static class VmCrashReportData {
@@ -315,6 +318,37 @@ public class VmCanonicalEvents {
 
         public void setInternalIp(String internalIp) {
             this.internalIp = internalIp;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class VmHostFileChangedData {
+        private String hostUuid;
+        private String vmUuid;
+        private List<String> types;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public List<String> getTypes() {
+            return types;
+        }
+
+        public void setTypes(List<String> types) {
+            this.types = types;
         }
     }
 }

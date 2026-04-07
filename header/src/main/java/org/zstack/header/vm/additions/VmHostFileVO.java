@@ -42,6 +42,10 @@ public class VmHostFileVO extends ResourceVO {
     @Column
     private String lastSyncReason;
     @Column
+    private Timestamp changeDate;
+    @Column
+    private Timestamp lastSyncDate;
+    @Column
     private Timestamp createDate;
     @Column
     private Timestamp lastOpDate;
@@ -86,6 +90,22 @@ public class VmHostFileVO extends ResourceVO {
         this.lastSyncReason = lastSyncReason;
     }
 
+    public Timestamp getChangeDate() {
+        return changeDate;
+    }
+
+    public void setChangeDate(Timestamp changeDate) {
+        this.changeDate = changeDate;
+    }
+
+    public Timestamp getLastSyncDate() {
+        return lastSyncDate;
+    }
+
+    public void setLastSyncDate(Timestamp lastSyncDate) {
+        this.lastSyncDate = lastSyncDate;
+    }
+
     public Timestamp getCreateDate() {
         return createDate;
     }
@@ -111,6 +131,8 @@ public class VmHostFileVO extends ResourceVO {
         ", type=" + type +
         ", path='" + path + '\'' +
         ", lastSyncReason='" + lastSyncReason + '\'' +
+        ", changeDate=" + changeDate +
+        ", lastSyncDate=" + lastSyncDate +
         ", createDate=" + createDate +
         ", lastOpDate=" + lastOpDate +
         '}';
