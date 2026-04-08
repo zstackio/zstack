@@ -71,6 +71,7 @@ public class SourceClassMap {
 			put("org.zstack.crypto.ccs.CCSCertificateAccountRefInventory", "org.zstack.sdk.CCSCertificateAccountRefInventory");
 			put("org.zstack.crypto.ccs.CCSCertificateInventory", "org.zstack.sdk.CCSCertificateInventory");
 			put("org.zstack.crypto.keyprovider.api.RekeyFailedResource", "org.zstack.sdk.keyprovider.api.RekeyFailedResource");
+			put("org.zstack.crypto.keyprovider.api.RekeyProviderResult", "org.zstack.sdk.keyprovider.api.RekeyProviderResult");
 			put("org.zstack.crypto.keyprovider.api.RekeySkippedResource", "org.zstack.sdk.keyprovider.api.RekeySkippedResource");
 			put("org.zstack.crypto.securitymachine.thirdparty.aisino.AiSiNoSecretResourcePoolInventory", "org.zstack.sdk.AiSiNoSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecretResourcePoolInventory", "org.zstack.sdk.FlkSecSecretResourcePoolInventory");
@@ -1269,6 +1270,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.identity.role.RoleAccountRefInventory", "org.zstack.header.identity.role.RoleAccountRefInventory");
 			put("org.zstack.sdk.identity.role.RoleInventory", "org.zstack.header.identity.role.RoleInventory");
 			put("org.zstack.sdk.keyprovider.api.RekeyFailedResource", "org.zstack.crypto.keyprovider.api.RekeyFailedResource");
+			put("org.zstack.sdk.keyprovider.api.RekeyProviderResult", "org.zstack.crypto.keyprovider.api.RekeyProviderResult");
 			put("org.zstack.sdk.keyprovider.api.RekeySkippedResource", "org.zstack.crypto.keyprovider.api.RekeySkippedResource");
 			put("org.zstack.sdk.license.entity.LicenseHistoryInventory", "org.zstack.license.entity.LicenseHistoryInventory");
 			put("org.zstack.sdk.license.entity.LicenseUsageView", "org.zstack.license.entity.LicenseUsageView");
