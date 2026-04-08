@@ -1,6 +1,5 @@
 package org.zstack.header.storage.primary
 
-
 import org.zstack.header.errorcode.ErrorCode
 
 doc {
@@ -9,7 +8,7 @@ doc {
 
 	ref {
 		name "vmInstanceMetadata"
-		path "org.zstack.header.storage.primary.APIScanVmInstanceMetadataFromPrimaryStorageEvent.vmInstanceMetadata"
+		path "org.zstack.header.storage.primary.APIScanVmInstanceMetadataFromPrimaryStorageReply.vmInstanceMetadata"
 		desc "云主机元数据摘要列表"
 		type "List"
 		since "5.0.0"
@@ -23,7 +22,7 @@ doc {
 	}
 	ref {
 		name "error"
-		path "org.zstack.header.storage.primary.APIScanVmInstanceMetadataFromPrimaryStorageEvent.error"
+		path "org.zstack.header.storage.primary.APIScanVmInstanceMetadataFromPrimaryStorageReply.error"
 		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null"
 		type "ErrorCode"
 		since "5.0.0"

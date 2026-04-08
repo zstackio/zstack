@@ -3,14 +3,16 @@ package org.zstack.header.storage.primary;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
         path = "/primary-storage/vm-instances/metadata/scan",
         method = HttpMethod.GET,
-        responseClass = APIScanVmInstanceMetadataFromPrimaryStorageEvent.class
+        responseClass = APIScanVmInstanceMetadataFromPrimaryStorageReply.class
 )
-public class APIScanVmInstanceMetadataFromPrimaryStorageMsg extends APIMessage implements PrimaryStorageMessage {
+public class APIScanVmInstanceMetadataFromPrimaryStorageMsg extends APISyncCallMessage implements PrimaryStorageMessage {
     @APIParam(resourceType = PrimaryStorageVO.class)
     private String uuid;
 
