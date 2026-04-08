@@ -1,6 +1,6 @@
 package org.zstack.header.storage.primary
 
-import org.zstack.header.storage.primary.APIScanVmInstanceMetadataFromPrimaryStorageEvent
+import org.zstack.header.storage.primary.APIScanVmInstanceMetadataFromPrimaryStorageReply
 
 doc {
 	title "扫描主存储上的云主机元数据"
@@ -52,7 +52,7 @@ doc {
 		}
 
 		response {
-			clz APIScanVmInstanceMetadataFromPrimaryStorageEvent.class
+			clz APIScanVmInstanceMetadataFromPrimaryStorageReply.class
 		}
 	}
 }

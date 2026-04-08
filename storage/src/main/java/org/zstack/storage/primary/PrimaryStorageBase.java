@@ -1877,25 +1877,25 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     }
 
     private void handle(APIScanVmInstanceMetadataFromPrimaryStorageMsg msg) {
-        APIScanVmInstanceMetadataFromPrimaryStorageEvent evt = new APIScanVmInstanceMetadataFromPrimaryStorageEvent(msg.getId());
+        APIScanVmInstanceMetadataFromPrimaryStorageReply reply = new APIScanVmInstanceMetadataFromPrimaryStorageReply();
 
         if (self.getStatus() != PrimaryStorageStatus.Connected) {
-            evt.setError(Platform.operr("primary storage[uuid:%s] is not Connected (status=%s), cannot scan metadata",
+            reply.setError(Platform.operr("primary storage[uuid:%s] is not Connected (status=%s), cannot scan metadata",
                     self.getUuid(), self.getStatus()));
-            bus.publish(evt);
+            bus.reply(msg, reply);
             return;
         }
 
         String psType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type).eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid()).findValue();
         if (psType == null) {
-            evt.setError(Platform.operr("primary storage[uuid:%s] not found", msg.getPrimaryStorageUuid()));
-            bus.publish(evt);
+            reply.setError(Platform.operr("primary storage[uuid:%s] not found", msg.getPrimaryStorageUuid()));
+            bus.reply(msg, reply);
             return;
         }
         VmMetadataPathBuildExtensionPoint ext = pluginRgty.getExtensionFromMap(psType, VmMetadataPathBuildExtensionPoint.class);
         if (ext == null) {
-            evt.setError(Platform.operr("primary storage type %s does not support metadata", psType));
-            bus.publish(evt);
+            reply.setError(Platform.operr("primary storage type %s does not support metadata", psType));
+            bus.reply(msg, reply);
             return;
         }
         String metadataDir = ext.buildMetadataDir(msg.getPrimaryStorageUuid());
@@ -1908,8 +1908,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             @Override
             public void run(MessageReply r) {
                 if (!r.isSuccess()) {
-                    evt.setError(r.getError());
-                    bus.publish(evt);
+                    reply.setError(r.getError());
+                    bus.reply(msg, reply);
                     return;
                 }
                 ScanVmInstanceMetadataFromPrimaryStorageReply re = r.castReply();
@@ -1922,8 +1922,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                         .filter(e -> e.getVmCategory() != null)
                         .filter(e -> !VmMetadataCategory.VM_TEMPLATE_CACHE.name().equals(e.getVmCategory()))
                         .collect(Collectors.toList());
-                evt.setVmInstanceMetadata(filtered);
-                bus.publish(evt);
+                reply.setVmInstanceMetadata(filtered);
+                bus.reply(msg, reply);
             }
         });
     }
