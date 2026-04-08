@@ -81,8 +81,6 @@ import java.util.Objects;
 
 import static org.zstack.compute.vm.VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.header.vm.VmMigrationType.HostMigration;
-import static org.zstack.header.vm.VmMigrationType.PrimaryStorageMigration;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.PostMigration;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.BeforeHaStart;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.PrepareReRead;
@@ -168,17 +166,12 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
 
     @Override
     public void preMigrateVm(VmInstanceInventory inv, String destHostUuid, Completion completion) {
-        completion.success(); // use preVmMigration instead of preMigrateVm to prevent from handle twice
+        prepareNvRamBeforeMigration(inv, destHostUuid, completion);
     }
 
     @Override
     public void preVmMigration(VmInstanceInventory vm, VmMigrationType type, String dstHostUuid, Completion completion) {
-        if (HostMigration != type && PrimaryStorageMigration != type) {
-            completion.success();
-            return;
-        }
-
-        prepareNvRamBeforeMigration(vm, dstHostUuid, completion);
+        completion.success(); // use preMigrateVm instead of preVmMigration to prevent from handle twice
     }
 
     private void prepareNvRamBeforeMigration(VmInstanceInventory vm, String dstHostUuid, Completion completion) {
