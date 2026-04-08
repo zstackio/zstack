@@ -12,19 +12,28 @@ public class VmInstanceMetadataConstants {
             "/rootVolumes/", "/dataVolumes/", "/volumeSnapshots/", "/memory/"
     };
 
+    /**
+     * Extract the storage mount-point prefix from a volume install path.
+     * <pre>
+     *   /mnt/ps/rootVolumes/acct-xxx/vol-xxx/xxx.qcow2  →  /mnt/ps/
+     *   /local_ps/dataVolumes/acct-xxx/vol-xxx/xxx.qcow2 →  /local_ps/
+     * </pre>
+     * Uses {@code lastIndexOf} so that mount paths which themselves contain a
+     * marker string (e.g. {@code /rootVolumes/rootVolumes/…}) are handled
+     * correctly — the last occurrence is always the real subdirectory boundary.
+     */
     public static String extractOldPrefix(String path) {
         if (path == null || !path.startsWith("/")) {
             return null;
         }
-        int earliest = Integer.MAX_VALUE;
-        String foundMarker = null;
+
+        int latest = -1;
         for (String marker : STORAGE_PATH_MARKERS) {
-            int idx = path.indexOf(marker);
-            if (idx >= 0 && idx < earliest) {
-                earliest = idx;
-                foundMarker = marker;
+            int idx = path.lastIndexOf(marker);
+            if (idx > latest) {
+                latest = idx;
             }
         }
-        return foundMarker == null ? null : path.substring(0, earliest + foundMarker.length());
+        return latest < 0 ? null : path.substring(0, latest + 1);
     }
 }
