@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend;
+import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend.CloneEncryptedResourceKeyContext;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -15,6 +16,8 @@ import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
@@ -24,12 +27,17 @@ import org.zstack.header.keyprovider.EncryptedResourceKeyManager;
 import org.zstack.header.keyprovider.EncryptedResourceKeyManager.GetOrCreateResourceKeyContext;
 import org.zstack.header.keyprovider.EncryptedResourceKeyManager.ResourceKeyResult;
 import org.zstack.header.secret.SecretHostDefineMsg;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.tpm.entity.TpmSpec;
 import org.zstack.header.tpm.entity.TpmVO;
+import org.zstack.header.tpm.entity.TpmVO_;
 import org.zstack.header.secret.SecretHostDefineReply;
 import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstantiateResourceException;
+import org.zstack.header.vm.additions.VmHostBackupFileVO;
+import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
 import org.zstack.header.vm.additions.VmHostFileVO_;
@@ -166,6 +174,53 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                         trigger.fail(errorCode);
                     }
                 });
+            }
+        }).then(new Flow() {
+            String __name__ = "clone-tpm-resource-key-from-snapshot-source";
+
+            @Override
+            public boolean skip(Map data) {
+                return StringUtils.isBlank(findSourceTpmUuidFromSnapshotTpmBackupFile(context.backupFileUuid)) ||
+                VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class);
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                String srcTpmUuid = findSourceTpmUuidFromSnapshotTpmBackupFile(context.backupFileUuid);
+                if (StringUtils.isBlank(srcTpmUuid)) {
+                    trigger.next();
+                    return;
+                }
+                CloneEncryptedResourceKeyContext cloneCtx = new CloneEncryptedResourceKeyContext();
+                cloneCtx.srcTpmUuid = srcTpmUuid;
+                cloneCtx.dstTpmUuid = context.tpmUuid;
+                cloneCtx.resetTpm = false;
+                resourceKeyBackend.cloneEncryptedResourceKey(cloneCtx, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        context.providerUuid = resourceKeyBackend.findKeyProviderUuidByTpm(context.tpmUuid);
+                        context.providerName = resourceKeyBackend.findKeyProviderNameByTpm(context.tpmUuid);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                if (StringUtils.isNotBlank(context.backupFileUuid)) {
+                    try {
+                        resourceKeyBackend.detachKeyProviderFromTpm(context.tpmUuid);
+                    } catch (Exception e) {
+                        logger.warn(String.format("failed to detach key provider ref for tpm[uuid:%s]: %s",
+                                context.tpmUuid, e.getMessage()));
+                    }
+                }
+                trigger.rollback();
             }
         }).then(new NoRollbackFlow() {
             String __name__ = "create-dek";
@@ -324,5 +379,29 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         }
         spec.getDevicesSpec().getTpm().setResourceKeyCreatedNew(false);
         spec.getDevicesSpec().getTpm().setResourceKeyProviderUuid(null);
+    }
+
+    private String findSourceTpmUuidFromSnapshotTpmBackupFile(String tpmBackupFileUuid) {
+        if (StringUtils.isBlank(tpmBackupFileUuid)) {
+            return null;
+        }
+        VmHostBackupFileVO bf = Q.New(VmHostBackupFileVO.class)
+                .eq(VmHostBackupFileVO_.uuid, tpmBackupFileUuid)
+                .eq(VmHostBackupFileVO_.type, VmHostFileType.TpmState)
+                .find();
+        if (bf == null || StringUtils.isBlank(bf.getResourceUuid())) {
+            return null;
+        }
+        String sourceVmUuid = Q.New(VolumeSnapshotGroupVO.class)
+                .select(VolumeSnapshotGroupVO_.vmInstanceUuid)
+                .eq(VolumeSnapshotGroupVO_.uuid, bf.getResourceUuid())
+                .findValue();
+        if (StringUtils.isBlank(sourceVmUuid)) {
+            return null;
+        }
+        return Q.New(TpmVO.class)
+                .eq(TpmVO_.vmInstanceUuid, sourceVmUuid)
+                .select(TpmVO_.uuid)
+                .findValue();
     }
 }
