@@ -155,6 +155,7 @@ public interface KVMConstant {
     String KVM_VERIFY_ENVELOPE_KEY_PATH = "/host/key/envelope/checkEnvelopeKey";
     String KVM_GET_SECRET_PATH = "/host/key/envelope/getSecret";
     String KVM_ENSURE_SECRET_PATH = "/host/key/envelope/ensureSecret";
+    String KVM_DELETE_SECRET_PATH = "/host/key/envelope/deleteSecret";
 
     /** HTTP timeout in seconds for envelope key sync (verify/create/rotate/get) to agent. */
     long ENVELOPE_KEY_HTTP_TIMEOUT_SEC = 5L;
