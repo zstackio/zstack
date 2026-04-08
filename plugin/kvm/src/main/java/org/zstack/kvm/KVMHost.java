@@ -57,6 +57,8 @@ import org.zstack.header.host.*;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
 import org.zstack.header.secret.SecretHostDefineMsg;
 import org.zstack.header.secret.SecretHostDefineReply;
+import org.zstack.header.secret.SecretHostDeleteMsg;
+import org.zstack.header.secret.SecretHostDeleteReply;
 import org.zstack.header.secret.SecretHostGetMsg;
 import org.zstack.header.secret.SecretHostGetReply;
 import org.zstack.header.message.APIMessage;
@@ -756,6 +758,8 @@ public class KVMHost extends HostBase implements Host {
             handle((SecretHostGetMsg) msg);
         } else if (msg instanceof SecretHostDefineMsg) {
             handle((SecretHostDefineMsg) msg);
+        } else if (msg instanceof SecretHostDeleteMsg) {
+            handle((SecretHostDeleteMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -5461,6 +5465,42 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public Class<KVMAgentCommands.SecretHostDefineResponse> getReturnClass() {
                 return KVMAgentCommands.SecretHostDefineResponse.class;
+            }
+        }, TimeUnit.SECONDS, KVMConstant.ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
+    }
+
+    private void handle(SecretHostDeleteMsg msg) {
+        SecretHostDeleteReply reply = new SecretHostDeleteReply();
+        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose())) {
+            reply.setError(operr("vmUuid and purpose are required for delete secret"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        String url = buildUrl(KVMConstant.KVM_DELETE_SECRET_PATH);
+        KVMAgentCommands.SecretHostDeleteCmd cmd = new KVMAgentCommands.SecretHostDeleteCmd();
+        cmd.setVmUuid(msg.getVmUuid());
+        cmd.setPurpose(msg.getPurpose());
+        cmd.setKeyVersion(msg.getKeyVersion());
+
+        restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<KVMAgentCommands.SecretHostDeleteResponse>(msg, reply) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err != null ? err : operr("delete secret on agent failed"));
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(KVMAgentCommands.SecretHostDeleteResponse rsp) {
+                if (rsp == null || !rsp.isSuccess()) {
+                    reply.setError(buildSecretAgentError(rsp, "delete secret failed"));
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<KVMAgentCommands.SecretHostDeleteResponse> getReturnClass() {
+                return KVMAgentCommands.SecretHostDeleteResponse.class;
             }
         }, TimeUnit.SECONDS, KVMConstant.ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
     }
