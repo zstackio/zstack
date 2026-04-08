@@ -21,24 +21,31 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.keyprovider.EncryptedResourceKeyManager;
 import org.zstack.header.keyprovider.EncryptedResourceKeyManager.GetOrCreateResourceKeyContext;
 import org.zstack.header.keyprovider.EncryptedResourceKeyManager.ResourceKeyResult;
+import org.zstack.header.secret.SecretHostDeleteMsg;
 import org.zstack.header.secret.SecretHostDefineMsg;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.secret.SecretHostDefineReply;
 import org.zstack.header.secret.SecretHostGetMsg;
 import org.zstack.header.secret.SecretHostGetReply;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.tpm.entity.TpmSpec;
 import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.tpm.entity.TpmVO_;
 import org.zstack.header.tpm.message.RemoveTpmMsg;
+import org.zstack.header.vm.HaStartVmInstanceMsg;
 import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
+import org.zstack.header.vm.VmAfterExpungeExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.VmInstantiateResourceException;
 import org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
@@ -65,7 +72,9 @@ import static org.zstack.core.Platform.operr;
 
 public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         PreVmInstantiateResourceExtensionPoint,
-        VmJustBeforeDeleteFromDbExtensionPoint {
+        VmJustBeforeDeleteFromDbExtensionPoint,
+        VmInstanceMigrateExtensionPoint,
+        VmAfterExpungeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmTpmExtensions.class);
 
     @Autowired
@@ -127,6 +136,16 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
 
     @Override
     public void startVmOnKvmSuccess(KVMHostInventory host, VmInstanceSpec spec) {
+        if (spec.getMessage() instanceof HaStartVmInstanceMsg) {
+            String vmUuid = spec.getVmInventory() == null ? null : spec.getVmInventory().getUuid();
+            String srcHostUuid = spec.getVmInventory() == null ? null : spec.getVmInventory().getLastHostUuid();
+            Integer keyVersion = findTpmKeyVersionByVmUuid(vmUuid);
+            boolean vmIsOnDestHost = isVmCurrentlyOnExpectedHost(vmUuid, host.getUuid());
+            if (vmIsOnDestHost && StringUtils.isNotBlank(srcHostUuid) && !host.getUuid().equals(srcHostUuid)) {
+                deleteHostSecretBestEffort(srcHostUuid, vmUuid, keyVersion,
+                        "ha-start-success");
+            }
+        }
         clearRollbackInfo(spec);
     }
 
@@ -233,10 +252,11 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
 
             @Override
             public boolean skip(Map data) {
-                boolean shouldSkip = VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class)
-                        && StringUtils.isBlank(context.providerUuid);
+                boolean shouldSkip = StringUtils.isBlank(context.providerUuid);
                 if (shouldSkip) {
-                    logger.info("skip create-dek: allowed.tpm.vm.without.kms is enabled and no KMS provider bound");
+                    logger.info(String.format(
+                            "skip ensure-resource-key-ref for tpm[uuid:%s] due to missing key provider binding, try host secret first",
+                            context.tpmUuid));
                 }
                 return shouldSkip;
             }
@@ -511,5 +531,96 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                 .eq(TpmVO_.vmInstanceUuid, sourceVmUuid)
                 .select(TpmVO_.uuid)
                 .findValue();
+    }
+
+    @Override
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    }
+
+    @Override
+    public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid, NoErrorCompletion completion) {
+        String vmUuid = inv == null ? null : inv.getUuid();
+        String destHostUuid = inv == null ? null : inv.getHostUuid();
+        if (StringUtils.isBlank(vmUuid) || StringUtils.isBlank(srcHostUuid) || srcHostUuid.equals(destHostUuid)) {
+            completion.done();
+            return;
+        }
+
+        if (!isVmCurrentlyOnExpectedHost(vmUuid, destHostUuid)) {
+            completion.done();
+            return;
+        }
+
+        Integer keyVersion = findTpmKeyVersionByVmUuid(vmUuid);
+        deleteHostSecretBestEffort(srcHostUuid, vmUuid, keyVersion, "after-migrate");
+        completion.done();
+    }
+
+    @Override
+    public void vmAfterExpunge(VmInstanceInventory vm) {
+        String vmUuid = vm.getUuid();
+        Integer keyVersion = findTpmKeyVersionByVmUuid(vmUuid);
+
+        java.util.Set<String> hostUuids = new java.util.HashSet<>();
+        if (StringUtils.isNotBlank(vm.getHostUuid())) {
+            hostUuids.add(vm.getHostUuid());
+        }
+        if (StringUtils.isNotBlank(vm.getLastHostUuid())) {
+            hostUuids.add(vm.getLastHostUuid());
+        }
+
+        if (hostUuids.isEmpty()) {
+            return;
+        }
+
+        for (String hostUuid : hostUuids) {
+            deleteHostSecretBestEffort(hostUuid, vmUuid, keyVersion, "expunge");
+        }
+    }
+
+    private Integer findTpmKeyVersionByVmUuid(String vmUuid) {
+        if (StringUtils.isBlank(vmUuid)) {
+            return null;
+        }
+        String tpmUuid = Q.New(TpmVO.class)
+                .eq(TpmVO_.vmInstanceUuid, vmUuid)
+                .select(TpmVO_.uuid)
+                .findValue();
+        return tpmUuid == null ? null : resourceKeyBackend.findKeyVersionByTpm(tpmUuid);
+    }
+
+    private boolean isVmCurrentlyOnExpectedHost(String vmUuid, String expectedHostUuid) {
+        if (StringUtils.isBlank(vmUuid) || StringUtils.isBlank(expectedHostUuid)) {
+            return false;
+        }
+
+        String currentHostUuid = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.hostUuid)
+                .eq(VmInstanceVO_.uuid, vmUuid)
+                .findValue();
+        return expectedHostUuid.equals(currentHostUuid);
+    }
+
+    private void deleteHostSecretBestEffort(String hostUuid, String vmUuid, Integer keyVersion, String reason) {
+        if (StringUtils.isBlank(hostUuid) || StringUtils.isBlank(vmUuid)) {
+            return;
+        }
+
+        SecretHostDeleteMsg dmsg = new SecretHostDeleteMsg();
+        dmsg.setHostUuid(hostUuid);
+        dmsg.setVmUuid(vmUuid);
+        dmsg.setPurpose("vtpm");
+        dmsg.setKeyVersion(keyVersion);
+        bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(dmsg, new CloudBusCallBack(null) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format(
+                            "best-effort delete host secret failed on %s for vm[uuid:%s], host[uuid:%s]: %s",
+                            reason, vmUuid, hostUuid, reply.getError().getDetails()));
+                }
+            }
+        });
     }
 }

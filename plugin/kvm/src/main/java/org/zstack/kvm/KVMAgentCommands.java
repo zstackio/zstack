@@ -538,6 +538,39 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class SecretHostDeleteCmd extends AgentCommand {
+        private String vmUuid;
+        private String purpose;
+        private Integer keyVersion;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getPurpose() {
+            return purpose;
+        }
+
+        public void setPurpose(String purpose) {
+            this.purpose = purpose;
+        }
+
+        public Integer getKeyVersion() {
+            return keyVersion;
+        }
+
+        public void setKeyVersion(Integer keyVersion) {
+            this.keyVersion = keyVersion;
+        }
+    }
+
+    public static class SecretHostDeleteResponse extends AgentResponse {
+    }
+
     public static class PingCmd extends AgentCommand {
         public String hostUuid;
         public long kvmagentPhysicalMemoryUsageAlarmThreshold;
