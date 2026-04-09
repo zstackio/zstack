@@ -33,9 +33,12 @@ import org.zstack.header.tpm.entity.TpmSpec;
 import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.tpm.entity.TpmVO_;
 import org.zstack.header.secret.SecretHostDefineReply;
+import org.zstack.header.tpm.message.RemoveTpmMsg;
 import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstantiateResourceException;
+import org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.additions.VmHostFileType;
@@ -54,11 +57,13 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Map;
 
+import static org.zstack.header.tpm.TpmConstants.SERVICE_ID;
 import static org.zstack.kvm.KVMConstant.*;
 import static org.zstack.core.Platform.operr;
 
 public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
-        PreVmInstantiateResourceExtensionPoint {
+        PreVmInstantiateResourceExtensionPoint,
+        VmJustBeforeDeleteFromDbExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmTpmExtensions.class);
 
     @Autowired
@@ -371,6 +376,27 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                 completion.success();
             }
         });
+    }
+
+    @Override
+    public void vmJustBeforeDeleteFromDb(VmInstanceInventory inv) {
+        String tpmUuid = Q.New(TpmVO.class)
+                .eq(TpmVO_.vmInstanceUuid, inv.getUuid())
+                .select(TpmVO_.uuid)
+                .findValue();
+        if (tpmUuid == null) {
+            return;
+        }
+
+        RemoveTpmMsg removeMsg = new RemoveTpmMsg();
+        removeMsg.setVmInstanceUuid(inv.getUuid());
+        removeMsg.setTpmUuid(tpmUuid);
+        bus.makeTargetServiceIdByResourceUuid(removeMsg, SERVICE_ID, removeMsg.getTpmUuid());
+        MessageReply reply = bus.call(removeMsg);
+        if (!reply.isSuccess()) {
+            logger.warn(String.format("failed to remove TPM[uuid:%s] of VM[uuid:%s], error: %s",
+                    tpmUuid, inv.getUuid(), reply.getError()));
+        }
     }
 
     private void clearRollbackInfo(VmInstanceSpec spec) {
