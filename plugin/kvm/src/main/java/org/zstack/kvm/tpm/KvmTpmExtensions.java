@@ -2,6 +2,7 @@ package org.zstack.kvm.tpm;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend;
 import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend.CloneEncryptedResourceKeyContext;
 import org.zstack.core.Platform;
@@ -42,7 +43,9 @@ import org.zstack.header.vm.VmAfterExpungeExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstantiateResourceException;
+import org.zstack.header.vm.VmStateChangedExtensionPoint;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.VmInstanceVO;
@@ -69,7 +72,8 @@ import static org.zstack.core.Platform.operr;
 public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         PreVmInstantiateResourceExtensionPoint,
         VmInstanceMigrateExtensionPoint,
-        VmAfterExpungeExtensionPoint {
+        VmAfterExpungeExtensionPoint,
+        VmStateChangedExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmTpmExtensions.class);
 
     @Autowired
@@ -220,7 +224,6 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                     @Override
                     public void success() {
                         context.providerUuid = resourceKeyBackend.findKeyProviderUuidByTpm(context.tpmUuid);
-                        context.providerName = resourceKeyBackend.findKeyProviderNameByTpm(context.tpmUuid);
                         trigger.next();
                     }
 
@@ -322,9 +325,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                         }
 
                         ErrorCode errorCode = reply.getError();
-                        if (errorCode != null
-                                && (SecretHostGetReply.ERROR_CODE_SECRET_NOT_FOUND.equals(errorCode.getCode())
-                                || SecretHostGetReply.ERROR_CODE_SECRET_NOT_FOUND.equals(errorCode.getDetails()))) {
+                        if (errorCode != null && isVtpmSecretNotFoundOnHost(errorCode)) {
                             trigger.next();
                             return;
                         }
@@ -528,6 +529,27 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
     }
 
     @Override
+    public void vmStateChanged(VmInstanceInventory vm, VmInstanceState oldState, VmInstanceState newState) {
+        if (oldState != VmInstanceState.VolumeMigrating) {
+            return;
+        }
+
+        String vmUuid = vm == null ? null : vm.getUuid();
+        String srcHostUuid = vm == null ? null : vm.getLastHostUuid();
+        String destHostUuid = vm == null ? null : vm.getHostUuid();
+        if (StringUtils.isBlank(vmUuid) || StringUtils.isBlank(srcHostUuid) || srcHostUuid.equals(destHostUuid)) {
+            return;
+        }
+
+        if (!isVmCurrentlyOnExpectedHost(vmUuid, destHostUuid)) {
+            return;
+        }
+
+        Integer keyVersion = findTpmKeyVersionByVmUuid(vmUuid);
+        deleteHostSecretBestEffort(srcHostUuid, vmUuid, keyVersion, "volume-migrated-host-change");
+    }
+
+    @Override
     public void vmAfterExpunge(VmInstanceInventory vm) {
         String vmUuid = vm.getUuid();
         Integer keyVersion = findTpmKeyVersionByVmUuid(vmUuid);
@@ -572,8 +594,16 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         return expectedHostUuid.equals(currentHostUuid);
     }
 
+    private static boolean isVtpmSecretNotFoundOnHost(ErrorCode errorCode) {
+        if (SecretHostGetReply.ERROR_CODE_SECRET_NOT_FOUND.equals(errorCode.getCode())) {
+            return true;
+        }
+        String details = errorCode.getDetails();
+        return details != null && details.contains(SecretHostGetReply.ERROR_CODE_SECRET_NOT_FOUND);
+    }
+
     private void deleteHostSecretBestEffort(String hostUuid, String vmUuid, Integer keyVersion, String reason) {
-        if (StringUtils.isBlank(hostUuid) || StringUtils.isBlank(vmUuid)) {
+        if (StringUtils.isBlank(hostUuid) || StringUtils.isBlank(vmUuid) || keyVersion == null) {
             return;
         }
 
@@ -587,9 +617,11 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
+                    ErrorCode err = reply.getError();
+                    String errMsg = err != null && err.getDetails() != null ? err.getDetails() : "unknown error";
                     logger.warn(String.format(
                             "best-effort delete host secret failed on %s for vm[uuid:%s], host[uuid:%s]: %s",
-                            reason, vmUuid, hostUuid, reply.getError().getDetails()));
+                            reason, vmUuid, hostUuid, errMsg));
                 }
             }
         });

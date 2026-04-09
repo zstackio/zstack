@@ -5327,11 +5327,14 @@ public class KVMHost extends HostBase implements Host {
         }
 
         String url = buildUrl(KVMConstant.KVM_GET_SECRET_PATH);
+        Map<String, String> headers = new HashMap<>();
+        headers.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, getSelf().getUuid());
         KVMAgentCommands.SecretHostGetCmd cmd = new KVMAgentCommands.SecretHostGetCmd();
         cmd.setVmUuid(msg.getVmUuid());
         cmd.setPurpose(msg.getPurpose());
         cmd.setKeyVersion(msg.getKeyVersion());
-        restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<KVMAgentCommands.SecretHostGetResponse>(msg, reply) {
+        cmd.setUsageInstance(KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM);
+        restf.asyncJsonPost(url, cmd, headers, new JsonAsyncRESTCallback<KVMAgentCommands.SecretHostGetResponse>(msg, reply) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err != null ? err : operr("get secret on agent failed"));
@@ -5437,13 +5440,16 @@ public class KVMHost extends HostBase implements Host {
         }
         String envelopeDekBase64 = java.util.Base64.getEncoder().encodeToString(envelope);
         String url = buildUrl(KVMConstant.KVM_ENSURE_SECRET_PATH);
+        Map<String, String> headers = new HashMap<>();
+        headers.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, getSelf().getUuid());
         KVMAgentCommands.SecretHostDefineCmd cmd = new KVMAgentCommands.SecretHostDefineCmd();
         cmd.setEncryptedDek(envelopeDekBase64);
         cmd.setVmUuid(msg.getVmUuid());
         cmd.setPurpose(msg.getPurpose());
         cmd.setKeyVersion(msg.getKeyVersion());
         cmd.setDescription(msg.getDescription() != null ? msg.getDescription() : "");
-        restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<KVMAgentCommands.SecretHostDefineResponse>(msg, reply) {
+        cmd.setUsageInstance(KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM);
+        restf.asyncJsonPost(url, cmd, headers, new JsonAsyncRESTCallback<KVMAgentCommands.SecretHostDefineResponse>(msg, reply) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err != null ? err : operr("ensure secret on agent failed"));
@@ -5476,24 +5482,41 @@ public class KVMHost extends HostBase implements Host {
             bus.reply(msg, reply);
             return;
         }
+        if (msg.getKeyVersion() == null) {
+            logger.debug(String.format(
+                    "skip delete host secret on host[uuid:%s]: keyVersion is null (vm[uuid:%s], purpose:%s)",
+                    getSelf().getUuid(), msg.getVmUuid(), msg.getPurpose()));
+            bus.reply(msg, reply);
+            return;
+        }
 
         String url = buildUrl(KVMConstant.KVM_DELETE_SECRET_PATH);
+        Map<String, String> headers = new HashMap<>();
+        headers.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, getSelf().getUuid());
         KVMAgentCommands.SecretHostDeleteCmd cmd = new KVMAgentCommands.SecretHostDeleteCmd();
         cmd.setVmUuid(msg.getVmUuid());
         cmd.setPurpose(msg.getPurpose());
         cmd.setKeyVersion(msg.getKeyVersion());
+        cmd.setUsageInstance(KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM);
 
-        restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<KVMAgentCommands.SecretHostDeleteResponse>(msg, reply) {
+        restf.asyncJsonPost(url, cmd, headers, new JsonAsyncRESTCallback<KVMAgentCommands.SecretHostDeleteResponse>(msg, reply) {
             @Override
             public void fail(ErrorCode err) {
-                reply.setError(err != null ? err : operr("delete secret on agent failed"));
+                logger.warn(String.format(
+                        "best-effort delete secret on agent failed on host[uuid:%s] for vm[uuid:%s]: %s",
+                        getSelf().getUuid(), msg.getVmUuid(),
+                        err != null ? err.getDetails() : "unknown error"));
                 bus.reply(msg, reply);
             }
 
             @Override
             public void success(KVMAgentCommands.SecretHostDeleteResponse rsp) {
                 if (rsp == null || !rsp.isSuccess()) {
-                    reply.setError(buildSecretAgentError(rsp, "delete secret failed"));
+                    ErrorCode agentErr = buildSecretAgentError(rsp, "delete secret failed");
+                    logger.warn(String.format(
+                            "best-effort delete secret on agent failed on host[uuid:%s] for vm[uuid:%s]: %s",
+                            getSelf().getUuid(), msg.getVmUuid(),
+                            agentErr.getDetails()));
                 }
                 bus.reply(msg, reply);
             }
@@ -5506,13 +5529,34 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private ErrorCode buildSecretAgentError(KVMAgentCommands.AgentResponse rsp, String defaultMessage) {
-        if (rsp != null && rsp.getError() != null) {
+        String raw = rsp != null ? StringUtils.trimToNull(rsp.getError()) : null;
+        if (raw == null) {
+            return operr(defaultMessage);
+        }
+        String stable = stableKeyAgentErrorCodeFromRawMessage(raw);
+        if (stable != null) {
             ErrorCode err = new ErrorCode();
-            err.setCode(rsp.getError());
-            err.setDetails(rsp.getError());
+            err.setCode(stable);
+            err.setDetails(raw);
             return err;
         }
-        return operr(defaultMessage);
+        return operr("%s: %s", defaultMessage, raw);
+    }
+
+    private static String stableKeyAgentErrorCodeFromRawMessage(String raw) {
+        String t = raw.trim();
+        int colon = t.indexOf(':');
+        String head = (colon >= 0 ? t.substring(0, colon) : t).trim();
+        if (head.isEmpty()) {
+            return null;
+        }
+        if (SecretHostGetReply.ERROR_CODE_SECRET_NOT_FOUND.equals(head)) {
+            return head;
+        }
+        if (head.startsWith("KEY_AGENT_")) {
+            return head;
+        }
+        return null;
     }
 
     @Override

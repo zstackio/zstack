@@ -3,10 +3,6 @@ package org.zstack.header.secret;
 import org.zstack.header.host.HostMessage;
 import org.zstack.header.message.NeedReplyMessage;
 
-/**
- * Request to delete existing secret on KVM host by vmUuid/purpose/keyVersion.
- * keyVersion can be null, then agent may remove all matched versions for the vm+purpose.
- */
 public class SecretHostDeleteMsg extends NeedReplyMessage implements HostMessage {
     private String hostUuid;
     private String vmUuid;

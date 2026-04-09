@@ -420,8 +420,10 @@ public class KvmTpmManager extends AbstractService {
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
+                                    ErrorCode err = reply.getError();
+                                    String errMsg = err != null && err.getDetails() != null ? err.getDetails() : "unknown error";
                                     logger.warn(String.format("failed to delete host secret on host[uuid:%s] for vm[uuid:%s], continue cleanup: %s",
-                                            hostUuid, context.vmInstanceUuid, reply.getError().getDetails()));
+                                            hostUuid, context.vmInstanceUuid, errMsg));
                                 }
                                 whileCompletion.done();
                             }
@@ -717,6 +719,10 @@ public class KvmTpmManager extends AbstractService {
                 .build())
             .then(Flow.of("delete-host-secret")
                 .handle(trigger -> {
+                    if (context.keyVersion == null) {
+                        trigger.next();
+                        return;
+                    }
                     Set<String> hostUuids = new HashSet<>();
                     for (VmHostFileVO file : context.hostFiles) {
                         hostUuids.add(file.getHostUuid());
@@ -740,8 +746,10 @@ public class KvmTpmManager extends AbstractService {
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
+                                    ErrorCode err = reply.getError();
+                                    String errMsg = err != null && err.getDetails() != null ? err.getDetails() : "unknown error";
                                     logger.warn(String.format("failed to delete host secret on host[uuid:%s] for vm[uuid:%s], continue reset: %s",
-                                            hostUuid, vmUuid, reply.getError().getDetails()));
+                                            hostUuid, vmUuid, errMsg));
                                 }
                                 whileCompletion.done();
                             }
