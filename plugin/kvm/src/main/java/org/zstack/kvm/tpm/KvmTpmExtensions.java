@@ -31,21 +31,23 @@ import org.zstack.header.secret.SecretHostDeleteMsg;
 import org.zstack.header.secret.SecretHostDefineMsg;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
-import org.zstack.header.secret.SecretHostDefineReply;
 import org.zstack.header.secret.SecretHostGetMsg;
 import org.zstack.header.secret.SecretHostGetReply;
 import org.zstack.header.tpm.entity.TpmSpec;
 import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.tpm.entity.TpmVO_;
 import org.zstack.header.vm.HaStartVmInstanceMsg;
-import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
 import org.zstack.header.vm.VmAfterExpungeExtensionPoint;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
+import org.zstack.header.secret.SecretHostDefineReply;
+import org.zstack.header.tpm.message.RemoveTpmMsg;
+import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstantiateResourceException;
 import org.zstack.header.vm.VmStateChangedExtensionPoint;
+import org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.VmInstanceVO;
@@ -64,8 +66,10 @@ import org.zstack.utils.logging.CLogger;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
+import static org.zstack.header.tpm.TpmConstants.SERVICE_ID;
 import static org.zstack.kvm.KVMConstant.*;
 import static org.zstack.core.Platform.operr;
 
@@ -73,7 +77,8 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         PreVmInstantiateResourceExtensionPoint,
         VmInstanceMigrateExtensionPoint,
         VmAfterExpungeExtensionPoint,
-        VmStateChangedExtensionPoint {
+        VmStateChangedExtensionPoint,
+        VmJustBeforeDeleteFromDbExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmTpmExtensions.class);
 
     @Autowired
@@ -88,6 +93,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
     private CloudBus bus;
 
     private final Object hostFileLock = new Object();
+    private final Map<String, String> volumeMigratingSourceHostCache = new ConcurrentHashMap<>();
 
     @Override
     public void beforeStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, KVMAgentCommands.StartVmCmd cmd) {
@@ -477,6 +483,27 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         });
     }
 
+    @Override
+    public void vmJustBeforeDeleteFromDb(VmInstanceInventory inv) {
+        String tpmUuid = Q.New(TpmVO.class)
+                .eq(TpmVO_.vmInstanceUuid, inv.getUuid())
+                .select(TpmVO_.uuid)
+                .findValue();
+        if (tpmUuid == null) {
+            return;
+        }
+
+        RemoveTpmMsg removeMsg = new RemoveTpmMsg();
+        removeMsg.setVmInstanceUuid(inv.getUuid());
+        removeMsg.setTpmUuid(tpmUuid);
+        bus.makeTargetServiceIdByResourceUuid(removeMsg, SERVICE_ID, removeMsg.getTpmUuid());
+        MessageReply reply = bus.call(removeMsg);
+        if (!reply.isSuccess()) {
+            logger.warn(String.format("failed to remove TPM[uuid:%s] of VM[uuid:%s], error: %s",
+                    tpmUuid, inv.getUuid(), reply.getError()));
+        }
+    }
+
     private void clearRollbackInfo(VmInstanceSpec spec) {
         if (spec.getDevicesSpec() == null || spec.getDevicesSpec().getTpm() == null) {
             return;
@@ -530,22 +557,68 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
 
     @Override
     public void vmStateChanged(VmInstanceInventory vm, VmInstanceState oldState, VmInstanceState newState) {
+        String vmUuid = vm == null ? null : vm.getUuid();
+        if (StringUtils.isBlank(vmUuid)) {
+            logger.info(String.format("vmStateChanged skip: vmUuid is blank, oldState=%s, newState=%s", oldState, newState));
+            return;
+        }
+
+        // Record source host when storage migration starts. In some end-state events (e.g. VolumeMigrating->Stopped),
+        // inventory host fields may not carry both src/dst host values reliably.
+        if (newState == VmInstanceState.VolumeMigrating) {
+            String srcHostUuid = vm.getLastHostUuid();
+            if (StringUtils.isBlank(srcHostUuid)) {
+                srcHostUuid = Q.New(VmInstanceVO.class)
+                        .select(VmInstanceVO_.lastHostUuid)
+                        .eq(VmInstanceVO_.uuid, vmUuid)
+                        .findValue();
+            }
+            if (StringUtils.isNotBlank(srcHostUuid)) {
+                volumeMigratingSourceHostCache.put(vmUuid, srcHostUuid);
+                logger.info(String.format(
+                        "vmStateChanged cache volume-migrating src host: vm[uuid:%s], oldState=%s, newState=%s, srcHostUuid=%s",
+                        vmUuid, oldState, newState, srcHostUuid));
+            } else {
+                logger.info(String.format(
+                        "vmStateChanged skip cache: source host is blank, vm[uuid:%s], oldState=%s, newState=%s",
+                        vmUuid, oldState, newState));
+            }
+            return;
+        }
+
         if (oldState != VmInstanceState.VolumeMigrating) {
             return;
         }
 
-        String vmUuid = vm == null ? null : vm.getUuid();
-        String srcHostUuid = vm == null ? null : vm.getLastHostUuid();
-        String destHostUuid = vm == null ? null : vm.getHostUuid();
-        if (StringUtils.isBlank(vmUuid) || StringUtils.isBlank(srcHostUuid) || srcHostUuid.equals(destHostUuid)) {
+        String srcHostUuid = volumeMigratingSourceHostCache.remove(vmUuid);
+        if (StringUtils.isBlank(srcHostUuid)) {
+            logger.info(String.format(
+                    "vmStateChanged skip delete: no cached source host, vm[uuid:%s], oldState=%s, newState=%s",
+                    vmUuid, oldState, newState));
             return;
         }
 
-        if (!isVmCurrentlyOnExpectedHost(vmUuid, destHostUuid)) {
+        String destHostUuid = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.hostUuid)
+                .eq(VmInstanceVO_.uuid, vmUuid)
+                .findValue();
+        if (StringUtils.isBlank(destHostUuid)) {
+            destHostUuid = Q.New(VmInstanceVO.class)
+                    .select(VmInstanceVO_.lastHostUuid)
+                    .eq(VmInstanceVO_.uuid, vmUuid)
+                    .findValue();
+        }
+        if (StringUtils.isBlank(destHostUuid) || srcHostUuid.equals(destHostUuid)) {
+            logger.info(String.format(
+                    "vmStateChanged skip delete: invalid host mapping, vm[uuid:%s], oldState=%s, newState=%s, srcHostUuid=%s, destHostUuid=%s",
+                    vmUuid, oldState, newState, srcHostUuid, destHostUuid));
             return;
         }
 
         Integer keyVersion = findTpmKeyVersionByVmUuid(vmUuid);
+        logger.info(String.format(
+                "vmStateChanged trigger delete: vm[uuid:%s], srcHostUuid=%s, destHostUuid=%s, keyVersion=%s, reason=volume-migrated-host-change",
+                vmUuid, srcHostUuid, destHostUuid, keyVersion));
         deleteHostSecretBestEffort(srcHostUuid, vmUuid, keyVersion, "volume-migrated-host-change");
     }
 
@@ -604,9 +677,15 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
 
     private void deleteHostSecretBestEffort(String hostUuid, String vmUuid, Integer keyVersion, String reason) {
         if (StringUtils.isBlank(hostUuid) || StringUtils.isBlank(vmUuid) || keyVersion == null) {
+            logger.info(String.format(
+                    "skip delete host secret: reason=%s, hostUuid=%s, vmUuid=%s, keyVersion=%s",
+                    reason, hostUuid, vmUuid, keyVersion));
             return;
         }
 
+        logger.info(String.format(
+                "send delete host secret: reason=%s, hostUuid=%s, vmUuid=%s, keyVersion=%s",
+                reason, hostUuid, vmUuid, keyVersion));
         SecretHostDeleteMsg dmsg = new SecretHostDeleteMsg();
         dmsg.setHostUuid(hostUuid);
         dmsg.setVmUuid(vmUuid);
