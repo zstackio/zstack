@@ -34,7 +34,7 @@ public class UploadAndExecuteSoftwareUpgradePackageAction extends AbstractAction
     @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String url;
 
-    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String installPath;
 
     @Param(required = false, validValues = {"Normal","Reexecute"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
