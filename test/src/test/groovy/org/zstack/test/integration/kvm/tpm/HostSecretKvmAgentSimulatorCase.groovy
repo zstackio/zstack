@@ -21,6 +21,11 @@ class HostSecretKvmAgentSimulatorCase extends SubCase {
     }
 
     @Override
+    void clean() {
+        env?.delete()
+    }
+
+    @Override
     void environment() {
         env = makeEnv {
             zone {
