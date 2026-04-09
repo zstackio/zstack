@@ -129,18 +129,20 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIChangeL2NetworkVlanIdMsg msg) {
         L2NetworkVO l2 = dbf.findByUuid(msg.getL2NetworkUuid(), L2NetworkVO.class);
-        l2.getAttachedClusterRefs().forEach(ref -> {
-            if (Q.New(HostVO.class).eq(HostVO_.clusterUuid, ref.getClusterUuid())
-                    .notEq(HostVO_.status, HostStatus.Connected).isExists()) {
-                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_L2_10013, "cannot change vlan for l2Network[uuid:%s]" +
-                        " because there are hosts status in Connecting or Disconnected", l2.getUuid()));
-            }
-            if (!Q.New(ClusterVO.class).eq(ClusterVO_.uuid, ref.getClusterUuid())
-                    .eq(ClusterVO_.hypervisorType, L2NetworkConstant.KVM_HYPERVISOR_TYPE).isExists()) {
-                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_L2_10014, "cannot change vlan for l2Network[uuid:%s]" +
-                        " because it only supports an L2Network that is exclusively attached to a kvm cluster", l2.getUuid()));
-            }
-        });
+        if (!L2NetworkConstant.VSWITCH_TYPE_ZNS.equals(l2.getvSwitchType())) {
+            l2.getAttachedClusterRefs().forEach(ref -> {
+                if (Q.New(HostVO.class).eq(HostVO_.clusterUuid, ref.getClusterUuid())
+                        .notEq(HostVO_.status, HostStatus.Connected).isExists()) {
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_L2_10013, "cannot change vlan for l2Network[uuid:%s]" +
+                            " because there are hosts status in Connecting or Disconnected", l2.getUuid()));
+                }
+                if (!Q.New(ClusterVO.class).eq(ClusterVO_.uuid, ref.getClusterUuid())
+                        .eq(ClusterVO_.hypervisorType, L2NetworkConstant.KVM_HYPERVISOR_TYPE).isExists()) {
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_L2_10014, "cannot change vlan for l2Network[uuid:%s]" +
+                            " because it only supports an L2Network that is exclusively attached to a kvm cluster", l2.getUuid()));
+                }
+            });
+        }
         // pvlan isolated not support change vlan
         if (l2.getIsolated()) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10015, "cannot change vlan for l2Network[uuid:%s]" +
@@ -157,8 +159,9 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         boolean targetIsVlan = L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(targetType);
         boolean targetIsNoVlan = L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE.equals(targetType);
         boolean targetIsGeneve = L2NetworkConstant.L2_GENEVE_NETWORK_TYPE.equals(targetType);
-        if (!targetIsVlan && !targetIsNoVlan && !targetIsGeneve) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10011,
+        boolean targetIsVxlan = L2NetworkConstant.VXLAN_NETWORK_TYPE.equals(targetType);
+        if (!targetIsVlan && !targetIsNoVlan && !targetIsGeneve && !targetIsVxlan) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10021,
                     "unsupported l2Network type[%s] for ChangeL2NetworkVlanId", targetType));
         }
 
@@ -248,6 +251,15 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             if (!l2s.isEmpty()) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10020, "There has been a l2Network attached to cluster that has physical interface[%s]. Failed to change l2Network[uuid:%s]",
                         l2.getPhysicalInterface(), l2.getUuid()));
+            }
+        } else if (targetIsGeneve) {
+            if (msg.getVlan() == null) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10016, "vni is required for " +
+                        "ChangeL2NetworkVlanId with type[%s]", msg.getType()));
+            }
+            if (msg.getVlan() < 1 || msg.getVlan() > 16777215) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10017, "invalid vni[%d] for " +
+                        "ChangeL2NetworkVlanId, must be between 1 and 16777215", msg.getVlan()));
             }
         }
     }

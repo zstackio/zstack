@@ -443,6 +443,7 @@ public class L2NoVlanNetwork implements L2Network {
 
             @Override
             public void run(SyncTaskChain chain) {
+                extpEmitter.beforeUpdate(getSelfInventory());
                 changeL2NetworkVlanId(msg, new Completion(chain) {
                     @Override
                     public void success() {

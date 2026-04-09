@@ -79,12 +79,13 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 List<VmNicInventory> releasedNics = new ArrayList<>();
+                List<VmNicVO> nicsToDelete = new ArrayList<>();
                 for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
                     VmNicVO vo = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
                     if (VmInstanceConstant.USER_VM_TYPE.equals(spec.getVmInventory().getType())) {
                         VmInstanceDeletionPolicy deletionPolicy = getDeletionPolicy(spec, data);
                         if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
-                            dbf.remove(vo);
+                            nicsToDelete.add(vo);
                         } else {
                             vo.setUsedIpUuid(null);
                             vo.setIp(null);
@@ -93,7 +94,7 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
                             dbf.update(vo);
                         }
                     } else {
-                        dbf.remove(vo);
+                        nicsToDelete.add(vo);
                     }
                     releasedNics.add(nic);
                 }
@@ -101,12 +102,14 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
                 callReleaseSdnNics(releasedNics, new Completion(chain) {
                     @Override
                     public void success() {
+                        nicsToDelete.forEach(dbf::remove);
                         chain.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
                         logger.warn(String.format("releaseSdnNics failed: %s, continue anyway", errorCode));
+                        nicsToDelete.forEach(dbf::remove);
                         chain.next();
                     }
                 });

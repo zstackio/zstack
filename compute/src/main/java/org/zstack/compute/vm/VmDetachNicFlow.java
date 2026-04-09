@@ -98,11 +98,10 @@ public class VmDetachNicFlow extends NoRollbackFlow {
         }).run(new WhileDoneCompletion(trigger){
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
-
                 callReleaseSdnNics(java.util.Collections.singletonList(nic), new Completion(trigger) {
                     @Override
                     public void success() {
+                        dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
                         trigger.next();
                     }
 
@@ -110,6 +109,7 @@ public class VmDetachNicFlow extends NoRollbackFlow {
                     public void fail(ErrorCode errorCode) {
                         logger.warn(String.format("releaseSdnNics failed for nic[uuid:%s]: %s, continue",
                                 nic.getUuid(), errorCode));
+                        dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
                         trigger.next();
                     }
                 });
