@@ -18,7 +18,6 @@ import base64
 import hmac
 from hashlib import sha1
 import datetime
-import time
 
 try:
     int_types = (int, long)
@@ -58,7 +57,7 @@ def _exception_safe(func):
     def wrap(*args, **kwargs):
         try:
             func(*args, **kwargs)
-        except:
+        except Exception:
             print(traceback.format_exc())
 
     return wrap
@@ -80,6 +79,7 @@ def _http_error(status, body=None):
 def _error(code, desc, details):
     err = ErrorCode()
     err.code = code
+    err.description = desc
     err.desc = desc
     err.details = details
     return {'error': err}
@@ -181,7 +181,7 @@ class AbstractAction(object):
             if value is not None and isinstance(value, str) and annotation.max_length and len(value) > annotation.max_length:
                 raise SdkError('invalid length[%s] of the parameter[%s], the max allowed length is %s' % (len(value), param_name, annotation.max_length))
 
-            if value is not None and isinstance(value, str) and annotation.min_length and len(value) > annotation.min_length:
+            if value is not None and isinstance(value, str) and annotation.min_length and len(value) < annotation.min_length:
                 raise SdkError('invalid length[%s] of the parameter[%s], the minimal allowed length is %s' % (len(value), param_name, annotation.min_length))
 
             if value is not None and isinstance(value, list) and annotation.non_empty is True and len(value) == 0:
@@ -235,11 +235,11 @@ class AbstractAction(object):
         elements.append('/v1')
 
         path = self.PATH.replace('{', '${')
-        unresolved = re.findall('${(.+?)}', path)
+        unresolved = re.findall(r'\$\{(.+?)\}', path)
         params = self._params()
         if unresolved:
             for u in unresolved:
-                if u in params:
+                if u not in params:
                     raise SdkError('missing a mandatory parameter[%s]' % u)
 
         path = string.Template(path).substitute(params)
@@ -362,7 +362,21 @@ class AbstractAction(object):
         m = json.loads(rsp.data)
         location = m[LOCATION]
         if not location:
-            raise SdkError("Internal Error] the api[%s] is an async API but the server doesn't return the polling location url")
+            raise SdkError("[Internal Error] the api[%s] is an async API but the server doesn't return the polling location url" % self.PATH)
+
+        # Rewrite poll URL to use client-configured hostname:port,
+        # in case server returns an internal IP unreachable from client
+        try:
+            from urllib.parse import urlparse, urlunparse
+        except ImportError:
+            from urlparse import urlparse, urlunparse
+        parsed = urlparse(location)
+        configured_host = __config__[CONFIG_HOSTNAME]
+        configured_port = str(__config__[CONFIG_PORT])
+        if ':' in configured_host and not configured_host.startswith('['):
+            configured_host = '[%s]' % configured_host
+        location = urlunparse(parsed._replace(
+            netloc='%s:%s' % (configured_host, configured_port)))
 
         if cb:
             # async polling
@@ -480,11 +494,13 @@ def _uuid():
 def _json_http(
         uri,
         body=None,
-        headers={},
+        headers=None,
         method='POST',
         timeout=120.0
 ):
     pool = urllib3.PoolManager(timeout=timeout, retries=urllib3.util.retry.Retry(15))
+    if headers is None:
+        headers = {}
     headers.update({'Content-Type': 'application/json', 'Connection': 'close'})
 
     if body is not None and not isinstance(body, str):
@@ -497,6 +513,15 @@ def _json_http(
     else:
         rsp = pool.request(method, uri, headers=headers)
 
-    print('[Response to %s %s]: status: %s, body: %s' % (method, uri, rsp.status, rsp.data))
-    return rsp
+    data = rsp.data
+    if isinstance(data, bytes):
+        data = data.decode('utf-8')
+    print('[Response to %s %s]: status: %s, body: %s' % (method, uri, rsp.status, data))
+
+    class _Rsp(object):
+        pass
+    r = _Rsp()
+    r.status = rsp.status
+    r.data = data
+    return r
 
