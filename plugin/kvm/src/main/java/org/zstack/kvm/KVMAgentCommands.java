@@ -412,6 +412,7 @@ public class KVMAgentCommands {
         private String purpose;
         private Integer keyVersion;
         private String description;
+        private String usageInstance;
 
         public String getEncryptedDek() {
             return encryptedDek;
@@ -452,6 +453,14 @@ public class KVMAgentCommands {
         public void setDescription(String description) {
             this.description = description;
         }
+
+        public String getUsageInstance() {
+            return usageInstance;
+        }
+
+        public void setUsageInstance(String usageInstance) {
+            this.usageInstance = usageInstance;
+        }
     }
 
     public static class SecretHostDefineResponse extends AgentResponse {
@@ -470,6 +479,7 @@ public class KVMAgentCommands {
         private String vmUuid;
         private String purpose;
         private Integer keyVersion;
+        private String usageInstance;
 
         public String getVmUuid() {
             return vmUuid;
@@ -493,6 +503,14 @@ public class KVMAgentCommands {
 
         public void setKeyVersion(Integer keyVersion) {
             this.keyVersion = keyVersion;
+        }
+
+        public String getUsageInstance() {
+            return usageInstance;
+        }
+
+        public void setUsageInstance(String usageInstance) {
+            this.usageInstance = usageInstance;
         }
     }
 
@@ -512,6 +530,7 @@ public class KVMAgentCommands {
         private String vmUuid;
         private String purpose;
         private Integer keyVersion;
+        private String usageInstance;
 
         public String getVmUuid() {
             return vmUuid;
@@ -535,6 +554,14 @@ public class KVMAgentCommands {
 
         public void setKeyVersion(Integer keyVersion) {
             this.keyVersion = keyVersion;
+        }
+
+        public String getUsageInstance() {
+            return usageInstance;
+        }
+
+        public void setUsageInstance(String usageInstance) {
+            this.usageInstance = usageInstance;
         }
     }
 
