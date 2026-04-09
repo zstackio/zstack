@@ -162,6 +162,7 @@ public interface KVMConstant {
 
     /** Max size in bytes for DEK payload in SecretHostDefine (decoded from dekBase64). */
     int MAX_DEK_BYTES = 1024;
+    String HOST_SECRET_USAGE_INSTANCE_VTPM = "tpm0";
 
     String KVM_HOST_FILE_DOWNLOAD_PATH = "/host/file/download";
     String KVM_HOST_FILE_UPLOAD_PATH = "/host/file/upload";
