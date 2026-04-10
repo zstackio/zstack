@@ -269,7 +269,8 @@ public class VmHostFileTracker implements Component {
                 // check if force sync is needed based on lastSyncDate
                 Timestamp oldestLastSync = group.stream()
                         .map(VmHostFileVO::getLastSyncDate)
-                        .min(Comparator.nullsFirst(Comparator.naturalOrder()))
+                        .filter(Objects::nonNull)
+                        .min(Comparator.naturalOrder())
                         .orElse(null);
 
                 if (oldestLastSync != null && (now - oldestLastSync.getTime()) < forceSyncThresholdMs) {
