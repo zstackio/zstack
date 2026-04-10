@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -87,6 +86,10 @@ public class L2NetworkHostHelper {
     }
 
     public static Set<HostVO> getHostsByL2NetworkAttachedCluster(L2NetworkInventory l2NetworkInventory) {
+        if (l2NetworkInventory.getAttachedClusterUuids() == null || l2NetworkInventory.getAttachedClusterUuids().isEmpty()) {
+            return new HashSet<>();
+        }
+
         return new HashSet<>(Q.New(HostVO.class)
                 .in(HostVO_.clusterUuid, l2NetworkInventory.getAttachedClusterUuids())
                 .notIn(HostVO_.state,asList(HostState.PreMaintenance, HostState.Maintenance))

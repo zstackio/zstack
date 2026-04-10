@@ -53,6 +53,20 @@ public class L2NetworkExtensionPointEmitter implements Component {
         });
     }
 
+    public void beforeUpdate(final L2NetworkInventory inv) {
+        for (L2NetworkUpdateExtensionPoint ext : updateExtensions) {
+            try {
+                ext.beforeChangeL2NetworkVlanId(inv);
+            } catch (RuntimeException e) {
+                // propagate validation failures and other runtime exceptions immediately
+                throw e;
+            } catch (Exception e) {
+                logger.warn(String.format("unhandled exception in L2NetworkUpdateExtensionPoint.beforeChangeL2NetworkVlanId of %s",
+                        ext.getClass().getCanonicalName()), e);
+            }
+        }
+    }
+
     public void afterUpdate(final L2NetworkInventory inv) {
         CollectionUtils.safeForEach(updateExtensions, arg -> arg.afterChangeL2NetworkVlanId(inv));
     }
