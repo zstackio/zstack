@@ -410,8 +410,9 @@ public class KVMAgentCommands {
         private String encryptedDek;
         private String vmUuid;
         private String purpose;
-        private String providerName;
+        private Integer keyVersion;
         private String description;
+        private String usageInstance;
 
         public String getEncryptedDek() {
             return encryptedDek;
@@ -437,12 +438,12 @@ public class KVMAgentCommands {
             this.purpose = purpose;
         }
 
-        public String getProviderName() {
-            return providerName;
+        public Integer getKeyVersion() {
+            return keyVersion;
         }
 
-        public void setProviderName(String providerName) {
-            this.providerName = providerName;
+        public void setKeyVersion(Integer keyVersion) {
+            this.keyVersion = keyVersion;
         }
 
         public String getDescription() {
@@ -451,6 +452,14 @@ public class KVMAgentCommands {
 
         public void setDescription(String description) {
             this.description = description;
+        }
+
+        public String getUsageInstance() {
+            return usageInstance;
+        }
+
+        public void setUsageInstance(String usageInstance) {
+            this.usageInstance = usageInstance;
         }
     }
 
@@ -464,6 +473,99 @@ public class KVMAgentCommands {
         public void setSecretUuid(String secretUuid) {
             this.secretUuid = secretUuid;
         }
+    }
+
+    public static class SecretHostGetCmd extends AgentCommand {
+        private String vmUuid;
+        private String purpose;
+        private Integer keyVersion;
+        private String usageInstance;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getPurpose() {
+            return purpose;
+        }
+
+        public void setPurpose(String purpose) {
+            this.purpose = purpose;
+        }
+
+        public Integer getKeyVersion() {
+            return keyVersion;
+        }
+
+        public void setKeyVersion(Integer keyVersion) {
+            this.keyVersion = keyVersion;
+        }
+
+        public String getUsageInstance() {
+            return usageInstance;
+        }
+
+        public void setUsageInstance(String usageInstance) {
+            this.usageInstance = usageInstance;
+        }
+    }
+
+    public static class SecretHostGetResponse extends AgentResponse {
+        private String secretUuid;
+
+        public String getSecretUuid() {
+            return secretUuid;
+        }
+
+        public void setSecretUuid(String secretUuid) {
+            this.secretUuid = secretUuid;
+        }
+    }
+
+    public static class SecretHostDeleteCmd extends AgentCommand {
+        private String vmUuid;
+        private String purpose;
+        private Integer keyVersion;
+        private String usageInstance;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getPurpose() {
+            return purpose;
+        }
+
+        public void setPurpose(String purpose) {
+            this.purpose = purpose;
+        }
+
+        public Integer getKeyVersion() {
+            return keyVersion;
+        }
+
+        public void setKeyVersion(Integer keyVersion) {
+            this.keyVersion = keyVersion;
+        }
+
+        public String getUsageInstance() {
+            return usageInstance;
+        }
+
+        public void setUsageInstance(String usageInstance) {
+            this.usageInstance = usageInstance;
+        }
+    }
+
+    public static class SecretHostDeleteResponse extends AgentResponse {
     }
 
     public static class PingCmd extends AgentCommand {

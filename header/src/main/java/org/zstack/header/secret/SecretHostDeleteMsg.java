@@ -1,22 +1,13 @@
 package org.zstack.header.secret;
 
 import org.zstack.header.host.HostMessage;
-import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.NeedReplyMessage;
 
-/**
- * Request to ensure secret on KVM host (for VM e.g. vTPM).
- * Caller provides plaintext DEK (dekBase64), then host seals it with host public key
- * and forwards the envelope to key-agent.
- */
-public class SecretHostDefineMsg extends NeedReplyMessage implements HostMessage {
+public class SecretHostDeleteMsg extends NeedReplyMessage implements HostMessage {
     private String hostUuid;
-    @NoLogging
-    private String dekBase64;
     private String vmUuid;
     private String purpose;
     private Integer keyVersion;
-    private String description;
 
     @Override
     public String getHostUuid() {
@@ -25,14 +16,6 @@ public class SecretHostDefineMsg extends NeedReplyMessage implements HostMessage
 
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
-    }
-
-    public String getDekBase64() {
-        return dekBase64;
-    }
-
-    public void setDekBase64(String dekBase64) {
-        this.dekBase64 = dekBase64;
     }
 
     public String getVmUuid() {
@@ -57,13 +40,5 @@ public class SecretHostDefineMsg extends NeedReplyMessage implements HostMessage
 
     public void setKeyVersion(Integer keyVersion) {
         this.keyVersion = keyVersion;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 }
