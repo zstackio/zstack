@@ -204,7 +204,8 @@ public class KvmSecureBootManager extends AbstractService {
     }
 
     private void handle(SyncVmHostFilesFromHostMsg msg) {
-        KvmCommandSender sender = new KvmCommandSender(msg.getHostUuid());
+        KvmCommandSender sender = new KvmCommandSender(msg.getHostUuid())
+                .disableHostStatusCheck();
 
         KVMAgentCommands.ReadVmHostFileContentCmd cmd = new KVMAgentCommands.ReadVmHostFileContentCmd();
         cmd.setHostFiles(new ArrayList<>());
