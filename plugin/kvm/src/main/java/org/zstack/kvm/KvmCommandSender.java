@@ -69,6 +69,11 @@ public class KvmCommandSender {
         DebugUtils.Assert(hostUuid != null, "hostUuid cannot be null");
     }
 
+    public KvmCommandSender disableHostStatusCheck() {
+        this.noStatusCheck = true;
+        return this;
+    }
+
     public void send(final Object cmd, final String path, final KvmCommandFailureChecker checker, final SteppingSendCallback<KvmResponseWrapper> completion) {
         List<KVMHostAsyncHttpCallMsg> msgs = hostUuids.stream().map(huuid -> {
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
