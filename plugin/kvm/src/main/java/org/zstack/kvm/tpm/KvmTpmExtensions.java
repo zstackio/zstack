@@ -94,6 +94,8 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
     private EncryptedResourceKeyManager resourceKeyManager;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private KvmTpmEncryptedResourceKeyRefJdbcRepair tpmKeyRefJdbcRepair;
 
     private final Object hostFileLock = new Object();
     private final Map<String, String> volumeMigratingSourceHostCache = new ConcurrentHashMap<>();
@@ -105,9 +107,14 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
             return;
         }
 
+        String tpmUuid = devicesSpec.getTpm().getTpmUuid();
+        repairOrphanTpmKeyRefPlaceholders(tpmUuid);
         String keyProviderUuid = devicesSpec.getTpm().getKeyProviderUuid();
         if (StringUtils.isBlank(keyProviderUuid)) {
-            keyProviderUuid = resourceKeyBackend.findKeyProviderUuidByTpm(devicesSpec.getTpm().getTpmUuid());
+            keyProviderUuid = safeFindKeyProviderUuidByTpm(tpmUuid);
+        }
+        if (StringUtils.isBlank(keyProviderUuid)) {
+            keyProviderUuid = tryRebindKeyProviderByName(tpmUuid);
         }
 
         TpmTO tpm = new TpmTO();
@@ -181,7 +188,23 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         final PrepareTpmResourceContext context = new PrepareTpmResourceContext();
         context.tpmUuid = tpmSpec.getTpmUuid();
         context.backupFileUuid = tpmSpec.getBackupFileUuid(); // maybe null
-        context.providerUuid = resourceKeyBackend.findKeyProviderUuidByTpm(context.tpmUuid);
+        repairOrphanTpmKeyRefPlaceholders(context.tpmUuid);
+        context.providerUuid = safeFindKeyProviderUuidByTpm(context.tpmUuid);
+        if (StringUtils.isBlank(context.providerUuid) && StringUtils.isNotBlank(tpmSpec.getKeyProviderUuid())) {
+            context.providerUuid = tpmSpec.getKeyProviderUuid();
+            resourceKeyBackend.attachKeyProviderToTpm(context.tpmUuid, context.providerUuid);
+            logger.info(String.format("auto repaired TPM key provider binding for tpm[uuid:%s], providerUuid:%s",
+                    context.tpmUuid, context.providerUuid));
+        }
+        if (StringUtils.isBlank(context.providerUuid)) {
+            String reboundUuid = tryRebindKeyProviderByName(context.tpmUuid);
+            if (StringUtils.isNotBlank(reboundUuid)) {
+                context.providerUuid = reboundUuid;
+                logger.info(String.format(
+                        "rebound TPM key provider by providerName after ref.providerUuid was cleared, tpm[uuid:%s], providerUuid:%s",
+                        context.tpmUuid, context.providerUuid));
+            }
+        }
         context.keyVersion = resourceKeyBackend.findKeyVersionByTpm(context.tpmUuid);
 
         final SimpleFlowChain chain = new SimpleFlowChain();
@@ -699,6 +722,80 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         }
         String details = errorCode.getDetails();
         return details != null && details.contains(SecretHostGetReply.ERROR_CODE_SECRET_NOT_FOUND);
+    }
+
+    private String tryRebindKeyProviderByName(String tpmUuid) {
+        String name = safeFindKeyProviderNameByTpm(tpmUuid);
+        if (StringUtils.isBlank(name)) {
+            return null;
+        }
+        String uuid = safeFindKeyProviderUuidByName(name, tpmUuid);
+        if (StringUtils.isBlank(uuid)) {
+            return null;
+        }
+        int updated = tpmKeyRefJdbcRepair.applyProviderUuidOnRowWithKek(tpmUuid, uuid);
+        if (updated > 0) {
+            logger.info(String.format(
+                    "updated EncryptedResourceKeyRef.providerUuid in-place for tpm[uuid:%s], rows:%d", tpmUuid, updated));
+        }
+        return uuid;
+    }
+
+    private void repairOrphanTpmKeyRefPlaceholders(String tpmUuid) {
+        int deleted = tpmKeyRefJdbcRepair.deleteOrphanPlaceholderTpmKeyRefRows(tpmUuid);
+        if (deleted > 0) {
+            logger.info(String.format(
+                    "removed %d EncryptedResourceKeyRef placeholder row(s) for tpm[uuid:%s]",
+                    deleted, tpmUuid));
+        }
+    }
+
+    private String safeFindKeyProviderUuidByTpm(String tpmUuid) {
+        try {
+            return resourceKeyBackend.findKeyProviderUuidByTpm(tpmUuid);
+        } catch (RuntimeException e) {
+            if (isNonUniqueResultException(e)) {
+                logger.warn(String.format(
+                        "multiple EncryptedResourceKeyRef rows for tpm[uuid:%s], fix duplicate refs in DB", tpmUuid), e);
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    private String safeFindKeyProviderNameByTpm(String tpmUuid) {
+        try {
+            return resourceKeyBackend.findKeyProviderNameByTpm(tpmUuid);
+        } catch (RuntimeException e) {
+            if (isNonUniqueResultException(e)) {
+                logger.warn(String.format(
+                        "multiple EncryptedResourceKeyRef rows for tpm[uuid:%s], fix duplicate refs in DB", tpmUuid), e);
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    private String safeFindKeyProviderUuidByName(String providerName, String tpmUuid) {
+        try {
+            return resourceKeyBackend.findKeyProviderUuidByName(providerName);
+        } catch (RuntimeException e) {
+            if (isNonUniqueResultException(e)) {
+                logger.warn(String.format(
+                        "multiple KeyProvider rows for name[%s]; tpm[uuid:%s]", providerName, tpmUuid), e);
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    private static boolean isNonUniqueResultException(Throwable e) {
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t.getClass().getName().endsWith("NonUniqueResultException")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void deleteHostSecretBestEffort(String hostUuid, String vmUuid, Integer keyVersion, String reason) {
