@@ -36,3 +36,4 @@ premium/test-premium/zstack-api.log
 **/bin/
 CLAUDE.md
 .claude/*
+.m2/
