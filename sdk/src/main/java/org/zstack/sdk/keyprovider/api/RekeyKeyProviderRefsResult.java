@@ -35,20 +35,12 @@ public class RekeyKeyProviderRefsResult {
         return this.failedCount;
     }
 
-    public java.util.List skippedResources;
-    public void setSkippedResources(java.util.List skippedResources) {
-        this.skippedResources = skippedResources;
+    public java.util.List providerResults;
+    public void setProviderResults(java.util.List providerResults) {
+        this.providerResults = providerResults;
     }
-    public java.util.List getSkippedResources() {
-        return this.skippedResources;
-    }
-
-    public java.util.List failedResources;
-    public void setFailedResources(java.util.List failedResources) {
-        this.failedResources = failedResources;
-    }
-    public java.util.List getFailedResources() {
-        return this.failedResources;
+    public java.util.List getProviderResults() {
+        return this.providerResults;
     }
 
 }
