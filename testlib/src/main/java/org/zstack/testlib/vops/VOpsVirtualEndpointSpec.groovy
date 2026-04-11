@@ -25,7 +25,7 @@ class VOpsVirtualEndpointSpec extends Spec {
 
     @Override
     SpecID create(String uuid, String sessionId) {
-        mockFactory(VOpsClient.class, { return new VOpsClientForTest(this) })
+        mockFactory(VOpsClient.class, { return new VOpsClientSimulator(this) })
         return id(endpointName, endpointUuid = uuid)
     }
 
@@ -34,15 +34,15 @@ class VOpsVirtualEndpointSpec extends Spec {
         Test.functionForMockTestObjectFactory.remove(VOpsClient.class)
     }
 
-    public List<PostHandlerPair<VOpsClientForTest.HttpForTest, Object>> postHandlers = []
+    public List<PostHandlerPair<VOpsClientSimulator.HttpForTest, Object>> postHandlers = []
 
     /**
      * @return a function to remove this handler
      */
     BooleanSupplier registerPostHttpHandler(
-            Predicate<VOpsClientForTest.HttpForTest> predicate,
-            BiFunction<VOpsClientForTest.HttpForTest, ErrorableValue<Object>, ErrorableValue<Object>> handler) {
-        def pair = new PostHandlerPair<VOpsClientForTest.HttpForTest, Object>(
+            Predicate<VOpsClientSimulator.HttpForTest> predicate,
+            BiFunction<VOpsClientSimulator.HttpForTest, ErrorableValue<Object>, ErrorableValue<Object>> handler) {
+        def pair = new PostHandlerPair<VOpsClientSimulator.HttpForTest, Object>(
                 Objects.requireNonNull(predicate),
                 Objects.requireNonNull(handler))
 
@@ -55,7 +55,7 @@ class VOpsVirtualEndpointSpec extends Spec {
      */
     BooleanSupplier registerPostHttpHandler(
             String path,
-            BiFunction<VOpsClientForTest.HttpForTest, ErrorableValue<Object>, ErrorableValue<Object>> handler) {
+            BiFunction<VOpsClientSimulator.HttpForTest, ErrorableValue<Object>, ErrorableValue<Object>> handler) {
         return registerPostHttpHandler({ it.path == path || it.pathWithoutIpAndPort == path }, handler)
     }
 
@@ -65,7 +65,7 @@ class VOpsVirtualEndpointSpec extends Spec {
     BooleanSupplier registerPostHttpHandler(
             String path,
             HttpMethod method,
-            BiFunction<VOpsClientForTest.HttpForTest, ErrorableValue<Object>, ErrorableValue<Object>> handler) {
+            BiFunction<VOpsClientSimulator.HttpForTest, ErrorableValue<Object>, ErrorableValue<Object>> handler) {
         return registerPostHttpHandler(
             {
                 (it.path == path || it.pathWithoutIpAndPort == path) && it.method == method

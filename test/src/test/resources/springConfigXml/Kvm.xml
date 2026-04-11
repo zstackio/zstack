@@ -206,7 +206,7 @@
             <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint"/>
         </zstack:plugin>
     </bean>
-    <bean id="HypervisorMetadataCollector" class="org.zstack.kvm.hypervisor.HypervisorMetadataCollectorForTest">
+    <bean id="HypervisorMetadataCollector" class="org.zstack.kvm.hypervisor.HypervisorMetadataCollectorSimulator">
     </bean>
 
     <bean id="KvmHypervisorZQLExtension" class="org.zstack.kvm.hypervisor.KvmHypervisorZQLExtension">
