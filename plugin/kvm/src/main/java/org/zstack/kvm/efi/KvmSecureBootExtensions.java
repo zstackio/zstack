@@ -3,7 +3,6 @@ package org.zstack.kvm.efi;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.VmGlobalConfig;
-import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.compute.vm.devices.VmTpmManager;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -23,8 +22,6 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.tpm.entity.TpmVO;
-import org.zstack.header.tpm.entity.TpmVO_;
 import org.zstack.header.vm.DiskAO;
 import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
 import org.zstack.header.vm.VmInstanceVO;
@@ -79,7 +76,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.zstack.compute.vm.VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.PostMigration;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.BeforeHaStart;
@@ -87,6 +83,7 @@ import static org.zstack.header.vm.additions.VmHostFileSyncReason.PrepareReRead;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.PrepareRead;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.ResourceRelease;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.SnapshotGroupOnlineBackup;
+import static org.zstack.header.vm.additions.VmHostFileType.NvRam;
 import static org.zstack.kvm.KVMConstant.*;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -107,6 +104,8 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
     private ResourceConfigFacade resourceConfigFacade;
     @Autowired
     private DatabaseFacade databaseFacade;
+    @Autowired
+    private KvmVmHostFileFactory vmHostFileFactory;
 
     private final Object hostFileLock = new Object();
 
@@ -141,7 +140,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
             final Timestamp now = Timestamp.from(Instant.now());
             VmHostFileVO nvRamFile = Q.New(VmHostFileVO.class)
                     .eq(VmHostFileVO_.vmInstanceUuid, cmd.getVmInstanceUuid())
-                    .eq(VmHostFileVO_.type, VmHostFileType.NvRam)
+                    .eq(VmHostFileVO_.type, NvRam)
                     .eq(VmHostFileVO_.hostUuid, host.getUuid())
                     .find();
             if (nvRamFile == null) {
@@ -149,7 +148,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 nvRamFile.setUuid(Platform.getUuid());
                 nvRamFile.setHostUuid(host.getUuid());
                 nvRamFile.setVmInstanceUuid(cmd.getVmInstanceUuid());
-                nvRamFile.setType(VmHostFileType.NvRam);
+                nvRamFile.setType(NvRam);
                 nvRamFile.setPath(volume.getInstallPath());
                 nvRamFile.setCreateDate(now);
                 nvRamFile.setResourceName("NvRam file for " + cmd.getVmInstanceUuid());
@@ -180,29 +179,17 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
             return;
         }
 
-        String tpmUuid = Q.New(TpmVO.class)
-                .eq(TpmVO_.vmInstanceUuid, vm.getUuid())
-                .select(TpmVO_.uuid)
-                .findValue();
-        boolean needRegisterNvRam = tpmUuid != null;
+        boolean needRegisterNvRam = vmHostFileFactory.needRegister(NvRam, vm.getUuid());
         if (!needRegisterNvRam) {
-            String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.BOOT_MODE_TOKEN);
-            if (isUefiBootMode(bootMode)) {
-                ResourceConfig resourceConfig = resourceConfigFacade.getResourceConfig(ENABLE_UEFI_SECURE_BOOT.getIdentity());
-                needRegisterNvRam = resourceConfig.getResourceConfigValue(vm.getUuid(), Boolean.class) == Boolean.TRUE;
-            }
-
-            if (!needRegisterNvRam) {
-                completion.success();
-                return;
-            }
+            completion.success();
+            return;
         }
 
         SimpleFlowChain.of("prepare-nvram-before-vm-" + vm.getUuid() + "-migrate")
                 .then("prepare-nvram-folder-on-dest-host", trigger -> {
                     VmHostFileTO to = new VmHostFileTO();
                     to.setPath(buildNvramFilePath(vm.getUuid()));
-                    to.setType(VmHostFileType.NvRam.toString());
+                    to.setType(NvRam.toString());
                     to.setOperation(VmHostFileOperation.Prepare.toString());
 
                     RewriteVmHostFilesContext context = new RewriteVmHostFilesContext();
@@ -290,7 +277,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         PrepareHostFileContext context = new PrepareHostFileContext();
         context.hostUuid = spec.getDestHost().getUuid();
         context.vmUuid = spec.getVmInventory().getUuid();
-        context.type = VmHostFileType.NvRam;
+        context.type = NvRam;
         context.backupUuid = nvRamSpec.getBackupFileUuid();
         context.syncReason = "pre-instantiate VM resource";
         prepareHostFileOnHost(context, completion);
@@ -349,7 +336,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 syncMsg.setVmUuid(context.vmUuid);
                 syncMsg.setSyncReason(PrepareRead.reason(context.syncReason));
 
-                if (vmHostFile.getType() == VmHostFileType.NvRam) {
+                if (vmHostFile.getType() == NvRam) {
                     context.path = vmHostFile.getPath();
                     syncMsg.setNvRamPath(context.path);
                 } else if (vmHostFile.getType() == VmHostFileType.TpmState) {
@@ -471,7 +458,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 syncMsg.setVmUuid(context.vmUuid);
                 syncMsg.setSyncReason(PrepareReRead.reason(context.syncReason));
 
-                if (context.type == VmHostFileType.NvRam) {
+                if (context.type == NvRam) {
                     syncMsg.setNvRamPath(context.path);
                 } else if (context.type == VmHostFileType.TpmState) {
                     syncMsg.setTpmStateFolder(context.path);
@@ -574,7 +561,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         syncMsg.setSyncReason(ResourceRelease.reason());
 
         for (VmHostFileVO file : vmHostFiles) {
-            if (file.getType() == VmHostFileType.NvRam) {
+            if (file.getType() == NvRam) {
                 syncMsg.setNvRamPath(file.getPath());
             } else if (file.getType() == VmHostFileType.TpmState) {
                 syncMsg.setTpmStateFolder(file.getPath());
@@ -633,7 +620,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         syncMsg.setSyncReason(BeforeHaStart.reason());
 
         for (VmHostFileVO file : vmHostFiles) {
-            if (file.getType() == VmHostFileType.NvRam) {
+            if (file.getType() == NvRam) {
                 syncMsg.setNvRamPath(file.getPath());
             } else if (file.getType() == VmHostFileType.TpmState) {
                 syncMsg.setTpmStateFolder(file.getPath());
@@ -699,7 +686,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         syncMsg.setSyncReason(PostMigration.reason());
 
         for (VmHostFileVO file : vmHostFiles) {
-            if (file.getType() == VmHostFileType.NvRam) {
+            if (file.getType() == NvRam) {
                 syncMsg.setNvRamPath(file.getPath());
             } else if (file.getType() == VmHostFileType.TpmState) {
                 syncMsg.setTpmStateFolder(file.getPath());
@@ -759,7 +746,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         syncMsg.setHostUuid(hostUuid);
 
         for (VmHostFileVO file : hostFiles) {
-            if (file.getType() == VmHostFileType.NvRam) {
+            if (file.getType() == NvRam) {
                 syncMsg.setNvRamPath(buildNvramSnapshotBackupFilePath(vmUuid));
             } else if (file.getType() == VmHostFileType.TpmState) {
                 syncMsg.setTpmStateFolder(buildTpmStateSnapshotBackupFilePath(vmUuid));
