@@ -422,6 +422,7 @@ public class KvmTpmManager extends AbstractService {
                         dmsg.setVmUuid(context.vmInstanceUuid);
                         dmsg.setPurpose("vtpm");
                         dmsg.setKeyVersion(context.keyVersion);
+                        dmsg.setUsageInstance(KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM);
                         bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, hostUuid);
                         bus.send(dmsg, new CloudBusCallBack(whileCompletion) {
                             @Override
@@ -812,6 +813,7 @@ public class KvmTpmManager extends AbstractService {
                         dmsg.setVmUuid(vmUuid);
                         dmsg.setPurpose("vtpm");
                         dmsg.setKeyVersion(context.keyVersion);
+                        dmsg.setUsageInstance(KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM);
                         bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, hostUuid);
                         bus.send(dmsg, new CloudBusCallBack(whileCompletion) {
                             @Override
