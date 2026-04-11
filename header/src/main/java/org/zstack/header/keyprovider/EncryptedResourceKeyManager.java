@@ -27,10 +27,33 @@ public interface EncryptedResourceKeyManager {
                         ReturnValueCompletion<ResourceKeyResult> completion);
 
     /**
+     * Load the existing resource encryption key material only.
+     * <p>
+     * Requires an {@code EncryptedResourceKeyRef} row and a usable secret reference already stored
+     * for the resource. Does <strong>not</strong> insert a ref row and does <strong>not</strong> call
+     * key-tool/KMS <em>create</em> APIs.
+     * <p>
+     * The implementation may still call key-tool/KMS <em>get/unwrap</em> for the <strong>existing</strong>
+     * secret ref in order to return the plaintext DEK (for example defining the secret on the destination
+     * host during hot migration). That RPC is read-side materialization, not secret creation.
+     * <p>
+     * On success, the implementation may update {@code EncryptedResourceKeyRef} provider columns to match
+     * the resolved key provider when they have drifted (same behavior as the existing-key branch of
+     * {@link #getOrCreateKey}).
+     *
+     * @param ctx same fields as {@link #getOrCreateKey}; identifies resource and provider
+     * @return {@link ResourceKeyResult} with {@code createdNewKey == false} on success
+     * @throws org.zstack.header.errorcode.OperationFailureException when the key cannot be loaded
+     */
+    ResourceKeyResult getKey(GetOrCreateResourceKeyContext ctx);
+
+    /**
      * Roll back a newly created resource key during upper-layer workflow rollback.
      * <p>
-     * If the key record already existed before creation, implementation should restore it
-     * to its previous empty-placeholder state instead of deleting the relationship.
+     * When {@link ResourceKeyResult#isCreatedNewKey()} is true, the implementation deletes the
+     * key-tool secret if one was materialized, then removes the {@code EncryptedResourceKeyRef} row
+     * for the resource (same storage effect as detaching the key provider from the resource).
+     * When {@code createdNewKey} is false (existing secret was reused), this is a no-op.
      */
     void rollbackCreatedKey(ResourceKeyResult result, Completion completion);
 
@@ -91,7 +114,6 @@ public interface EncryptedResourceKeyManager {
         private String dekBase64;
         private String secretRef;
         private boolean createdNewKey;
-        private boolean refExistedBeforeCreate;
 
         public String getResourceUuid() {
             return resourceUuid;
@@ -155,14 +177,6 @@ public interface EncryptedResourceKeyManager {
 
         public void setCreatedNewKey(boolean createdNewKey) {
             this.createdNewKey = createdNewKey;
-        }
-
-        public boolean isRefExistedBeforeCreate() {
-            return refExistedBeforeCreate;
-        }
-
-        public void setRefExistedBeforeCreate(boolean refExistedBeforeCreate) {
-            this.refExistedBeforeCreate = refExistedBeforeCreate;
         }
     }
 }
