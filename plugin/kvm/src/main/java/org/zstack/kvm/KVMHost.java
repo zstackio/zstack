@@ -12,6 +12,8 @@ import org.zstack.compute.cluster.ClusterGlobalConfig;
 import org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer;
 import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
+import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend;
+import org.zstack.compute.vm.devices.VmTpmManager;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.timeout.TimeHelper;
@@ -55,6 +57,9 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
+import org.zstack.header.keyprovider.EncryptedResourceKeyManager;
+import org.zstack.header.keyprovider.EncryptedResourceKeyManager.GetOrCreateResourceKeyContext;
+import org.zstack.header.keyprovider.EncryptedResourceKeyManager.ResourceKeyResult;
 import org.zstack.header.secret.SecretHostDefineMsg;
 import org.zstack.header.secret.SecretHostDefineReply;
 import org.zstack.header.secret.SecretHostDeleteMsg;
@@ -67,6 +72,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
@@ -79,6 +85,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.kvm.hypervisor.KvmHypervisorInfoHelper;
+import org.zstack.kvm.tpm.VtpmPreMigrateSecretCtx;
 import org.zstack.kvm.hypervisor.KvmHypervisorInfoManager;
 import org.zstack.network.l3.NetworkGlobalProperty;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -168,6 +175,10 @@ public class KVMHost extends HostBase implements Host {
     private AccountManager accountMgr;
     @Autowired
     private ResourceDestinationMaker destMaker;
+    @Autowired
+    private TpmEncryptedResourceKeyBackend tpmKeyBackend;
+    @Autowired
+    private EncryptedResourceKeyManager resourceKeyManager;
 
     private KVMHostContext context;
 
@@ -3171,6 +3182,156 @@ public class KVMHost extends HostBase implements Host {
                 });
 
                 flow(new NoRollbackFlow() {
+                    String __name__ = "vtpm-prepare-context-before-migrate";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        VtpmPreMigrateSecretCtx ctx = new VtpmPreMigrateSecretCtx();
+                        data.put(VtpmPreMigrateSecretCtx.DATA_MAP_KEY, ctx);
+                        String tpmUuid = VmTpmManager.findTpmUuidForVmOrNull(vmUuid);
+                        if (StringUtils.isBlank(tpmUuid)) {
+                            ctx.setSkipAll(true);
+                            trigger.next();
+                            return;
+                        }
+                        if (VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class)) {
+                            ctx.setSkipAll(true);
+                            trigger.next();
+                            return;
+                        }
+                        ctx.setTpmUuid(tpmUuid);
+                        ctx.setProviderUuid(tpmKeyBackend.findKeyProviderUuidByTpm(tpmUuid));
+                        ctx.setProviderName(tpmKeyBackend.findKeyProviderNameByTpm(tpmUuid));
+                        if (StringUtils.isBlank(ctx.getProviderUuid()) && StringUtils.isBlank(ctx.getProviderName())) {
+                            trigger.fail(operr("missing TPM resource key binding for tpm[uuid:%s] before migrate", tpmUuid));
+                            return;
+                        }
+                        ctx.setKeyVersion(tpmKeyBackend.findKeyVersionByTpm(tpmUuid));
+                        if (ctx.getKeyVersion() == null) {
+                            trigger.fail(operr("cannot find keyVersion for tpm[uuid:%s] before migrate", tpmUuid));
+                            return;
+                        }
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "vtpm-get-resource-key-before-migrate";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        VtpmPreMigrateSecretCtx ctx = VtpmPreMigrateSecretCtx.from(data);
+                        return ctx == null || ctx.isSkipAll();
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        VtpmPreMigrateSecretCtx ctx = VtpmPreMigrateSecretCtx.from(data);
+                        GetOrCreateResourceKeyContext keyCtx = new GetOrCreateResourceKeyContext();
+                        keyCtx.setResourceUuid(ctx.getTpmUuid());
+                        keyCtx.setResourceType(TpmVO.class.getSimpleName());
+                        keyCtx.setKeyProviderUuid(ctx.getProviderUuid());
+                        keyCtx.setKeyProviderName(ctx.getProviderName());
+                        keyCtx.setPurpose("vtpm");
+                        resourceKeyManager.getKey(keyCtx, new ReturnValueCompletion<ResourceKeyResult>(trigger) {
+                            @Override
+                            public void success(ResourceKeyResult result) {
+                                if (StringUtils.isBlank(result.getDekBase64())) {
+                                    trigger.fail(operr("missing DEK for tpm[uuid:%s] after getKey before migrate", ctx.getTpmUuid()));
+                                    return;
+                                }
+                                ctx.setResourceKeyResult(result);
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "vtpm-get-source-secret-uuid-before-migrate";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        VtpmPreMigrateSecretCtx ctx = VtpmPreMigrateSecretCtx.from(data);
+                        return ctx == null || ctx.isSkipAll();
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        VtpmPreMigrateSecretCtx ctx = VtpmPreMigrateSecretCtx.from(data);
+                        SecretHostGetMsg innerMsg = new SecretHostGetMsg();
+                        innerMsg.setHostUuid(self.getUuid());
+                        innerMsg.setVmUuid(vmUuid);
+                        innerMsg.setPurpose("vtpm");
+                        innerMsg.setKeyVersion(ctx.getKeyVersion());
+                        innerMsg.setUsageInstance(KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM);
+                        bus.makeTargetServiceIdByResourceUuid(innerMsg, HostConstant.SERVICE_ID, innerMsg.getHostUuid());
+                        bus.send(innerMsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError() != null ? reply.getError()
+                                            : operr("get secret on source host failed before migrate"));
+                                    return;
+                                }
+                                SecretHostGetReply r = reply.castReply();
+                                if (StringUtils.isBlank(r.getSecretUuid())) {
+                                    trigger.fail(operr("failed to get source secret uuid before migrate: empty secretUuid"));
+                                    return;
+                                }
+                                ctx.setSourceSecretUuid(r.getSecretUuid());
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "vtpm-define-secret-on-dst-before-migrate";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        VtpmPreMigrateSecretCtx ctx = VtpmPreMigrateSecretCtx.from(data);
+                        return ctx == null || ctx.isSkipAll();
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        VtpmPreMigrateSecretCtx ctx = VtpmPreMigrateSecretCtx.from(data);
+                        ResourceKeyResult result = ctx.getResourceKeyResult();
+                        if (result == null || StringUtils.isBlank(result.getDekBase64())) {
+                            trigger.fail(operr("missing DEK for tpm[uuid:%s] before ensure secret on destination", ctx.getTpmUuid()));
+                            return;
+                        }
+                        SecretHostDefineMsg innerMsg = new SecretHostDefineMsg();
+                        innerMsg.setHostUuid(dstHostUuid);
+                        innerMsg.setVmUuid(vmUuid);
+                        innerMsg.setDekBase64(result.getDekBase64());
+                        innerMsg.setPurpose("vtpm");
+                        innerMsg.setKeyVersion(ctx.getKeyVersion());
+                        innerMsg.setUsageInstance(KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM);
+                        innerMsg.setSecretUuid(ctx.getSourceSecretUuid());
+                        innerMsg.setDescription(String.format("Define secret for VM %s before live migration", vmUuid));
+                        bus.makeTargetServiceIdByResourceUuid(innerMsg, HostConstant.SERVICE_ID, innerMsg.getHostUuid());
+                        bus.send(innerMsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(reply.getError());
+                                }
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
                     String __name__ = "migrate-vm";
 
                     @Override
@@ -5320,8 +5481,9 @@ public class KVMHost extends HostBase implements Host {
 
     private void handle(SecretHostGetMsg msg) {
         SecretHostGetReply reply = new SecretHostGetReply();
-        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) || msg.getKeyVersion() == null) {
-            reply.setError(operr("vmUuid, purpose and keyVersion are required for get secret"));
+        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) || 
+                msg.getKeyVersion() == null || StringUtils.isBlank(msg.getUsageInstance())) {
+            reply.setError(operr("vmUuid, purpose, keyVersion and usageInstance are required for get secret"));
             bus.reply(msg, reply);
             return;
         }
@@ -5331,7 +5493,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVmUuid(msg.getVmUuid());
         cmd.setPurpose(msg.getPurpose());
         cmd.setKeyVersion(msg.getKeyVersion());
-        cmd.setUsageInstance(KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM);
+        cmd.setUsageInstance(msg.getUsageInstance());
         Map<String, String> headers = new HashMap<>();
         headers.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, getSelf().getUuid());
         Http<KVMAgentCommands.SecretHostGetResponse> http = new Http<>(url, cmd, KVMAgentCommands.SecretHostGetResponse.class);
@@ -5372,8 +5534,9 @@ public class KVMHost extends HostBase implements Host {
             bus.reply(msg, reply);
             return;
         }
-        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) || msg.getKeyVersion() == null) {
-            reply.setError(operr("vmUuid, purpose and keyVersion are required for ensure secret"));
+        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) ||
+                msg.getKeyVersion() == null || StringUtils.isBlank(msg.getUsageInstance())) {
+            reply.setError(operr("vmUuid, purpose, keyVersion and usageInstance are required for ensure secret"));
             bus.reply(msg, reply);
             return;
         }
@@ -5452,8 +5615,9 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVmUuid(msg.getVmUuid());
         cmd.setPurpose(msg.getPurpose());
         cmd.setKeyVersion(msg.getKeyVersion());
+        cmd.setSecretUuid(msg.getSecretUuid());
         cmd.setDescription(msg.getDescription() != null ? msg.getDescription() : "");
-        cmd.setUsageInstance(KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM);
+        cmd.setUsageInstance(msg.getUsageInstance());
         Map<String, String> headers = new HashMap<>();
         headers.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, getSelf().getUuid());
         Http<KVMAgentCommands.SecretHostDefineResponse> http = new Http<>(url, cmd, KVMAgentCommands.SecretHostDefineResponse.class);
@@ -5486,13 +5650,9 @@ public class KVMHost extends HostBase implements Host {
 
     private void handle(SecretHostDeleteMsg msg) {
         SecretHostDeleteReply reply = new SecretHostDeleteReply();
-        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose())) {
-            reply.setError(operr("vmUuid and purpose are required for delete secret"));
-            bus.reply(msg, reply);
-            return;
-        }
-        if (msg.getKeyVersion() == null) {
-            reply.setError(operr("keyVersion is required for delete secret"));
+        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) ||
+                StringUtils.isBlank(msg.getUsageInstance()) || msg.getKeyVersion() == null) {
+            reply.setError(operr("vmUuid, purpose, keyVersion and usageInstance are required for delete secret"));
             bus.reply(msg, reply);
             return;
         }
@@ -5502,7 +5662,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVmUuid(msg.getVmUuid());
         cmd.setPurpose(msg.getPurpose());
         cmd.setKeyVersion(msg.getKeyVersion());
-        cmd.setUsageInstance(KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM);
+        cmd.setUsageInstance(msg.getUsageInstance());
         Map<String, String> headers = new HashMap<>();
         headers.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, getSelf().getUuid());
         Http<KVMAgentCommands.SecretHostDeleteResponse> http = new Http<>(url, cmd, KVMAgentCommands.SecretHostDeleteResponse.class);

@@ -243,6 +243,9 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                 });
             }
 
+            // Use clone op above and will not set rollback flag TpmSpec.resourceKeyCreatedNew
+            // to true, so use flow rollback instead preReleaseVmResource rollback. And we
+            // definitely don't need to delete keytool secret on shapshot case.
             @Override
             public void rollback(FlowRollback trigger, Map data) {
                 if (StringUtils.isNotBlank(context.backupFileUuid)) {
@@ -256,31 +259,56 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                 trigger.rollback();
             }
         }).then(new NoRollbackFlow() {
-            String __name__ = "ensure-resource-key-ref";
+            String __name__ = "get-secret-on-host-first";
 
             @Override
             public boolean skip(Map data) {
-                boolean shouldSkip = StringUtils.isBlank(context.providerUuid);
-                if (shouldSkip) {
-                    logger.info(String.format(
-                            "skip ensure-resource-key-ref for tpm[uuid:%s] due to missing key provider binding, try host secret first",
-                            context.tpmUuid));
-                }
-                return shouldSkip;
+                return VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class);
             }
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                if (StringUtils.isBlank(context.providerUuid)) {
-                    trigger.fail(operr("missing TPM resource key binding for tpm[uuid:%s], attachKeyProviderToTpm must run before create-dek", context.tpmUuid));
-                    return;
-                }
-
-                if (context.keyVersion != null) {
+                if (context.keyVersion == null || StringUtils.isBlank(spec.getDevicesSpec().getTpm().getSecretUuid())) {
                     trigger.next();
                     return;
                 }
+                SecretHostGetMsg innerMsg = new SecretHostGetMsg();
+                innerMsg.setHostUuid(spec.getDestHost().getUuid());
+                innerMsg.setVmUuid(spec.getVmInventory().getUuid());
+                innerMsg.setPurpose("vtpm");
+                innerMsg.setKeyVersion(context.keyVersion);
+                innerMsg.setUsageInstance(HOST_SECRET_USAGE_INSTANCE_VTPM);
+                bus.makeTargetServiceIdByResourceUuid(innerMsg, HostConstant.SERVICE_ID, innerMsg.getHostUuid());
+                bus.send(innerMsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            SecretHostGetReply r = reply.castReply();
+                            spec.getDevicesSpec().getTpm().setSecretUuid(r.getSecretUuid());
+                            trigger.next();
+                            return;
+                        }
 
+                        ErrorCode errorCode = reply.getError();
+                        if (errorCode != null && isVtpmSecretNotFoundOnHost(errorCode)) {
+                            trigger.next();
+                            return;
+                        }
+
+                        trigger.fail(errorCode != null ? errorCode : operr("get secret on host failed"));
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "get-or-create-key-and-dek";
+
+            @Override
+            public boolean skip(Map data) {
+                return VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class);
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
                 GetOrCreateResourceKeyContext keyCtx = new GetOrCreateResourceKeyContext();
                 keyCtx.setResourceUuid(context.tpmUuid);
                 keyCtx.setResourceType(TpmVO.class.getSimpleName());
@@ -308,89 +336,17 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                 });
             }
         }).then(new NoRollbackFlow() {
-            String __name__ = "get-secret-on-host";
-
-            @Override
-            public boolean skip(Map data) {
-                return context.keyVersion == null;
-            }
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                SecretHostGetMsg innerMsg = new SecretHostGetMsg();
-                innerMsg.setHostUuid(spec.getDestHost().getUuid());
-                innerMsg.setVmUuid(spec.getVmInventory().getUuid());
-                innerMsg.setPurpose("vtpm");
-                innerMsg.setKeyVersion(context.keyVersion);
-                bus.makeTargetServiceIdByResourceUuid(innerMsg, HostConstant.SERVICE_ID, innerMsg.getHostUuid());
-                bus.send(innerMsg, new CloudBusCallBack(trigger) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (reply.isSuccess()) {
-                            SecretHostGetReply r = reply.castReply();
-                            spec.getDevicesSpec().getTpm().setSecretUuid(r.getSecretUuid());
-                            trigger.next();
-                            return;
-                        }
-
-                        ErrorCode errorCode = reply.getError();
-                        if (errorCode != null && isVtpmSecretNotFoundOnHost(errorCode)) {
-                            trigger.next();
-                            return;
-                        }
-
-                        trigger.fail(errorCode != null ? errorCode : operr("get secret on host failed"));
-                    }
-                });
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "load-dek-for-host";
-
-            @Override
-            public boolean skip(Map data) {
-                return StringUtils.isNotBlank(spec.getDevicesSpec().getTpm().getSecretUuid()) || context.dekBase64 != null;
-            }
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                GetOrCreateResourceKeyContext keyCtx = new GetOrCreateResourceKeyContext();
-                keyCtx.setResourceUuid(context.tpmUuid);
-                keyCtx.setResourceType(TpmVO.class.getSimpleName());
-                keyCtx.setKeyProviderUuid(context.providerUuid);
-                keyCtx.setPurpose("vtpm");
-
-                resourceKeyManager.getOrCreateKey(keyCtx, new ReturnValueCompletion<ResourceKeyResult>(trigger) {
-                    @Override
-                    public void success(ResourceKeyResult result) {
-                        tpmSpec.setResourceKeyCreatedNew(result.isCreatedNewKey());
-                        tpmSpec.setResourceKeyProviderUuid(result.getKeyProviderUuid());
-                        context.dekBase64 = result.getDekBase64();
-                        context.keyVersion = result.getKeyVersion();
-                        if (context.keyVersion == null) {
-                            trigger.fail(operr("missing keyVersion for tpm[uuid:%s] before ensure secret", context.tpmUuid));
-                            return;
-                        }
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                    }
-                });
-            }
-        }).then(new NoRollbackFlow() {
             String __name__ = "define-secret-on-host";
 
             @Override
             public boolean skip(Map data) {
-                return context.dekBase64 == null || StringUtils.isNotBlank(spec.getDevicesSpec().getTpm().getSecretUuid());
+                return VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class);
             }
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                if (context.keyVersion == null) {
-                    trigger.fail(operr("missing keyVersion for tpm[uuid:%s] before define-secret-on-host", context.tpmUuid));
+                if (context.dekBase64 == null) {
+                    trigger.fail(operr("missing dekBase64 for tpm[uuid:%s] before define-secret-on-host", context.tpmUuid));
                     return;
                 }
 
@@ -400,6 +356,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                 innerMsg.setDekBase64(context.dekBase64);
                 innerMsg.setPurpose("vtpm");
                 innerMsg.setKeyVersion(context.keyVersion);
+                innerMsg.setUsageInstance(HOST_SECRET_USAGE_INSTANCE_VTPM);
                 innerMsg.setDescription("Define secret for VM " + spec.getVmInventory().getUuid());
                 bus.makeTargetServiceIdByResourceUuid(innerMsg, HostConstant.SERVICE_ID, innerMsg.getHostUuid());
                 bus.send(innerMsg, new CloudBusCallBack(trigger) {
@@ -466,8 +423,6 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         result.setResourceType(TpmVO.class.getSimpleName());
         result.setKeyProviderUuid(tpmSpec.getResourceKeyProviderUuid());
         result.setCreatedNewKey(true);
-        // TPM resource key creation requires attachKeyProviderToTpm to create a placeholder ref first.
-        result.setRefExistedBeforeCreate(true);
 
         resourceKeyManager.rollbackCreatedKey(result, new Completion(completion) {
             @Override

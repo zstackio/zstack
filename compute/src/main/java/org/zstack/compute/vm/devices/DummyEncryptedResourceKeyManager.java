@@ -20,6 +20,14 @@ public class DummyEncryptedResourceKeyManager implements EncryptedResourceKeyMan
     }
 
     @Override
+    public void getKey(GetOrCreateResourceKeyContext ctx,
+                       ReturnValueCompletion<ResourceKeyResult> completion) {
+        logger.warn(String.format("crypto module not installed, cannot get resource key for %s[uuid:%s]",
+                ctx.getResourceType(), ctx.getResourceUuid()));
+        completion.fail(operr("crypto module is not installed, cannot manage resource encryption keys"));
+    }
+
+    @Override
     public void rollbackCreatedKey(ResourceKeyResult result, Completion completion) {
         completion.success();
     }
