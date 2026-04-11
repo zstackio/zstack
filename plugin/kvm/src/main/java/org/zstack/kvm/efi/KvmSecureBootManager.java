@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacadeImpl;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -27,8 +28,6 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.tpm.entity.TpmVO;
-import org.zstack.header.tpm.entity.TpmVO_;
 import org.zstack.header.vm.VmCanonicalEvents;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceVO;
@@ -76,7 +75,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
-import static org.zstack.compute.vm.VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT;
 import static org.zstack.compute.vm.VmGlobalConfig.RESET_TPM_AFTER_VM_CLONE;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.PostClone;
@@ -104,6 +102,8 @@ public class KvmSecureBootManager extends AbstractService {
     private KvmVmHostFileFactory vmHostFileFactory;
     @Autowired
     private TimeHelper timeHelper;
+    @Autowired
+    private ResourceDestinationMaker resourceDestinationMaker;
 
     @Override
     public boolean start() {
@@ -118,10 +118,27 @@ public class KvmSecureBootManager extends AbstractService {
 
     @SuppressWarnings("rawtypes")
     private void setupCanonicalEvents() {
+        eventFacade.on(VmCanonicalEvents.VM_LIBVIRT_REPORT_START, new EventCallback<Object>() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                String vmUuid = (String) data;
+                boolean managedByMe = resourceDestinationMaker.isManagedByUs(vmUuid);
+                if (!managedByMe) {
+                    return;
+                }
+                markVmHostFilesChanged(vmUuid);
+            }
+        });
+
         eventFacade.on(VmCanonicalEvents.VM_LIBVIRT_REPORT_SHUTDOWN, new EventCallback<Object>() {
             @Override
             protected void run(Map tokens, Object data) {
                 String vmUuid = (String) data;
+                boolean managedByMe = resourceDestinationMaker.isManagedByUs(vmUuid);
+                if (!managedByMe) {
+                    return;
+                }
+
                 Tuple tuple = Q.New(VmInstanceVO.class)
                         .select(VmInstanceVO_.hostUuid, VmInstanceVO_.lastHostUuid)
                         .eq(VmInstanceVO_.uuid, vmUuid)
@@ -134,6 +151,7 @@ public class KvmSecureBootManager extends AbstractService {
                 if (hostUuid == null) {
                     hostUuid = (String) tuple.get(1);
                 }
+                markVmHostFilesChanged(vmUuid, hostUuid);
 
                 List<VmHostFileVO> hostFiles = Q.New(VmHostFileVO.class)
                         .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
@@ -171,6 +189,55 @@ public class KvmSecureBootManager extends AbstractService {
                 });
             }
         });
+    }
+
+    /**
+     * Preemptive judgment: when a VM with TPM (or enabled secure boot) starts or shuts down,
+     * the NvRam/TpmState data must have changed, so mark the corresponding
+     * VmHostFileVO.changeDate to current time.
+     */
+    private void markVmHostFilesChanged(String vmUuid) {
+        Tuple tuple = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.hostUuid, VmInstanceVO_.lastHostUuid)
+                .eq(VmInstanceVO_.uuid, vmUuid)
+                .findTuple();
+        if (tuple == null) {
+            return;
+        }
+
+        String hostUuid = (String) tuple.get(0);
+        if (hostUuid == null) {
+            hostUuid = (String) tuple.get(1);
+        }
+        if (hostUuid == null) {
+            return;
+        }
+
+        markVmHostFilesChanged(vmUuid, hostUuid);
+    }
+
+    private void markVmHostFilesChanged(String vmUuid, String hostUuid) {
+        if (hostUuid == null) {
+            return;
+        }
+
+        final Set<VmHostFileType> types = vmHostFileFactory.vmHostFileTypeNeedRegisterForVm(vmUuid);
+        if (types.isEmpty()) {
+            return;
+        }
+
+        Timestamp now = new Timestamp(timeHelper.getCurrentTimeMillis());
+        long updated = SQL.New(VmHostFileVO.class)
+                .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
+                .eq(VmHostFileVO_.hostUuid, hostUuid)
+                .in(VmHostFileVO_.type, types)
+                .set(VmHostFileVO_.changeDate, now)
+                .update();
+
+        if (updated > 0) {
+            logger.debug(String.format("preemptively marked VmHostFiles as changed for VM[uuid:%s] on host[uuid:%s], %d records updated",
+                    vmUuid, hostUuid, updated));
+        }
     }
 
     @Override
@@ -473,22 +540,21 @@ public class KvmSecureBootManager extends AbstractService {
     private void handle(CloneVmHostFileMsg msg) {
         CloneVmHostFileReply reply = new CloneVmHostFileReply();
 
-        boolean hasTpm = Q.New(TpmVO.class)
-                .eq(TpmVO_.vmInstanceUuid, msg.getSrcVmUuid())
-                .isExists();
-        ResourceConfig resourceConfig = resourceConfigFacade.getResourceConfig(ENABLE_UEFI_SECURE_BOOT.getIdentity());
-        boolean secureBoot = resourceConfig.getResourceConfigValue(msg.getSrcVmUuid(), Boolean.class);
-        if (!hasTpm && !secureBoot) {
+        final Set<VmHostFileType> types = vmHostFileFactory.vmHostFileTypeNeedRegisterForVm(msg.getSrcVmUuid());
+        if (types.isEmpty()) {
             bus.reply(msg, reply);
             return;
         }
 
         CloneVmHostFileContext context = new CloneVmHostFileContext();
-        context.typesNeedClone.add(VmHostFileType.NvRam);
-        if (hasTpm) {
+        if (types.contains(VmHostFileType.NvRam)) {
+            context.typesNeedClone.add(VmHostFileType.NvRam);
+        }
+
+        if (types.contains(VmHostFileType.TpmState)) {
             boolean resetTpm;
             if (msg.getResetTpm() == null) {
-                resourceConfig = resourceConfigFacade.getResourceConfig(RESET_TPM_AFTER_VM_CLONE.getIdentity());
+                ResourceConfig resourceConfig = resourceConfigFacade.getResourceConfig(RESET_TPM_AFTER_VM_CLONE.getIdentity());
                 resetTpm = resourceConfig.getResourceConfigValue(msg.getSrcVmUuid(), Boolean.class);
             } else {
                 resetTpm = msg.getResetTpm();
