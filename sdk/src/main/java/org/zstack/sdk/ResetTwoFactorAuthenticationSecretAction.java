@@ -37,6 +37,9 @@ public class ResetTwoFactorAuthenticationSecretAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String verifyCode;
 
+    @Param(required = true, validValues = {"account","ldap"}, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
+
     @Param(required = false)
     public java.util.List systemTags;
 

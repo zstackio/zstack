@@ -407,23 +407,12 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         return loginType;
     }
 
-    @Override
-    public void login(LoginContext loginContext, ReturnValueCompletion<LoginSessionInfo> completion) {
+    public ErrorableValue<AccountThirdPartyAccountSourceRefVO> findAccountThirdPartyAccountSourceRefByName(String ldapLoginName, String ldapLoginPassword) {
         final ErrorableValue<LdapServerVO> currentLdapServer = findCurrentLdapServer();
         if (!currentLdapServer.isSuccess()) {
-            logger.debug("failed to login by LDAP: failed to find current LdapServer: " + currentLdapServer.error.getDetails());
-            completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR,
-                    "Login validation failed in LDAP"));
-            return;
+            return ErrorableValue.ofErrorCode(currentLdapServer.error);
         }
         final LdapServerVO ldap = currentLdapServer.result;
-
-        String ldapLoginName = loginContext.getUsername();
-        if (!isValid(ldapLoginName, loginContext.getPassword())) {
-            completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR,
-                    "Login validation failed in LDAP"));
-            return;
-        }
 
         String dn = createDriver().getFullUserDn(ldap, ldap.getUsernameProperty(), ldapLoginName);
         AccountThirdPartyAccountSourceRefVO vo = Q.New(AccountThirdPartyAccountSourceRefVO.class)
@@ -432,19 +421,35 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
                 .find();
 
         if (vo == null) {
-            completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR,
+            return ErrorableValue.ofErrorCode(err(IdentityErrors.AUTHENTICATION_ERROR,
                     "The ldapUid does not have a binding account."));
+        }
+        return ErrorableValue.of(vo);
+    }
+
+    @Override
+    public void login(LoginContext loginContext, ReturnValueCompletion<LoginSessionInfo> completion) {
+        final ErrorableValue<AccountThirdPartyAccountSourceRefVO> accountThirdPartyAccountSourceRef = findAccountThirdPartyAccountSourceRefByName(loginContext.getUsername(), loginContext.getPassword());
+
+        if  (!accountThirdPartyAccountSourceRef.isSuccess()) {
+            completion.fail(accountThirdPartyAccountSourceRef.error);
             return;
         }
 
+        if (!isValid(loginContext.getUsername(), loginContext.getPassword())) {
+            completion.fail(err(IdentityErrors.AUTHENTICATION_ERROR,
+                    "Login validation failed in LDAP"));
+            return;
+        }
+        String accountUuid = accountThirdPartyAccountSourceRef.result.getAccountUuid();
         final AccountState state = Q.New(AccountVO.class)
-                .eq(AccountVO_.uuid, vo.getAccountUuid())
+                .eq(AccountVO_.uuid, accountUuid)
                 .select(AccountVO_.state)
                 .findValue();
 
         if (state == null || state == AccountState.Staled) {
             completion.fail(operr(
-                    "Account[uuid:%s] Not Found!!!", vo.getAccountUuid()));
+                    "Account[uuid:%s] Not Found!!!", accountUuid));
             return;
         }
         if (state == AccountState.Disabled) {
@@ -453,7 +458,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
         }
 
         LoginSessionInfo info = new LoginSessionInfo();
-        info.setAccountUuid(vo.getAccountUuid());
+        info.setAccountUuid(accountUuid);
         completion.success(info);
     }
 
@@ -468,21 +473,36 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
 
     @Override
     public String getAccountIdByName(String username) {
-        final ErrorableValue<LdapServerVO> property = findCurrentLdapServer();
-        if (property.isSuccess()) {
-            final String fullUserDn = createDriver().getFullUserDn(property.result, username);
-            return "".equals(fullUserDn) ? null : fullUserDn;
+        final ErrorableValue<LdapServerVO> currentLdapServer = findCurrentLdapServer();
+        if (!currentLdapServer.isSuccess()) {
+            return null;
         }
-        return null;
+        final LdapServerVO ldap = currentLdapServer.result;
+
+        String dn = createDriver().getFullUserDn(ldap, ldap.getUsernameProperty(), username);
+        if (dn == null || dn.isEmpty()) {
+            return null;
+        }
+
+        String accountUuid = Q.New(AccountThirdPartyAccountSourceRefVO.class)
+                .select(AccountThirdPartyAccountSourceRefVO_.accountUuid)
+                .eq(AccountThirdPartyAccountSourceRefVO_.credentials, dn)
+                .eq(AccountThirdPartyAccountSourceRefVO_.accountSourceUuid, ldap.getUuid())
+                .findValue();
+        return accountUuid;
     }
 
     @Override
     public void collectUserInfoIntoContext(LoginContext loginContext) {
-        loginContext.setAccountUuid(getAccountIdByName(loginContext.getUsername()));
+        ErrorableValue<AccountThirdPartyAccountSourceRefVO> accountThirdPartyAccountSourceRef = findAccountThirdPartyAccountSourceRefByName(loginContext.getUsername(), loginContext.getPassword());
+        if (!accountThirdPartyAccountSourceRef.isSuccess()) {
+            return;
+        }
+        loginContext.setAccountUuid(accountThirdPartyAccountSourceRef.result.getAccountUuid());
     }
 
     @Override
     public List<AdditionalAuthFeature> getRequiredAdditionalAuthFeature() {
-        return Collections.singletonList(LoginAuthConstant.basicLoginControl);
+        return Arrays.asList(LoginAuthConstant.basicLoginControl, LoginAuthConstant.twoFactor);
     }
 }
