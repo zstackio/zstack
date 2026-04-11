@@ -5320,8 +5320,9 @@ public class KVMHost extends HostBase implements Host {
 
     private void handle(SecretHostGetMsg msg) {
         SecretHostGetReply reply = new SecretHostGetReply();
-        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) || msg.getKeyVersion() == null) {
-            reply.setError(operr("vmUuid, purpose and keyVersion are required for get secret"));
+        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) || 
+                msg.getKeyVersion() == null || StringUtils.isBlank(msg.getUsageInstance())) {
+            reply.setError(operr("vmUuid, purpose, keyVersion and usageInstance are required for get secret"));
             bus.reply(msg, reply);
             return;
         }
@@ -5331,7 +5332,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVmUuid(msg.getVmUuid());
         cmd.setPurpose(msg.getPurpose());
         cmd.setKeyVersion(msg.getKeyVersion());
-        cmd.setUsageInstance(KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM);
+        cmd.setUsageInstance(msg.getUsageInstance());
         Map<String, String> headers = new HashMap<>();
         headers.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, getSelf().getUuid());
         Http<KVMAgentCommands.SecretHostGetResponse> http = new Http<>(url, cmd, KVMAgentCommands.SecretHostGetResponse.class);
@@ -5372,8 +5373,9 @@ public class KVMHost extends HostBase implements Host {
             bus.reply(msg, reply);
             return;
         }
-        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) || msg.getKeyVersion() == null) {
-            reply.setError(operr("vmUuid, purpose and keyVersion are required for ensure secret"));
+        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) ||
+                msg.getKeyVersion() == null || StringUtils.isBlank(msg.getUsageInstance())) {
+            reply.setError(operr("vmUuid, purpose, keyVersion and usageInstance are required for ensure secret"));
             bus.reply(msg, reply);
             return;
         }
@@ -5452,8 +5454,9 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVmUuid(msg.getVmUuid());
         cmd.setPurpose(msg.getPurpose());
         cmd.setKeyVersion(msg.getKeyVersion());
+        cmd.setSecretUuid(msg.getSecretUuid());
         cmd.setDescription(msg.getDescription() != null ? msg.getDescription() : "");
-        cmd.setUsageInstance(KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM);
+        cmd.setUsageInstance(msg.getUsageInstance());
         Map<String, String> headers = new HashMap<>();
         headers.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, getSelf().getUuid());
         Http<KVMAgentCommands.SecretHostDefineResponse> http = new Http<>(url, cmd, KVMAgentCommands.SecretHostDefineResponse.class);
@@ -5486,13 +5489,9 @@ public class KVMHost extends HostBase implements Host {
 
     private void handle(SecretHostDeleteMsg msg) {
         SecretHostDeleteReply reply = new SecretHostDeleteReply();
-        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose())) {
-            reply.setError(operr("vmUuid and purpose are required for delete secret"));
-            bus.reply(msg, reply);
-            return;
-        }
-        if (msg.getKeyVersion() == null) {
-            reply.setError(operr("keyVersion is required for delete secret"));
+        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) ||
+                StringUtils.isBlank(msg.getUsageInstance()) || msg.getKeyVersion() == null) {
+            reply.setError(operr("vmUuid, purpose, keyVersion and usageInstance are required for delete secret"));
             bus.reply(msg, reply);
             return;
         }
@@ -5502,7 +5501,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVmUuid(msg.getVmUuid());
         cmd.setPurpose(msg.getPurpose());
         cmd.setKeyVersion(msg.getKeyVersion());
-        cmd.setUsageInstance(KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM);
+        cmd.setUsageInstance(msg.getUsageInstance());
         Map<String, String> headers = new HashMap<>();
         headers.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, getSelf().getUuid());
         Http<KVMAgentCommands.SecretHostDeleteResponse> http = new Http<>(url, cmd, KVMAgentCommands.SecretHostDeleteResponse.class);
