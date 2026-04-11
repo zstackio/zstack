@@ -11,6 +11,7 @@ public class SecretHostGetMsg extends NeedReplyMessage implements HostMessage {
     private String vmUuid;
     private String purpose;
     private Integer keyVersion;
+    private String usageInstance;
 
     @Override
     public String getHostUuid() {
@@ -43,5 +44,13 @@ public class SecretHostGetMsg extends NeedReplyMessage implements HostMessage {
 
     public void setKeyVersion(Integer keyVersion) {
         this.keyVersion = keyVersion;
+    }
+
+    public String getUsageInstance() {
+        return usageInstance;
+    }
+
+    public void setUsageInstance(String usageInstance) {
+        this.usageInstance = usageInstance;
     }
 }
