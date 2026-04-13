@@ -45,6 +45,17 @@ public interface TpmEncryptedResourceKeyBackend {
      */
     String defaultKeyProviderUuid();
 
+    /**
+     * Repair providerUuid on existing TPM key ref row where wrapped material already exists.
+     * @return updated rows
+     */
+    int applyProviderUuidOnRowWithKek(String tpmUuid, String providerUuid);
+
+    /**
+     * Whether any EncryptedResourceKeyRef row exists for this TPM.
+     */
+    boolean hasAnyRefRowForTpm(String tpmUuid);
+
     static class CloneEncryptedResourceKeyContext {
         public String srcTpmUuid;
         public String dstTpmUuid;

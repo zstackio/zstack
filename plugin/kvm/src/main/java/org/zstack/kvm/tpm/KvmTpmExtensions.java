@@ -183,8 +183,32 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         clearRollbackInfo(spec);
         final PrepareTpmResourceContext context = new PrepareTpmResourceContext();
         context.tpmUuid = tpmSpec.getTpmUuid();
+        if (StringUtils.isBlank(context.tpmUuid)) {
+            completion.fail(operr("blank tpmUuid in preInstantiateVmResource for vm[uuid:%s]",
+                    spec.getVmInventory() == null ? "unknown" : spec.getVmInventory().getUuid()));
+            return;
+        }
         context.backupFileUuid = tpmSpec.getBackupFileUuid(); // maybe null
         context.providerUuid = resourceKeyBackend.findKeyProviderUuidByTpm(context.tpmUuid);
+        if (StringUtils.isBlank(context.providerUuid) && StringUtils.isNotBlank(tpmSpec.getKeyProviderUuid())) {
+            int updated = resourceKeyBackend.applyProviderUuidOnRowWithKek(context.tpmUuid, tpmSpec.getKeyProviderUuid());
+            if (updated > 0) {
+                context.providerUuid = tpmSpec.getKeyProviderUuid();
+                logger.info(String.format(
+                        "auto repaired TPM key provider binding in-place for tpm[uuid:%s], providerUuid:%s, rows:%d",
+                        context.tpmUuid, context.providerUuid, updated));
+            } else if (!resourceKeyBackend.hasAnyRefRowForTpm(context.tpmUuid)) {
+                context.providerUuid = tpmSpec.getKeyProviderUuid();
+                resourceKeyBackend.attachKeyProviderToTpm(context.tpmUuid, context.providerUuid);
+                logger.info(String.format(
+                        "auto repaired TPM key provider binding by attach for tpm[uuid:%s], providerUuid:%s",
+                        context.tpmUuid, context.providerUuid));
+            } else {
+                logger.warn(String.format(
+                        "failed in-place providerUuid repair in preInstantiate for tpm[uuid:%s], providerUuid:%s, existing ref rows remain",
+                        context.tpmUuid, tpmSpec.getKeyProviderUuid()));
+            }
+        }
         context.keyVersion = resourceKeyBackend.findKeyVersionByTpm(context.tpmUuid);
         context.instantiateForNewVm = spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.NewCreate;
         context.enableKeyProvider = !VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class);
@@ -276,17 +300,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                     trigger.next();
                     return;
                 }
-                if (StringUtils.isBlank(context.providerUuid)) {
-                    trigger.fail(operr("missing TPM resource key binding for tpm[uuid:%s], attachKeyProviderToTpm must run before get-secret-on-host",
-                            context.tpmUuid));
-                    return;
-                }
-                if (!context.instantiateForNewVm && context.keyVersion == null) {
-                    trigger.fail(operr("missing keyVersion for tpm[uuid:%s] before get secret on host", context.tpmUuid));
-                    return;
-                }
-                // NewCreate cloned from an existing TPM may already carry keyVersion; allow it.
-                // For non-NewCreate, keyVersion must exist (validated above).
+
                 SecretHostGetMsg innerMsg = new SecretHostGetMsg();
                 innerMsg.setHostUuid(spec.getDestHost().getUuid());
                 innerMsg.setVmUuid(spec.getVmInventory().getUuid());
@@ -300,6 +314,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                         if (reply.isSuccess()) {
                             SecretHostGetReply r = reply.castReply();
                             spec.getDevicesSpec().getTpm().setSecretUuid(r.getSecretUuid());
+                            context.vtpmSecretAlreadyOnHost = true;
                             trigger.next();
                             return;
                         }
@@ -319,7 +334,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
 
             @Override
             public boolean skip(Map data) {
-                return !context.enableKeyProvider;
+                return !context.enableKeyProvider || context.vtpmSecretAlreadyOnHost;
             }
 
             @Override
@@ -355,7 +370,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
 
             @Override
             public boolean skip(Map data) {
-                return !context.enableKeyProvider;
+                return !context.enableKeyProvider || context.vtpmSecretAlreadyOnHost;
             }
 
             @Override
@@ -421,6 +436,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         Integer keyVersion;
         String dekBase64;
         boolean instantiateForNewVm;
+        boolean vtpmSecretAlreadyOnHost;
 
         void clearSensitiveData() {
             dekBase64 = null;
@@ -795,3 +811,4 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         });
     }
 }
+
