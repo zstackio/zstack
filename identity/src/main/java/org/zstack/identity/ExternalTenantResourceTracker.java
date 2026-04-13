@@ -16,6 +16,8 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.vo.ResourceVO;
 
+import org.zstack.utils.TaskContext;
+
 import javax.persistence.EntityManager;
 import java.util.*;
 
@@ -46,6 +48,38 @@ public class ExternalTenantResourceTracker implements
      */
     private static final String HEADER_EXTERNAL_TENANT = "external-tenant-context";
 
+    /**
+     * TaskContext key used to propagate ExternalTenantContext across thread-pool
+     * boundaries (e.g. thdf.chainSubmit). ZStack's HasThreadContextAspect
+     * automatically snapshots TaskContext when a ChainTask/Completion is created,
+     * and SetThreadContextAspect restores it before execution in the worker thread.
+     * By storing the tenant context here in addition to the ThreadLocal, we ensure
+     * cascade resources (Volume, NIC, CdRom) created inside FlowChains that run
+     * in a different thread still see the correct tenant context.
+     */
+    static final String TASK_CONTEXT_EXTERNAL_TENANT = "__externalTenantContext__";
+
+    /**
+     * Resolve the current ExternalTenantContext using ThreadLocal first, then
+     * falling back to TaskContext. This covers the case where ThreadLocal is
+     * lost after a thread-pool handoff (e.g. thdf.chainSubmit) but TaskContext
+     * was propagated by HasThreadContextAspect/SetThreadContextAspect.
+     *
+     * Note: this method only reads — it does NOT restore the ThreadLocal, because
+     * the caller's thread-local state should be managed by SetThreadContextAspect
+     * at the thread entry point.
+     */
+    private static ExternalTenantContext resolveCurrentContext() {
+        ExternalTenantContext ctx = ExternalTenantContext.getCurrent();
+        if (ctx == null || ctx.getTenantId() == null) {
+            Object taskCtx = TaskContext.getTaskContextItem(TASK_CONTEXT_EXTERNAL_TENANT);
+            if (taskCtx instanceof ExternalTenantContext) {
+                ctx = (ExternalTenantContext) taskCtx;
+            }
+        }
+        return ctx;
+    }
+
     @Override
     public boolean start() {
         for (ExternalTenantProvider p : pluginRgty.getExtensionList(ExternalTenantProvider.class)) {
@@ -65,7 +99,7 @@ public class ExternalTenantResourceTracker implements
         bus.installBeforeSendMessageInterceptor(new AbstractBeforeSendMessageInterceptor() {
             @Override
             public void beforeSendMessage(Message msg) {
-                ExternalTenantContext ctx = ExternalTenantContext.getCurrent();
+                ExternalTenantContext ctx = resolveCurrentContext();
                 if (ctx != null && ctx.getTenantId() != null) {
                     msg.putHeaderEntry(HEADER_EXTERNAL_TENANT,
                             new String[]{ctx.getSource(), ctx.getTenantId(), ctx.getUserId()});
@@ -90,19 +124,28 @@ public class ExternalTenantResourceTracker implements
                     SessionInventory session = ((APIMessage) msg).getSession();
                     if (session != null && session.hasExternalTenant()) {
                         ExternalTenantContext ctx = session.getExternalTenantContext();
-                        ExternalTenantContext.setCurrent(ctx);
+                        if (ctx != null) {
+                            ExternalTenantContext.setCurrent(ctx);
+                            TaskContext.putTaskContextItem(TASK_CONTEXT_EXTERNAL_TENANT, ctx);
+                        } else {
+                            ExternalTenantContext.clearCurrent();
+                            TaskContext.removeTaskContextItem(TASK_CONTEXT_EXTERNAL_TENANT);
+                        }
                     } else {
                         ExternalTenantContext.clearCurrent();
+                        TaskContext.removeTaskContextItem(TASK_CONTEXT_EXTERNAL_TENANT);
                     }
                 } else {
                     // Non-APIMessage: restore from dedicated message header (message-scoped)
                     String[] tenantData = msg.getHeaderEntry(HEADER_EXTERNAL_TENANT);
                     if (tenantData != null && tenantData.length >= 2) {
                         String userId = tenantData.length >= 3 ? tenantData[2] : null;
-                        ExternalTenantContext.setCurrent(
-                                new ExternalTenantContext(tenantData[0], tenantData[1], userId));
+                        ExternalTenantContext ctx = new ExternalTenantContext(tenantData[0], tenantData[1], userId);
+                        ExternalTenantContext.setCurrent(ctx);
+                        TaskContext.putTaskContextItem(TASK_CONTEXT_EXTERNAL_TENANT, ctx);
                     } else {
                         ExternalTenantContext.clearCurrent();
+                        TaskContext.removeTaskContextItem(TASK_CONTEXT_EXTERNAL_TENANT);
                     }
                 }
             }
@@ -119,7 +162,8 @@ public class ExternalTenantResourceTracker implements
 
     @Override
     public void notifyResourceOwnershipCreated(AccountResourceRefVO ref, EntityManager entityManager) {
-        ExternalTenantContext ctx = ExternalTenantContext.getCurrent();
+        ExternalTenantContext ctx = resolveCurrentContext();
+
         if (ctx == null || ctx.getTenantId() == null) {
             return;
         }
