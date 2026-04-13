@@ -290,6 +290,27 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="TpmCascadeExtension"
+          class="org.zstack.compute.vm.devices.TpmCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VmHostFileCascadeExtension"
+          class="org.zstack.compute.vm.devices.VmHostFileCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VmHostBackupFileCascadeExtension"
+          class="org.zstack.compute.vm.devices.VmHostBackupFileCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="VmTpmRekeyAssociation" class="org.zstack.compute.vm.devices.VmTpmRekeyAssociation">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.keyprovider.KeyProviderRekeyAssociationExtensionPoint" />
