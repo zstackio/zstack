@@ -455,23 +455,6 @@ public class KVMAgentCommands {
     public static class HostFactCmd extends AgentCommand {
     }
 
-    public static class UpdateTlsCertCmd extends AgentCommand implements Serializable {
-        private String caCert;
-        @NoLogging
-        private String caKey;
-        private String certIps;
-
-        public String getCaCert() { return caCert; }
-        public void setCaCert(String caCert) { this.caCert = caCert; }
-        public String getCaKey() { return caKey; }
-        public void setCaKey(String caKey) { this.caKey = caKey; }
-        public String getCertIps() { return certIps; }
-        public void setCertIps(String certIps) { this.certIps = certIps; }
-    }
-
-    public static class UpdateTlsCertResponse extends AgentResponse {
-    }
-
     public static class HostFactResponse extends AgentResponse {
         @GrayVersion(value = "5.0.0")
         private String osDistribution;
