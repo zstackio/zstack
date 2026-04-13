@@ -252,6 +252,8 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="KvmTpmEncryptedResourceKeyRefJdbcRepair" class="org.zstack.kvm.tpm.KvmTpmEncryptedResourceKeyRefJdbcRepair"/>
+
     <bean id="KvmTpmExtensions" class="org.zstack.kvm.tpm.KvmTpmExtensions">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint" />
@@ -259,6 +261,7 @@
             <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" />
             <zstack:extension interface="org.zstack.header.vm.VmAfterExpungeExtensionPoint" />
             <zstack:extension interface="org.zstack.header.vm.VmStateChangedExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint" />
         </zstack:plugin>
     </bean>
 
