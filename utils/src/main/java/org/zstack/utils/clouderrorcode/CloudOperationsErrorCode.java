@@ -13247,6 +13247,10 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_CORE_THREAD_10002 = "ORG_ZSTACK_CORE_THREAD_10002";
 
+    public static final String ORG_ZSTACK_CORE_THREAD_10003 = "ORG_ZSTACK_CORE_THREAD_10003";
+
+    public static final String ORG_ZSTACK_CORE_THREAD_10004 = "ORG_ZSTACK_CORE_THREAD_10004";
+
     public static final String ORG_ZSTACK_POLICYROUTE_10000 = "ORG_ZSTACK_POLICYROUTE_10000";
 
     public static final String ORG_ZSTACK_POLICYROUTE_10001 = "ORG_ZSTACK_POLICYROUTE_10001";
