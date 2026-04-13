@@ -13,10 +13,10 @@ import java.util.function.Function
 
 import static org.zstack.externalservice.vops.VOpsCommands.*;
 
-class VOpsClientForTest extends VOpsClient {
+class VOpsClientSimulator extends VOpsClient {
     public final VOpsVirtualEndpointSpec parent
 
-    VOpsClientForTest(VOpsVirtualEndpointSpec parent) {
+    VOpsClientSimulator(VOpsVirtualEndpointSpec parent) {
         this.parent = parent
     }
 
@@ -75,9 +75,9 @@ class VOpsClientForTest extends VOpsClient {
     }
 
     static class HttpForTest<T> extends RestHttp<T> {
-        final VOpsClientForTest client
+        final VOpsClientSimulator client
 
-        HttpForTest(Class<T> returnClass, VOpsClientForTest client) {
+        HttpForTest(Class<T> returnClass, VOpsClientSimulator client) {
             super(returnClass)
             this.client = client
             this.errorCodeBuilder = { Exception e, http2 -> client.errorFacade.throwableToOperationError(e) }

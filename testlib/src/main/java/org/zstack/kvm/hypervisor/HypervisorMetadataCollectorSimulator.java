@@ -13,7 +13,7 @@ import java.util.function.Function;
  * 
  * Created by Wenhao.Zhang on 23/03/01
  */
-public class HypervisorMetadataCollectorForTest extends HypervisorMetadataCollectorImpl {
+public class HypervisorMetadataCollectorSimulator extends HypervisorMetadataCollectorImpl {
     public static final String QEMU_VERSION_FOR_TEST = "4.2.0-632.g6a6222b.el7";
     private Function<Path, List<HypervisorMetadataDefinition>> folderScannerSimulator;
     private Function<HypervisorMetadataDefinition, String> collectMetadataSimulator;
@@ -41,11 +41,11 @@ public class HypervisorMetadataCollectorForTest extends HypervisorMetadataCollec
     }
 
     public List<HypervisorMetadataDefinition> scanFolderForDefault(Path rootPath) {
-        HypervisorMetadataDefinitionForTest d1 = new HypervisorMetadataDefinitionForTest();
+        HypervisorMetadataDefinitionSimulator d1 = new HypervisorMetadataDefinitionSimulator();
         d1.setArchitecture(CpuArchitecture.x86_64.name());
         d1.setOsReleaseSimpleVersion("c76");
 
-        HypervisorMetadataDefinitionForTest d2 = new HypervisorMetadataDefinitionForTest();
+        HypervisorMetadataDefinitionSimulator d2 = new HypervisorMetadataDefinitionSimulator();
         d2.setArchitecture(CpuArchitecture.x86_64.name());
         d2.setOsReleaseSimpleVersion("c79");
 
@@ -74,7 +74,7 @@ public class HypervisorMetadataCollectorForTest extends HypervisorMetadataCollec
                 QEMU_VERSION_FOR_TEST, osReleaseVersion[0], osReleaseVersion[1], osReleaseVersion[2]);
     }
 
-    public static class HypervisorMetadataDefinitionForTest extends HypervisorMetadataDefinition {
+    public static class HypervisorMetadataDefinitionSimulator extends HypervisorMetadataDefinition {
         @Override
         public boolean isValid() {
             return true;

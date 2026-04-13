@@ -13,7 +13,7 @@ import org.zstack.ldap.entity.LdapServerVO_
 import java.util.function.Function
 import java.util.function.Supplier
 
-class LdapDriverForTest extends LdapUtil {
+class LdapDriverSimulator extends LdapUtil {
     public Supplier<List<LdapVirtualEndpointSpec>> findAllEndpointsFunction
     public Function<LdapServerVO, LdapVirtualEndpointSpec> findEndpointByLdapVOFunction
 

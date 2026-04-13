@@ -60,7 +60,7 @@ class LdapVirtualEndpointSpec extends Spec {
         endpointUuid = uuid
 
         envSpec.mockFactory(LdapUtil.class) {
-            def driver = new LdapDriverForTest()
+            def driver = new LdapDriverSimulator()
             driver.findAllEndpointsFunction = { findAllEndpoints() }
             driver.findEndpointByLdapVOFunction = { LdapServerVO ldap -> findEndpointByLdapVO(ldap) }
             return driver
