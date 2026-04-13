@@ -111,6 +111,11 @@ public class KVMApiInterceptor implements ApiMessageInterceptor, GlobalApiMessag
             return;
         }
 
+        // ZNS L2 networks don't create vlan devices on host, skip length check
+        if (L2NetworkConstant.VSWITCH_TYPE_ZNS.equals(l2.getvSwitchType())) {
+            return;
+        }
+
         if (NetworkUtils.generateVlanDeviceName(l2.getPhysicalInterface(), l2.getVlan()).length()
                 > L2NetworkConstant.LINUX_IF_NAME_MAX_SIZE) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_KVM_10139, "cannot create vlan-device on %s because it's too long"

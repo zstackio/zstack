@@ -968,6 +968,10 @@ public class L2NoVlanNetwork implements L2Network {
                     }
 
                     L2NetworkVO tl2 = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).find();
+                    // ZNS L2NoVlan segments are uniquely identified by SDN controller, not by physicalInterface
+                    if (L2NetworkConstant.VSWITCH_TYPE_ZNS.equals(tl2.getvSwitchType())) {
+                        return;
+                    }
                     for (L2NetworkVO l2 : l2s) {
                         if (l2.getPhysicalInterface().equals(tl2.getPhysicalInterface())) {
                             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10006, "There has been a l2Network[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s]. Failed to attach l2Network[uuid:%s]",
@@ -980,8 +984,10 @@ public class L2NoVlanNetwork implements L2Network {
                         l2s = SQL.New("select l2" +
                                         " from L2VlanNetworkVO l2, L2NetworkClusterRefVO ref" +
                                         " where l2.uuid = ref.l2NetworkUuid" +
-                                        " and ref.clusterUuid = :clusterUuid")
-                                .param("clusterUuid", msg.getClusterUuid()).list();
+                                        " and ref.clusterUuid = :clusterUuid" +
+                                        " and l2.vSwitchType != :znsType")
+                                .param("clusterUuid", msg.getClusterUuid())
+                                .param("znsType", L2NetworkConstant.VSWITCH_TYPE_ZNS).list();
                     } else {
                         l2s = SQL.New("select l2" +
                                         " from L2VlanNetworkVO l2, L2NetworkClusterRefVO ref, SystemTagVO tag" +

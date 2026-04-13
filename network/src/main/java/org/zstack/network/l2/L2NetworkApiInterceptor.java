@@ -80,7 +80,9 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
 
         /* current ovs only support vlan, vxlan*/
         L2NetworkVO l2 = dbf.findByUuid(msg.getL2NetworkUuid(), L2NetworkVO.class);
-        if (!StringUtils.isEmpty(l2.getPhysicalInterface())) {
+        // ZNS L2 networks are managed by SDN controller, physicalInterface is irrelevant
+        if (!L2NetworkConstant.VSWITCH_TYPE_ZNS.equals(l2.getvSwitchType())
+                && !StringUtils.isEmpty(l2.getPhysicalInterface())) {
             /* find l2 network with same physical interface, but different vswitch Type */
             List<String> otherL2s = Q.New(L2NetworkVO.class).select(L2NetworkVO_.uuid)
                     .eq(L2NetworkVO_.physicalInterface, l2.getPhysicalInterface())
