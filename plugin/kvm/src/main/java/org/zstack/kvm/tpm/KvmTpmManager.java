@@ -320,6 +320,7 @@ public class KvmTpmManager extends AbstractService {
             RemoveTpmFromVmContext context = new RemoveTpmFromVmContext();
             context.vmInstanceUuid = msg.getVmInstanceUuid();
             context.tpmUuid = msg.getTpmUuid();
+            context.force = msg.isForceDelete();
             return context;
         }
     }

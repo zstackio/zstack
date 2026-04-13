@@ -34,11 +34,15 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.additions.RestoreVmHostFileMsg;
 import org.zstack.header.vm.additions.RestoreVmHostFileReply;
+import org.zstack.header.vm.additions.VmHostBackupFileDeletionMsg;
+import org.zstack.header.vm.additions.VmHostBackupFileDeletionReply;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.additions.VmHostFileContentFormat;
 import org.zstack.header.vm.additions.VmHostFileContentVO;
 import org.zstack.header.vm.additions.VmHostFileContentVO_;
+import org.zstack.header.vm.additions.VmHostFileDeletionMsg;
+import org.zstack.header.vm.additions.VmHostFileDeletionReply;
 import org.zstack.header.vm.additions.VmHostFileOperation;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
@@ -258,6 +262,10 @@ public class KvmSecureBootManager extends AbstractService {
             handle((RestoreVmHostFileMsg) msg);
         } else if (msg instanceof BackupVmHostFileOnHypervisorMsg) {
             handle((BackupVmHostFileOnHypervisorMsg) msg);
+        } else if (msg instanceof VmHostFileDeletionMsg) {
+            handle((VmHostFileDeletionMsg) msg);
+        } else if (msg instanceof VmHostBackupFileDeletionMsg) {
+            handle((VmHostBackupFileDeletionMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -1063,5 +1071,20 @@ public class KvmSecureBootManager extends AbstractService {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private void handle(VmHostFileDeletionMsg msg) {
+        VmHostFileDeletionReply reply = new VmHostFileDeletionReply();
+        databaseFacade.removeByPrimaryKey(msg.getUuid(), VmHostFileVO.class);
+        bus.reply(msg, reply);
+    }
+
+    private void handle(VmHostBackupFileDeletionMsg msg) {
+        VmHostBackupFileDeletionReply reply = new VmHostBackupFileDeletionReply();
+        VmHostBackupFileVO backup = databaseFacade.findByUuid(msg.getUuid(), VmHostBackupFileVO.class);
+        if (backup != null) {
+            vmHostFileFactory.createBackupBase(backup).clean();
+        }
+        bus.reply(msg, reply);
     }
 }
