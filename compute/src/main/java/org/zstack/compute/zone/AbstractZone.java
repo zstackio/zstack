@@ -8,7 +8,6 @@ import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneStateEvent;
 
 abstract class AbstractZone implements Zone {
-	private static DatabaseFacade dbf = Platform.getComponentLoader().getComponent(DatabaseFacade.class);
 	private final static StateMachine<ZoneState, ZoneStateEvent> stateMachine;
 	
     static {

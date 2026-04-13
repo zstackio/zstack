@@ -1,6 +1,7 @@
 package org.zstack.test.integration.networkservice.provider.flat.dhcp
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.thread.ThreadFacade
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.eip.EipConstant
@@ -9,6 +10,9 @@ import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.HostInventory
+import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.InstanceOfferingInventory
+import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VirtualRouterVmInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
@@ -16,6 +20,10 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
+
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 class VerifyPrepareDhcpWhenReconnectHostCase extends SubCase {
     EnvSpec env
@@ -147,12 +155,14 @@ class VerifyPrepareDhcpWhenReconnectHostCase extends SubCase {
     void test() {
         env.create {
             checkDhcpWork()
+            testBatchStartVmApplyDhcp()
         }
     }
 
     void checkDhcpWork(){
         def host = queryHost {}[0] as HostInventory
         def vm = env.inventoryByName("vm") as VmInstanceInventory
+        def vmItemTokens = new LinkedHashSet<String>()
 
         setVmHostname {
             uuid = vm.uuid
@@ -164,6 +174,11 @@ class VerifyPrepareDhcpWhenReconnectHostCase extends SubCase {
         env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
             cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
             called += 1
+            cmd.dhcpInfos.each { info ->
+                info.dhcp.each { dhcp ->
+                    vmItemTokens.add(String.format("%s-%s-%s", dhcp.ip, dhcp.netmask, dhcp.gateway))
+                }
+            }
             return rsp
         }
 
@@ -176,12 +191,17 @@ class VerifyPrepareDhcpWhenReconnectHostCase extends SubCase {
         assert called == 1
         assert cmd.dhcpInfos.size() == 1
         assert cmd.dhcpInfos.get(0).dhcp.get(0).hostname == "test-name"
+        def vmNic = vm.vmNics.get(0)
+        def expectedToken = String.format("%s-%s-%s", vmNic.ip, vmNic.netmask, vmNic.gateway)
+        assert vmItemTokens.contains(expectedToken)
 
         called = 0
         cmd = null
+        vmItemTokens.clear()
         reconnectHost { uuid=host.uuid }
         assert called == 1
         assert cmd.dhcpInfos.get(0).dhcp.get(0).hostname == "test-name"
+        assert vmItemTokens.contains(expectedToken)
 
         def vr = queryVirtualRouterVm {}[0] as VirtualRouterVmInventory
         assert vr != null
@@ -190,6 +210,129 @@ class VerifyPrepareDhcpWhenReconnectHostCase extends SubCase {
 
         reconnectHost { uuid=host.uuid }
         assert called == 1
+    }
+
+    void testBatchStartVmApplyDhcp() {
+        L3NetworkInventory l3 = env.inventoryByName("l3-1") as L3NetworkInventory
+        ImageInventory image = env.inventoryByName("image") as ImageInventory
+        InstanceOfferingInventory offering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+
+        def vmCount = 4
+        def vms = new ArrayList<VmInstanceInventory>()
+        def hostnameByIp = new LinkedHashMap<String, String>()
+        (0..<vmCount).each { idx ->
+            def hname = "batch-${idx}"
+            VmInstanceInventory inv = createVmInstance {
+                name = "batch-vm-${idx}"
+                imageUuid = image.uuid
+                l3NetworkUuids = [l3.uuid]
+                instanceOfferingUuid = offering.uuid
+            } as VmInstanceInventory
+            setVmHostname {
+                uuid = inv.uuid
+                hostname = hname
+            }
+            hostnameByIp.put(inv.vmNics.get(0).ip, hname)
+            vms.add(inv)
+        }
+
+        vms.each { vmInv ->
+            stopVmInstance {
+                uuid = vmInv.uuid
+            }
+        }
+
+        def batchCmds = Collections.synchronizedList(new ArrayList<FlatDhcpBackend.BatchApplyDhcpCmd>())
+        def firstBatchArrived = new CountDownLatch(1)
+        def releaseFirstBatch = new CountDownLatch(1)
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
+            FlatDhcpBackend.BatchApplyDhcpCmd cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
+            batchCmds.add(cmd)
+            if (batchCmds.size() == 1) {
+                firstBatchArrived.countDown()
+                releaseFirstBatch.await(10, TimeUnit.SECONDS)
+            }
+            return rsp
+        }
+
+        VmInstanceInventory blocker = vms.remove(0)
+        new Thread({
+            startVmInstance {
+                uuid = blocker.uuid
+            }
+        }).start()
+        assert firstBatchArrived.await(10, TimeUnit.SECONDS)
+
+        CountDownLatch doneLatch = new CountDownLatch(vms.size())
+        vms.each { vmInv ->
+            new Thread({
+                try {
+                    startVmInstance {
+                        uuid = vmInv.uuid
+                    }
+                } finally {
+                    doneLatch.countDown()
+                }
+            }).start()
+        }
+
+        ThreadFacade thdf = bean(ThreadFacade.class)
+        retryInSecs {
+            assert thdf.getChainTaskInfo(String.format("coalesce-queue-flat-dhcp-apply-%s", vms[0].hostUuid)).pendingTask.size() == 3
+        }
+
+        releaseFirstBatch.countDown()
+        assert doneLatch.await(2, TimeUnit.MINUTES)
+
+        retryInSecs(5) {
+            assert batchCmds.size() == 2
+        }
+        retryInSecs(2) {
+            assert batchCmds.size() == 2
+        }
+
+        Closure<Set<String>> toTokenSet = { FlatDhcpBackend.BatchApplyDhcpCmd batch ->
+            def tokens = new LinkedHashSet<String>()
+            batch.dhcpInfos.each { info ->
+                info.dhcp.each { dhcp ->
+                    tokens.add(String.format("%s-%s-%s", dhcp.ip, dhcp.netmask, dhcp.gateway))
+                }
+            }
+            return tokens
+        }
+
+        Closure<Map<String, String>> toHostnameMap = { FlatDhcpBackend.BatchApplyDhcpCmd batch ->
+            def hostnames = new LinkedHashMap<String, String>()
+            batch.dhcpInfos.each { info ->
+                info.dhcp.each { dhcp ->
+                    hostnames.put(dhcp.ip, dhcp.hostname)
+                }
+            }
+            return hostnames
+        }
+
+        def firstBatchTokens = toTokenSet(batchCmds.get(0))
+        def secondBatchTokens = toTokenSet(batchCmds.get(1))
+        def firstBatchHostnames = toHostnameMap(batchCmds.get(0))
+        def secondBatchHostnames = toHostnameMap(batchCmds.get(1))
+
+        def blockerNic = blocker.vmNics.get(0)
+        def blockerToken = String.format("%s-%s-%s", blockerNic.ip, blockerNic.netmask, blockerNic.gateway)
+        assert firstBatchTokens.size() == 1
+        assert firstBatchTokens.contains(blockerToken)
+        assert firstBatchHostnames.size() == 1
+        assert firstBatchHostnames.get(blockerNic.ip) == hostnameByIp.get(blockerNic.ip)
+
+        def expectedTokens = new LinkedHashSet<String>()
+        def expectedHostnames = new LinkedHashMap<String, String>()
+        vms.each { vmInv ->
+            def nic = vmInv.vmNics.get(0)
+            expectedTokens.add(String.format("%s-%s-%s", nic.ip, nic.netmask, nic.gateway))
+            expectedHostnames.put(nic.ip, hostnameByIp.get(nic.ip))
+        }
+        assert secondBatchTokens.containsAll(expectedTokens)
+        assert secondBatchTokens.size() == expectedTokens.size()
+        assert secondBatchHostnames == expectedHostnames
     }
 
     @Override
