@@ -11950,6 +11950,16 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_NETWORK_ZNS_10009 = "ORG_ZSTACK_NETWORK_ZNS_10009";
 
+    // ZNS error-code semantic mapping:
+    // 10010 unsupported API for ZNS controller
+    // 10011 ZNS L2 only supports L3BasicNetwork
+    // 10012 duplicate ZNS L2NoVlan creation under same controller
+    // 10013 invalid ZNS L2 target type in change-vlan flow
+    // 10014 Geneve type can only change VNI, not L2 type
+    // 10015 cannot switch to Geneve / cannot move NIC across ZNS controllers
+    // 10016 duplicate Geneve VNI under same controller
+    // 10017 non-ZNS L2 cannot change to Geneve type
+    // 10018 ZNS non-Geneve L2 network cannot change type to L2GeneveNetwork
     public static final String ORG_ZSTACK_NETWORK_ZNS_10010 = "ORG_ZSTACK_NETWORK_ZNS_10010";
 
     public static final String ORG_ZSTACK_NETWORK_ZNS_10011 = "ORG_ZSTACK_NETWORK_ZNS_10011";
@@ -11961,6 +11971,12 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_NETWORK_ZNS_10014 = "ORG_ZSTACK_NETWORK_ZNS_10014";
 
     public static final String ORG_ZSTACK_NETWORK_ZNS_10015 = "ORG_ZSTACK_NETWORK_ZNS_10015";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10016 = "ORG_ZSTACK_NETWORK_ZNS_10016";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10017 = "ORG_ZSTACK_NETWORK_ZNS_10017";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10018 = "ORG_ZSTACK_NETWORK_ZNS_10018";
 
     public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000";
 
