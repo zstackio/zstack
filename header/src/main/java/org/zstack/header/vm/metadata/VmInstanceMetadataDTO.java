@@ -9,6 +9,7 @@ public class VmInstanceMetadataDTO {
     private List<VolumeResourceMetadata> volumes;
     private List<ResourceMetadata> nics;
     private List<String> snapshots;
+    private List<String> snapshotTrees;
     private List<String> snapshotGroups;
     private List<String> snapshotGroupRefs;
 
@@ -58,6 +59,14 @@ public class VmInstanceMetadataDTO {
 
     public void setSnapshots(List<String> snapshots) {
         this.snapshots = snapshots;
+    }
+
+    public List<String> getSnapshotTrees() {
+        return snapshotTrees;
+    }
+
+    public void setSnapshotTrees(List<String> snapshotTrees) {
+        this.snapshotTrees = snapshotTrees;
     }
 
     public List<String> getSnapshotGroups() {
