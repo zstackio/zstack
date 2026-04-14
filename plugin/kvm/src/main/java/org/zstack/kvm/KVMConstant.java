@@ -81,7 +81,7 @@ public interface KVMConstant {
     String KVM_DELETE_CONSOLE_FIREWALL_PATH = "/vm/console/deletefirewall";
     String KVM_UPDATE_HOST_OS_PATH = "/host/updateos";
     String KVM_HOST_UPDATE_DEPENDENCY_PATH = "/host/updatedependency";
-    String KVM_UPDATE_TLS_CERT_PATH = "/host/updatetlscert";
+
     String HOST_SHUTDOWN = "/host/shutdown";
     String HOST_REBOOT = "/host/reboot";
     String HOST_UPDATE_SPICE_CHANNEL_CONFIG_PATH = "/host/updateSpiceChannelConfig";

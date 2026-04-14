@@ -129,6 +129,20 @@ public class KVMHost extends HostBase implements Host {
     protected static OperationChecker allowedOperations = new OperationChecker(true);
     protected static OperationChecker skipOperations = new OperationChecker(true);
 
+    public static Set<String> parseSanIps(String sanOutput) {
+        Set<String> sanIps = new HashSet<>();
+        if (sanOutput == null || sanOutput.isEmpty()) {
+            return sanIps;
+        }
+        for (String line : sanOutput.split(",|\n")) {
+            String trimmed = line.trim();
+            if (trimmed.startsWith("IP Address:")) {
+                sanIps.add(trimmed.substring("IP Address:".length()).trim());
+            }
+        }
+        return sanIps;
+    }
+
     @Autowired
     @Qualifier("KVMHostFactory")
     protected KVMHostFactory factory;
@@ -196,7 +210,6 @@ public class KVMHost extends HostBase implements Host {
     private String checkSnapshotPath;
     private String mergeSnapshotPath;
     private String hostFactPath;
-    private String updateTlsCertPath;
     private String hostCheckFilePath;
     private String attachIsoPath;
     private String detachIsoPath;
@@ -329,10 +342,6 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_HOST_FACT_PATH);
         hostFactPath = ub.build().toString();
-
-        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-        ub.path(KVMConstant.KVM_UPDATE_TLS_CERT_PATH);
-        updateTlsCertPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_HOST_CHECK_FILE_PATH);
@@ -5703,6 +5712,84 @@ public class KVMHost extends HostBase implements Host {
                 });
 
                 flow(new NoRollbackFlow() {
+                    String __name__ = "check-tls-certs-if-needed";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return CoreGlobalProperty.UNIT_TEST_ON
+                                || !KVMGlobalConfig.LIBVIRT_TLS_ENABLED.value(Boolean.class)
+                                || !rcf.getResourceConfigValue(
+                                        KVMGlobalConfig.RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE,
+                                        self.getUuid(), Boolean.class);
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        String managementIp = getSelf().getManagementIp();
+
+                        // 1. Get all IPs on the host via SSH
+                        SshShell sshShell = new SshShell();
+                        sshShell.setHostname(managementIp);
+                        sshShell.setUsername(getSelf().getUsername());
+                        sshShell.setPassword(getSelf().getPassword());
+                        sshShell.setPort(getSelf().getPort());
+
+                        SshResult ipResult = sshShell.runCommand(
+                                "ip -4 -o addr show scope global | sed -n \"s/.* inet \\([0-9.]\\+\\).*/\\1/p\"");
+                        if (ipResult.isSshFailure() || ipResult.getReturnCode() != 0) {
+                            logger.warn(String.format("Failed to get host IPs via SSH for TLS cert check on host[uuid:%s]: %s",
+                                    self.getUuid(), ipResult.getExitErrorMessage()));
+                            trigger.next();
+                            return;
+                        }
+
+                        // 2. Build IP list: managementIp + extra IPs (exclude managementIp and MN VIP)
+                        List<String> allIps = new ArrayList<>();
+                        allIps.add(managementIp);
+                        String[] hostIps = ipResult.getStdout().trim().split("\n");
+                        for (String ip : hostIps) {
+                            String trimmed = ip.trim();
+                            if (!trimmed.isEmpty() && !trimmed.equals(managementIp)
+                                    && !trimmed.equals(CoreGlobalProperty.MN_VIP)
+                                    && !trimmed.equals("127.0.0.1")
+                                    && !allIps.contains(trimmed)) {
+                                allIps.add(trimmed);
+                            }
+                        }
+
+                        String certIpList = String.join(",", allIps);
+
+                        // 3. Check existing cert SAN via SSH
+                        SshResult sanResult = sshShell.runCommand(
+                                "openssl x509 -in /etc/pki/libvirt/servercert.pem -noout -ext subjectAltName 2>/dev/null");
+
+                        boolean needDeploy = false;
+                        if (sanResult.isSshFailure() || sanResult.getReturnCode() != 0
+                                || sanResult.getStdout() == null || sanResult.getStdout().trim().isEmpty()) {
+                            // cert doesn't exist or can't be read
+                            logger.info(String.format("TLS cert not found or unreadable on host[uuid:%s], need deploy", self.getUuid()));
+                            needDeploy = true;
+                        } else {
+                            Set<String> sanIps = parseSanIps(sanResult.getStdout());
+                            for (String ip : allIps) {
+                                if (!sanIps.contains(ip)) {
+                                    logger.info(String.format("TLS cert SAN missing IP %s on host[uuid:%s], need deploy", ip, self.getUuid()));
+                                    needDeploy = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (needDeploy) {
+                            data.put("NEED_DEPLOY_TLS_CERT", true);
+                        }
+                        data.put("TLS_CERT_IPS", certIpList);
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
                     String __name__ = "apply-ansible-playbook";
 
                     @Override
@@ -5836,14 +5923,27 @@ public class KVMHost extends HostBase implements Host {
                         deployArguments.setSkipPackages(info.getSkipPackages());
                         deployArguments.setUpdatePackages(String.valueOf(CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT));
 
-                        // Build TLS cert IP list: management IP + extra IPs (migration network etc.)
-                        String managementIp = getSelf().getManagementIp();
-                        String extraIps = HostSystemTags.EXTRA_IPS.getTokenByResourceUuid(
-                                self.getUuid(), HostSystemTags.EXTRA_IPS_TOKEN);
-                        if (extraIps != null && !extraIps.isEmpty()) {
-                            deployArguments.setTlsCertIps(managementIp + "," + extraIps);
+                        // Build TLS cert IP list: prefer SSH-detected IPs from check-tls-certs flow
+                        String tlsCertIpsFromData = (String) data.get("TLS_CERT_IPS");
+                        if (tlsCertIpsFromData != null) {
+                            deployArguments.setTlsCertIps(tlsCertIpsFromData);
                         } else {
-                            deployArguments.setTlsCertIps(managementIp);
+                            // Fallback: management IP + extra IPs from system tag
+                            String managementIp = getSelf().getManagementIp();
+                            String extraIps = HostSystemTags.EXTRA_IPS.getTokenByResourceUuid(
+                                    self.getUuid(), HostSystemTags.EXTRA_IPS_TOKEN);
+                            if (extraIps != null && !extraIps.isEmpty()) {
+                                deployArguments.setTlsCertIps(managementIp + "," + extraIps);
+                            } else {
+                                deployArguments.setTlsCertIps(managementIp);
+                            }
+                        }
+
+                        // Force ansible deploy when TLS cert needs update (detected by check-tls-certs flow)
+                        Boolean needDeployTlsCert = (Boolean) data.get("NEED_DEPLOY_TLS_CERT");
+                        if (Boolean.TRUE.equals(needDeployTlsCert)) {
+                            runner.setForceRun(true);
+                            deployArguments.setRestartLibvirtd("true");
                         }
 
                         if (deployArguments.isForceRun()) {
@@ -6031,70 +6131,6 @@ public class KVMHost extends HostBase implements Host {
 
                 flow(createCollectHostFactsFlow(info));
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "update-tls-certs-if-needed";
-
-                    @Override
-                    public boolean skip(Map data) {
-                        return CoreGlobalProperty.UNIT_TEST_ON
-                                || !KVMGlobalConfig.LIBVIRT_TLS_ENABLED.value(Boolean.class)
-                                || !KVMGlobalConfig.RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE.value(Boolean.class);
-                    }
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        String managementIp = getSelf().getManagementIp();
-                        String extraIps = HostSystemTags.EXTRA_IPS.getTokenByResourceUuid(
-                                self.getUuid(), HostSystemTags.EXTRA_IPS_TOKEN);
-
-                        List<String> allIps = new ArrayList<>();
-                        allIps.add(managementIp);
-                        if (extraIps != null && !extraIps.isEmpty()) {
-                            for (String ip : extraIps.split(",")) {
-                                String trimmed = ip.trim();
-                                if (!trimmed.isEmpty() && !allIps.contains(trimmed)) {
-                                    allIps.add(trimmed);
-                                }
-                            }
-                        }
-
-                        String certIps = String.join(",", allIps);
-
-                        String caCert = new JsonLabel().get("libvirtTLSCA", String.class);
-                        String caKey = new JsonLabel().get("libvirtTLSPrivateKey", String.class);
-                        if (caCert == null || caKey == null) {
-                            logger.warn("TLS CA cert/key not found in database, skipping cert update");
-                            trigger.next();
-                            return;
-                        }
-
-                        UpdateTlsCertCmd cmd = new UpdateTlsCertCmd();
-                        cmd.setCaCert(caCert);
-                        cmd.setCaKey(caKey);
-                        cmd.setCertIps(certIps);
-
-                        new Http<>(updateTlsCertPath, cmd, UpdateTlsCertResponse.class)
-                                .call(new ReturnValueCompletion<UpdateTlsCertResponse>(trigger) {
-                                    @Override
-                                    public void success(UpdateTlsCertResponse ret) {
-                                        if (!ret.isSuccess()) {
-                                            logger.warn(String.format("Failed to update TLS certs on host[uuid:%s]: %s",
-                                                    self.getUuid(), ret.getError()));
-                                        }
-                                        // cert update failure should not block reconnect
-                                        trigger.next();
-                                    }
-
-                                    @Override
-                                    public void fail(ErrorCode errorCode) {
-                                        logger.warn(String.format("Failed to update TLS certs on host[uuid:%s]: %s",
-                                                self.getUuid(), errorCode));
-                                        // cert update failure should not block reconnect
-                                        trigger.next();
-                                    }
-                                });
-                    }
-                });
 
                 if (info.isNewAdded()) {
                     flow(new NoRollbackFlow() {

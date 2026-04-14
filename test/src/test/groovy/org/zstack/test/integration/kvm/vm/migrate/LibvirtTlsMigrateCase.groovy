@@ -4,6 +4,7 @@ import org.springframework.http.HttpEntity
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMGlobalConfig
+import org.zstack.kvm.KVMHost
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.UpdateGlobalConfigAction
 import org.zstack.sdk.VmInstanceInventory
@@ -17,6 +18,10 @@ import org.zstack.utils.gson.JSONObjectUtil
 /**
  * Verify that the libvirt TLS configuration (ZSTAC-81343) is correctly
  * propagated in the MigrateVmCmd sent to kvmagent.
+ *
+ * TLS certificate deployment is now handled by SSH-based detection +
+ * ansible deploy (ZSTAC-83696), which skips in unit tests. Only
+ * migration TLS flag propagation is tested here.
  *
  * Key logic under test (KVMHost.java):
  *   cmd.setUseTls(LIBVIRT_TLS_ENABLED && RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE)
@@ -126,6 +131,7 @@ class LibvirtTlsMigrateCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testSanIpParsing()
             testMigrateWithTlsEnabled()
             testMigrateWithTlsDisabled()
             testMigrateWithRestartLibvirtdDisabled()
@@ -263,5 +269,31 @@ class LibvirtTlsMigrateCase extends SubCase {
             name = "libvirt.tls.enabled"
             value = "true"
         }
+    }
+
+    void testSanIpParsing() {
+        // typical openssl SAN output
+        def sanOutput = "            IP Address:10.0.0.10, IP Address:192.168.1.1, DNS:host.example.com\n"
+
+        def ips = KVMHost.parseSanIps(sanOutput)
+        assert ips.contains("10.0.0.10")
+        assert ips.contains("192.168.1.1")
+        assert ips.size() == 2 : "should only contain 2 IPs, got ${ips}"
+
+        // prefix false-positive: 10.0.0.1 must NOT match when only 10.0.0.10 is in SAN
+        assert !ips.contains("10.0.0.1") : "10.0.0.1 should not match 10.0.0.10"
+        assert !ips.contains("192.168.1") : "partial IP should not match"
+
+        // null / empty input
+        assert KVMHost.parseSanIps(null).isEmpty()
+        assert KVMHost.parseSanIps("").isEmpty()
+
+        // multiline format
+        def multiline = "X509v3 Subject Alternative Name:\n    IP Address:10.0.0.1\n    IP Address:10.0.0.10\n"
+        def mlIps = KVMHost.parseSanIps(multiline)
+        assert mlIps.contains("10.0.0.1")
+        assert mlIps.contains("10.0.0.10")
+        assert mlIps.size() == 2
+        assert !mlIps.contains("10.0.0") : "prefix should not match"
     }
 }
