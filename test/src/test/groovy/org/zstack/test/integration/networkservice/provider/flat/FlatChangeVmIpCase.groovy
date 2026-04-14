@@ -269,6 +269,7 @@ class FlatChangeVmIpCase extends SubCase{
         VmNicInventory vmNic = vm.getVmNics().get(0)
         VmNicVO vmNicVO = dbFindByUuid(vmNic.uuid, VmNicVO.class)
         String ip1 = vmNicVO.getIp()
+        String usedIpUuid1 = vmNicVO.getUsedIps().find { it.ip == ip1 }?.uuid
 
         def sg = createSecurityGroup {
             name = "sg-change-l3"
@@ -343,6 +344,14 @@ class FlatChangeVmIpCase extends SubCase{
 
             assert cmd != null
             assert cmd.ruleTOs.get(sg.uuid) != null
+
+            VmNicVO latestVmNicVO = dbFindByUuid(vmNic.uuid, VmNicVO.class)
+            String usedIpUuid2 = latestVmNicVO.getUsedIps().find { it.ip == ip2 }?.uuid
+            assert usedIpUuid2 != null
+            assert usedIpUuid2 != usedIpUuid1
+            assert latestVmNicVO.getUsedIps().every { it.uuid != usedIpUuid1 }
+            assert latestVmNicVO.getUsedIps().every { it.ip != ip1 }
+            assert latestVmNicVO.getUsedIps().any { it.ip == ip2 && it.uuid == usedIpUuid2 }
         }
     }
 
