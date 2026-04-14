@@ -293,13 +293,14 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         public String path;
         // whether the NvRam is on the same host as before
         private boolean sameHost = false;
+        private boolean syncFromOriginHostSuccess = false;
         private boolean writeSuccess = false;
         private VmHostFileVO vmHostFile;
         private VmHostBackupFileVO vmBackupFileVO;
 
         // property: VmHostBackupFileVO (when "backupUuid" is set)
         //             > VmHostFileVO (read success)
-        //             > VmHostFileVO (read fail)
+        //             > VmHostFileVO (read fail, but has content)
         //             > VmHostBackupFileVO (vmInstanceUuid matched)  <-  read this only if VmHostFileVO is not exist
     }
 
@@ -317,7 +318,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                VmHostFileVO vmHostFile = Q.New(VmHostFileVO.class)
+                VmHostFileVO vmHostFile = context.vmHostFile = Q.New(VmHostFileVO.class)
                         .eq(VmHostFileVO_.type, context.type)
                         .eq(VmHostFileVO_.vmInstanceUuid, context.vmUuid)
                         .orderByDesc(VmHostFileVO_.lastOpDate)
@@ -351,14 +352,45 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                     @Override
                     public void run(MessageReply reply) {
                         if (reply.isSuccess()) {
-                            context.vmHostFile = vmHostFile;
-                        } else {
-                            logger.warn(String.format("failed to read vm host file for VM[vmUuid=%s] but still continue: %s",
-                                    context.vmUuid, reply.getError().getReadableDetails()));
+                            context.syncFromOriginHostSuccess = true;
+                            trigger.next();
+                            return;
                         }
+
+                        boolean fileUpdated = vmHostFile.getChangeDate() != null;
+                        if (fileUpdated) {
+                            // file updated but we can not sync from original host, it is unsafe to start with cache.
+                            trigger.fail(operr(
+                                    "failed to read %s vm host file for VM[vmUuid=%s] since last updated", context.type, context.vmUuid)
+                                    .withCause(reply.getError()));
+                            return;
+                        }
+
+                        logger.warn(String.format("failed to read vm host file for VM[vmUuid=%s] but still continue: %s",
+                                context.vmUuid, reply.getError().getReadableDetails()));
                         trigger.next();
                     }
                 });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "check-content-for-vm-host-file-if-sync-failed";
+
+            @Override
+            public boolean skip(Map data) {
+                return context.syncFromOriginHostSuccess || context.vmHostFile == null;
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (!Q.New(VmHostFileContentVO.class)
+                        .eq(VmHostFileContentVO_.uuid, context.vmHostFile.getUuid())
+                        .isExists()) {
+                    logger.debug(String.format(
+                            "VmHostFileVO[vmUuid=%s, hostUuid=%s, type=%s] has no content",
+                            context.vmUuid, context.hostUuid, context.type));
+                    context.vmHostFile = null;
+                }
+                trigger.next();
             }
         }).then(new NoRollbackFlow() {
             String __name__ = "read-vm-host-file-from-backup";
