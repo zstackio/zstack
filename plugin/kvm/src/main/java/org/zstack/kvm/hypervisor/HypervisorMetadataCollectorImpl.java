@@ -131,7 +131,8 @@ public class HypervisorMetadataCollectorImpl implements HypervisorMetadataCollec
         Object platformDistName = properties.get(KEY_PLATFORM_DIST_NAME);
         Object platformVersion = properties.get(KEY_PLATFORM_VERSION);
         if (platformDistName != null && platformVersion != null) {
-            definition.setOsReleaseVersion(String.format("%s %s", platformDistName, platformVersion));
+            definition.setOsReleaseVersion(String.format("%s %s",
+                    platformDistName, KvmHypervisorInfoHelper.normalizeOsVersion(platformVersion.toString())));
         } else {
             return false;
         }
