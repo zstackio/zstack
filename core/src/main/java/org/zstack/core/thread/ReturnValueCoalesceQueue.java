@@ -28,7 +28,7 @@ public abstract class ReturnValueCoalesceQueue<T, R, V> extends AbstractCoalesce
 
     @Override
     protected final AbstractCompletion createBatchCompletion(String syncSignature, List<PendingRequest> requests, SyncTaskChain chain) {
-        return new ReturnValueCompletion<R>(null) {
+        return new ReturnValueCompletion<R>(chain) {
             @Override
             public void success(R batchResult) {
                 handleSuccess(syncSignature, requests, batchResult, chain);
