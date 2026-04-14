@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddLogServerAction extends AbstractAction {
+public class GetVpcVRouterSnatLogStateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddLogServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddLogServerResult value;
+        public org.zstack.sdk.GetVpcVRouterSnatLogStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,29 +25,8 @@ public class AddLogServerAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, validValues = {"ManagementNodeLog","PlatformOperationLog","SnatLog"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String category;
-
-    @Param(required = true, validValues = {"Log4j2","FluentBit"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = false, validValues = {"OFF","FATAL","ERROR","WARN","INFO","DEBUG","TRACE","ALL"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String level;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String configuration;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -67,12 +46,6 @@ public class AddLogServerAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -81,8 +54,8 @@ public class AddLogServerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddLogServerResult value = res.getResult(org.zstack.sdk.AddLogServerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddLogServerResult() : value; 
+        org.zstack.sdk.GetVpcVRouterSnatLogStateResult value = res.getResult(org.zstack.sdk.GetVpcVRouterSnatLogStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVpcVRouterSnatLogStateResult() : value; 
 
         return ret;
     }
@@ -111,11 +84,11 @@ public class AddLogServerAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/log/servers";
+        info.httpMethod = "GET";
+        info.path = "/vpc/virtual-routers/{uuid}/snat-log";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
