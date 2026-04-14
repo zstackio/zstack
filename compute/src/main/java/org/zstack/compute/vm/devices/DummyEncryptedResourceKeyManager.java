@@ -1,5 +1,6 @@
 package org.zstack.compute.vm.devices;
 
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.keyprovider.EncryptedResourceKeyManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -17,6 +18,13 @@ public class DummyEncryptedResourceKeyManager implements EncryptedResourceKeyMan
         logger.warn(String.format("crypto module not installed, cannot create resource key for %s[uuid:%s]",
                 ctx.getResourceType(), ctx.getResourceUuid()));
         completion.fail(operr("crypto module is not installed, cannot manage resource encryption keys"));
+    }
+
+    @Override
+    public ResourceKeyResult getKey(GetOrCreateResourceKeyContext ctx) {
+        logger.warn(String.format("crypto module not installed, cannot get resource key for %s[uuid:%s]",
+                ctx.getResourceType(), ctx.getResourceUuid()));
+        throw new OperationFailureException(operr("crypto module is not installed, cannot manage resource encryption keys"));
     }
 
     @Override

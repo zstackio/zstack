@@ -411,8 +411,9 @@ public class KVMAgentCommands {
         private String vmUuid;
         private String purpose;
         private Integer keyVersion;
-        private String description;
         private String usageInstance;
+        private String secretUuid;
+        private String description;
 
         public String getEncryptedDek() {
             return encryptedDek;
@@ -446,20 +447,28 @@ public class KVMAgentCommands {
             this.keyVersion = keyVersion;
         }
 
-        public String getDescription() {
-            return description;
-        }
-
-        public void setDescription(String description) {
-            this.description = description;
-        }
-
         public String getUsageInstance() {
             return usageInstance;
         }
 
         public void setUsageInstance(String usageInstance) {
             this.usageInstance = usageInstance;
+        }
+
+        public String getSecretUuid() {
+            return secretUuid;
+        }
+
+        public void setSecretUuid(String secretUuid) {
+            this.secretUuid = secretUuid;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
         }
     }
 
