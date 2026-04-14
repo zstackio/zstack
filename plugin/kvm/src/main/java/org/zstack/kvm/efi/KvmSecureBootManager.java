@@ -664,7 +664,7 @@ public class KvmSecureBootManager extends AbstractService {
 
                 context.backupFiles.addAll(Q.New(VmHostBackupFileVO.class)
                         .eq(VmHostBackupFileVO_.resourceUuid, msg.getSrcVmUuid())
-                        .in(VmHostFileVO_.type, missingTypes)
+                        .in(VmHostBackupFileVO_.type, missingTypes)
                         .list());
                 trigger.next();
             }
