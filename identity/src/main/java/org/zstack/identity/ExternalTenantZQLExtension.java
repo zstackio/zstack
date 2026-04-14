@@ -70,14 +70,25 @@ public class ExternalTenantZQLExtension implements MarshalZQLASTTreeExtensionPoi
         String primaryKey = EntityMetadata.getPrimaryKeyField(src.inventoryAnnotation.mappingVOClass()).getName();
         String inventoryAlias = src.simpleInventoryName();
 
-        // Generate subquery, filter associated resources by source + tenantId
+        // Generate subquery, filter associated resources by source + tenantId (+ userId if present)
+        // Add userId filter only when present and valid; invalid userId is
+        // silently ignored (falls back to tenant-level isolation) rather than
+        // throwing SkipThisRestrictExprException which would remove the entire
+        // tenant filter — a security escalation.
+        String userId = tenantCtx.getUserId();
+        String userFilter = "";
+        if (userId != null && !userId.isEmpty() && SAFE_TENANT_VALUE.matcher(userId).matches()) {
+            userFilter = String.format(" AND etref.userId = '%s'", escapeSql(userId));
+        }
+
         return String.format(
                 "(%s.%s IN (SELECT etref.resourceUuid FROM ExternalTenantResourceRefVO etref" +
-                " WHERE etref.source = '%s' AND etref.tenantId = '%s'))",
+                " WHERE etref.source = '%s' AND etref.tenantId = '%s'%s))",
                 inventoryAlias,
                 primaryKey,
                 escapeSql(tenantCtx.getSource()),
-                escapeSql(tenantCtx.getTenantId())
+                escapeSql(tenantCtx.getTenantId()),
+                userFilter
         );
     }
 
