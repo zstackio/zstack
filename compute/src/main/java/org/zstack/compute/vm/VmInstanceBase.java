@@ -3896,7 +3896,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }
 
                         if (!StringUtils.isEmpty(msg.getIp())) {
-                            UsedIpVO vo = oldIpv4Set.stream().findFirst().orElse(new UsedIpVO());
+                            String ipRangeUuid = IpRangeHelper.getIpRangeUuid(nicVO.getL3NetworkUuid(), msg.getIp());
+                            UsedIpVO vo = UsedIpHelper.getOrRecreateForIpChange(
+                                    oldIpv4Set.stream().findFirst().orElse(new UsedIpVO()),
+                                    msg.getIp(), ipRangeUuid, voRemoveSet);
                             if (vo.getUuid() == null) {
                                 vo.setUuid(Platform.getUuid());
                                 vo.setIpVersion(IPv6Constants.IPv4);
@@ -3911,7 +3914,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                             vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                             vo.setNetmask(msg.getNetmask());
                             vo.setGateway(msg.getGateway());
-                            vo.setIpRangeUuid(IpRangeHelper.getIpRangeUuid(vo.getL3NetworkUuid(), vo.getIp()));
+                            vo.setIpRangeUuid(ipRangeUuid);
                             nicVO.setUsedIpUuid(vo.getUuid());
                             nicVO.setIp(vo.getIp());
                             nicVO.setIpVersion(vo.getIpVersion());
@@ -3920,7 +3923,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                             ipOperator.setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp());
                         }
                         if (!StringUtils.isEmpty(msg.getIp6())) {
-                            UsedIpVO vo = oldIpv6Set.stream().findFirst().orElse(new UsedIpVO());
+                            String ipRangeUuid = IpRangeHelper.getIpRangeUuid(nicVO.getL3NetworkUuid(), msg.getIp6());
+                            UsedIpVO vo = UsedIpHelper.getOrRecreateForIpChange(
+                                    oldIpv6Set.stream().findFirst().orElse(new UsedIpVO()),
+                                    msg.getIp6(), ipRangeUuid, voRemoveSet);
                             if (vo.getUuid() == null) {
                                 vo.setUuid(Platform.getUuid());
                                 vo.setIpVersion(IPv6Constants.IPv6);
@@ -3934,7 +3940,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                             vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                             vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(String.format("%s/%s", msg.getIp6(), msg.getIpv6Prefix())));
                             vo.setGateway(msg.getIpv6Gateway());
-                            vo.setIpRangeUuid(IpRangeHelper.getIpRangeUuid(vo.getL3NetworkUuid(), vo.getIp()));
+                            vo.setIpRangeUuid(ipRangeUuid);
                             // ipv6 only, or dual stack, but ipv4 deleted
                             if (msg.getIp() == null ? oldIpv4Set.isEmpty() : msg.getIp().isEmpty()) {
                                 nicVO.setUsedIpUuid(vo.getUuid());
@@ -9370,4 +9376,3 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 }
-
