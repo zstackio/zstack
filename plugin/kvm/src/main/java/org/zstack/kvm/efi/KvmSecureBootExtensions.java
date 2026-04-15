@@ -357,15 +357,6 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                             return;
                         }
 
-                        boolean fileUpdated = vmHostFile.getChangeDate() != null;
-                        if (fileUpdated) {
-                            // file updated but we can not sync from original host, it is unsafe to start with cache.
-                            trigger.fail(operr(
-                                    "failed to read %s vm host file for VM[vmUuid=%s] since last updated", context.type, context.vmUuid)
-                                    .withCause(reply.getError()));
-                            return;
-                        }
-
                         logger.warn(String.format("failed to read vm host file for VM[vmUuid=%s] but still continue: %s",
                                 context.vmUuid, reply.getError().getReadableDetails()));
                         trigger.next();
