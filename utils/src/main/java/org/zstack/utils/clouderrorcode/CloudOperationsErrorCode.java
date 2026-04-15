@@ -1015,6 +1015,7 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_NETWORK_L2_10019 = "ORG_ZSTACK_NETWORK_L2_10019";
 
     public static final String ORG_ZSTACK_NETWORK_L2_10020 = "ORG_ZSTACK_NETWORK_L2_10020";
+    public static final String ORG_ZSTACK_NETWORK_L2_10021 = "ORG_ZSTACK_NETWORK_L2_10021";
 
     public static final String ORG_ZSTACK_CONSOLE_10000 = "ORG_ZSTACK_CONSOLE_10000";
 
