@@ -1,7 +1,9 @@
 package org.zstack.kvm;
 
 import org.zstack.header.configuration.PythonClass;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.additions.VmHostFileType;
 
 @PythonClass
 public interface KVMConstant {
@@ -85,6 +87,9 @@ public interface KVMConstant {
     String KVM_REGISTER_PRIMARY_VM_HEARTBEAT = "/register/primary/vm/heartbeat";
     String CLEAN_FIRMWARE_FLASH = "/clean/firmware/flash";
     String FSTRIM_VM_PATH = "/vm/fstrim";
+    String READ_VM_HOST_FILE_PATH = "/vm/hostfile/read";
+    String WRITE_VM_HOST_FILE_PATH = "/vm/hostfile/write";
+    String BACKUP_VM_HOST_FILE_PATH = "/vm/hostfile/backup";
 
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";
@@ -119,6 +124,21 @@ public interface KVMConstant {
     String KVM_HOST_GET_SENSORS_PATH = "/host/sensors/get";
     String KVM_UPDATE_HOST_NQN_PATH = "/host/nqn/update";
     String KVM_UPDATE_HOSTNAME_PATH = "/host/hostname/update";
+
+    String KVM_CREATE_ENVELOPE_KEY_PATH = "/host/key/envelope/createEnvelopeKey";
+    String KVM_GET_ENVELOPE_KEY_PATH = "/host/key/envelope/getEnvelopePublicKey";
+    String KVM_ROTATE_ENVELOPE_KEY_PATH = "/host/key/envelope/rotateEnvelopeKey";
+    String KVM_VERIFY_ENVELOPE_KEY_PATH = "/host/key/envelope/checkEnvelopeKey";
+    String KVM_GET_SECRET_PATH = "/host/key/envelope/getSecret";
+    String KVM_ENSURE_SECRET_PATH = "/host/key/envelope/ensureSecret";
+    String KVM_DELETE_SECRET_PATH = "/host/key/envelope/deleteSecret";
+
+    /** HTTP timeout in seconds for envelope key sync (verify/create/rotate/get) to agent. */
+    long ENVELOPE_KEY_HTTP_TIMEOUT_SEC = 5L;
+
+    /** Max size in bytes for DEK payload in SecretHostDefine (decoded from dekBase64). */
+    int MAX_DEK_BYTES = 1024;
+    String HOST_SECRET_USAGE_INSTANCE_VTPM = "tpm0";
 
     String KVM_HOST_FILE_DOWNLOAD_PATH = "/host/file/download";
     String KVM_HOST_FILE_UPLOAD_PATH = "/host/file/upload";
@@ -182,6 +202,45 @@ public interface KVMConstant {
     public static final String L2_PROVIDER_TYPE_LINUX_BRIDGE = "LinuxBridge";
     public static final String L2_PROVIDER_TYPE_OVS_DPDK = "OvsDpdk";
     public static final String L2_PROVIDER_TYPE_MACVLAN = "MacVlan";
+
+    public static final String EDK_VERSION_NONE = "None";
+    public static final String NV_RAM_FILE_PATH_FORMAT = "/var/lib/libvirt/qemu/nvram/%s-host-files/%s.fd";
+    public static String buildNvramFilePath(String vmUuid) {
+        return String.format(NV_RAM_FILE_PATH_FORMAT, vmUuid, vmUuid);
+    }
+
+    public static final String TPM_STATE_FILE_PATH_FORMAT = "/var/lib/libvirt/swtpm/%s/";
+    public static String buildTpmStateFilePath(String vmUuid) {
+        String vmUuidWithHyphen = vmUuid.replaceFirst("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5");
+        return String.format(TPM_STATE_FILE_PATH_FORMAT, vmUuidWithHyphen);
+    }
+
+    public static String buildPathForVmHostFileType(VmHostFileType type, String vmUuid) {
+        switch (type) {
+            case NvRam: return buildNvramFilePath(vmUuid);
+            case TpmState: return buildTpmStateFilePath(vmUuid);
+            default: throw new CloudRuntimeException("unsupported VmHostFileType: " + type);
+        }
+    }
+
+    public static final String NV_RAM_SNAPSHOT_BACKUP_FILE_PATH_FORMAT = "/var/lib/libvirt/qemu/nvram/%s-host-files/%s.fd.snapshot-backup";
+    public static String buildNvramSnapshotBackupFilePath(String vmUuid) {
+        return String.format(NV_RAM_SNAPSHOT_BACKUP_FILE_PATH_FORMAT, vmUuid, vmUuid);
+    }
+
+    public static final String TPM_STATE_SNAPSHOT_BACKUP_FILE_PATH_FORMAT = "/var/lib/libvirt/swtpm/%s.snapshot-backup/";
+    public static String buildTpmStateSnapshotBackupFilePath(String vmUuid) {
+        String vmUuidWithHyphen = vmUuid.replaceFirst("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5");
+        return String.format(TPM_STATE_SNAPSHOT_BACKUP_FILE_PATH_FORMAT, vmUuidWithHyphen);
+    }
+
+    public static String buildSnapshotBackupPathForVmHostFileType(VmHostFileType type, String vmUuid) {
+        switch (type) {
+            case NvRam: return buildNvramSnapshotBackupFilePath(vmUuid);
+            case TpmState: return buildTpmStateSnapshotBackupFilePath(vmUuid);
+            default: throw new CloudRuntimeException("unsupported VmHostFileType: " + type);
+        }
+    }
 
     public static final String DHCP_BIN_FILE_PATH = "/usr/local/zstack/dnsmasq";
 

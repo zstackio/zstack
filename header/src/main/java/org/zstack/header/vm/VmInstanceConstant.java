@@ -1,10 +1,12 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.configuration.PythonClass;
+import org.zstack.utils.data.SizeUnit;
 
 @PythonClass
 public interface VmInstanceConstant {
     String SERVICE_ID = "vmInstance";
+    String SECURE_BOOT_SERVICE_ID = "secureBoot";
     String ACTION_CATEGORY = "instance";
     @PythonClass
     String USER_VM_TYPE = "UserVm";

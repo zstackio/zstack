@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
+import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend;
+import org.zstack.compute.vm.devices.VmTpmManager;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
@@ -45,6 +47,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.tpm.TpmConstants;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
@@ -56,6 +59,7 @@ import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPo
 import org.zstack.header.vm.VmInstanceSpec.CdRomSpec;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
+import org.zstack.header.vm.additions.ResetVmTpmMsg;
 import org.zstack.header.vm.cdrom.*;
 import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
 import org.zstack.header.vo.ResourceVO;
@@ -140,12 +144,27 @@ public class VmInstanceBase extends AbstractVmInstance {
     private VmInstanceResourceMetadataManager vidm;
     @Autowired
     private NetworkServiceManager nwServiceMgr;
+    @Autowired
+    private TpmEncryptedResourceKeyBackend tpmKeyBackend;
 
     protected VmInstanceVO self;
     protected VmInstanceVO originalCopy;
     protected String syncThreadName;
     private final static StaticIpOperator ipOperator = new StaticIpOperator();
     private final static VmConfigSyncHelper vmConfigSyncHelper = new VmConfigSyncHelper();
+
+    private void detachTpmKeyProviderBestEffort(String tpmUuid) {
+        if (tpmUuid == null) {
+            return;
+        }
+        try {
+            tpmKeyBackend.detachKeyProviderFromTpm(tpmUuid);
+        } catch (Throwable t) {
+            logger.warn(String.format(
+                    "failed to detach key provider from TPM[uuid:%s]: %s",
+                    tpmUuid, t.getMessage()), t);
+        }
+    }
 
     protected void checkState(final String hostUuid, final NoErrorCompletion completion) {
         CheckVmStateOnHypervisorMsg msg = new CheckVmStateOnHypervisorMsg();
@@ -1270,6 +1289,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmAfterExpungeExtensionPoint.class),
                         arg -> arg.vmAfterExpunge(inv));
 
+                final String tpmUuidForEncryptedKeyRef = VmTpmManager.findTpmUuidForVmOrNull(self.getUuid());
+
                 callVmJustBeforeDeleteFromDbExtensionPoint();
 
                 dbf.reload(self);
@@ -1281,6 +1302,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (inv.getRootVolumeUuid() != null) {
                     dbf.eoCleanup(VolumeVO.class, inv.getRootVolumeUuid());
                 }
+                detachTpmKeyProviderBestEffort(tpmUuidForEncryptedKeyRef);
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
@@ -2580,12 +2602,15 @@ public class VmInstanceBase extends AbstractVmInstance {
                     if (self.getState() != VmInstanceState.Destroyed) {
                         changeVmStateInDb(VmInstanceStateEvent.destroyed);
                     }
+                    final String tpmUuidForEncryptedKeyRef = VmTpmManager.findTpmUuidForVmOrNull(self.getUuid());
                     callVmJustBeforeDeleteFromDbExtensionPoint();
                     dbf.removeCollection(self.getVmCdRoms(), VmCdRomVO.class);
                     dbf.remove(getSelf());
                     dbf.eoCleanup(VmInstanceVO.class, self.getUuid());
+                    detachTpmKeyProviderBestEffort(tpmUuidForEncryptedKeyRef);
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.DBOnly || deletionPolicy == VmInstanceDeletionPolicy.KeepVolume) {
                     String accountUuid = acntMgr.getOwnerAccountUuidOfResource(inv.getUuid());
+                    final String tpmUuidForEncryptedKeyRef = VmTpmManager.findTpmUuidForVmOrNull(self.getUuid());
                     new SQLBatch() {
                         @Override
                         protected void scripts() {
@@ -2599,6 +2624,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                             sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, self.getUuid()).hardDelete();
                         }
                     }.execute();
+                    detachTpmKeyProviderBestEffort(tpmUuidForEncryptedKeyRef);
                     callVmJustAfterDeleteFromDbExtensionPoint(inv, accountUuid);
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.Delay) {
                     changeVmStateInDb(VmInstanceStateEvent.destroyed);
@@ -3555,6 +3581,40 @@ public class VmInstanceBase extends AbstractVmInstance {
                                     return;
                                 }
                                 dbf.remove(cache);
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "reset-vm-tpm";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        boolean resetTpm;
+                        if (msg.getResetTpm() == null) {
+                            resetTpm = rcf.getResourceConfigValue(
+                                    VmGlobalConfig.RESET_TPM_AFTER_VM_CLONE,
+                                    msg.getVmInstanceUuid(), Boolean.class);
+                        } else {
+                            resetTpm = msg.getResetTpm();
+                        }
+                        return !resetTpm;
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map map) {
+                        ResetVmTpmMsg rmsg = new ResetVmTpmMsg();
+                        rmsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+                        bus.makeLocalServiceId(rmsg, TpmConstants.SERVICE_ID);
+                        bus.send(rmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
                                 trigger.next();
                             }
                         });
@@ -7711,6 +7771,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setDataDisks(struct.getDataDisks());
         spec.setDeprecatedDisksSpecs(struct.getDeprecatedDataVolumeSpecs());
         spec.setVmCustomSpecification(struct.getVmCustomSpecification());
+        spec.setDevicesSpec(struct.getDevicesSpec());
 
         List<CdRomSpec> cdRomSpecs = buildVmCdRomSpecsForNewCreated(spec);
         spec.setCdRomSpecs(cdRomSpecs);

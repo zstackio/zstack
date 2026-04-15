@@ -9,6 +9,7 @@ import java.util.List;
  */
 public class TakeVolumesSnapshotOnKvmReply extends MessageReply {
     private List<TakeSnapshotsOnKvmResultStruct> snapshotsResults;
+    private String hostBackupTempResourceUuid;
 
     public List<TakeSnapshotsOnKvmResultStruct> getSnapshotsResults() {
         return snapshotsResults;
@@ -16,5 +17,13 @@ public class TakeVolumesSnapshotOnKvmReply extends MessageReply {
 
     public void setSnapshotsResults(List<TakeSnapshotsOnKvmResultStruct> snapshotsResults) {
         this.snapshotsResults = snapshotsResults;
+    }
+
+    public String getHostBackupTempResourceUuid() {
+        return hostBackupTempResourceUuid;
+    }
+
+    public void setHostBackupTempResourceUuid(String hostBackupTempResourceUuid) {
+        this.hostBackupTempResourceUuid = hostBackupTempResourceUuid;
     }
 }
