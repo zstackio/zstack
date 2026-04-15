@@ -125,4 +125,9 @@ class HostSecretKvmAgentSimulatorCase extends SubCase {
 
         assert KVMSimulator.getSimulatedHostSecretForTest(hostUuid, vmUuid, purpose, keyVersion) == null
     }
+
+    @Override
+    void clean() {
+        env.delete()
+    }
 }

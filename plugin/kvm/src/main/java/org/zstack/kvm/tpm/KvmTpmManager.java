@@ -402,11 +402,18 @@ public class KvmTpmManager extends AbstractService {
                 })
                 .build())
             .then(Flow.of("delete-host-secret")
-                .skipIf(data -> context.hostFiles == null || context.hostFiles.isEmpty())
+                .skipIf(data -> context.keyVersion == null)
                 .handle(trigger -> {
                     Set<String> hostUuids = new HashSet<>();
                     for (VmHostFileVO file : context.hostFiles) {
                         hostUuids.add(file.getHostUuid());
+                    }
+                    if (hostUuids.isEmpty()) {
+                        addVmCurrentAndLastHostUuidsForSecretDelete(hostUuids, context.vmInstanceUuid);
+                    }
+                    if (hostUuids.isEmpty()) {
+                        trigger.next();
+                        return;
                     }
 
                     new While<>(new ArrayList<>(hostUuids)).each((hostUuid, whileCompletion) -> {
@@ -717,51 +724,6 @@ public class KvmTpmManager extends AbstractService {
                     trigger.next();
                 })
                 .build())
-            .then(Flow.of("delete-host-secret")
-                .handle(trigger -> {
-                    if (context.keyVersion == null) {
-                        trigger.next();
-                        return;
-                    }
-                    Set<String> hostUuids = new HashSet<>();
-                    for (VmHostFileVO file : context.hostFiles) {
-                        hostUuids.add(file.getHostUuid());
-                    }
-                    if (context.hostFileToDeleteLast != null) {
-                        hostUuids.add(context.hostFileToDeleteLast.getHostUuid());
-                    }
-                    if (hostUuids.isEmpty()) {
-                        trigger.next();
-                        return;
-                    }
-
-                    new While<>(new ArrayList<>(hostUuids)).each((hostUuid, whileCompletion) -> {
-                        SecretHostDeleteMsg dmsg = new SecretHostDeleteMsg();
-                        dmsg.setHostUuid(hostUuid);
-                        dmsg.setVmUuid(vmUuid);
-                        dmsg.setPurpose("vtpm");
-                        dmsg.setKeyVersion(context.keyVersion);
-                        bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, hostUuid);
-                        bus.send(dmsg, new CloudBusCallBack(whileCompletion) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    ErrorCode err = reply.getError();
-                                    String errMsg = err != null && err.getDetails() != null ? err.getDetails() : "unknown error";
-                                    logger.warn(String.format("failed to delete host secret on host[uuid:%s] for vm[uuid:%s], continue reset: %s",
-                                            hostUuid, vmUuid, errMsg));
-                                }
-                                whileCompletion.done();
-                            }
-                        });
-                    }).run(new WhileDoneCompletion(trigger) {
-                        @Override
-                        public void done(ErrorCodeList errorCodeList) {
-                            trigger.next();
-                        }
-                    });
-                })
-                .build())
             .then(Flow.of("check-if-any-error-in-command-sending")
                 .handle(trigger -> {
                     // If any host failed to delete, abort the chain to preserve
@@ -823,10 +785,76 @@ public class KvmTpmManager extends AbstractService {
                     trigger.next();
                 })
                 .build())
+            .then(Flow.of("delete-host-secret")
+                .handle(trigger -> {
+                    if (context.keyVersion == null) {
+                        trigger.next();
+                        return;
+                    }
+                    Set<String> hostUuids = new HashSet<>();
+                    for (VmHostFileVO file : context.hostFiles) {
+                        hostUuids.add(file.getHostUuid());
+                    }
+                    if (context.hostFileToDeleteLast != null) {
+                        hostUuids.add(context.hostFileToDeleteLast.getHostUuid());
+                    }
+                    if (hostUuids.isEmpty()) {
+                        addVmCurrentAndLastHostUuidsForSecretDelete(hostUuids, vmUuid);
+                    }
+                    if (hostUuids.isEmpty()) {
+                        trigger.next();
+                        return;
+                    }
+
+                    new While<>(new ArrayList<>(hostUuids)).each((hostUuid, whileCompletion) -> {
+                        SecretHostDeleteMsg dmsg = new SecretHostDeleteMsg();
+                        dmsg.setHostUuid(hostUuid);
+                        dmsg.setVmUuid(vmUuid);
+                        dmsg.setPurpose("vtpm");
+                        dmsg.setKeyVersion(context.keyVersion);
+                        bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, hostUuid);
+                        bus.send(dmsg, new CloudBusCallBack(whileCompletion) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    ErrorCode err = reply.getError();
+                                    String errMsg = err != null && err.getDetails() != null ? err.getDetails() : "unknown error";
+                                    logger.warn(String.format("failed to delete host secret on host[uuid:%s] for vm[uuid:%s], continue reset: %s",
+                                            hostUuid, vmUuid, errMsg));
+                                }
+                                whileCompletion.done();
+                            }
+                        });
+                    }).run(new WhileDoneCompletion(trigger) {
+                        @Override
+                        public void done(ErrorCodeList errorCodeList) {
+                            trigger.next();
+                        }
+                    });
+                })
+                .build())
             .propagateExceptionTo(completion)
             .done(completion::success)
             .error(completion::fail)
             .start();
+    }
+
+    private static void addVmCurrentAndLastHostUuidsForSecretDelete(Set<String> hostUuids, String vmInstanceUuid) {
+        if (vmInstanceUuid == null) {
+            return;
+        }
+        VmInstanceVO vm = Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, vmInstanceUuid)
+                .find();
+        if (vm == null) {
+            return;
+        }
+        if (vm.getHostUuid() != null) {
+            hostUuids.add(vm.getHostUuid());
+        }
+        if (vm.getLastHostUuid() != null) {
+            hostUuids.add(vm.getLastHostUuid());
+        }
     }
 
     private void handle(APIGetTpmCapabilityMsg msg) {
