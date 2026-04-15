@@ -162,14 +162,12 @@ public abstract class AbstractCoalesceQueue<T, R, V> {
 
                 // Execute batch with the direct completion object
                 List<T> items = requests.stream().map(req -> req.item).collect(Collectors.toList());
-                try {
-                    executeBatch(items, batchCompletion);
-                } catch (Throwable t) {
-                    logger.warn(String.format("[%s] executeBatch threw exception for signature[%s]",
-                            name, syncSignature), t);
-                    handleFailure(syncSignature, requests,
-                            operr(ORG_ZSTACK_CORE_THREAD_10004, "executeBatch threw exception: %s", t.getMessage()), chain);
-                }
+
+                /** *(.., AbstractCompletion, ..) is not AsyncSafeAspect's pointcut, but it will call
+                 * executeBatch(.., Completion/ReturnValueCompletion) which is pointcut,
+                 * so we do not need try-catch here.
+                 */
+                executeBatch(items, batchCompletion);
             }
 
             @Override
