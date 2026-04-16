@@ -23,7 +23,7 @@ public class TpmMessageAutoCompleter implements GlobalApiMessageInterceptor {
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof TpmMessage) {
-            validateAndComplete((TpmMessage) msg);
+            validate((TpmMessage) msg);
         }
         return msg;
     }
@@ -39,7 +39,7 @@ public class TpmMessageAutoCompleter implements GlobalApiMessageInterceptor {
         return InterceptorPosition.FRONT;
     }
 
-    private void validateAndComplete(TpmMessage msg) throws ApiMessageInterceptionException {
+    private void validate(TpmMessage msg) throws ApiMessageInterceptionException {
         String tpmUuid = msg.getTpmUuid();
         String vmUuid = msg.getVmInstanceUuid();
 
