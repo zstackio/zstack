@@ -30,6 +30,7 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.keyprovider.EncryptedResourceKeyManager;
 import org.zstack.header.secret.SecretHostDeleteMsg;
 import org.zstack.header.tpm.api.APIAddTpmEvent;
 import org.zstack.header.tpm.api.APIAddTpmMsg;
@@ -104,6 +105,8 @@ public class KvmTpmManager extends AbstractService {
     private VmTpmManager vmTpmManager;
     @Autowired
     private TpmEncryptedResourceKeyBackend tpmKeyBackend;
+    @Autowired
+    private EncryptedResourceKeyManager resourceKeyManager;
     @Autowired
     private KvmSecureBootExtensions secureBootExtensions;
 
@@ -253,10 +256,32 @@ public class KvmTpmManager extends AbstractService {
             .then(Flow.of("attach-key-provider-to-tpm")
                 .skipIf(data -> VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class))
                 .handle(trigger -> {
-                    if (context.keyProviderUuid != null) {
-                        tpmKeyBackend.attachKeyProviderToTpm(context.createdTpmUuid, context.keyProviderUuid);
-                        context.keyProviderAttached = true;
+                    if (context.keyProviderUuid == null) {
+                        trigger.fail(operr("keyProviderUuid is required when adding TPM to VM[uuid:%s]",
+                                context.vmInstanceUuid));
+                        return;
                     }
+
+                    tpmKeyBackend.attachKeyProviderToTpm(context.createdTpmUuid, context.keyProviderUuid);
+                    context.keyProviderAttached = true;
+
+                    EncryptedResourceKeyManager.GetOrCreateResourceKeyContext keyCtx =
+                            new EncryptedResourceKeyManager.GetOrCreateResourceKeyContext();
+                    keyCtx.setResourceUuid(context.createdTpmUuid);
+                    keyCtx.setResourceType(TpmVO.class.getSimpleName());
+                    keyCtx.setKeyProviderUuid(context.keyProviderUuid);
+                    keyCtx.setPurpose("vtpm");
+                    resourceKeyManager.getOrCreateKey(keyCtx, new ReturnValueCompletion<EncryptedResourceKeyManager.ResourceKeyResult>(trigger) {
+                        @Override
+                        public void success(EncryptedResourceKeyManager.ResourceKeyResult returnValue) {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
                     trigger.next();
                 })
                 .rollback(trigger -> {
