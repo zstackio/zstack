@@ -53,7 +53,7 @@ public class KvmHypervisorInfoHelper {
             }
 
             HostOperationSystem os = hostOsMap.get(hostUuid);
-            String osReleaseVersion = String.format("%s %s", os.distribution, os.version);
+            String osReleaseVersion = String.format("%s %s", os.distribution, normalizeOsVersion(os.version));
 
             Pair<String, String> key = new Pair<>(architecture, osReleaseVersion);
             HostOsCategoryVO vo = caches.get(key);
@@ -83,6 +83,30 @@ public class KvmHypervisorInfoHelper {
         }
 
         return results;
+    }
+
+    /**
+     * Strip a leading {@code V} or {@code v} from an OS version string when the
+     * next character is a digit. Some distributions (notably Kylin Linux Advanced
+     * Server) expose {@code VERSION_ID="V10"} via {@code /etc/os-release}, while
+     * the matching DVD metadata script outputs the same release as a plain
+     * {@code 10}. Without normalization the two sides build different
+     * {@code osReleaseVersion} keys (e.g. {@code "kylin V10"} vs {@code "kylin 10"})
+     * and the metadata join silently returns no rows, leaving
+     * {@code matchTargetVersion} null and the host stuck in {@code Unknown}.
+     * See ZSTAC-83682.
+     */
+    public static String normalizeOsVersion(String version) {
+        if (version == null) {
+            return null;
+        }
+        String trimmed = version.trim();
+        if (trimmed.length() > 1
+                && (trimmed.charAt(0) == 'V' || trimmed.charAt(0) == 'v')
+                && Character.isDigit(trimmed.charAt(1))) {
+            return trimmed.substring(1);
+        }
+        return trimmed;
     }
 
     public static HypervisorVersionState isQemuVersionMatched(String v1, String v2) {
