@@ -292,4 +292,11 @@
 
     <bean id="KvmVmHostFileFactory" class="org.zstack.kvm.efi.KvmVmHostFileFactory">
     </bean>
+
+    <bean id="VmHostFileAutoCompleter" class="org.zstack.kvm.vmfiles.VmHostFileAutoCompleter">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
+        </zstack:plugin>
+    </bean>
 </beans>
