@@ -44,6 +44,16 @@ public class DummyTpmEncryptedResourceKeyBackend implements TpmEncryptedResource
     }
 
     @Override
+    public int applyKeyProviderWithKek(String tpmUuid, String providerUuid) {
+        return 0;
+    }
+
+    @Override
+    public boolean checkTpmKeyProviderAttached(String tpmUuid) {
+        return false;
+    }
+
+    @Override
     public void cloneEncryptedResourceKey(CloneEncryptedResourceKeyContext context, Completion completion) {
         // do nothing
         logger.debug("ignore clone encrypted resource key request for TPM uuid "
