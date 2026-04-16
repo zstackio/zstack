@@ -5257,6 +5257,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).set(VmNicVO_.state, VmNicState.disable).update();
             }
             self = dbf.reload(self);
+            extEmitter.afterChangeVmNicState(msg.getVmNicUuid(), msg.getState());
             evt.setInventory(VmInstanceInventory.valueOf(self));
             bus.publish(evt);
             return;
