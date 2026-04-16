@@ -7976,7 +7976,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 StartVmInstanceReply reply = new StartVmInstanceReply();
-                reply.setError(err(VmErrors.START_ERROR, "failed to start VM[uuid:%s]", self.getUuid())
+                reply.setError(err(VmErrors.START_ERROR, "failed to start VM: %s", errorCode)
+                        .withOpaque("vm.uuid", self.getUuid())
                         .withCause(errorCode));
                 bus.reply(msg, reply);
                 taskChain.next();

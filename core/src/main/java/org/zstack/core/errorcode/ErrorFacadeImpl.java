@@ -108,8 +108,15 @@ public class ErrorFacadeImpl implements ErrorFacade {
         } else if (args == null || args.length == 0) {
             details = fmt;
         } else {
+            Object[] formatArgs = args.clone();
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] instanceof ErrorCode) {
+                    formatArgs[i] = ((ErrorCode) args[i]).getDetails();
+                }
+            }
+
             try {
-                details = String.format(fmt, args);
+                details = String.format(fmt, formatArgs);
             } catch (Exception e) {
                 logger.warn("exception happened when format error message");
                 logger.warn(e.getMessage());

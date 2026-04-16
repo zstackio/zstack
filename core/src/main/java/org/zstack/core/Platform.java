@@ -66,6 +66,7 @@ import static org.zstack.utils.StringDSL.ln;
 
 public class Platform {
     private static final CLogger logger = CLoggerImpl.getLogger(Platform.class);
+    public static final Object[] EMPTY_ARGS = new Object[0];
 
     private static ComponentLoader loader;
     private static String msId;
@@ -852,20 +853,26 @@ public class Platform {
 
     public static String toI18nString(String code, Locale l, Object...args) {
         l = l == null ? locale : l;
+        Object[] formatArgs = args == null || args.length == 0 ? EMPTY_ARGS : args.clone();
+        for (int i = 0; i < formatArgs.length; i++) {
+            if (formatArgs[i] instanceof ErrorCode) {
+                formatArgs[i] = ((ErrorCode) formatArgs[i]).getI18nDetails();
+            }
+        }
 
         try {
             String ret;
-            if (args.length > 0) {
-                 ret = messageSource.getMessage(code, args, l);
+            if (formatArgs.length > 0) {
+                ret = messageSource.getMessage(code, formatArgs, l);
             } else {
-                 ret = messageSource.getMessage(code, null, l);
+                ret = messageSource.getMessage(code, null, l);
             }
 
             // if the result is an empty string which means the string is not translated in the locale,
             // return the original string so users won't get a confusing, empty string
-            return ret.isEmpty() ? stringFormat(code, args) : ret;
+            return ret.isEmpty() ? stringFormat(code, formatArgs) : ret;
         } catch (NoSuchMessageException e) {
-            return stringFormat(code, args);
+            return stringFormat(code, formatArgs);
         }
     }
 
