@@ -38,12 +38,6 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
-        <name>CentOS Stream</name>
-        <version>10</version>
-        <osRelease>CentOS Stream 10</osRelease>
-    </osInfo>
-    <osInfo>
-        <platform>Linux</platform>
         <name>RedHat</name>
         <version>5</version>
         <osRelease>RHEL 5</osRelease>
@@ -308,6 +302,12 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>AlmaLinux</name>
+        <version>10</version>
+        <osRelease>AlmaLinux 10</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>Linux</name>
         <version></version>
         <osRelease>Linux</osRelease>
@@ -329,6 +329,12 @@
         <name>Oracle</name>
         <version>9</version>
         <osRelease>Oracle Linux 9</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Oracle</name>
+        <version>10</version>
+        <osRelease>Oracle Linux 10</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
@@ -359,6 +365,12 @@
         <name>AnolisOS</name>
         <version>8</version>
         <osRelease>AnolisOS 8</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Amazon</name>
+        <version>2023</version>
+        <osRelease>Amazon Linux 2023</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
