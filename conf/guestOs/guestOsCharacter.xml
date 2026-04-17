@@ -51,6 +51,11 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
+        <osRelease>CentOS Stream 9</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
         <osRelease>RHEL 5</osRelease>
     </osInfo>
     <osInfo>
@@ -72,6 +77,11 @@
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>RHEL 9</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>RHEL 10</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
@@ -136,7 +146,17 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
+        <osRelease>Debian 13</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
         <osRelease>Fedora</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Fedora 42</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
@@ -162,6 +182,11 @@
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>NeoKylin V7 Update6</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Kylin 11</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
@@ -251,7 +276,62 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
+        <osRelease>AlmaLinux 10</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
         <osRelease>Oracle Linux 7</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Oracle Linux 8</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Oracle Linux 9</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Oracle Linux 10</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>SUSE Linux 12</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>SUSE Linux 15</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Rocky Linux 8</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Rocky Linux 9</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Rocky Linux 10</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>AlmaLinux 9</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>AnolisOS 8</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
