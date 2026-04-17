@@ -5,8 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -49,15 +48,15 @@ public class PrimaryStorageTagAllocatorFlow extends NoRollbackFlow {
 
         List<SystemTagVO> tvos = null;
         if (spec.getVmInstanceUuid() != null) {
-            SimpleQuery<SystemTagVO> q  = dbf.createQuery(SystemTagVO.class);
-            q.add(SystemTagVO_.resourceType, Op.EQ, VmInstanceVO.class.getSimpleName());
-            q.add(SystemTagVO_.resourceUuid, Op.EQ, spec.getVmInstanceUuid());
-            tvos = q.list();
+            tvos = Q.New(SystemTagVO.class)
+                    .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
+                    .eq(SystemTagVO_.resourceUuid, spec.getVmInstanceUuid())
+                    .list();
         } else if (spec.getDiskOfferingUuid() != null) {
-            SimpleQuery<SystemTagVO> q  = dbf.createQuery(SystemTagVO.class);
-            q.add(SystemTagVO_.resourceType, Op.EQ, DiskOfferingVO.class.getSimpleName());
-            q.add(SystemTagVO_.resourceUuid, Op.EQ, spec.getDiskOfferingUuid());
-            tvos = q.list();
+            tvos = Q.New(SystemTagVO.class)
+                    .eq(SystemTagVO_.resourceType, DiskOfferingVO.class.getSimpleName())
+                    .eq(SystemTagVO_.resourceUuid, spec.getDiskOfferingUuid())
+                    .list();
         }
 
         if (tvos != null && !tvos.isEmpty()) {

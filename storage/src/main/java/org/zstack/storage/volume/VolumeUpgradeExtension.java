@@ -6,8 +6,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
@@ -53,10 +52,10 @@ public class VolumeUpgradeExtension implements Component {
     }
 
     private void rootVolumeFindMissingUuid() {
-        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-        q.add(VolumeVO_.type, Op.EQ, VolumeType.Root);
-        q.add(VolumeVO_.rootImageUuid, Op.NULL);
-        List<VolumeVO> volumes = q.list();
+        List<VolumeVO> volumes = Q.New(VolumeVO.class)
+                .eq(VolumeVO_.type, VolumeType.Root)
+                .isNull(VolumeVO_.rootImageUuid)
+                .list();
         if (volumes.isEmpty()) {
             return;
         }
@@ -138,11 +137,11 @@ public class VolumeUpgradeExtension implements Component {
                     return;
                 }
 
-                SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-                q.add(VolumeVO_.primaryStorageUuid, Op.EQ, d.getPrimaryStorageUuid());
-                q.add(VolumeVO_.status, Op.EQ, VolumeStatus.Ready);
-                q.add(VolumeVO_.actualSize, Op.NULL);
-                List<VolumeVO> vols = q.list();
+                List<VolumeVO> vols = Q.New(VolumeVO.class)
+                        .eq(VolumeVO_.primaryStorageUuid, d.getPrimaryStorageUuid())
+                        .eq(VolumeVO_.status, VolumeStatus.Ready)
+                        .isNull(VolumeVO_.actualSize)
+                        .list();
 
                 if (vols.isEmpty()) {
                     return;

@@ -9,8 +9,6 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -254,9 +252,9 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                     l3NicMacMap.put(nic.getL3NetworkUuid(), nic.getMac());
                 }
 
-                SimpleQuery<ApplianceVmFirewallRuleVO> q = dbf.createQuery(ApplianceVmFirewallRuleVO.class);
-                q.add(ApplianceVmFirewallRuleVO_.applianceVmUuid, Op.EQ, self.getUuid());
-                total = q.count();
+                total = Q.New(ApplianceVmFirewallRuleVO.class)
+                        .eq(ApplianceVmFirewallRuleVO_.applianceVmUuid, self.getUuid())
+                        .count();
             }
 
             List<ApplianceVmFirewallRuleTO> merge() {
@@ -322,11 +320,11 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                 int offset = 0;
                 int step = 1000;
                 while (offset < total) {
-                    SimpleQuery<ApplianceVmFirewallRuleVO> q = dbf.createQuery(ApplianceVmFirewallRuleVO.class);
-                    q.add(ApplianceVmFirewallRuleVO_.applianceVmUuid, Op.EQ, self.getUuid());
-                    q.setLimit(step);
-                    q.setStart(offset);
-                    List<ApplianceVmFirewallRuleVO> vos = q.list();
+                    List<ApplianceVmFirewallRuleVO> vos = Q.New(ApplianceVmFirewallRuleVO.class)
+                            .eq(ApplianceVmFirewallRuleVO_.applianceVmUuid, self.getUuid())
+                            .limit(step)
+                            .start(offset)
+                            .list();
                     for (ApplianceVmFirewallRuleVO vo : vos) {
                         String key = String.format("%s-%s-%s-%s-%s",
                                 vo.getL3NetworkUuid(), vo.getProtocol(), vo.getSourceIp(), vo.getDestIp(), vo.getAllowCidr());
@@ -406,9 +404,9 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
     }
 
     private void prepareFirewallInfo(FlowChain chain) {
-        SimpleQuery<ApplianceVmFirewallRuleVO> q = dbf.createQuery(ApplianceVmFirewallRuleVO.class);
-        q.add(ApplianceVmFirewallRuleVO_.applianceVmUuid, Op.EQ, getSelf().getUuid());
-        List<ApplianceVmFirewallRuleVO> vos = q.list();
+        List<ApplianceVmFirewallRuleVO> vos = Q.New(ApplianceVmFirewallRuleVO.class)
+                .eq(ApplianceVmFirewallRuleVO_.applianceVmUuid, getSelf().getUuid())
+                .list();
         List<ApplianceVmFirewallRuleInventory> rules = ApplianceVmFirewallRuleInventory.valueOf(vos);
         chain.getData().put(ApplianceVmConstant.Params.applianceVmFirewallRules.toString(), rules);
     }
@@ -907,9 +905,9 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             spec.setRequiredHostUuid(smsg.getApplianceVmSpec().getRequiredHostUuid());
             List<VmNicSpec> nicSpecs = new ArrayList<>();
             if (msg.getL3NetworkUuids() != null && !msg.getL3NetworkUuids().isEmpty()) {
-                SimpleQuery<L3NetworkVO> nwquery = dbf.createQuery(L3NetworkVO.class);
-                nwquery.add(L3NetworkVO_.uuid, SimpleQuery.Op.IN, VmNicSpec.getL3UuidsOfSpec(msg.getL3NetworkUuids()));
-                List<L3NetworkVO> vos = nwquery.list();
+                List<L3NetworkVO> vos = Q.New(L3NetworkVO.class)
+                        .in(L3NetworkVO_.uuid, VmNicSpec.getL3UuidsOfSpec(msg.getL3NetworkUuids()))
+                        .list();
                 for (L3NetworkVO vo :vos) {
                     nicSpecs.add(new VmNicSpec(L3NetworkInventory.valueOf(vo)));
                 }

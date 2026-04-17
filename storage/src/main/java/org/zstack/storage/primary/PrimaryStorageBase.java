@@ -15,7 +15,6 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.job.JobQueueFacade;
 import org.zstack.core.thread.ChainTask;
@@ -1417,10 +1416,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }
 
         // if not, HA will allocate wrong host, rollback when API fail
-        SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
-        q.add(PrimaryStorageClusterRefVO_.clusterUuid, Op.EQ, msg.getClusterUuid());
-        q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
-        List<PrimaryStorageClusterRefVO> refs = q.list();
+        List<PrimaryStorageClusterRefVO> refs = Q.New(PrimaryStorageClusterRefVO.class)
+                .eq(PrimaryStorageClusterRefVO_.clusterUuid, msg.getClusterUuid())
+                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
+                .list();
         dbf.removeCollection(refs, PrimaryStorageClusterRefVO.class);
 
 

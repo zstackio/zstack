@@ -7,7 +7,7 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
@@ -157,9 +157,9 @@ public class PrimaryStorageCascadeExtension extends AbstractAsyncCascadeExtensio
             List<String> zuuids = transformAndRemoveNull(
                     action.getParentIssuerContext(), ZoneInventory::getUuid);
 
-            SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
-            q.add(PrimaryStorageVO_.zoneUuid, SimpleQuery.Op.IN, zuuids);
-            List<PrimaryStorageVO> prvos = q.list();
+            List<PrimaryStorageVO> prvos = Q.New(PrimaryStorageVO.class)
+                    .in(PrimaryStorageVO_.zoneUuid, zuuids)
+                    .list();
             if (!prvos.isEmpty()) {
                 ret = PrimaryStorageInventory.valueOf(prvos);
             }

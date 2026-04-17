@@ -5,8 +5,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.Q;
 import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
 
@@ -18,25 +17,25 @@ public class AccountReferenceValidator {
     private DatabaseFacade dbf;
 
     public void hasReference(String resourceUuid, Class resourceType) {
-        SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
-        q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, resourceUuid);
-        q.add(AccountResourceRefVO_.resourceType, Op.EQ, resourceType.getSimpleName());
-        boolean has = q.isExists();
+        boolean has = Q.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.resourceUuid, resourceUuid)
+                .eq(AccountResourceRefVO_.resourceType, resourceType.getSimpleName())
+                .isExists();
         Assert.assertTrue(String.format("no AccountResourceRefVO found for %s[uuid:%s]", resourceType.getName(), resourceUuid), has);
     }
 
     public void noReference(String resourceUuid, Class resourceType) {
-        SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
-        q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, resourceUuid);
-        q.add(AccountResourceRefVO_.resourceType, Op.EQ, resourceType.getSimpleName());
-        boolean has = q.isExists();
+        boolean has = Q.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.resourceUuid, resourceUuid)
+                .eq(AccountResourceRefVO_.resourceType, resourceType.getSimpleName())
+                .isExists();
         Assert.assertFalse(String.format("AccountResourceRefVO found for %s[uuid:%s], expect none", resourceType.getName(), resourceUuid), has);
     }
 
     public void noReference(Class resourceType) {
-        SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
-        q.add(AccountResourceRefVO_.resourceType, Op.EQ, resourceType.getSimpleName());
-        boolean has = q.isExists();
+        boolean has = Q.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.resourceType, resourceType.getSimpleName())
+                .isExists();
         Assert.assertFalse(String.format("AccountResourceRefVO found for %s, expect none", resourceType.getName()), has);
     }
 }

@@ -5,8 +5,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
@@ -128,10 +126,10 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
     }
 /*
     private void validate(APIBackupVolumeSnapshotMsg msg) {
-        SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
-        q.select(VolumeSnapshotVO_.primaryStorageUuid);
-        q.add(VolumeSnapshotVO_.uuid, Op.EQ, msg.getUuid());
-        String priUuid = q.findValue();
+        String priUuid = Q.New(VolumeSnapshotVO.class)
+                .select(VolumeSnapshotVO_.primaryStorageUuid);
+                .eq(VolumeSnapshotVO_.uuid, msg.getUuid());
+                .findValue();
         if (priUuid == null) {
             throw new ApiMessageInterceptionException(operr("volume snapshot[uuid:%s] is not on primary storage, cannot be backed up", msg.getUuid()));
         }
@@ -167,13 +165,13 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
 */
 
     private void validate(APIDeleteVolumeSnapshotFromBackupStorageMsg msg) {
-        SimpleQuery<VolumeSnapshotBackupStorageRefVO> q = dbf.createQuery(VolumeSnapshotBackupStorageRefVO.class);
-        q.select(VolumeSnapshotBackupStorageRefVO_.backupStorageUuid);
-        q.add(VolumeSnapshotBackupStorageRefVO_.volumeSnapshotUuid, Op.EQ, msg.getSnapshotUuid());
+        Q q = Q.New(VolumeSnapshotBackupStorageRefVO.class)
+                .select(VolumeSnapshotBackupStorageRefVO_.backupStorageUuid)
+                .eq(VolumeSnapshotBackupStorageRefVO_.volumeSnapshotUuid, msg.getSnapshotUuid());
         if (!msg.getBackupStorageUuids().isEmpty()) {
-            q.add(VolumeSnapshotBackupStorageRefVO_.backupStorageUuid, Op.IN, msg.getBackupStorageUuids());
+            q.in(VolumeSnapshotBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuids());
         }
-        List<String> bsUuids = q.listValue();
+        List<String> bsUuids = q.listValues();
         if (bsUuids.isEmpty()) {
             APIDeleteVolumeSnapshotFromBackupStorageEvent evt = new APIDeleteVolumeSnapshotFromBackupStorageEvent(msg.getId());
             bus.publish(evt);
@@ -183,10 +181,10 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIRevertVolumeFromSnapshotMsg msg) {
-        SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
-        q.select(VolumeSnapshotVO_.state, VolumeSnapshotVO_.volumeUuid);
-        q.add(VolumeSnapshotVO_.uuid, Op.EQ, msg.getUuid());
-        Tuple t = q.findTuple();
+        Tuple t = Q.New(VolumeSnapshotVO.class)
+                .select(VolumeSnapshotVO_.state, VolumeSnapshotVO_.volumeUuid)
+                .eq(VolumeSnapshotVO_.uuid, msg.getUuid())
+                .findTuple();
         VolumeSnapshotState state = t.get(0, VolumeSnapshotState.class);
         if (state != VolumeSnapshotState.Enabled) {
             throw new ApiMessageInterceptionException(operr("volume snapshot[uuid:%s] is in state %s, cannot revert volume to it", msg.getUuid(), state));

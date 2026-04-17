@@ -11,8 +11,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -181,10 +179,10 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
     }
 
     private void validate(APICreateVolumeSnapshotMsg msg) {
-        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-        q.select(VolumeVO_.status, VolumeVO_.type, VolumeVO_.state);
-        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
-        Tuple tuple = q.findTuple();
+        Tuple tuple = Q.New(VolumeVO.class)
+                .select(VolumeVO_.status, VolumeVO_.type, VolumeVO_.state)
+                .eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                .findTuple();
         VolumeStatus status = (VolumeStatus) tuple.get(0);
         if (status != VolumeStatus.Ready) {
             throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is not in status Ready, current is %s, can't create snapshot", msg.getVolumeUuid(), status));
@@ -245,20 +243,20 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
     }
 
     private void validate(APIRecoverDataVolumeMsg msg) {
-        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
-        q.add(VolumeVO_.status, Op.EQ, VolumeStatus.Deleted);
-        if (!q.isExists()) {
+        if (!Q.New(VolumeVO.class)
+                .eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                .eq(VolumeVO_.status, VolumeStatus.Deleted)
+                .isExists()) {
             throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is not in status of deleted. This is operation is to recover a deleted data volume",
                     msg.getVolumeUuid()));
         }
     }
 
     private void exceptionIsVolumeIsDeleted(String volumeUuid) {
-        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-        q.add(VolumeVO_.uuid, Op.EQ, volumeUuid);
-        q.add(VolumeVO_.status, Op.EQ, VolumeStatus.Deleted);
-        if (q.isExists()) {
+        if (Q.New(VolumeVO.class)
+                .eq(VolumeVO_.uuid, volumeUuid)
+                .eq(VolumeVO_.status, VolumeStatus.Deleted)
+                .isExists()) {
             throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is in status of deleted, cannot do the operation", volumeUuid));
         }
     }
@@ -280,10 +278,10 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
     }
 
     private void validate(APIGetDataVolumeAttachableVmMsg msg) {
-        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-        q.select(VolumeVO_.vmInstanceUuid, VolumeVO_.state, VolumeVO_.status, VolumeVO_.type);
-        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
-        Tuple t = q.findTuple();
+        Tuple t = Q.New(VolumeVO.class)
+                .select(VolumeVO_.vmInstanceUuid, VolumeVO_.state, VolumeVO_.status, VolumeVO_.type)
+                .eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                .findTuple();
 
         VolumeType type = t.get(3, VolumeType.class);
         if (type == VolumeType.Root) {
@@ -504,10 +502,10 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
             throw new StopRoutingException();
         }
 
-        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-        q.select(VolumeVO_.type, VolumeVO_.status);
-        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
-        Tuple t = q.findTuple();
+        Tuple t = Q.New(VolumeVO.class)
+                .select(VolumeVO_.type, VolumeVO_.status)
+                .eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                .findTuple();
         VolumeType type = t.get(0, VolumeType.class);
         if (type != VolumeType.Data) {
             throw new ApiMessageInterceptionException(argerr("volume[uuid:%s, type:%s] can't be deleted", msg.getVolumeUuid(), type));
@@ -527,10 +525,10 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
     }
 
     private boolean isRootVolume(String uuid) {
-        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-        q.select(VolumeVO_.type);
-        q.add(VolumeVO_.uuid, Op.EQ, uuid);
-        VolumeType type = q.findValue();
+        VolumeType type = Q.New(VolumeVO.class)
+                .select(VolumeVO_.type)
+                .eq(VolumeVO_.uuid, uuid)
+                .findValue();
         return type == VolumeType.Root;
     }
 

@@ -22,8 +22,6 @@ import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.thread.*;
 import org.zstack.header.AbstractService;
@@ -457,10 +455,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         if (msg.getPrimaryStorageUuid() != null) {
             passThrough(msg);
         } else if (msg.getZoneUuid() != null) {
-            SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
-            q.select(PrimaryStorageVO_.uuid);
-            q.add(PrimaryStorageVO_.zoneUuid, Op.EQ, msg.getZoneUuid());
-            List<String> uuids = q.listValue();
+            List<String> uuids = Q.New(PrimaryStorageVO.class)
+                    .select(PrimaryStorageVO_.uuid)
+                    .eq(PrimaryStorageVO_.zoneUuid, msg.getZoneUuid())
+                    .listValues();
             psUuids.addAll(uuids);
 
             PrimaryStorageCapacityRecalculator psRecal = new PrimaryStorageCapacityRecalculator();
@@ -1256,15 +1254,15 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     private List<String> getPrimaryStorageManagedByUs(boolean skipConnected) {
         List<String> ret = new ArrayList<>();
-        SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
-        q.select(PrimaryStorageVO_.uuid);
+        final Q q = Q.New(PrimaryStorageVO.class)
+                .select(PrimaryStorageVO_.uuid);
 
         if (skipConnected) {
             // treat connecting as disconnected
-            q.add(PrimaryStorageVO_.status, Op.NOT_EQ, PrimaryStorageStatus.Connected);
+            q.notEq(PrimaryStorageVO_.status, PrimaryStorageStatus.Connected);
         }
 
-        List<String> uuids = q.listValue();
+        List<String> uuids = q.listValues();
         for (String uuid : uuids) {
             if (destMaker.isManagedByUs(uuid)) {
                 ret.add(uuid);
