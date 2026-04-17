@@ -9,6 +9,7 @@ import org.zstack.configuration.DiskOfferingSystemTags;
 import org.zstack.configuration.InstanceOfferingSystemTags;
 import org.zstack.configuration.OfferingUserConfigUtils;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -35,9 +36,12 @@ import org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidato
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigValidator;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.trash.InstallPathRecycleVO;
 import org.zstack.header.core.trash.InstallPathRecycleVO_;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -149,6 +153,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             handle((APIGetPrimaryStorageLicenseInfoMsg) msg);
         } else if (msg instanceof APIGetPrimaryStorageUsageReportMsg) {
             handle((APIGetPrimaryStorageUsageReportMsg) msg);
+        } else if (msg instanceof APIDiscoverStrangePrimaryStorageMsg) {
+            handle((APIDiscoverStrangePrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -285,6 +291,42 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                     GetPrimaryStorageUsedPhysicalCapacityForecastReply re = r.castReply();
                     reply.setUriUsageForecast(re.getUsageReportMap());
                 }
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(APIDiscoverStrangePrimaryStorageMsg msg) {
+        APIDiscoverStrangePrimaryStorageReply reply = new APIDiscoverStrangePrimaryStorageReply();
+
+        List<PrimaryStorageDiscoverExtensionPoint> exts = pluginRgty.getExtensionList(PrimaryStorageDiscoverExtensionPoint.class);
+        if (exts.isEmpty()) {
+            bus.reply(msg, reply);
+            return;
+        }
+
+        new While<>(exts).all((ext, whileCompletion) -> {
+            ext.discoverStrangePrimaryStorage(msg.getClusterUuid(), new ReturnValueCompletion<List<PrimaryStorageInventory>>(whileCompletion) {
+                @Override
+                public void success(List<PrimaryStorageInventory> inventories) {
+                    if (inventories != null) {
+                        synchronized (reply) {
+                            reply.getInventories().addAll(inventories);
+                        }
+                    }
+                    whileCompletion.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    logger.warn(String.format("failed to discover strange primary storage from extension[%s]: %s",
+                            ext.getClass().getSimpleName(), errorCode));
+                    whileCompletion.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
                 bus.reply(msg, reply);
             }
         });
