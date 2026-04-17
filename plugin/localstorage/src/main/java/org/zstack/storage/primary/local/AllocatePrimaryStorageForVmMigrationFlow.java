@@ -4,8 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.Q;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.allocator.HostCandidate;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -45,18 +44,19 @@ public class AllocatePrimaryStorageForVmMigrationFlow  extends AbstractHostAlloc
         }
 
         long snapshotSize = 0;
-        SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
-        sq.select(VolumeSnapshotVO_.size);
-        sq.add(VolumeSnapshotVO_.volumeUuid, Op.IN, volUuids);
-        List<Long> snapshotSizes = sq.listValue();
+        List<Long> snapshotSizes = Q.New(VolumeSnapshotVO.class)
+                .select(VolumeSnapshotVO_.size)
+                .in(VolumeSnapshotVO_.volumeUuid, volUuids)
+                .listValues();
         for (Long s : snapshotSizes) {
             snapshotSize += s;
         }
 
-        SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
-        q.add(LocalStorageHostRefVO_.hostUuid, Op.IN, huuids);
-        q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, psUuid);
-        List<LocalStorageHostRefVO> refs = q.list();
+        List<LocalStorageHostRefVO> refs = Q.New(LocalStorageHostRefVO.class)
+                .in(LocalStorageHostRefVO_.hostUuid, huuids)
+                .eq(LocalStorageHostRefVO_.primaryStorageUuid, psUuid)
+                .list();
+
         final List<String> hostUuids = new ArrayList<>();
         for (LocalStorageHostRefVO ref : refs) {
             if (ref.getAvailableCapacity() > ratioMgr.calculateByRatio(psUuid, volumeSize) + snapshotSize) {

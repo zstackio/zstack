@@ -7,8 +7,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
@@ -19,12 +17,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO;
 import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO_;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupMsg;
 import org.zstack.header.volume.APICreateVolumeSnapshotGroupMsg;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
-import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -115,9 +111,9 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.isAll() && (msg.getZoneUuids() == null || msg.getZoneUuids().isEmpty())) {
-            SimpleQuery<ZoneVO> q = dbf.createQuery(ZoneVO.class);
-            q.select(ZoneVO_.uuid);
-            List<String> zuuids = q.listValue();
+            List<String> zuuids = Q.New(ZoneVO.class)
+                    .select(ZoneVO_.uuid)
+                    .listValues();
             msg.setZoneUuids(zuuids);
 
             if (msg.getZoneUuids().isEmpty()) {
@@ -129,10 +125,10 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIDetachPrimaryStorageFromClusterMsg msg) {
-        SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
-        q.add(PrimaryStorageClusterRefVO_.clusterUuid, Op.EQ, msg.getClusterUuid());
-        q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
-        if (!q.isExists()) {
+        if (!Q.New(PrimaryStorageClusterRefVO.class)
+                .eq(PrimaryStorageClusterRefVO_.clusterUuid, msg.getClusterUuid())
+                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
+                .isExists()) {
             throw new ApiMessageInterceptionException(argerr("primary storage[uuid:%s] has not been attached to cluster[uuid:%s] yet",
                             msg.getPrimaryStorageUuid(), msg.getClusterUuid()));
         }

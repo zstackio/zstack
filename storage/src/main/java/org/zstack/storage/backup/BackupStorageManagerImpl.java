@@ -12,7 +12,7 @@ import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
@@ -397,16 +397,17 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
     }
 
     private List<String> getBackupStorageManagedByUs(boolean skipConnected) {
-        List<String> ret = new ArrayList<String>();
-        SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
-        q.select(BackupStorageVO_.uuid);
+        List<String> ret = new ArrayList<>();
+
+        final Q q = Q.New(BackupStorageVO.class)
+                .select(BackupStorageVO_.uuid);
 
         if (skipConnected) {
             // treat connecting as disconnected
-            q.add(BackupStorageVO_.status, SimpleQuery.Op.NOT_EQ, BackupStorageStatus.Connected);
+            q.notEq(BackupStorageVO_.status, BackupStorageStatus.Connected);
         }
 
-        List<String> uuids = q.listValue();
+        List<String> uuids = q.listValues();
         for (String uuid : uuids) {
             if (destMaker.isManagedByUs(uuid)) {
                 ret.add(uuid);

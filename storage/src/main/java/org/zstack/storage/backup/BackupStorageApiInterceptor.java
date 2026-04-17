@@ -3,8 +3,7 @@ package org.zstack.storage.backup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
@@ -89,9 +88,9 @@ public class BackupStorageApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.isAll() && (msg.getBackupStorageUuids() == null || msg.getBackupStorageUuids().isEmpty())) {
-            SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
-            q.select(BackupStorageVO_.uuid);
-            List<String> bsUuids = q.listValue();
+            List<String> bsUuids = Q.New(BackupStorageVO.class)
+                    .select(BackupStorageVO_.uuid)
+                    .listValues();
             msg.setBackupStorageUuids(bsUuids);
 
             if (msg.getBackupStorageUuids().isEmpty()) {
@@ -111,19 +110,19 @@ public class BackupStorageApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIDetachBackupStorageFromZoneMsg msg) {
-        SimpleQuery<BackupStorageZoneRefVO> q = dbf.createQuery(BackupStorageZoneRefVO.class);
-        q.add(BackupStorageZoneRefVO_.backupStorageUuid, Op.EQ, msg.getBackupStorageUuid());
-        q.add(BackupStorageZoneRefVO_.zoneUuid, Op.EQ, msg.getZoneUuid());
-        if (!q.isExists()) {
+        if (!Q.New(BackupStorageZoneRefVO.class)
+                .eq(BackupStorageZoneRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
+                .eq(BackupStorageZoneRefVO_.zoneUuid, msg.getZoneUuid())
+                .isExists()) {
             throw new ApiMessageInterceptionException(operr("backup storage[uuid:%s] has not been attached to zone[uuid:%s]", msg.getBackupStorageUuid(), msg.getZoneUuid()));
         }
     }
 
     private void validate(APIAttachBackupStorageToZoneMsg msg) {
-        SimpleQuery<BackupStorageZoneRefVO> q = dbf.createQuery(BackupStorageZoneRefVO.class);
-        q.add(BackupStorageZoneRefVO_.backupStorageUuid, Op.EQ, msg.getBackupStorageUuid());
-        q.add(BackupStorageZoneRefVO_.zoneUuid, Op.EQ, msg.getZoneUuid());
-        if (q.isExists()) {
+        if (Q.New(BackupStorageZoneRefVO.class)
+                .eq(BackupStorageZoneRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
+                .eq(BackupStorageZoneRefVO_.zoneUuid, msg.getZoneUuid())
+                .isExists()) {
             throw new ApiMessageInterceptionException(operr("backup storage[uuid:%s] has been attached to zone[uuid:%s]", msg.getBackupStorageUuid(), msg.getZoneUuid()));
         }
     }

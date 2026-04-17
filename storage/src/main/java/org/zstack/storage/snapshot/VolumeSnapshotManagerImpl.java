@@ -11,7 +11,6 @@ import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -34,8 +33,6 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceMessage;
-import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO;
-import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.*;
 import org.zstack.header.volume.*;
@@ -499,9 +496,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             }
 
             VolumeSnapshotTreeInventory inv = VolumeSnapshotTreeInventory.valueOf(treeVO);
-            SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
-            q.add(VolumeSnapshotVO_.treeUuid, Op.EQ, msg.getTreeUuid());
-            List<VolumeSnapshotVO> vos = q.list();
+            List<VolumeSnapshotVO> vos = Q.New(VolumeSnapshotVO.class)
+                    .eq(VolumeSnapshotVO_.treeUuid, msg.getTreeUuid())
+                    .list();
             VolumeSnapshotTree tree = VolumeSnapshotTree.fromVOs(vos);
             inv.setTree(tree.getRoot().toLeafInventory());
             reply.setInventories(Arrays.asList(inv));
@@ -1352,9 +1349,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         }
 
         for (VolumeSnapshotTreeInventory inv : reply.getInventories()) {
-            SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
-            sq.add(VolumeSnapshotVO_.treeUuid, Op.EQ, inv.getUuid());
-            List<VolumeSnapshotVO> vos = sq.list();
+            List<VolumeSnapshotVO> vos = Q.New(VolumeSnapshotVO.class)
+                    .eq(VolumeSnapshotVO_.treeUuid, inv.getUuid())
+                    .list();
             VolumeSnapshotTree tree = VolumeSnapshotTree.fromVOs(vos);
             inv.setTree(tree.getRoot().toLeafInventory(querySnapshotUuids(inv.getUuid(), session)));
         }
@@ -1416,10 +1413,10 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     }
 
     private void changeVolumeSnapshotOwner(AccountResourceRefInventory ref, String newOwnerUuid) {
-        SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
-        q.select(VolumeSnapshotVO_.uuid);
-        q.add(VolumeSnapshotVO_.volumeUuid, Op.EQ, ref.getResourceUuid());
-        List<String> spUuids = q.listValue();
+        List<String> spUuids = Q.New(VolumeSnapshotVO.class)
+                .select(VolumeSnapshotVO_.uuid)
+                .eq(VolumeSnapshotVO_.volumeUuid, ref.getResourceUuid())
+                .listValues();
 
         for (String spUuid : spUuids) {
             acntMgr.changeResourceOwner(spUuid, newOwnerUuid);

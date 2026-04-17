@@ -9,9 +9,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Od;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.core.Completion;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
@@ -102,12 +99,12 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
             }
 
             private int getNextDeviceId() {
-                SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-                q.select(VolumeVO_.deviceId);
-                q.add(VolumeVO_.vmInstanceUuid, Op.EQ, spec.getVmInventory().getUuid());
-                q.add(VolumeVO_.deviceId, Op.NOT_NULL);
-                q.orderBy(VolumeVO_.deviceId, Od.ASC);
-                List<Integer> devIds = q.listValue();
+                List<Integer> devIds = Q.New(VolumeVO.class)
+                        .select(VolumeVO_.deviceId)
+                        .eq(VolumeVO_.vmInstanceUuid, spec.getVmInventory().getUuid())
+                        .notNull(VolumeVO_.deviceId)
+                        .orderByAsc(VolumeVO_.deviceId)
+                        .listValues();
 
                 for (BeforeGetNextVolumeDeviceIdExtensionPoint e : pluginRgty.getExtensionList(BeforeGetNextVolumeDeviceIdExtensionPoint.class)) {
                     e.beforeGetNextVolumeDeviceId(spec.getVmInventory().getUuid(), devIds);

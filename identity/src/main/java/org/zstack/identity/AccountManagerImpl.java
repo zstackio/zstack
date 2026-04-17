@@ -10,7 +10,6 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.*;
 import org.zstack.core.db.*;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -1020,9 +1019,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void validate(APICreateAccountMsg msg) {
-        SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-        q.add(AccountVO_.name, Op.EQ, msg.getName());
-        if (q.isExists()) {
+        if (Q.New(AccountVO.class).eq(AccountVO_.name, msg.getName()).isExists()) {
             throw new ApiMessageInterceptionException(argerr("unable to create an account. An account already called %s", msg.getName()));
         }
     }
@@ -1068,9 +1065,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         AccountVO a = dbf.findByUuid(msg.getSession().getAccountUuid(), AccountVO.class);
 
         if (msg.getName() != null) {
-            SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-            q.add(AccountVO_.name, Op.EQ, msg.getName());
-            if (q.isExists()) {
+            if (Q.New(AccountVO.class).eq(AccountVO_.name, msg.getName()).isExists()) {
                 throw new ApiMessageInterceptionException(argerr("unable to update name. An account already called %s", msg.getName()));
             }
         }

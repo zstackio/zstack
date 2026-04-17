@@ -8,8 +8,6 @@ import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.timeout.Timer;
@@ -238,9 +236,9 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
 
     @Override
     public void deleteConsoleSession(SessionInventory session, final NoErrorCompletion completion) {
-        SimpleQuery<ConsoleProxyVO> q = dbf.createQuery(ConsoleProxyVO.class);
-        q.add(ConsoleProxyVO_.token, Op.LIKE, session.getUuid() + "%");
-        List<ConsoleProxyVO> vos = q.list();
+        List<ConsoleProxyVO> vos = Q.New(ConsoleProxyVO.class)
+                .like(ConsoleProxyVO_.token, session.getUuid() + "%")
+                .list();
 
         if (vos.isEmpty()) {
             completion.done();
@@ -286,10 +284,10 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
 
     @Override
     public void deleteConsoleSession(final VmInstanceInventory vm, final Completion completion) {
-        SimpleQuery<ConsoleProxyVO> q = dbf.createQuery(ConsoleProxyVO.class);
-        q.add(ConsoleProxyVO_.vmInstanceUuid, SimpleQuery.Op.EQ, vm.getUuid());
-        q.add(ConsoleProxyVO_.status, SimpleQuery.Op.EQ, ConsoleProxyStatus.Active);
-        final ConsoleProxyVO vo = q.find();
+        final ConsoleProxyVO vo = Q.New(ConsoleProxyVO.class)
+                .eq(ConsoleProxyVO_.vmInstanceUuid, vm.getUuid())
+                .eq(ConsoleProxyVO_.status, ConsoleProxyStatus.Active)
+                .find();
         if (vo != null) {
             // wss do not request console proxy because it connect to vm's host directly
             // so skip deleteProxy

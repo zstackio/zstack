@@ -14,7 +14,6 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.RunInQueue;
@@ -29,7 +28,6 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.image.ImageConstant;
@@ -174,9 +172,9 @@ public class VolumeSnapshotTreeBase {
     }
 
     private void buildFullSnapshotTree() {
-        SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
-        q.add(VolumeSnapshotVO_.treeUuid, Op.EQ, currentRoot.getTreeUuid());
-        List<VolumeSnapshotVO> vos = q.list();
+        List<VolumeSnapshotVO> vos = Q.New(VolumeSnapshotVO.class)
+                .eq(VolumeSnapshotVO_.treeUuid, currentRoot.getTreeUuid())
+                .list();
 
         fullTree = VolumeSnapshotTree.fromVOs(vos);
     }
@@ -525,10 +523,10 @@ public class VolumeSnapshotTreeBase {
 
         if (!msg.isVolumeDeletion()) {
             // this deletion is caused by snapshot deletion, check if merge need
-            SimpleQuery<VolumeSnapshotTreeVO> tq = dbf.createQuery(VolumeSnapshotTreeVO.class);
-            tq.select(VolumeSnapshotTreeVO_.current);
-            tq.add(VolumeSnapshotTreeVO_.uuid, Op.EQ, currentRoot.getTreeUuid());
-            Boolean onCurrentTree = tq.findValue();
+            Boolean onCurrentTree = Q.New(VolumeSnapshotTreeVO.class)
+                    .select(VolumeSnapshotTreeVO_.current)
+                    .eq(VolumeSnapshotTreeVO_.uuid, currentRoot.getTreeUuid())
+                    .findValue();
 
             boolean needMerge = onCurrentTree && ancestorOfLatest && currentRoot.getPrimaryStorageUuid() != null && VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString().equals(currentRoot.getType());
             if (needMerge) {
@@ -1708,10 +1706,10 @@ public class VolumeSnapshotTreeBase {
             return;
         }
 
-        SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
-        q.select(PrimaryStorageVO_.type);
-        q.add(PrimaryStorageVO_.uuid, Op.EQ, currentRoot.getPrimaryStorageUuid());
-        String psType = q.findValue();
+        String psType = Q.New(PrimaryStorageVO.class)
+                .select(PrimaryStorageVO_.type)
+                .eq(PrimaryStorageVO_.uuid, currentRoot.getPrimaryStorageUuid())
+                .findValue();
 
         CreateTemplateFromVolumeSnapshotExtensionPoint ext = pluginRgty.getExtensionFromMap(psType, CreateTemplateFromVolumeSnapshotExtensionPoint.class);
         if (ext == null) {
@@ -2586,10 +2584,10 @@ public class VolumeSnapshotTreeBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         for (String vmUuid : volumeInventory.getAttachedVmUuids()) {
-                            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-                            q.select(VmInstanceVO_.state);
-                            q.add(VmInstanceVO_.uuid, Op.EQ, vmUuid);
-                            VmInstanceState state = q.findValue();
+                            VmInstanceState state = Q.New(VmInstanceVO.class)
+                                    .select(VmInstanceVO_.state)
+                                    .eq(VmInstanceVO_.uuid, vmUuid)
+                                    .findValue();
                             if (state != VmInstanceState.Stopped) {
                                 trigger.fail(operr("unable to reset volume[uuid:%s] to snapshot[uuid:%s]," +
                                                 " the vm[uuid:%s] volume attached to is not in Stopped state," +

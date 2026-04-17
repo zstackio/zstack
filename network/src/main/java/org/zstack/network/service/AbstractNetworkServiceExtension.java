@@ -3,7 +3,7 @@ package org.zstack.network.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.*;
@@ -38,10 +38,10 @@ public abstract class AbstractNetworkServiceExtension implements NetworkServiceE
                 continue;
             }
 
-            SimpleQuery<NetworkServiceProviderVO> q = dbf.createQuery(NetworkServiceProviderVO.class);
-            q.select(NetworkServiceProviderVO_.type);
-            q.add(NetworkServiceProviderVO_.uuid, SimpleQuery.Op.EQ, ref.getNetworkServiceProviderUuid());
-            String providerType = q.findValue();
+            String providerType = Q.New(NetworkServiceProviderVO.class)
+                    .select(NetworkServiceProviderVO_.type)
+                    .eq(NetworkServiceProviderVO_.uuid, ref.getNetworkServiceProviderUuid())
+                    .findValue();
 
             return NetworkServiceProviderType.valueOf(providerType);
         }
@@ -58,17 +58,13 @@ public abstract class AbstractNetworkServiceExtension implements NetworkServiceE
                     continue;
                 }
 
-                SimpleQuery<NetworkServiceProviderVO> q = dbf.createQuery(NetworkServiceProviderVO.class);
-                q.select(NetworkServiceProviderVO_.type);
-                q.add(NetworkServiceProviderVO_.uuid, SimpleQuery.Op.EQ, ref.getNetworkServiceProviderUuid());
-                String providerType = q.findValue();
+                String providerType = Q.New(NetworkServiceProviderVO.class)
+                        .select(NetworkServiceProviderVO_.type)
+                        .eq(NetworkServiceProviderVO_.uuid, ref.getNetworkServiceProviderUuid())
+                        .findValue();
 
                 NetworkServiceProviderType ptype = NetworkServiceProviderType.valueOf(providerType);
-                List<L3NetworkInventory> l3s = ret.get(ptype);
-                if (l3s == null) {
-                    l3s = new ArrayList<L3NetworkInventory>();
-                    ret.put(ptype, l3s);
-                }
+                List<L3NetworkInventory> l3s = ret.computeIfAbsent(ptype, k -> new ArrayList<>());
                 l3s.add(l3);
             }
         }

@@ -1,10 +1,8 @@
 package org.zstack.identity;
 
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.identity.AccountVO_;
 import org.zstack.header.identity.IdentityErrors;
@@ -48,7 +46,8 @@ public class AccountInterceptor implements GlobalApiMessageInterceptor {
         }
 
         String accountUuid = session.getAccountUuid();
-        boolean correct = Q.New(AccountVO.class).eq(AccountVO_.uuid, accountUuid)
+        boolean correct = Q.New(AccountVO.class)
+                .eq(AccountVO_.uuid, accountUuid)
                 .eq(AccountVO_.password, msg.getPassword())
                 .isExists();
         if (!correct) {

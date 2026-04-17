@@ -10,7 +10,6 @@ import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.storage.primary.*;
@@ -319,7 +318,7 @@ public abstract class AbstractUsageReport<T extends PrimaryStorageHistoricalUsag
     private Map<String, HistoricalUsageLoader> getHistoricalUsagesFromDatabase() {
         Map<String, HistoricalUsageLoader> usageMap = new HashMap<>();
 
-        List<T> allUsageVOs = Q.New(usageClass).orderBy(HistoricalUsageAO_.recordDate, SimpleQuery.Od.ASC).list();
+        List<T> allUsageVOs = Q.New(usageClass).orderByAsc(HistoricalUsageAO_.recordDate).list();
 
         List<String> resourceUuids = allUsageVOs.stream().map(HistoricalUsageAO::getResourceUuid).distinct().collect(Collectors.toList());
         resourceUuids.forEach(resourceUuid -> {
@@ -405,7 +404,7 @@ public abstract class AbstractUsageReport<T extends PrimaryStorageHistoricalUsag
     private Map<String, Timestamp> getHistoricalLastUsageRecordDateMap() {
         Map<String, Timestamp> recordDateMap = new HashMap<>();
 
-        List<T> allUsageVOs = Q.New(usageClass).orderBy(HistoricalUsageAO_.recordDate, SimpleQuery.Od.ASC).list();
+        List<T> allUsageVOs = Q.New(usageClass).orderByAsc(HistoricalUsageAO_.recordDate).list();
 
         List<String> resourceUuids = allUsageVOs.stream().map(HistoricalUsageAO::getResourceUuid).distinct().collect(Collectors.toList());
         resourceUuids.forEach(resourceUuid -> {

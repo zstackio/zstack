@@ -9,8 +9,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.Flow;
@@ -59,10 +58,10 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
         final ImageInventory iminv = spec.getImageSpec().getInventory();
 
         // get ps types from bs
-        SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
-        q.select(BackupStorageVO_.type);
-        q.add(BackupStorageVO_.uuid, Op.EQ, spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
-        String bsType = q.findValue();
+        String bsType = Q.New(BackupStorageVO.class)
+                .select(BackupStorageVO_.type)
+                .eq(BackupStorageVO_.uuid, spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid())
+                .findValue();
         List<String> primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
         DebugUtils.Assert(primaryStorageTypes != null, "why primaryStorageTypes is null");
 

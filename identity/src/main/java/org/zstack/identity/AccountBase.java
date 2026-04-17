@@ -11,7 +11,6 @@ import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -27,7 +26,6 @@ import org.zstack.header.identity.role.RoleVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import static org.zstack.core.Platform.argerr;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -37,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.CollectionDSL.list;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -375,11 +374,11 @@ public class AccountBase implements Account {
             umap.put(usage.getName(), usage);
         }
 
-        SimpleQuery<QuotaVO> q = dbf.createQuery(QuotaVO.class);
-        q.add(QuotaVO_.identityUuid, Op.EQ, msg.getAccountUuid());
-        q.add(QuotaVO_.identityType, Op.EQ, AccountVO.class.getSimpleName());
-        q.add(QuotaVO_.name, Op.IN, umap.keySet());
-        List<QuotaVO> vos = q.list();
+        List<QuotaVO> vos = Q.New(QuotaVO.class)
+                .eq(QuotaVO_.identityUuid, msg.getAccountUuid())
+                .eq(QuotaVO_.identityType, AccountVO.class.getSimpleName())
+                .in(QuotaVO_.name, umap.keySet())
+                .list();
         Map<String, QuotaVO> vmap = new HashMap<>();
         for (QuotaVO vo : vos) {
             vmap.put(vo.getName(), vo);
