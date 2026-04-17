@@ -28,14 +28,6 @@ public class HaNetworkGroupInventory  {
         return this.description;
     }
 
-    public java.lang.String clusterUuid;
-    public void setClusterUuid(java.lang.String clusterUuid) {
-        this.clusterUuid = clusterUuid;
-    }
-    public java.lang.String getClusterUuid() {
-        return this.clusterUuid;
-    }
-
     public java.lang.String type;
     public void setType(java.lang.String type) {
         this.type = type;
@@ -50,14 +42,6 @@ public class HaNetworkGroupInventory  {
     }
     public int getMinAvailableCount() {
         return this.minAvailableCount;
-    }
-
-    public java.lang.Long configVersion;
-    public void setConfigVersion(java.lang.Long configVersion) {
-        this.configVersion = configVersion;
-    }
-    public java.lang.Long getConfigVersion() {
-        return this.configVersion;
     }
 
     public java.lang.String state;
