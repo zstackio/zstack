@@ -30,6 +30,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmCanonicalEvents;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.additions.RestoreVmHostFileMsg;
@@ -590,6 +591,19 @@ public class KvmSecureBootManager extends AbstractService {
                 if (context.files.isEmpty()) {
                     trigger.next();
                     return;
+                }
+
+                VmInstanceState vmState = Q.New(VmInstanceVO.class)
+                        .eq(VmInstanceVO_.uuid, msg.getSrcVmUuid())
+                        .select(VmInstanceVO_.state)
+                        .findValue();
+                if (vmState == VmInstanceState.Stopped) {
+                    boolean anyChange = context.files.stream()
+                            .anyMatch(it -> it.getChangeDate() != null);
+                    if (!anyChange) {
+                        trigger.next();
+                        return;
+                    }
                 }
 
                 Map<String, SyncVmHostFilesFromHostMsg> contextMap = new HashMap<>();
