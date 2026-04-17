@@ -1857,11 +1857,11 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
-    "raw": "failed to start VM[uuid:%s]",
-    "en_US": "failed to start VM[uuid:{0}]",
-    "zh_CN": "",
+    "raw": "failed to start VM: %s",
+    "en_US": "failed to start VM: {0}",
+    "zh_CN": "启动虚拟机失败: {0}",
     "arguments": [
-      "self.getUuid()"
+      "errorCode"
     ],
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },

@@ -8002,7 +8002,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 APIStartVmInstanceEvent evt = new APIStartVmInstanceEvent(msg.getId());
-                evt.setError(err(VmErrors.START_ERROR, "failed to start VM[uuid:%s]", self.getUuid())
+                evt.setError(err(VmErrors.START_ERROR, "failed to start VM: %s", errorCode)
+                        .withOpaque("vm.uuid", self.getUuid())
                         .withCause(errorCode));
                 bus.publish(evt);
                 taskChain.next();
