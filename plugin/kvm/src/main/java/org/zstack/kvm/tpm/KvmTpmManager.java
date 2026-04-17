@@ -19,11 +19,6 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowDoneHandler;
-import org.zstack.header.core.workflow.FlowErrorHandler;
-import org.zstack.header.core.workflow.FlowRollback;
-import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostConstant;
@@ -502,7 +497,6 @@ public class KvmTpmManager extends AbstractService {
             .start();
     }
 
-    @SuppressWarnings("rawtypes")
     private void handle(CloneVmTpmMsg msg) {
         CloneVmTpmReply reply = new CloneVmTpmReply();
 
@@ -515,23 +509,17 @@ public class KvmTpmManager extends AbstractService {
             return;
         }
 
-        SimpleFlowChain chain = new SimpleFlowChain();
-        chain.setName("clone-VM-TPM");
-        chain.then(new Flow() {
-            String __name__ = "persist-TPM-VO";
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
+        SimpleFlowChain.of("clone-VM-TPM")
+        .then(Flow.of("persist-TPM-VO")
+            .handle(trigger -> {
                 reply.setInventories(new ArrayList<>());
                 for (String dstVmUuid : msg.getDstVmUuidList()) {
                     TpmVO dstTpm = vmTpmManager.persistTpmVO(null, dstVmUuid);
                     reply.getInventories().add(TpmInventory.valueOf(dstTpm));
                 }
                 trigger.next();
-            }
-
-            @Override
-            public void rollback(FlowRollback trigger, Map data) {
+            })
+            .rollback(trigger -> {
                 if (CollectionUtils.isEmpty(reply.getInventories())) {
                     trigger.rollback();
                     return;
@@ -561,12 +549,10 @@ public class KvmTpmManager extends AbstractService {
                         trigger.rollback();
                     }
                 });
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "clone-encrypted-resource-key-if-needed";
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
+            })
+            .build())
+        .then(Flow.of("clone-encrypted-resource-key-if-needed")
+            .handle(trigger -> {
                 boolean resetTpm;
                 if (msg.getResetTpm() == null) {
                     ResourceConfig resourceConfig = resourceConfigFacade.getResourceConfig(RESET_TPM_AFTER_VM_CLONE.getIdentity());
@@ -605,19 +591,15 @@ public class KvmTpmManager extends AbstractService {
                                 .causedBy(errorCodeList));
                     }
                 });
-            }
-        }).done(new FlowDoneHandler(msg) {
-            @Override
-            public void handle(Map data) {
-                bus.reply(msg, reply);
-            }
-        }).error(new FlowErrorHandler(msg) {
-            @Override
-            public void handle(ErrorCode errCode, Map data) {
-                reply.setError(errCode);
-                bus.reply(msg, reply);
-            }
-        }).start();
+            })
+            .build())
+        .propagateExceptionTo(msg)
+        .done(() -> bus.reply(msg, reply))
+        .error(errorCode -> {
+            reply.setError(errorCode);
+            bus.reply(msg, reply);
+        })
+        .start();
     }
 
     static class ResetVmTpmContext {
