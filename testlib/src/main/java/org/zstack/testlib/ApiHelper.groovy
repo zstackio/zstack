@@ -10061,33 +10061,6 @@ abstract class ApiHelper {
     }
 
 
-    def createL2GeneveNetwork(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateL2GeneveNetworkAction.class) Closure c) {
-        def a = new org.zstack.sdk.CreateL2GeneveNetworkAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def createL2HardwareVxlanNetwork(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateL2HardwareVxlanNetworkAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateL2HardwareVxlanNetworkAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -51864,6 +51837,33 @@ abstract class ApiHelper {
 
     def withdrawLicenseCapacityApplication(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.license.api.server.WithdrawLicenseCapacityApplicationAction.class) Closure c) {
         def a = new org.zstack.sdk.license.api.server.WithdrawLicenseCapacityApplicationAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def createL2GeneveNetwork(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.network.zns.CreateL2GeneveNetworkAction.class) Closure c) {
+        def a = new org.zstack.sdk.network.zns.CreateL2GeneveNetworkAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

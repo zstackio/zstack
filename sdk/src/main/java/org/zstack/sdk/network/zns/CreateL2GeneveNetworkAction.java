@@ -1,4 +1,4 @@
-package org.zstack.sdk;
+package org.zstack.sdk.network.zns;
 
 import java.util.HashMap;
 import java.util.Map;
