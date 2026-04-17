@@ -6,7 +6,7 @@
     <parent>
         <artifactId>zstack</artifactId>
         <groupId>org.zstack</groupId>
-        <version>5.5.0</version>
+        <version>5.8.0</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>resourceconfig</artifactId>
