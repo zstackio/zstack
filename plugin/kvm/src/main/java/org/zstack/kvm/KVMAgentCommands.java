@@ -710,6 +710,7 @@ public class KVMAgentCommands {
         private String iscsiInitiatorName;
         private String nqn;
         private String hostname;
+        private String cpuFeatureMd5;
 
         public String getOsDistribution() {
             return osDistribution;
@@ -1005,6 +1006,14 @@ public class KVMAgentCommands {
 
         public void setHostname(String hostname) {
             this.hostname = hostname;
+        }
+
+        public String getCpuFeatureMd5() {
+            return cpuFeatureMd5;
+        }
+
+        public void setCpuFeatureMd5(String cpuFeatureMd5) {
+            this.cpuFeatureMd5 = cpuFeatureMd5;
         }
     }
 
