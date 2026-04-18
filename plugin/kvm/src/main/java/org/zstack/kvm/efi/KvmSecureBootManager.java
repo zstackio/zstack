@@ -468,13 +468,6 @@ public class KvmSecureBootManager extends AbstractService {
             }
 
             VmHostFileType type = VmHostFileType.valueOf(to.getType());
-            String expectPath = KVMConstant.buildSnapshotBackupPathForVmHostFileType(type, msg.getVmUuid());
-            if (!(Objects.equals(to.getPath(), expectPath))) {
-                errors.add(operr("unexpected path %s for backup file type %s", to.getPath(), to.getType())
-                        .withOpaque("path", to.getPath())
-                        .withOpaque("type", to.getType()));
-                continue;
-            }
 
             VmHostBackupFileVO backupFile = new VmHostBackupFileVO();
             backupFile.setUuid(Platform.getUuid());
