@@ -7,6 +7,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 @RestRequest(
         path = "/vm-instances/{templatedVmInstanceUuid}/convert-to-vmInstance",
@@ -14,6 +15,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIConvertTemplatedVmInstanceToVmInstanceEvent.class,
         parameterName = "params"
 )
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "VmUuidDirectResolver", field = "templatedVmInstanceUuid")
 public class APIConvertTemplatedVmInstanceToVmInstanceMsg extends APIMessage implements VmInstanceMessage, APIAuditor {
     @APIParam(resourceType = TemplatedVmInstanceVO.class)
     private String templatedVmInstanceUuid;

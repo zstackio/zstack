@@ -8,6 +8,7 @@ import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmInstanceMessage;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 /**
  * Create by lining at 2018/12/29
@@ -18,6 +19,7 @@ import org.zstack.header.vm.VmInstanceVO;
         isAction = true,
         responseClass = APISetVmInstanceDefaultCdRomEvent.class
 )
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "VmUuidDirectResolver", field = "vmInstanceUuid")
 public class APISetVmInstanceDefaultCdRomMsg extends APIMessage implements VmInstanceMessage, APIAuditor {
     @APIParam(resourceType = VmCdRomVO.class)
     private String uuid;

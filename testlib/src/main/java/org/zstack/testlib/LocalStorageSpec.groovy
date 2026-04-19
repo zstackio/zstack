@@ -600,6 +600,26 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 rsp.hashValue = cmd.installPath
                 return rsp
             }
+
+            simulator(LocalStorageKvmBackend.WRITE_VM_METADATA_PATH) {
+                return new LocalStorageKvmBackend.WriteVmMetadataRsp()
+            }
+
+            simulator(LocalStorageKvmBackend.GET_VM_INSTANCE_METADATA_PATH) {
+                return new LocalStorageKvmBackend.GetVmInstanceMetadataRsp()
+            }
+
+            simulator(LocalStorageKvmBackend.SCAN_VM_METADATA_PATH) {
+                return new LocalStorageKvmBackend.ScanVmMetadataRsp()
+            }
+
+            simulator(LocalStorageKvmBackend.CLEANUP_VM_METADATA_PATH) {
+                return new LocalStorageKvmBackend.CleanupVmMetadataRsp()
+            }
+
+            simulator(LocalStorageKvmBackend.PREFIX_REBASE_BACKING_FILES_PATH) {
+                return new LocalStorageKvmBackend.PrefixRebaseBackingFilesRsp()
+            }
         }
     }
 

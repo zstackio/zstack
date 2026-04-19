@@ -4,6 +4,7 @@ import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 import org.zstack.header.vo.ResourceVO;
 
 import java.util.List;
@@ -16,6 +17,7 @@ import static org.zstack.utils.CollectionDSL.list;
         responseClass = APICreateSystemTagsEvent.class,
         parameterName = "params"
 )
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "ResourceUuidToVmUuidResolver", field = "resourceUuid")
 public class APICreateSystemTagsMsg extends APIMessage {
     @APIParam
     private String resourceType;

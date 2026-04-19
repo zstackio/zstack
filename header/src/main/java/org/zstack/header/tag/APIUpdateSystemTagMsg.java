@@ -4,6 +4,7 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 /**
  * Created by frank on 8/17/2015.
@@ -14,6 +15,7 @@ import org.zstack.header.rest.RestRequest;
         isAction = true,
         method = HttpMethod.PUT
 )
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "SystemTagUuidToVmUuidResolver", field = "uuid")
 public class APIUpdateSystemTagMsg extends APIMessage {
     @APIParam(resourceType = SystemTagVO.class)
     private String uuid;

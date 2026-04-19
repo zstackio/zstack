@@ -6,6 +6,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 import org.zstack.utils.network.NicIpAddressInfo;
 
 import java.util.List;
@@ -45,6 +46,7 @@ import java.util.Map;
         method = HttpMethod.POST,
         responseClass = APIAttachL3NetworkToVmEvent.class
 )
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "VmUuidDirectResolver", field = "vmInstanceUuid")
 public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceMessage {
     /**
      * @desc vm uuid

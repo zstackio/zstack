@@ -4,6 +4,7 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 
 /**
  */
@@ -12,6 +13,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.DELETE,
         responseClass = APIDeleteTagEvent.class
 )
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "SystemTagUuidToVmUuidResolver", field = "uuid")
 public class APIDeleteTagMsg extends APIDeleteMessage {
     @APIParam
     private String uuid;

@@ -5,11 +5,13 @@ import org.zstack.core.Platform;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 import org.zstack.header.vo.ResourceVO;
 
 @RestRequest(path = "/resource-configurations/{category}/{name}/{resourceUuid}",
         method = HttpMethod.DELETE,
         responseClass = APIDeleteResourceConfigEvent.class)
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "ResourceUuidToVmUuidResolver", field = "resourceUuid")
 public class APIDeleteResourceConfigMsg extends APIDeleteMessage implements ResourceConfigMessage {
     @APIParam
     private String category;

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -49,6 +50,7 @@ import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimarySto
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageStatusChangedData;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.metadata.*;
 import org.zstack.header.volume.*;
 import org.zstack.storage.volume.VolumeUtils;
 import org.zstack.utils.CollectionDSL;
@@ -317,6 +319,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 new PrimaryStorageValidater().disable().maintenance()
                         .validate();
             }
+        } else if (msg instanceof RebaseVolumeBackingFileOnPrimaryStorageMsg) {
+            new PrimaryStorageValidater().maintenance()
+                    .validate();
         }
     }
 
@@ -416,6 +421,16 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((DeleteVolumeChainOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CleanUpStorageTrashOnPrimaryStorageMsg) {
             handle((CleanUpStorageTrashOnPrimaryStorageMsg)msg);
+        } else if (msg instanceof UpdateVmInstanceMetadataOnPrimaryStorageMsg) {
+            handle((UpdateVmInstanceMetadataOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof ScanVmInstanceMetadataFromPrimaryStorageMsg) {
+            handle((ScanVmInstanceMetadataFromPrimaryStorageMsg) msg);
+        } else if (msg instanceof GetVmInstanceMetadataFromPrimaryStorageMsg) {
+            handle((GetVmInstanceMetadataFromPrimaryStorageMsg) msg);
+        } else if (msg instanceof CleanupVmInstanceMetadataOnPrimaryStorageMsg) {
+            handle((CleanupVmInstanceMetadataOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof RebaseVolumeBackingFileOnPrimaryStorageMsg) {
+            handle((RebaseVolumeBackingFileOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -936,6 +951,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((APIAddStorageProtocolMsg) msg);
         } else if (msg instanceof APITakeoverPrimaryStorageMsg) {
             handle((APITakeoverPrimaryStorageMsg) msg);
+        } else if (msg instanceof APIScanVmInstanceMetadataFromPrimaryStorageMsg) {
+            handle((APIScanVmInstanceMetadataFromPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -1780,6 +1797,36 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         bus.reply(msg, reply);
     };
 
+    protected void handle(UpdateVmInstanceMetadataOnPrimaryStorageMsg msg) {
+        UpdateVmInstanceMetadataOnPrimaryStorageReply reply = new UpdateVmInstanceMetadataOnPrimaryStorageReply();
+        reply.setError(operr("operation not supported"));
+        bus.reply(msg, reply);
+    }
+
+    protected void handle(GetVmInstanceMetadataFromPrimaryStorageMsg msg) {
+        GetVmInstanceMetadataFromPrimaryStorageReply reply = new GetVmInstanceMetadataFromPrimaryStorageReply();
+        reply.setError(operr("operation not supported"));
+        bus.reply(msg, reply);
+    }
+
+    protected void handle(ScanVmInstanceMetadataFromPrimaryStorageMsg msg) {
+        ScanVmInstanceMetadataFromPrimaryStorageReply reply = new ScanVmInstanceMetadataFromPrimaryStorageReply();
+        reply.setError(operr("operation not supported"));
+        bus.reply(msg, reply);
+    }
+
+    protected void handle(CleanupVmInstanceMetadataOnPrimaryStorageMsg msg) {
+        CleanupVmInstanceMetadataOnPrimaryStorageReply reply = new CleanupVmInstanceMetadataOnPrimaryStorageReply();
+        reply.setError(operr("operation not supported"));
+        bus.reply(msg, reply);
+    }
+
+    protected void handle(RebaseVolumeBackingFileOnPrimaryStorageMsg msg) {
+        RebaseVolumeBackingFileOnPrimaryStorageReply reply = new RebaseVolumeBackingFileOnPrimaryStorageReply();
+        reply.setError(operr("operation not supported"));
+        bus.reply(msg, reply);
+    }
+
     // don't attach any cluster
     public boolean isUnmounted() {
         long count = Q.New(PrimaryStorageClusterRefVO.class)
@@ -1818,5 +1865,57 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     private static String getDeduplicateError(String operationName) {
         return String.format("an other %s task is running, cancel this operation", operationName);
+    }
+
+    private void handle(APIScanVmInstanceMetadataFromPrimaryStorageMsg msg) {
+        APIScanVmInstanceMetadataFromPrimaryStorageReply reply = new APIScanVmInstanceMetadataFromPrimaryStorageReply();
+
+        if (self.getStatus() != PrimaryStorageStatus.Connected) {
+            reply.setError(Platform.operr("primary storage[uuid:%s] is not Connected (status=%s), cannot scan metadata",
+                    self.getUuid(), self.getStatus()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        String psType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type).eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid()).findValue();
+        if (psType == null) {
+            reply.setError(Platform.operr("primary storage[uuid:%s] not found", msg.getPrimaryStorageUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+        VmMetadataPathBuildExtensionPoint ext = pluginRgty.getExtensionFromMap(psType, VmMetadataPathBuildExtensionPoint.class);
+        if (ext == null) {
+            reply.setError(Platform.operr("primary storage type %s does not support metadata", psType));
+            bus.reply(msg, reply);
+            return;
+        }
+        String metadataDir = ext.buildMetadataDir(msg.getPrimaryStorageUuid());
+
+        ScanVmInstanceMetadataFromPrimaryStorageMsg gmsg = new ScanVmInstanceMetadataFromPrimaryStorageMsg();
+        gmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        gmsg.setMetadataDir(metadataDir);
+        bus.makeTargetServiceIdByResourceUuid(gmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+        bus.send(gmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setError(r.getError());
+                    bus.reply(msg, reply);
+                    return;
+                }
+                ScanVmInstanceMetadataFromPrimaryStorageReply re = r.castReply();
+                List<VmMetadataScanEntry> metadata = re.getVmInstanceMetadata();
+                if (metadata == null) {
+                    metadata = Collections.emptyList();
+                }
+                List<VmMetadataScanEntry> filtered = metadata.stream()
+                        .filter(Objects::nonNull)
+                        .filter(e -> e.getVmCategory() != null)
+                        .filter(e -> !VmMetadataCategory.VM_TEMPLATE_CACHE.name().equals(e.getVmCategory()))
+                        .collect(Collectors.toList());
+                reply.setVmInstanceMetadata(filtered);
+                bus.reply(msg, reply);
+            }
+        });
     }
 }

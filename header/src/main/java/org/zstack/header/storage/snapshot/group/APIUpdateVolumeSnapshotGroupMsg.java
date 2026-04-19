@@ -4,6 +4,7 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.metadata.MetadataImpact;
 import org.zstack.header.storage.snapshot.SnapshotBackendOperation;
 
 /**
@@ -15,6 +16,7 @@ import org.zstack.header.storage.snapshot.SnapshotBackendOperation;
         isAction = true,
         responseClass = APIUpdateVolumeSnapshotGroupEvent.class
 )
+@MetadataImpact(value = MetadataImpact.Impact.CONFIG, resolver = "SnapshotGroupUuidToVmUuidResolver", field = "uuid")
 public class APIUpdateVolumeSnapshotGroupMsg extends APIMessage implements VolumeSnapshotGroupMessage {
     @APIParam(required = false)
     private String name;

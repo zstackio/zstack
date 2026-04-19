@@ -317,4 +317,133 @@
 		<type>java.lang.Boolean</type>
 		<defaultValue>false</defaultValue>
 	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vm.metadata.enabled</name>
+		<description>enable vm metadata</description>
+		<type>java.lang.Boolean</type>
+		<defaultValue>false</defaultValue>
+	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vm.metadata.lastRefreshVersion</name>
+		<description>Last completed upgrade refresh version, prevents duplicate triggers across MNs. Internal use only</description>
+		<type>java.lang.String</type>
+		<defaultValue>5.0.0</defaultValue>
+	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vm.metadata.flush.concurrency</name>
+		<description>Max concurrent metadata flush tasks per management node</description>
+		<type>java.lang.Integer</type>
+		<defaultValue>10</defaultValue>
+	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vm.metadata.flush.pollInterval</name>
+		<description>Metadata dirty poller interval in seconds</description>
+		<type>java.lang.Long</type>
+		<defaultValue>5</defaultValue>
+	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vm.metadata.flush.batchSize</name>
+		<description>Max dirty rows claimed per poll cycle</description>
+		<type>java.lang.Integer</type>
+		<defaultValue>20</defaultValue>
+	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vm.metadata.cleanup.gc.interval</name>
+		<description>Metadata cleanup GC retry interval in hours</description>
+		<type>java.lang.Long</type>
+		<defaultValue>8</defaultValue>
+	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vm.metadata.flush.maxRetry</name>
+		<description>Max flush retry count before marking VM metadata as stale</description>
+		<type>java.lang.Integer</type>
+		<defaultValue>5</defaultValue>
+	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vm.metadata.flush.zombieClaimThreshold</name>
+		<description>Minutes before an uncompleted flush claim is considered zombie and released</description>
+		<type>java.lang.Long</type>
+		<defaultValue>15</defaultValue>
+	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vm.metadata.maintenance.contentDriftInterval</name>
+		<description>Content drift detection interval in seconds. Drift detection is a fallback safety net; the primary mechanism is dirty marking via interceptors.</description>
+		<type>java.lang.Long</type>
+		<defaultValue>86400</defaultValue>
+	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vm.metadata.maintenance.staleRecoveryInterval</name>
+		<description>Stale VM metadata recovery interval in seconds</description>
+		<type>java.lang.Long</type>
+		<defaultValue>600</defaultValue>
+	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vm.metadata.maintenance.staleRecoveryMaxCycles</name>
+		<description>Max stale recovery cycles before entering permanent-stale state</description>
+		<type>java.lang.Integer</type>
+		<defaultValue>10</defaultValue>
+	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vm.metadata.payload.rejectThreshold</name>
+		<description>Max allowed VM metadata payload size in bytes. VMs exceeding this are skipped.</description>
+		<type>java.lang.Long</type>
+		<defaultValue>33554432</defaultValue>
+	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vm.metadata.maintenance.orphanCheckInterval</name>
+		<description>Orphan dirty-row detector interval in seconds. Releases rows claimed by dead management nodes.</description>
+		<type>java.lang.Long</type>
+		<defaultValue>3600</defaultValue>
+	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vm.metadata.maintenance.staleRecoveryBatchSize</name>
+		<description>Max stale VMs processed per recovery cycle</description>
+		<type>java.lang.Integer</type>
+		<defaultValue>10</defaultValue>
+	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vm.metadata.maintenance.contentDriftBatchSize</name>
+		<description>Number of VMs checked per batch during content drift detection</description>
+		<type>java.lang.Integer</type>
+		<defaultValue>10</defaultValue>
+	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vm.metadata.maintenance.contentDriftBatchSleepSec</name>
+		<description>Sleep time in seconds between content drift detection batches to limit DB pressure</description>
+		<type>java.lang.Long</type>
+		<defaultValue>1</defaultValue>
+	</config>
+
 </globalConfig>

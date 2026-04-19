@@ -36,7 +36,6 @@ import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
-import org.zstack.header.storage.snapshot.DeleteVolumeSnapshotDirection;
 import org.zstack.header.storage.snapshot.ShrinkVolumeSnapshotOnPrimaryStorageMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
@@ -44,23 +43,27 @@ import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.metadata.*;
 import org.zstack.header.volume.*;
-import org.zstack.kvm.*;
-import org.zstack.storage.primary.*;
+import org.zstack.kvm.KVMConstant;
+import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
+import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
+import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.File;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -131,6 +134,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((CommitVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof PullVolumeSnapshotOnPrimaryStorageMsg) {
             handle((PullVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof RebaseVolumeBackingFileOnPrimaryStorageMsg) {
+            handle((RebaseVolumeBackingFileOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -1896,6 +1901,9 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
     private String getHostUuidFromVolume(String volumeUuid) {
         VolumeVO vol = dbf.findByUuid(volumeUuid, VolumeVO.class);
+        if (vol == null) {
+            return "";
+        }
 
         String hostUuid = "";
         List<HostInventory> connectedHost = factory.getConnectedHostForOperation(getSelfInventory());
@@ -1923,5 +1931,162 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
 
         return hostUuid;
+    }
+
+    @Override
+    protected void handle(UpdateVmInstanceMetadataOnPrimaryStorageMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("update-metadata-on-ps-%s", self.getUuid());
+            }
+
+            @Override
+            public int getSyncLevel() {
+                return 10;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                UpdateVmInstanceMetadataOnPrimaryStorageReply reply = new UpdateVmInstanceMetadataOnPrimaryStorageReply();
+
+                String hostUuid = getHostUuidFromVolume(msg.getRootVolumeUuid());
+                if (hostUuid == null || hostUuid.isEmpty()) {
+                    reply.setError(operr("no host found for volume[uuid:%s]", msg.getRootVolumeUuid()));
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                final NfsPrimaryStorageBackend backend = getBackendByHostUuid(hostUuid);
+                backend.handle(msg, hostUuid, new ReturnValueCompletion<UpdateVmInstanceMetadataOnPrimaryStorageReply>(msg, chain) {
+                    @Override
+                    public void success(UpdateVmInstanceMetadataOnPrimaryStorageReply r) {
+                        bus.reply(msg, r);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("update-metadata-on-ps-%s", self.getUuid());
+            }
+        });
+    }
+
+    @Override
+    protected void handle(GetVmInstanceMetadataFromPrimaryStorageMsg msg) {
+        GetVmInstanceMetadataFromPrimaryStorageReply reply = new GetVmInstanceMetadataFromPrimaryStorageReply();
+        List<HostInventory> connectedHosts = factory.getConnectedHostForOperation(getSelfInventory());
+        if (connectedHosts.isEmpty()) {
+            reply.setError(operr("no connected host found for NFS primary storage[uuid:%s]", self.getUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+        String hostUuid = msg.getHostUuid();
+        String finalHostUuid = hostUuid;
+        if (hostUuid == null || !connectedHosts.stream().anyMatch(h -> h.getUuid().equals(finalHostUuid))) {
+            hostUuid = connectedHosts.get(0).getUuid();
+        }
+        final NfsPrimaryStorageBackend backend = getBackendByHostUuid(hostUuid);
+        backend.handle(msg, hostUuid, new ReturnValueCompletion<GetVmInstanceMetadataFromPrimaryStorageReply>(msg) {
+            @Override
+            public void success(GetVmInstanceMetadataFromPrimaryStorageReply r) {
+                bus.reply(msg, r);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(ScanVmInstanceMetadataFromPrimaryStorageMsg msg) {
+        ScanVmInstanceMetadataFromPrimaryStorageReply reply = new ScanVmInstanceMetadataFromPrimaryStorageReply();
+        List<HostInventory> connectedHosts = factory.getConnectedHostForOperation(getSelfInventory());
+        if (connectedHosts.isEmpty()) {
+            reply.setError(operr("no connected host found for NFS primary storage[uuid:%s]", self.getUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+        String hostUuid = connectedHosts.get(0).getUuid();
+        final NfsPrimaryStorageBackend backend = getBackendByHostUuid(hostUuid);
+        backend.handle(msg, hostUuid, new ReturnValueCompletion<ScanVmInstanceMetadataFromPrimaryStorageReply>(msg) {
+            @Override
+            public void success(ScanVmInstanceMetadataFromPrimaryStorageReply r) {
+                bus.reply(msg, r);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(CleanupVmInstanceMetadataOnPrimaryStorageMsg msg) {
+        CleanupVmInstanceMetadataOnPrimaryStorageReply reply = new CleanupVmInstanceMetadataOnPrimaryStorageReply();
+        List<HostInventory> connectedHosts = factory.getConnectedHostForOperation(getSelfInventory());
+        if (connectedHosts.isEmpty()) {
+            reply.setError(operr("no connected host found for NFS primary storage[uuid:%s]", self.getUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+        String hostUuid = msg.getHostUuid();
+        String finalHostUuid = hostUuid;
+        if (hostUuid == null || !connectedHosts.stream().anyMatch(h -> h.getUuid().equals(finalHostUuid))) {
+            hostUuid = connectedHosts.get(0).getUuid();
+        }
+        final NfsPrimaryStorageBackend backend = getBackendByHostUuid(hostUuid);
+        backend.handle(msg, hostUuid, new ReturnValueCompletion<CleanupVmInstanceMetadataOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(CleanupVmInstanceMetadataOnPrimaryStorageReply r) {
+                bus.reply(msg, r);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(RebaseVolumeBackingFileOnPrimaryStorageMsg msg) {
+        RebaseVolumeBackingFileOnPrimaryStorageReply reply = new RebaseVolumeBackingFileOnPrimaryStorageReply();
+        List<HostInventory> connectedHosts = factory.getConnectedHostForOperation(getSelfInventory());
+        if (connectedHosts.isEmpty()) {
+            reply.setError(operr("no connected host found for NFS primary storage[uuid:%s]", self.getUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+        String hostUuid = connectedHosts.get(0).getUuid();
+        final NfsPrimaryStorageBackend backend = getBackendByHostUuid(hostUuid);
+        backend.handle(msg, hostUuid, new ReturnValueCompletion<RebaseVolumeBackingFileOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(RebaseVolumeBackingFileOnPrimaryStorageReply r) {
+                bus.reply(msg, r);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 }
