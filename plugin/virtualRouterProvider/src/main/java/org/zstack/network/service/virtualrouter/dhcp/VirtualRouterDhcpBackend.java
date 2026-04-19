@@ -30,7 +30,6 @@ import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -129,12 +128,8 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
             }
         }
 
-        VmNicInventory vrNic = CollectionUtils.find(vr.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid().equals(struct.getL3Network().getUuid()) ? arg : null;
-            }
-        });
+        VmNicInventory vrNic = CollectionUtils.findOneOrNull(vr.getVmNics(),
+                arg -> arg.getL3NetworkUuid().equals(struct.getL3Network().getUuid()));
         info.setVrNicMac(vrNic.getMac());
         if (struct.isDefaultL3Network()) {
             /*if there is no DNS service, the DHCP uses the external DNS service. ZSTAC-13262 by miaozhanyong*/

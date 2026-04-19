@@ -317,12 +317,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         }
 
                         final String bsUuid = bsUuids.get(0);
-                        targetBackupStorageRef = CollectionUtils.find(template.getBackupStorageRefs(), new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
-                            @Override
-                            public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
-                                return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
-                            }
-                        });
+                        targetBackupStorageRef = CollectionUtils.findOneOrNull(template.getBackupStorageRefs(),
+                                arg -> arg.getBackupStorageUuid().equals(bsUuid));
 
                         trigger.next();
                     }

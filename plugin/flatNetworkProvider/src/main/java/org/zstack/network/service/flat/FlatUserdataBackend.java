@@ -44,7 +44,6 @@ import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.userdata.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
@@ -390,8 +389,9 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 return;
             }
 
-            String vmIp = CollectionUtils.find(struct.getVmNics(), arg -> arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getIp() : null);
-            if (vmIp == null) {
+            VmNicInventory selected = CollectionUtils.findOneOrNull(struct.getVmNics(),
+                    arg -> arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()));
+            if (selected == null) {
                 completion.cancel();
                 return;
             }
@@ -400,7 +400,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
             cmd.hostUuid = struct.getHostUuid();
             cmd.bridgeName = new BridgeNameFinder().findByL3UuidOnHost(struct.getL3NetworkUuid(), struct.getHostUuid());
             cmd.namespaceName = FlatDhcpBackend.makeNamespaceName(cmd.bridgeName, struct.getL3NetworkUuid());
-            cmd.vmIp = vmIp;
+            cmd.vmIp = selected.getIp();
 
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
             msg.setHostUuid(struct.getHostUuid());
@@ -559,12 +559,8 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
             return;
         }
 
-        VmNicInventory destNic = CollectionUtils.find(struct.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg : null;
-            }
-        });
+        VmNicInventory destNic = CollectionUtils.findOneOrNull(struct.getVmNics(),
+                arg -> arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()));
 
         if (destNic == null) {
             completion.success();
@@ -714,12 +710,8 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         }
 
 
-        VmNicInventory destNic = CollectionUtils.find(struct.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg : null;
-            }
-        });
+        VmNicInventory destNic = CollectionUtils.findOneOrNull(struct.getVmNics(),
+                arg -> arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()));
 
         if (destNic == null) {
             completion.success();

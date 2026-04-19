@@ -18,7 +18,6 @@ import org.zstack.header.network.l3.ReturnIpMsg;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import java.util.Map;
 
@@ -42,15 +41,11 @@ public class VmDetachNicFlow extends NoRollbackFlow {
 
         if (defaultL3Uuid != null && VmNicHelper.getL3Uuids(nic).contains(defaultL3Uuid)) {
             // reset the default L3 to a l3 network; if there is no other l3, the default l3 will be null
-            String l3Uuid = CollectionUtils.find(spec.getVmInventory().getVmNics(), new Function<String, VmNicInventory>() {
-                @Override
-                public String call(VmNicInventory arg) {
-                    return arg.getUuid().equals(nic.getUuid()) ? null : arg.getL3NetworkUuid();
-                }
-            });
+            VmNicInventory selected = CollectionUtils.findOneOrNull(
+                    spec.getVmInventory().getVmNics(), arg -> !arg.getUuid().equals(nic.getUuid()));
 
             VmInstanceVO vm = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class);
-            vm.setDefaultL3NetworkUuid(l3Uuid);
+            vm.setDefaultL3NetworkUuid(selected == null ? null : selected.getL3NetworkUuid());
             dbf.update(vm);
         }
 

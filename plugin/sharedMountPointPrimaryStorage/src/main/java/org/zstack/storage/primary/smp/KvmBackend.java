@@ -51,7 +51,6 @@ import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
@@ -1707,12 +1706,8 @@ public class KvmBackend extends HypervisorBackend {
             }
 
             final String finalBsUuid = bsUuid;
-            ImageBackupStorageRefInventory ref = CollectionUtils.find(imgInv.getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
-                @Override
-                public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
-                    return arg.getBackupStorageUuid().equals(finalBsUuid) ? arg : null;
-                }
-            });
+            ImageBackupStorageRefInventory ref = CollectionUtils.findOneOrNull(imgInv.getBackupStorageRefs(),
+                    arg -> arg.getBackupStorageUuid().equals(finalBsUuid));
 
             backupStorageInstallPath = ref.getInstallPath();
         }

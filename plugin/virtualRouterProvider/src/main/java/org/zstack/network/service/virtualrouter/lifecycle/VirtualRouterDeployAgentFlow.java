@@ -29,7 +29,6 @@ import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
@@ -42,18 +41,18 @@ import static org.zstack.core.Platform.operr;
 public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
     private static final CLogger logger = Utils.getLogger(VirtualRouterDeployAgentFlow.class);
 
-	@Autowired
-	private AnsibleFacade asf;
-	@Autowired
-	private VirtualRouterManager vrMgr;
-	@Autowired
-	private RESTFacade restf;
+    @Autowired
+    private AnsibleFacade asf;
+    @Autowired
+    private VirtualRouterManager vrMgr;
+    @Autowired
+    private RESTFacade restf;
     @Autowired
     private ErrorFacade errf;
 
     private final String agentPackageName = VirtualRouterGlobalProperty.AGENT_PACKAGE_NAME;
 
-	private void continueConnect(final VmNicInventory mgmtNic, final Map<String, Object> data, final FlowTrigger completion) {
+    private void continueConnect(final VmNicInventory mgmtNic, final Map<String, Object> data, final FlowTrigger completion) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("virtual-router-%s-continue-connecting", mgmtNic.getVmInstanceUuid()));
@@ -166,8 +165,7 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
                 });
             }
         }).start();
-	}
-	
+    }
 
     @Override
     public void run(final FlowTrigger chain, final Map data) {
@@ -178,15 +176,8 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
         } else {
             final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
             final ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
-            mgmtNic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {
-                @Override
-                public VmNicInventory call(VmNicInventory arg) {
-                    if (arg.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid())) {
-                        return arg;
-                    }
-                    return null;
-                }
-            });
+            mgmtNic = CollectionUtils.findOneOrNull(spec.getDestNics(),
+                    arg -> arg.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid()));
             DebugUtils.Assert(mgmtNic!=null, String.format("cannot find management nic for virtual router[uuid:%s, name:%s]", spec.getVmInventory().getUuid(), spec.getVmInventory().getName()));
         }
 

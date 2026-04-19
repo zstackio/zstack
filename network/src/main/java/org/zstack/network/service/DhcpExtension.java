@@ -31,6 +31,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionUtils.findOneOrNull;
 
 /**
  * Created with IntelliJ IDEA.
@@ -140,12 +141,8 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
         L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(l3Uuid, L3NetworkVO.class));
         DhcpStruct struct = new DhcpStruct();
         struct.setVmUuid(nic.getVmInstanceUuid());
-        String hostname = CollectionUtils.find(hostNames, new Function<String, HostName>() {
-            @Override
-            public String call(HostName arg) {
-                return arg.getL3NetworkUuid().equals(l3.getUuid()) ? arg.getHostname() : null;
-            }
-        });
+        VmInstanceSpec.HostName selected = findOneOrNull(hostNames, it -> it.getL3NetworkUuid().equals(l3.getUuid()));
+        String hostname = selected == null ? null : selected.getHostname();
         if (hostname != null && l3.getDnsDomain() != null) {
             hostname = String.format("%s.%s", hostname, l3.getDnsDomain());
         }

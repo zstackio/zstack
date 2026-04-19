@@ -22,9 +22,7 @@ import org.zstack.network.service.AbstractNetworkServiceExtension;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
@@ -33,7 +31,7 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionUtils.findOneOrNull;
 
 /**
  */
@@ -116,25 +114,23 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
                 if (!isEipShouldBeAttachedToBackend(spec.getVmInventory().getUuid(), l3.getUuid(), spec.getCurrentVmOperation())) {
                     continue;
                 }
-                final VmNicInventory nic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {
-                    @Override
-                    public VmNicInventory call(VmNicInventory arg) {
-                        if (arg.getUsedIps() != null && !arg.getUsedIps().isEmpty()) {
-                            for (UsedIpInventory ip : arg.getUsedIps()) {
-                                if (ip.getL3NetworkUuid().equals(l3.getUuid())) {
-                                    return arg;
-                                }
-                            }
-                        } else {
-                            VmNicVO nic = dbf.findByUuid(arg.getUuid(), VmNicVO.class);
-                            for (UsedIpVO ip : nic.getUsedIps()) {
-                                if (ip.getL3NetworkUuid().equals(l3.getUuid())) {
-                                    return arg;
-                                }
+
+                final VmNicInventory nic = findOneOrNull(spec.getDestNics(), arg -> {
+                    if (arg.getUsedIps() != null && !arg.getUsedIps().isEmpty()) {
+                        for (UsedIpInventory ip : arg.getUsedIps()) {
+                            if (ip.getL3NetworkUuid().equals(l3.getUuid())) {
+                                return true;
                             }
                         }
-                        return null;
+                    } else {
+                        VmNicVO nicVO = dbf.findByUuid(arg.getUuid(), VmNicVO.class);
+                        for (UsedIpVO ip : nicVO.getUsedIps()) {
+                            if (ip.getL3NetworkUuid().equals(l3.getUuid())) {
+                                return true;
+                            }
+                        }
                     }
+                    return false;
                 });
 
                 if (nic == null) {

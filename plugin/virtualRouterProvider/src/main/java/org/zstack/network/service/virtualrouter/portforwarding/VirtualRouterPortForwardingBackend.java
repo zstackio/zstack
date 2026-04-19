@@ -32,7 +32,6 @@ import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -76,25 +75,13 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
     private List<String> releasePortForwardingRuleElements;
 
     private PortForwardingRuleTO makePortForwardingRuleTO(final PortForwardingStruct struct, VirtualRouterVmInventory vr) {
-        String privateMac = CollectionUtils.find(vr.getVmNics(), new Function<String, VmNicInventory>() {
-            @Override
-            public String call(VmNicInventory arg) {
-                if (arg.getL3NetworkUuid().equals(struct.getGuestL3Network().getUuid())) {
-                    return arg.getMac();
-                }
-                return null;
-            }
-        });
+        VmNicInventory selected = CollectionUtils.findOneOrNull(vr.getVmNics(),
+                arg -> arg.getL3NetworkUuid().equals(struct.getGuestL3Network().getUuid()));
+        String privateMac = selected == null ? null : selected.getMac();
 
-        String publicMac = CollectionUtils.find(vr.getVmNics(), new Function<String, VmNicInventory>() {
-            @Override
-            public String call(VmNicInventory arg) {
-                if (arg.getL3NetworkUuid().equals(struct.getVipL3Network().getUuid())) {
-                    return arg.getMac();
-                }
-                return null;
-            }
-        });
+        selected = CollectionUtils.findOneOrNull(vr.getVmNics(),
+                arg -> arg.getL3NetworkUuid().equals(struct.getVipL3Network().getUuid()));
+        String publicMac = selected == null ? null : selected.getMac();
 
         DebugUtils.Assert(privateMac!=null, String.format("cannot find guest nic[l3NetworkUuid:%s] on virtual router[uuid:%s, name:%s]",
                 struct.getGuestL3Network().getUuid(), vr.getUuid(), vr.getName()));

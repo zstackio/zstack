@@ -14,7 +14,6 @@ import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimarySto
 import org.zstack.header.volume.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
@@ -103,12 +102,8 @@ public class VolumeUpgradeExtension implements Component {
                         public void run(MessageReply reply) {
                             if (reply.isSuccess()) {
                                 GetVolumeRootImageUuidFromPrimaryStorageReply r = reply.castReply();
-                                VolumeVO vol = CollectionUtils.find(vos, new Function<VolumeVO, VolumeVO>() {
-                                    @Override
-                                    public VolumeVO call(VolumeVO arg) {
-                                        return arg.getUuid().equals(msg.getVolume().getUuid()) ? arg : null;
-                                    }
-                                });
+                                VolumeVO vol = CollectionUtils.findOneOrNull(vos,
+                                        arg -> arg.getUuid().equals(msg.getVolume().getUuid()));
                                 vol.setRootImageUuid(r.getImageUuid());
                                 dbf.update(vol);
                                 vos.remove(vol);
