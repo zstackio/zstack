@@ -13,17 +13,13 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.virtualrouter.VirtualRouter;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.network.service.virtualrouter.vip.VipConfigProxy;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,12 +40,8 @@ public class VirtualRouterAssembleDecoratorFlow extends NoRollbackFlow {
             final ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
             info = new ApplianceVmPostLifeCycleInfo();
             info.setDefaultRouteL3Network(aspec.getDefaultRouteL3Network());
-            VmNicInventory mgmtNic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {
-                @Override
-                public VmNicInventory call(VmNicInventory arg) {
-                    return arg.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid()) ? arg : null;
-                }
-            });
+            VmNicInventory mgmtNic = CollectionUtils.findOneOrNull(spec.getDestNics(),
+                    arg -> arg.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid()));
             info.setManagementNic(mgmtNic);
             data.put(Param.IS_NEW_CREATED.toString(), true);
         } else {

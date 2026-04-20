@@ -140,12 +140,7 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
             final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
             if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
                 final ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
-                mgmtNic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {
-                    @Override
-                    public VmNicInventory call(VmNicInventory arg) {
-                        return arg.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid()) ? arg : null;
-                    }
-                });
+                mgmtNic = CollectionUtils.findOneOrNull(spec.getDestNics(), arg -> arg.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid()));
                 apvmUuid = spec.getVmInventory().getUuid();
             } else {
                 ApplianceVmVO avo = dbf.findByUuid(spec.getVmInventory().getUuid(), ApplianceVmVO.class);

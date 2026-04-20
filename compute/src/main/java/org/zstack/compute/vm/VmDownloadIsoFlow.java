@@ -11,7 +11,6 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.message.MessageReply;
@@ -22,7 +21,6 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import java.util.Map;
 
@@ -66,15 +64,9 @@ public class VmDownloadIsoFlow extends NoRollbackFlow {
         }
 
         ImageSpec imageSpec = new ImageSpec();
-        imageSpec.setSelectedBackupStorage(CollectionUtils.find(iso.getBackupStorageRefs(),
-                new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
-                    @Override
-                    public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
-                        return arg.getBackupStorageUuid().equals(bsUuid)
-                                && ImageStatus.Ready.toString().equals(arg.getStatus())
-                                ? arg : null;
-                    }
-                }));
+        imageSpec.setSelectedBackupStorage(CollectionUtils.findOneOrNull(iso.getBackupStorageRefs(),
+                arg -> arg.getBackupStorageUuid().equals(bsUuid)
+                        && ImageStatus.Ready.toString().equals(arg.getStatus())));
         imageSpec.setInventory(iso);
 
         DownloadIsoToPrimaryStorageMsg msg = new DownloadIsoToPrimaryStorageMsg();

@@ -7,7 +7,6 @@ import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -178,15 +177,7 @@ public class ApplianceVmFirewallRuleVO {
 
     public ApplianceVmFirewallRuleTO toRuleTO(Collection<VmNicVO> nics) {
         ApplianceVmFirewallRuleTO to = new ApplianceVmFirewallRuleTO();
-        VmNicVO nic = CollectionUtils.find(nics, new Function<VmNicVO, VmNicVO>() {
-            @Override
-            public VmNicVO call(VmNicVO arg) {
-                if (arg.getL3NetworkUuid().equals(l3NetworkUuid)) {
-                    return arg;
-                }
-                return null;
-            }
-        });
+        VmNicVO nic = CollectionUtils.findOneOrNull(nics, arg -> arg.getL3NetworkUuid().equals(l3NetworkUuid));
         to.setDestIp(destIp);
         to.setSourceIp(sourceIp);
         to.setAllowCidr(allowCidr);

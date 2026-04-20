@@ -109,12 +109,7 @@ public class PrimaryStorageTagAllocatorExtension implements InstanceOfferingTagA
         for (SystemTagInventory tag : tags) {
             final String uuid = PrimaryStorageSystemTags.PRIMARY_STORAGE_ALLOCATOR_UUID_TAG.getTokenByTag(tag.getTag(), "uuid");
             if (uuid != null) {
-                PrimaryStorageVO pvo = CollectionUtils.find(candidates, new Function<PrimaryStorageVO, PrimaryStorageVO>() {
-                    @Override
-                    public PrimaryStorageVO call(PrimaryStorageVO arg) {
-                        return uuid.equals(arg.getUuid()) ? arg : null;
-                    }
-                });
+                PrimaryStorageVO pvo = CollectionUtils.findOneOrNull(candidates, arg -> uuid.equals(arg.getUuid()));
 
                 if (pvo == null) {
                     throw new OperationFailureException(operr("cannot find primary storage[uuid:%s], the uuid is specified in instance offering or disk offering", uuid));

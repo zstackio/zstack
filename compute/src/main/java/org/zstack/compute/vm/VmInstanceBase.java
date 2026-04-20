@@ -1024,17 +1024,13 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void changeVmIp(final String l3Uuid, final Map<Integer, String> staticIpMap, final Completion completion) {
-        final VmNicVO targetNic = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
-            @Override
-            public VmNicVO call(VmNicVO arg) {
-                for (UsedIpVO ip : arg.getUsedIps()) {
-                    if (ip.getL3NetworkUuid().equals(l3Uuid)) {
-                        return arg;
-                    }
+        final VmNicVO targetNic = CollectionUtils.findOneOrNull(self.getVmNics(), arg -> {
+            for (UsedIpVO ip : arg.getUsedIps()) {
+                if (ip.getL3NetworkUuid().equals(l3Uuid)) {
+                    return true;
                 }
-
-                return null;
             }
+            return false;
         });
 
         if (targetNic == null) {
@@ -1624,12 +1620,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (self.getState() == VmInstanceState.Destroyed) {
                     // the cascade framework may send this message when
                     // the vm has been destroyed
-                    VmNicVO nic = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
-                        @Override
-                        public VmNicVO call(VmNicVO arg) {
-                            return msg.getVmNicUuid().equals(arg.getUuid()) ? arg : null;
-                        }
-                    });
+                    VmNicVO nic = CollectionUtils.findOneOrNull(self.getVmNics(),
+                            arg -> msg.getVmNicUuid().equals(arg.getUuid()));
 
                     if (nic != null) {
                         dbf.remove(nic);
@@ -5719,23 +5711,13 @@ public class VmInstanceBase extends AbstractVmInstance {
         // the nic has been removed, reload
         self = dbf.reload(self);
 
-        final VmNicVO candidate = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
-            @Override
-            public VmNicVO call(VmNicVO arg) {
-                return arg.getUuid().equals(nic.getUuid()) ? null : arg;
-            }
-        });
+        final VmNicVO candidate = CollectionUtils.findOneOrNull(self.getVmNics(), arg -> !arg.getUuid().equals(nic.getUuid()));
 
         if (candidate != null) {
             String newDefaultL3 = VmNicHelper.getPrimaryL3Uuid(VmNicInventory.valueOf(candidate));
             CollectionUtils.safeForEach(
                     pluginRgty.getExtensionList(VmDefaultL3NetworkChangedExtensionPoint.class),
-                    new ForEachFunction<VmDefaultL3NetworkChangedExtensionPoint>() {
-                        @Override
-                        public void run(VmDefaultL3NetworkChangedExtensionPoint ext) {
-                            ext.vmDefaultL3NetworkChanged(vm, previousDefaultL3, newDefaultL3);
-                        }
-                    });
+                    ext -> ext.vmDefaultL3NetworkChanged(vm, previousDefaultL3, newDefaultL3));
 
             self.setDefaultL3NetworkUuid(newDefaultL3);
             logger.debug(String.format(
@@ -5754,15 +5736,15 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void detachNic(final String nicUuid, boolean releaseNic, boolean isRollback, boolean dbOnly, boolean noApi, final Completion completion) {
-        VmNicVO vmNicVO = CollectionUtils.find(self.getVmNics(), arg -> arg.getUuid().equals(nicUuid) ? arg : null);
+        VmNicVO vmNicVO = CollectionUtils.findOneOrNull(self.getVmNics(), arg -> arg.getUuid().equals(nicUuid));
         if (vmNicVO == null) {
             completion.success();
             return;
         }
         final VmNicInventory nic = VmNicInventory.valueOf(
-                CollectionUtils.find(
+                CollectionUtils.findOneOrNull(
                         self.getVmNics(),
-                        (Function<VmNicVO, VmNicVO>) arg -> arg.getUuid().equals(nicUuid) ? arg : null)
+                        arg -> arg.getUuid().equals(nicUuid))
         );
 
         for (VmDetachNicExtensionPoint ext : pluginRgty.getExtensionList(VmDetachNicExtensionPoint.class)) {

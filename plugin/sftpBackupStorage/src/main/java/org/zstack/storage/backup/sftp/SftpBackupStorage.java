@@ -29,7 +29,6 @@ import org.zstack.storage.backup.BackupStoragePathMaker;
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
@@ -514,12 +513,8 @@ public class SftpBackupStorage extends BackupStorageBase {
         cmd.imageUuid = image.getUuid();
         cmd.uuid = self.getUuid();
 
-        ImageBackupStorageRefInventory ref = CollectionUtils.find(image.getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
-            @Override
-            public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
-                return arg.getBackupStorageUuid().equals(self.getUuid()) ? arg : null;
-            }
-        });
+        ImageBackupStorageRefInventory ref = CollectionUtils.findOneOrNull(image.getBackupStorageRefs(),
+                arg -> arg.getBackupStorageUuid().equals(self.getUuid()));
 
         if (ref == null) {
             throw new CloudRuntimeException(String.format("cannot find ImageBackupStorageRefInventory of image[uuid:%s] for the backup storage[uuid:%s]",

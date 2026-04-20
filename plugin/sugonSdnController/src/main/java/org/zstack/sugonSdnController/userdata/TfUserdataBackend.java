@@ -34,7 +34,6 @@ import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.userdata.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
@@ -269,9 +268,12 @@ public class TfUserdataBackend implements UserdataBackend, KVMHostConnectExtensi
                 return;
             }
 
+            VmNicInventory selected = CollectionUtils.findOneOrNull(struct.getVmNics(),
+                    arg -> arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()));
+
             ReleaseUserdataCmd cmd = new ReleaseUserdataCmd();
             cmd.hostUuid = struct.getHostUuid();
-            cmd.vmIp = CollectionUtils.find(struct.getVmNics(), arg -> arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getIp() : null);
+            cmd.vmIp = selected == null ? null : selected.getIp();
             cmd.vmUuid = struct.getVmUuid();
 
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
@@ -431,18 +433,11 @@ public class TfUserdataBackend implements UserdataBackend, KVMHostConnectExtensi
                         UserdataTO uto = new UserdataTO();
                         uto.metadata = to;
                         uto.userdataList = struct.getUserdataList();
-                        uto.vmIp = CollectionUtils.find(struct.getVmNics(), new Function<String, VmNicInventory>() {
-                            @Override
-                            public String call(VmNicInventory arg) {
-                                return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getIp() : null;
-                            }
-                        });
-                        uto.netmask = CollectionUtils.find(struct.getVmNics(), new Function<String, VmNicInventory>() {
-                            @Override
-                            public String call(VmNicInventory arg) {
-                                return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getNetmask() : null;
-                            }
-                        });
+
+                        VmNicInventory selected = CollectionUtils.findOneOrNull(struct.getVmNics(),
+                                arg -> arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()));
+                        uto.vmIp = selected == null ? null : selected.getIp();
+                        uto.netmask = selected == null ? null : selected.getNetmask();
                         uto.port = UserdataGlobalProperty.HOST_PORT;
                         uto.l3NetworkUuid = struct.getL3NetworkUuid();
                         uto.agentConfig = new HashMap<>();
@@ -504,14 +499,12 @@ public class TfUserdataBackend implements UserdataBackend, KVMHostConnectExtensi
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
+                        final VmNicInventory selected = CollectionUtils.findOneOrNull(struct.getVmNics(),
+                                arg -> arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()));
+
                         ReleaseUserdataCmd cmd = new ReleaseUserdataCmd();
                         cmd.hostUuid = struct.getHostUuid();
-                        cmd.vmIp = CollectionUtils.find(struct.getVmNics(), new Function<String, VmNicInventory>() {
-                            @Override
-                            public String call(VmNicInventory arg) {
-                                return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getIp() : null;
-                            }
-                        });
+                        cmd.vmIp = selected == null ? null : selected.getIp();
                         cmd.vmUuid = struct.getVmUuid();
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();

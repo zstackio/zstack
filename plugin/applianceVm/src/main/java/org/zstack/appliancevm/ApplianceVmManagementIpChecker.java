@@ -10,7 +10,6 @@ import org.zstack.header.vm.VmBeforeStartOnHypervisorExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.utils.*;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -38,12 +37,8 @@ public class ApplianceVmManagementIpChecker implements VmBeforeCreateOnHyperviso
         VmNicInventory mgmtNic;
         if (isNewCreated) {
             final ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
-            mgmtNic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {
-                @Override
-                public VmNicInventory call(VmNicInventory arg) {
-                    return arg.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid()) ? arg : null;
-                }
-            });
+            mgmtNic = CollectionUtils.findOneOrNull(spec.getDestNics(),
+                    arg -> arg.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid()));
         } else {
             ApplianceVmInventory apvm = ApplianceVmInventory.valueOf(dbf.findByUuid(spec.getVmInventory().getUuid(), ApplianceVmVO.class));
             mgmtNic = apvm.getManagementNic();

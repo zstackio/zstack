@@ -77,25 +77,13 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
             final String l3Uuid = t.get(1, String.class);
             String guestIp = t.get(2, String.class);
             final String pubL3Uuid = t.get(3, String.class);
-            String privMac = CollectionUtils.find(vr.getVmNics(), new Function<String, VmNicInventory>() {
-                @Override
-                public String call(VmNicInventory arg) {
-                    if (arg.getL3NetworkUuid().equals(l3Uuid)) {
-                        return arg.getMac();
-                    }
-                    return null;
-                }
-            });
+            VmNicInventory selected = CollectionUtils.findOneOrNull(vr.getVmNics(),
+                    arg -> arg.getL3NetworkUuid().equals(l3Uuid));
+            String privMac = selected == null ? null : selected.getMac();
 
-            String publicMac = CollectionUtils.find(vr.getVmNics(), new Function<String, VmNicInventory>() {
-                @Override
-                public String call(VmNicInventory arg) {
-                    if (arg.getL3NetworkUuid().equals(pubL3Uuid)) {
-                        return arg.getMac();
-                    }
-                    return null;
-                }
-            });
+            selected = CollectionUtils.findOneOrNull(vr.getVmNics(),
+                    arg -> arg.getL3NetworkUuid().equals(pubL3Uuid));
+            String publicMac = selected == null ? null : selected.getMac();
 
             DebugUtils.Assert(privMac!=null, String.format("cannot find private nic[l3NetworkUuid:%s] on virtual router[uuid:%s]",
                     l3Uuid, vr.getUuid()));

@@ -444,7 +444,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             return;
         }
 
-        final List<ZbsPrimaryStorageMdsBase> mds = CollectionUtils.transformToList(addonInfo.getMdsInfos(), ZbsPrimaryStorageMdsBase::new);
+        final List<ZbsPrimaryStorageMdsBase> mds = CollectionUtils.transform(addonInfo.getMdsInfos(), ZbsPrimaryStorageMdsBase::new);
         new While<>(mds).each((m, comp) -> m.ping(addonInfo.getClusterInfo(), new Completion(comp) {
             @Override
             public void success() {

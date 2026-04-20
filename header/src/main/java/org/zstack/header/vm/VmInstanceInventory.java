@@ -16,7 +16,6 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -335,15 +334,7 @@ public class VmInstanceInventory implements Serializable, Cloneable {
     }
 
     public VmNicInventory findNic(final String l3Uuid) {
-        return CollectionUtils.find(vmNics, new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                if (VmNicHelper.isL3AttachedToVmNic(arg, l3Uuid)) {
-                    return arg;
-                }
-                return null;
-            }
-        });
+        return CollectionUtils.findOneOrNull(vmNics, arg -> VmNicHelper.isL3AttachedToVmNic(arg, l3Uuid));
     }
 
     public static VmInstanceInventory copyFrom(VmInstanceInventory origin) {

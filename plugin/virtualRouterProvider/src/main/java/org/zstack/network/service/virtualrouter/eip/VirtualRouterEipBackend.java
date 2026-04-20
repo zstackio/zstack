@@ -32,7 +32,6 @@ import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -124,15 +123,9 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 EipTO to = new EipTO();
-                String priMac = CollectionUtils.find(vr.getVmNics(), new Function<String, VmNicInventory>() {
-                    @Override
-                    public String call(VmNicInventory arg) {
-                        if (arg.getL3NetworkUuid().equals(struct.getNic().getL3NetworkUuid())) {
-                            return arg.getMac();
-                        }
-                        return null;
-                    }
-                });
+                final VmNicInventory selected = CollectionUtils.findOneOrNull(vr.getVmNics(),
+                        arg -> arg.getL3NetworkUuid().equals(struct.getNic().getL3NetworkUuid()));
+                String priMac = selected == null ? null : selected.getMac();
                 to.setPrivateMac(priMac);
                 to.setPublicMac(vr.getVmNics().stream()
                         .filter(nic -> nic.getL3NetworkUuid().equals(struct.getVip().getL3NetworkUuid()))
@@ -273,15 +266,9 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
             public void run(final FlowTrigger trigger, Map data) {
                 VirtualRouterCommands.RemoveEipCmd cmd = new VirtualRouterCommands.RemoveEipCmd();
                 EipTO to = new EipTO();
-                String priMac = CollectionUtils.find(vr.getVmNics(), new Function<String, VmNicInventory>() {
-                    @Override
-                    public String call(VmNicInventory arg) {
-                        if (arg.getL3NetworkUuid().equals(struct.getNic().getL3NetworkUuid())) {
-                            return arg.getMac();
-                        }
-                        return null;
-                    }
-                });
+                final VmNicInventory selected = CollectionUtils.findOneOrNull(vr.getVmNics(),
+                        arg -> arg.getL3NetworkUuid().equals(struct.getNic().getL3NetworkUuid()));
+                String priMac = selected == null ? null : selected.getMac();
 
                 to.setPublicMac(vr.getVmNics().stream()
                         .filter(nic -> nic.getL3NetworkUuid().equals(struct.getVip().getL3NetworkUuid()))
