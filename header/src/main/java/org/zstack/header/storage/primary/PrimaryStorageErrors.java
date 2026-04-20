@@ -7,7 +7,8 @@ public enum PrimaryStorageErrors {
     ATTACH_ERROR(1001),
     DETACH_ERROR(1002),
     DISCONNECTED(1003),
-    FORBIDDENQOS(1004);
+    FORBIDDENQOS(1004),
+    TAKEN_OVER(1005);
 
     private String code;
 
