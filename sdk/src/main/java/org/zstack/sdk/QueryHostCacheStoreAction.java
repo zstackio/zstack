@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetBlockDevicesAction extends AbstractAction {
+public class QueryHostCacheStoreAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetBlockDevicesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetBlockDevicesResult value;
+        public org.zstack.sdk.QueryHostCacheStoreResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,35 +25,6 @@ public class GetBlockDevicesAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean includeInUse = false;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -63,8 +34,8 @@ public class GetBlockDevicesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetBlockDevicesResult value = res.getResult(org.zstack.sdk.GetBlockDevicesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetBlockDevicesResult() : value; 
+        org.zstack.sdk.QueryHostCacheStoreResult value = res.getResult(org.zstack.sdk.QueryHostCacheStoreResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryHostCacheStoreResult() : value; 
 
         return ret;
     }
@@ -94,9 +65,9 @@ public class GetBlockDevicesAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hosts/{uuid}/block-devices";
+        info.path = "/hosts/local-volume-cache-pools";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }

@@ -220,6 +220,7 @@ public abstract class HostBase extends AbstractHost {
         APIGetBlockDevicesEvent event = new APIGetBlockDevicesEvent(msg.getId());
         GetBlockDevicesOnHostMsg gmsg = new GetBlockDevicesOnHostMsg();
         gmsg.setHostUuid(msg.getHostUuid());
+        gmsg.setIncludeInUse(msg.isIncludeInUse());
         bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, msg.getHostUuid());
         bus.send(gmsg, new CloudBusCallBack(msg) {
             @Override

@@ -48,6 +48,15 @@ doc {
 					optional true
 					since "5.5.6"
 				}
+				column {
+					name "includeInUse"
+					enclosedIn ""
+					desc ""
+					location "query"
+					type "boolean"
+					optional true
+					since "5.5.6"
+				}
 			}
         }
 
