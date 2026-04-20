@@ -725,7 +725,7 @@ class KVMSimulator implements Simulator {
 
         spec.simulator(KVMConstant.KVM_HOST_FILE_UPLOAD_PATH) {
             UploadFileResponse rsp = new UploadFileResponse()
-            rsp.directUploadPath = "http://172.1.1.1:7070/host/file/direct-upload"
+            rsp.directUploadUrl = "http://172.1.1.1:7070/host/file/direct-upload"
             return rsp
         }
 

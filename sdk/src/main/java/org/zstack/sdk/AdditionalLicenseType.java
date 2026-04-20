@@ -5,4 +5,5 @@ public enum AdditionalLicenseType {
 	zstone,
 	zcex,
 	zsv,
+	zmigrate,
 }

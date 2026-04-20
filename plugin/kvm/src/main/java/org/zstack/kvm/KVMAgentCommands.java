@@ -4847,7 +4847,7 @@ public class KVMAgentCommands {
     }
 
     public static class UploadFileResponse extends AgentResponse {
-        public String directUploadPath;
+        public String directUploadUrl;
     }
 
     public static class GetDownloadFileProgressCmd extends AgentCommand {

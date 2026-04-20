@@ -7500,7 +7500,7 @@ public class KVMHost extends HostBase implements Host {
                         return;
                     }
 
-                    reply.setDirectUploadUrl(rsp.directUploadPath);
+                    reply.setDirectUploadUrl(rsp.directUploadUrl);
                     bus.reply(msg, reply);
                     completion.done();
                 }
