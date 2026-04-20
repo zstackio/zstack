@@ -33,8 +33,7 @@ import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.additions.RestoreVmHostFileMsg;
 import org.zstack.header.vm.RestoreVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.additions.VmHostBackupFileVO;
-import org.zstack.header.vm.additions.VmHostBackupFileVO_;
+import org.zstack.header.vm.additions.VmHostFileManager;
 import org.zstack.header.vm.additions.VmHostFileSyncReason;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
@@ -73,6 +72,8 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
     private PluginRegistry pluginRgty;
     @Autowired
     private VmInstanceDeviceManager vidm;
+    @Autowired
+    private VmHostFileManager vmHostFileManager;
 
     public VolumeSnapshotGroupBase(VolumeSnapshotGroupVO self) {
         this.self = self;
@@ -152,9 +153,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
             public void run(SyncTaskChain chain) {
                 APIUngroupVolumeSnapshotGroupEvent evt = new APIUngroupVolumeSnapshotGroupEvent(msg.getId());
                 dbf.remove(self);
-                SQL.New(VmHostBackupFileVO.class)
-                        .eq(VmHostBackupFileVO_.resourceUuid, msg.getUuid())
-                        .delete();
+                vmHostFileManager.cleanVmHostBackupFile(msg.getUuid());
                 bus.publish(evt);
                 chain.next();
             }
@@ -247,9 +246,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                     }
                 }))
             .then("delete-vm-host-backup-files", trigger -> {
-                SQL.New(VmHostBackupFileVO.class)
-                        .eq(VmHostBackupFileVO_.resourceUuid, self.getUuid())
-                        .delete();
+                vmHostFileManager.cleanVmHostBackupFile(self.getUuid());
                 trigger.next();
             })
             .propagateExceptionTo(msg)

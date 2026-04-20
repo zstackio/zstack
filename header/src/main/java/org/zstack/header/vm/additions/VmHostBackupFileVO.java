@@ -1,7 +1,6 @@
 package org.zstack.header.vm.additions;
 
 import org.zstack.header.vo.EntityGraph;
-import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.Column;
