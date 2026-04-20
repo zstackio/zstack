@@ -362,12 +362,6 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
-        <name>AnolisOS</name>
-        <version>8</version>
-        <osRelease>AnolisOS 8</osRelease>
-    </osInfo>
-    <osInfo>
-        <platform>Linux</platform>
         <name>Amazon</name>
         <version>2023</version>
         <osRelease>Amazon Linux 2023</osRelease>
