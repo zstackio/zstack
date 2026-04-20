@@ -292,7 +292,7 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="KvmSecureBootManager" class="org.zstack.kvm.efi.KvmSecureBootManager">
+    <bean id="KvmSecureBootManager" class="org.zstack.kvm.efi.KvmSecureBootManager" primary="true">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
             <zstack:extension interface="org.zstack.header.Service" />
