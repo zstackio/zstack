@@ -7929,6 +7929,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
+                final String tpmUuidForEncryptedKeyRef = VmTpmManager.findTpmUuidForVmOrNull(self.getUuid());
                 extEmitter.failedToStartNewCreatedVm(VmInstanceInventory.valueOf(self), errCode);
                 dbf.remove(self);
                 // clean up EO, otherwise API-retry may cause conflict if
@@ -7939,6 +7940,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     logger.warn(e.getMessage());
                 }
 
+                detachTpmKeyProviderBestEffort(tpmUuidForEncryptedKeyRef);
                 completion.fail(errCode);
             }
         }).start();

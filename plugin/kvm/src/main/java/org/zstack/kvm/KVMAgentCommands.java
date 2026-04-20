@@ -535,6 +535,30 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class ResolveVtpmLibvirtSecretCmd extends AgentCommand {
+        private String vmUuid;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+    }
+
+    public static class ResolveVtpmLibvirtSecretResponse extends AgentResponse {
+        private String secretUuid;
+
+        public String getSecretUuid() {
+            return secretUuid;
+        }
+
+        public void setSecretUuid(String secretUuid) {
+            this.secretUuid = secretUuid;
+        }
+    }
+
     public static class SecretHostDeleteCmd extends AgentCommand {
         private String vmUuid;
         private String purpose;

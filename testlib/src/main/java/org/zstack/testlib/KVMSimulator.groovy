@@ -381,6 +381,14 @@ class KVMSimulator implements Simulator {
             return new SecretHostDeleteResponse()
         }
 
+        spec.simulator(KVMConstant.KVM_VTPM_RESOLVE_LIBVIRT_SECRET_UUID_PATH) { HttpEntity<String> e ->
+            String hostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+            KVMAgentCommands.ResolveVtpmLibvirtSecretCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ResolveVtpmLibvirtSecretCmd.class)
+            def rsp = new KVMAgentCommands.ResolveVtpmLibvirtSecretResponse()
+            rsp.secretUuid = findOrCreateVtpmSecretUuid(hostUuid, cmd?.vmUuid)
+            return rsp
+        }
+
         spec.simulator(KVMConstant.KVM_ECHO_PATH) { HttpEntity<String> e ->
             Spec.checkHttpCallType(e, true)
             return [:]
@@ -788,5 +796,15 @@ class KVMSimulator implements Simulator {
                 purpose ?: "",
                 keyVersion == null ? "" : String.valueOf(keyVersion),
                 usage)
+    }
+
+    private static String findOrCreateVtpmSecretUuid(String hostUuid, String vmUuid) {
+        String prefix = String.format("%s::%s::%s::", hostUuid ?: "", vmUuid ?: "", "vtpm")
+        for (Map.Entry<String, String> entry : ensureSecretUuidCache.entrySet()) {
+            if (entry.key != null && entry.key.startsWith(prefix)) {
+                return entry.value
+            }
+        }
+        return Platform.uuid
     }
 }

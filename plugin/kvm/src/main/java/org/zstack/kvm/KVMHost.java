@@ -61,6 +61,8 @@ import org.zstack.header.secret.SecretHostDeleteMsg;
 import org.zstack.header.secret.SecretHostDeleteReply;
 import org.zstack.header.secret.SecretHostGetMsg;
 import org.zstack.header.secret.SecretHostGetReply;
+import org.zstack.header.secret.ResolveVtpmLibvirtSecretOnHypervisorMsg;
+import org.zstack.header.secret.ResolveVtpmLibvirtSecretOnHypervisorReply;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -756,6 +758,8 @@ public class KVMHost extends HostBase implements Host {
             handle((RestartKvmAgentMsg) msg);
         } else if (msg instanceof SecretHostGetMsg) {
             handle((SecretHostGetMsg) msg);
+        } else if (msg instanceof ResolveVtpmLibvirtSecretOnHypervisorMsg) {
+            handle((ResolveVtpmLibvirtSecretOnHypervisorMsg) msg);
         } else if (msg instanceof SecretHostDefineMsg) {
             handle((SecretHostDefineMsg) msg);
         } else if (msg instanceof SecretHostDeleteMsg) {
@@ -5364,6 +5368,44 @@ public class KVMHost extends HostBase implements Host {
                 return KVMAgentCommands.SecretHostGetResponse.class;
             }
         }, TimeUnit.SECONDS, KVMConstant.ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
+    }
+
+    private void handle(ResolveVtpmLibvirtSecretOnHypervisorMsg msg) {
+        ResolveVtpmLibvirtSecretOnHypervisorReply reply = new ResolveVtpmLibvirtSecretOnHypervisorReply();
+        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getHostUuid())) {
+            reply.setError(operr("vmUuid and hostUuid are required for vTPM resolve libvirt secret uuid"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        KVMAgentCommands.ResolveVtpmLibvirtSecretCmd cmd = new KVMAgentCommands.ResolveVtpmLibvirtSecretCmd();
+        cmd.setVmUuid(msg.getVmUuid());
+        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+        kmsg.setCommand(cmd);
+        kmsg.setPath(KVMConstant.KVM_VTPM_RESOLVE_LIBVIRT_SECRET_UUID_PATH);
+        kmsg.setHostUuid(msg.getHostUuid());
+        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.send(kmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setError(r.getError());
+                    bus.reply(msg, reply);
+                    return;
+                }
+                KVMHostAsyncHttpCallReply kreply = r.castReply();
+                KVMAgentCommands.ResolveVtpmLibvirtSecretResponse rsp =
+                        kreply.toResponse(KVMAgentCommands.ResolveVtpmLibvirtSecretResponse.class);
+                if (rsp != null && rsp.isSuccess() && StringUtils.isNotBlank(rsp.getSecretUuid())) {
+                    reply.setSecretUuid(rsp.getSecretUuid());
+                } else if (rsp != null && rsp.isSuccess()) {
+                    reply.setError(operr("vTPM resolve succeeded but secretUuid is empty"));
+                } else {
+                    reply.setError(buildSecretAgentError(rsp, "vTPM resolve libvirt secret uuid failed"));
+                }
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(SecretHostDefineMsg msg) {
