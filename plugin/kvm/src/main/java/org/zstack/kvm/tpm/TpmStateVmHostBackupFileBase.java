@@ -14,6 +14,7 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend.BackupEncryptedResourceKeyContent;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -69,6 +70,11 @@ public class TpmStateVmHostBackupFileBase extends AbstractVmHostBackupFileBase {
         createKeyProviderNameTag(keyProviderName);
         logger.debug(String.format("created tpm key provider name[%s] tag on VmHostBackupFileVO[uuid:%s] from tpm[uuid:%s] of vm[uuid:%s]",
                 keyProviderName, self.getUuid(), tpmUuid, from.getVmInstanceUuid()));
+
+        final BackupEncryptedResourceKeyContent context = new BackupEncryptedResourceKeyContent();
+        context.srcTpmUuid = tpmUuid;
+        context.dstVmHostBackupFileUuid = self.getUuid();
+        resourceKeyBackend.backupEncryptedResourceKey(context);
     }
 
     @SuppressWarnings("unchecked")
@@ -78,5 +84,11 @@ public class TpmStateVmHostBackupFileBase extends AbstractVmHostBackupFileBase {
         creator.inherent = true;
         creator.recreate = true;
         creator.create();
+    }
+
+    @Override
+    public void clean() {
+        resourceKeyBackend.cleanEncryptedResourceKey(self.getUuid());
+        super.clean();
     }
 }

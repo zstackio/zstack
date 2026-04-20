@@ -106,6 +106,8 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
     private DatabaseFacade databaseFacade;
     @Autowired
     private KvmVmHostFileFactory vmHostFileFactory;
+    @Autowired
+    private KvmSecureBootManager secureBootManager;
 
     private final Object hostFileLock = new Object();
 
@@ -551,9 +553,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         SQL.New(VmHostFileVO.class)
                 .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
                 .delete();
-        SQL.New(VmHostBackupFileVO.class)
-                .eq(VmHostBackupFileVO_.resourceUuid, vmUuid)
-                .delete();
+        secureBootManager.cleanVmHostBackupFile(vmUuid);
 
         logger.debug(String.format("reset TPM state for VM[uuid:%s] after reimage: " +
                 "deleted all VmHostFileVO and VmHostBackupFileVO records", vmUuid));
