@@ -90,6 +90,7 @@ public interface KVMConstant {
     String READ_VM_HOST_FILE_PATH = "/vm/hostfile/read";
     String WRITE_VM_HOST_FILE_PATH = "/vm/hostfile/write";
     String BACKUP_VM_HOST_FILE_PATH = "/vm/hostfile/backup";
+    String KVM_VTPM_RESOLVE_LIBVIRT_SECRET_UUID_PATH = "/vm/vtpm/resolveLibvirtSecretUuid";
 
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";
@@ -134,7 +135,7 @@ public interface KVMConstant {
     String KVM_DELETE_SECRET_PATH = "/host/key/envelope/deleteSecret";
 
     /** HTTP timeout in seconds for envelope key sync (verify/create/rotate/get) to agent. */
-    long ENVELOPE_KEY_HTTP_TIMEOUT_SEC = 5L;
+    long ENVELOPE_KEY_HTTP_TIMEOUT_SEC = 10L;
 
     /** Max size in bytes for DEK payload in SecretHostDefine (decoded from dekBase64). */
     int MAX_DEK_BYTES = 1024;
