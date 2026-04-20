@@ -10,4 +10,5 @@ public enum TrashType {
     RevertVolume,
     VolumeSnapshot,
     ReimageVolume,
+    ReInitDataVolume,
 }

@@ -2,10 +2,7 @@ package org.zstack.header.storage.snapshot;
 
 import org.zstack.header.message.MessageReply;
 
-/**
- * Created by liangbo.zhou on 17-6-23.
- */
-public class MarkRootVolumeAsSnapshotReply extends MessageReply {
+public class MarkVolumeAsSnapshotReply extends MessageReply {
     private VolumeSnapshotInventory inventory;
 
     public VolumeSnapshotInventory getInventory() {

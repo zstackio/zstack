@@ -5430,6 +5430,139 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(final ReInitDataVolumeOnPrimaryStorageMsg msg) {
+        final ReInitDataVolumeOnPrimaryStorageReply reply = new ReInitDataVolumeOnPrimaryStorageReply();
+
+        final FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("reinit-data-volume-%s", msg.getVolume().getUuid()));
+        chain.then(new ShareFlow() {
+            final String originalVolumePath = msg.getVolume().getInstallPath();
+            final String targetPoolName = getTargetPoolNameFromAllocatedUrl(msg.getAllocatedInstallUrl());
+            String newVolumePath = makeReInitDataVolumeInstallPath(msg.getVolume().getUuid(), targetPoolName);
+            boolean newVolumeCreated;
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "create-empty-data-volume";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
+                        cmd.installPath = newVolumePath;
+                        cmd.size = msg.getVolume().getSize();
+                        cmd.setShareable(msg.getVolume().isShareable());
+                        httpCall(CREATE_VOLUME_PATH, cmd, CreateEmptyVolumeRsp.class, new ReturnValueCompletion<CreateEmptyVolumeRsp>(trigger) {
+                            @Override
+                            public void success(CreateEmptyVolumeRsp ret) {
+                                newVolumeCreated = true;
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode err) {
+                                trigger.fail(err);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-origin-data-volume-which-has-no-snapshot";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        long snapshotCount = Q.New(VolumeSnapshotVO.class)
+                                .like(VolumeSnapshotVO_.primaryStorageInstallPath,
+                                        String.format("%s@%%", originalVolumePath))
+                                .count();
+                        if (snapshotCount == 0) {
+                            DeleteCmd cmd = new DeleteCmd();
+                            cmd.installPath = originalVolumePath;
+                            httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(null) {
+                                @Override
+                                public void success(DeleteRsp returnValue) {
+                                    logger.debug(String.format("successfully deleted %s", originalVolumePath));
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    logger.warn(String.format("unable to delete %s, %s. Need a cleanup",
+                                            originalVolumePath, errorCode));
+                                    trash.createTrash(TrashType.ReInitDataVolume, false, msg.getVolume());
+                                }
+                            });
+                        } else {
+                            trash.createTrash(TrashType.ReInitDataVolume, false, msg.getVolume());
+                        }
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        reply.setNewVolumeInstallPath(newVolumePath);
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        if (newVolumeCreated) {
+                            cleanupNewReInitDataVolumeBits(newVolumePath, msg.getVolume());
+                        }
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void cleanupNewReInitDataVolumeBits(String installPath, VolumeInventory volume) {
+        DeleteCmd cmd = new DeleteCmd();
+        cmd.installPath = installPath;
+        httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(null) {
+            @Override
+            public void success(DeleteRsp returnValue) {
+                logger.debug(String.format("successfully deleted reinit new volume bits[path:%s, volumeUuid:%s]",
+                        installPath, volume.getUuid()));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("unable to delete reinit new volume bits[path:%s, volumeUuid:%s], submit GC. %s",
+                        installPath, volume.getUuid(), errorCode));
+                submitNewReInitDataVolumeBitsGC(installPath, volume);
+            }
+        });
+    }
+
+    private void submitNewReInitDataVolumeBitsGC(String installPath, VolumeInventory volume) {
+        VolumeInventory cleanupVolume = new VolumeInventory();
+        cleanupVolume.setUuid(volume.getUuid());
+        cleanupVolume.setInstallPath(installPath);
+        cleanupVolume.setPrimaryStorageUuid(volume.getPrimaryStorageUuid());
+        cleanupVolume.setFormat(volume.getFormat());
+        cleanupVolume.setSize(0L);
+
+        CephDeleteVolumeGC gc = new CephDeleteVolumeGC();
+        gc.NAME = String.format("gc-ceph-%s-reinit-volume-%s-new-bits", self.getUuid(), volume.getUuid());
+        gc.primaryStorageUuid = self.getUuid();
+        gc.volume = cleanupVolume;
+        gc.deduplicateSubmit(CephGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
+    }
+
+    private String makeReInitDataVolumeInstallPath(String volUuid, String targetPoolName) {
+        return String.format("ceph://%s/reinit-%s-%s",
+                targetPoolName,
+                volUuid,
+                System.currentTimeMillis());
+    }
+
+    @Override
     protected void handle(DeleteSnapshotOnPrimaryStorageMsg msg) {
         inQueue().name(String.format("delete-snapshot-on-primarystorage-%s", self.getUuid()))
                 .asyncBackup(msg)

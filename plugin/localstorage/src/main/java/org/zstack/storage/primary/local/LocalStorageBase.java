@@ -68,6 +68,7 @@ import static org.zstack.core.progress.ProgressReportService.createSubTaskProgre
 import static org.zstack.storage.primary.local.LocalStorageUtils.getHostUuidFromInstallUrl;
 import static org.zstack.utils.CollectionDSL.*;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+import org.zstack.header.storage.primary.ReInitDataVolumeOnPrimaryStorageMsg;
 
 /**
  * Created by frank on 6/30/2015.
@@ -1424,6 +1425,12 @@ public class LocalStorageBase extends PrimaryStorageBase {
             }
         });
     }
+
+    @Override
+    protected void handle(ReInitDataVolumeOnPrimaryStorageMsg msg) {
+        bus.dealWithUnknownMessage(msg);
+    }
+
 
     protected String getHostUuidByResourceUuid(String resUuid) {
         String huuid;

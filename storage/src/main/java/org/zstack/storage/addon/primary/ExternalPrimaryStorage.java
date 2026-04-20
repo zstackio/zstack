@@ -65,6 +65,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.*;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+import org.zstack.header.storage.primary.ReInitDataVolumeOnPrimaryStorageMsg;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
@@ -2003,6 +2004,12 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             }
         }).start();
     }
+
+    @Override
+    protected void handle(ReInitDataVolumeOnPrimaryStorageMsg msg) {
+        bus.dealWithUnknownMessage(msg);
+    }
+
 
     @Override
     protected void handle(AskInstallPathForNewSnapshotMsg msg) {
