@@ -1,13 +1,13 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.VmLocalVolumeCacheInventory;
+import org.zstack.sdk.VolumeCacheInventory;
 
 public class DisableVolumeCacheResult {
-    public VmLocalVolumeCacheInventory inventory;
-    public void setInventory(VmLocalVolumeCacheInventory inventory) {
+    public VolumeCacheInventory inventory;
+    public void setInventory(VolumeCacheInventory inventory) {
         this.inventory = inventory;
     }
-    public VmLocalVolumeCacheInventory getInventory() {
+    public VolumeCacheInventory getInventory() {
         return this.inventory;
     }
 

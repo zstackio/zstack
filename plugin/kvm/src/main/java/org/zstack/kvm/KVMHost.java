@@ -748,6 +748,7 @@ public class KVMHost extends HostBase implements Host {
     private void handle(GetBlockDevicesOnHostMsg msg) {
         GetBlockDevicesOnHostReply reply = new GetBlockDevicesOnHostReply();
         KVMAgentCommands.GetBlockDevicesCmd cmd = new KVMAgentCommands.GetBlockDevicesCmd();
+        cmd.setIncludeInUse(msg.isIncludeInUse());
         new Http<>(getBlockDevicesPath, cmd, KVMAgentCommands.GetBlockDevicesRsp.class)
                 .call(new ReturnValueCompletion<KVMAgentCommands.GetBlockDevicesRsp>(msg) {
             @Override
