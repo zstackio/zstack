@@ -65,12 +65,13 @@ public class VmAllocateVolumeFlow implements Flow {
             throw new CloudRuntimeException(String.format("accountUuid for vm[uuid:%s] is null", spec.getVmInventory().getUuid()));
         }
 
-        if (!CollectionUtils.isEmpty(spec.getDeprecatedDisksSpecs())) {
+        List<DiskAO> nonTemplateDeprecatedDisks = spec.getNonTemplateDeprecatedDisksSpecs();
+        if (!CollectionUtils.isEmpty(nonTemplateDeprecatedDisks)) {
             List<VolumeSpec> dataVolumeSpecs = filter(spec.getVolumeSpecs(), s -> s.getType().equals(VolumeType.Data.toString()));
-            int minLen = Math.min(spec.getDeprecatedDisksSpecs().size(), dataVolumeSpecs.size());
+            int minLen = Math.min(nonTemplateDeprecatedDisks.size(), dataVolumeSpecs.size());
 
             for (int i = 0; i < minLen; i++) {
-                DiskAO disk = spec.getDeprecatedDisksSpecs().get(i);
+                DiskAO disk = nonTemplateDeprecatedDisks.get(i);
                 if (!CollectionUtils.isEmpty(disk.getSystemTags())) {
                     dataVolumeSpecs.get(i).setTags(disk.getSystemTags());
                 }
@@ -120,8 +121,8 @@ public class VmAllocateVolumeFlow implements Flow {
             } else if (vspec.isData()) {
                 DiskAO disk = isEmpty(spec.getDataDisks()) ? null :
                         spec.getDataDisks().size() > dataVolumeIndex ? spec.getDataDisks().get(dataVolumeIndex) : null;
-                DiskAO deprecatedDisk = isEmpty(spec.getDeprecatedDisksSpecs()) ? null :
-                        spec.getDeprecatedDisksSpecs().size() > dataVolumeIndex ? spec.getDeprecatedDisksSpecs().get(dataVolumeIndex) : null;
+                DiskAO deprecatedDisk = isEmpty(nonTemplateDeprecatedDisks) ? null :
+                        nonTemplateDeprecatedDisks.size() > dataVolumeIndex ? nonTemplateDeprecatedDisks.get(dataVolumeIndex) : null;
 
                 String name = disk == null ? null : disk.getName();
                 msg.setName(name == null ? "DATA-for-" + spec.getVmInventory().getName() : name);

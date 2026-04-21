@@ -131,7 +131,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
             }
         }
 
-        if(!isEmpty(spec.getDeprecatedDisksSpecs()) && spec.getRequiredPrimaryStorageUuidForDataVolume() == null){
+        if(!isEmpty(spec.getNonTemplateDeprecatedDisksSpecs()) && spec.getRequiredPrimaryStorageUuidForDataVolume() == null){
             ErrorCode errorCode = operr("The cluster[uuid=%s] mounts multiple primary storage[LocalStorage, other non-LocalStorage primary storage], You must specify the primary storage where the data disk is located",
                     spec.getDestHost().getClusterUuid());
             return errorCode;
@@ -203,11 +203,11 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
     private  List<AllocatePrimaryStorageSpaceMsg> getDataVolumeAllocationMsgs(VmInstanceSpec spec){
         List<AllocatePrimaryStorageSpaceMsg> msgs = new ArrayList<>();
 
-        if (isEmpty(spec.getDeprecatedDisksSpecs())) {
+        if (isEmpty(spec.getNonTemplateDeprecatedDisksSpecs())) {
             return msgs;
         }
 
-        for (DiskAO dinv : spec.getDeprecatedDisksSpecs()) {
+        for (DiskAO dinv : spec.getNonTemplateDeprecatedDisksSpecs()) {
             AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
             amsg.setSize(dinv.getSize());
             amsg.setRequiredHostUuid(spec.getDestHost().getUuid());

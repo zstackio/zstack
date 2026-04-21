@@ -433,7 +433,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                         .eq(PrimaryStorageVO_.uuid, rootPs)
                         .notEq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)
                         .isExists();
-                requireNoneLocalStorage = requireNoneLocalStorage && (isEmpty(spec.getDeprecatedDisksSpecs()) ||
+                requireNoneLocalStorage = requireNoneLocalStorage && (isEmpty(spec.getNonTemplateDeprecatedDisksSpecs()) ||
                         spec.getRequiredPrimaryStorageUuidForDataVolume() != null && Q.New(PrimaryStorageVO.class)
                         .eq(PrimaryStorageVO_.uuid, spec.getRequiredPrimaryStorageUuidForDataVolume())
                         .notEq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)

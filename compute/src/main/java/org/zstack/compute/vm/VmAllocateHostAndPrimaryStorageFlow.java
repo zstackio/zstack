@@ -385,7 +385,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
     }
 
     private boolean needCreateDataVolume(VmInstanceSpec spec) {
-        return !CollectionUtils.isEmpty(spec.getDeprecatedDisksSpecs());
+        return !CollectionUtils.isEmpty(spec.getNonTemplateDeprecatedDisksSpecs());
     }
 
     private FlowChain buildAllocateHostAndPrimaryStorageFlowChain(final FlowTrigger trigger, VmInstanceSpec spec) {

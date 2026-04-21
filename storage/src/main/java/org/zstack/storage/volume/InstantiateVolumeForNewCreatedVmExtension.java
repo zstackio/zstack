@@ -223,35 +223,51 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
             msgs.add(rmsg);
         }
 
-        if (spec.getDataVolumeTemplateUuids() != null) {
+        List<DiskAO> templateDataDisks = spec.getTemplateDeprecatedDisksSpecs();
+        if (spec.getDataVolumeTemplateUuids() != null || !templateDataDisks.isEmpty()) {
             String accountUuid = acntMgr.getOwnerAccountUuidOfResource(spec.getVmInventory().getUuid());
             if (accountUuid == null) {
                 throw new CloudRuntimeException(String.format("accountUuid for vm[uuid:%s] is null", spec.getVmInventory().getUuid()));
             }
 
-            String psUuid = spec.getRequiredPrimaryStorageUuidForDataVolume();
-            if (psUuid == null) {
-                psUuid = spec.getDestRootVolume().getPrimaryStorageUuid();
+            String defaultPsUuid = spec.getRequiredPrimaryStorageUuidForDataVolume();
+            if (defaultPsUuid == null) {
+                defaultPsUuid = spec.getDestRootVolume().getPrimaryStorageUuid();
             }
 
-            for (String imageUuid : spec.getDataVolumeTemplateUuids()) {
-                CreateDataVolumeFromVolumeTemplateMsg cmsg = new CreateDataVolumeFromVolumeTemplateMsg();
-                cmsg.setHostUuid(spec.getDestHost().getUuid());
-                cmsg.setImageUuid(imageUuid);
-                cmsg.setPrimaryStorageUuid(psUuid);
+            if (spec.getDataVolumeTemplateUuids() != null) {
+                for (String imageUuid : spec.getDataVolumeTemplateUuids()) {
+                    List<String> perImageTags = spec.getDataVolumeFromTemplateSystemTags() == null
+                            ? null : spec.getDataVolumeFromTemplateSystemTags().get(imageUuid);
+                    msgs.add(buildCreateDataVolumeFromTemplateMsg(spec, imageUuid, defaultPsUuid, perImageTags, accountUuid));
+                }
+            }
 
-                Tuple t = Q.New(ImageVO.class).eq(ImageVO_.uuid, imageUuid).select(ImageVO_.name, ImageVO_.description).findTuple();
-
-                cmsg.setName("data-volume-" + t.get(0, String.class));
-                cmsg.setDescription(t.get(1, String.class));
-                cmsg.setAccountUuid(accountUuid);
-                cmsg.setSystemTags(spec.getDataVolumeFromTemplateSystemTags().get(imageUuid));
-                bus.makeLocalServiceId(cmsg, VolumeConstant.SERVICE_ID);
-                msgs.add(cmsg);
+            for (DiskAO diskAO : templateDataDisks) {
+                String psUuid = diskAO.getPrimaryStorageUuid() != null ? diskAO.getPrimaryStorageUuid() : defaultPsUuid;
+                msgs.add(buildCreateDataVolumeFromTemplateMsg(spec, diskAO.getTemplateUuid(), psUuid,
+                        diskAO.getSystemTags(), accountUuid));
             }
         }
 
         doInstantiate(msgs.iterator(), spec, completion);
+    }
+
+    private CreateDataVolumeFromVolumeTemplateMsg buildCreateDataVolumeFromTemplateMsg(
+            VmInstanceSpec spec, String imageUuid, String psUuid, List<String> systemTags, String accountUuid) {
+        CreateDataVolumeFromVolumeTemplateMsg cmsg = new CreateDataVolumeFromVolumeTemplateMsg();
+        cmsg.setHostUuid(spec.getDestHost().getUuid());
+        cmsg.setImageUuid(imageUuid);
+        cmsg.setPrimaryStorageUuid(psUuid);
+
+        Tuple t = Q.New(ImageVO.class).eq(ImageVO_.uuid, imageUuid).select(ImageVO_.name, ImageVO_.description).findTuple();
+
+        cmsg.setName("data-volume-" + t.get(0, String.class));
+        cmsg.setDescription(t.get(1, String.class));
+        cmsg.setAccountUuid(accountUuid);
+        cmsg.setSystemTags(systemTags);
+        bus.makeLocalServiceId(cmsg, VolumeConstant.SERVICE_ID);
+        return cmsg;
     }
 
     private InstantiateVolumeMsg fillMsg(InstantiateVolumeMsg msg, VolumeInventory volume, VmInstanceSpec spec) {
