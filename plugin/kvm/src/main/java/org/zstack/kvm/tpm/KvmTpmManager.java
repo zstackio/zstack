@@ -40,8 +40,8 @@ import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.tpm.entity.TpmVO_;
 import org.zstack.header.tpm.message.AddTpmMsg;
 import org.zstack.header.tpm.message.AddTpmReply;
-import org.zstack.header.tpm.message.RemoveTpmMsg;
-import org.zstack.header.tpm.message.RemoveTpmReply;
+import org.zstack.header.tpm.message.TpmDeletionMsg;
+import org.zstack.header.tpm.message.TpmDeletionReply;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.additions.ResetVmTpmMsg;
@@ -136,8 +136,8 @@ public class KvmTpmManager extends AbstractService {
     private void handleLocalMessage(Message msg) {
         if (msg instanceof AddTpmMsg) {
             handle((AddTpmMsg) msg);
-        } else if (msg instanceof RemoveTpmMsg) {
-            handle((RemoveTpmMsg) msg);
+        } else if (msg instanceof TpmDeletionMsg) {
+            handle((TpmDeletionMsg) msg);
         } else if (msg instanceof CloneVmTpmMsg) {
             handle((CloneVmTpmMsg) msg);
         } else if (msg instanceof ResetVmTpmMsg) {
@@ -291,8 +291,8 @@ public class KvmTpmManager extends AbstractService {
             .start();
     }
 
-    private void handle(RemoveTpmMsg msg) {
-        RemoveTpmReply reply = new RemoveTpmReply();
+    private void handle(TpmDeletionMsg msg) {
+        TpmDeletionReply reply = new TpmDeletionReply();
         threadFacade.chainSubmit(new ChainTask(msg) {
             @Override
             public void run(SyncTaskChain chain) {
@@ -330,15 +330,16 @@ public class KvmTpmManager extends AbstractService {
         String tpmUuid;
         Integer keyVersion;
 
-       // enable when TPM delete/VM delete operation
+        // enable when TPM delete/VM delete operation
         boolean force;
 
         List<VmHostFileVO> hostFiles;
 
-        static RemoveTpmFromVmContext valueOf(RemoveTpmMsg msg) {
+        static RemoveTpmFromVmContext valueOf(TpmDeletionMsg msg) {
             RemoveTpmFromVmContext context = new RemoveTpmFromVmContext();
             context.vmInstanceUuid = msg.getVmInstanceUuid();
             context.tpmUuid = msg.getTpmUuid();
+            context.force = msg.isForceDelete();
             return context;
         }
     }
@@ -919,7 +920,7 @@ public class KvmTpmManager extends AbstractService {
     private void handle(APIRemoveTpmMsg msg) {
         APIRemoveTpmEvent event = new APIRemoveTpmEvent(msg.getId());
 
-        RemoveTpmMsg inner = RemoveTpmMsg.valueOf(msg);
+        TpmDeletionMsg inner = TpmDeletionMsg.valueOf(msg);
         bus.makeTargetServiceIdByResourceUuid(inner, SERVICE_ID, msg.getTpmUuid());
         bus.send(inner, new CloudBusCallBack(msg) {
             @Override
