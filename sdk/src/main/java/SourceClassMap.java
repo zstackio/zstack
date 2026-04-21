@@ -73,6 +73,7 @@ public class SourceClassMap {
 			put("org.zstack.baremetal2.chassis.ipmi.BareMetal2IpmiChassisInventory", "org.zstack.sdk.BareMetal2IpmiChassisInventory");
 			put("org.zstack.baremetal2.configuration.BareMetal2ChassisOfferingInventory", "org.zstack.sdk.BareMetal2ChassisOfferingInventory");
 			put("org.zstack.baremetal2.dpu.BareMetal2DpuHostInventory", "org.zstack.sdk.BareMetal2DpuHostInventory");
+			put("org.zstack.baremetal2.dpu.yucca.YuccaBareMetal2DpuChassisConfig", "org.zstack.sdk.YuccaBareMetal2DpuChassisConfig");
 			put("org.zstack.baremetal2.gateway.BareMetal2GatewayInventory", "org.zstack.sdk.BareMetal2GatewayInventory");
 			put("org.zstack.baremetal2.gateway.BareMetal2GatewayProvisionNicInventory", "org.zstack.sdk.BareMetal2GatewayProvisionNicInventory");
 			put("org.zstack.baremetal2.instance.BareMetal2InstanceInventory", "org.zstack.sdk.BareMetal2InstanceInventory");
@@ -1630,6 +1631,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.XmlHookInventory", "org.zstack.kvm.xmlhook.XmlHookInventory");
 			put("org.zstack.sdk.XmlHookType", "org.zstack.kvm.xmlhook.XmlHookType");
 			put("org.zstack.sdk.XskyBlockVolumeInventory", "org.zstack.header.volume.block.XskyBlockVolumeInventory");
+			put("org.zstack.sdk.YuccaBareMetal2DpuChassisConfig", "org.zstack.baremetal2.dpu.yucca.YuccaBareMetal2DpuChassisConfig");
 			put("org.zstack.sdk.ZBoxBackupInventory", "org.zstack.externalbackup.zbox.ZBoxBackupInventory");
 			put("org.zstack.sdk.ZBoxBackupStorageBackupInfo", "org.zstack.externalbackup.zbox.ZBoxBackupStorageBackupInfo");
 			put("org.zstack.sdk.ZBoxInventory", "org.zstack.zbox.ZBoxInventory");
