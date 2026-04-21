@@ -15,7 +15,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.tpm.entity.TpmVO_;
-import org.zstack.header.tpm.message.RemoveTpmMsg;
+import org.zstack.header.tpm.message.TpmDeletionMsg;
 import org.zstack.header.vm.VmDeletionStruct;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.utils.CollectionUtils;
@@ -82,7 +82,7 @@ public class TpmCascadeExtension extends AbstractAsyncCascadeExtension {
         }
 
         new While<>(tpmList).each((tpm, whileCompletion) -> {
-            RemoveTpmMsg msg = new RemoveTpmMsg();
+            TpmDeletionMsg msg = new TpmDeletionMsg();
             msg.setTpmUuid(tpm.getUuid());
             msg.setVmInstanceUuid(tpm.getVmInstanceUuid());
             // delete TPM in cascade must skip VM state checking -> force should always BE TRUE
