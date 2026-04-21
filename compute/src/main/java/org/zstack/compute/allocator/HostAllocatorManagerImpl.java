@@ -42,6 +42,7 @@ import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.query.QueryFacade;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -434,7 +435,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             DesignatedAllocateHostMsg dmsg = (DesignatedAllocateHostMsg) msg;
             if (dmsg.getHostUuid() != null) {
                 hvType = Q.New(HostVO.class).eq(HostVO_.uuid, dmsg.getHostUuid()).select(HostVO_.hypervisorType).findValue();
-            } else if (!org.apache.commons.collections.CollectionUtils.isEmpty(dmsg.getClusterUuids())) {
+            } else if (!CollectionUtils.isEmpty(dmsg.getClusterUuids())) {
                 List<String> hvTypes = Q.New(ClusterVO.class).in(ClusterVO_.uuid, dmsg.getClusterUuids())
                         .groupBy(ClusterVO_.hypervisorType).select(ClusterVO_.hypervisorType).listValues();
                 hvType = hvTypes.size() == 1 ? hvTypes.get(0) : null;
@@ -561,8 +562,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     rmsg.setCpuCapacity(spec.getCpuCapacity());
                     bus.makeTargetServiceIdByResourceUuid(rmsg, HostAllocatorConstant.SERVICE_ID, rmsg.getHostUuid());
                     bus.send(rmsg);
-                    trigger.rollback();               
- 		}
+                    trigger.rollback();
+                }
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
