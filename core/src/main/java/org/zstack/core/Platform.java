@@ -22,6 +22,7 @@ import org.zstack.core.statemachine.StateMachine;
 import org.zstack.core.statemachine.StateMachineImpl;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
+import org.zstack.header.core.I18nMessage;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.core.encrypt.ENCRYPT;
 import org.zstack.header.errorcode.ErrorCode;
@@ -840,7 +841,17 @@ public class Platform {
     }
 
     public static String toI18nString(String code, Locale l, List<Object> args) {
-        return toI18nString(code, l, args.toArray(new Object[0]));
+        return toI18nString(code, l, args.toArray(EMPTY_ARGS));
+    }
+
+    private static String toRawString(String code, Object... args) {
+        Object[] detailsArgs = args == null || args.length == 0 ? EMPTY_ARGS : args.clone();
+        for (int i = 0; i < detailsArgs.length; i++) {
+            if (detailsArgs[i] instanceof I18nMessage) {
+                detailsArgs[i] = ((I18nMessage) detailsArgs[i]).getDetails();
+            }
+        }
+        return stringFormat(code, detailsArgs);
     }
 
     private static String stringFormat(String fmt, Object...args) {
@@ -855,8 +866,8 @@ public class Platform {
         l = l == null ? locale : l;
         Object[] formatArgs = args == null || args.length == 0 ? EMPTY_ARGS : args.clone();
         for (int i = 0; i < formatArgs.length; i++) {
-            if (formatArgs[i] instanceof ErrorCode) {
-                formatArgs[i] = ((ErrorCode) formatArgs[i]).getI18nDetails();
+            if (formatArgs[i] instanceof I18nMessage) {
+                formatArgs[i] = ((I18nMessage) formatArgs[i]).getI18nDetails();
             }
         }
 
@@ -874,6 +885,10 @@ public class Platform {
         } catch (NoSuchMessageException e) {
             return stringFormat(code, formatArgs);
         }
+    }
+
+    public static I18nMessage i18m(String str, Object...args) {
+        return I18nMessage.valueOf(toRawString(str, args), toI18nString(str, args));
     }
 
     public static String i18n(String str, Object...args) {

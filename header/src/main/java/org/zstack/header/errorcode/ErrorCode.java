@@ -1,6 +1,7 @@
 package org.zstack.header.errorcode;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.zstack.header.core.I18nMessage;
 import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -38,7 +39,7 @@ import static org.zstack.utils.opaque.OpaqueConstants.*;
  * }
  * </pre></blockquote>
  */
-public class ErrorCode implements Serializable, Cloneable, OpaqueCollection {
+public class ErrorCode implements Serializable, Cloneable, OpaqueCollection, I18nMessage {
     private String code;
     private String description;
     private String details;
@@ -151,6 +152,7 @@ public class ErrorCode implements Serializable, Cloneable, OpaqueCollection {
         return description;
     }
 
+    @Override
     public String getDetails() {
         return details;
     }
@@ -159,6 +161,7 @@ public class ErrorCode implements Serializable, Cloneable, OpaqueCollection {
         this.details = details;
     }
 
+    @Override
     public String getI18nDetails() {
         return i18nDetails;
     }

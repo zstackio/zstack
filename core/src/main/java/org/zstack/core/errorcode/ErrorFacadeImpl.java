@@ -1,6 +1,7 @@
 package org.zstack.core.errorcode;
 
 import org.zstack.core.errorcode.schema.Error;
+import org.zstack.header.core.I18nMessage;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -110,8 +111,8 @@ public class ErrorFacadeImpl implements ErrorFacade {
         } else {
             Object[] formatArgs = args.clone();
             for (int i = 0; i < args.length; i++) {
-                if (args[i] instanceof ErrorCode) {
-                    formatArgs[i] = ((ErrorCode) args[i]).getDetails();
+                if (args[i] instanceof I18nMessage) {
+                    formatArgs[i] = ((I18nMessage) args[i]).getDetails();
                 }
             }
 
