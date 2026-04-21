@@ -2,7 +2,9 @@ package org.zstack.kvm.vmfiles;
 
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.db.SQL;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
+import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
 
@@ -22,5 +24,11 @@ public abstract class AbstractVmHostBackupFileBase {
     }
 
     public void afterBackup(VmHostFileVO from) {
+    }
+
+    public void clean() {
+        SQL.New(VmHostBackupFileVO.class)
+                .eq(VmHostBackupFileVO_.uuid, self.getUuid())
+                .delete();
     }
 }

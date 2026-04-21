@@ -40,12 +40,12 @@ import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.additions.VmHostFileContentFormat;
 import org.zstack.header.vm.additions.VmHostFileContentVO;
 import org.zstack.header.vm.additions.VmHostFileContentVO_;
+import org.zstack.header.vm.additions.VmHostFileManager;
 import org.zstack.header.vm.additions.VmHostFileOperation;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
 import org.zstack.header.vm.additions.VmHostFileVO_;
 import org.zstack.kvm.KVMAgentCommands;
-import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KvmCommandSender;
 import org.zstack.kvm.KvmResponseWrapper;
 import org.zstack.kvm.vmfiles.message.BackupVmHostFileMsg;
@@ -88,7 +88,7 @@ import static org.zstack.utils.CollectionUtils.findOneOrNull;
 import static org.zstack.utils.CollectionUtils.toMap;
 import static org.zstack.utils.CollectionUtils.transform;
 
-public class KvmSecureBootManager extends AbstractService {
+public class KvmSecureBootManager extends AbstractService implements VmHostFileManager {
     private static final CLogger logger = Utils.getLogger(KvmSecureBootManager.class);
 
     @Autowired
@@ -1070,5 +1070,21 @@ public class KvmSecureBootManager extends AbstractService {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    @Override
+    public void cleanVmHostBackupFile(String resourceUuid) {
+        List<VmHostBackupFileVO> backups = Q.New(VmHostBackupFileVO.class)
+                .eq(VmHostBackupFileVO_.resourceUuid, resourceUuid)
+                .list();
+
+        for (VmHostBackupFileVO backup : backups) {
+            try {
+                vmHostFileFactory.createBackupBase(backup).clean();
+            } catch (Exception e) {
+                logger.warn(String.format("failed to delete VmHostBackupFileVO[uuid:%s, type:%s]: %s",
+                        backup.getUuid(), backup.getType(), e.getMessage()), e);
+            }
+        }
     }
 }
