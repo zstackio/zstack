@@ -44,6 +44,36 @@ public class BlockDevices {
         return allBlockDevices;
     }
 
+    /** DFS lookup by absolute name (e.g. "/dev/sda", "/dev/mapper/mpatha"); null if absent. */
+    public static BlockDevice findByName(List<BlockDevice> roots, String name) {
+        if (roots == null || name == null) {
+            return null;
+        }
+        for (BlockDevice dev : roots) {
+            if (name.equals(dev.getName())) {
+                return dev;
+            }
+            BlockDevice hit = findByName(dev.getChildren(), name);
+            if (hit != null) {
+                return hit;
+            }
+        }
+        return null;
+    }
+
+    /** First direct child with type == "mpath" (the aggregator above a physical disk); null if none. */
+    public static BlockDevice findMultipathChild(BlockDevice device) {
+        if (device == null || device.getChildren() == null) {
+            return null;
+        }
+        for (BlockDevice child : device.getChildren()) {
+            if ("mpath".equalsIgnoreCase(child.getType())) {
+                return child;
+            }
+        }
+        return null;
+    }
+
     public static class BlockDevice {
         private String name;
         private String type;
@@ -62,6 +92,7 @@ public class BlockDevices {
         private long usedRatio;
         private Boolean smartPassed;
         private String smartMessage;
+        private boolean multipath;
 
         BlockDevice() {
 
@@ -85,7 +116,23 @@ public class BlockDevices {
             device.fsType = blockDevice.getFstype();
             device.serialNumber = blockDevice.getSerial();
             device.model = blockDevice.getModel();
+            device.multipath = isMultipathDevice(device);
             return device;
+        }
+
+        /** True if self is mpath, or a disk with an mpath child (i.e. underlying multipath member). */
+        private static boolean isMultipathDevice(BlockDevice device) {
+            if ("mpath".equalsIgnoreCase(device.type)) {
+                return true;
+            }
+            if ("disk".equalsIgnoreCase(device.type) && !CollectionUtils.isEmpty(device.children)) {
+                for (BlockDevice child : device.children) {
+                    if ("mpath".equalsIgnoreCase(child.type)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         private boolean isUsed(BlockDevice device) {
@@ -237,6 +284,14 @@ public class BlockDevices {
 
         public void setSmartMessage(String smartMessage) {
             this.smartMessage = smartMessage;
+        }
+
+        public boolean isMultipath() {
+            return multipath;
+        }
+
+        public void setMultipath(boolean multipath) {
+            this.multipath = multipath;
         }
     }
 }

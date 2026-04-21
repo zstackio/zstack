@@ -140,4 +140,12 @@ public class BlockDevice  {
         return this.smartMessage;
     }
 
+    public boolean multipath;
+    public void setMultipath(boolean multipath) {
+        this.multipath = multipath;
+    }
+    public boolean getMultipath() {
+        return this.multipath;
+    }
+
 }
