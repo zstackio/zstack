@@ -39,7 +39,7 @@ import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.tpm.entity.TpmSpec;
 import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.tpm.entity.TpmVO_;
-import org.zstack.header.tpm.message.RemoveTpmMsg;
+import org.zstack.header.tpm.message.TpmDeletionMsg;
 import org.zstack.header.vm.HaStartVmInstanceMsg;
 import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
 import org.zstack.header.vm.VmAfterExpungeExtensionPoint;
@@ -511,9 +511,10 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
             deleteHostSecretBestEffort(hostUuid, inv.getUuid(), keyVersion, "vm-just-before-delete-from-db");
         }
 
-        RemoveTpmMsg removeMsg = new RemoveTpmMsg();
+        TpmDeletionMsg removeMsg = new TpmDeletionMsg();
         removeMsg.setVmInstanceUuid(inv.getUuid());
         removeMsg.setTpmUuid(tpmUuid);
+        removeMsg.setForceDelete(true);
         bus.makeTargetServiceIdByResourceUuid(removeMsg, SERVICE_ID, removeMsg.getTpmUuid());
         MessageReply reply = bus.call(removeMsg);
         if (!reply.isSuccess()) {

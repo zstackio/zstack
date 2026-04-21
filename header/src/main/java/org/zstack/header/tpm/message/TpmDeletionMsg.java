@@ -1,9 +1,10 @@
 package org.zstack.header.tpm.message;
 
-import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.DeletionMessage;
 import org.zstack.header.tpm.api.APIRemoveTpmMsg;
 
-public class RemoveTpmMsg extends NeedReplyMessage {
+public class TpmDeletionMsg extends DeletionMessage {
     private String tpmUuid;
     private String vmInstanceUuid;
 
@@ -23,10 +24,11 @@ public class RemoveTpmMsg extends NeedReplyMessage {
         this.vmInstanceUuid = vmInstanceUuid;
     }
 
-    public static RemoveTpmMsg valueOf(APIRemoveTpmMsg api) {
-        RemoveTpmMsg msg = new RemoveTpmMsg();
+    public static TpmDeletionMsg valueOf(APIRemoveTpmMsg api) {
+        TpmDeletionMsg msg = new TpmDeletionMsg();
         msg.setTpmUuid(api.getTpmUuid());
         msg.setVmInstanceUuid(api.getVmInstanceUuid());
+        msg.setForceDelete(api.getDeletionMode() == APIDeleteMessage.DeletionMode.Enforcing);
         return msg;
     }
 }
