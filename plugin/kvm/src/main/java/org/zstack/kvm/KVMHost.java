@@ -5727,39 +5727,21 @@ public class KVMHost extends HostBase implements Host {
                     public void run(FlowTrigger trigger, Map data) {
                         String managementIp = getSelf().getManagementIp();
 
-                        // 1. Get all IPs on the host via SSH
                         SshShell sshShell = new SshShell();
                         sshShell.setHostname(managementIp);
                         sshShell.setUsername(getSelf().getUsername());
                         sshShell.setPassword(getSelf().getPassword());
                         sshShell.setPort(getSelf().getPort());
 
-                        SshResult ipResult = sshShell.runCommand(
-                                "ip -4 -o addr show scope global | sed -n \"s/.* inet \\([0-9.]\\+\\).*/\\1/p\"");
-                        if (ipResult.isSshFailure() || ipResult.getReturnCode() != 0) {
-                            logger.warn(String.format("Failed to get host IPs via SSH for TLS cert check on host[uuid:%s]: %s",
-                                    self.getUuid(), ipResult.getExitErrorMessage()));
-                            trigger.next();
-                            return;
-                        }
+                        // Use the same logic as zstack-utility host_plugin.fact() so MN's
+                        // expectation matches what the host itself reports.
+                        String certIpList = KVMHostUtils.collectHostIps(
+                                sshShell, self.getUuid(), managementIp);
+                        List<String> allIps = new ArrayList<>(Arrays.asList(certIpList.split(",")));
+                        // Save detected IPs so apply-ansible-playbook can union with EXTRA_IPS
+                        // without running a second SSH.
+                        data.put("TLS_DETECTED_IPS", certIpList);
 
-                        // 2. Build IP list: managementIp + extra IPs (exclude managementIp and MN VIP)
-                        List<String> allIps = new ArrayList<>();
-                        allIps.add(managementIp);
-                        String[] hostIps = ipResult.getStdout().trim().split("\n");
-                        for (String ip : hostIps) {
-                            String trimmed = ip.trim();
-                            if (!trimmed.isEmpty() && !trimmed.equals(managementIp)
-                                    && !trimmed.equals(CoreGlobalProperty.MN_VIP)
-                                    && !trimmed.equals("127.0.0.1")
-                                    && !allIps.contains(trimmed)) {
-                                allIps.add(trimmed);
-                            }
-                        }
-
-                        String certIpList = String.join(",", allIps);
-
-                        // 3. Check existing cert SAN via SSH
                         SshResult sanResult = sshShell.runCommand(
                                 "openssl x509 -in /etc/pki/libvirt/servercert.pem -noout -ext subjectAltName 2>/dev/null");
 
@@ -5783,7 +5765,6 @@ public class KVMHost extends HostBase implements Host {
                         if (needDeploy) {
                             data.put("NEED_DEPLOY_TLS_CERT", true);
                         }
-                        data.put("TLS_CERT_IPS", certIpList);
 
                         trigger.next();
                     }
@@ -5923,21 +5904,11 @@ public class KVMHost extends HostBase implements Host {
                         deployArguments.setSkipPackages(info.getSkipPackages());
                         deployArguments.setUpdatePackages(String.valueOf(CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT));
 
-                        // Build TLS cert IP list: prefer SSH-detected IPs from check-tls-certs flow
-                        String tlsCertIpsFromData = (String) data.get("TLS_CERT_IPS");
-                        if (tlsCertIpsFromData != null) {
-                            deployArguments.setTlsCertIps(tlsCertIpsFromData);
-                        } else {
-                            // Fallback: management IP + extra IPs from system tag
-                            String managementIp = getSelf().getManagementIp();
-                            String extraIps = HostSystemTags.EXTRA_IPS.getTokenByResourceUuid(
-                                    self.getUuid(), HostSystemTags.EXTRA_IPS_TOKEN);
-                            if (extraIps != null && !extraIps.isEmpty()) {
-                                deployArguments.setTlsCertIps(managementIp + "," + extraIps);
-                            } else {
-                                deployArguments.setTlsCertIps(managementIp);
-                            }
-                        }
+                        String managementIp = getSelf().getManagementIp();
+                        String detectedIps = (String) data.get("TLS_DETECTED_IPS");
+                        String tlsCertIps = KVMHostUtils.unionTlsCertIps(
+                                self.getUuid(), managementIp, detectedIps);
+                        deployArguments.setTlsCertIps(tlsCertIps);
 
                         // Force ansible deploy when TLS cert needs update (detected by check-tls-certs flow)
                         Boolean needDeployTlsCert = (Boolean) data.get("NEED_DEPLOY_TLS_CERT");
