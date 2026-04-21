@@ -115,6 +115,13 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    private boolean hasSdnControllerTag(List<String> systemTags) {
+        if (systemTags == null || systemTags.isEmpty()) {
+            return false;
+        }
+        return systemTags.stream().anyMatch(tag -> tag.startsWith(L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN + "::"));
+    }
+
     private void validate(APICreateL2NetworkMsg msg) {
         if (!L2NetworkType.hasType(msg.getType())) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10011, "unsupported l2Network type[%s]", msg.getType()));
@@ -126,8 +133,11 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10012, "unsupported vSwitch type[%s]", msg.getvSwitchType()));
         }
 
+        msg.setPhysicalInterface(StringUtils.trimToNull(msg.getPhysicalInterface()));
+
         if (L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE.equals(msg.getvSwitchType())
-                && (msg.getPhysicalInterface() == null || msg.getPhysicalInterface().trim().isEmpty())) {
+                && msg.getPhysicalInterface() == null
+                && !hasSdnControllerTag(msg.getSystemTags())) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10021,
                     "physicalInterface is required when vSwitchType is [%s]", msg.getvSwitchType()));
         }
