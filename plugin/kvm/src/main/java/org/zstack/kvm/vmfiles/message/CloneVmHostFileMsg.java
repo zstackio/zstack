@@ -8,6 +8,7 @@ public class CloneVmHostFileMsg extends NeedReplyMessage {
     private String srcVmUuid;
     private List<String> dstVmUuidList;
     private Boolean resetTpm;
+    private boolean ignoreSyncError = false;
 
     public String getSrcVmUuid() {
         return srcVmUuid;
@@ -31,5 +32,13 @@ public class CloneVmHostFileMsg extends NeedReplyMessage {
 
     public void setResetTpm(Boolean resetTpm) {
         this.resetTpm = resetTpm;
+    }
+
+    public boolean isIgnoreSyncError() {
+        return ignoreSyncError;
+    }
+
+    public void setIgnoreSyncError(boolean ignoreSyncError) {
+        this.ignoreSyncError = ignoreSyncError;
     }
 }

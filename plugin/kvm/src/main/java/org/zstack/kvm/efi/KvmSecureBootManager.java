@@ -656,12 +656,20 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
                 }).run(new WhileDoneCompletion(trigger) {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
-                        if (!errorCodeList.isEmpty()) {
-                            logger.warn(String.format("failed to sync host file for VM[uuid=%s] but still continue:\n%s",
-                                    msg.getSrcVmUuid(),
-                                    String.join("\n", transform(errorCodeList.getCauses(), ErrorCode::getReadableDetails))));
+                        if (errorCodeList == null || errorCodeList.isEmpty()) {
+                            trigger.next();
+                            return;
                         }
-                        trigger.next();
+                        String details = String.join("\n", transform(errorCodeList.getCauses(), ErrorCode::getReadableDetails));
+                        if (msg.isIgnoreSyncError()) {
+                            logger.warn(String.format(
+                                    "failed to sync host file for VM[uuid=%s] but ignoreSyncError=true, continue:\n%s",
+                                    msg.getSrcVmUuid(), details));
+                            trigger.next();
+                        } else {
+                            trigger.fail(operr("failed to sync host file for VM[uuid=%s]", msg.getSrcVmUuid())
+                                    .withCause(errorCodeList));
+                        }
                     }
                 });
             }
