@@ -3584,15 +3584,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public boolean skip(Map data) {
-                        boolean resetTpm;
-                        if (msg.getResetTpm() == null) {
-                            resetTpm = rcf.getResourceConfigValue(
-                                    VmGlobalConfig.RESET_TPM_AFTER_VM_CLONE,
-                                    msg.getVmInstanceUuid(), Boolean.class);
-                        } else {
-                            resetTpm = msg.getResetTpm();
-                        }
-                        return !resetTpm;
+                        return msg.getResetTpm() != Boolean.TRUE;
                     }
 
                     @Override
