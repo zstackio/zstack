@@ -46,7 +46,7 @@ public class VmAllocateHostFlow implements Flow {
 
     private long getTotalDataDiskSize(VmInstanceSpec spec) {
         long size = 0;
-        for (DiskAO dinv : spec.getDeprecatedDisksSpecs()) {
+        for (DiskAO dinv : spec.getNonTemplateDeprecatedDisksSpecs()) {
             size += dinv.getSize();
         }
         return size;
@@ -67,7 +67,7 @@ public class VmAllocateHostFlow implements Flow {
         }
         diskSize += getTotalDataDiskSize(spec);
 
-        for (DiskAO diskAO : spec.getDeprecatedDisksSpecs()) {
+        for (DiskAO diskAO : spec.getNonTemplateDeprecatedDisksSpecs()) {
             DiskOfferingInventory dinv = new DiskOfferingInventory();
             dinv.setUuid(diskAO.getDiskOfferingUuid());
             dinv.setDiskSize(diskAO.getSize());

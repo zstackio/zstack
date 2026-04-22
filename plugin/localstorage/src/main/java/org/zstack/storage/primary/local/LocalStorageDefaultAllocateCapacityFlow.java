@@ -137,11 +137,11 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
         AllocatePrimaryStorageSpaceMsg rmsg = buildMessageForRootVolume(spec, localStorageUuid);
         msgs.add(rmsg);
 
-        if (!spec.getDeprecatedDisksSpecs().isEmpty()) {
+        if (!spec.getNonTemplateDeprecatedDisksSpecs().isEmpty()) {
             boolean hasOtherNonLocalStoragePrimaryStorage = isThereOtherNonLocalStoragePrimaryStorageForTheHost(
                     spec.getDestHost().getUuid(), localStorageUuid);
 
-            for (DiskAO dinv : spec.getDeprecatedDisksSpecs()) {
+            for (DiskAO dinv : spec.getNonTemplateDeprecatedDisksSpecs()) {
                 AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                 amsg.setSize(dinv.getSize());
                 amsg.setRequiredHostUuid(spec.getDestHost().getUuid());

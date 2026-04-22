@@ -162,7 +162,8 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
     }
 
     private List<AllocatePrimaryStorageSpaceMsg> buildMessageForDataVolumes(final VmInstanceSpec spec, HostInventory destHost) {
-        int dataVolumeCount = isEmpty(spec.getDeprecatedDisksSpecs()) ? 0 : spec.getDeprecatedDisksSpecs().size();
+        List<DiskAO> nonTemplateDeprecatedDisks = spec.getNonTemplateDeprecatedDisksSpecs();
+        int dataVolumeCount = isEmpty(nonTemplateDeprecatedDisks) ? 0 : nonTemplateDeprecatedDisks.size();
 
         if (dataVolumeCount == 0) {
             return Collections.emptyList();
@@ -170,8 +171,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
 
         List<AllocatePrimaryStorageSpaceMsg> msgs = new ArrayList<>();
         for (int i = 0; i < dataVolumeCount; i++) {
-            DiskAO deprecatedDisk = isEmpty(spec.getDeprecatedDisksSpecs()) || i >= spec.getDeprecatedDisksSpecs().size() ?
-                    null : spec.getDeprecatedDisksSpecs().get(i);
+            DiskAO deprecatedDisk = nonTemplateDeprecatedDisks.get(i);
 
             AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
             amsg.setCandidatePrimaryStorageUuids(spec.getCandidatePrimaryStorageUuidsForDataVolume());

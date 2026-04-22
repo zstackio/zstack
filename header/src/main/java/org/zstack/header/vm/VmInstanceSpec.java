@@ -431,6 +431,24 @@ public class VmInstanceSpec implements Serializable {
         this.deprecatedDisksSpecs = deprecatedDisksSpecs;
     }
 
+    public List<DiskAO> getNonTemplateDeprecatedDisksSpecs() {
+        if (deprecatedDisksSpecs == null) {
+            return Collections.emptyList();
+        }
+        return deprecatedDisksSpecs.stream()
+                .filter(d -> d.getTemplateUuid() == null)
+                .collect(Collectors.toList());
+    }
+
+    public List<DiskAO> getTemplateDeprecatedDisksSpecs() {
+        if (deprecatedDisksSpecs == null) {
+            return Collections.emptyList();
+        }
+        return deprecatedDisksSpecs.stream()
+                .filter(d -> d.getTemplateUuid() != null)
+                .collect(Collectors.toList());
+    }
+
     public VmCustomSpecificationStruct getVmCustomSpecification() {
         return vmCustomSpecification;
     }
