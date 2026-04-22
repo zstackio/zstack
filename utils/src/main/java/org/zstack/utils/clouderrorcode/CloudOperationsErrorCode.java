@@ -11971,6 +11971,78 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_NETWORK_OVN_10084 = "ORG_ZSTACK_NETWORK_OVN_10084";
 
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10000 = "ORG_ZSTACK_NETWORK_ZNS_10000";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10001 = "ORG_ZSTACK_NETWORK_ZNS_10001";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10002 = "ORG_ZSTACK_NETWORK_ZNS_10002";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10003 = "ORG_ZSTACK_NETWORK_ZNS_10003";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10004 = "ORG_ZSTACK_NETWORK_ZNS_10004";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10005 = "ORG_ZSTACK_NETWORK_ZNS_10005";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10006 = "ORG_ZSTACK_NETWORK_ZNS_10006";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10007 = "ORG_ZSTACK_NETWORK_ZNS_10007";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10008 = "ORG_ZSTACK_NETWORK_ZNS_10008";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10009 = "ORG_ZSTACK_NETWORK_ZNS_10009";
+
+    // ZNS error-code semantic mapping:
+    // 10000 ZNS async API returned unexpected status (not 200/202)
+    // 10001 ZNS API returned HTTP error status
+    // 10002 ZNS API I/O/connection error
+    // 10003 ZNS API unexpected exception
+    // 10004 ZNS sync GET failed (without query params)
+    // 10005 ZNS sync GET failed (with query params)
+    // 10006 failed to resolve ZNS SdnController for an L2 network
+    // 10007 failed to resolve ZNS SdnControllerL2 for an L2 network
+    // 10008 reserved
+    // 10009 VM NIC cannot change between ZNS and non-ZNS networks
+    // 10010 unsupported API for ZNS controller
+    // 10011 ZNS L2 only supports L3BasicNetwork
+    // 10012 duplicate ZNS L2NoVlan creation under same controller
+    // 10013 invalid ZNS L2 target type in create/change-vlan flow
+    // 10014 duplicate/invalid Geneve change (or non-Geneve target from Geneve)
+    // 10015 VM NIC cannot move across different ZNS controllers
+    // 10016 duplicate Geneve VNI under same controller
+    // 10017 non-ZNS L2 cannot change to Geneve type
+    // 10018 ZNS non-Geneve L2 cannot change to L2GeneveNetwork
+    // 10019 only one L3 network is allowed per ZNS L2 network
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10010 = "ORG_ZSTACK_NETWORK_ZNS_10010";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10011 = "ORG_ZSTACK_NETWORK_ZNS_10011";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10012 = "ORG_ZSTACK_NETWORK_ZNS_10012";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10013 = "ORG_ZSTACK_NETWORK_ZNS_10013";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10014 = "ORG_ZSTACK_NETWORK_ZNS_10014";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10015 = "ORG_ZSTACK_NETWORK_ZNS_10015";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10016 = "ORG_ZSTACK_NETWORK_ZNS_10016";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10017 = "ORG_ZSTACK_NETWORK_ZNS_10017";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10018 = "ORG_ZSTACK_NETWORK_ZNS_10018";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10019 = "ORG_ZSTACK_NETWORK_ZNS_10019";
+
+    // ZNS DHCP
+    // 10020 ZNS DHCP enable/check failed due to invalid L3/segment state
+    // 10021 reserved
+    // 10022 reserved
+    // 10023 reserved
+    // 10024 unsupported legacy SdnControllerDhcp path for ZNS L3
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10020 = "ORG_ZSTACK_NETWORK_ZNS_10020";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10021 = "ORG_ZSTACK_NETWORK_ZNS_10021";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10022 = "ORG_ZSTACK_NETWORK_ZNS_10022";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10023 = "ORG_ZSTACK_NETWORK_ZNS_10023";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10024 = "ORG_ZSTACK_NETWORK_ZNS_10024";
+
     public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000";
 
     public static final String ORG_ZSTACK_ALIYUN_NAS_STORAGE_PRIMARY_IMAGESTORE_10000 = "ORG_ZSTACK_ALIYUN_NAS_STORAGE_PRIMARY_IMAGESTORE_10000";

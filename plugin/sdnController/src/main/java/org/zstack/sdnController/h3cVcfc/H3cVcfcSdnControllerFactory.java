@@ -20,12 +20,6 @@ public class H3cVcfcSdnControllerFactory implements SdnControllerFactory {
         return sdnControllerType;
     }
 
-    @Override
-    public SdnControllerVO persistSdnController(SdnControllerVO vo) {
-        vo = dbf.persistAndRefresh(vo);
-        return vo;
-    }
-
 
     @Override
     public SdnController getSdnController(SdnControllerVO vo) {

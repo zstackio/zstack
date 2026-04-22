@@ -4,4 +4,5 @@
  *** xref:networkResource/L3Network.adoc[]
  *** xref:networkResource/l3Ipam.adoc[]
  *** xref:networkResource/VpcRouter.adoc[]
+ *** xref:networkResource/ZnsIntegration.adoc[]
  ** xref:networkService/networkService.adoc[]

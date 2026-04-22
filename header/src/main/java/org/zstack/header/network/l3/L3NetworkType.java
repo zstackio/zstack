@@ -6,6 +6,7 @@ public class L3NetworkType {
     private static Map<String, L3NetworkType> types = Collections.synchronizedMap(new HashMap<String, L3NetworkType>());
     private final String typeName;
     private boolean exposed = true;
+    private boolean ipAddressAllocationEnabled = true;
 
     public L3NetworkType(String typeName) {
         this.typeName = typeName;
@@ -23,6 +24,14 @@ public class L3NetworkType {
 
     public void setExposed(boolean exposed) {
         this.exposed = exposed;
+    }
+
+    public boolean isIpAddressAllocationEnabled() {
+        return ipAddressAllocationEnabled;
+    }
+
+    public void setIpAddressAllocationEnabled(boolean ipAddressAllocationEnabled) {
+        this.ipAddressAllocationEnabled = ipAddressAllocationEnabled;
     }
 
     public static boolean hasType(String typeName) {

@@ -1,0 +1,504 @@
+= 网络类型体系：L2NetworkType / VSwitchType / VmNicType
+
+ZStack 的网络类型由三层模型组成，分别描述二层网络拓扑、虚拟交换机实现和虚拟机网卡类型。
+
+== 三层类型模型
+
+[cols="1,1,1"]
+|===
+| L2NetworkType (网络拓扑类型) | VSwitchType (虚拟交换机类型) | VmNicType (网卡类型)
+
+| 定义二层网络的拓扑结构
+| 定义物理机上的虚拟交换机实现
+| 定义虚拟机网卡的驱动/接口类型
+
+| 由 `L2NetworkFactory` 注册
+| 由 `VmInstanceNicFactory` 注册
+| 由 `VSwitchType.addVmNicType()` 绑定
+
+| 存储在 `L2NetworkVO.type`
+| 存储在 `L2NetworkVO.vSwitchType`
+| 存储在 `VmNicVO.type`
+|===
+
+=== 关系
+
+----
+L2NetworkType 1 ──── N VSwitchType 1 ──── N VmNicType
+              (一种L2可选多种vSwitch)    (一种vSwitch可有多种NIC子类型)
+----
+
+例：
+
+----
+L2NoVlanNetwork ──┬── LinuxBridge ──── VIRTUAL_NIC (SubType=NONE)
+                  └── OVN_DPDK   ──┬── dpdkvhostuserclient (SubType=NONE)
+                                   └── VF (SubType=SRIOV)
+
+L2GeneveNetwork ──── ZNS  ──┬── VIRTUAL_NIC (SubType=NONE, 默认)
+                             └── dpdkvhostuserclient (SubType=VHOSTUSER, 需system tag指定)
+
+L2VlanNetwork   ──── LinuxBridge ──── VIRTUAL_NIC (SubType=NONE)
+----
+
+== 注册机制
+
+=== L2NetworkType
+
+在 `L2NetworkFactory.getType()` 中通过 `new L2NetworkType("xxx")` 自动注册到静态 Map。
+
+[source,java]
+----
+// L2NoVlanL2NetworkFactory.java
+public L2NetworkType getType() {
+    return new L2NetworkType(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE);
+}
+----
+
+=== VSwitchType
+
+在 `VmInstanceNicFactory.getType()` 中通过 `new VSwitchType("xxx")` 自动注册到静态 Map。
+
+[source,java]
+----
+// ZnsVmNicFactory.java
+static final VSwitchType vSwitchType = new VSwitchType("ZNS");
+----
+
+=== VmNicType
+
+通过 `VSwitchType.addVmNicType(SubType, VmNicType)` 绑定到 VSwitchType。
+
+[source,java]
+----
+// ZnsVmNicFactory.java
+vSwitchType.addVmNicType(VmNicType.VmNicSubType.NONE, type);
+----
+
+== 全部 L2NetworkType（10种）
+
+[cols="2,3,2"]
+|===
+| L2NetworkType | 工厂类 | 模块
+
+| L2NoVlanNetwork
+| `L2NoVlanL2NetworkFactory`
+| network/
+
+| L2VlanNetwork
+| `L2VlanNetworkFactory`
+| network/
+
+| VxlanNetwork
+| `VxlanNetworkFactory`
+| plugin/vxlan/
+
+| VxlanNetworkPool
+| `VxlanNetworkPoolFactory`
+| plugin/vxlan/
+
+| HardwareVxlanNetwork
+| `HardwareVxlanNetworkFactory`
+| plugin/sdnController/
+
+| HardwareVxlanNetworkPool
+| `HardwareVxlanNetworkPoolFactory`
+| plugin/sdnController/
+
+| L2GeneveNetwork
+| `L2GeneveNetworkFactory`
+| premium/zns/
+
+| PortGroupNetwork
+| `L2PortGroupNetworkFactory`
+| premium/virtualSwitch/
+
+| VirtualSwitchNetwork
+| `L2VirtualSwitchNetworkFactory`
+| premium/virtualSwitch/
+
+| TfNetwork
+| `TfL2NetworkFactory`
+| plugin/sugonSdn/
+|===
+
+== 全部 VSwitchType（7种）
+
+[cols="2,1,1,2"]
+|===
+| VSwitchType | sdnControllerType | nicLifecycleManagedByFactory | NicFactory
+
+| LinuxBridge
+| null
+| false
+| `VmNicFactory`
+
+| ZNS
+| "ZNS"
+| *true*
+| `ZnsVmNicFactory`
+
+| MacVlan
+| null
+| false
+| `VmMacVlanNicFactory`
+
+| OVN_DPDK
+| null
+| false
+| `VmOvnVhostUserNicFactory`
+
+| OVS_DPDK
+| null
+| false
+| `VmOvnVhostUserNicFactory`
+
+| TF
+| null
+| false
+| `TfVmNicFactory`
+
+| OVS_DPDK(vDPA)
+| null
+| false
+| `VmVdpaNicFactory`
+|===
+
+=== VSwitchType 关键属性
+
+[cols="2,4,1"]
+|===
+| 属性 | 作用 | ZNS 值
+
+| `sdnControllerType`
+| 关联的 SDN 控制器类型，null 表示无 SDN
+| "ZNS"
+
+| `nicLifecycleManagedByFactory`
+| NIC 生命周期由 NicFactory 管理 (true) 还是 SdnControllerManager 管理 (false)
+| *true*
+
+| `attachToCluster`
+| 是否需要手动挂载集群
+| false（ZNS 通过 TransportZone 自动挂载）
+
+| `useDpdk`
+| 是否使用 DPDK
+| false
+|===
+
+== L2NetworkType → VSwitchType 映射
+
+L2NetworkVO 同时持有 `type`（L2NetworkType）和 `vSwitchType`（VSwitchType）。
+L2 创建时由用户或系统指定 vSwitchType。同一 L2NetworkType 可搭配不同 VSwitchType：
+
+[cols="2,2,3"]
+|===
+| L2NetworkType | 可用 VSwitchType | 说明
+
+| L2NoVlanNetwork
+| LinuxBridge, OVN_DPDK, OVS_DPDK, ZNS
+| 普通无 VLAN 二层网络
+
+| L2VlanNetwork
+| LinuxBridge, OVN_DPDK, OVS_DPDK, ZNS
+| VLAN tagged 网络
+
+| VxlanNetwork
+| LinuxBridge
+| 软件 VXLAN 覆盖网络
+
+| HardwareVxlanNetwork
+| (SDN 专用)
+| 硬件 SDN VXLAN
+
+| L2GeneveNetwork
+| ZNS
+| ZNS Geneve 覆盖网络
+
+| PortGroupNetwork
+| (VirtualSwitch)
+| VMware 端口组
+
+| TfNetwork
+| TF
+| Tungsten Fabric
+|===
+
+== VSwitchType → VmNicType 映射（按 VmNicSubType）
+
+请求创建 NIC 时：
+
+. 检查 VM 是否有 SRIOV 系统标签 → SubType=SRIOV
+. 检查全局配置是否启用 VHOSTUSER → SubType=VHOSTUSER
+. 否则 → SubType=NONE
+
+`VSwitchType.getVmNicType(subType)` 从 nicTypes Map 中查找对应的 VmNicType。
+
+[cols="2,1,1,1"]
+|===
+| VSwitchType | SubType=NONE | SubType=SRIOV | SubType=VHOSTUSER
+
+| LinuxBridge
+| VIRTUAL_NIC
+| —
+| —
+
+| ZNS
+| VIRTUAL_NIC
+| —
+| dpdkvhostuserclient
+
+| MacVlan
+| MACVLAN_NIC
+| —
+| —
+
+| OVN_DPDK
+| OVN_VHOSTUSER
+| OVN_VF
+| —
+
+| OVS_DPDK
+| —
+| VDPA
+| OVS_VHOSTUSER
+
+| TF
+| TF_NIC
+| —
+| —
+|===
+
+== 创建 VM 时 NIC 组装完整流程
+
+----
+                                 VmAllocateNicFlow
+                                       │
+  L3Network → L2Network → VSwitchType → VmNicType → VmInstanceNicFactory
+                                                           │
+                                                 factory.createVmNic()
+                                               ┌───────────┴───────────┐
+                                               │                       │
+                                        (持久化 VmNicVO)     factory.afterCreateVmNic()
+                                                                       │
+                                             ┌─────────────────────────┤
+                                             │                         │
+                                    普通 NIC (空操作)             ZNS NIC:
+                                                             createSegmentPort()
+                                                             → 创建 UsedIpVO
+                                                             → 回写 VmNicVO.ip/gateway
+                                       │
+                            VmInstantiateResourcePreFlow
+                                       │
+                         SdnControllerManagerImpl.preInstantiateVmResource()
+                                       │
+                        ┌──────────────┼──────────────┐
+                        │              │              │
+                 sdnControllerType   nicLifecycle    其他 SDN:
+                    == null?      ManagedByFactory?  controller.addVmNics()
+                   → 跳过(普通)    → 跳过(ZNS已处理)  (OVN/HW-VXLAN 路径)
+                                       │
+                             KVMHost.completeNicInfo()
+                                       │
+                 KVMCompleteNicInformationExtensionPoint (按 L2Type 分发)
+                        ┌──────┬──────┼──────┬──────┐
+                        │      │      │      │      │
+                     NoVlan  Vlan   VxLAN  Geneve  PortGroup
+                     bridge  bridge bridge bridge   ...
+                     无VLAN  +VLAN  +VNI   (ZNS管)
+                                       │
+                             StartVmCmd → KVM Agent
+----
+
+== L2 物理机配置（Realize）决策
+
+[cols="2,3,3"]
+|===
+| L2 Backend | realize() 行为 | 触发时机
+
+| KVMRealizeL2NoVlan
+| `CreateBridgeCmd` → 物理机创建网桥
+| Host 连接时 + NIC 挂载时
+
+| KVMRealizeL2Vlan
+| `CreateVlanBridgeCmd` → 创建 VLAN 子接口 + 网桥
+| Host 连接时 + NIC 挂载时
+
+| KVMRealizeL2Vxlan
+| `CreateVxlanBridgeCmd` → 创建 VXLAN 隧道 + 网桥
+| 按需（`InstantiateResourceOnAttachingNic`）
+
+| KVMRealizeL2Geneve
+| *空操作*
+| ZNS/OVS controller 自行管理网桥
+|===
+
+== 全部 VmNicType（6种）
+
+[cols="2,2,2,3"]
+|===
+| VmNicType | 类型名 | NicFactory | 说明
+
+| VNIC
+| `"VNIC"`
+| `VmNicFactory`
+| 标准 virtio 网卡，最常用的类型
+
+| dpdkvhostuserclient
+| `"dpdkvhostuserclient"`
+| `VmOvnVhostUserNicFactory`
+| DPDK vhost-user 网卡，使用 OVS 的 vhost-user socket 进行高性能数据传输
+
+| VF
+| `"VF"`
+| `VmVfNicFactory`
+| SR-IOV Virtual Function 网卡，直通物理网卡的虚拟功能
+
+| vDPA
+| `"vDPA"`
+| `VmVdpaNicFactory`
+| vDPA (virtio Data Path Acceleration) 网卡，硬件加速的 virtio 数据路径
+
+| MACVLAN
+| `"MACVLAN"`
+| `VmMacVlanNicFactory`
+| MacVLAN 网卡，基于 MAC 地址的虚拟 LAN
+
+| TFVNIC
+| `"TFVNIC"`
+| `TfVmNicFactory`
+| Tungsten Fabric 网卡
+|===
+
+=== 各 VmNicType 的使用条件
+
+VmNicType 的选择由 `VmNicManagerImpl.getVmNicType()` 决定，依据三个因素：
+
+. L2 网络的 VSwitchType
+. VM 是否有 SRIOV 系统标签（`enableSRIOV::{l3Uuid}`）
+. 全局配置 `ENABLE_VHOSTUSER` 是否开启
+
+选择优先级：SRIOV > VHOSTUSER > NONE，若 VSwitchType 不支持请求的 SubType，回退到 NONE。
+
+[cols="2,2,2,2,2"]
+|===
+| VmNicType | VSwitchType | L2NetworkType | VmNicSubType | 使用条件
+
+| VNIC
+| LinuxBridge
+| L2NoVlanNetwork, L2VlanNetwork
+| NONE
+| 默认情况：未启用 SRIOV 且未启用 VHOSTUSER
+
+| dpdkvhostuserclient
+| OVN_DPDK
+| L2NoVlanNetwork
+| NONE
+| L2 使用 OVN_DPDK vSwitch，默认情况
+
+| dpdkvhostuserclient
+| OVS_DPDK
+| L2NoVlanNetwork, L2VlanNetwork
+| VHOSTUSER
+| L2 使用 OVS_DPDK vSwitch 且全局配置 `ENABLE_VHOSTUSER=true`
+
+| dpdkvhostuserclient
+| OVN_DPDK
+| L2NoVlanNetwork
+| SRIOV
+| L2 使用 OVN_DPDK vSwitch 且 VM 有 `enableSRIOV` 标签（注册为 VF 类型）
+
+| VF
+| LinuxBridge
+| L2NoVlanNetwork, L2VlanNetwork
+| SRIOV
+| L2 使用 LinuxBridge 且 VM 有 `enableSRIOV` 标签
+
+| vDPA
+| OVS_DPDK
+| L2NoVlanNetwork, L2VlanNetwork
+| NONE, SRIOV
+| L2 使用 OVS_DPDK vSwitch，默认或 SRIOV 模式
+
+| MACVLAN
+| MacVlan
+| L2NoVlanNetwork, L2VlanNetwork
+| NONE
+| L2 使用 MacVlan vSwitch
+
+| VNIC
+| ZNS
+| L2NoVlanNetwork, L2VlanNetwork, L2GeneveNetwork
+| NONE
+| L2 使用 ZNS vSwitch，默认网卡类型
+
+| dpdkvhostuserclient
+| ZNS
+| L2NoVlanNetwork, L2VlanNetwork, L2GeneveNetwork
+| VHOSTUSER
+| L2 使用 ZNS vSwitch，用户通过 system tag 指定使用 dpdkvhostuserclient
+
+| TFVNIC
+| TF
+| TfNetwork
+| NONE
+| L2 使用 TF (Tungsten Fabric) vSwitch
+|===
+
+=== NicTO 中 srcPath 设置规则
+
+当 VSwitchType 为 OVN_DPDK 或 ZNS 时，`completeNicInformation()` 会设置
+`srcPath = "/var/run/openvswitch/" + nic.getInternalName()`，用于 DPDK vhost-user socket 连接。
+
+[cols="2,2,2,1"]
+|===
+| L2NetworkType | VSwitchType | 设置 srcPath? | Backend
+
+| L2NoVlanNetwork
+| LinuxBridge
+| 否
+| KVMRealizeL2NoVlanNetworkBackend
+
+| L2NoVlanNetwork
+| OVN_DPDK / ZNS
+| *是*
+| KVMRealizeL2NoVlanNetworkBackend
+
+| L2VlanNetwork
+| LinuxBridge
+| 否
+| KVMRealizeL2VlanNetworkBackend
+
+| L2VlanNetwork
+| OVN_DPDK / ZNS
+| *是*
+| KVMRealizeL2VlanNetworkBackend
+
+| L2GeneveNetwork
+| ZNS
+| 否（仅 OVN_DPDK 设置）
+| KVMRealizeL2GeneveNetworkBackend
+
+| VxlanNetwork
+| LinuxBridge
+| 否
+| KVMRealizeL2VxlanNetworkBackend
+|===
+
+== SDN 两条路径对比
+
+=== Path A: Factory 管理（ZNS）
+
+* `VSwitchType.nicLifecycleManagedByFactory = true`
+* `SdnControllerManagerImpl.preInstantiateVmResource()` 跳过
+* `VmInstanceNicFactory`（ZnsVmNicFactory）在 `afterCreateVmNic()` 中直接调 ZNS API
+* Port 在 VM stop/reboot 时持久化，不随 VM 生命周期反复创建/删除
+
+=== Path B: SdnControllerManager 管理（OVN / Hardware VXLAN）
+
+* `VSwitchType.nicLifecycleManagedByFactory = false`，`sdnControllerType != null`
+* `SdnControllerManagerImpl.preInstantiateVmResource()` 处理
+* 通过 `L2NetworkSystemTags.SdnControllerUuid` 找到控制器 UUID
+* 调用 `SdnControllerL2.addVmNics()` 创建端口
+* Port 随 VM start/stop 反复创建/删除

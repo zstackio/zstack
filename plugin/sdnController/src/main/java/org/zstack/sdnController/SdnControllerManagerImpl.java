@@ -47,10 +47,10 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class SdnControllerManagerImpl extends AbstractService implements SdnControllerManager,
-        L2NetworkCreateExtensionPoint, L2NetworkDeleteExtensionPoint, InstantiateResourceOnAttachingNicExtensionPoint,
-        PreVmInstantiateResourceExtensionPoint, VmReleaseResourceExtensionPoint,
-        ReleaseNetworkServiceOnDetachingNicExtensionPoint, SecurityGroupGetSdnBackendExtensionPoint,
-        AfterAddIpRangeExtensionPoint, IpRangeDeletionExtensionPoint, GetSdnControllerExtensionPoint {
+        L2NetworkCreateExtensionPoint, L2NetworkDeleteExtensionPoint,
+        SecurityGroupGetSdnBackendExtensionPoint,
+        AfterAddIpRangeExtensionPoint, IpRangeDeletionExtensionPoint, GetSdnControllerExtensionPoint,
+        AfterAllocateSdnNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SdnControllerManagerImpl.class);
     private static final Logger log = LoggerFactory.getLogger(SdnControllerManagerImpl.class);
 
@@ -270,8 +270,13 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
-                    tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), SdnControllerVO.class.getSimpleName());
-                    event.setInventory(SdnControllerInventory.valueOf(dbf.findByUuid(vo.getUuid(), SdnControllerVO.class)));
+                    try {
+                        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), SdnControllerVO.class.getSimpleName());
+                        event.setInventory(SdnControllerInventory.valueOf(dbf.findByUuid(vo.getUuid(), SdnControllerVO.class)));
+                    } catch (Exception e) {
+                        logger.warn(String.format("failed to load SdnControllerVO[uuid:%s] after init: %s",
+                                vo.getUuid(), e.getMessage()), e);
+                    }
                 } else {
                     event.setError(reply.getError());
                 }
@@ -454,267 +459,13 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         });
     }
 
-    @Override
-    public void releaseVmResource(VmInstanceSpec spec, Completion completion) {
-        if (VmInstanceConstant.VmOperation.DetachNic != spec.getCurrentVmOperation() &&
-                VmInstanceConstant.VmOperation.Destroy != spec.getCurrentVmOperation()) {
-            completion.success();
-            return;
-        }
-
-        if (spec.getL3Networks() == null || spec.getL3Networks().isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        // we run into this situation when VM nics are all detached and the
-        // VM is being rebooted
-        if (spec.getDestNics().isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        Map<String, List<VmNicInventory>> nicMaps = new HashMap<>();
-        for (VmNicInventory nic : spec.getDestNics()) {
-            L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
-            if (l3Vo == null) {
-                continue;
-            }
-
-            L2NetworkVO l2VO = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
-            if (l2VO == null) {
-                continue;
-            }
-
-            VSwitchType vSwitchType = VSwitchType.valueOf(l2VO.getvSwitchType());
-            if (vSwitchType.getSdnControllerType() == null) {
-                continue;
-            }
-
-            String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
-                    l2VO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
-            if (controllerUuid == null) {
-                completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10005, "sdn l2 network[uuid:%s] is not attached controller", l2VO.getUuid()));
-                return;
-            }
-
-            nicMaps.computeIfAbsent(controllerUuid, k -> new ArrayList<>()).add(nic);
-        }
-
-        if (nicMaps.isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        removeLogicalPort(nicMaps, completion);
-    }
-
-    @Override
-    public void instantiateResourceOnAttachingNic(VmInstanceSpec spec, L3NetworkInventory l3, Completion completion) {
-        L2NetworkVO l2NetworkVO = dbf.findByUuid(l3.getL2NetworkUuid(), L2NetworkVO.class);
-        VSwitchType vSwitchType = VSwitchType.valueOf(l2NetworkVO.getvSwitchType());
-        if (vSwitchType.getSdnControllerType() == null) {
-            completion.success();
-            return;
-        }
-
-        String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
-                l2NetworkVO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
-        if (controllerUuid == null) {
-            completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10006, "sdn l2 network[uuid:%s] is not attached controller", l2NetworkVO.getUuid()));
-            return;
-        }
-
-        Map<String, List<VmNicInventory>> nicMaps = new HashMap<>();
-        List<VmNicInventory> nics = new ArrayList<>();
-        nics.add(spec.getDestNics().get(0));
-        nicMaps.put(controllerUuid, nics);
-        sdnAddVmNics(nicMaps, completion);
-    }
-
-    @Override
-    public void releaseResourceOnAttachingNic(VmInstanceSpec spec, L3NetworkInventory l3, NoErrorCompletion completion) {
-        L2NetworkVO l2NetworkVO = dbf.findByUuid(l3.getL2NetworkUuid(), L2NetworkVO.class);
-        VSwitchType vSwitchType = VSwitchType.valueOf(l2NetworkVO.getvSwitchType());
-        if (vSwitchType.getSdnControllerType() == null) {
-            completion.done();
-            return;
-        }
-
-        String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
-                l2NetworkVO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
-        if (controllerUuid == null) {
-            logger.warn(String.format("sdn l2 network[uuid:%s] is not attached controller", l2NetworkVO.getUuid()));
-            completion.done();
-            return;
-        }
-
-        Map<String, List<VmNicInventory>> nicMaps = new HashMap<>();
-        List<VmNicInventory> nics = new ArrayList<>();
-        nics.add(spec.getDestNics().get(0));
-        nicMaps.put(controllerUuid, nics);
-
-        removeLogicalPort(nicMaps, new Completion(completion) {
-            @Override
-            public void success() {
-                completion.done();
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                logger.info(String.format("failed to remove logical port for vm[uuid:%s] nic[internalName:%s], because: %s",
-                        spec.getVmInventory().getUuid(), spec.getDestNics().get(0).getInternalName(), errorCode.getDetails()));
-                completion.done();
-            }
-        });
-    }
-
-    @Override
-    public void releaseResourceOnDetachingNic(VmInstanceSpec spec, VmNicInventory nic, NoErrorCompletion completion) {
-        L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
-        L2NetworkVO l2NetworkVO = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
-        VSwitchType vSwitchType = VSwitchType.valueOf(l2NetworkVO.getvSwitchType());
-        if (vSwitchType.getSdnControllerType() == null) {
-            completion.done();
-            return;
-        }
-
-        String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
-                l2NetworkVO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
-        if (controllerUuid == null) {
-            logger.warn(String.format("sdn l2 network[uuid:%s] is not attached controller", l2NetworkVO.getUuid()));
-            completion.done();
-            return;
-        }
-
-        Map<String, List<VmNicInventory>> nicMaps = new HashMap<>();
-        List<VmNicInventory> nics = new ArrayList<>();
-        nics.add(spec.getDestNics().get(0));
-        nicMaps.put(controllerUuid, nics);
-
-        removeLogicalPort(nicMaps, new Completion(completion) {
-            @Override
-            public void success() {
-                completion.done();
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                logger.info(String.format("failed to remove logical port for vm[uuid:%s] nic[internalName:%s], because: %s",
-                        spec.getVmInventory().getUuid(), spec.getDestNics().get(0).getInternalName(), errorCode.getDetails()));
-                completion.done();
-            }
-        });
-    }
-
-    @Override
-    public void preBeforeInstantiateVmResource(VmInstanceSpec spec) throws VmInstantiateResourceException {
-
-    }
-
-    @Override
-    public void preInstantiateVmResource(VmInstanceSpec spec, Completion completion) {
-        if (spec.getL3Networks() == null || spec.getL3Networks().isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        // we run into this situation when VM nics are all detached and the
-        // VM is being rebooted
-        if (spec.getDestNics().isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        Map<String, List<VmNicInventory>> nicMaps = new HashMap<>();
-        for (VmNicInventory nic : spec.getDestNics()) {
-            L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
-            if (l3Vo == null) {
-                continue;
-            }
-
-            L2NetworkVO l2VO = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
-            if (l2VO == null) {
-                continue;
-            }
-
-            VSwitchType vSwitchType = VSwitchType.valueOf(l2VO.getvSwitchType());
-            if (vSwitchType.getSdnControllerType() ==null) {
-                continue;
-            }
-
-            String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
-                    l2VO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
-            if (controllerUuid == null) {
-                completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10007, "sdn l2 network[uuid:%s] is not attached controller", l2VO.getUuid()));
-                return;
-            }
-
-            nicMaps.computeIfAbsent(controllerUuid, k -> new ArrayList<>()).add(nic);
-        }
-
-        if (nicMaps.isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        sdnAddVmNics(nicMaps, completion);
-    }
-
-    @Override
-    public void preReleaseVmResource(VmInstanceSpec spec, Completion completion) {
-        // create/start/reboot vm failed, code will go here VmInstantiateResourcePreFlow.rollack()
-        // vm change image failed,
-        if (VmInstanceConstant.VmOperation.NewCreate != spec.getCurrentVmOperation()) {
-            completion.success();
-            return;
-        }
-
-        if (spec.getL3Networks() == null || spec.getL3Networks().isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        // we run into this situation when VM nics are all detached and the
-        // VM is being rebooted
-        if (spec.getDestNics().isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        Map<String, List<VmNicInventory>> nicMaps = new HashMap<>();
-        for (VmNicInventory nic : spec.getDestNics()) {
-            L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
-            if (l3Vo == null) {
-                continue;
-            }
-
-            L2NetworkVO l2VO = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
-            if (l2VO == null) {
-                continue;
-            }
-
-            VSwitchType vSwitchType = VSwitchType.valueOf(l2VO.getvSwitchType());
-            if (vSwitchType.getSdnControllerType() ==null) {
-                continue;
-            }
-
-            String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
-                    l2VO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
-            if (controllerUuid == null) {
-                completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10008, "sdn l2 network[uuid:%s] is not attached controller", l2VO.getUuid()));
-                return;
-            }
-
-            nicMaps.computeIfAbsent(controllerUuid, k -> new ArrayList<>()).add(nic);
-        }
-
-        if (nicMaps.isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        removeLogicalPort(nicMaps, completion);
+    /**
+     * Returns true if the L2 network should be skipped for SDN port management:
+     * it has no SDN controller type configured on its VSwitchType.
+     */
+    private boolean shouldSkipSdnForNic(L2NetworkVO l2VO) {
+        VSwitchType vSwitchType = VSwitchType.valueOf(l2VO.getvSwitchType());
+        return vSwitchType.getSdnControllerType() == null;
     }
 
     @Override
@@ -898,5 +649,114 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             return null;
         }
         return dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
+    }
+
+    @Override
+    public void afterAllocateSdnNic(VmInstanceSpec spec, List<VmNicInventory> nics, Completion completion) {
+        if (nics == null || nics.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        Map<String, List<VmNicInventory>> nicMaps = new HashMap<>();
+        for (VmNicInventory nic : nics) {
+            L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
+            if (l3Vo == null) {
+                continue;
+            }
+
+            L2NetworkVO l2VO = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
+            if (l2VO == null || shouldSkipSdnForNic(l2VO)) {
+                continue;
+            }
+
+            String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
+                    l2VO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
+            if (controllerUuid == null) {
+                completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10006, "sdn l2 network[uuid:%s] has not attached controller", l2VO.getUuid()));
+                return;
+            }
+
+            nicMaps.computeIfAbsent(controllerUuid, k -> new ArrayList<>()).add(nic);
+        }
+
+        if (nicMaps.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        sdnAddVmNics(nicMaps, completion);
+    }
+
+    @Override
+    public void rollbackSdnNic(VmInstanceSpec spec, List<VmNicInventory> nics, Completion completion) {
+        if (nics == null || nics.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        Map<String, List<VmNicInventory>> nicMaps = new HashMap<>();
+        for (VmNicInventory nic : nics) {
+            L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
+            if (l3Vo == null) {
+                continue;
+            }
+
+            L2NetworkVO l2VO = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
+            if (l2VO == null || shouldSkipSdnForNic(l2VO)) {
+                continue;
+            }
+
+            String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
+                    l2VO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
+            if (controllerUuid == null) {
+                continue;
+            }
+
+            nicMaps.computeIfAbsent(controllerUuid, k -> new ArrayList<>()).add(nic);
+        }
+
+        if (nicMaps.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        removeLogicalPort(nicMaps, completion);
+    }
+
+    @Override
+    public void releaseSdnNics(List<VmNicInventory> nics, Completion completion) {
+        if (nics == null || nics.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        Map<String, List<VmNicInventory>> nicMaps = new HashMap<>();
+        for (VmNicInventory nic : nics) {
+            L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
+            if (l3Vo == null) {
+                continue;
+            }
+
+            L2NetworkVO l2VO = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
+            if (l2VO == null || shouldSkipSdnForNic(l2VO)) {
+                continue;
+            }
+
+            String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
+                    l2VO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
+            if (controllerUuid == null) {
+                continue;
+            }
+
+            nicMaps.computeIfAbsent(controllerUuid, k -> new ArrayList<>()).add(nic);
+        }
+
+        if (nicMaps.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        removeLogicalPort(nicMaps, completion);
     }
 }

@@ -2335,6 +2335,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         flowChain.then(new VmAllocateNicFlow());
         flowChain.then(new VmAllocateNicIpFlow());
+        flowChain.then(new VmAllocateSdnNicFlow());
         flowChain.then(new VmSetDefaultL3NetworkOnAttachingFlow());
         setAdditionalFlow(flowChain, spec);
         if (self.getState() == VmInstanceState.Running) {
@@ -5330,6 +5331,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).set(VmNicVO_.state, VmNicState.disable).update();
             }
             self = dbf.reload(self);
+            extEmitter.afterChangeVmNicState(msg.getVmNicUuid(), msg.getState());
             evt.setInventory(VmInstanceInventory.valueOf(self));
             bus.publish(evt);
             return;
