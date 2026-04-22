@@ -1,4 +1,4 @@
-package org.zstack.storage.ceph.primary;
+package org.zstack.storage.primary;
 
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
