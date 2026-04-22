@@ -4638,6 +4638,12 @@ public class KVMAgentCommands {
         public String hostIp;
     }
 
+    public static class ReportVmHostFileChangedCmd {
+        public String hostUuid;
+        public String vmUuid;
+        public List<String> types;
+    }
+
     public static class ShutdownHostCmd extends AgentCommand {
     }
 

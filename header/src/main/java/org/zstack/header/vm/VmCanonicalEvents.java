@@ -21,7 +21,6 @@ public class VmCanonicalEvents {
     public static final String VM_NIC_INFO_DUPLICATE_PATH = "/vm/nicinfo/duplicate";
     public static final String VM_NIC_INFO_IPRANGE_CONFLICT_PATH = "/vm/nicinfo/iprangeConflict";
     public static final String VM_HOST_FILE_CHANGED_PATH = "/vm/hostfile/changed";
-    public static final String KVM_REPORT_VM_HOST_FILE_CHANGED = "/kvm/reportvmhostfilechanged";
 
     @NeedJsonSchema
     public static class VmCrashReportData {
