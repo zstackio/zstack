@@ -1,8 +1,8 @@
 package org.zstack.header.tpm.message;
 
 import org.zstack.header.message.APIDeleteMessage;
-import org.zstack.header.message.DeletionMessage;
 import org.zstack.header.tpm.api.APIRemoveTpmMsg;
+import org.zstack.header.message.DeletionMessage;
 
 public class TpmDeletionMsg extends DeletionMessage {
     private String tpmUuid;
