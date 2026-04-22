@@ -26,8 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionUtils.*;
 
 /**
@@ -122,7 +121,7 @@ public class ImageBackupStorageAllocatorFlow extends AbstractHostAllocatorFlow {
 
         for (HostCandidate candidate : candidates) {
             if (!zoneUuids.contains(candidate.host.getZoneUuid())) {
-                reject(candidate, String.format("not in zones %s attached to backup storage of image[uuid:%s]",
+                reject(candidate, i18m("not in zones %s attached to backup storage of image[uuid:%s]",
                         zoneUuids, spec.getImage().getUuid()));
             }
         }

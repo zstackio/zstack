@@ -19,6 +19,8 @@ import org.zstack.utils.CollectionUtils;
 
 import java.util.*;
 
+import static org.zstack.core.Platform.i18m;
+
 /**
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -58,7 +60,7 @@ public class AttachedVolumePrimaryStorageAllocatorFlow extends AbstractHostAlloc
         }
 
         if (clusterHavingAllPs.isEmpty()) {
-            rejectAll("need to attach primary storage: " + requiredPsUuids);
+            rejectAll(i18m("need to attach primary storage: %s", requiredPsUuids));
             next();
             return;
         }
@@ -66,7 +68,7 @@ public class AttachedVolumePrimaryStorageAllocatorFlow extends AbstractHostAlloc
         // find out host in above result clusters
         for (HostCandidate candidate : candidates) {
             if (!clusterHavingAllPs.contains(candidate.host.getClusterUuid())) {
-                reject(candidate, "need to attach primary storage: " + requiredPsUuids);
+                reject(candidate, i18m("need to attach primary storage: %s", requiredPsUuids));
             }
         }
 

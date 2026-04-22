@@ -22,6 +22,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.i18m;
 import static org.zstack.utils.CollectionUtils.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -147,7 +148,7 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         Set<String> uuidSet = transformToSet(hosts, HostVO::getUuid);
         for (HostCandidate candidate : candidates) {
             if (!uuidSet.contains(candidate.host.getUuid())) {
-                reject(candidate, "not accessible to the specific primary storage");
+                reject(candidate, i18m("not accessible to the specific primary storage"));
             }
         }
 
@@ -157,7 +158,7 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
 
         huuids = transform(filterHostHavingAccessiblePrimaryStorage(huuids, spec), HostVO::getUuid);
         if (huuids.isEmpty()) {
-            rejectAll("not accessible to the specific primary storage");
+            rejectAll(i18m("not accessible to the specific primary storage"));
             return;
         }
 
@@ -176,7 +177,7 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         q.setParameter("huuids", huuids);
         List<String> psUuids = q.getResultList();
         if (psUuids.isEmpty()) {
-            rejectAll("no primary storage available for new-created VM");
+            rejectAll(i18m("no primary storage available for new-created VM"));
             return;
         }
 
@@ -196,11 +197,11 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                         .param("phStatus", PrimaryStorageHostStatus.Connected)
                         .list();
                 if (huuids.isEmpty()) {
-                    rejectAll(String.format("primary storage %s required for new-created VM", requiredPsUuids));
+                    rejectAll(i18m("primary storage %s required for new-created VM", requiredPsUuids));
                     return;
                 }
             } else {
-                rejectAll(String.format("primary storage %s required for new-created VM", requiredPsUuids));
+                rejectAll(i18m("primary storage %s required for new-created VM", requiredPsUuids));
                 return;
             }
         }
@@ -248,18 +249,18 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         }
 
         if (hostCandidates.isEmpty()) {
-            rejectAll("no capable primary storage for new-created VM");
+            rejectAll(i18m("no capable primary storage for new-created VM"));
             return;
         }
 
         for (HostCandidate candidate : candidates) {
             if (!hostCandidates.contains(candidate.getUuid())) {
                 if (spec.getVmOperation().equals(VmOperation.NewCreate.toString())) {
-                    reject(candidate, String.format(
+                    reject(candidate, i18m(
                             "required primary storage[state: %s, status: %s, available capacity %s bytes]",
                             PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getDiskSize()));
                 } else {
-                    reject(candidate, String.format(
+                    reject(candidate, i18m(
                             "required primary storage[state: %s or %s, status: %s]",
                             PrimaryStorageState.Enabled, PrimaryStorageState.Disabled, PrimaryStorageStatus.Connected));
                 }

@@ -146,7 +146,8 @@ class CreateVmWithDesignatedPSCase extends SubCase {
             }
             assert candidates1.size() == 1
             assert candidates1[0]["hostName"] == "kvm1"
-            assert candidates1[0]["reject"] == Platform.i18n("not accessible to the specific primary storage")
+            assert candidates1[0]["reject"] == "not accessible to the specific primary storage"
+            assert candidates1[0]["rejectI18n"] == Platform.i18n("not accessible to the specific primary storage")
             assert candidates1[0]["rejectBy"] == "HostPrimaryStorageAllocatorFlow"
 
             def kvm2 = env.inventoryByName("kvm2") as HostInventory
@@ -155,7 +156,8 @@ class CreateVmWithDesignatedPSCase extends SubCase {
             }
             assert candidates2.size() == 1
             assert candidates2[0]["hostName"] == "kvm2"
-            assert candidates2[0]["reject"] == Platform.i18n("not accessible to the specific primary storage")
+            assert candidates2[0]["reject"] == "not accessible to the specific primary storage"
+            assert candidates2[0]["rejectI18n"] == Platform.i18n("not accessible to the specific primary storage")
             assert candidates2[0]["rejectBy"] == "HostPrimaryStorageAllocatorFlow"
         }
     }

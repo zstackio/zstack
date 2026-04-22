@@ -12,6 +12,8 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 
+import static org.zstack.core.Platform.i18m;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class DesignatedHostAllocatorFlow extends AbstractHostAllocatorFlow {
     private static final CLogger logger = Utils.getLogger(DesignatedHostAllocatorFlow.class);
@@ -26,19 +28,19 @@ public class DesignatedHostAllocatorFlow extends AbstractHostAllocatorFlow {
                           String hypervisorType) {
         for (HostCandidate candidate : candidates) {
             if (zoneUuid != null && !candidate.host.getZoneUuid().equals(zoneUuid)) {
-                reject(candidate, String.format("not in zone[uuid:%s]", zoneUuid));
+                reject(candidate, i18m("not in zone[uuid:%s]", zoneUuid));
                 continue;
             }
             if (!CollectionUtils.isEmpty(clusterUuids) && !clusterUuids.contains(candidate.host.getClusterUuid())) {
-                reject(candidate, String.format("not in cluster[uuid:%s]", clusterUuids));
+                reject(candidate, i18m("not in cluster[uuid:%s]", clusterUuids));
                 continue;
             }
             if (hostUuid != null && !candidate.getUuid().equals(hostUuid)) {
-                reject(candidate, String.format("must be host[uuid:%s]", hostUuid));
+                reject(candidate, i18m("must be host[uuid:%s]", hostUuid));
                 continue;
             }
             if (hypervisorType != null && !candidate.host.getHypervisorType().equals(hypervisorType)) {
-                reject(candidate, String.format("not with type[%s]", hypervisorType));
+                reject(candidate, i18m("not with type[%s]", hypervisorType));
             }
         }
     }

@@ -21,8 +21,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.TypedQuery;
 import java.util.List;
 
-import static org.zstack.core.Platform.inerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 /**
  * Created by xing5 on 2016/8/17.
@@ -63,20 +62,18 @@ public class BackupStorageSelectPrimaryStorageAllocatorFlow extends AbstractHost
             }
 
             List<String> result = findHostsByPrimaryStorageTypes(possiblePrimaryStorageTypes);
-            String rejectReason = String.format("need to attach backup storage with type %s for image[uuid:%s, name:%s]",
-                        possiblePrimaryStorageTypes, spec.getImage().getUuid(), spec.getImage().getName());
             for (HostCandidate candidate : candidates) {
                 if (!result.contains(candidate.getUuid())) {
-                    reject(candidate, rejectReason);
+                    reject(candidate, i18m("need to attach backup storage with type %s for image[uuid:%s, name:%s]",
+                            possiblePrimaryStorageTypes, spec.getImage().getUuid(), spec.getImage().getName()));
                 }
             }
         } else if (!psUuids.isEmpty()) {
             List<String> result = findHostsByPrimaryStorageUuids(psUuids);
-            String rejectReason = String.format("need to attach backup storage%s for image[uuid:%s, name:%s]",
-                        spec.getRequiredBackupStorageUuid(), spec.getImage().getUuid(), spec.getImage().getName());
             for (HostCandidate candidate : candidates) {
                 if (!result.contains(candidate.getUuid())) {
-                    reject(candidate, rejectReason);
+                    reject(candidate, i18m("need to attach backup storage %s for image[uuid:%s, name:%s]",
+                            spec.getRequiredBackupStorageUuid(), spec.getImage().getUuid(), spec.getImage().getName()));
                 }
             }
         } else {

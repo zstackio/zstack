@@ -16,7 +16,7 @@ import com.google.common.base.Objects;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.i18n;
+import static org.zstack.core.Platform.i18m;
 
 public class VmHostFileAllocatorExtensionPoint implements HostAllocatorFilterExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmHostFileAllocatorExtensionPoint.class);
@@ -55,8 +55,8 @@ public class VmHostFileAllocatorExtensionPoint implements HostAllocatorFilterExt
 
         for (HostCandidate c : candidates) {
             if (!Objects.equal(lastHostUuid, c.getUuid())) {
-                String reason = i18n("only allowed start on last host: unsynchronized %s VM host files exist", types);
-                c.markAsRejected(getClass(), reason);
+                c.markAsRejected(getClass(),
+                        i18m("only allowed start on last host: unsynchronized %s VM host files exist", types));
             }
         }
     }

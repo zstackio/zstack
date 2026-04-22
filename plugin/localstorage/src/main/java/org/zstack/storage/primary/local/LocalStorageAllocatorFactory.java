@@ -41,7 +41,7 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.i18n;
+import static org.zstack.core.Platform.i18m;
 import static org.zstack.header.image.ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA;
 
 /**
@@ -150,7 +150,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
             for (HostCandidate candidate : candidates) {
                 if (toRemoveHuuids.contains(candidate.getUuid())) {
-                    candidate.markAsRejected(getClass(), i18n("disk capacity[%s bytes] required", spec.getDiskSize()));
+                    candidate.markAsRejected(getClass(), i18m("disk capacity[%s bytes] required", spec.getDiskSize()));
                 }
             }
         }
@@ -178,7 +178,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 for (HostCandidate candidate : candidates) {
                     if (!hostUuid.equals(candidate.getUuid())) {
                         candidate.markAsRejected(getClass(),
-                                i18n("local storage volume[uuid:%s] is not on this host", volume.getUuid()));
+                                i18m("local storage volume[uuid:%s] is not on this host", volume.getUuid()));
                     }
                 }
 
