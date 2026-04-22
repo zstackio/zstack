@@ -31,7 +31,9 @@ import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
 import org.zstack.header.vm.BeforeHaStartVmInstanceExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
+import org.zstack.header.vm.ConvertVmInstanceToTemplatedVmExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstantiateResourceException;
 import org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint;
 import org.zstack.header.vm.VmMigrationType;
@@ -77,12 +79,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.header.vm.additions.VmHostFileSyncReason.PostMigration;
-import static org.zstack.header.vm.additions.VmHostFileSyncReason.BeforeHaStart;
-import static org.zstack.header.vm.additions.VmHostFileSyncReason.PrepareReRead;
-import static org.zstack.header.vm.additions.VmHostFileSyncReason.PrepareRead;
-import static org.zstack.header.vm.additions.VmHostFileSyncReason.ResourceRelease;
-import static org.zstack.header.vm.additions.VmHostFileSyncReason.SnapshotGroupOnlineBackup;
+import static org.zstack.header.vm.additions.VmHostFileSyncReason.*;
 import static org.zstack.header.vm.additions.VmHostFileType.NvRam;
 import static org.zstack.kvm.KVMConstant.*;
 import static org.zstack.utils.CollectionDSL.list;
@@ -95,7 +92,8 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         VmReleaseResourceExtensionPoint,
         VmInstanceMigrateExtensionPoint,
         VolumeSnapshotCreationExtensionPoint,
-        BeforeHaStartVmInstanceExtensionPoint {
+        BeforeHaStartVmInstanceExtensionPoint,
+        ConvertVmInstanceToTemplatedVmExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmSecureBootExtensions.class);
 
     @Autowired
@@ -812,5 +810,63 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
     @Override
     public void afterVolumeSnapshotCreated(VolumeSnapshotInventory snapshot, Completion completion) {
         completion.success();
+    }
+
+    @Override
+    public void beforeConvertVmInstanceToTemplatedVm(String vmUuid, Completion completion) {
+        boolean needRegisterNvRam = !vmHostFileFactory.vmHostFileTypeNeedRegisterForVm(vmUuid).isEmpty();
+        if (!needRegisterNvRam) {
+            completion.success();
+            return;
+        }
+
+        Tuple tuple = Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, vmUuid)
+                .select(VmInstanceVO_.state, VmInstanceVO_.hostUuid, VmInstanceVO_.lastHostUuid)
+                .findTuple();
+        VmInstanceState vmState = tuple.get(0, VmInstanceState.class);
+        String hostUuid = tuple.get(1, String.class);
+        if (hostUuid == null) {
+            hostUuid = tuple.get(2, String.class);
+        }
+
+        List<VmHostFileVO> fileList = Q.New(VmHostFileVO.class)
+                .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
+                .eq(VmHostFileVO_.hostUuid, hostUuid)
+                .list();
+        if (fileList.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        if (vmState == VmInstanceState.Stopped && fileList.stream().allMatch(it -> it.getChangeDate() == null)) {
+            completion.success();
+            return;
+        }
+
+        SyncVmHostFilesFromHostMsg syncMsg = new SyncVmHostFilesFromHostMsg();
+        syncMsg.setHostUuid(hostUuid);
+        syncMsg.setVmUuid(vmUuid);
+        syncMsg.setSyncReason(ConventToTemplatedVM.reason());
+
+        for (VmHostFileVO file : fileList) {
+            if (file.getType() == NvRam) {
+                syncMsg.setNvRamPath(file.getPath());
+            } else if (file.getType() == VmHostFileType.TpmState) {
+                syncMsg.setTpmStateFolder(file.getPath());
+            }
+        }
+
+        bus.makeLocalServiceId(syncMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
+        bus.send(syncMsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    completion.success();
+                    return;
+                }
+                completion.fail(reply.getError());
+            }
+        });
     }
 }

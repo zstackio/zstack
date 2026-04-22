@@ -80,7 +80,6 @@ import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NicIpAddressInfo;
@@ -3671,13 +3670,53 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         APIConvertVmInstanceToTemplatedVmInstanceEvent event = new APIConvertVmInstanceToTemplatedVmInstanceEvent(msg.getId());
-        TemplatedVmInstanceVO templatedVmInstance = new TemplatedVmInstanceVO();
-        templatedVmInstance.setUuid(msg.getVmInstanceUuid());
-        dbf.persistAndRefresh(templatedVmInstance);
 
-        TemplatedVmInstanceInventory inventory = TemplatedVmInstanceInventory.valueOf(templatedVmInstance);
-        event.setInventory(inventory);
-        bus.publish(event);
+        SimpleFlowChain.of("convert-vm-to-templated-" + msg.getVmInstanceUuid())
+                .then("before-convert-extensions", trigger -> {
+                    List<ConvertVmInstanceToTemplatedVmExtensionPoint> exts =
+                            pluginRgty.getExtensionList(ConvertVmInstanceToTemplatedVmExtensionPoint.class);
+                    new While<>(exts).each((ext, whileCompletion) -> {
+                        ext.beforeConvertVmInstanceToTemplatedVm(msg.getVmInstanceUuid(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                whileCompletion.done();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                whileCompletion.addError(errorCode);
+                                whileCompletion.allDone();
+                            }
+                        });
+                    }).run(new WhileDoneCompletion(trigger) {
+                        @Override
+                        public void done(ErrorCodeList errorCodeList) {
+                            if (errorCodeList.isEmpty()) {
+                                trigger.next();
+                            } else {
+                                trigger.fail(operr("failed to convert VM to templated VM")
+                                        .withOpaque("vm.uuid", msg.getVmInstanceUuid())
+                                        .withCause(errorCodeList));
+                            }
+                        }
+                    });
+                })
+                .then("create-templated-vm", trigger -> {
+                    TemplatedVmInstanceVO templatedVmInstance = new TemplatedVmInstanceVO();
+                    templatedVmInstance.setUuid(msg.getVmInstanceUuid());
+                    dbf.persistAndRefresh(templatedVmInstance);
+
+                    TemplatedVmInstanceInventory inventory = TemplatedVmInstanceInventory.valueOf(templatedVmInstance);
+                    event.setInventory(inventory);
+                    trigger.next();
+                })
+                .propagateExceptionTo(msg)
+                .done(() -> bus.publish(event))
+                .error(err -> {
+                    event.setError(err);
+                    bus.publish(event);
+                })
+                .start();
     }
 
     private void handle(APIGetVmUptimeMsg msg) {
