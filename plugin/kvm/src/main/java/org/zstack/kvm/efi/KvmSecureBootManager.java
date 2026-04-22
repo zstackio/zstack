@@ -1090,7 +1090,17 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
         VmHostBackupFileDeletionReply reply = new VmHostBackupFileDeletionReply();
         VmHostBackupFileVO backup = databaseFacade.findByUuid(msg.getUuid(), VmHostBackupFileVO.class);
         if (backup != null) {
-            vmHostFileFactory.createBackupBase(backup).clean();
+            try {
+                vmHostFileFactory.createBackupBase(backup).clean();
+            } catch (Exception e) {
+                if (msg.isForceDelete()) {
+                    logger.warn(String.format("force delete VmHostBackupFile[uuid:%s] ignored cleanup error: %s",
+                            backup.getUuid(), e.getMessage()), e);
+                } else {
+                    reply.setError(operr("failed to delete VmHostBackupFile[uuid:%s]", backup.getUuid())
+                            .withException(e));
+                }
+            }
         }
         bus.reply(msg, reply);
     }
