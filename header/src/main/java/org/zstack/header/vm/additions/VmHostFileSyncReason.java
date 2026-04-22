@@ -14,6 +14,7 @@ public enum VmHostFileSyncReason {
     BeforeHaStart("on before HA start (from last host)"),
     PeriodicDirtyCheck("on periodic dirty check"),
     PeriodicForceSync("on periodic force sync"),
+    ConventToTemplatedVM("on convent to templated VM"),
     ;
 
     public final String detail;
