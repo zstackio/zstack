@@ -31,7 +31,7 @@ public class FilterFlow extends AbstractHostAllocatorFlow {
             try {
                 filter.filter(new ArrayList<>(candidates), spec);
             } catch (OperationFailureException e) {
-                candidates.forEach(candidate -> candidate.markAsRejected(filter.getClass(), e.getErrorCode().getDetails()));
+                candidates.forEach(candidate -> candidate.markAsRejected(filter.getClass(), e.getErrorCode()));
                 next();
                 return;
             }

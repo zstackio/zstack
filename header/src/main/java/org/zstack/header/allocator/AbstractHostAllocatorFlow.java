@@ -2,6 +2,7 @@ package org.zstack.header.allocator;
 
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.header.core.I18nMessage;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.utils.Utils;
@@ -55,7 +56,7 @@ public abstract class AbstractHostAllocatorFlow {
 
     /**
      * Call fail() will stop pagination and stop allocating now.
-     * If you want to start next pagination, use {@link #rejectAll(String)} and {@link #next()}.
+     * If you want to start next pagination, use {@link #rejectAll(I18nMessage)} and {@link #next()}.
      */
     protected void fail(ErrorCode reason) {
         throw new OperationFailureException(reason);
@@ -76,7 +77,16 @@ public abstract class AbstractHostAllocatorFlow {
         logger.debug(String.format("%s reject host[%s]: %s", candidate.rejectBy, candidate.getUuid(), candidate.reject));
     }
 
+    protected void reject(HostCandidate candidate, I18nMessage reason) {
+        candidate.markAsRejected(getClass().getSimpleName(), reason);
+        logger.debug(String.format("%s reject host[%s]: %s", candidate.rejectBy, candidate.getUuid(), candidate.reject));
+    }
+
     protected void rejectAll(String reason) {
+        candidates.forEach(c -> reject(c, reason));
+    }
+
+    protected void rejectAll(I18nMessage reason) {
         candidates.forEach(c -> reject(c, reason));
     }
 

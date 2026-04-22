@@ -10,7 +10,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.i18n;
+import static org.zstack.core.Platform.i18m;
 
 public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilterExtensionPoint {
     private CLogger logger = Utils.getLogger(KVMHostAllocatorFilterExtensionPoint.class);
@@ -187,7 +187,7 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
             Map<KVMPropertyName, String> candidateHostPropertyMap = getPropertyMapOfHost(candidate.getUuid());
             if (!allPropertiesMatched(srcHostPropertyMap, candidateHostPropertyMap)) {
                 candidate.markAsRejected(getClass(),
-                        i18n("kvm properties mismatch detected from host[uuid:%s]", srcHostUuid));
+                        i18m("kvm properties mismatch detected from host[uuid:%s]", srcHostUuid));
             }
         }
     }

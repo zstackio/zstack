@@ -16,12 +16,12 @@ import org.zstack.header.tag.TagInventory;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.zstack.core.Platform.i18m;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
@@ -48,7 +48,7 @@ public class PrimaryStorageTagAllocatorExtension implements InstanceOfferingTagA
             if (!results.contains(candidate.getUuid())) {
                 candidate.markAsRejected(
                         getClass().getSimpleName(),
-                        String.format("not attach to primary storage[uuid:%s] the instance offering tag specified", psUuid));
+                        i18m("not attach to primary storage[uuid:%s] the instance offering tag specified", psUuid));
             }
         }
     }
@@ -99,7 +99,7 @@ public class PrimaryStorageTagAllocatorExtension implements InstanceOfferingTagA
             if (!vos.contains(candidate.getUuid())) {
                 candidate.markAsRejected(
                         getClass().getSimpleName(),
-                        String.format("not attach to primary storage the user tag[%s] specified", tag));
+                        i18m("not attach to primary storage the user tag[%s] specified", tag));
             }
         }
     }

@@ -2061,7 +2061,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
         for (HostCandidate candidate : candidates) {
             if (!architecture.equals(candidate.host.getArchitecture())) {
-                candidate.markAsRejected(getClass(), i18n("architecture %s required", architecture));
+                candidate.markAsRejected(getClass(), i18m("architecture %s required", architecture));
             }
         }
     }

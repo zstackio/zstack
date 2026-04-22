@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.i18m;
 import static org.zstack.utils.CollectionUtils.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -51,7 +52,7 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
     private boolean enoughCpu(HostCandidate candidate, long cpu) {
         boolean result = candidate.host.getCapacity().getAvailableCpu() >= cpu;
         if (!result) {
-            reject(candidate, "no enough CPU");
+            reject(candidate, i18m("no enough CPU"));
         }
         return result;
     }
@@ -59,7 +60,7 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
     private boolean enoughMemory(HostCandidate candidate, long memory, long oldMemory) {
         boolean result = memoryCheck(memory, oldMemory, candidate.host);
         if (!result) {
-            reject(candidate, "no enough memory");
+            reject(candidate, i18m("no enough memory"));
         }
         return result;
     }
@@ -75,7 +76,7 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
 
         for (HostCandidate candidate : ret) {
             if (!hostUuidSet.contains(candidate.host.getUuid())) {
-                reject(candidate, "not enough capacity");
+                reject(candidate, i18m("not enough capacity"));
             }
         }
 

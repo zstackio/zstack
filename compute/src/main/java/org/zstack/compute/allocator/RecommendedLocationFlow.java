@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.i18m;
 import static org.zstack.utils.CollectionUtils.*;
 
 /**
@@ -40,7 +41,7 @@ public class RecommendedLocationFlow extends AbstractHostAllocatorFlow {
         } else {
             for (HostCandidate candidate : from) {
                 if (!to.contains(candidate)) {
-                    reject(candidate, "not recommended by " + candidate.notRecommendBy);
+                    reject(candidate, i18m("not recommended by %s", candidate.notRecommendBy));
                 }
             }
         }
@@ -60,7 +61,7 @@ public class RecommendedLocationFlow extends AbstractHostAllocatorFlow {
 
         for (HostCandidate candidate : from) {
             if (candidate.recommendBy == null || candidate.recommendBy.size() < maxVote) {
-                reject(candidate, "another host is recommended");
+                reject(candidate, i18m("another host is recommended"));
             }
         }
 

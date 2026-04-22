@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.i18m;
 import static org.zstack.utils.CollectionUtils.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -20,7 +21,7 @@ public class AvoidHostAllocatorFlow extends AbstractHostAllocatorFlow {
         final Set<String> avoidHostUuids = avoidHostUuids();
         for (HostCandidate candidate : candidates) {
             if (avoidHostUuids.contains(candidate.getUuid())) {
-                reject(candidate, "in avoid host list");
+                reject(candidate, i18m("in avoid host list"));
             }
         }
 

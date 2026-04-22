@@ -11,6 +11,8 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.i18m;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class HostStateAndHypervisorAllocatorFlow extends AbstractHostAllocatorFlow {
     private static final CLogger logger = Utils.getLogger(HostStateAndHypervisorAllocatorFlow.class);
@@ -21,17 +23,17 @@ public class HostStateAndHypervisorAllocatorFlow extends AbstractHostAllocatorFl
     private void allocate(String hypervisorType) {
         for (HostCandidate candidate : candidates) {
             if (hypervisorType != null && !hypervisorType.equals(candidate.host.getHypervisorType())) {
-                reject(candidate, hypervisorType + " hypervisorType required");
+                reject(candidate, i18m("%s hypervisorType required", hypervisorType));
                 continue;
             }
 
             if (candidate.host.getState() != HostState.Enabled) {
-                reject(candidate, "host is not enabled");
+                reject(candidate, i18m("host is not enabled"));
                 continue;
             }
 
             if (candidate.host.getStatus() != HostStatus.Connected) {
-                reject(candidate, "host is not connected");
+                reject(candidate, i18m("host is not connected"));
             }
         }
     }

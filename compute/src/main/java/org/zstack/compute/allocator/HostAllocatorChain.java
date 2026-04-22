@@ -79,12 +79,6 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         this.producers = producers;
     }
 
-    public LinkedHashMap<String, Object> buildOpaque() {
-        LinkedHashMap<String, Object> opaque = new LinkedHashMap<>();
-        opaque.put("rejectedCandidates", rejectedList);
-        return opaque;
-    }
-
     private void done() {
         if (result == null) {
             if (isDryRun && HostAllocatorError.NO_AVAILABLE_HOST.toString().equals(errorCode.getCode())) {
@@ -255,8 +249,25 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     @Override
     public void fail(ErrorCode errorCode) {
         result = null;
-        this.errorCode = err(HostAllocatorError.NO_AVAILABLE_HOST, "[Host Allocation] no host meet the requirements");
-        this.errorCode.setOpaque(buildOpaque());
+
+        for (HostCandidate.RejectedCandidate candidate : rejectedList) {
+            if (candidate.rejectI18n == null)
+                candidate.rejectI18n = i18n(candidate.reject);
+        }
+
+        LinkedHashMap<String, Object> opaque = new LinkedHashMap<>();
+        opaque.put("rejectedCandidates", rejectedList);
+
+        if (rejectedList.size() == 1) {
+            HostCandidate.RejectedCandidate candidate = rejectedList.get(0);
+            this.errorCode = err(HostAllocatorError.NO_AVAILABLE_HOST,
+            "failed to allocate host[%s]: %s", candidate.hostUuid, candidate);
+        } else {
+            this.errorCode = err(HostAllocatorError.NO_AVAILABLE_HOST,
+            "[Host Allocation] no host meet the requirements");
+        }
+
+        this.errorCode.setOpaque(opaque);
         this.errorCode.withCause(errorCode);
         if (!seriesErrorWhenPagination.isEmpty()) {
             this.errorCode.withCause(seriesErrorWhenPagination);

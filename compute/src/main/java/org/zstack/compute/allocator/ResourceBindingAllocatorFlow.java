@@ -18,6 +18,7 @@ import org.zstack.resourceconfig.ResourceConfigFacade;
 
 import java.util.*;
 
+import static org.zstack.core.Platform.i18m;
 import static org.zstack.utils.CollectionUtils.transform;
 
 /**
@@ -119,7 +120,7 @@ public class ResourceBindingAllocatorFlow extends AbstractHostAllocatorFlow {
             if (isSoft) {
                 notRecommend(candidate);
             } else {
-                reject(candidate, "not bound resource");
+                reject(candidate, i18m("not bound resource"));
             }
         }
 

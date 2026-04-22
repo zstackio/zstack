@@ -18,6 +18,7 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.i18m;
 import static org.zstack.utils.CollectionUtils.*;
 
 /**
@@ -62,7 +63,7 @@ public class HostOsVersionAllocatorFlow  extends AbstractHostAllocatorFlow {
 
         for (HostCandidate candidate : candidates) {
             if (!matchedHosts.contains(candidate.getUuid())) {
-                reject(candidate, String.format("OS version %s required", currentHostOs));
+                reject(candidate, i18m("OS version %s required", currentHostOs));
             }
         }
 

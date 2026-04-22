@@ -17,6 +17,8 @@ import org.zstack.header.volume.VolumeInventory;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.zstack.core.Platform.i18m;
+
 /**
  * Created by frank on 10/24/2015.
  */
@@ -66,7 +68,7 @@ public class AllocatePrimaryStorageForVmMigrationFlow  extends AbstractHostAlloc
 
         for (HostCandidate candidate : candidates) {
             if (!hostUuids.contains(candidate.getUuid())) {
-                reject(candidate, "no enough space on host");
+                reject(candidate, i18m("not enough space on host"));
             }
         }
 

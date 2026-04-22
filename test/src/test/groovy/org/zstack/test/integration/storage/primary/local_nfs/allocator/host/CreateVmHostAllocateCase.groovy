@@ -186,7 +186,8 @@ class CreateVmHostAllocateCase extends SubCase {
             assert list.size() == 2
             assert list.any { it["hostUuid"] == kvm.uuid && it["hostName"] == "kvm" }
             assert list.any { it["hostUuid"] == kvm1.uuid && it["hostName"] == "kvm1" }
-            assert list.every { it["reject"] == Platform.i18n("not accessible to the specific primary storage") }
+            assert list.every { it["reject"] == "not accessible to the specific primary storage" }
+            assert list.every { it["rejectI18n"] == Platform.i18n("not accessible to the specific primary storage") }
             assert list.every { it["rejectBy"] == HostPrimaryStorageAllocatorFlow.class.simpleName }
         }
     }
