@@ -23,7 +23,6 @@ public class VmCanonicalEvents {
     public static final String VM_GPU_STATUS_ABNORMAL = "/vm/gpu/status/abnormal";
     public static final String VM_GPU_XID_ERROR = "/vm/gpu/xid/error";
     public static final String VM_HOST_FILE_CHANGED_PATH = "/vm/hostfile/changed";
-    public static final String KVM_REPORT_VM_HOST_FILE_CHANGED = "/kvm/reportvmhostfilechanged";
 
     @NeedJsonSchema
     public static class VmCrashReportData {
