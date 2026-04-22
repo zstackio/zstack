@@ -34,6 +34,8 @@ import org.zstack.header.secret.SecretHostDefineMsg;
 import org.zstack.header.secret.SecretHostDefineReply;
 import org.zstack.header.secret.SecretHostGetMsg;
 import org.zstack.header.secret.SecretHostGetReply;
+import org.zstack.header.secret.ResolveVtpmLibvirtSecretOnHypervisorMsg;
+import org.zstack.header.secret.ResolveVtpmLibvirtSecretOnHypervisorReply;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.tpm.entity.TpmSpec;
@@ -566,25 +568,50 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
             completion.success();
             return;
         }
-        try {
-            VtpmMigratePreAgentContext ctx = new VtpmMigratePreAgentContext(inv.getUuid(), srcHostUuid, destHostUuid);
-            ctx.setEnableKeyProvider(!VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class));
-            prepareVtpmSecretOnHostsBeforeMigrate(ctx);
-            completion.success();
-        } catch (OperationFailureException e) {
-            completion.fail(e.getErrorCode());
-        }
-    }
-
-    private void prepareVtpmSecretOnHostsBeforeMigrate(VtpmMigratePreAgentContext ctx) {
+        VtpmMigratePreAgentContext ctx = new VtpmMigratePreAgentContext(inv.getUuid(), srcHostUuid, destHostUuid);
+        ctx.setEnableKeyProvider(!VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class));
         String tpmUuid = VmTpmManager.findTpmUuidForVmOrNull(ctx.getVmUuid());
         if (StringUtils.isBlank(tpmUuid)) {
+            completion.success();
             return;
         }
         if (!ctx.isEnableKeyProvider()) {
+            completion.success();
             return;
         }
-        ctx.setTpmUuid(tpmUuid);
+        try {
+            ctx.setTpmUuid(tpmUuid);
+            ensureVtpmKeyBindingAndDekLoaded(ctx);
+        } catch (OperationFailureException e) {
+            completion.fail(e.getErrorCode());
+            return;
+        }
+        resolveSourceHostVtpmSecretUuid(ctx, new ReturnValueCompletion<String>(completion) {
+            @Override
+            public void success(String sourceSecretUuid) {
+                ctx.setSourceSecretUuid(sourceSecretUuid);
+                ensureDestinationHostVtpmSecretDefined(ctx, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        completion.success();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                    }
+                });
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    private void ensureVtpmKeyBindingAndDekLoaded(VtpmMigratePreAgentContext ctx) {
+        String tpmUuid = ctx.getTpmUuid();
         ctx.setProviderUuid(resourceKeyBackend.findKeyProviderUuidByTpm(tpmUuid));
         ctx.setProviderName(resourceKeyBackend.findKeyProviderNameByTpm(tpmUuid));
         if (StringUtils.isBlank(ctx.getProviderUuid()) && StringUtils.isBlank(ctx.getProviderName())) {
@@ -596,39 +623,57 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         }
 
         GetOrCreateResourceKeyContext keyCtx = new GetOrCreateResourceKeyContext();
-        keyCtx.setResourceUuid(ctx.getTpmUuid());
+        keyCtx.setResourceUuid(tpmUuid);
         keyCtx.setResourceType(TpmVO.class.getSimpleName());
         keyCtx.setKeyProviderUuid(ctx.getProviderUuid());
         keyCtx.setKeyProviderName(ctx.getProviderName());
         keyCtx.setPurpose("vtpm");
         ResourceKeyResult result = resourceKeyManager.getKey(keyCtx);
         if (StringUtils.isBlank(result.getDekBase64())) {
-            throw new OperationFailureException(operr("missing DEK for tpm[uuid:%s] after getKey before migrate", ctx.getTpmUuid()));
+            throw new OperationFailureException(operr("missing DEK for tpm[uuid:%s] after getKey before migrate", tpmUuid));
         }
         ctx.setResourceKeyResult(result);
+    }
 
-        SecretHostGetMsg getMsg = new SecretHostGetMsg();
-        getMsg.setHostUuid(ctx.getSrcHostUuid());
-        getMsg.setVmUuid(ctx.getVmUuid());
-        getMsg.setPurpose("vtpm");
-        getMsg.setKeyVersion(ctx.getKeyVersion());
-        getMsg.setUsageInstance(HOST_SECRET_USAGE_INSTANCE_VTPM);
-        bus.makeTargetServiceIdByResourceUuid(getMsg, HostConstant.SERVICE_ID, getMsg.getHostUuid());
-        MessageReply getReply = bus.call(getMsg);
-        if (!getReply.isSuccess()) {
-            throw new OperationFailureException(getReply.getError() != null ? getReply.getError()
-                    : operr("get secret on source host failed before migrate"));
-        }
-        SecretHostGetReply getR = getReply.castReply();
-        if (StringUtils.isBlank(getR.getSecretUuid())) {
-            throw new OperationFailureException(operr("failed to get source secret uuid before migrate: empty secretUuid"));
-        }
-        ctx.setSourceSecretUuid(getR.getSecretUuid());
+    private void resolveSourceHostVtpmSecretUuid(VtpmMigratePreAgentContext ctx, ReturnValueCompletion<String> completion) {
+        ResolveVtpmLibvirtSecretOnHypervisorMsg m = new ResolveVtpmLibvirtSecretOnHypervisorMsg();
+        m.setHostUuid(ctx.getSrcHostUuid());
+        m.setVmUuid(ctx.getVmUuid());
+        bus.makeTargetServiceIdByResourceUuid(m, HostConstant.SERVICE_ID, m.getHostUuid());
+        bus.send(m, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    logger.warn(String.format("vTPM resolve libvirt secret uuid on agent failed, vmUuid:%s, err:%s",
+                            ctx.getVmUuid(), r.getError().getReadableDetails()));
+                    completion.fail(operr(
+                            "cannot continue vTPM migrate precheck: failed to resolve libvirt secret UUID from domain XML, vmUuid:%s, srcHostUuid:%s",
+                            ctx.getVmUuid(), ctx.getSrcHostUuid()));
+                    return;
+                }
+                ResolveVtpmLibvirtSecretOnHypervisorReply rr = r.castReply();
+                String sourceSecretUuid = StringUtils.isNotBlank(rr.getSecretUuid()) ? rr.getSecretUuid() : null;
+                if (sourceSecretUuid == null) {
+                    completion.fail(operr(
+                            "cannot continue vTPM migrate precheck: failed to resolve libvirt secret UUID from domain XML, vmUuid:%s, srcHostUuid:%s",
+                            ctx.getVmUuid(), ctx.getSrcHostUuid()));
+                    return;
+                }
+                logger.info(String.format(
+                        "vTPM preMigrate source secret uuid resolved from domain XML, vmUuid:%s, srcHostUuid:%s, xmlHint:%s",
+                        ctx.getVmUuid(), ctx.getSrcHostUuid(), sourceSecretUuid));
+                completion.success(sourceSecretUuid);
+            }
+        });
+    }
 
+    private void ensureDestinationHostVtpmSecretDefined(VtpmMigratePreAgentContext ctx, Completion completion) {
         ResourceKeyResult keyResult = ctx.getResourceKeyResult();
         if (keyResult == null || StringUtils.isBlank(keyResult.getDekBase64())) {
-            throw new OperationFailureException(operr("missing DEK for tpm[uuid:%s] before ensure secret on destination", ctx.getTpmUuid()));
+            completion.fail(operr("missing DEK for tpm[uuid:%s] before ensure secret on destination", ctx.getTpmUuid()));
+            return;
         }
+
         SecretHostDefineMsg defMsg = new SecretHostDefineMsg();
         defMsg.setHostUuid(ctx.getDstHostUuid());
         defMsg.setVmUuid(ctx.getVmUuid());
@@ -639,10 +684,27 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         defMsg.setSecretUuid(ctx.getSourceSecretUuid());
         defMsg.setDescription(String.format("Define secret for VM %s before live migration", ctx.getVmUuid()));
         bus.makeTargetServiceIdByResourceUuid(defMsg, HostConstant.SERVICE_ID, defMsg.getHostUuid());
-        MessageReply defReply = bus.call(defMsg);
-        if (!defReply.isSuccess()) {
-            throw new OperationFailureException(defReply.getError());
-        }
+        bus.send(defMsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply defReply) {
+                if (!defReply.isSuccess()) {
+                    completion.fail(defReply.getError());
+                    return;
+                }
+
+                SecretHostDefineReply defR = defReply.castReply();
+                if (StringUtils.isBlank(defR.getSecretUuid())) {
+                    completion.fail(operr(
+                            "define secret on host succeeded but returned empty secretUuid, hostUuid:%s", ctx.getDstHostUuid()));
+                    return;
+                }
+                String destSecretUuid = defR.getSecretUuid();
+                logger.info(String.format(
+                        "vTPM preMigrate destination secret defined, vmUuid:%s, dstHostUuid:%s, secretUuid:%s",
+                        ctx.getVmUuid(), ctx.getDstHostUuid(), destSecretUuid));
+                completion.success();
+            }
+        });
     }
 
     @Override
@@ -661,6 +723,19 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
 
         Integer keyVersion = findTpmKeyVersionByVmUuid(vmUuid);
         deleteHostSecretBestEffort(srcHostUuid, vmUuid, keyVersion, "after-migrate");
+        completion.done();
+    }
+
+    @Override
+    public void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason, NoErrorCompletion completion) {
+        String vmUuid = inv == null ? null : inv.getUuid();
+        if (StringUtils.isBlank(vmUuid) || StringUtils.isBlank(destHostUuid)) {
+            completion.done();
+            return;
+        }
+
+        Integer keyVersion = findTpmKeyVersionByVmUuid(vmUuid);
+        deleteHostSecretBestEffort(destHostUuid, vmUuid, keyVersion, "failed-migrate");
         completion.done();
     }
 
