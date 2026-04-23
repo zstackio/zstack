@@ -8819,6 +8819,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
+        // Align with VmDetachNicFlow: clean up the device address metadata
+        // before the owning VO is removed, otherwise
+        // VmInstanceResourceMetadataManager#checkParams can no longer locate
+        // the device and refuses to delete the row. Leaving the orphan
+        // metadata later breaks memory snapshot archive / revert because the
+        // archived device no longer exists.
+        vidm.deleteVmResourceMetadata(cdRomUuid, self.getUuid());
         dbf.removeByPrimaryKey(cdRomUuid, VmCdRomVO.class);
         completion.success();
     }
