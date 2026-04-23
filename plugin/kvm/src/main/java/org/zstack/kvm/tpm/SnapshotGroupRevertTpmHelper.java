@@ -3,11 +3,8 @@ package org.zstack.kvm.tpm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend;
 import org.zstack.core.db.Q;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.tpm.entity.TpmSpec;
 import org.zstack.header.vm.APICreateVmInstanceFromVolumeSnapshotGroupMsg;
 import org.zstack.header.vm.CreateVmInstanceMsg;
@@ -17,7 +14,6 @@ import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.devices.NvRamSpec;
 import org.zstack.header.vm.devices.VmDevicesSpec;
 import org.zstack.kvm.KVMSystemTags;
-import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -30,27 +26,12 @@ public class SnapshotGroupRevertTpmHelper {
     private static final CLogger logger = Utils.getLogger(SnapshotGroupRevertTpmHelper.class);
 
     @Autowired
-    private ResourceConfigFacade resourceConfigFacade;
-    @Autowired
     private TpmEncryptedResourceKeyBackend tpmKeyBackend;
 
     public void setupFromApi(APICreateVmInstanceFromVolumeSnapshotGroupMsg apiMsg, CreateVmInstanceMsg cmsg) {
         String snapshotGroupUuid = apiMsg.getVolumeSnapshotGroupUuid();
 
-        boolean resetTpm;
-        if (apiMsg.getResetTpm() != null) {
-            resetTpm = apiMsg.getResetTpm();
-        } else {
-            String vmInstanceUuid = Q.New(VolumeSnapshotGroupVO.class)
-                    .select(VolumeSnapshotGroupVO_.vmInstanceUuid)
-                    .eq(VolumeSnapshotGroupVO_.uuid, snapshotGroupUuid)
-                    .findValue();
-            resetTpm = resourceConfigFacade.getResourceConfigValue(
-                    VmGlobalConfig.RESET_TPM_AFTER_VM_CLONE, vmInstanceUuid, Boolean.class);
-            logger.debug(String.format("resetTpm not specified in API, resolved from resource config " +
-                    "RESET_TPM_AFTER_VM_CLONE for vm[uuid:%s]: %s", vmInstanceUuid, resetTpm));
-        }
-
+        boolean resetTpm = apiMsg.getResetTpm() == Boolean.TRUE;
         List<VmHostBackupFileVO> backupFiles = Q.New(VmHostBackupFileVO.class)
                 .eq(VmHostBackupFileVO_.resourceUuid, snapshotGroupUuid)
                 .list();
