@@ -72,6 +72,7 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.zstack.compute.vm.VmGlobalConfig.RESET_TPM_AFTER_VM_CLONE;
@@ -604,6 +605,7 @@ public class KvmTpmManager extends AbstractService {
 
     static class ResetVmTpmContext {
         String vmInstanceUuid;
+        String tpmUuid;
         Integer keyVersion;
 
         List<VmHostFileVO> hostFiles;
@@ -654,12 +656,12 @@ public class KvmTpmManager extends AbstractService {
 
     private void resetVmTpm(ResetVmTpmContext context, Completion completion) {
         String vmUuid = context.vmInstanceUuid;
-        String tpmUuid = Q.New(TpmVO.class)
+        context.tpmUuid = Q.New(TpmVO.class)
                 .eq(TpmVO_.vmInstanceUuid, vmUuid)
                 .select(TpmVO_.uuid)
                 .findValue();
-        if (tpmUuid != null) {
-            context.keyVersion = tpmKeyBackend.findKeyVersionByTpm(tpmUuid);
+        if (context.tpmUuid != null) {
+            context.keyVersion = tpmKeyBackend.findKeyVersionByTpm(context.tpmUuid);
         }
 
         SimpleFlowChain.of("reset-vm-tpm-" + vmUuid)
@@ -842,10 +844,43 @@ public class KvmTpmManager extends AbstractService {
                     });
                 })
                 .build())
+            .then(Flow.of("reset-key-provider-binding-to-default")
+                .skipIf(data -> context.tpmUuid == null
+                        || VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class))
+                .handle(trigger -> {
+                    bindTpmToDefaultProviderIfNeeded(vmUuid, context.tpmUuid);
+                    trigger.next();
+                })
+                .build())
             .propagateExceptionTo(completion)
             .done(completion::success)
             .error(completion::fail)
             .start();
+    }
+
+    private void bindTpmToDefaultProviderIfNeeded(String vmUuid, String tpmUuid) {
+        if (tpmUuid == null || VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class)) {
+            return;
+        }
+
+        String defaultProviderUuid = tpmKeyBackend.defaultKeyProviderUuid();
+        if (defaultProviderUuid == null) {
+            logger.warn(String.format(
+                    "skip resetting TPM key provider for vm[uuid:%s], no default key provider found",
+                    vmUuid));
+            return;
+        }
+
+        String currentProviderUuid = tpmKeyBackend.findKeyProviderUuidByTpm(tpmUuid);
+        if (Objects.equals(defaultProviderUuid, currentProviderUuid)) {
+            return;
+        }
+
+        tpmKeyBackend.detachKeyProviderFromTpm(tpmUuid);
+        tpmKeyBackend.attachKeyProviderToTpm(tpmUuid, defaultProviderUuid);
+        logger.info(String.format(
+                "reset TPM key provider for vm[uuid:%s], tpm[uuid:%s], provider[uuid:%s -> %s]",
+                vmUuid, tpmUuid, currentProviderUuid, defaultProviderUuid));
     }
 
     private static void addVmCurrentAndLastHostUuidsForSecretDelete(Set<String> hostUuids, String vmInstanceUuid) {
