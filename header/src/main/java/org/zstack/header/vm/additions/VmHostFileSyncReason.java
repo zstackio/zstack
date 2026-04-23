@@ -4,6 +4,7 @@ public enum VmHostFileSyncReason {
     PrepareRead("on prepare host file (from origin host)"),
     PrepareReRead("on prepare host file (from dest host)"),
     ResourceRelease("on release vm resource"),
+    PreMigration("on pre-migration (from src host)"),
     PostMigration("on post-migration (from dest host)"),
     VmShutdown("on libvirt shutdown event"),
     PostClone("on post-clone (from dest host)"),
