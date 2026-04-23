@@ -34,7 +34,7 @@ public class UpdateAlarmLabelAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String value;
 
-    @Param(required = true, validValues = {"Regex","Equal"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"Regex","Equal","RegexAgainst","NotEqual"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String operator;
 
     @Param(required = false)
