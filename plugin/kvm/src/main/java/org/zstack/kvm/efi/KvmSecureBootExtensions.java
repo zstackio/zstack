@@ -186,6 +186,60 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         }
 
         SimpleFlowChain.of("prepare-nvram-before-vm-" + vm.getUuid() + "-migrate")
+                .then("sync-vm-host-files-before-migration", trigger -> {
+                    String vmUuid = vm.getUuid();
+
+                    Tuple tuple = Q.New(VmInstanceVO.class)
+                            .eq(VmInstanceVO_.uuid, vmUuid)
+                            .select(VmInstanceVO_.hostUuid, VmInstanceVO_.lastHostUuid)
+                            .findTuple();
+                    String hostUuid = tuple.get(0, String.class);
+                    if (hostUuid == null) {
+                        hostUuid = tuple.get(1, String.class);
+                    }
+
+                    List<VmHostFileVO> fileList = Q.New(VmHostFileVO.class)
+                            .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
+                            .eq(VmHostFileVO_.hostUuid, hostUuid)
+                            .list();
+
+                    if (fileList.isEmpty()) {
+                        trigger.next();
+                        return;
+                    }
+
+                    if (fileList.stream().allMatch(it -> it.getChangeDate() == null)) {
+                        logger.debug(String.format("skip syncing VM host files before migration for VM[uuid=%s], " +
+                                "All files are clean (changeDate is null)", vmUuid));
+                        trigger.next();
+                        return;
+                    }
+
+                    SyncVmHostFilesFromHostMsg syncMsg = new SyncVmHostFilesFromHostMsg();
+                    syncMsg.setHostUuid(hostUuid);
+                    syncMsg.setVmUuid(vmUuid);
+                    syncMsg.setSyncReason(PreMigration.reason());
+
+                    for (VmHostFileVO file : fileList) {
+                        if (file.getType() == NvRam) {
+                            syncMsg.setNvRamPath(file.getPath());
+                        } else if (file.getType() == VmHostFileType.TpmState) {
+                            syncMsg.setTpmStateFolder(file.getPath());
+                        }
+                    }
+
+                    bus.makeLocalServiceId(syncMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
+                    bus.send(syncMsg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                trigger.next();
+                                return;
+                            }
+                            trigger.fail(reply.getError());
+                        }
+                    });
+                })
                 .then("prepare-nvram-folder-on-dest-host", trigger -> {
                     VmHostFileTO to = new VmHostFileTO();
                     to.setPath(buildNvramFilePath(vm.getUuid()));
