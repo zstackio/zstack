@@ -71,37 +71,7 @@ public class SnapshotGroupRevertTpmHelper {
                 tpmSpec = new TpmSpec();
                 devicesSpec.setTpm(tpmSpec);
             }
-            tpmSpec.setEnable(true);
-
-            if (resetTpm) {
-                // resetTpm=true: reset generate a new one during VM creation
-                logger.debug(String.format("resetTpm is true for volume snapshot group[uuid:%s], " +
-                        "will reset tpmBackupFileUuid:%s", snapshotGroupUuid, tpmBackupFile.getUuid()));
-            } else {
-                tpmSpec.setBackupFileUuid(tpmBackupFile.getUuid());
-            }
-
-            if (ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class) != Boolean.TRUE) {
-                String keyProviderName = KVMSystemTags.TPM_KEY_PROVIDER_NAME
-                        .getTokenByResourceUuid(tpmBackupFile.getUuid(), KVMSystemTags.TPM_KEY_PROVIDER_NAME_TOKEN);
-                if (keyProviderName == null) {
-                    logger.warn(String.format(
-                            "failed to find keyProvider from snapshotGroup[uuid:%s] by tpmBackupFile[uuid:%s]",
-                            snapshotGroupUuid, tpmBackupFile.getUuid()));
-                    if (tpmSpec.getKeyProviderUuid() == null) {
-                        tpmSpec.setKeyProviderUuid(tpmKeyBackend.defaultKeyProviderUuid()); // maybe null
-                    }
-                } else {
-                    String keyProviderUuid = tpmKeyBackend.findKeyProviderUuidByName(keyProviderName);
-                    if (keyProviderUuid == null) {
-                        logger.warn(String.format(
-                                "failed to resolve keyProvider[name:%s] from snapshotGroup[uuid:%s] by tpmBackupFile[uuid:%s], keep keyProviderUuid unset",
-                                keyProviderName, snapshotGroupUuid, tpmBackupFile.getUuid()));
-                    } else {
-                        tpmSpec.setKeyProviderUuid(keyProviderUuid);
-                    }
-                }
-            }
+            setupTpmSpec(snapshotGroupUuid, tpmBackupFile, tpmSpec, cmsg, resetTpm);
         }
 
         if (nvRamBackupFile != null) {
@@ -114,5 +84,55 @@ public class SnapshotGroupRevertTpmHelper {
             logger.debug(String.format("set NvRam restore info for volume snapshot group[uuid:%s], nvRamBackupFileUuid:%s",
                     snapshotGroupUuid, nvRamBackupFile.getUuid()));
         }
+    }
+
+    private void setupTpmSpec(String snapshotGroupUuid, VmHostBackupFileVO tpmBackupFile, TpmSpec tpmSpec,
+                              CreateVmInstanceMsg cmsg, boolean resetTpm) {
+        tpmSpec.setEnable(true);
+
+        if (resetTpm) {
+            // resetTpm=true: reset generate a new one during VM creation
+            logger.debug(String.format("resetTpm is true for volume snapshot group[uuid:%s], " +
+                    "will reset tpmBackupFileUuid:%s", snapshotGroupUuid, tpmBackupFile.getUuid()));
+        } else {
+            tpmSpec.setBackupFileUuid(tpmBackupFile.getUuid());
+        }
+
+        if (ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class) == Boolean.TRUE) {
+            return;
+        }
+
+        if (resetTpm) {
+            String defaultProviderUuid = tpmKeyBackend.defaultKeyProviderUuid();
+            tpmSpec.setKeyProviderUuid(defaultProviderUuid);
+            logger.info(String.format(
+                    "snapshot-reset TPM target provider selected, source[snapshotGroupUuid:%s,tpmBackupFileUuid:%s], " +
+                            "destination[vmResourceUuid:%s,vmName:%s,providerUuid:%s]",
+                    snapshotGroupUuid, tpmBackupFile.getUuid(),
+                    cmsg.getResourceUuid(), cmsg.getName(), defaultProviderUuid));
+            return;
+        }
+
+        String keyProviderName = KVMSystemTags.TPM_KEY_PROVIDER_NAME
+                .getTokenByResourceUuid(tpmBackupFile.getUuid(), KVMSystemTags.TPM_KEY_PROVIDER_NAME_TOKEN);
+        if (keyProviderName == null) {
+            logger.warn(String.format(
+                    "failed to find keyProvider from snapshotGroup[uuid:%s] by tpmBackupFile[uuid:%s]",
+                    snapshotGroupUuid, tpmBackupFile.getUuid()));
+            if (tpmSpec.getKeyProviderUuid() == null) {
+                tpmSpec.setKeyProviderUuid(tpmKeyBackend.defaultKeyProviderUuid());
+            }
+            return;
+        }
+
+        String keyProviderUuid = tpmKeyBackend.findKeyProviderUuidByName(keyProviderName);
+        if (keyProviderUuid == null) {
+            logger.warn(String.format(
+                    "failed to resolve keyProvider[name:%s] from snapshotGroup[uuid:%s] by tpmBackupFile[uuid:%s], keep keyProviderUuid unset",
+                    keyProviderName, snapshotGroupUuid, tpmBackupFile.getUuid()));
+            return;
+        }
+
+        tpmSpec.setKeyProviderUuid(keyProviderUuid);
     }
 }
