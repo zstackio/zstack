@@ -228,16 +228,34 @@ public class VmHostFileTracker implements Component {
         });
     }
 
-    private void syncVmHostFiles() {
-        List<VmHostFileVO> hostFiles = Q.New(VmHostFileVO.class, VmInstanceVO.class)
+    /**
+     * Vm host files the periodic sync should consider: (1) running VM files on the current host,
+     * and (2) stopped VM files on the last host when at least one is dirty ({@code changeDate} set).
+     */
+    private List<VmHostFileVO> listVmHostFilesToSync() {
+        List<VmHostFileVO> hostFiles = new ArrayList<>(Q.New(VmHostFileVO.class, VmInstanceVO.class)
                 .table0()
                     .eq(VmHostFileVO_.vmInstanceUuid).table1(VmInstanceAO_.uuid)
                     .eq(VmHostFileVO_.hostUuid).table1(VmInstanceAO_.hostUuid)
                     .selectThisTable()
                 .table1()
                     .eq(VmInstanceAO_.state, VmInstanceState.Running)
-                .list();
+                .list());
+        hostFiles.addAll(Q.New(VmHostFileVO.class, VmInstanceVO.class)
+                .table0()
+                    .eq(VmHostFileVO_.vmInstanceUuid).table1(VmInstanceAO_.uuid)
+                    .eq(VmHostFileVO_.hostUuid).table1(VmInstanceAO_.lastHostUuid)
+                    .notNull(VmHostFileVO_.changeDate)
+                    .selectThisTable()
+                .table1()
+                    .eq(VmInstanceAO_.state, VmInstanceState.Stopped)
+                    .notNull(VmInstanceAO_.lastHostUuid)
+                .list());
+        return hostFiles;
+    }
 
+    private void syncVmHostFiles() {
+        List<VmHostFileVO> hostFiles = listVmHostFilesToSync();
         if (hostFiles.isEmpty()) {
             return;
         }
