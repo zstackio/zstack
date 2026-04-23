@@ -431,6 +431,18 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                Timestamp latestChangeDate = Q.New(VmHostFileVO.class)
+                        .select(VmHostFileVO_.changeDate)
+                        .eq(VmHostFileVO_.uuid, context.vmHostFile.getUuid())
+                        .findValue();
+                if (latestChangeDate != null && !context.sameHost) {
+                    trigger.fail(operr(
+                            "vm host file content on management node may be stale: change is pending on host "
+                                    + "but sync from origin host failed, cannot use cached content[vmUuid=%s, type=%s]",
+                            context.vmUuid, context.type));
+                    return;
+                }
+
                 if (!Q.New(VmHostFileContentVO.class)
                         .eq(VmHostFileContentVO_.uuid, context.vmHostFile.getUuid())
                         .isExists()) {
