@@ -48,4 +48,5 @@ public interface OAuth2PluginConstants {
     String MAX_KEY_PROVIDER_NAME = "max_key";
     String ZIAM_PROVIDER_NAME = "ziam";
     String LOGIN_TYPE_IAM2_ROPC = "iam2_ropc";
+    String ZIAM_DEFAULT_SCOPE = "openid profile email";
 }
