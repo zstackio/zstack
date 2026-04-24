@@ -59,7 +59,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
-import static org.zstack.header.host.APIMountBlockDeviceMsg.mkfsCommd.buildMkfsCommd;
 import static org.zstack.header.host.BlockDevicesParser.*;
 import static org.zstack.longjob.LongJobUtils.noncancelableErr;
 
@@ -528,78 +527,40 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }
     }
 
+    public static volatile java.util.function.Supplier<Ssh> sshFactory = null;
+
     private void handle(final APIMountBlockDeviceMsg msg) {
         APIMountBlockDeviceEvent event = new APIMountBlockDeviceEvent(msg.getId());
-        if (CoreGlobalProperty.UNIT_TEST_ON) {
+        if (CoreGlobalProperty.UNIT_TEST_ON && sshFactory == null) {
             DebugUtils.Assert(msg.getPassword() != null, "password cannot be null");
             bus.publish(event);
             return;
         }
 
-        Ssh ssh = new Ssh();
+        Ssh ssh = sshFactory != null ? sshFactory.get() : new Ssh();
         ssh.setUsername(msg.getUsername()).setPassword(msg.getPassword()).setPort(msg.getSshPort())
                 .setHostname(msg.getHostName()).setTimeout(20);
+        MountBlockDeviceHelper.MountRequest req = MountBlockDeviceHelper.MountRequest.from(msg);
+        MountBlockDeviceHelper.logStart(req);
         try {
-            // 1 Check if mount point is already mounted
-            SshResult mountPointCheck = ssh.command(String.format("findmnt -n -o SOURCE '%s'", msg.getMountPoint())).run();
-            ssh.reset();
-            if (mountPointCheck.getReturnCode() == 0 && !mountPointCheck.getStdout().trim().isEmpty()) {
-                throw new OperationFailureException(operr("mountPoint %s is already mount on device %s",
-                        msg.getMountPoint(), mountPointCheck.getStdout().trim()));
-            }
-
-            // 2 Check if device is already mounted
-            SshResult devicePathCheck = ssh.command(String.format("findmnt -n -o TARGET '%s'", msg.getPath())).run();
-            ssh.reset();
-            if (devicePathCheck.getReturnCode() == 0 && !devicePathCheck.getStdout().trim().isEmpty()) {
-                throw new OperationFailureException(operr("device %s is already mount on mountPoint %s",
-                        msg.getPath(), devicePathCheck.getStdout().trim()));
-            }
-
-            // 3 Create mount point directory
-            executeSshCommand(ssh, String.format("mkdir -p '%s'", msg.getMountPoint()));
-
-            // 4 Format and execute mkfs command
-            executeSshCommand(ssh, buildMkfsCommd(msg.getFilesystemType(), msg.getPath()));
-
-            // 5 Retrieve device UUID
-            SshResult ret = executeSshCommand(ssh, String.format("blkid -s UUID -o value '%s'", msg.getPath()));
-            String uuid = ret.getStdout().trim();
-            if (uuid.isEmpty()) {
-                throw new OperationFailureException(operr("failed to get UUID for device %s", msg.getPath()));
-            }
-
-            // 6 Mount device using UUID
-            executeSshCommand(ssh, String.format("mount -U '%s' '%s'", uuid, msg.getMountPoint()));
-
-            String fstabEntry = String.format("UUID=%s %s %s defaults 0 0", uuid, msg.getMountPoint(), msg.getFilesystemType());
-
-            // 7 Check if fstabEntry already exists in /etc/fstab
-            String checkCommand = String.format("grep -F '%s' /etc/fstab", fstabEntry);
-            SshResult fstabCheck = ssh.command(checkCommand).run();
-            ssh.reset();
-            if (fstabCheck.getReturnCode() == 0 && fstabCheck.getStdout().trim().equals(fstabEntry)) {
-                logger.info(String.format("fstabEntry[%s] already exists in fstab", fstabEntry));
+            if (MountBlockDeviceHelper.checkMountPointIdempotent(ssh, req)) {
                 bus.publish(event);
                 return;
             }
-
-            // 8 Add fstabEntry to fstab
-            executeSshCommand(ssh, String.format("echo '%s' >> /etc/fstab", fstabEntry));
-
+            MountBlockDeviceHelper.ensureDeviceNotAlreadyMounted(ssh, req);
+            MountBlockDeviceHelper.DeviceResolution resolved =
+                    MountBlockDeviceHelper.resolveEffectiveDevice(ssh, req);
+            if (MountBlockDeviceHelper.checkPostRedirectIdempotent(ssh, req, resolved)) {
+                bus.publish(event);
+                return;
+            }
+            MountBlockDeviceHelper.prepareMountPoint(ssh, req);
+            MountBlockDeviceHelper.validateFstabClean(ssh, req, resolved.devicePath);
+            MountBlockDeviceHelper.doFormatAndMount(ssh, req, resolved);
             bus.publish(event);
         } finally {
             ssh.close();
         }
-    }
-
-    private SshResult executeSshCommand(Ssh ssh, String command) {
-        SshResult ret = ssh.command(command).run();
-        ssh.reset();
-        if (ret.getReturnCode() != 0) {
-            throw new CloudRuntimeException(String.format("SSH command failed [%s]: stderr=%s, stdout=%s", command, ret.getStderr(), ret.getStdout()));
-        }
-        return ret;
     }
 
     private void handle(final APIGetHostBlockDevicesMsg msg) {

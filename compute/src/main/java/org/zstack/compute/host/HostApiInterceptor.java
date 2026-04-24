@@ -171,51 +171,53 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
         VmHostnameUtils.validateHostname(msg.getHostname(), false);
     }
 
+    private static final String SAFE_MOUNT_POINT_PATTERN = "^[a-zA-Z0-9_\\-./]+$";
+    private static final String SAFE_DEVICE_PATH_PATTERN = "^[a-zA-Z0-9_\\-./:=+]+$";
+
+    private void validateAbsolutePathCommon(String value, String fieldName) {
+        if (value == null || value.isEmpty()) {
+            throw new ApiMessageInterceptionException(operr("%s cannot be empty", fieldName));
+        }
+        if (!value.startsWith("/")) {
+            throw new ApiMessageInterceptionException(operr(
+                    "%s must be an absolute path (start with '/')", fieldName));
+        }
+        if (value.contains("..") || value.contains("//")) {
+            throw new ApiMessageInterceptionException(operr(
+                    "path traversal detected in %s", fieldName));
+        }
+    }
+
     private void validatePath(String path) {
-        if (path == null || path.isEmpty()) {
-            throw new ApiMessageInterceptionException(operr("path cannot be empty"));
-        }
-
-        if (!path.startsWith("/")) {
-            throw new ApiMessageInterceptionException(operr("path must be an absolute path (start with '/')\""));
-        }
-
-        if (path.contains("..") || path.contains("//")) {
-            throw new ApiMessageInterceptionException(operr("invalid path traversal detected"));
+        validateAbsolutePathCommon(path, "device path");
+        if (!path.matches(SAFE_DEVICE_PATH_PATTERN)) {
+            throw new ApiMessageInterceptionException(operr(
+                    "device path must match pattern '%s'. " +
+                            "allowed characters: alphanumeric, '-', '_', '.', '/', ':', '=', '+' " +
+                            "(':' and '=' are needed for /dev/disk/by-path/pci-0000:00:1f.2-ata-1 " +
+                            "and some LVM mapper names). " +
+                            "valid examples: /dev/sda, /dev/mapper/mpath0, " +
+                            "/dev/disk/by-path/pci-0000:00:1f.2-ata-1, /dev/disk/by-id/wwn-0x5000cca00a123456. " +
+                            "shell metacharacters are rejected to prevent command injection. " +
+                            "invalid value detected: '%s'",
+                    SAFE_DEVICE_PATH_PATTERN, path));
         }
     }
 
     private void validateMountPoint(String mountPoint) {
-        if (mountPoint == null || mountPoint.isEmpty()) {
-            throw new ApiMessageInterceptionException(operr("mountPoint cannot be empty"));
-        }
-
-        if (!mountPoint.startsWith("/")) {
-            throw new ApiMessageInterceptionException(operr("mount point must be an absolute path (start with '/')"));
-        }
-
-        if (mountPoint.contains("..") || mountPoint.contains("//")) {
-            throw new ApiMessageInterceptionException(operr("path traversal detected in mount point"));
-        }
-
-        String safePattern = "^[a-zA-Z0-9_\\-./]+$";
-        if (!mountPoint.matches(safePattern)) {
+        validateAbsolutePathCommon(mountPoint, "mount point");
+        if (!mountPoint.matches(SAFE_MOUNT_POINT_PATTERN)) {
             throw new ApiMessageInterceptionException(operr(
-                    "the mount point must strictly follow the security pattern: '^[a-zA-Z0-9_\\-./]+$'. " +
-                            "this requires: \n" +
-                            "1. only alphanumeric characters [a-z, A-Z, 0-9]\n" +
-                            "2. limited special characters: hyphen (-), underscore (_), period (.), and forward slash (/)\n" +
-                            "3. must be a valid absolute path starting with '/'\n\n" +
-                            "valid examples:\n" +
-                            "  /mnt/data\n" +
-                            "  /volumes/drive01\n" +
-                            "  /backup-2023.disk\n\n" +
-                            "invalid value detected: '%s'", mountPoint
-            ));
+                    "mount point must match pattern '%s'. " +
+                            "allowed characters: alphanumeric, '-', '_', '.', '/'. " +
+                            "valid examples: /mnt/data, /volumes/drive01, /backup-2023.disk. " +
+                            "shell metacharacters are rejected to prevent command injection. " +
+                            "invalid value detected: '%s'",
+                    SAFE_MOUNT_POINT_PATTERN, mountPoint));
         }
-
         if (mountPoint.endsWith("/") && !mountPoint.equals("/")) {
-            throw new ApiMessageInterceptionException(operr("mountPoint should not end with '/' except root directory"));
+            throw new ApiMessageInterceptionException(operr(
+                    "mountPoint should not end with '/' except root directory"));
         }
     }
 

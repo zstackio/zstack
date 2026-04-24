@@ -110,4 +110,10 @@ doc {
 		type "String"
 		since "zsv 4.10.0"
 	}
+	field {
+		name "multipath"
+		desc "是否为多路径设备；true 表示该磁盘自身为 multipath 设备或为 multipath 底层路径盘"
+		type "boolean"
+		since "zsv 5.0.0"
+	}
 }

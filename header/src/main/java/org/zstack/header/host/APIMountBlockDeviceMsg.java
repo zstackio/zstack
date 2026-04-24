@@ -22,6 +22,7 @@ public class APIMountBlockDeviceMsg extends APIMessage {
     private Integer sshPort;
     @APIParam(maxLength = 255)
     private String hostName;
+    // regex guards against shell metachar injection in downstream ssh commands.
     @APIParam(maxLength = 255)
     private String path;
     @APIParam(maxLength = 2048)
